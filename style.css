@@ -1,0 +1,44 @@
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        .logout-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background-color: #d32f2f;
+        }
+        .content {
+            display: flex;
+            height: calc(100vh - 40px); /* Adjust based on header height */
+        }
+        .zones, .factions {
+            flex: 1;
+            padding: 20px;
+        }
+        .zones {
+            background-color: #f2f2f2;
+        }
+        .factions {
+            background-color: #e0e0e0;
+        }
