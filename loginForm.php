@@ -28,14 +28,6 @@ if (
     header('Location: index.php');
     exit();
 }
- echo '
-    <form action="loginForm.php" method="post">
-        <h3> Please log in : </H3> 
-    <p>Username: <input type="text" name="username" /></p>
-    <p>Password: <input type="password" name="passwd" /></p>
-    <input type="submit" name="submit" value="Submit" />
-    </form>
-    ';
 
 if (
     isset($_POST['username'])
@@ -83,3 +75,33 @@ if (
     }
 }
 ?>
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPGConquestGame</title>
+    <style>
+        <?php include_once './style.css'; ?>
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>RPGConquestGame</h1>
+    <div class="menu_top_left">
+        <?php
+            if ($_SESSION['is_privileged'] == true){
+                echo '<a href="admin.php" class="admin-btn">Configuration</a>';
+            }
+        ?>
+        <a href="logout.php" class="logout-btn">Logout</a>
+    </div>
+</div>
+<div class="content">
+    <form action="loginForm.php" method="post">
+        <h3> Please log in : </H3> 
+    <p>Username: <input type="text" name="username" /></p>
+    <p>Password: <input type="password" name="passwd" /></p>
+    <input type="submit" name="submit" value="Submit" />
+    </form>
+</div>

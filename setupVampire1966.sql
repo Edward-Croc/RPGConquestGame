@@ -10,7 +10,6 @@ VALUES
     ('player2', 'two', TRUE)
 ;
 
-
 INSERT INTO factions (name) 
 VALUES
     ('Brujah'),
@@ -24,10 +23,13 @@ VALUES
     ('Assamites'),
     ('Discple'),
     ('Tzimisce'),
-    ('Lassombra');
+    ('Lassombra'),
+    ('Humain'),
+    ('Eglise'),
+    ('Démon');
 
 INSERT INTO controlers (
-    firstname, lastname, startworkers, faction_id, fake_faction_id
+    firstname, lastname, startworkers, is_AI, faction_id, fake_faction_id
 ) VALUES 
     ('Dame', 'Calabreze', 0, FALSE,
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
@@ -62,20 +64,20 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Nosfératu' )
     ),
     ('Der', 'Swartz', 1, FALSE,
-        (SELECT ID FROM factions WHERE name = 'Tzimisce' ),
-        (SELECT ID FROM factions WHERE name = 'Gangrel' )
+        (SELECT ID FROM factions WHERE name = 'Gangrel' ),
+        (SELECT ID FROM factions WHERE name = 'Tzimisce' )
     ),
     ('Hassan', 'Ben Hassan', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Discple' ),
         (SELECT ID FROM factions WHERE name = 'Discple' )
     ),
     ('Frère Inquisiteur', 'Lorenzo', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Humains' ),
+        (SELECT ID FROM factions WHERE name = 'Humain' ),
         (SELECT ID FROM factions WHERE name = 'Eglise' )
     ),
     ('Dark', 'Dimonio', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Humains' ),
-        (SELECT ID FROM factions WHERE name = 'Eglise' )
+        (SELECT ID FROM factions WHERE name = 'Humain' ),
+        (SELECT ID FROM factions WHERE name = 'Démon' )
     );
 
 

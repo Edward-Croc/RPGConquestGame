@@ -40,6 +40,25 @@ function tableExists($pdo, $tableName) {
     return $stmt->fetchColumn();
 }
 
+function destroyAllTables($pdo) {
+    try {
+        // Get list of tables in the database
+        $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // Drop each table
+        foreach ($tables as $table) {
+            $pdo->exec("DROP TABLE IF EXISTS $table CASCADE");
+            echo "Table $table dropped successfully.<br \>";
+        }
+        
+        // Success message
+        echo "All tables in database have been destroyed successfully.<br />";
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
+    }
+}
+
 function gameReady() {
     $pdo = getDBConnection();
     if ($pdo != NUll) {
