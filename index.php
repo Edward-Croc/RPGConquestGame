@@ -1,30 +1,7 @@
 <?php
 session_start(); // Start the session
 
-require_once './dbConnector.php';
-
-// Call the gameReady() function from dbConnector.php
-$gameReady = gameReady();
-// Use the return value
-if (!$gameReady) {
-    echo "The game is not ready. Please check DB Configuration and Setup. <br />";
-    exit();
-}else{
-    $_SESSION['DEBUG'] = getConfig($gameReady, 'DEBUG');
-    if ($_SESSION['DEBUG'] == true){
-        echo "The game is ready.<br />";
-    }
-}
-
-// Check if the user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    // Redirect the user to the login page if not logged in
-    header('Location: loginForm.php');
-    exit();
-}
-if ($_SESSION['DEBUG'] == true){
-    echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['userid']. ", is_privileged: " . $_SESSION['is_privileged']. "<br />";
-}
+require_once './basePHP.php';
 
 // Function to get controllers and return as an array
 function getControllersArray($pdo, $player_id = NULL) {
@@ -58,29 +35,10 @@ function getControllersArray($pdo, $player_id = NULL) {
     echo "<p>Faction Name: " . $controller['faction_name'] . "</p>";
 } */
 
+require_once './baseHTML.php';
+
 ?>
 
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPGConquestGame</title>
-    <style>
-        <?php include_once './style.css'; ?>
-    </style>
-</head>
-<body>
-<div class="header">
-    <h1>RPGConquestGame</h1>
-    <div class="menu_top_left">
-        <?php
-            if ($_SESSION['is_privileged'] == true){
-                echo '<a href="admin.php" class="admin-btn">Configuration</a>';
-            }
-        ?>
-        <a href="logout.php" class="logout-btn">Logout</a>
-    </div>
-</div>
 <div class="content flex">
     <div class="zones">
         <h2>Zones</h2>

@@ -6,8 +6,8 @@
 
 INSERT INTO players (username, passwd, is_privileged) 
 VALUES 
-    ('player1', 'one', FALSE),
-    ('player2', 'two', TRUE)
+    ('player1', 'one', false),
+    ('player2', 'two', false)
 ;
 
 INSERT INTO factions (name) 
@@ -15,7 +15,7 @@ VALUES
     ('Brujah'),
     ('Ventrue'),
     ('Toréador'),
-    ('Tremère'),
+    ('Tremere'),
     ('Malkavien'),
     ('Gangrel'),
     ('Nosfératu'),
@@ -23,7 +23,7 @@ VALUES
     ('Assamites'),
     ('Discple'),
     ('Tzimisce'),
-    ('Lassombra'),
+    ('Lasombra'),
     ('Humain'),
     ('Eglise'),
     ('Démon');
@@ -35,7 +35,7 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
     ),
-    ('Angelo', 'Angelotti', 1, FALSE,
+    ('Angelo', 'Ricciotti', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
@@ -89,8 +89,8 @@ INSERT INTO player_controler (player_id, controler_id)
 VALUES 
     (
         (SELECT ID FROM players WHERE username = 'player1'),
-        (SELECT ID FROM controlers WHERE lastname = 'Angelotti')
-    ), -- player1 controls  Angelo Angelotti
+        (SELECT ID FROM controlers WHERE lastname = 'Ricciotti')
+    ), -- player1 controls  Angelo Ricciotti
     (
         (SELECT ID FROM players WHERE username = 'player2'),
         (SELECT ID FROM controlers WHERE lastname = 'Calabreze')

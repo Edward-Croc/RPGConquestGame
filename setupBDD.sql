@@ -7,13 +7,14 @@
 CREATE TABLE config (
     ID SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
-    value VARCHAR(50) NOT NULL
+    value VARCHAR(50) DEFAULT '',
+    description VARCHAR(255)
 );
 
-INSERT INTO config (name, value) 
+INSERT INTO config (name, value, description) 
 VALUES 
-    ('DEBUG', 'true'),
-    ('MAXTURNS', 6);
+    ('DEBUG', 'true', 'Activates the Debugging texts'),
+    ('MAXTURNS', 6, 'Sets number of turns for game');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
@@ -24,7 +25,7 @@ CREATE TABLE players (
 
 INSERT INTO players (username, passwd, is_privileged) 
 VALUES 
-    ('gm', 'orga', TRUE);
+    ('gm', 'orga', true);
 
 CREATE TABLE factions (
     ID SERIAL PRIMARY KEY,
