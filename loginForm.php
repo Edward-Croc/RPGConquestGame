@@ -97,7 +97,7 @@ if (
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
 </div>
-<div class="content">
+<div class="content flex">
     <form action="loginForm.php" method="post">
         <h3> Please log in : </H3> 
     <p>Username: <input type="text" name="username" /></p>

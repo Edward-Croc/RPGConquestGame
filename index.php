@@ -81,7 +81,7 @@ function getControllersArray($pdo, $player_id = NULL) {
         <a href="logout.php" class="logout-btn">Logout</a>
     </div>
 </div>
-<div class="content">
+<div class="content flex">
     <div class="zones">
         <h2>Zones</h2>
         <!-- Add content for zones here -->

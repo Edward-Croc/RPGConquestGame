@@ -12,7 +12,8 @@ CREATE TABLE config (
 
 INSERT INTO config (name, value) 
 VALUES 
-    ('DEBUG', 'true');
+    ('DEBUG', 'true'),
+    ('MAXTURNS', 6);
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,

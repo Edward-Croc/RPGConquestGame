@@ -43,16 +43,25 @@
             background-color: #d32f2f;
         }
         .content {
-            display: flex;
             height: calc(100vh - 40px); /* Adjust based on header height */
         }
-        .zones, .factions {
+
+        .flex {
+            display: flex;
+        }
+
+        .zones, .factions, .config {
             flex: 1;
             padding: 20px;
         }
-        .zones {
+        .zones, .config {
             background-color: #f2f2f2;
         }
         .factions {
             background-color: #e0e0e0;
+        }
+        
+        .config {
+            display: block;
+            padding: 20px;
         }
