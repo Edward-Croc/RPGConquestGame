@@ -4,16 +4,27 @@
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TABLE mecanics (
+    ID SERIAL PRIMARY KEY,
+    turncounter INTEGER DEFAULT 0,
+    gamestat BOOLEAN DEFAULT false
+);
+
+INSERT INTO mecanics (turncounter, gamestat) 
+VALUES (0, FALSE);
+
 CREATE TABLE config (
     ID SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
-    value VARCHAR(50) DEFAULT '',
-    description VARCHAR(255)
+    value text DEFAULT '',
+    description VARCHAR(50)
 );
 
 INSERT INTO config (name, value, description) 
 VALUES 
     ('DEBUG', 'true', 'Activates the Debugging texts'),
+    ('TITLE', 'RPGConquest', 'Name of game'),
+    ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('MAXTURNS', 6, 'Sets number of turns for game');
 
 CREATE TABLE players (

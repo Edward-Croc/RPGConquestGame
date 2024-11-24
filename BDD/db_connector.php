@@ -1,6 +1,7 @@
 
 <?php
 
+
 function getDBConnection () {
     // PostgreSQL database credentials
     $host = 'localhost'; // Change this to your database host if it's different
@@ -12,22 +13,15 @@ function getDBConnection () {
     try {
         $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        echo "Connected successfully to database $dbname.<br />";
+        if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
+            echo "Connected successfully to database $dbname.<br />";
+        }
         return $pdo;
 
     } catch (PDOException $e) {
         echo "Connection failed: " . $e->getMessage()."<br />";
         return NULL;
     }
-}
-
-function getConfig($pdo, $configName) {
-    $stmt = $pdo->prepare("SELECT value 
-        FROM config 
-        WHERE name = :configName
-    ");
-    $stmt->execute([':configName' => $configName]);
-    return $stmt->fetchColumn();
 }
 
 function tableExists($pdo, $tableName) {
@@ -70,7 +64,7 @@ function gameReady() {
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
-                $sqlFile = './setupBDD.sql';
+                $sqlFile = '../BDD/setupBDD.sql';
                 echo "Loading $sqlFile ...<br />";
                 // Read SQL file
                 $sqlQueries = file_get_contents($sqlFile);
@@ -78,7 +72,7 @@ function gameReady() {
                 $pdo->exec($sqlQueries);
                 echo "SQL file executed successfully.<br />";
 
-                $sqlFile = './setupVampire1966.sql';
+                $sqlFile = '../BDD/setupVampire1966.sql';
                 echo "Loading $sqlFile ...<br />";
                 // Read SQL file
                 $sqlQueries = file_get_contents($sqlFile);

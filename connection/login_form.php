@@ -1,7 +1,22 @@
 <?php
 session_start(); // Start the session
 
-require_once './dbConnector.php';
+require_once '../BDD/db_connector.php';
+
+function getConfig($pdo, $configName) {
+    try{
+        $stmt = $pdo->prepare("SELECT value 
+            FROM config 
+            WHERE name = :configName
+        ");
+        $stmt->execute([':configName' => $configName]);
+        return $stmt->fetchColumn();  
+    } catch (PDOException $e) {
+        echo "getConfig $configName failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+}
+
 
 // Call the gameReady() function from dbConnector.php
 $gameReady = gameReady();
@@ -25,7 +40,7 @@ if (
     }
 
     // Redirect the user to a logged-in page
-    header('Location: index.php');
+    header('Location: '.'/base/accueil.php');
     exit();
 }
 
@@ -62,7 +77,7 @@ if (
                 echo "ID: " . $_SESSION['userid']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
             // Redirect the user to a logged-in page
-            header('Location: index.php');
+            header('Location: '.'/RPGConquestGame/base/accueil.php');
             exit();
         } else {
             $_SESSION['logged_in'] = false;
@@ -82,23 +97,15 @@ if (
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPGConquestGame</title>
     <style>
-        <?php include_once './style.css'; ?>
+        <?php include_once  '../base/style.css'; ?>
     </style>
 </head>
 <body>
 <div class="header">
     <h1>RPGConquestGame</h1>
-    <div class="menu_top_left">
-        <?php
-            if ($_SESSION['is_privileged'] == true){
-                echo '<a href="admin.php" class="admin-btn">Configuration</a>';
-            }
-        ?>
-        <a href="logout.php" class="logout-btn">Logout</a>
-    </div>
 </div>
 <div class="content flex">
-    <form action="loginForm.php" method="post">
+    <form action="login_form.php" method="post">
         <h3> Please log in : </H3> 
     <p>Username: <input type="text" name="username" /></p>
     <p>Password: <input type="password" name="passwd" /></p>

@@ -4,6 +4,11 @@
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
+UPDATE config SET 
+    value = 'Le 6 novembre 1966, l''Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d''œuvre. Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.'
+    WHERE name = 'PRESENTATION';
+
 INSERT INTO players (username, passwd, is_privileged) 
 VALUES 
     ('player1', 'one', false),
@@ -44,8 +49,8 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Toréador' )
     ),
     ('Gaetano', 'Trentini', 1, FALSE,
-        (SELECT ID FROM factions WHERE name = 'Tremère' ),
-        (SELECT ID FROM factions WHERE name = 'Tremère' )
+        (SELECT ID FROM factions WHERE name = 'Tremere' ),
+        (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
     ('Duca Amandin', 'Franco', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Ventrue' ),
@@ -94,4 +99,4 @@ VALUES
     (
         (SELECT ID FROM players WHERE username = 'player2'),
         (SELECT ID FROM controlers WHERE lastname = 'Calabreze')
-    ); -- Gaetano Trentini controls player2
+    );

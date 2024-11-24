@@ -8,7 +8,7 @@ session_unset();
 session_destroy();
 
 // Redirect the user to the login page or any other desired page
-header('Location: loginForm.php');
+header('Location: '.'/RPGConquestGame/index.php');
 exit();
 
 ?>
