@@ -40,7 +40,10 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
     ),
-    ('Angelo', 'Ricciotti', 1, FALSE,
+    (
+        --'Angelo', 'Ricciotti',
+        'Antonio', 'Mazzino',
+        1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
@@ -60,7 +63,10 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Giovanni' ),
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
     ),
-    ('Dame', 'Vizirof', 1, FALSE,
+    (
+        'Ana', 'Walkil'
+        -- 'Dame', 'Vizirof',
+        1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
         (SELECT ID FROM factions WHERE name = 'Tremère' )
     ),
@@ -76,7 +82,7 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Discple' ),
         (SELECT ID FROM factions WHERE name = 'Discple' )
     ),
-    ('Frère Inquisiteur', 'Lorenzo', 1, TRUE,
+    ('Frère', 'Lorenzo', 1, TRUE,
         (SELECT ID FROM factions WHERE name = 'Humain' ),
         (SELECT ID FROM factions WHERE name = 'Eglise' )
     ),
@@ -95,7 +101,7 @@ VALUES
     (
         (SELECT ID FROM players WHERE username = 'player1'),
         (SELECT ID FROM controlers WHERE lastname = 'Ricciotti')
-    ), -- player1 controls  Angelo Ricciotti
+    ), -- player1 controls  Angelo Ricciotti/Antonio Mazzino,
     (
         (SELECT ID FROM players WHERE username = 'player2'),
         (SELECT ID FROM controlers WHERE lastname = 'Calabreze')

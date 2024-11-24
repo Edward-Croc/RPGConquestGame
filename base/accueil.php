@@ -4,59 +4,52 @@ $pageName = 'accueil';
 
 require_once '../base/base_php.php';
 
-// Function to get controllers and return as an array
-function getControllersArray($pdo, $player_id = NULL) {
-    $controllersArray = array();
-
-    $sql = "SELECT c.*, f.name AS faction_name FROM controlers c LEFT JOIN factions f ON c.faction_id = f.ID";
-    if ($player_id !== NULL){
-        $sql .= "
-            INNER JOIN player_controler pc ON pc.controler_id = c.id
-            WHERE pc.player_id = '$player_id'";
-    }
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-
-    // Fetch the results
-    $controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Store controllers in the array
-    foreach ($controllers as $controller) {
-        $controllersArray[] = $controller;
-    }
-
-    return $controllersArray;
+if (
+    isset($_POST['controlerSelect'])
+) {
+    echo 'controlerSelect';
+    echo var_export($_POST['controlerSelect'], true);
+    $controler = getControler($gameReady, $_POST['controlerSelect']);
+    echo var_export($controler, true);
+   // $_SESSION['controler']
 }
 
 require_once '../base/base_html.php';
 
+$controllers = getControllersArray($gameReady, $_SESSION['userid']);
+if (count($controllers) > 1) {
 ?>
-
+    <div class="factions">
+        <h2>Factions</h2>
+        <!-- Add content for factions here -->
+        <form action="/RPGConquestGame/base/accueil.php" method="post" name="selectfaction">
+        <select id='controlerSelect' form="selectfaction">
+        <option value=''>Select Controller</option>
+        <?php
+        // Display select list of controllers
+        foreach ($controllers as $controller) {
+            echo "<option value='" . $controller['id'] . "'>" . $controller['firstname'] . " " . $controller['lastname'] . "</option>";
+        }
+        ?>
+        </select>
+        <input type="submit" name="chosir" value="Choisir" />
+        </form>
+<?php 
+    }
+?>
+        <!-- Display controller details section (initially hidden) -->
+        <div id='controllerDetails' style='display: none;'>";
+        </div>
+</div>
 <div class="content flex">
+    <div class="agents">
+        <h2>Agents</h2>
+    </div>
     <div class="zones">
         <h2>Zones</h2>
         <!-- Add content for zones here -->
     </div>
-    <div class="factions">
-        <h2>Factions</h2>
-        <!-- Add content for factions here -->
-        <?php
-        // Get controllers array
-        $controllers = getControllersArray($gameReady, $_SESSION['userid']);
 
-        // Display select list of controllers
-        echo "<select id='controllerSelect'>";
-        echo "<option value=''>Select Controller</option>";
-        foreach ($controllers as $controller) {
-            echo "<option value='" . $controller['id'] . "'>" . $controller['firstname'] . " " . $controller['lastname'] . "</option>";
-        }
-        echo "</select>";
-
-        // Display controller details section (initially hidden)
-        echo "<div id='controllerDetails' style='display: none;'>";
-        echo "</div>";
-        ?>
-    </div>
 </div>
 
 <script>
@@ -73,9 +66,9 @@ require_once '../base/base_html.php';
         // Display controller details
         document.getElementById('controllerDetails').style.display = 'block';
         document.getElementById('controllerDetails').innerHTML = "<h3>Controller Details</h3>" +
-            "<p>Name: " + selectedController.firstname + " " + selectedController.lastname + "</p>" +
-            "<p>ID: " + selectedController.id + "</p>" +
-            "<p>Faction Name: " + selectedController.faction_name + "</p>";
+            "<p>Name: " + selectedController.firstname + " " + selectedController.lastname +
+            ", ID: " + selectedController.id +
+            ", Faction Name: " + selectedController.faction_name + "</p>";
     });
 </script>
 

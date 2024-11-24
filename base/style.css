@@ -50,15 +50,15 @@
             display: flex;
         }
 
-        .zones, .factions, .config, .mecanics {
+        .agents, .zones, .factions, .config, .mecanics {
             flex: 1;
             padding: 20px;
         }
-        .zones, .config, .mecanics {
+        .agents, .zones, .config, .mecanics {
             background-color: #f2f2f2;
         }
         .factions {
-            background-color: #e0e0e0;
+            background-color: #f8c3c3;
         }
         
         .config, .mecanics {

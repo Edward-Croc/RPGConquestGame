@@ -19,7 +19,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 </head>
 <body>
 <div class="header">
-    <h1><?php echo "$pageTitle"; ?></h1>
+    <?php echo "<h1> $pageTitle </h1>";
+        if ( isset($_SESSION['controler']) )
+        echo $_SESSION['controler']['firstname']. " ". $_SESSION['controler']['lastname'];
+    ?>
     <div class="menu_top_left">
         <?php
             echo '<div id="endTurnCounter">

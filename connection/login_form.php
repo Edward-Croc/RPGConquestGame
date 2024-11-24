@@ -2,6 +2,7 @@
 session_start(); // Start the session
 
 require_once '../BDD/db_connector.php';
+require_once '../controlers/functions.php';
 
 function getConfig($pdo, $configName) {
     try{
@@ -40,7 +41,7 @@ if (
     }
 
     // Redirect the user to a logged-in page
-    header('Location: '.'/base/accueil.php');
+    header('Location: '.'/RPGConquestGame/base/accueil.php');
     exit();
 }
 
@@ -76,6 +77,13 @@ if (
             if ($_SESSION['DEBUG'] == true){
                 echo "ID: " . $_SESSION['userid']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
+        
+            // Get controllers array
+            $controllers = getControllersArray($gameReady, $_SESSION['userid']);
+            if (count($controllers) == 1) {
+                $_SESSION['controler'] = $controllers[0]; 
+            }
+
             // Redirect the user to a logged-in page
             header('Location: '.'/RPGConquestGame/base/accueil.php');
             exit();
