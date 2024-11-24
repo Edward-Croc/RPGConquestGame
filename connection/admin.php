@@ -77,6 +77,28 @@ require_once '../base/base_html.php';
 
 <div class="content">
     <div class="flex">
+        <div  class="mecanics">
+            <h1>Mecanics</h1>
+        </div>
+        <div class="mecanics">
+        <table border="1">
+            <tr>
+                <th> Key </th>
+                <th> Value </th>
+            </tr>
+            <?php
+           // Display config values in a table
+            foreach ($mecanics as $key => $value) {
+            echo" <tr>
+                <td> $key </td>
+                <td> $value </td>
+             </tr>";
+            }
+            ?>
+        </table>
+        </div>
+    </div>
+    <div class="flex">
         <div  class="config">
             <h1>Config Management</h1>
         </div>

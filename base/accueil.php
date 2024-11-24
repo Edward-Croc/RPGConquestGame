@@ -28,14 +28,6 @@ function getControllersArray($pdo, $player_id = NULL) {
     return $controllersArray;
 }
 
-// Function to display controller details
-/* function displayControllerDetails($controller) {
-    echo "<h3>Controller Details</h3>";
-    echo "<p>Name: " . $controller['firstname'] . " " . $controller['lastname'] . "</p>";
-    echo "<p>ID: " . $controller['ID'] . "</p>";
-    echo "<p>Faction Name: " . $controller['faction_name'] . "</p>";
-} */
-
 require_once '../base/base_html.php';
 
 ?>

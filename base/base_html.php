@@ -27,7 +27,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </div>';
             if ($_SESSION['is_privileged'] == true){
                 echo '<div>';
-                if ($mecanics['gamestat'] != false) {
+                if ($mecanics['gamestat'] == 0) {
                     echo '<button id="endTurnButton" class="topbar-btn">Start Game</a>';
                 }else{
                     echo '<button id="endTurnButton" class="topbar-btn">End Turn</a>';

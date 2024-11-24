@@ -7,11 +7,11 @@
 CREATE TABLE mecanics (
     ID SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
-    gamestat BOOLEAN DEFAULT false
+    gamestat INTEGER DEFAULT 0
 );
 
 INSERT INTO mecanics (turncounter, gamestat) 
-VALUES (0, FALSE);
+VALUES (0, 0);
 
 CREATE TABLE config (
     ID SERIAL PRIMARY KEY,
