@@ -103,37 +103,36 @@ VALUES
     );
 
 INSERT INTO zones (name, description) VALUES
-('Railway Station', ''),
-('Le Cascine', ''),
-('Monticelli', ''),
-('Fortezza Basso', ''),
-('Santa Maria Novella (Railway Station)', ''),
-('Santa Maria Novella (Square)', ''),
+('Stazione ferroviaria norte', 'Au nord de Florence se situe Peretola, un village qui c’est fait absorbée pour devenir le quartier des habitations bas de gamme due à la présence du petit aéroport de Florence et des quelques avions qui passe au dessus des habitation.'),
+('Le Cascine', 'Le quartier de Le Cascine tire son nom de son parc, le plus grand parc public de la ville de Florence qui tire son nom des anciennes fermes grand-ducales. Le quartier est principalement occupée par les halles du Mercatello delle Cascine plus vaste marché de la ville. '),
+('Monticelli', 'Située de l’autre côté du Fleuve Arno face au parc Cascine c’est ici dans ce quartier excentrée de florence que l’on trouve les étudiants et ceux qui tiennent les boutiques du Mercatello delle Cascine.'),
+('Fortezza Basso', 'La massive Forteresse de Basso du 16eme siècle qui est désormais devenu un palais des exposition donne son nom au quartier qui contient aussi le Centre hospitalier universitaire et la Scuola di ingegneria.'),
+('Santa Maria Novella', 'Ce quartier qui est un centre-ville commerçant tire son nom de sa basilique Sainte Marie nouvelle. Ce quartier est traversée par la rue commerçante Sainte marie qui mène de la gare Santa maria de Firenze jusqu’au au Mercato di San Lorenzo.'),
 ('Indipendenza', ''),
-('Duomo', ''),
-('Palazzo Pitti', ''),
-('Santa Croce', ''),
+('Duomo', 'Le Duomo est l’autre nom de la Cathédrale Santa Maria del Fiore, la 5eme église d’europe qui préside la Piazza del Duomo. Cette place du centre ville piétonnier est bordée du musée de l’opéra et de plusieurs Palazzos.'),
+('Palazzo Pitti', 'Au centre du quartier domine le Palazzo Pitti, un sublime palais de la renaissance qui forme le coeur des affaire du sénéchal actuelle de la ville. Ce quartier est située de l’autre côté de l’arno et connectée au centre ville par le fameux Ponte Vecchio.'),
+('Santa Croce', 'Entre la basilique Santa Croce et la place du buste de Guglielmo Oberdan ce trouve ce que l’on peut qualifier de quartier financier de Florence.  Et ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza)'),
+('Oberdan', 'Entre la basilique Santa Croce et la place du buste de Guglielmo Oberdan ce trouve ce que l’on peut qualifier de quartier financier de Florence.  Et ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza)'),
 ('Piazza della Liberta & Savonarola', ''),
-('Oberdan', ''),
-('Michelangelo', ''),
-('Campo di Marte', ''),
-('Gavinana', '');
+('Michelangelo-Gavinana', 'Ce quartier du sud de Florence est le plus étendu des quartiers composée de bâtiments qui longe le fleuve Arno. On y trouve un golfe, des hôtels de luxe, une parfumerie et la Viale Europa qui travers le quartier de part en part.'),
+('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est sa gare fret du champ de mars.');
 
 
 -- Insert the data
 INSERT INTO locations (name, description, is_secret, zone_id) VALUES
-('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
-('Le barrage','', 1, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
+('Le barrage','', 1, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
 ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
-('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella (Railway Station)')),
-('Facolta di Ingegneria/Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella (Square)')),
+('Facolta di Ingegneria', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
+('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
+('Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
 ('L’hospitalidero','', 0, (SELECT ID FROM zones WHERE name = 'Indipendenza')),
 ('Palazzo Vecchio', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
 ('Duomo', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
 ('Cairn','', 1, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
 ('Palazzo Pitti','', 0, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
 ('Santa Croce', '', 0, (SELECT ID FROM zones WHERE name = 'Santa Croce')),
+('Banca Di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Oberdan')),
 ('Piazza della Liberta', '', 0,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
 ('Pallazzo Medeci Ricardi', '', 1,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
-('Banca Di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Oberdan')),
 ('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo'));
