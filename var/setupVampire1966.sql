@@ -1,8 +1,3 @@
--- make sur a database RPGConquestGame exists and a user php_gamedev exists 
-
--- DROP DATABASE IF EXISTS RPGConquestGame;
--- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
--- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
 UPDATE config SET 
@@ -64,7 +59,7 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
     ),
     (
-        'Ana', 'Walkil'
+        'Ana', 'Walkil',
         -- 'Dame', 'Vizirof',
         1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
@@ -100,7 +95,7 @@ INSERT INTO player_controler (player_id, controler_id)
 VALUES 
     (
         (SELECT ID FROM players WHERE username = 'player1'),
-        (SELECT ID FROM controlers WHERE lastname = 'Ricciotti')
+        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti'))
     ), -- player1 controls  Angelo Ricciotti/Antonio Mazzino,
     (
         (SELECT ID FROM players WHERE username = 'player2'),

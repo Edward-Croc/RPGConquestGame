@@ -1,13 +1,47 @@
 
 <?php
 
-
 function getDBConnection () {
+
+    $path = '';
+    $path1 = "/var/www/RPGConquestGame";
+    $path2 = "..";
+
+    // Path to the config.ini file
+    $configFile = "/var/config.ini";
+    if (file_exists ($path1.$configFile)) {
+        $path = $path1;
+    }
+    if (file_exists ($path2.$configFile)) {
+        $path = $path2;
+    }
+
     // PostgreSQL database credentials
-    $host = 'localhost'; // Change this to your database host if it's different
+    // Default values
+    $host = 'localhost';
     $dbname = 'rpgconquestgame';
-    $username = 'php_gamedev';
-    $password = 'php_gamedev';
+    $username = 'postgres';
+    $password = 'postgres';
+
+    // Check if the file exists
+    if (file_exists($path.$configFile)) {
+        // Parse the INI file
+        $config = parse_ini_file($path.$configFile);
+
+        // Check if the required keys exist
+        if ( isset($config['host']) ){
+            $host = $config['host'];
+        }
+        if ( isset($config['dbname']) ){
+            $dbname = $config['dbname'];
+        }
+        if ( isset($config['username']) ){
+            $username = $config['username'];
+        }
+        if ( isset($config['password']) ) {
+            $password = $config['password'];
+        }
+    }
 
     // Attempt to connect to PostgreSQL database
     try {
@@ -54,6 +88,16 @@ function destroyAllTables($pdo) {
 }
 
 function gameReady() {
+
+    // Path to the config.ini file
+    $configFile = "/var/config.ini";
+    if (file_exists ($path1.$configFile)) {
+        $path = $path1;
+    }
+    if (file_exists ($path2.$configFile)) {
+        $path = $path2;
+    }
+
     $pdo = getDBConnection();
     if ($pdo != NUll) {
         try {
@@ -64,21 +108,31 @@ function gameReady() {
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
-                $sqlFile = '../BDD/setupBDD.sql';
-                echo "Loading $sqlFile ...<br />";
-                // Read SQL file
-                $sqlQueries = file_get_contents($sqlFile);
-                // Execute SQL queries
-                $pdo->exec($sqlQueries);
-                echo "SQL file executed successfully.<br />";
+                $sqlFile = $path.'/var/setupBDD.sql';
+                echo "Loading $sqlFile ... ";
+                //$sqlFile = '../BDD/setupBDD.sql';
+                if (file_exists($sqlFile)) {
+                    echo 'Start <br>';
+                    // Read SQL file
+                    $sqlQueries = file_get_contents($sqlFile);
+                    // Execute SQL queries
+                    $pdo->exec($sqlQueries);
+                    echo "SQL file executed successfully.<br />";
+                }
+                echo 'END <br>';
 
-                $sqlFile = '../BDD/setupVampire1966.sql';
+
+                $sqlFile =  $path.'/var/setupVampire1966.sql';
                 echo "Loading $sqlFile ...<br />";
-                // Read SQL file
-                $sqlQueries = file_get_contents($sqlFile);
-                // Execute SQL queries
-                $pdo->exec($sqlQueries);
-                echo "SQL file executed successfully.<br />";
+                if (file_exists($sqlFile)) {
+                    echo 'Start <br>';
+                    // Read SQL file
+                    $sqlQueries = file_get_contents($sqlFile);
+                    // Execute SQL queries
+                    $pdo->exec($sqlQueries);
+                    echo "SQL file executed successfully.<br />";
+                }
+                echo 'END <br>';
             }
         } catch (PDOException $e) {
             echo "Check Database failed: " . $e->getMessage()."<br />";

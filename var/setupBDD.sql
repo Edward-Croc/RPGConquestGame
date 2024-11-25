@@ -1,4 +1,3 @@
--- make sur a database RPGConquestGame exists and a user php_gamedev exists 
 
 -- DROP DATABASE IF EXISTS RPGConquestGame;
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
