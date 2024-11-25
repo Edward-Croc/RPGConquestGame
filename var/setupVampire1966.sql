@@ -63,7 +63,7 @@ INSERT INTO controlers (
         -- 'Dame', 'Vizirof',
         1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
-        (SELECT ID FROM factions WHERE name = 'Tremère' )
+        (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
     ('Adamo', 'de Toscane', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Nosfératu' ),
@@ -132,3 +132,130 @@ INSERT INTO locations (name, description, is_secret, zone_id) VALUES
 ('Piazza della Liberta', '', 0,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
 ('Pallazzo Medeci Ricardi', '', 1,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
 ('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo'));
+
+-- Insert names into worker_origins
+INSERT INTO worker_origins (name) VALUES 
+    ('Italie'),
+    ('Suede'),
+    ('France'),
+    ('Allemagne'),
+    ('Angleterre'),
+    ('Espagne'),
+    ('Autriche');
+
+-- Insert names into worker_names
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Amerigo', 'Attilio', 1),
+    ('Marco', 'Martino', 1),
+    ('Benvenuto', 'Braulio', 1),
+    ('Cirrillo', 'Cajetan', 1),
+    ('Donato', 'Demarco', 1),
+    ('Eriberto', 'Ettore', 1),
+    ('Flavio', 'Fortino', 1),
+    ('Gino', 'Giancarlo', 1),
+    ('Hortensio', 'Honorius', 1),
+    ('Indro', 'Lombardi', 1),
+    ('Massimo', 'Maury', 1),
+    ('Bianca', 'Abriana', 1),
+    ('Carlotta', 'Cara', 1),
+    ('Donatella', 'Domani', 1),
+    ('Fabiana', 'Fiorella', 1),
+    ('Graziella', 'Giordana', 1),
+    ('Ilaria', 'Itala', 1),
+    ('Justina', 'Lanza', 1),
+    ('Liona', 'Lave', 1),
+    ('Luciana', 'Marsala', 1),
+    ('Marietta', 'Mila', 1),
+    ('Natalia', 'Neroli', 1),
+    ('Ornella', 'Prima', 1),
+    ('Quorra', 'Ricarda', 1),
+    ('Rocio', 'Sidonia', 1),
+    ('Teressa', 'Trilby', 1),
+    ('Mercury', 'Messala', 1),
+    ('Michelangelo', 'Belluchi', 1),
+    ('Nino', 'Nek', 1),
+    ('Othello', 'Pancrazio', 1),
+    ('Paolo', 'Pisano', 1),
+    ('Primo', 'Proculeius', 1),
+    ('Romeo', 'Rocco', 1),
+    ('Saverio', 'Santo', 1),
+    ('Silvano', 'Solanio', 1),
+    ('Taddeo', 'Ugo', 1),
+    ('Umberto', 'Venezio', 1),
+    ('Venturo', 'Vesuvio', 1),
+    ('Vitalian', 'Vittorio', 1),
+    ('Zanebono', 'Zanipolo', 1),
+    ('Uberta', 'Vedette', 1),
+    ('Venecia', 'Zola', 1);
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Lars', 'Johansson', 2),
+    ('Anna', 'Andersson', 2),
+    ('Johan', 'Karlsson', 2),
+    ('Erik', 'Nilsson', 2),
+    ('Anders', 'Eriksson', 2),
+    ('Maria', 'Larsson', 2),
+    ('Karin', 'Olsson', 2),
+    ('Per', 'Persson', 2),
+    ('Fredrik', 'Svensson', 2),
+    ('Emma', 'Gustafsson', 2);
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Jean', 'Martin', 3),
+    ('Marie', 'Bernard', 3),
+    ('Pierre', 'Dubois', 3),
+    ('Jacques', 'Thomas', 3),
+    ('Michel', 'Robert', 3),
+    ('Claude', 'Richard', 3),
+    ('Nicolas', 'Petit', 3),
+    ('Thomas', 'Durand', 3),
+    ('Sophie', 'Leroy', 3),
+    ('Claire', 'Moreau', 3);
+
+    INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Hans', 'Müller', 4),
+    ('Anna', 'Schmidt', 4),
+    ('Klaus', 'Schneider', 4),
+    ('Peter', 'Fischer', 4),
+    ('Karl', 'Weber', 4),
+    ('Maria', 'Meyer', 4),
+    ('Heinrich', 'Wagner', 4),
+    ('Helga', 'Becker', 4),
+    ('Wolfgang', 'Schulz', 4),
+    ('Erika', 'Hoffmann', 4);
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('James', 'Smith', 5),
+    ('Mary', 'Johnson', 5),
+    ('John', 'Williams', 5),
+    ('Elizabeth', 'Brown', 5),
+    ('William', 'Jones', 5),
+    ('Sarah', 'Miller', 5),
+    ('George', 'Davis', 5),
+    ('Emma', 'Wilson', 5),
+    ('Thomas', 'Moore', 5),
+    ('Charlotte', 'Taylor', 5);
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES  
+    ('Antonio', 'García', 6),  
+    ('María', 'Fernández', 6),  
+    ('Manuel', 'González', 6),  
+    ('Carmen', 'Rodríguez', 6),  
+    ('José', 'López', 6),  
+    ('Ana', 'Martínez', 6),  
+    ('Francisco', 'Sánchez', 6),  
+    ('Laura', 'Pérez', 6),  
+    ('Juan', 'Gómez', 6),  
+    ('Isabel', 'Martín', 6);  
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES  
+    ('Maximilian', 'Gruber', 7),  
+    ('Anna', 'Huber', 7),  
+    ('Lukas', 'Bauer', 7),  
+    ('Sophia', 'Wagner', 7),  
+    ('Elias', 'Müller', 7),  
+    ('Emma', 'Steiner', 7),  
+    ('Jakob', 'Mayer', 7),  
+    ('Lena', 'Schmidt', 7),  
+    ('Tobias', 'Hofer', 7),  
+    ('Laura', 'Lehner', 7);  
