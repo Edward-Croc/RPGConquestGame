@@ -77,3 +77,21 @@ CREATE TABLE controler_worker (
     FOREIGN KEY (controler_id) REFERENCES controlers (ID),
     FOREIGN KEY (worker_id) REFERENCES workers (ID)
 );
+
+
+-- Create the table
+CREATE TABLE zones (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NOT NULL
+);
+
+-- Create the table
+CREATE TABLE locations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    is_secret INT DEFAULT 0,
+    zone_id INT,
+    FOREIGN KEY (zone_id) REFERENCES zones (ID)
+);

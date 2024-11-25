@@ -101,3 +101,39 @@ VALUES
         (SELECT ID FROM players WHERE username = 'player2'),
         (SELECT ID FROM controlers WHERE lastname = 'Calabreze')
     );
+
+INSERT INTO zones (name, description) VALUES
+('Railway Station', ''),
+('Le Cascine', ''),
+('Monticelli', ''),
+('Fortezza Basso', ''),
+('Santa Maria Novella (Railway Station)', ''),
+('Santa Maria Novella (Square)', ''),
+('Indipendenza', ''),
+('Duomo', ''),
+('Palazzo Pitti', ''),
+('Santa Croce', ''),
+('Piazza della Liberta & Savonarola', ''),
+('Oberdan', ''),
+('Michelangelo', ''),
+('Campo di Marte', ''),
+('Gavinana', '');
+
+
+-- Insert the data
+INSERT INTO locations (name, description, is_secret, zone_id) VALUES
+('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Le barrage','', 1, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
+('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella (Railway Station)')),
+('Facolta di Ingegneria/Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella (Square)')),
+('L’hospitalidero','', 0, (SELECT ID FROM zones WHERE name = 'Indipendenza')),
+('Palazzo Vecchio', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
+('Duomo', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
+('Cairn','', 1, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
+('Palazzo Pitti','', 0, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
+('Santa Croce', '', 0, (SELECT ID FROM zones WHERE name = 'Santa Croce')),
+('Piazza della Liberta', '', 0,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
+('Pallazzo Medeci Ricardi', '', 1,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
+('Banca Di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Oberdan')),
+('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo'));

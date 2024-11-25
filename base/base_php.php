@@ -2,6 +2,8 @@
 
 require_once '../BDD/db_connector.php';
 require_once '../controlers/functions.php';
+require_once '../zones/functions.php';
+
 
 function getConfig($pdo, $configName) {
     try{

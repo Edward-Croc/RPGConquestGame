@@ -45,11 +45,7 @@ if (count($controllers) > 1) {
     <div class="agents">
         <h2>Agents</h2>
     </div>
-    <div class="zones">
-        <h2>Zones</h2>
-        <!-- Add content for zones here -->
-    </div>
-
+    <?php require_once '../zones/view.php'; ?>
 </div>
 
 <script>
