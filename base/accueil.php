@@ -4,8 +4,10 @@ $pageName = 'accueil';
 
 require_once '../base/base_php.php';
 
+echo var_export($_POST['controlerSelect'], true);
+
 if (
-    isset($_POST['controlerSelect'])
+    isset($_GET['controlerSelect'])
 ) {
     echo 'controlerSelect';
     echo var_export($_POST['controlerSelect'], true);
@@ -22,7 +24,7 @@ if (count($controllers) > 1) {
     <div class="factions">
         <h2>Factions</h2>
         <!-- Add content for factions here -->
-        <form action="/RPGConquestGame/base/accueil.php" method="post" name="selectfaction">
+        <form action="/RPGConquestGame/base/accueil.php" method="GET" name="selectfaction">
         <select id='controlerSelect' form="selectfaction">
         <option value=''>Select Controller</option>
         <?php
@@ -42,9 +44,7 @@ if (count($controllers) > 1) {
         </div>
 </div>
 <div class="content flex">
-    <div class="agents">
-        <h2>Agents</h2>
-    </div>
+    <?php require_once '../workers/view.php'; ?>
     <?php require_once '../zones/view.php'; ?>
 </div>
 

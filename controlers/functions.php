@@ -25,11 +25,9 @@ function getControllersArray($pdo, $player_id = NULL) {
 }
 
 function getControler($pdo, $controler_id) {
+    $sql = "SELECT c.*, f.name AS faction_name FROM controlers c LEFT JOIN factions f ON c.faction_id = f.ID";
     try{
-        $stmt = $pdo->prepare("SELECT * 
-            FROM controlers 
-            WHERE id = :id
-        ");
+        $stmt = $pdo->prepare($sql." WHERE id = :id");
         $stmt->execute([':id' => $controler_id]);
         return $stmt->fetchColumn();
     } catch (PDOException $e) {

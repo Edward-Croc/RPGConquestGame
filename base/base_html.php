@@ -21,7 +21,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 <div class="header">
     <?php echo "<h1> $pageTitle </h1>";
         if ( isset($_SESSION['controler']) )
-        echo $_SESSION['controler']['firstname']. " ". $_SESSION['controler']['lastname'];
+        echo sprintf ("%s %s <br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['faction_name']);
     ?>
     <div class="menu_top_left">
         <?php
