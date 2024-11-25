@@ -4,7 +4,7 @@
 function getZonesArray($pdo) {
     $zonesArray = array();
 
-    $sql = "SELECT z.*, l.* FROM zones AS z LEFT JOIN locations l ON z.ID = l.zone_id";
+    $sql = "SELECT * FROM zones AS z";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
 
@@ -17,4 +17,23 @@ function getZonesArray($pdo) {
     }
 
     return $zonesArray;
+}
+
+// Function to get controllers and return as an array
+function getLocationsArray($pdo) {
+    $locationsArray = array();
+
+    $sql = "SELECT * FROM locations AS z";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+
+    // Fetch the results
+    $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Store controllers in the array
+    foreach ($locations as $location) {
+        $locationsArray[] = $location;
+    }
+
+    return $locationsArray;
 }
