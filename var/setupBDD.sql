@@ -114,3 +114,35 @@ CREATE TABLE controler_worker (
     FOREIGN KEY (worker_id) REFERENCES workers (ID)
 );
 
+CREATE TABLE power_types (
+    ID SERIAL PRIMARY KEY,
+    name text NOT NULL,
+    activation JSON
+);
+
+CREATE TABLE powers (
+    ID SERIAL PRIMARY KEY,
+    name text NOT NULL,
+    enquete INT DEFAULT 0,
+    action INT DEFAULT 0,
+    defence INT DEFAULT 0,
+    other JSON
+);
+
+CREATE TABLE worker_power_type (
+    ID SERIAL PRIMARY KEY,
+    power_type_id INT NOT NULL,
+    power_id INT NOT NULL,
+    UNIQUE (power_type_id, power_id),
+    FOREIGN KEY (power_type_id) REFERENCES power_types (ID),
+    FOREIGN KEY (power_id) REFERENCES powers (ID)
+);
+
+CREATE TABLE worker_powers (
+    ID SERIAL PRIMARY KEY,
+    worker_id INT NOT NULL,
+    worker_power_type_id INT NOT NULL,
+    UNIQUE (worker_id, worker_power_type_id), -- Adding unique constraint
+    FOREIGN KEY (worker_id) REFERENCES workers (ID),
+    FOREIGN KEY (worker_power_type_id) REFERENCES worker_power_type (ID)
+);
