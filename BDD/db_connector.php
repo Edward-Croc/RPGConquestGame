@@ -89,6 +89,10 @@ function destroyAllTables($pdo) {
 
 function gameReady() {
 
+    $path = '';
+    $path1 = "/var/www/RPGConquestGame";
+    $path2 = "..";
+
     // Path to the config.ini file
     $configFile = "/var/config.ini";
     if (file_exists ($path1.$configFile)) {
