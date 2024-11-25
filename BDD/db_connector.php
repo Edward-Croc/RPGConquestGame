@@ -15,6 +15,9 @@ function getDBConnection () {
     if (file_exists ($path2.$configFile)) {
         $path = $path2;
     }
+    if (file_exists ('.'.$configFile)) {
+        $path = '.';
+    }
 
     // PostgreSQL database credentials
     // Default values

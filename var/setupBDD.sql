@@ -14,9 +14,9 @@ VALUES (0, 0);
 
 CREATE TABLE config (
     ID SERIAL PRIMARY KEY,
-    name VARCHAR(50) UNIQUE NOT NULL,
+    name text UNIQUE NOT NULL,
     value text DEFAULT '',
-    description VARCHAR(50)
+    description text
 );
 
 INSERT INTO config (name, value, description) 
@@ -39,13 +39,13 @@ VALUES
 
 CREATE TABLE factions (
     ID SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name text NOT NULL
 );
 
 CREATE TABLE controlers (
     ID SERIAL PRIMARY KEY,
-    firstname VARCHAR(50) NOT NULL,
-    lastname VARCHAR(50) NOT NULL,
+    firstname text NOT NULL,
+    lastname text NOT NULL,
     startworkers INT DEFAULT 1,
     is_AI BOOLEAN DEFAULT FALSE,
     faction_id INT,
@@ -64,8 +64,8 @@ CREATE TABLE player_controler (
 
 CREATE TABLE workers (
     ID SERIAL PRIMARY KEY,
-    firstname VARCHAR(50) NOT NULL,
-    lastname VARCHAR(50) NOT NULL
+    firstname text NOT NULL,
+    lastname text NOT NULL
 );
 
 CREATE TABLE controler_worker (
@@ -82,15 +82,15 @@ CREATE TABLE controler_worker (
 -- Create the table
 CREATE TABLE zones (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description VARCHAR(255) NOT NULL
+    name text NOT NULL,
+    description text NOT NULL
 );
 
 -- Create the table
 CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description VARCHAR(255) NOT NULL,
+    name text NOT NULL,
+    description text NOT NULL,
     is_secret INT DEFAULT 0,
     zone_id INT,
     FOREIGN KEY (zone_id) REFERENCES zones (ID)

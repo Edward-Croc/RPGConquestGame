@@ -8,8 +8,7 @@
     <?php
         // Display select list of controllers
         foreach ($zones as $zone) {
-            echo "<h4>".$zone['name']."</h4>";
-            echo var_export($zone, true);
+            echo sprintf('<h4> %s (%s)</h4><i>%s</i>', $zone['name'], $zone['id'], $zone['description']);
         }
-        ?>
+    ?>
 </div>
