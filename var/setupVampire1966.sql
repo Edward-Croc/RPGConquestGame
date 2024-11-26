@@ -309,4 +309,96 @@ INSERT INTO controler_worker (controler_id, worker_id) VALUES
         (SELECT ID FROM workers WHERE lastname in ('Popescu'))
     );
 
-        
+-- Table of Power Types
+INSERT INTO power_types (name) VALUES
+    ('Hobby'),
+    ('Metier'),
+    ('Discipline'),
+    ('Etreinte');
+
+-- Table of powers 
+--
+INSERT INTO powers ( name, enquete, action, defence) VALUES
+    ('Vampire', 1,1,1),
+    -- Suggested Disciplines
+    -- Possible Values Based on +2 :
+    -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),
+    -- ('', 2,0,0), ('', 0,2,0), ('', 0,0,2), 
+    -- ('', -1,2,1), ('', -1,1,2), ('', 2,-1,1), ('', 1,-1,2), ('', 1,2,-1),('', 2,1,-1),
+    -- Possible Values Based on +2 : with imbalance on strong defence
+    -- ('', 1,1,1),
+    -- ('', 2,0,0), ('', 0,2,1), ('', 0,1,2),
+    -- ('', -1,2,2), ('', 2,-1,1), ('', 2,2,-1),
+    -- ('', 1,1,1),
+    ('Aliénation', 1,1,1),
+    ('Célérité', 1,1,1),
+    ('Chimérie', 1,1,1),
+    ('Domination', 1,1,1),
+    ('Obténébration', 1,1,1),
+    ('Vicissitude', 1,1,1),
+    ('Protéisme', 1,1,1),
+    -- ('', 0,1,2),
+    ('Endurance', 0,1,2),
+    -- ('', 0,2,1), 
+    ('Puissance', 0,2,1),
+    -- ('', 2,0,0),
+    ('Serpentis', 2,0,0),
+    ('Animalisme', 2,0,0),
+    ('Occultation', 2,0,0),
+    ('Présence', 2,0,0),
+    ('Thaumaturgie', 2,0,0),
+    -- ('', 2,2,-1),
+    ('Quiétus', 2,2,-1),
+    ('Nécromancie', 2,2,-1),
+    -- ('', 2,-1,1), 
+    ('Augure', 2,-1,1),
+    -- Suggested Hobbies
+    -- Possible Values Based on +1 :
+    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
+    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
+    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
+    -- Possible Values Based on +1 : With imbalance on defence
+    -- ('', 1,0,0), ('', 0,1,1),
+    -- ('', 1,-1,1), ('', 1,1,-1),
+    -- ('', -1,0,2) ('', -1,2,1), ('', 2,-1,0),('', 2,0,-1), ('', 0,2,-1),
+    -- ('', 1,0,0), => Enqueteurs
+    ('Acteur Amateur', 1,0,0),
+    ('Musicien', 1,0,0),
+    ('Lecteur de roman policiers', 1,0,0),
+    ('Pompier volontaire', 1,0,0),
+    ('Collectionneur', 1,0,0),
+    -- ('', 0,1,1), => Combatants
+    ('Rugbyman du dimanche', 0,1,1),
+    ('Militaire réserviste', 0,1,1),
+    ('Adepte d’arts martiaux', 0,1,1),
+    ('Escrimeur', 0,1,1),
+    ('Manifestant régulier', 0,1,1),
+    -- ('', -1,2,1), => Maitres Combatants
+    ('Adepte de muscu', -1,2,1),
+    ('Dresseur de Pitbulls', -1,2,1),
+    -- ('', 0,2,-1), => Glass Canons 
+    ('Drogué à la LSD', 1,1,-1),
+    ('Punk a chien', 1,1,-1),
+    -- ('', 2, 0/-1), => Maitres Enqueteurs 
+    ('Surdoué', 2,-1,0),
+    ('Astrologue Amateur', 2,0,-1),
+    -- Suggested Jobs :
+    -- Possible Values Based on +1 :  
+    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
+    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
+    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
+    -- ('', 1,1,-1), => Glass canons
+    -- ('', 1,-1,1), => Maitres Enqueteurs
+    -- ('', -1,2,1), => Maitres Combatants
+    ('Militaire', -1,2,1)
+;
+
+INSERT INTO powers ( name, enquete, action, defence, other) VALUES
+    ('Chrétien pratiquant', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
+;
+
+INSERT INTO  worker_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Etreinte'),(SELECT ID FROM powers WHERE name = 'Vampire')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Chrétien pratiquant')),
+    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Militaire'))
+;
