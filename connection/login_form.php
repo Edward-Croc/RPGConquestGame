@@ -71,15 +71,15 @@ if (
 
         // Output the result
         if ($result) {
-            $_SESSION['userid'] = $result['id'];
+            $_SESSION['user_id'] = $result['id'];
             $_SESSION['is_privileged'] = $result['is_privileged'];
             $_SESSION['logged_in'] = true;
             if ($_SESSION['DEBUG'] == true){
-                echo "ID: " . $_SESSION['userid']. ", is_privileged: " . $_SESSION['is_privileged'];
+                echo "ID: " . $_SESSION['user_id']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
         
             // Get controllers array
-            $controllers = getControllersArray($gameReady, $_SESSION['userid']);
+            $controllers = getControllersArray($gameReady, $_SESSION['user_id']);
             if (count($controllers) == 1) {
                 $_SESSION['controler'] = $controllers[0]; 
             }

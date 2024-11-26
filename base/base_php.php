@@ -36,6 +36,12 @@ function getMecanics($pdo) {
     }
 }
 
+session_start(); // Start the session
+
+if ($_SESSION['DEBUG'] == true){
+    echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
+}
+
 // Call the gameReady() function from dbConnector.php
 $gameReady = gameReady();
 // Use the return value
@@ -57,7 +63,7 @@ if (!$gameReady) {
 }
 
 if ($_SESSION['DEBUG'] == true){
-    echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['userid']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
+    echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
     echo "Turn : ".$mecanics['turncounter']."; gamestat : '".$mecanics['gamestat']. "' <br />";
 }
 

@@ -25,15 +25,16 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     ?>
     <div class="menu_top_left">
         <?php
-            echo '<div id="endTurnCounter">
-                <!-- This is where the current end turn count will be displayed -->
-            </div>';
+            echo '
+                <div id="endTurnCounter">
+                    <!-- This is where the current end turn count will be displayed -->
+                </div>';
             if ($_SESSION['is_privileged'] == true){
                 echo '<div>';
                 if ($mecanics['gamestat'] == 0) {
-                    echo '<button id="endTurnButton" class="topbar-btn">Start Game</a>';
+                    echo '<button id="endTurnButton" class="topbar-btn">Start Game</button>';
                 }else{
-                    echo '<button id="endTurnButton" class="topbar-btn">End Turn</a>';
+                    echo '<button id="endTurnButton" class="topbar-btn">End Turn</button>';
                 }
                 if ($pageName !== 'admin') {
                     echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';

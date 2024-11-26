@@ -4,8 +4,6 @@ $pageName = 'accueil';
 
 require_once '../base/base_php.php';
 
-echo var_export($_POST['controlerSelect'], true);
-
 if (
     isset($_GET['controlerSelect'])
 ) {
@@ -18,7 +16,7 @@ if (
 
 require_once '../base/base_html.php';
 
-$controllers = getControllersArray($gameReady, $_SESSION['userid']);
+$controllers = getControllersArray($gameReady, $_SESSION['user_id']);
 if (count($controllers) > 1) {
 ?>
     <div class="factions">
@@ -26,13 +24,13 @@ if (count($controllers) > 1) {
         <!-- Add content for factions here -->
         <form action="/RPGConquestGame/base/accueil.php" method="GET" name="selectfaction">
         <select id='controlerSelect' form="selectfaction">
-        <option value=''>Select Controller</option>
-        <?php
-        // Display select list of controllers
-        foreach ($controllers as $controller) {
-            echo "<option value='" . $controller['id'] . "'>" . $controller['firstname'] . " " . $controller['lastname'] . "</option>";
-        }
-        ?>
+            <option value=''>Select Controller</option>
+            <?php
+            // Display select list of controllers
+            foreach ($controllers as $controller) {
+                echo "<option value='" . $controller['id'] . "'>" . $controller['firstname'] . " " . $controller['lastname'] . "</option>";
+            }
+            ?>
         </select>
         <input type="submit" name="chosir" value="Choisir" />
         </form>
