@@ -3,12 +3,17 @@
 function randomPowersByType($pdo, $type_list, $limit = 1) {
     $powerArray = array();
 
-    // Get x random values from powers for a power_type 
-    $sql = "SELECT * FROM powers
-    INNER JOIN link_power_type ON link_power_type.power_id = powers.id
-    WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+    try{
+        // Get x random values from powers for a power_type 
+        $sql = "SELECT * FROM powers
+        INNER JOIN link_power_type ON link_power_type.power_id = powers.id
+        WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
 
     // Fetch the results
     $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -23,12 +28,16 @@ function getPowersByType($pdo, $type_list) {
     $powerArray = array();
 
     // Get all powers from a type_list
-    $sql = "SELECT * FROM powers
-    INNER JOIN link_power_type ON link_power_type.power_id = powers.id
-    WHERE link_power_type.power_type_id IN ($type_list)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-
+    try{
+        $sql = "SELECT * FROM powers
+        INNER JOIN link_power_type ON link_power_type.power_id = powers.id
+        WHERE link_power_type.power_type_id IN ($type_list)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }   
     // Fetch the results
     $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Store worker_origins in the array
@@ -59,16 +68,21 @@ function getBasePowers($pdo, $type_list, $controler_id = null) {
             AND (%s %s %s )
         )",
         $type_list,
-         $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
+        $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
         ($controler_id != "" && $basePowerNames != "") ? "OR" : '',
         $controler_id != "" ? "controlers.id IN ($controler_id)" : ''
     );
     if ($_SESSION['DEBUG'] == true){
         echo "getBasePowers(): sql  $sql <br />";
     }
+    try{
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }   
 
     // Fetch the results
     $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);

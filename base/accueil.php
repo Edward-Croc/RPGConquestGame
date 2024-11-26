@@ -4,30 +4,29 @@ $pageName = 'accueil';
 require_once '../base/base_php.php';
 
 if (
-    isset($_GET['controlerSelect'])
+    !empty($_GET['controler'])
 ) {
-    echo 'controlerSelect';
-    echo var_export($_POST['controlerSelect'], true);
-    $controler = getControler($gameReady, $_POST['controlerSelect']);
-    echo var_export($controler, true);
-   // $_SESSION['controler']
+    echo "_GET['controler']:". var_export($_GET['controler'], true);
+    $controler = getControlers($gameReady, NULL, $_GET['controler']);
+    echo "controler:". var_export($controler, true);
+    $_SESSION['controler'] =  $controler[0];
 }
 
 require_once '../base/base_html.php';
 
-$controllers = getControllersArray($gameReady, $_SESSION['user_id']);
-if (count($controllers) > 1) {
+$Controlers = getControlers($gameReady, $_SESSION['user_id']);
+if (count($Controlers) > 1) {
 ?>
     <div class="factions">
         <h2>Factions</h2>
         <!-- Add content for factions here -->
-        <form action="/RPGConquestGame/base/accueil.php" method="GET" name="selectfaction">
-        <select id='controlerSelect' form="selectfaction">
-            <option value=''>Select Controller</option>
+        <form action="/RPGConquestGame/base/accueil.php" method="GET">
+        <select id='controlerSelect' name='controler'>
+            <option value=''>Select Controler</option>
             <?php
-            // Display select list of controllers
-            foreach ($controllers as $controller) {
-                echo "<option value='" . $controller['id'] . "'>" . $controller['firstname'] . " " . $controller['lastname'] . "</option>";
+            // Display select list of Controlers
+            foreach ($Controlers as $Controler) {
+                echo "<option value='" . $Controler['id'] . "'>" . $Controler['firstname'] . " " . $Controler['lastname'] . "</option>";
             }
             ?>
         </select>
@@ -36,8 +35,8 @@ if (count($controllers) > 1) {
 <?php 
     }
 ?>
-        <!-- Display controller details section (initially hidden) -->
-        <div id='controllerDetails' style='display: none;'>";
+        <!-- Display Controler details section (initially hidden) -->
+        <div id='ControlerDetails' style='display: none;'>";
         </div>
 </div>
 <div class="content flex">
@@ -46,22 +45,22 @@ if (count($controllers) > 1) {
 </div>
 
 <script>
-    // Function to show controller details when a controller is selected from the list
-    document.getElementById('controllerSelect').addEventListener('change', function() {
-        var controllerId = this.value;
-        var controllers = <?php echo json_encode($controllers); ?>;
+    // Function to show Controler details when a Controler is selected from the list
+    document.getElementById('ControlerSelect').addEventListener('change', function() {
+        var ControlerId = this.value;
+        var Controlers = <?php echo json_encode($Controlers); ?>;
 
-        // Find the selected controller in the array
-        var selectedController = controllers.find(function(controller) {
-            return controller.id == controllerId;
+        // Find the selected Controler in the array
+        var selectedControler = Controlers.find(function(Controler) {
+            return Controler.id == ControlerId;
         });
 
-        // Display controller details
-        document.getElementById('controllerDetails').style.display = 'block';
-        document.getElementById('controllerDetails').innerHTML = "<h3>Controller Details</h3>" +
-            "<p>Name: " + selectedController.firstname + " " + selectedController.lastname +
-            ", ID: " + selectedController.id +
-            ", Faction Name: " + selectedController.faction_name + "</p>";
+        // Display Controler details
+        document.getElementById('ControlerDetails').style.display = 'block';
+        document.getElementById('ControlerDetails').innerHTML = "<h3>Controler Details</h3>" +
+            "<p>Name: " + selectedControler.firstname + " " + selectedControler.lastname +
+            ", ID: " + selectedControler.id +
+            ", Faction Name: " + selectedControler.faction_name + "</p>";
     });
 </script>
 

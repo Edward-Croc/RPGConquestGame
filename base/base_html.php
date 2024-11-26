@@ -19,18 +19,24 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 </head>
 <body class='content'>
     <div class="header">
-        <?php echo "<h1> $gameTitle </h1>";
-            if ( isset($_SESSION['controler']) )
-            echo sprintf ("%s %s <br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['faction_name']);
+        <?php echo sprintf('
+            <div>
+                <h1> %s </h1>
+                <div id="endTurnCounter">
+                    <!-- This is where the current end turn count will be displayed -->
+                    Semaine %s
+                </div>
+            </div>',
+            $gameTitle,
+            $mecanics['turncounter']
+        );
+        if ( isset($_SESSION['controler']) )
+        echo sprintf ("%s %s <br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['faction_name']);
         ?>
         <div class="menu_top_left">
             <?php
-                echo '
-                    <div id="endTurnCounter">
-                        <!-- This is where the current end turn count will be displayed -->
-                    </div>';
+                echo'<div>';
                 if ($_SESSION['is_privileged'] == true){
-                    echo '<div>';
                     if ($mecanics['gamestat'] == 0) {
                         echo '<button id="endTurnButton" class="topbar-btn">Start Game</button>';
                     }else{
@@ -38,10 +44,12 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                     }
                     if ($pageName !== 'admin') {
                         echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
-                    }else{
-                        echo '<a href="/RPGConquestGame/index.php" class="topbar-btn">Retour</a>';}
-                    echo'</div>';
+                    }
                 }
+                if ($pageName !== 'accueil') {
+                    echo '<a href="/RPGConquestGame/index.php" class="topbar-btn">Retour</a>';
+                }
+                echo'</div>';
                 
             ?>
             <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>

@@ -13,7 +13,7 @@ function getConfig($pdo, $configName) {
         $stmt->execute([':configName' => $configName]);
         return $stmt->fetchColumn();  
     } catch (PDOException $e) {
-        echo "getConfig $configName failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }
@@ -78,10 +78,10 @@ if (
                 echo "ID: " . $_SESSION['user_id']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
         
-            // Get controllers array
-            $controllers = getControllersArray($gameReady, $_SESSION['user_id']);
-            if (count($controllers) == 1) {
-                $_SESSION['controler'] = $controllers[0]; 
+            // Get Controlers array
+            $Controlers = getControlers($gameReady, $_SESSION['user_id']);
+            if (count($Controlers) == 1) {
+                $_SESSION['controler'] = $Controlers[0]; 
             }
 
             // Redirect the user to a logged-in page

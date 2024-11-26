@@ -23,7 +23,7 @@ function getConfig($pdo, $configName) {
         $stmt->execute([':configName' => $configName]);
         return $stmt->fetchColumn();  
     } catch (PDOException $e) {
-        echo "getConfig $configName failed: " . $e->getMessage()."<br />";
+        echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }
@@ -39,7 +39,7 @@ function getMecanics($pdo) {
         }
         return $mecanics[0];
     } catch (PDOException $e) {
-        echo "getMecanics failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }

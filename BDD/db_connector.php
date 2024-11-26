@@ -55,18 +55,23 @@ function getDBConnection () {
         return $pdo;
 
     } catch (PDOException $e) {
-        echo "Connection failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }
 
 function tableExists($pdo, $tableName) {
-    $stmt = $pdo->prepare("SELECT EXISTS (
-        SELECT 1 
-        FROM information_schema.tables 
-        WHERE table_name = :tableName
-    )");
-    $stmt->execute([':tableName' => $tableName]);
+    try{
+        $stmt = $pdo->prepare("SELECT EXISTS (
+            SELECT 1 
+            FROM information_schema.tables 
+            WHERE table_name = :tableName
+        )");
+        $stmt->execute([':tableName' => $tableName]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."$tableName failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
     return $stmt->fetchColumn();
 }
 
@@ -85,7 +90,7 @@ function destroyAllTables($pdo) {
         // Success message
         echo "All tables in database have been destroyed successfully.<br />";
     } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+        echo __FUNCTION__."(): Error: " . $e->getMessage();
     }
 }
 
@@ -141,7 +146,7 @@ function gameReady() {
                 echo 'END <br>';
             }
         } catch (PDOException $e) {
-            echo "Check Database failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): Check Database failed: " . $e->getMessage()."<br />";
             return NULL;
         }
     }

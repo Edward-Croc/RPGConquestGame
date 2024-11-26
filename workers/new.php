@@ -1,6 +1,8 @@
 <?php
 require_once '../base/base_php.php';
 
+$pageName = 'new';
+
 if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
     // Redirect the user to the login page if not logged in
     header('Location: connection/login_form.php');
@@ -9,8 +11,8 @@ if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
 if (isset($_SESSION['user_id'])){
     $controler_id = $_SESSION['user_id'];
 }
-if (isset($_GET['controler_id'])){
-    $controler_id = $_GET['controler_id'];
+if (isset($_GET['controler'])){
+    $controler_id = $_GET['controler'];
 }
 
 $buttonClicked = 'first_come';
@@ -80,24 +82,39 @@ echo "
 
 for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     echo sprintf ('
-    <div class="workers"><p>
+    <div class="workers">
+    <form action="/RPGConquestGame/workers/action.php" method="GET">
+        <p>
         %1$s  %2$s de %3$s <br />
         %4$s, %5$s  <br />
+        <!-- Hidden inputs -->
+        <input type="hidden" name="creation" value="true">
+        <input type="hidden" name="firstname" value="%1$s">
+        <input type="hidden" name="lastname" value="%2$s">
+        <input type="hidden" name="origin" value="%3$s">
+        <input type="hidden" name="power_hobby" value="%4$s">
+        <input type="hidden" name="power_metier" value="%5$s">
+        <input type="hidden" name="origin_id" value="%6$s">
+        <input type="hidden" name="power_hobby_id" value="%7$s">
+        <input type="hidden" name="power_metier_id" value="%8$s">
     ',
     $nameArray[$iteration]['firstname'],
     $nameArray[$iteration]['lastname'],
     $nameArray[$iteration]['origin'],
     $powerHobbyArray[$iteration]['name'],
-    $powerMetierArray[$iteration]['name']
+    $powerMetierArray[$iteration]['name'],
+    $nameArray[$iteration]['origin_id'],
+    $powerHobbyArray[$iteration]['id'],
+    $powerMetierArray[$iteration]['id'],
     );
 
     $disciplinesOptions = '';
-    // Display select list of controllers
+    // Display select list of Controlers
     foreach ( $powerDisciplineArray as $powerDiscipline) {
         $disciplinesOptions .= "<option value='" . $powerDiscipline['id'] . "'>" . $powerDiscipline['name'] . " </option>";
     }
     echo sprintf(" Discipline:
-        <select id='disciplineSelect'>
+        <select id='disciplineSelect' name='discipline'>
             <option value=\'\'>Select Discipline</option>
             %s
         </select>
@@ -107,12 +124,12 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     );
 
     $zoneOptions = '';
-    // Display select list of controllers
+    // Display select list of Controlers
     foreach ( $zonesArray as $zone) {
         $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
     }
     echo sprintf(" Zone :
-        <select id='zone'>
+        <select id='zoneSelect' name='zone'>
             <option value=\'\'>Select Zone</option>
             %s
         </select>
@@ -123,6 +140,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
     </p>
+    </form>
     </div>";
 
 }
