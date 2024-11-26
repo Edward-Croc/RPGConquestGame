@@ -1,4 +1,11 @@
 <?php
+if (isset( $_SESSION['DEBUG']) ){
+    if ($_SESSION['DEBUG'] == true){
+        echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
+    }
+} else {
+    session_start(); // Start the session
+}
 
 require_once '../BDD/db_connector.php';
 require_once '../controlers/functions.php';
@@ -34,12 +41,6 @@ function getMecanics($pdo) {
         echo "getMecanics failed: " . $e->getMessage()."<br />";
         return NULL;
     }
-}
-
-session_start(); // Start the session
-
-if ($_SESSION['DEBUG'] == true){
-    echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
 // Call the gameReady() function from dbConnector.php

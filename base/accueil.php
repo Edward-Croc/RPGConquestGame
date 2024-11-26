@@ -1,5 +1,4 @@
 <?php
-session_start(); // Start the session
 $pageName = 'accueil';
 
 require_once '../base/base_php.php';
