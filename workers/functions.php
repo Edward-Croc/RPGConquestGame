@@ -5,7 +5,7 @@
 function getWorkersByControler($pdo, $controler_id) {
     $workersArray = array();
 
-    $sql = "SELECT * FROM controler_worker AS cw 
+    $sql = "SELECT * FROM controler_worker AS cw
             WHERE cw.controler_id = '$controler_id'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
@@ -50,8 +50,12 @@ function randomWorkerName($pdo, $origin_list, $iterations = 1) {
 
     for ($iteration = 0; $iteration < $iterations; $iteration++) {
         $origin_id = $originsArray[$iteration]['id'];
-        // Get 2 random values from worker_names for and origin ID 
-        $sql = "SELECT * FROM worker_names WHERE origin_id = $origin_id ORDER BY RANDOM() LIMIT 2";
+        // Get 2 random values from worker_names for and origin ID
+        $sql = "SELECT * FROM worker_names
+            JOIN worker_origins ON worker_origins.id = worker_names.origin_id
+            WHERE origin_id = $origin_id
+            ORDER BY RANDOM()
+            LIMIT 2";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
 
@@ -61,6 +65,7 @@ function randomWorkerName($pdo, $origin_list, $iterations = 1) {
         $nameArray[$iteration]['firstname'] = $worker_names[0]['firstname'];
         $nameArray[$iteration]['lastname'] = $worker_names[1]['lastname'];
         $nameArray[$iteration]['origin_id'] = $origin_id;
+        $nameArray[$iteration]['origin'] = $worker_names[1]['name'];
     }
     return $nameArray;
 }

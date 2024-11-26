@@ -4,8 +4,14 @@ UPDATE config SET
     value = 'Le 6 novembre 1966, l''Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d''œuvre. Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.'
     WHERE name = 'PRESENTATION';
 
-INSERT INTO config (name, value) 
+INSERT INTO config (name, value)
 VALUES ('basePowerNames', '''Célérité'', ''Endurance'', ''Puissance''');
+
+INSERT INTO config (name, value) VALUES 
+    ('first_come_nb_choices', '1'),
+    ('recrutement_nb_choices', '2'),
+    ('recrutement_origin_list', '1,2,3,4,5')
+;
 
 INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player1', 'one', false),
@@ -191,7 +197,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Zanebono', 'Zanipolo', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
     ('Uberta', 'Vedette', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
     ('Venecia', 'Zola', (SELECT ID FROM worker_origins WHERE name = 'Firenze'));
-    
+
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Luciana', 'Marsala', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
     ('Michelangelo', 'Belluchi', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
@@ -202,14 +208,14 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Bianca', 'Abriana', (SELECT ID FROM worker_origins WHERE name = 'Venezia')),
     ('Paolo', 'Pisano', (SELECT ID FROM worker_origins WHERE name = 'Venezia'));
 
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES 
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Antonio', 'Esposito', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
     ('Giuseppe', 'Russo', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
     ('Maria', 'Marotta', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
     ('Vincenzo', 'Romano', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
     ('Luigi', 'Coppola', (SELECT ID FROM worker_origins WHERE name = 'Napoli'));
 
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES 
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Marco', 'Rossi',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
     ('Matteo', 'Brambilla',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
     ('Alessandro', 'Ferrari',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
@@ -316,15 +322,15 @@ INSERT INTO power_types (name) VALUES
     ('Discipline'),
     ('Etreinte');
 
--- Table of powers 
+-- Table of powers
 --
 INSERT INTO powers ( name, enquete, action, defence) VALUES ('Vampire', 1,1,1);
-    
+
 INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
     -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),
-    -- ('', 2,0,0), ('', 0,2,0), ('', 0,0,2), 
+    -- ('', 2,0,0), ('', 0,2,0), ('', 0,0,2),
     -- ('', -1,2,1), ('', -1,1,2), ('', 2,-1,1), ('', 1,-1,2), ('', 1,2,-1),('', 2,1,-1),
     -- Possible Values Based on +2 : with imbalance on strong defence
     -- ('', 1,1,1),
@@ -340,7 +346,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Protéisme', 1,1,1),
     -- ('', 0,1,2),
     ('Endurance', 0,1,2),
-    -- ('', 0,2,1), 
+    -- ('', 0,2,1),
     ('Puissance', 0,2,1),
     -- ('', 2,0,0),
     ('Serpentis', 2,0,0),
@@ -351,7 +357,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', 2,2,-1),
     ('Quiétus', 2,2,-1),
     ('Nécromancie', 2,2,-1),
-    -- ('', 2,-1,1), 
+    -- ('', 2,-1,1),
     ('Augure', 2,-1,1)
 ;
 
@@ -383,10 +389,10 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', -1,2,1), => Maitres Combatants
     ('Adepte de muscu', -1,2,1),
     ('Dresseur de Pitbulls', -1,2,1),
-    -- ('', 0,2,-1), => Glass Canons 
+    -- ('', 0,2,-1), => Glass Canons
     ('Drogué à la LSD', 1,1,-1),
     ('Punk a chien', 1,1,-1),
-    -- ('', 2, 0/-1), => Maitres Enqueteurs 
+    -- ('', 2, 0/-1), => Maitres Enqueteurs
     ('Surdoué', 2,-1,0),
     ('Astrologue Amateur', 2,0,-1)
 ;
@@ -397,7 +403,7 @@ INSERT INTO powers ( name, enquete, action, defence, other) VALUES
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Suggested Jobs :
-    -- Possible Values Based on +1 :  
+    -- Possible Values Based on +1 :
     -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
     -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
     -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
