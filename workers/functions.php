@@ -54,6 +54,7 @@ function randomWorkerName($pdo, $origin_list, $iterations = 1) {
         $sql = "SELECT * FROM worker_names WHERE origin_id = $origin_id ORDER BY RANDOM() LIMIT 2";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
+
         // Fetch the results
         $worker_names = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Store worker_origins in the array
@@ -62,22 +63,4 @@ function randomWorkerName($pdo, $origin_list, $iterations = 1) {
         $nameArray[$iteration]['origin_id'] = $origin_id;
     }
     return $nameArray;
-}
-
-function randomPowersByType($pdo, $type_list, $limit = 1) {
-    $powerArray = array();
-
-    // Get 2 random values from worker_names for and origin ID 
-    $sql = "SELECT * FROM powers
-    INNER JOIN worker_power_type ON worker_power_type.power_id = powers.id
-    WHERE worker_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-    // Fetch the results
-    $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // Store worker_origins in the array
-    foreach ($powers as $power) {
-        $powerArray[] = $power;
-    }
-    return $powerArray;
 }

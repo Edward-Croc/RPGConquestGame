@@ -4,8 +4,10 @@ UPDATE config SET
     value = 'Le 6 novembre 1966, l''Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d''œuvre. Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.'
     WHERE name = 'PRESENTATION';
 
-INSERT INTO players (username, passwd, is_privileged)
-VALUES
+INSERT INTO config (name, value) 
+VALUES ('basePowerNames', '''Célérité'', ''Endurance'', ''Puissance''');
+
+INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player1', 'one', false),
     ('player2', 'two', false),
     ('player3', 'three', false),
@@ -13,8 +15,7 @@ VALUES
     ('player5', 'five', false)
 ;
 
-INSERT INTO factions (name)
-VALUES
+INSERT INTO factions (name) VALUES
     ('Brujah'),
     ('Ventrue'),
     ('Toréador'),
@@ -89,8 +90,7 @@ INSERT INTO player_controler (controler_id, player_id)
     SELECT ID, (SELECT ID FROM players WHERE username = 'gm')
     FROM controlers;
 
-INSERT INTO player_controler (player_id, controler_id)
-VALUES
+INSERT INTO player_controler (player_id, controler_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player1'),
         (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti'))
@@ -318,8 +318,9 @@ INSERT INTO power_types (name) VALUES
 
 -- Table of powers 
 --
+INSERT INTO powers ( name, enquete, action, defence) VALUES ('Vampire', 1,1,1);
+    
 INSERT INTO powers ( name, enquete, action, defence) VALUES
-    ('Vampire', 1,1,1),
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
     -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),
@@ -351,7 +352,10 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Quiétus', 2,2,-1),
     ('Nécromancie', 2,2,-1),
     -- ('', 2,-1,1), 
-    ('Augure', 2,-1,1),
+    ('Augure', 2,-1,1)
+;
+
+INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Suggested Hobbies
     -- Possible Values Based on +1 :
     -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
@@ -364,15 +368,18 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', 1,0,0), => Enqueteurs
     ('Acteur Amateur', 1,0,0),
     ('Musicien', 1,0,0),
-    ('Lecteur de roman policiers', 1,0,0),
+    ('Fan de roman policiers', 1,0,0),
     ('Pompier volontaire', 1,0,0),
     ('Collectionneur', 1,0,0),
+    ('Scout', 1,0,0),
     -- ('', 0,1,1), => Combatants
     ('Rugbyman du dimanche', 0,1,1),
     ('Militaire réserviste', 0,1,1),
     ('Adepte d’arts martiaux', 0,1,1),
     ('Escrimeur', 0,1,1),
     ('Manifestant régulier', 0,1,1),
+    ('Alcoolique', 0,1,1),
+    ('Hooligan', 0,1,1),
     -- ('', -1,2,1), => Maitres Combatants
     ('Adepte de muscu', -1,2,1),
     ('Dresseur de Pitbulls', -1,2,1),
@@ -381,24 +388,240 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Punk a chien', 1,1,-1),
     -- ('', 2, 0/-1), => Maitres Enqueteurs 
     ('Surdoué', 2,-1,0),
-    ('Astrologue Amateur', 2,0,-1),
-    -- Suggested Jobs :
-    -- Possible Values Based on +1 :  
-    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
-    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
-    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
-    -- ('', 1,1,-1), => Glass canons
-    -- ('', 1,-1,1), => Maitres Enqueteurs
-    -- ('', -1,2,1), => Maitres Combatants
-    ('Militaire', -1,2,1)
+    ('Astrologue Amateur', 2,0,-1)
 ;
 
 INSERT INTO powers ( name, enquete, action, defence, other) VALUES
     ('Chrétien pratiquant', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
 ;
 
-INSERT INTO  worker_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Etreinte'),(SELECT ID FROM powers WHERE name = 'Vampire')),
+INSERT INTO powers ( name, enquete, action, defence) VALUES
+    -- Suggested Jobs :
+    -- Possible Values Based on +1 :  
+    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
+    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
+    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
+    -- ('', 1,1,-1), => Glass canons
+    ('Policier', -1,2,1),
+    -- ('', 1,-1,1), => Maitres Enqueteurs
+    -- ('', -1,2,1), => Maitres Combatants
+    ('Militaire', -1,2,1)
+;
+
+INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Etreinte'),(SELECT ID FROM powers WHERE name = 'Vampire'))
+;
+
+INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Chrétien pratiquant')),
-    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Militaire'))
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Acteur Amateur')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Collectionneur')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Fan de roman policiers')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Musicien')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Scout')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Rugbyman du dimanche')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Militaire réserviste')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Adepte d’arts martiaux')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Escrimeur')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Manifestant régulier')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Alcoolique')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Hooligan')),
+    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Punk a chien'))
+;
+
+INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Militaire')),
+    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Policier'))
+;
+
+INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Aliénation')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Célérité')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Chimérie')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Domination')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Obténébration')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Vicissitude')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Protéisme')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Endurance')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Puissance')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Serpentis')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Animalisme')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Occultation')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Présence')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Thaumaturgie')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Quiétus')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Nécromancie')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Augure'))
+;
+
+-- Add base powers to the factions :
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Brujah'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Célérité'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Brujah'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Brujah'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Présence'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Ventrue'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Présence'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Ventrue'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Ventrue'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Endurance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Toréador'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Célérité'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Toréador'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Présence'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Toréador'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Augure'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tremere'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Augure'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tremere'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Thaumaturgie'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tremere'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Malkavien'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Augure'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Malkavien'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Occultation'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Malkavien'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Aliénation'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Gangrel'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Endurance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Gangrel'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Protéisme'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Gangrel'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Animalisme'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Nosfératu'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Animalisme'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Nosfératu'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Nosfératu'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Occultation'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Giovanni'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Giovanni'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Giovanni'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Nécromancie'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Assamites'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Célérité'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Assamites'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Occultation'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Assamites'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Quiétus'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Serpentis'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Endurance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Présence'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tzimisce'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Vicissitude'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tzimisce'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Animalisme'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Tzimisce'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Augure'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Lasombra'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Obténébration'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Lasombra'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Lasombra'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    ))
+;
+
+-- Add base powers to the workers :
+INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
+    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Alcoolique'
+    )),
+    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Policier'
+    )),
+    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Punk a chien'
+    )),
+    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Militaire'
+    ))
 ;

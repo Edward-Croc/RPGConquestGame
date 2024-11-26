@@ -129,7 +129,7 @@ CREATE TABLE powers (
     other JSON
 );
 
-CREATE TABLE worker_power_type (
+CREATE TABLE link_power_type (
     ID SERIAL PRIMARY KEY,
     power_type_id INT NOT NULL,
     power_id INT NOT NULL,
@@ -141,8 +141,17 @@ CREATE TABLE worker_power_type (
 CREATE TABLE worker_powers (
     ID SERIAL PRIMARY KEY,
     worker_id INT NOT NULL,
-    worker_power_type_id INT NOT NULL,
-    UNIQUE (worker_id, worker_power_type_id), -- Adding unique constraint
+    link_power_type_id INT NOT NULL,
+    UNIQUE (worker_id, link_power_type_id), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
-    FOREIGN KEY (worker_power_type_id) REFERENCES worker_power_type (ID)
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
+);
+
+CREATE TABLE faction_powers (
+    ID SERIAL PRIMARY KEY,
+    faction_id INT NOT NULL,
+    link_power_type_id INT NOT NULL,
+    UNIQUE (faction_id, link_power_type_id), -- Adding unique constraint
+    FOREIGN KEY (faction_id) REFERENCES factions (ID),
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
 );
