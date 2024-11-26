@@ -1,16 +1,31 @@
 <?php
 
-
 // Function to get Controlers and return as an array
-function getWorkersByControler($pdo, $controler_id) {
+function getWorkers($pdo, $worker_ids) {
     $workersArray = array();
 
-    $sql = "SELECT * FROM controler_worker AS cw
-            WHERE cw.controler_id = :controler_id
-    ";
+    if ( empty($worker_ids) ) return NULL;
+    $worker_id_str = implode(',', $worker_ids);
+
+    /*
+    
+            (SELECT 
+                FROM worker_powers AS 
+                JOIN link_power_type AS lpt ON lpt.id = wp.link_power_type_id
+                JOIN link_power_type AS lpt ON lpt.id = wp.link_power_type_id
+                WHERE wp.worker_id = w.id
+            )
+    */
+    $sql = "SELECT w.*,
+            wo.name AS origin_name,
+            z.name  AS zone_name
+        FROM workers AS w
+        JOIN worker_origins AS wo ON wo.id = w.origin_id
+        JOIN zones AS z ON z.id = w.zone_id
+        WHERE w.id IN (:worker_id_str)";
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':controler_id' => $controler_id]);
+        $stmt->execute([':worker_id_str' => $worker_id_str]);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -24,6 +39,32 @@ function getWorkersByControler($pdo, $controler_id) {
         $workersArray[] = $worker;
     }
     return $workersArray;
+}
+
+// Function to get Controlers and return as an array
+function getWorkersByControler($pdo, $controler_id) {
+    $workersArray = array();
+
+    $sql = " SELECT * FROM controler_worker AS cw
+        WHERE cw.controler_id = :controler_id
+    ";
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':controler_id' => $controler_id]);
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+
+    // Fetch the results
+    $controler_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $worker_ids = NULL;
+    // Store Controlers in the array
+    foreach ($controler_workers as $controler_worker) {
+        $worker_ids[] = $controler_worker['worker_id'];
+    }
+
+    return getWorkers($pdo, $worker_ids);
 }
 
 function randomWorkerOrigin($pdo, $limit = 1, $origin_list = '') {

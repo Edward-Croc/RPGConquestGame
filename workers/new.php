@@ -123,20 +123,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         $disciplinesOptions
     );
 
-    $zoneOptions = '';
-    // Display select list of Controlers
-    foreach ( $zonesArray as $zone) {
-        $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
-    }
-    echo sprintf(" Zone :
-        <select id='zoneSelect' name='zone'>
-            <option value=\'\'>Select Zone</option>
-            %s
-        </select>
-        <br />
-        ",
-        $zoneOptions
-    );
+    showZoneSelect($zonesArray);
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
     </p>

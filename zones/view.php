@@ -8,7 +8,11 @@
     <?php
         // Display select list of Controlers
         foreach ($zones as $zone) {
-            echo sprintf('<h4> %s (%s)</h4><i>%s</i>', $zone['name'], $zone['id'], $zone['description']);
+            echo sprintf('
+                <h4 onclick="toggleDescription(%2$s)" style="cursor: pointer;"> %1$s (%2$s)</h4>
+                <i id="description-%2$s" style="display: none;">%3$s</i>
+            ',
+            $zone['name'], $zone['id'], $zone['description']);
         }
     ?>
 </div>

@@ -47,3 +47,19 @@ function getLocationsArray($pdo) {
 
     return $locationsArray;
 }
+
+function showZoneSelect($zonesArray){
+    $zoneOptions = '';
+    // Display select list of Controlers
+    foreach ( $zonesArray as $zone) {
+        $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
+    }
+    return sprintf(" Zone :
+        <select id='zoneSelect' name='zone'>
+            <option value=\'\'>Select Zone</option>
+            %s
+        </select>
+        ",
+        $zoneOptions
+    );
+}
