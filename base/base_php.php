@@ -55,10 +55,10 @@ if (!$gameReady) {
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
-    $pageTitle = getConfig($gameReady, 'TITLE');
+    $gameTitle = getConfig($gameReady, 'TITLE');
     if ($_SESSION['DEBUG'] == true){
         echo "The game is ready.<br />";
-        echo "The pageTitle is : '$pageTitle'.<br />";
+        echo "The gameTitle is : '$gameTitle'.<br />";
     }
 
     $mecanics = getMecanics($gameReady);

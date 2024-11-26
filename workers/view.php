@@ -1,5 +1,5 @@
 
-<div class="agents">
+<div class="workers">
 <?php
 
     echo var_export($_SESSION, true);

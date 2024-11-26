@@ -1,7 +1,6 @@
 <?php
 require_once '../base/base_php.php';
 
-
 if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
     // Redirect the user to the login page if not logged in
     header('Location: connection/login_form.php');
@@ -15,8 +14,10 @@ if (isset($_GET['controler_id'])){
 }
 
 $buttonClicked = 'first_come';
+$pageTitle = 'Recruter le premier venu';
 if (isset($_GET['recrutement'])){
     $buttonClicked = 'recrutement';
+    $pageTitle = "Recrutement d'un Agent";
 }
 
 if ($_SESSION['DEBUG'] == true){
@@ -38,9 +39,11 @@ if ($_SESSION['DEBUG'] == true){
 $tmpOrigine = getConfig($gameReady, $buttonClicked.'_origin_list');
 if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
     $originsArray = randomWorkerOrigin($gameReady);
-    echo var_export($originsArray, true);
-    echo"<br />";
-    echo"<br />";
+    if ($_SESSION['DEBUG'] == true){
+        echo var_export($originsArray, true);
+        echo"<br />";
+        echo"<br />";
+    }
     $originList = $originsArray[0]['id'];
 } else {
     $originList = $tmpOrigine;
@@ -70,14 +73,14 @@ if ($_SESSION['DEBUG'] == true){
 
 require_once '../base/base_html.php';
 
-echo '
-    <div class="content">
-    <h2> Recrutement d\'un agent</h2>
-';
+echo "
+    <div> <h2> $pageTitle </h2> </div>
+    <div class='flex'>
+";
 
 for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     echo sprintf ('
-    <p>
+    <div class="workers"><p>
         %1$s  %2$s de %3$s <br />
         %4$s, %5$s  <br />
     ',
@@ -119,9 +122,11 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     );
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
-    </p>";
+    </p>
+    </div>";
 
 }
-echo "</div>";
+echo "</div>
+</body>";
 
 ?>

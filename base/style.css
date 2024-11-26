@@ -44,20 +44,19 @@
         }
         .content {
             height: calc(100vh - 40px); /* Adjust based on header height */
+            background-color: #f2f2f2;
         }
 
-        .flex {
-            display: flex;
-        }
+        .flex { display: flex; }
 
-        .agents, .zones, .factions, .config, .mecanics {
+        .workers, .zones, .factions, .config, .mecanics {
             flex: 1;
             padding: 20px;
         }
-        .agents, .zones, .config, .mecanics {
-            background-color: #f2f2f2;
+        .workers {
+            background-color: #c3e5f8;
         }
-        .factions {
+        .zones, .factions { 
             background-color: #f8c3c3;
         }
         
