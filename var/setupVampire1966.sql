@@ -1,16 +1,19 @@
 
 UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
-UPDATE config SET 
+UPDATE config SET
     value = 'Le 6 novembre 1966, l''Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d''œuvre. Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.'
     WHERE name = 'PRESENTATION';
 
-INSERT INTO players (username, passwd, is_privileged) 
-VALUES 
+INSERT INTO players (username, passwd, is_privileged)
+VALUES
     ('player1', 'one', false),
-    ('player2', 'two', false)
+    ('player2', 'two', false),
+    ('player3', 'three', false),
+    ('player4', 'four', false),
+    ('player5', 'five', false)
 ;
 
-INSERT INTO factions (name) 
+INSERT INTO factions (name)
 VALUES
     ('Brujah'),
     ('Ventrue'),
@@ -30,7 +33,7 @@ VALUES
 
 INSERT INTO controlers (
     firstname, lastname, startworkers, is_AI, faction_id, fake_faction_id
-) VALUES 
+) VALUES
     ('Dame', 'Calabreze', 0, FALSE,
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
@@ -86,8 +89,8 @@ INSERT INTO player_controler (controler_id, player_id)
     SELECT ID, (SELECT ID FROM players WHERE username = 'gm')
     FROM controlers;
 
-INSERT INTO player_controler (player_id, controler_id) 
-VALUES 
+INSERT INTO player_controler (player_id, controler_id)
+VALUES
     (
         (SELECT ID FROM players WHERE username = 'player1'),
         (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti'))
@@ -95,6 +98,10 @@ VALUES
     (
         (SELECT ID FROM players WHERE username = 'player2'),
         (SELECT ID FROM controlers WHERE lastname = 'Calabreze')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player3'),
+        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof'))
     );
 
 INSERT INTO zones (name, description) VALUES
@@ -134,128 +141,172 @@ INSERT INTO locations (name, description, is_secret, zone_id) VALUES
 ('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo'));
 
 -- Insert names into worker_origins
-INSERT INTO worker_origins (name) VALUES 
-    ('Italie'),
+INSERT INTO worker_origins (name) VALUES
+    ('Firenze'),
+    ('Roma'),
+    ('Venezia'),
+    ('Napoli'),
+    ('Milano'),
     ('Suede'),
     ('France'),
     ('Allemagne'),
     ('Angleterre'),
     ('Espagne'),
-    ('Autriche');
+    ('Autriche'),
+    ('Roumanie');
 
 -- Insert names into worker_names
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Amerigo', 'Attilio', 1),
-    ('Marco', 'Martino', 1),
-    ('Benvenuto', 'Braulio', 1),
-    ('Cirrillo', 'Cajetan', 1),
-    ('Donato', 'Demarco', 1),
-    ('Eriberto', 'Ettore', 1),
-    ('Flavio', 'Fortino', 1),
-    ('Gino', 'Giancarlo', 1),
-    ('Hortensio', 'Honorius', 1),
-    ('Indro', 'Lombardi', 1),
-    ('Massimo', 'Maury', 1),
-    ('Bianca', 'Abriana', 1),
-    ('Carlotta', 'Cara', 1),
-    ('Donatella', 'Domani', 1),
-    ('Fabiana', 'Fiorella', 1),
-    ('Graziella', 'Giordana', 1),
-    ('Ilaria', 'Itala', 1),
-    ('Justina', 'Lanza', 1),
-    ('Liona', 'Lave', 1),
-    ('Luciana', 'Marsala', 1),
-    ('Marietta', 'Mila', 1),
-    ('Natalia', 'Neroli', 1),
-    ('Ornella', 'Prima', 1),
-    ('Quorra', 'Ricarda', 1),
-    ('Rocio', 'Sidonia', 1),
-    ('Teressa', 'Trilby', 1),
-    ('Mercury', 'Messala', 1),
-    ('Michelangelo', 'Belluchi', 1),
-    ('Nino', 'Nek', 1),
-    ('Othello', 'Pancrazio', 1),
-    ('Paolo', 'Pisano', 1),
-    ('Primo', 'Proculeius', 1),
-    ('Romeo', 'Rocco', 1),
-    ('Saverio', 'Santo', 1),
-    ('Silvano', 'Solanio', 1),
-    ('Taddeo', 'Ugo', 1),
-    ('Umberto', 'Venezio', 1),
-    ('Venturo', 'Vesuvio', 1),
-    ('Vitalian', 'Vittorio', 1),
-    ('Zanebono', 'Zanipolo', 1),
-    ('Uberta', 'Vedette', 1),
-    ('Venecia', 'Zola', 1);
+    ('Amerigo', 'Attilio', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Marco', 'Martino', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Benvenuto', 'Braulio', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Cirrillo', 'Cajetan', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Donato', 'Demarco', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Eriberto', 'Ettore', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Flavio', 'Fortino', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Indro', 'Lombardi', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Massimo', 'Maury', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Carlotta', 'Cara', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Donatella', 'Domani', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Fabiana', 'Fiorella', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Graziella', 'Giordana', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Ilaria', 'Itala', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Justina', 'Lanza', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Liona', 'Lave', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Marietta', 'Mila', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Natalia', 'Neroli', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Ornella', 'Prima', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Quorra', 'Ricarda', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Rocio', 'Sidonia', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Teressa', 'Trilby', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Mercury', 'Messala', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Nino', 'Nek', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Othello', 'Pancrazio', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Primo', 'Proculeius', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Romeo', 'Rocco', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Saverio', 'Santo', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Silvano', 'Solanio', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Taddeo', 'Ugo', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Vitalian', 'Vittorio', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Zanebono', 'Zanipolo', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Uberta', 'Vedette', (SELECT ID FROM worker_origins WHERE name = 'Firenze')),
+    ('Venecia', 'Zola', (SELECT ID FROM worker_origins WHERE name = 'Firenze'));
+    
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Luciana', 'Marsala', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
+    ('Michelangelo', 'Belluchi', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
+    ('Umberto', 'Venezio', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
+    ('Venturo', 'Vesuvio', (SELECT ID FROM worker_origins WHERE name = 'Roma')),
+    ('Gino', 'Giancarlo', (SELECT ID FROM worker_origins WHERE name = 'Venezia')),
+    ('Hortensio', 'Honorius', (SELECT ID FROM worker_origins WHERE name = 'Venezia')),
+    ('Bianca', 'Abriana', (SELECT ID FROM worker_origins WHERE name = 'Venezia')),
+    ('Paolo', 'Pisano', (SELECT ID FROM worker_origins WHERE name = 'Venezia'));
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES 
+    ('Antonio', 'Esposito', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
+    ('Giuseppe', 'Russo', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
+    ('Maria', 'Marotta', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
+    ('Vincenzo', 'Romano', (SELECT ID FROM worker_origins WHERE name = 'Napoli')),
+    ('Luigi', 'Coppola', (SELECT ID FROM worker_origins WHERE name = 'Napoli'));
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES 
+    ('Marco', 'Rossi',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
+    ('Matteo', 'Brambilla',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
+    ('Alessandro', 'Ferrari',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
+    ('Francesca', 'Colombo',  (SELECT ID FROM worker_origins WHERE name = 'Milano')),
+    ('Luca', 'Bianchi',  (SELECT ID FROM worker_origins WHERE name = 'Milano'));
 
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Lars', 'Johansson', 2),
-    ('Anna', 'Andersson', 2),
-    ('Johan', 'Karlsson', 2),
-    ('Erik', 'Nilsson', 2),
-    ('Anders', 'Eriksson', 2),
-    ('Maria', 'Larsson', 2),
-    ('Karin', 'Olsson', 2),
-    ('Per', 'Persson', 2),
-    ('Fredrik', 'Svensson', 2),
-    ('Emma', 'Gustafsson', 2);
+    ('Lars', 'Johansson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Anna', 'Andersson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Johan', 'Karlsson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Erik', 'Nilsson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Anders', 'Eriksson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Maria', 'Larsson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Karin', 'Olsson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Per', 'Persson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Fredrik', 'Svensson', (SELECT ID FROM worker_origins WHERE name = 'Suede')),
+    ('Emma', 'Gustafsson', (SELECT ID FROM worker_origins WHERE name = 'Suede'));
 
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Jean', 'Martin', 3),
-    ('Marie', 'Bernard', 3),
-    ('Pierre', 'Dubois', 3),
-    ('Jacques', 'Thomas', 3),
-    ('Michel', 'Robert', 3),
-    ('Claude', 'Richard', 3),
-    ('Nicolas', 'Petit', 3),
-    ('Thomas', 'Durand', 3),
-    ('Sophie', 'Leroy', 3),
-    ('Claire', 'Moreau', 3);
+    ('Jean', 'Martin', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Marie', 'Bernard', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Pierre', 'Dubois', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Jacques', 'Thomas', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Michel', 'Robert', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Claude', 'Richard', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Nicolas', 'Petit', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Thomas', 'Durand', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Sophie', 'Leroy', (SELECT ID FROM worker_origins WHERE name = 'France')),
+    ('Claire', 'Moreau', (SELECT ID FROM worker_origins WHERE name = 'France'));
 
     INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Hans', 'Müller', 4),
-    ('Anna', 'Schmidt', 4),
-    ('Klaus', 'Schneider', 4),
-    ('Peter', 'Fischer', 4),
-    ('Karl', 'Weber', 4),
-    ('Maria', 'Meyer', 4),
-    ('Heinrich', 'Wagner', 4),
-    ('Helga', 'Becker', 4),
-    ('Wolfgang', 'Schulz', 4),
-    ('Erika', 'Hoffmann', 4);
+    ('Hans', 'Müller', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Anna', 'Schmidt', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Klaus', 'Schneider', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Peter', 'Fischer', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Karl', 'Weber', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Maria', 'Meyer', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Heinrich', 'Wagner', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Helga', 'Becker', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Wolfgang', 'Schulz', (SELECT ID FROM worker_origins WHERE name = 'Allemagne')),
+    ('Erika', 'Hoffmann', (SELECT ID FROM worker_origins WHERE name = 'Allemagne'));
 
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('James', 'Smith', 5),
-    ('Mary', 'Johnson', 5),
-    ('John', 'Williams', 5),
-    ('Elizabeth', 'Brown', 5),
-    ('William', 'Jones', 5),
-    ('Sarah', 'Miller', 5),
-    ('George', 'Davis', 5),
-    ('Emma', 'Wilson', 5),
-    ('Thomas', 'Moore', 5),
-    ('Charlotte', 'Taylor', 5);
+    ('James', 'Smith', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Mary', 'Johnson', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('John', 'Williams', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Elizabeth', 'Brown', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('William', 'Jones', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Sarah', 'Miller', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('George', 'Davis', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Emma', 'Wilson', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Thomas', 'Moore', (SELECT ID FROM worker_origins WHERE name = 'Angleterre')),
+    ('Charlotte', 'Taylor', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'));
 
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES  
-    ('Antonio', 'García', 6),  
-    ('María', 'Fernández', 6),  
-    ('Manuel', 'González', 6),  
-    ('Carmen', 'Rodríguez', 6),  
-    ('José', 'López', 6),  
-    ('Ana', 'Martínez', 6),  
-    ('Francisco', 'Sánchez', 6),  
-    ('Laura', 'Pérez', 6),  
-    ('Juan', 'Gómez', 6),  
-    ('Isabel', 'Martín', 6);  
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Antonio', 'García', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('María', 'Fernández', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Manuel', 'González', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Carmen', 'Rodríguez', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('José', 'López', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Ana', 'Martínez', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Francisco', 'Sánchez', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Laura', 'Pérez', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Juan', 'Gómez', (SELECT ID FROM worker_origins WHERE name = 'Espagne')),
+    ('Isabel', 'Martín', (SELECT ID FROM worker_origins WHERE name = 'Espagne'));
 
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES  
-    ('Maximilian', 'Gruber', 7),  
-    ('Anna', 'Huber', 7),  
-    ('Lukas', 'Bauer', 7),  
-    ('Sophia', 'Wagner', 7),  
-    ('Elias', 'Müller', 7),  
-    ('Emma', 'Steiner', 7),  
-    ('Jakob', 'Mayer', 7),  
-    ('Lena', 'Schmidt', 7),  
-    ('Tobias', 'Hofer', 7),  
-    ('Laura', 'Lehner', 7);  
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Maximilian', 'Gruber', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Anna', 'Huber', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Lukas', 'Bauer', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Sophia', 'Wagner', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Elias', 'Müller', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Emma', 'Steiner', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Jakob', 'Mayer', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Lena', 'Schmidt', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Tobias', 'Hofer', (SELECT ID FROM worker_origins WHERE name = 'Autriche')),
+    ('Laura', 'Lehner', (SELECT ID FROM worker_origins WHERE name = 'Autriche'));
+
+INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
+    ('Maria', 'Ionescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie')),
+    ('Ioan', 'Stan', (SELECT ID FROM worker_origins WHERE name = 'Roumanie')),
+    ('Elena', 'Dumitru', (SELECT ID FROM worker_origins WHERE name = 'Roumanie')),
+    ('Alexandru', 'Gheorghe', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'));
+
+
+INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
+    ('Harvey', 'Mathews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
+    ('Andrei', 'Popescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti'));
+
+INSERT INTO controler_worker (controler_id, worker_id) VALUES
+    (
+        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM workers WHERE lastname in ('Mathews'))
+
+    ), (
+        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM workers WHERE lastname in ('Popescu'))
+    );
+
+        

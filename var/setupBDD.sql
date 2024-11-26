@@ -9,7 +9,7 @@ CREATE TABLE mecanics (
     gamestat INTEGER DEFAULT 0
 );
 
-INSERT INTO mecanics (turncounter, gamestat) 
+INSERT INTO mecanics (turncounter, gamestat)
 VALUES (0, 0);
 
 CREATE TABLE config (
@@ -19,8 +19,8 @@ CREATE TABLE config (
     description text
 );
 
-INSERT INTO config (name, value, description) 
-VALUES 
+INSERT INTO config (name, value, description)
+VALUES
     ('DEBUG', 'true', 'Activates the Debugging texts'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
@@ -33,8 +33,8 @@ CREATE TABLE players (
     is_privileged BOOLEAN DEFAULT FALSE
 );
 
-INSERT INTO players (username, passwd, is_privileged) 
-VALUES 
+INSERT INTO players (username, passwd, is_privileged)
+VALUES
     ('gm', 'orga', true);
 
 CREATE TABLE factions (
@@ -85,6 +85,15 @@ CREATE TABLE worker_origins (
     name text NOT NULL
 );
 
+-- Table storing the worker random names by origin
+CREATE TABLE worker_names (
+    ID SERIAL PRIMARY KEY,
+    firstname text NOT NULL,
+    lastname text NOT NULL,
+    origin_id INT NOT NULL,
+    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID)
+);
+
 CREATE TABLE workers (
     ID SERIAL PRIMARY KEY,
     firstname text NOT NULL,
@@ -93,15 +102,6 @@ CREATE TABLE workers (
     zone_id INT NOT NULL,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID)
-);
-
--- Table pour stocker the worker random names
-CREATE TABLE worker_names (
-    ID SERIAL PRIMARY KEY,
-    firstname text NOT NULL,
-    lastname text NOT NULL,
-    origin_id INT NOT NULL,
-    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID)
 );
 
 CREATE TABLE controler_worker (
