@@ -337,26 +337,26 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', 2,0,0), ('', 0,2,1), ('', 0,1,2),
     -- ('', -1,2,2), ('', 2,-1,1), ('', 2,2,-1),
     -- ('', 1,1,1),
-    ('Aliénation', 1,1,1),
     ('Célérité', 1,1,1),
-    ('Chimérie', 1,1,1),
     ('Domination', 1,1,1),
+    ('Aliénation', 1,1,1),
     ('Obténébration', 1,1,1),
-    ('Vicissitude', 1,1,1),
     ('Protéisme', 1,1,1),
+    ('Thaumaturgie', 1,1,1),
     -- ('', 0,1,2),
     ('Endurance', 0,1,2),
     -- ('', 0,2,1),
     ('Puissance', 0,2,1),
     -- ('', 2,0,0),
-    ('Serpentis', 2,0,0),
     ('Animalisme', 2,0,0),
-    ('Occultation', 2,0,0),
     ('Présence', 2,0,0),
-    ('Thaumaturgie', 2,0,0),
+    ('Chimérie', 2,0,0),
+    ('Nécromancie', 2,0,0),
+    ('Serpentis', 2,0,0),
+    ('Vicissitude', 2,0,0),
     -- ('', 2,2,-1),
-    ('Quiétus', 2,2,-1),
-    ('Nécromancie', 2,2,-1),
+    ('Quiétus', 2,1,-1),
+    ('Occultation', 2,1,-1),
     -- ('', 2,-1,1),
     ('Augure', 2,-1,1)
 ;
@@ -373,11 +373,17 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', -1,0,2) ('', -1,2,1), ('', 2,-1,0),('', 2,0,-1), ('', 0,2,-1),
     -- ('', 1,0,0), => Enqueteurs
     ('Acteur Amateur', 1,0,0),
-    ('Musicien', 1,0,0),
-    ('Fan de roman policiers', 1,0,0),
-    ('Pompier volontaire', 1,0,0),
+    ('Musicien de rue', 1,0,0),
+    ('Fan de romans policiers', 1,0,0),
+    ('Photographe amateur', 1,0,0),
     ('Collectionneur', 1,0,0),
     ('Scout', 1,0,0),
+    ('Globe trotter', 1,0,0),
+    ('Ornithologue', 1,0,0),
+    ('Peintre copiste', 1,0,0),
+    ('Aristocrate', 1,0,0),
+    ('Membre du club de crochet', 1,0,0),
+    ('Possède un chien', 1,0,0),
     -- ('', 0,1,1), => Combatants
     ('Rugbyman du dimanche', 0,1,1),
     ('Militaire réserviste', 0,1,1),
@@ -386,6 +392,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Manifestant régulier', 0,1,1),
     ('Alcoolique', 0,1,1),
     ('Hooligan', 0,1,1),
+    ('Pompier volontaire', 0,1,1),
     -- ('', -1,2,1), => Maitres Combatants
     ('Adepte de muscu', -1,2,1),
     ('Dresseur de Pitbulls', -1,2,1),
@@ -393,8 +400,9 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Drogué à la LSD', 1,1,-1),
     ('Punk a chien', 1,1,-1),
     -- ('', 2, 0/-1), => Maitres Enqueteurs
-    ('Surdoué', 2,-1,0),
-    ('Astrologue Amateur', 2,0,-1)
+    ('Rôliste', 2,-1,0),
+    ('Astrologue Amateur', 2,0,-1),
+    ('Oiseau de nuit', 2,-1,0)
 ;
 
 INSERT INTO powers ( name, enquete, action, defence, other) VALUES
@@ -410,8 +418,17 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', 1,1,-1), => Glass canons
     ('Policier', -1,2,1),
     -- ('', 1,-1,1), => Maitres Enqueteurs
+    ('Conducteur de taxi', -1,2,1),
     -- ('', -1,2,1), => Maitres Combatants
-    ('Militaire', -1,2,1)
+    ('Militaire', -1,2,1),
+    ('Gardien de zoo', -1,2,1),
+    ('Policier', -1,2,1)
+    --Violent 
+    --Policier, Pompier, Ouvrier du bâtiment, Agent de sécurité, Garde du Corps, CRS, Garde, Touriste hystérique,  Voleur, Manutentionnaire,  Racaille, Éboueur, Voisin vigilant
+    --Étudiant (Sciences, Chimie), Professeur (EPS), 
+    --Enqueteurs
+    -- Étudiant (Arts, Lettres),  Professeur (Langues, Physique), Directeur, Bibliothécaire, : Mère de Famille, Gardien, Retraité curieux, Marchand ambulant, Boutiquier, SDF, : Agent de tourisme, Musicien de rue ,  Trader, Secrétaire,Voiturier, 
+    -- Volontaire venu de loin, Détective, Conducteur de bus/Taxi
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
