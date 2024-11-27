@@ -205,6 +205,8 @@ function createWorker($pdo, $array) {
     // Get the last inserted ID
     $worker_id = $pdo->lastInsertId();
 
+    addWorkerAction($pdo, $worker_id, $array['controler_id'], $array['zone_id']);
+
     try{
         // Insert new controler_worker value into the database
         $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id) VALUES (:controler_id, :worker_id)");
@@ -233,8 +235,26 @@ function createWorker($pdo, $array) {
     return $worker_id;
 }
 
-function moveWorker($pdo, $worker_id, $zone_id) {
+function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
+    try{
+        // Insert new controler_worker value into the database
+        $stmt = $pdo->prepare("INSERT
+            INTO worker_actions (worker_id, turn_number, zone_id, controler_id, action) 
+             VALUES (:worker_id, :turn_number, :zone_id, :controler_id, :action)");
+        $stmt->bindParam(':controler_id', $controler_id,);
+        $stmt->bindParam(':worker_id', $worker_id );
+        $stmt->bindParam(':zone_id', $zone_id );
+        $stmt->bindParam(':turn_number', $mecanics['turncounter']);
+        $stmt->bindParam(':action', 'passive');
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT controler_worker Failed: " . $e->getMessage()."<br />";
+    }
+    // Get the last inserted ID
+    return $pdo->lastInsertId();
+}
 
+function moveWorker($pdo, $worker_id, $zone_id) {
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
@@ -244,7 +264,67 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
+    // get worker action status for turn 
+    $action = getWorkerActions($pdo, $worker_id);
+    try{
+        // Insert new workers value into the database
+        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id WHERE id = :id ");
+        $stmt->bindParam(':zone_id', $zone_id);
+        $stmt->bindParam(':id', $action['action']['id']);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+    }
 
+    return $worker_id;
+}
+
+// get worker action status for turn 
+function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
+        $sql = "SELECT * FROM worker_actions
+            WHERE worker_id = $worker_id";
+        if (empty($turn_number)) $turn_number = $mecanics['turncounter'];
+        $sql .= "AND turn_number = $turn_number";
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            return NULL;
+        }
+        // Fetch the results
+        $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $worker_actions[0];
+}
+
+function activateWorker($pdo, $worker_id, $action, $enemy_worker_id) {
+    switch($action) {
+        case 'attack' :
+            echo 'attack';
+            break;
+        case 'activate' :
+            echo 'activate';
+            // get worker action status for turn 
+            $action = getWorkerActions($pdo);
+            // if worker is other than passive set passive
+            $new_action = 'passive';
+            if ( $action['action'] == 'passive' ) { // if worker is passive set investigating
+                $new_action = 'investigate';
+            }
+            try{
+                // Insert new workers value into the database
+                $stmt = $pdo->prepare("UPDATE worker_actions SET action = :action WHERE id = :id ");
+                $stmt->bindParam(':action', $new_action);
+                $stmt->bindParam(':id', $action['action']['id']);
+                $stmt->execute();
+            } catch (PDOException $e) {
+                echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+            }
+            break;
+        case 'claimZone' :
+            echo 'claimZone';
+            break; 
+    }
     return $worker_id;
 }
 

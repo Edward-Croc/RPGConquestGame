@@ -25,13 +25,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         moveWorker($gameReady, $worker_id, $zone_id);
     }
     if (isset($_GET['attack'])){
-        activateWorker($gameReady, $worker_id, $_GET['attack'], $enemy_worker_id);
+        activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
     }
     if (isset($_GET['activate'])){
-        activateWorker($gameReady, $worker_id, $_GET['activate']);
+        activateWorker($gameReady, $worker_id, 'activate');
     }
     if (isset($_GET['claimZone'])){
-        workerClaimZone($gameReady, $worker_id);
+        activateWorker($gameReady, $worker_id, 'claimZone');
     }
 }
 

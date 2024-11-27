@@ -11,6 +11,10 @@ require_once '../base/base_php.php';
             $stmt->execute();
         }
 
+        // do end_turn actions
+        // generate JSon reports
+        // create new turn lines
+
         $turn = $mecanics['turncounter'] + 1;
         // SQL query to select username from the players table
         $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";

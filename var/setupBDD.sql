@@ -155,3 +155,17 @@ CREATE TABLE faction_powers (
     FOREIGN KEY (faction_id) REFERENCES factions (ID),
     FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
 );
+
+CREATE TABLE worker_actions (
+    ID SERIAL PRIMARY KEY,
+    worker_id INT NOT NULL,
+    turn_number INT NOT NULL,
+    zone_id INT NOT NULL,
+    controler_id INT NOT NULL,
+    action TEXT NOT NULL,
+    action_params JSON DEFAULT '{}'::json,
+    report JSON DEFAULT '{}'::json,
+    FOREIGN KEY (worker_id) REFERENCES workers (ID),
+    FOREIGN KEY (zone_id) REFERENCES zones (ID),
+    FOREIGN KEY (controler_id) REFERENCES controlers (ID)
+);

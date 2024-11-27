@@ -74,7 +74,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['id'],
                 $showZoneSelect,
                 $enemyWorkersSelect,
-                "Enqueter Activement"
+                true ? "Enqueter" : "Se cacher"
             );
             echo '</div> </form>';
         }
