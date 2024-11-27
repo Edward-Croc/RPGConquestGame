@@ -642,15 +642,15 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ))
 ;
 
-INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id, action) VALUES 
+INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id) VALUES 
     (
         (SELECT ID FROM workers WHERE lastname = 'Mathews'),
         (SELECT ID FROM controler_worker JOIN workers ON workers.ID = controler_worker.worker_id WHERE workers.lastname = 'Mathews'),
-          0, 1, 'passive'
+          0, 1
     ),
     (
         (SELECT ID FROM workers WHERE lastname = 'Popescu'),
         (SELECT ID FROM controler_worker JOIN workers ON workers.ID = controler_worker.worker_id WHERE workers.lastname = 'Popescu'),
-          0, 1, 'passive'
+          0, 1
     )
 ;

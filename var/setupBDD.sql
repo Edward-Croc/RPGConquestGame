@@ -162,7 +162,7 @@ CREATE TABLE worker_actions (
     turn_number INT NOT NULL,
     zone_id INT NOT NULL,
     controler_id INT NOT NULL,
-    action TEXT NOT NULL,
+    action TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
     report JSON DEFAULT '{}'::json,
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
