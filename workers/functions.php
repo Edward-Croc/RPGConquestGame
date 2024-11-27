@@ -7,40 +7,29 @@ function getWorkers($pdo, $worker_ids) {
     if ( empty($worker_ids) ) return NULL;
     $worker_id_str = implode(',', $worker_ids);
 
-    $sql = "SELECT w.*,
-            wo.name AS origin_name,
-            z.name  AS zone_name
-        FROM workers AS w
-        JOIN worker_origins AS wo ON wo.id = w.origin_id
-        JOIN zones AS z ON z.id = w.zone_id
-        WHERE w.id IN (:worker_id_str)";
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([':worker_id_str' => $worker_id_str]);
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-        return NULL;
-    }
-    // Fetch the results
-    $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     $sql = "SELECT 
-        w1.id AS worker_id,
-        COALESCE(SUM(p1.enquete), 0) AS total_enquete,
-        COALESCE(SUM(p1.action), 0) AS total_action,
-        COALESCE(SUM(p1.defence), 0) AS total_defence
-    FROM 
-        workers w1
-    LEFT JOIN 
-        worker_powers wp1 ON w1.id = wp1.worker_id
-    LEFT JOIN 
-        link_power_type lpt1 ON wp1.link_power_type_id = lpt1.ID
-    LEFT JOIN 
-        powers p1 ON lpt1.power_id = p1.ID
-    WHERE 
-        w1.id IN (:worker_id_str)
-    GROUP BY 
-        w1.id
+            w.*,
+            wo.name AS origin_name,
+            z.name AS zone_name,
+            COALESCE(SUM(p.enquete), 0) AS total_enquete,
+            COALESCE(SUM(p.action), 0) AS total_action,
+            COALESCE(SUM(p.defence), 0) AS total_defence
+        FROM 
+            workers AS w
+        JOIN 
+            worker_origins AS wo ON wo.id = w.origin_id
+        JOIN 
+            zones AS z ON z.id = w.zone_id
+        LEFT JOIN 
+            worker_powers wp ON w.id = wp.worker_id
+        LEFT JOIN 
+            link_power_type lpt ON wp.link_power_type_id = lpt.ID
+        LEFT JOIN 
+            powers p ON lpt.power_id = p.ID
+        WHERE 
+            w.id IN (:worker_id_str)
+        GROUP BY w.id, wo.name, z.name
+        ORDER BY w.id ASC
     ";
     try {
         $stmt = $pdo->prepare($sql);
@@ -50,8 +39,8 @@ function getWorkers($pdo, $worker_ids) {
         return NULL;
     }
     // Fetch the results
-    $workers_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_values %s <br> <br>", var_export($workers_values,true));
+    $workersArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br> <br>", var_export($workersArray,true));
 
     $sql = "SELECT 
         w.id AS worker_id,
@@ -68,7 +57,9 @@ function getWorkers($pdo, $worker_ids) {
     JOIN 
         power_types pt ON lpt.power_type_id = pt.ID
     WHERE 
-        w.id IN (:worker_id_str)";
+        w.id IN (:worker_id_str)
+    ORDER BY w.id ASC
+    ";
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':worker_id_str' => $worker_id_str]);
@@ -80,11 +71,17 @@ function getWorkers($pdo, $worker_ids) {
     $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br> <br>", var_export($workers_powers,true));
 
-    // Store Controlers in the array
-    foreach ($workers as $worker) {
-        
-        $workersArray[] = $worker;
+    // Index $workers_powers by worker_id for faster lookup
+    $workerPowersById = [];
+    foreach ($workers_powers as $power) {
+        $workerPowersById[$power['worker_id']][$power['power_type_name']] = $power['power_name'];
     }
+
+    foreach ($workersArray as $key => $worker) {
+        $workersArray[$key]['powers'] = $workerPowersById[$worker['id']] ?? []; // Add powers or empty array if none
+    }
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br> <br>", var_export($workersArray,true));
+
     return $workersArray;
 }
 
