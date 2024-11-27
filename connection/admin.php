@@ -114,8 +114,8 @@ require_once '../base/base_html.php';
         <div  class="config">
             <form method="post">
                 <h2>Add New Config Value</h2>
-                <label>Name:</label> <input type="text" name="name" required><br>
-                <label>Value:</label> <input type="text" name="value" required><br>
+                <label>Name:</label> <input type="text" name="name" required><br />
+                <label>Value:</label> <input type="text" name="value" required><br />
                 <input type="submit" name="add_config" value="Add">
             </form>
         </div>

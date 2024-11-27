@@ -79,9 +79,9 @@ if (
             }
         
             // Get Controlers array
-            $Controlers = getControlers($gameReady, $_SESSION['user_id']);
-            if (count($Controlers) == 1) {
-                $_SESSION['controler'] = $Controlers[0]; 
+            $controlers = getControlers($gameReady, $_SESSION['user_id']);
+            if (count($controlers) == 1) {
+                $_SESSION['controler'] = $controlers[0]; 
             }
 
             // Redirect the user to a logged-in page

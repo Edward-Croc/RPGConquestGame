@@ -4,30 +4,31 @@ $pageName = 'accueil';
 require_once '../base/base_php.php';
 
 if (
-    !empty($_GET['controler'])
+    !empty($_GET['controler_id'])
 ) {
     
-    if ($_SESSION['DEBUG'] == true) echo "_GET['controler']:". var_export($_GET['controler'], true).'<br/><br/>';
-    $controler = getControlers($gameReady, NULL, $_GET['controler']);
-    if ($_SESSION['DEBUG'] == true) echo "controler:". var_export($controler, true).'<br/><br/>';
-    $_SESSION['controler'] =  $controler[0];
+    if ($_SESSION['DEBUG'] == true) echo "_GET['controler_id']:". var_export($_GET['controler_id'], true).'<br/><br/>';
+    $controlers = getControlers($gameReady, NULL, $_GET['controler_id']);
+    if ($_SESSION['DEBUG'] == true) echo "controlers:". var_export($controlers, true).'<br/><br/>';
+    $_SESSION['controler'] =  $controlers[0];
+    $controler_id = $controlers[0]['id'];
 }
 
 require_once '../base/base_html.php';
 
-$Controlers = getControlers($gameReady, $_SESSION['user_id']);
-if (count($Controlers) > 1) {
+$controlers = getControlers($gameReady, $_SESSION['user_id']);
+if (count($controlers) > 1) {
 ?>
     <div class="factions">
         <h2>Factions</h2>
         <!-- Add content for factions here -->
         <form action="/RPGConquestGame/base/accueil.php" method="GET">
-        <select id='controlerSelect' name='controler'>
+        <select id='controlerSelect' name='controler_id'>
             <option value=''>Select Controler</option>
             <?php
             // Display select list of Controlers
-            foreach ($Controlers as $Controler) {
-                echo "<option value='" . $Controler['id'] . "'>" . $Controler['firstname'] . " " . $Controler['lastname'] . "</option>";
+            foreach ($controlers as $controler) {
+                echo "<option value='" . $controler['id'] . "'>" . $controler['firstname'] . " " . $controler['lastname'] . "</option>";
             }
             ?>
         </select>
@@ -47,13 +48,13 @@ if (count($Controlers) > 1) {
 
 <script>
     // Function to show Controler details when a Controler is selected from the list
-    document.getElementById('ControlerSelect').addEventListener('change', function() {
-        var ControlerId = this.value;
-        var Controlers = <?php echo json_encode($Controlers); ?>;
+    document.getElementById('controlerSelect').addEventListener('change', function() {
+        var controlerId = this.value;
+        var controlers = <?php echo json_encode($controlers); ?>;
 
         // Find the selected Controler in the array
-        var selectedControler = Controlers.find(function(Controler) {
-            return Controler.id == ControlerId;
+        var selectedControler = controlers.find(function(controlers) {
+            return controlers.id == controlerId;
         });
 
         // Display Controler details

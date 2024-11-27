@@ -68,7 +68,7 @@ function getWorkers($pdo, $worker_ids) {
     }
     // Fetch the results
     $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br> <br>", var_export($workers_powers,true));
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br /> <br />", var_export($workers_powers,true));
 
     // Index $workers_powers by worker_id for faster lookup
     $workerPowersById = [];
@@ -85,7 +85,7 @@ function getWorkers($pdo, $worker_ids) {
     foreach ($workersArray as $key => $worker) {
         $workersArray[$key]['powers'] = $workerPowersById[$worker['id']] ?? []; // Add powers or empty array if none
     }
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br> <br>", var_export($workersArray,true));
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
 
     return $workersArray;
 }
@@ -246,4 +246,25 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     }
 
     return $worker_id;
+}
+
+function enemyWorkersSelect($pdo, $zone_id, $controler_id) {
+    $enemyWorkerOptions = '';
+    $enemyWorkerArray = [];
+    // Display select list of Controlers
+    foreach ( $enemyWorkerArray as $enemyWorker) {
+        $enemyWorkerOptions .= "<option value='" . $enemyWorker['id'] . "'>" . $enemyWorker['name'] . " </option>";
+    }
+
+    $enemyWorkersSelect = sprintf("
+        <select id='enemyWorkersSelect' name='enemy_worker_id'>
+            <option value=\'\'>All</option>
+            %s
+        </select>
+        ",
+        $enemyWorkerOptions
+    );
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): enemyWorkersSelect: ".var_export($enemyWorkersSelect, true)."<br /><br />";
+
+    return $enemyWorkersSelect;
 }

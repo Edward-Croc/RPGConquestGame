@@ -4,10 +4,10 @@ require_once '../base/base_php.php';
 $pageName = 'action';
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
-    if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br> <br>";
+    if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
     if (isset($_GET['creation'])){
         $worker_id  = createWorker($gameReady, $_GET);
-        if ($_SESSION['DEBUG'] == true) echo 'createWorker : DONE <br>';
+        if ($_SESSION['DEBUG'] == true) echo 'createWorker : DONE <br />';
     }
     if (isset($_GET['demenager'])){
         $worker_id  = $_GET['worker_id'];

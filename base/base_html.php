@@ -31,7 +31,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             $mecanics['turncounter']
         );
         if ( isset($_SESSION['controler']) )
-        echo sprintf ("%s %s <br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['faction_name']);
+        echo sprintf ("%s %s (%s)<br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
         ?>
         <div class="menu_top_left">
             <?php

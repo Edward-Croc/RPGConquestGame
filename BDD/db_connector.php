@@ -123,27 +123,27 @@ function gameReady() {
                 echo "Loading $sqlFile ... ";
                 //$sqlFile = '../BDD/setupBDD.sql';
                 if (file_exists($sqlFile)) {
-                    echo 'Start <br>';
+                    echo 'Start <br />';
                     // Read SQL file
                     $sqlQueries = file_get_contents($sqlFile);
                     // Execute SQL queries
                     $pdo->exec($sqlQueries);
                     echo "SQL file executed successfully.<br />";
                 }
-                echo 'END <br>';
+                echo 'END <br />';
 
 
                 $sqlFile =  $path.'/var/setupVampire1966.sql';
                 echo "Loading $sqlFile ...<br />";
                 if (file_exists($sqlFile)) {
-                    echo 'Start <br>';
+                    echo 'Start <br />';
                     // Read SQL file
                     $sqlQueries = file_get_contents($sqlFile);
                     // Execute SQL queries
                     $pdo->exec($sqlQueries);
                     echo "SQL file executed successfully.<br />";
                 }
-                echo 'END <br>';
+                echo 'END <br />';
             }
         } catch (PDOException $e) {
             echo __FUNCTION__."(): Check Database failed: " . $e->getMessage()."<br />";
