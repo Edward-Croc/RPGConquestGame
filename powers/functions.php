@@ -57,7 +57,7 @@ function getBasePowers($pdo, $type_list, $controler_id = null) {
     }
 
     // Get all powers from a type_list
-    $sql = sprintf('SELECT powers.*, link_power_type.*
+    $sql = sprintf('SELECT powers.*, link_power_type.id as link_power_type_id
         FROM powers
         JOIN link_power_type ON link_power_type.power_id = powers.id
         WHERE powers.id IN (

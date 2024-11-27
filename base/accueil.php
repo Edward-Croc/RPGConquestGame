@@ -6,9 +6,10 @@ require_once '../base/base_php.php';
 if (
     !empty($_GET['controler'])
 ) {
-    echo "_GET['controler']:". var_export($_GET['controler'], true);
+    
+    if ($_SESSION['DEBUG'] == true) echo "_GET['controler']:". var_export($_GET['controler'], true).'<br/><br/>';
     $controler = getControlers($gameReady, NULL, $_GET['controler']);
-    echo "controler:". var_export($controler, true);
+    if ($_SESSION['DEBUG'] == true) echo "controler:". var_export($controler, true).'<br/><br/>';
     $_SESSION['controler'] =  $controler[0];
 }
 

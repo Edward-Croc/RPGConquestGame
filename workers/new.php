@@ -104,7 +104,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $disciplinesOptions = '';
     // Display select list of Controlers
     foreach ( $powerDisciplineArray as $powerDiscipline) {
-        $disciplinesOptions .= "<option value='" . $powerDiscipline['power_id'] . "'>" . $powerDiscipline['name'] . " </option>";
+        $disciplinesOptions .= "<option value='" . $powerDiscipline['link_power_type_id'] . "'>" . $powerDiscipline['name'] . " </option>";
     }
     echo sprintf(" Discipline:
         <select id='disciplineSelect' name='discipline'>

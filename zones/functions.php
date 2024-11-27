@@ -54,7 +54,8 @@ function showZoneSelect($zonesArray){
     foreach ( $zonesArray as $zone) {
         $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
     }
-    return sprintf(" Zone :
+    
+    $showZoneSelect = sprintf("
         <select id='zoneSelect' name='zone'>
             <option value=\'\'>Select Zone</option>
             %s
@@ -62,4 +63,7 @@ function showZoneSelect($zonesArray){
         ",
         $zoneOptions
     );
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
+
+    return $showZoneSelect;
 }

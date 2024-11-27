@@ -2,7 +2,6 @@
 
 // Function to get Controlers and return as an array
 function getWorkers($pdo, $worker_ids) {
-    $workersArray = array();
 
     if ( empty($worker_ids) ) return NULL;
     $worker_id_str = implode(',', $worker_ids);
@@ -74,6 +73,8 @@ function getWorkers($pdo, $worker_ids) {
     // Index $workers_powers by worker_id for faster lookup
     $workerPowersById = [];
     foreach ($workers_powers as $power) {
+        if ( empty($workerPowersById[$power['worker_id']][$power['power_type_name']]) )
+             $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] = '';
         if ( !empty($workerPowersById[$power['worker_id']][$power['power_type_name']]['texte']) ) {
             $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] .= ', ';
         }
@@ -229,5 +230,20 @@ function createWorker($pdo, $array) {
             echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
         }
     }
-    return NULL;
+    return $worker_id;
+}
+
+function moveWorker($pdo, $worker_id, $zone_id) {
+
+    try{
+        // Insert new workers value into the database
+        $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
+        $stmt->bindParam(':id', $worker_id);
+        $stmt->bindParam(':zone_id', $zone_id);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+    }
+
+    return $worker_id;
 }
