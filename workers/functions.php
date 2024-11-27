@@ -74,7 +74,11 @@ function getWorkers($pdo, $worker_ids) {
     // Index $workers_powers by worker_id for faster lookup
     $workerPowersById = [];
     foreach ($workers_powers as $power) {
-        $workerPowersById[$power['worker_id']][$power['power_type_name']] = $power['power_name'];
+        if ( !empty($workerPowersById[$power['worker_id']][$power['power_type_name']]['texte']) ) {
+            $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] .= ', ';
+        }
+        $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] = $power['power_name'];
+        $workerPowersById[$power['worker_id']][$power['power_type_name']][] = $power['power_name'];
     }
 
     foreach ($workersArray as $key => $worker) {

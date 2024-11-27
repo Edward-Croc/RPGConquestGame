@@ -620,6 +620,11 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
         JOIN powers on  powers.ID = link_power_type.power_id
         WHERE powers.name = 'Policier'
     )),
+    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Célérité'
+    )),
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
@@ -629,5 +634,10 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
         WHERE powers.name = 'Militaire'
-    ))
+    )),
+    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Quiétus'
+    )),
 ;

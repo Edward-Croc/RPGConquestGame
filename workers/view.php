@@ -28,14 +28,16 @@ if ( !empty($_SESSION['controler']) ) {
         echo sprintf('
             <b onclick="toggleInfo(%1$s)" style="cursor: pointer;"> %2$s %3$s </b> surveille %5$s
             <i id="info-%1$s" style="display: none;">
-                Originaire de %4$s, c\'etait un %5$s et il aime le %6$s
+                Originaire de %4$s, c\'etait un %5$s et il est un %6$s <br>
+                Ses disciplines dévéloppées : %7$s
             ',
             $worker['id'],
             $worker['firstname'],
             $worker['lastname'],
             $worker['origin_name'],
-            $worker['powers']['Metier'],
-            $worker['powers']['Hobby']
+            $worker['powers']['Metier']['texte'],
+            $worker['powers']['Hobby']['texte'],
+            $worker['powers']['Discipline']['texte'] != "" ? $worker['powers']['Discipline']['texte'] : ''
         );
         echo sprintf('
             <form action="/RPGConquestGame/workers/action.php" method="GET">
