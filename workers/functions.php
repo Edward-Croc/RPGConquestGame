@@ -197,7 +197,7 @@ function createWorker($pdo, $array) {
         $stmt->bindParam(':firstname', $array['firstname']);
         $stmt->bindParam(':lastname', $array['lastname']);
         $stmt->bindParam(':origin_id', $array['origin_id']);
-        $stmt->bindParam(':zone_id', $array['zone']);
+        $stmt->bindParam(':zone_id', $array['zone_id']);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT workers Failed: " . $e->getMessage()."<br />";
@@ -248,6 +248,10 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     return $worker_id;
 }
 
+function enemyWorkersFind($pdo, $zone_id, $controler_id) {
+
+}
+
 function enemyWorkersSelect($pdo, $zone_id, $controler_id) {
     $enemyWorkerOptions = '';
     $enemyWorkerArray = [];
@@ -258,7 +262,8 @@ function enemyWorkersSelect($pdo, $zone_id, $controler_id) {
 
     $enemyWorkersSelect = sprintf("
         <select id='enemyWorkersSelect' name='enemy_worker_id'>
-            <option value=\'\'>All</option>
+            <option value='carnage'>Carnage!</option>
+            <option value='allknown'>Tous les connus!</option>
             %s
         </select>
         ",

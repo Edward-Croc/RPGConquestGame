@@ -16,12 +16,7 @@ function getZonesArray($pdo) {
     // Fetch the results
     $zones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Store Controlers in the array
-    foreach ($zones as $zone) {
-        $zonesArray[] = $zone;
-    }
-
-    return $zonesArray;
+    return $zones;
 }
 
 // Function to get Controlers and return as an array
@@ -56,8 +51,8 @@ function showZoneSelect($zonesArray){
     }
     
     $showZoneSelect = sprintf("
-        <select id='zoneSelect' name='zone'>
-            <option value=\'\'>Select Zone</option>
+        <select id='zoneSelect' name='zone_id'>
+            <option value=''>Select Zone</option>
             %s
         </select>
         ",

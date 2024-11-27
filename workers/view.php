@@ -65,14 +65,16 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             );
 
             echo sprintf('<input type="hidden" name="worker_id" value=%1$s>
-                    <input type="submit" name="demenager"  value="Demenager vers :">
+                    <input type="submit" name="move"  value="Demenager vers :">
                     %2$s<br />
-                    <input type="submit" name="activer" value="Enqueter Activement"><br />
-                    %3$s<input type="submit" name="attaquer" value="Attaquer"><br />
+                    <input type="submit" name="activate" value="%4$s"><br />
+                    %3$s<input type="submit" name="attack" value="Attaquer"><br />
+                    %3$s<input type="submit" name="claim" value="Revendiquer le quartier"><br />
                 ',
                 $worker['id'],
                 $showZoneSelect,
                 $enemyWorkersSelect,
+                "Enqueter Activement"
             );
             echo '</div> </form>';
         }
