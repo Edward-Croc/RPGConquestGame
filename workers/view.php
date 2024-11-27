@@ -25,15 +25,16 @@ if ( !empty($_SESSION['controler']) ) {
 
     if ($_SESSION['DEBUG'] == true ) echo var_export($workersArray, true)."<br><br>";
     foreach ($workersArray as $worker){
-        echo sprintf('
-            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;"> %2$s %3$s </b> surveille %5$s
+        echo sprintf('<p>
+            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;"> %2$s %3$s </b> surveille le %4$s.
             <i id="info-%1$s" style="display: none;">
-                Originaire de %4$s, c\'etait un %5$s et il est un %6$s <br>
-                Ses disciplines dévéloppées : %7$s
+                Originaire de %5$s, c\'etait un %6$s et il est un %7$s <br>
+                Ses disciplines dévéloppées : %8$s
             ',
             $worker['id'],
             $worker['firstname'],
             $worker['lastname'],
+            $worker['zone_name'],
             $worker['origin_name'],
             $worker['powers']['Metier']['texte'],
             $worker['powers']['Hobby']['texte'],
@@ -49,7 +50,7 @@ if ( !empty($_SESSION['controler']) ) {
             showZoneSelect($zonesArray),
             $worker['id'],
         );
-        echo '</i>';
+        echo '</i></p>';
     }
 }
 ?>

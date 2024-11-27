@@ -8,11 +8,11 @@ if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Location: connection/login_form.php');
 }
 
-if (isset($_SESSION['user_id'])){
-    $controler_id = $_SESSION['user_id'];
+if (isset($_SESSION['controler'])){
+    $controler_id = $_SESSION['controler']['id'];
 }
-if (isset($_GET['controler'])){
-    $controler_id = $_GET['controler'];
+if (isset($_GET['controler_id'])){
+    $controler_id = $_GET['controler_id'];
 }
 
 $buttonClicked = 'first_come';
@@ -57,20 +57,11 @@ $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
 $powerDisciplineArray = getBasePowers($gameReady,'3', $controler_id);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true){
-    echo var_export($nameArray, true);
-    echo"<br />";
-    echo"<br />";
-    echo var_export($powerHobbyArray, true);
-    echo"<br />";
-    echo"<br />";
-    echo var_export($powerMetierArray, true);
-    echo"<br />";
-    echo"<br />";
-    echo var_export($powerDisciplineArray, true);
-    echo"<br />";
-    echo"<br />";
-    echo var_export($zonesArray, true). "<br />";
-    echo"<br />";
+    echo "nameArray: ".var_export($nameArray, true)."<br /><br />";
+    echo "powerHobbyArray: ".var_export($powerHobbyArray, true)."<br /><br />";
+    echo "powerMetierArray: ".var_export($powerMetierArray, true)."<br /><br />";
+    echo "powerDisciplineArray: ".var_export($powerDisciplineArray, true);"<br /><br />";
+    echo "zonesArray: ".var_export($zonesArray, true). "<br /><br />";
 }
 
 require_once '../base/base_html.php';
@@ -97,6 +88,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         <input type="hidden" name="origin_id" value="%6$s">
         <input type="hidden" name="power_hobby_id" value="%7$s">
         <input type="hidden" name="power_metier_id" value="%8$s">
+        <input type="hidden" name="controler_id" value="%9$s">
     ',
     $nameArray[$iteration]['firstname'],
     $nameArray[$iteration]['lastname'],
@@ -106,12 +98,13 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $nameArray[$iteration]['origin_id'],
     $powerHobbyArray[$iteration]['id'],
     $powerMetierArray[$iteration]['id'],
+    $controler_id,
     );
 
     $disciplinesOptions = '';
     // Display select list of Controlers
     foreach ( $powerDisciplineArray as $powerDiscipline) {
-        $disciplinesOptions .= "<option value='" . $powerDiscipline['id'] . "'>" . $powerDiscipline['name'] . " </option>";
+        $disciplinesOptions .= "<option value='" . $powerDiscipline['power_id'] . "'>" . $powerDiscipline['name'] . " </option>";
     }
     echo sprintf(" Discipline:
         <select id='disciplineSelect' name='discipline'>
@@ -123,7 +116,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         $disciplinesOptions
     );
 
-    showZoneSelect($zonesArray);
+    echo showZoneSelect($zonesArray);
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
     </p>

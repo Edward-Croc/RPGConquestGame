@@ -1,10 +1,10 @@
 <?php
-if (isset( $_SESSION['DEBUG']) ){
-    if ($_SESSION['DEBUG'] == true){
-        echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
-    }
-} else {
+if ( !isset($_SESSION['DEBUG']) ){
     session_start(); // Start the session
+}
+
+if ( $_SESSION['DEBUG'] == true ){
+    echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
 require_once '../BDD/db_connector.php';
@@ -12,7 +12,6 @@ require_once '../controlers/functions.php';
 require_once '../powers/functions.php';
 require_once '../workers/functions.php';
 require_once '../zones/functions.php';
-
 
 function getConfig($pdo, $configName) {
     try{

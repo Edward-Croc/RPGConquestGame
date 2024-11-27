@@ -57,23 +57,26 @@ function getBasePowers($pdo, $type_list, $controler_id = null) {
     }
 
     // Get all powers from a type_list
-    $sql = sprintf("SELECT powers.* FROM powers WHERE powers.id IN (
+    $sql = sprintf('SELECT powers.*, link_power_type.*
+        FROM powers
+        JOIN link_power_type ON link_power_type.power_id = powers.id
+        WHERE powers.id IN (
             SELECT distinct(powers.id)
             FROM powers
             JOIN link_power_type ON link_power_type.power_id = powers.id 
             LEFT JOIN faction_powers ON faction_powers.link_power_type_id = link_power_type.id 
             LEFT JOIN factions ON factions.id = faction_powers.faction_id 
             LEFT JOIN controlers ON controlers.faction_id = factions.id 
-            WHERE link_power_type.power_type_id IN (%s)
-            AND (%s %s %s )
-        )",
+            WHERE link_power_type.power_type_id IN ( %1$s )
+            AND ( %2$s %3$s %4$s )
+        )',
         $type_list,
         $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
         ($controler_id != "" && $basePowerNames != "") ? "OR" : '',
         $controler_id != "" ? "controlers.id IN ($controler_id)" : ''
     );
     if ($_SESSION['DEBUG'] == true){
-        echo "getBasePowers(): sql  $sql <br />";
+        echo __FUNCTION__."(): $sql <br />";
     }
     try{
 
