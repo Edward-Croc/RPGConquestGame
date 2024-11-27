@@ -7,15 +7,6 @@ function getWorkers($pdo, $worker_ids) {
     if ( empty($worker_ids) ) return NULL;
     $worker_id_str = implode(',', $worker_ids);
 
-    /*
-    
-            (SELECT 
-                FROM worker_powers AS 
-                JOIN link_power_type AS lpt ON lpt.id = wp.link_power_type_id
-                JOIN link_power_type AS lpt ON lpt.id = wp.link_power_type_id
-                WHERE wp.worker_id = w.id
-            )
-    */
     $sql = "SELECT w.*,
             wo.name AS origin_name,
             z.name  AS zone_name
@@ -30,12 +21,68 @@ function getWorkers($pdo, $worker_ids) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
     }
-
     // Fetch the results
     $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    $sql = "SELECT 
+        w1.id AS worker_id,
+        COALESCE(SUM(p1.enquete), 0) AS total_enquete,
+        COALESCE(SUM(p1.action), 0) AS total_action,
+        COALESCE(SUM(p1.defence), 0) AS total_defence
+    FROM 
+        workers w1
+    LEFT JOIN 
+        worker_powers wp1 ON w1.id = wp1.worker_id
+    LEFT JOIN 
+        link_power_type lpt1 ON wp1.link_power_type_id = lpt1.ID
+    LEFT JOIN 
+        powers p1 ON lpt1.power_id = p1.ID
+    WHERE 
+        w1.id IN (:worker_id_str)
+    GROUP BY 
+        w1.id
+    ";
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':worker_id_str' => $worker_id_str]);
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    // Fetch the results
+    $workers_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_values %s <br> <br>", var_export($workers_values,true));
+
+    $sql = "SELECT 
+        w.id AS worker_id,
+        p.name AS power_name,
+        pt.name AS power_type_name
+    FROM 
+        workers w
+    JOIN 
+        worker_powers wp ON w.id = wp.worker_id
+    JOIN 
+        link_power_type lpt ON wp.link_power_type_id = lpt.ID
+    JOIN 
+        powers p ON lpt.power_id = p.ID
+    JOIN 
+        power_types pt ON lpt.power_type_id = pt.ID
+    WHERE 
+        w.id IN (:worker_id_str)";
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':worker_id_str' => $worker_id_str]);
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    // Fetch the results
+    $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br> <br>", var_export($workers_powers,true));
+
     // Store Controlers in the array
     foreach ($workers as $worker) {
+        
         $workersArray[] = $worker;
     }
     return $workersArray;

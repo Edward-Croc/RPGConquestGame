@@ -26,8 +26,8 @@ if ( !empty($_SESSION['controler']) ) {
     if ($_SESSION['DEBUG'] == true ) echo var_export($workersArray, true)."<br><br>";
     foreach ($workersArray as $worker){
         echo sprintf('
-            <b onclick="toggleInfo(%s)" style="cursor: pointer;"> %2$s %3$s </b> surveille %5$s
-            <i id="info-%s" style="display: none;">
+            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;"> %2$s %3$s </b> surveille %5$s
+            <i id="info-%1$s" style="display: none;">
                 Originaire de %4$s, c\'etait un ... et il aime le ...
             ',
             $worker['id'],
@@ -36,8 +36,8 @@ if ( !empty($_SESSION['controler']) ) {
             $worker['origin_name'],
             $worker['zone_name']
         );
-        /* echo sprintf('
-            <form action="/RPGConquestGame/workers/new.php" method="GET">
+        echo sprintf('
+            <form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id"  value=%2$s>
                 %1$s
                 <input type="submit" name="demenager"  value="Demenager">
@@ -46,7 +46,6 @@ if ( !empty($_SESSION['controler']) ) {
             showZoneSelect($zonesArray),
             $worker['id'],
         );
-        */
         echo '</i>';
     }
 }

@@ -37,7 +37,7 @@
     }
     
     function toggleInfo(id) {
-        const description = document.getElementById('info-' + id);
+        const info = document.getElementById('info-' + id);
         if (info.style.display === 'none') {
             info.style.display = 'block';
         } else {
