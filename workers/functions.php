@@ -39,7 +39,7 @@ function getWorkers($pdo, $worker_ids) {
     }
     // Fetch the results
     $workersArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br> <br>", var_export($workersArray,true));
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
 
     $sql = "SELECT
         w.id AS worker_id,
