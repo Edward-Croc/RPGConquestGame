@@ -1,6 +1,5 @@
-<div class="workers">
+<?php 
 
-<?php
 if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
 
 if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
@@ -18,6 +17,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     } else {
         $workersArray = getWorkersByControler($gameReady, $controler_id);
     }
+    echo "<div class='workers'>";
     if ( empty($worker_id) ) {
         echo sprintf("
             <h2>Agents</h2>

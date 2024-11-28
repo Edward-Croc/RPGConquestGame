@@ -166,6 +166,22 @@ function createWorker($pdo, $array) {
         discipline
         controler_id
     */
+    // Check if worker already exists : 
+    try{
+        // Insert new workers value into the database
+        $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
+        INNER JOIN controler_worker AS cw ON cw.worker_id = w.id
+        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controler_id = :controler_id");
+        $stmt->bindParam(':firstname', $array['firstname']);
+        $stmt->bindParam(':lastname', $array['lastname']);
+        $stmt->bindParam(':origin_id', $array['origin_id']);
+        $stmt->bindParam(':controler_id', $array['controler_id']);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
+    }
+    $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($worker)) return $worker[0]['id'];
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES (:firstname, :lastname, :origin_id, :zone_id)");

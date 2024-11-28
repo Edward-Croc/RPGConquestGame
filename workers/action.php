@@ -16,9 +16,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ( !empty($_GET['enemy_worker_id']) ) $enemy_worker_id = $_GET['enemy_worker_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "enemy_worker_id: ".var_export($enemy_worker_id, true)."<br /><br />";
 
-    if ( $_SESSION['DEBUG'] == true ) echo "controler_id: ".var_export($controler_id, true)."<br /><br />";
     if (isset($_GET['creation'])){
-        $worker_id  = createWorker($gameReady, $_GET);
+        $worker_id = createWorker($gameReady, $_GET);
         if ($_SESSION['DEBUG'] == true) echo 'createWorker : DONE <br />';
     }
     if (isset($_GET['move'])){
@@ -36,7 +35,6 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 require_once '../base/base_html.php';
-
 require_once '../workers/view.php';
 
 
