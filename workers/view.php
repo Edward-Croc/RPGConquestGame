@@ -69,7 +69,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     %2$s<br />
                     <input type="submit" name="activate" value="%4$s"><br />
                     %3$s<input type="submit" name="attack" value="Attaquer"><br />
-                    %3$s<input type="submit" name="claim" value="Revendiquer le quartier"><br />
+                    <input type="submit" name="claim" value="Revendiquer le quartier"><br />
                 ',
                 $worker['id'],
                 $showZoneSelect,

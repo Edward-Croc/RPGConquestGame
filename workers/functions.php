@@ -236,16 +236,16 @@ function createWorker($pdo, $array) {
 }
 
 function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
+    $mecanics = getMecanics($pdo);
     try{
         // Insert new controler_worker value into the database
         $stmt = $pdo->prepare("INSERT
-            INTO worker_actions (worker_id, turn_number, zone_id, controler_id, action) 
-             VALUES (:worker_id, :turn_number, :zone_id, :controler_id, :action)");
+            INTO worker_actions (worker_id, turn_number, zone_id, controler_id) 
+             VALUES (:worker_id, :turn_number, :zone_id, :controler_id)");
         $stmt->bindParam(':controler_id', $controler_id,);
         $stmt->bindParam(':worker_id', $worker_id );
         $stmt->bindParam(':zone_id', $zone_id );
         $stmt->bindParam(':turn_number', $mecanics['turncounter']);
-        $stmt->bindParam(':action', 'passive');
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controler_worker Failed: " . $e->getMessage()."<br />";
@@ -281,49 +281,71 @@ function moveWorker($pdo, $worker_id, $zone_id) {
 
 // get worker action status for turn 
 function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
-        $sql = "SELECT * FROM worker_actions
-            WHERE worker_id = $worker_id";
-        if (empty($turn_number)) $turn_number = $mecanics['turncounter'];
-        $sql .= "AND turn_number = $turn_number";
-        try {
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute();
-        } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-            return NULL;
-        }
-        // Fetch the results
-        $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $worker_actions[0];
+
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+    }
+
+    $sql = "SELECT * FROM worker_actions
+        WHERE worker_id = $worker_id
+        AND turn_number = $turn_number 
+        ORDER BY id DESC
+    ";
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql: ".var_export($sql, true)."<br/><br/>";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    // Fetch the results
+    $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_actions: ".var_export($worker_actions, true)."<br/><br/>";
+    return $worker_actions;
 }
 
-function activateWorker($pdo, $worker_id, $action, $enemy_worker_id) {
+function activateWorker($pdo, $worker_id, $action, $enemy_worker_id = NULL) {
+
+    $mecanics = getMecanics($pdo);
+    $turn_number = $mecanics['turncounter'];
+
+    // get worker action status for turn 
+    $worker_actions = getWorkerActions($pdo, $worker_id);
+    if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
+    $sql_worker_actions = "UPDATE worker_actions SET ";
     switch($action) {
         case 'attack' :
-            echo 'attack';
+            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): attack <br/><br/>";
+            $sql_worker_actions .= " action = '$action' ";
             break;
         case 'activate' :
-            echo 'activate';
-            // get worker action status for turn 
-            $action = getWorkerActions($pdo);
+            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): activate <br/><br/>";
             // if worker is other than passive set passive
             $new_action = 'passive';
-            if ( $action['action'] == 'passive' ) { // if worker is passive set investigating
+            if ( $worker_actions[0]['action'] == 'passive' ) { // if worker is passive set investigating
                 $new_action = 'investigate';
             }
-            try{
-                // Insert new workers value into the database
-                $stmt = $pdo->prepare("UPDATE worker_actions SET action = :action WHERE id = :id ");
-                $stmt->bindParam(':action', $new_action);
-                $stmt->bindParam(':id', $action['action']['id']);
-                $stmt->execute();
-            } catch (PDOException $e) {
-                echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
-            }
+            $sql_worker_actions .= " action = '$new_action' ";
             break;
-        case 'claimZone' :
-            echo 'claimZone';
-            break; 
+        case 'claim' :
+            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): claim <br/><br/>";
+            $sql_worker_actions .= " action = '$action' ";
+            break;
+    }
+    try{
+        $sql_worker_actions .= " WHERE id = :id AND turn_number = :turn_number ";
+        if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
+        // Insert new workers value into the database
+        $stmt = $pdo->prepare($sql_worker_actions);
+        $stmt->bindParam(':id', $worker_actions[0]['id']);
+        $stmt->bindParam(':turn_number', $turn_number );
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
     return $worker_id;
 }
