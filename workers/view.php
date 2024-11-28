@@ -42,6 +42,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
             echo sprintf('<form action="/RPGConquestGame/workers/action.php" method="GET">
+                <input type="hidden" name="worker_id" value=%1$s>
                 <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le quartier %4$s.
                 <div id="info-%1$s" style="%5$s">
                 ',
@@ -51,12 +52,13 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['zone_name'],
                 empty($worker_id) ? 'display: none;' : 'display: block;',
             );
-            echo sprintf('
-                    <i>
+            echo sprintf('<i> Capacité d\'enquete : %5$s. Capacité d\'attaque / défense : %6$s / %7$s <br /></i>
+                    <p>
                         Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
                         Ses disciplines dévéloppées sont: %4$s <br />
-                        Capacité d\'enquete : %5$s. Capacité d\'attaque / défense : %6$s / %7$s <br />
-                    </i>',
+                        %8$s
+                    </p>
+                </div>',
                 $worker['origin_name'],
                 empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                 empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
@@ -64,22 +66,27 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['total_enquete'],
                 $worker['total_action'],
                 $worker['total_defence'],
+                empty($worker_id) ? '<input type="submit" name="voir" value="Voir" class="worker-action-btn">' : ''
             );
 
-            echo sprintf('<input type="hidden" name="worker_id" value=%1$s>
-                    <input type="submit" name="move"  value="Demenager vers :">
-                    %2$s<br />
-                    <input type="submit" name="activate" value="%4$s"> OU 
-                    %3$s <input type="submit" name="attack" value="Attaquer"> OU
-                    <input type="submit" name="claim" value="Revendiquer le quartier au nom de "> %5$s<br />
-                ',
-                $worker['id'],
-                $showZoneSelect,
-                $enemyWorkersSelect,
-                true ? "Enqueter" : "Se cacher",
-                $showControlerSelect
-            );
-            echo '</div> </form>';
+            if ( !empty($worker_id) ) {
+                echo sprintf('
+                    <p>
+                        <h4>Actions : </h4>
+                        <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
+                        <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
+                        <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s OU
+                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de" class="worker-action-btn"> %5$s
+                    </p>
+                    ',
+                    $worker['id'],
+                    $showZoneSelect,
+                    $enemyWorkersSelect,
+                    true ? "Enqueter" : "Se cacher",
+                    $showControlerSelect
+                );
+            }
+            echo ' </form>';
         }
     }
 }
