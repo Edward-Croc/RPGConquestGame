@@ -40,7 +40,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
             echo sprintf('<form action="/RPGConquestGame/workers/action.php" method="GET">
-                <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le %4$s.
+                <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le quartier %4$s.
                 <div id="info-%1$s" style="%5$s">
                 ',
                 $worker['id'],
@@ -56,9 +56,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         Capacité d\'enquete : %5$s. Capacité d\'attaque / défense : %6$s / %7$s <br />
                     </i>',
                 $worker['origin_name'],
-                $worker['powers']['Metier']['texte'],
-                $worker['powers']['Hobby']['texte'],
-                $worker['powers']['Discipline']['texte'] != "" ? $worker['powers']['Discipline']['texte'] : '',
+                empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
+                empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
+                empty($worker['powers']['Discipline']['texte']) ? '' : $worker['powers']['Discipline']['texte'],
                 $worker['total_enquete'],
                 $worker['total_action'],
                 $worker['total_defence'],

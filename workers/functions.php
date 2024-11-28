@@ -41,45 +41,20 @@ function getWorkers($pdo, $worker_ids) {
     $workersArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
 
-    $sql = "SELECT
-        w.id AS worker_id,
-        p.name AS power_name,
-        pt.name AS power_type_name
-    FROM
-        workers w
-    JOIN
-        worker_powers wp ON w.id = wp.worker_id
-    JOIN
-        link_power_type lpt ON wp.link_power_type_id = lpt.ID
-    JOIN
-        powers p ON lpt.power_id = p.ID
-    JOIN
-        power_types pt ON lpt.power_type_id = pt.ID
-    WHERE
-        w.id IN ($worker_id_str)
-    ORDER BY w.id ASC
-    ";
-    try {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-        return NULL;
-    }
-    // Fetch the results
-    $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br /> <br />", var_export($workers_powers,true));
+    $workers_powers = getPowersByWorkers($pdo, $worker_id_str);
 
     // Index $workers_powers by worker_id for faster lookup
     $workerPowersById = [];
     foreach ($workers_powers as $power) {
-        if ( empty($workerPowersById[$power['worker_id']][$power['power_type_name']]) )
-             $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] = '';
-        if ( !empty($workerPowersById[$power['worker_id']][$power['power_type_name']]['texte']) ) {
-            $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] .= ', ';
+        $worker_id = $power['worker_id'];
+        $power_type = $power['power_type_name'];
+        if ( empty($workerPowersById[$worker_id][$power_type]) )
+             $workerPowersById[$worker_id][$power_type]['texte'] = '';
+        if ( !empty($workerPowersById[$worker_id][$power_type]['texte']) ) {
+            $workerPowersById[$worker_id][$power_type]['texte'] .= ', ';
         }
-        $workerPowersById[$power['worker_id']][$power['power_type_name']]['texte'] .= $power['power_name'];
-        $workerPowersById[$power['worker_id']][$power['power_type_name']][] = $power['power_name'];
+        $workerPowersById[$worker_id][$power_type]['texte'] .=  $power['power_text'];
+        $workerPowersById[$worker_id][$power_type][] = $power['name'];
     }
 
     foreach ($workersArray as $key => $worker) {

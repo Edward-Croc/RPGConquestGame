@@ -44,12 +44,15 @@ function getLocationsArray($pdo) {
 }
 
 function showZoneSelect($zonesArray){
+
+    if (empty($zonesArray)) return '';
+
     $zoneOptions = '';
     // Display select list of Controlers
     foreach ( $zonesArray as $zone) {
         $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
     }
-    
+
     $showZoneSelect = sprintf("
         <select id='zoneSelect' name='zone_id'>
             <option value=''>Select Zone</option>

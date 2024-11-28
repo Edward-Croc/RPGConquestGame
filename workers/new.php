@@ -93,29 +93,15 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $nameArray[$iteration]['firstname'],
     $nameArray[$iteration]['lastname'],
     $nameArray[$iteration]['origin'],
-    $powerHobbyArray[$iteration]['name'],
-    $powerMetierArray[$iteration]['name'],
+    $powerHobbyArray[$iteration]['power_text'],
+    $powerMetierArray[$iteration]['power_text'],
     $nameArray[$iteration]['origin_id'],
     $powerHobbyArray[$iteration]['id'],
     $powerMetierArray[$iteration]['id'],
     $controler_id,
     );
 
-    $disciplinesOptions = '';
-    // Display select list of Controlers
-    foreach ( $powerDisciplineArray as $powerDiscipline) {
-        $disciplinesOptions .= "<option value='" . $powerDiscipline['link_power_type_id'] . "'>" . $powerDiscipline['name'] . " </option>";
-    }
-    echo sprintf(" Discipline:
-        <select id='disciplineSelect' name='discipline'>
-            <option value=\'\'>Select Discipline</option>
-            %s
-        </select>
-        <br />
-        ",
-        $disciplinesOptions
-    );
-
+    echo showDisciplineSelect($powerDisciplineArray);
     echo showZoneSelect($zonesArray);
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
