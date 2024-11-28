@@ -301,20 +301,6 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Alexandru', 'Gheorghe', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'));
 
 
-INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
-    ('Harvey', 'Mathews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
-    ('Andrei', 'Popescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti'));
-
-INSERT INTO controler_worker (controler_id, worker_id) VALUES
-    (
-        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
-        (SELECT ID FROM workers WHERE lastname in ('Mathews'))
-
-    ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof')),
-        (SELECT ID FROM workers WHERE lastname in ('Popescu'))
-    );
-
 -- Table of Power Types
 INSERT INTO power_types (name) VALUES
     ('Hobby'),
@@ -361,101 +347,10 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Augure', 2,-1,1)
 ;
 
-INSERT INTO powers ( name, enquete, action, defence) VALUES
-    -- Suggested Hobbies
-    -- Possible Values Based on +1 :
-    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
-    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
-    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
-    -- Possible Values Based on +1 : With imbalance on defence
-    -- ('', 1,0,0), ('', 0,1,1),
-    -- ('', 1,-1,1), ('', 1,1,-1),
-    -- ('', -1,0,2) ('', -1,2,1), ('', 2,-1,0),('', 2,0,-1), ('', 0,2,-1),
-    -- ('', 1,0,0), => Enqueteurs
-    ('Acteur Amateur', 1,0,0),
-    ('Musicien de rue', 1,0,0),
-    ('Fan de romans policiers', 1,0,0),
-    ('Photographe amateur', 1,0,0),
-    ('Collectionneur', 1,0,0),
-    ('Scout', 1,0,0),
-    ('Globe trotter', 1,0,0),
-    ('Ornithologue', 1,0,0),
-    ('Peintre copiste', 1,0,0),
-    ('Aristocrate', 1,0,0),
-    ('Membre du club de crochet', 1,0,0),
-    ('Possède un chien', 1,0,0),
-    -- ('', 0,1,1), => Combatants
-    ('Rugbyman du dimanche', 0,1,1),
-    ('Militaire réserviste', 0,1,1),
-    ('Adepte d’arts martiaux', 0,1,1),
-    ('Escrimeur', 0,1,1),
-    ('Manifestant régulier', 0,1,1),
-    ('Alcoolique', 0,1,1),
-    ('Hooligan', 0,1,1),
-    ('Pompier volontaire', 0,1,1),
-    -- ('', -1,2,1), => Maitres Combatants
-    ('Adepte de muscu', -1,2,1),
-    ('Dresseur de Pitbulls', -1,2,1),
-    -- ('', 0,2,-1), => Glass Canons
-    ('Drogué à la LSD', 1,1,-1),
-    ('Punk a chien', 1,1,-1),
-    -- ('', 2, 0/-1), => Maitres Enqueteurs
-    ('Rôliste', 2,-1,0),
-    ('Astrologue Amateur', 2,0,-1),
-    ('Oiseau de nuit', 2,-1,0)
-;
-
-INSERT INTO powers ( name, enquete, action, defence, other) VALUES
-    ('Chrétien pratiquant', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
-;
-
-INSERT INTO powers ( name, enquete, action, defence) VALUES
-    -- Suggested Jobs :
-    -- Possible Values Based on +1 :
-    -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
-    -- ('', -1,1,1), ('', 1,-1,1), ('', 1,1,-1),
-    -- ('', -1,2,0), ('', -1,0,2), ('', 2,-1,0), ('', 0,-1,2), ('', 2,0,-1), ('', 0,2,-1),
-    -- ('', 1,1,-1), => Glass canons
-    ('Policier', -1,2,1),
-    -- ('', 1,-1,1), => Maitres Enqueteurs
-    ('Conducteur de taxi', -1,2,1),
-    -- ('', -1,2,1), => Maitres Combatants
-    ('Militaire', -1,2,1),
-    ('Gardien de zoo', -1,2,1),
-    ('Policier', -1,2,1)
-    --Violent 
-    --Policier, Pompier, Ouvrier du bâtiment, Agent de sécurité, Garde du Corps, CRS, Garde, Touriste hystérique,  Voleur, Manutentionnaire,  Racaille, Éboueur, Voisin vigilant
-    --Étudiant (Sciences, Chimie), Professeur (EPS), 
-    --Enqueteurs
-    -- Étudiant (Arts, Lettres),  Professeur (Langues, Physique), Directeur, Bibliothécaire, : Mère de Famille, Gardien, Retraité curieux, Marchand ambulant, Boutiquier, SDF, : Agent de tourisme, Musicien de rue ,  Trader, Secrétaire,Voiturier, 
-    -- Volontaire venu de loin, Détective, Conducteur de bus/Taxi
-;
-
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Etreinte'),(SELECT ID FROM powers WHERE name = 'Vampire'))
 ;
 
-INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Chrétien pratiquant')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Acteur Amateur')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Collectionneur')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Fan de roman policiers')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Musicien')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Scout')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Rugbyman du dimanche')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Militaire réserviste')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Adepte d’arts martiaux')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Escrimeur')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Manifestant régulier')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Alcoolique')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Hooligan')),
-    ((SELECT ID FROM power_types WHERE name = 'Hobby'),(SELECT ID FROM powers WHERE name = 'Punk a chien'))
-;
-
-INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Militaire')),
-    ((SELECT ID FROM power_types WHERE name = 'Metier'),(SELECT ID FROM powers WHERE name = 'Policier'))
-;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Aliénation')),
@@ -625,49 +520,3 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ))
 ;
 
--- Add base powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
-    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Alcoolique'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Policier'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Mathews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Punk a chien'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Militaire'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Quiétus'
-    ))
-;
-
-INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id) VALUES 
-    (
-        (SELECT ID FROM workers WHERE lastname = 'Mathews'),
-        (SELECT ID FROM controler_worker JOIN workers ON workers.ID = controler_worker.worker_id WHERE workers.lastname = 'Mathews'),
-          0, 1
-    ),
-    (
-        (SELECT ID FROM workers WHERE lastname = 'Popescu'),
-        (SELECT ID FROM controler_worker JOIN workers ON workers.ID = controler_worker.worker_id WHERE workers.lastname = 'Popescu'),
-          0, 1
-    )
-;

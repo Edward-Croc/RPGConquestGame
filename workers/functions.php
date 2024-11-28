@@ -256,7 +256,7 @@ function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
 
 function moveWorker($pdo, $worker_id, $zone_id) {
     try{
-        // Insert new workers value into the database
+        // UPDATE workers value
         $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
         $stmt->bindParam(':id', $worker_id);
         $stmt->bindParam(':zone_id', $zone_id);
@@ -267,7 +267,7 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     // get worker action status for turn 
     $action = getWorkerActions($pdo, $worker_id);
     try{
-        // Insert new workers value into the database
+        // UPDATE worker_actions values
         $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id WHERE id = :id ");
         $stmt->bindParam(':zone_id', $zone_id);
         $stmt->bindParam(':id', $action['action']['id']);

@@ -63,8 +63,8 @@ function getDBConnection () {
 function tableExists($pdo, $tableName) {
     try{
         $stmt = $pdo->prepare("SELECT EXISTS (
-            SELECT 1 
-            FROM information_schema.tables 
+            SELECT 1
+            FROM information_schema.tables
             WHERE table_name = :tableName
         )");
         $stmt->execute([':tableName' => $tableName]);
@@ -86,7 +86,7 @@ function destroyAllTables($pdo) {
             $pdo->exec("DROP TABLE IF EXISTS $table CASCADE");
             echo "Table $table dropped successfully.<br \>";
         }
-        
+
         // Success message
         echo "All tables in database have been destroyed successfully.<br />";
     } catch (PDOException $e) {
@@ -115,7 +115,7 @@ function gameReady() {
             // Check if table exists
             $tableName = 'players';
             $exists = tableExists($pdo, $tableName);
-    
+
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
@@ -133,7 +133,7 @@ function gameReady() {
                 echo 'END <br />';
 
 
-                $sqlFile =  $path.'/var/setupVampire1966.sql';
+                $sqlFile =  $path.'/var/setupVampire1966_base.sql';
                 echo "Loading $sqlFile ...<br />";
                 if (file_exists($sqlFile)) {
                     echo 'Start <br />';
@@ -143,6 +143,126 @@ function gameReady() {
                     $pdo->exec($sqlQueries);
                     echo "SQL file executed successfully.<br />";
                 }
+
+                $sqlFile =  $path.'/var/setupVampire1966_hobbys.sql';
+                echo "Loading $sqlFile ...<br />";
+                if (file_exists($sqlFile)) {
+                    echo 'Start <br />';
+                    // Read SQL file
+                    $sqlQueries = file_get_contents($sqlFile);
+                    // Execute SQL queries
+                    $pdo->exec($sqlQueries);
+                    echo "SQL file executed successfully.<br />";
+                    try{
+                        // Get all popwers with no link_power_type
+                        $sql = "SELECT id FROM power_types WHERE name = 'Hobby'";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute();
+                    } catch (PDOException $e) {
+                        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                        return NULL;
+                    }
+                    // Fetch the results
+                    $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
+                    try{
+                        // Get all popwers with no link_power_type
+                        $sql = "SELECT id FROM powers WHERE id NOT IN
+                            ( SELECT power_id FROM link_power_type )";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute();
+                    } catch (PDOException $e) {
+                        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                        return NULL;
+                    }
+                    // Fetch the results
+                    $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        // Get all popwers with no link_power_type
+                        $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
+                        $firstIter = True;
+                        foreach ($powers as $power){
+                            $sql .= sprintf(
+                                "%s(%s,%s)",
+                                $firstIter ? '' : ',',
+                                $power['id'],
+                                $power_types[0]['id']
+                            );
+                            $firstIter = FALSE;
+                        }
+                        try{
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute();
+                        } catch (PDOException $e) {
+                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                            return NULL;
+                        }
+                    echo "SQL INSERT link_power_type executed successfully.<br />";
+                }
+
+                $sqlFile =  $path.'/var/setupVampire1966_jobs.sql';
+                echo "Loading $sqlFile ...<br />";
+                if (file_exists($sqlFile)) {
+                    echo 'Start <br />';
+                    // Read SQL file
+                    $sqlQueries = file_get_contents($sqlFile);
+                    // Execute SQL queries
+                    $pdo->exec($sqlQueries);
+                    echo "SQL file executed successfully.<br />";
+                    try{
+                        // Get all popwers with no link_power_type
+                        $sql = "SELECT id FROM power_types WHERE name = 'Metier'";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute();
+                    } catch (PDOException $e) {
+                        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                        return NULL;
+                    }
+                    // Fetch the results
+                    $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
+                    try{
+                        // Get all popwers with no link_power_type
+                        $sql = "SELECT id FROM powers WHERE id NOT IN
+                            ( SELECT power_id FROM link_power_type )";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute();
+                    } catch (PDOException $e) {
+                        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                        return NULL;
+                    }
+                    // Fetch the results
+                    $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        // Get all popwers with no link_power_type
+                        $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
+                        $firstIter = True;
+                        foreach ($powers as $power){
+                            $sql .= sprintf(
+                                "%s(%s,%s)",
+                                $firstIter ? '' : ',',
+                                $power['id'],
+                                $power_types[0]['id']
+                            );
+                            $firstIter = FALSE;
+                        }
+                        try{
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute();
+                        } catch (PDOException $e) {
+                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                            return NULL;
+                        }
+                    echo "SQL INSERT link_power_type executed successfully.<br />";
+                }
+
+                $sqlFile =  $path.'/var/setupVampire1966_advanced.sql';
+                echo "Loading $sqlFile ...<br />";
+                if (file_exists($sqlFile)) {
+                    echo 'Start <br />';
+                    // Read SQL file
+                    $sqlQueries = file_get_contents($sqlFile);
+                    // Execute SQL queries
+                    $pdo->exec($sqlQueries);
+                    echo "SQL file executed successfully.<br />";
+                }
+
                 echo 'END <br />';
             }
         } catch (PDOException $e) {
@@ -152,4 +272,4 @@ function gameReady() {
     }
     return $pdo;
 }
-    
+

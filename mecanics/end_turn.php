@@ -11,6 +11,7 @@ require_once '../base/base_php.php';
             $stmt->execute();
         }
 
+        // calculate the vals
         // do end_turn actions
         // generate JSon reports
         // create new turn lines
