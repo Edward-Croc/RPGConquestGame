@@ -41,7 +41,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
         foreach ($workersArray as $worker){
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
-            echo sprintf('<form action="/RPGConquestGame/workers/action.php" method="GET">
+            echo sprintf('<div %6$s ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>
                 <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le quartier %4$s.
                 <div id="info-%1$s" style="%5$s">
@@ -51,18 +51,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['lastname'],
                 $worker['zone_name'],
                 empty($worker_id) ? 'display: none;' : 'display: block;',
+                !empty($worker_id) ? 'class="flex"' : '',
             );
-            echo sprintf('<i> Capacité d\'enquete : %5$s. Capacité d\'attaque / défense : %6$s / %7$s <br /></i>
-                    <p>
-                        Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
-                        Ses disciplines dévéloppées sont: %4$s <br />
-                        %8$s
-                    </p>
-                </div>',
-                $worker['origin_name'],
-                empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
-                empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
-                empty($worker['powers']['Discipline']['texte']) ? '' : $worker['powers']['Discipline']['texte'],
+            echo sprintf('<i> Capacité d\'enquete : %1$s. Capacité d\'attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
                 $worker['total_enquete'],
                 $worker['total_action'],
                 $worker['total_defence'],
@@ -70,23 +61,45 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             );
 
             if ( !empty($worker_id) ) {
-                echo sprintf('
+
+                echo sprintf('<div>
+                    <h4>Historique : </h4>
                     <p>
+                        Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
+                        Ses disciplines dévéloppées sont: %4$s <br />
+                    </p></div>',
+                    $worker['origin_name'],
+                    empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
+                    empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
+                    empty($worker['powers']['Discipline']['texte']) ? '' : $worker['powers']['Discipline']['texte'],
+                );
+
+                echo sprintf('<div> <p>
                         <h4>Actions : </h4>
                         <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
                         <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s OU
                         <input type="submit" name="claim" value="Revendiquer le quartier au nom de" class="worker-action-btn"> %5$s
-                    </p>
+                    </p> </div>
                     ',
                     $worker['id'],
                     $showZoneSelect,
                     $enemyWorkersSelect,
                     true ? "Enqueter" : "Se cacher",
-                    $showControlerSelect
+                    $showControlerSelect,
                 );
             }
             echo ' </form>';
+
+            if ( !empty($worker_id) ) {
+                echo sprintf('
+                    <p>
+                        <h4>Rapport : </h4>
+                    </p>
+                    '
+                );
+            }
+            echo ' </div>';
         }
     }
 }
