@@ -12,6 +12,7 @@ require_once '../controlers/functions.php';
 require_once '../powers/functions.php';
 require_once '../workers/functions.php';
 require_once '../zones/functions.php';
+require_once '../mecanics/functions.php';
 
 function getConfig($pdo, $configName) {
     try{

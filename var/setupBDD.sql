@@ -24,7 +24,9 @@ VALUES
     ('DEBUG', 'true', 'Activates the Debugging texts'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
-    ('MAXTURNS', 6, 'Sets number of turns for game');
+    ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
+    ('MINROLL', 1, 'Minimum Roll for a worker'),
+    ('MAXROLL', 6, 'Maximum valeur Roll for a worker');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,

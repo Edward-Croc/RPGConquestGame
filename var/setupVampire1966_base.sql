@@ -4,8 +4,8 @@ UPDATE config SET
     value = 'Le 6 novembre 1966, l''Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d''œuvre. Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.'
     WHERE name = 'PRESENTATION';
 
-INSERT INTO config (name, value)
-VALUES ('basePowerNames', '''Célérité'', ''Endurance'', ''Puissance''');
+UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
+WHERE name = 'basePowerNames';
 
 INSERT INTO config (name, value) VALUES 
     ('first_come_nb_choices', '1'),

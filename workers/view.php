@@ -41,7 +41,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
         foreach ($workersArray as $worker){
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
-            echo sprintf('<div %6$s ><form action="/RPGConquestGame/workers/action.php" method="GET">
+            echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>
                 <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le quartier %4$s.
                 <div id="info-%1$s" style="%5$s">
@@ -51,7 +51,6 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['lastname'],
                 $worker['zone_name'],
                 empty($worker_id) ? 'display: none;' : 'display: block;',
-                !empty($worker_id) ? 'class="flex"' : '',
             );
             echo sprintf('<i> Capacité d\'enquete : %1$s. Capacité d\'attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
                 $worker['total_enquete'],
