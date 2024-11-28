@@ -32,7 +32,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', -1,2,1), => Maitres Combatants
     ('Militaire', -1,2,1),
     ('CRS', -1,2,1),
-    ('Gardien de zoo', -1,2,1),
+    ('Gardien de zoo', -1,2,1)
     --Violent 
     -- Garde du Corps, Garde, Manutentionnaire,  
     -- Professeur (EPS), 
