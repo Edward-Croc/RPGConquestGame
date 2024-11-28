@@ -36,6 +36,8 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
     if ( !empty($workersArray) ) {
         $showZoneSelect = showZoneSelect($zonesArray);
+        $controlers = getControlers($gameReady);
+        $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
         foreach ($workersArray as $worker){
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
@@ -67,14 +69,15 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             echo sprintf('<input type="hidden" name="worker_id" value=%1$s>
                     <input type="submit" name="move"  value="Demenager vers :">
                     %2$s<br />
-                    <input type="submit" name="activate" value="%4$s"><br />
-                    %3$s<input type="submit" name="attack" value="Attaquer"><br />
-                    <input type="submit" name="claim" value="Revendiquer le quartier"><br />
+                    <input type="submit" name="activate" value="%4$s"> OU 
+                    %3$s <input type="submit" name="attack" value="Attaquer"> OU
+                    <input type="submit" name="claim" value="Revendiquer le quartier au nom de "> %5$s<br />
                 ',
                 $worker['id'],
                 $showZoneSelect,
                 $enemyWorkersSelect,
-                true ? "Enqueter" : "Se cacher"
+                true ? "Enqueter" : "Se cacher",
+                $showControlerSelect
             );
             echo '</div> </form>';
         }

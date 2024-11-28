@@ -15,6 +15,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     $enemy_worker_id = NULL;
     if ( !empty($_GET['enemy_worker_id']) ) $enemy_worker_id = $_GET['enemy_worker_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "enemy_worker_id: ".var_export($enemy_worker_id, true)."<br /><br />";
+    $claim_controler_id = NULL;
+    if ( !empty($_GET['claim_controler_id']) ) $claim_controler_id = $_GET['claim_controler_id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "claim_controler_id: ".var_export($claim_controler_id, true)."<br /><br />";
 
     if (isset($_GET['creation'])){
         $worker_id = createWorker($gameReady, $_GET);
@@ -29,8 +32,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['activate'])){
         activateWorker($gameReady, $worker_id, 'activate');
     }
-    if (isset($_GET['claimZone'])){
-        activateWorker($gameReady, $worker_id, 'claimZone');
+    if (isset($_GET['claim'])){
+        activateWorker($gameReady, $worker_id, 'claim', $claim_controler_id);
     }
 }
 

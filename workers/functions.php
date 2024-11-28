@@ -299,7 +299,7 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
     return $worker_actions;
 }
 
-function activateWorker($pdo, $worker_id, $action, $enemy_worker_id = NULL) {
+function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
 
     $mecanics = getMecanics($pdo);
     $turn_number = $mecanics['turncounter'];
@@ -312,6 +312,24 @@ function activateWorker($pdo, $worker_id, $action, $enemy_worker_id = NULL) {
         case 'attack' :
             if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): attack <br/><br/>";
             $sql_worker_actions .= " action = '$action' ";
+            // Build attack JSON
+            $attackScope = '';
+            $attackID = null;
+            // Determine scope and ID
+            if ($extraVal === 'carnage' || $extraVal === 'allknown') {
+                $attackScope = $extraVal;
+            } elseif (preg_match('/^(network|worker)_(\d+)$/', $extraVal, $matches)) {
+                $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
+                $attackID = intval($matches[2]); // Extract ID as integer
+            } else {
+                throw new Exception('Invalid extraVal format');
+            }
+            // Create JSON table
+            $jsonOutput = json_encode([
+                'attackScope' => $attackScope,
+                'attackID' => $attackID
+            ]);
+            $sql_worker_actions .= ", action_params = '$jsonOutput'";
             break;
         case 'activate' :
             if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): activate <br/><br/>";
@@ -325,6 +343,12 @@ function activateWorker($pdo, $worker_id, $action, $enemy_worker_id = NULL) {
         case 'claim' :
             if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): claim <br/><br/>";
             $sql_worker_actions .= " action = '$action' ";
+            // Create JSON table
+            $jsonOutput = json_encode([
+                'claim_controler_id' => $extraVal
+            ]);
+            $sql_worker_actions .= ", action_params = '$jsonOutput'";
+            
             break;
     }
     try{

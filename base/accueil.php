@@ -23,15 +23,9 @@ if (count($controlers) > 1) {
         <h2>Factions</h2>
         <!-- Add content for factions here -->
         <form action="/RPGConquestGame/base/accueil.php" method="GET">
-        <select id='controlerSelect' name='controler_id'>
-            <option value=''>Select Controler</option>
             <?php
-            // Display select list of Controlers
-            foreach ($controlers as $controler) {
-                echo "<option value='" . $controler['id'] . "'>" . $controler['firstname'] . " " . $controler['lastname'] . "</option>";
-            }
+            echo showControlerSelect($controlers);
             ?>
-        </select>
         <input type="submit" name="chosir" value="Choisir" />
         </form>
 <?php 

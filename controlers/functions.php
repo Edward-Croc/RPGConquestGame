@@ -10,13 +10,16 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
             $sql .= "
                 INNER JOIN player_controler pc ON pc.controler_id = c.id
                 WHERE pc.player_id = '$player_id'";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute();
         }
         if ($controler_id !== NULL){
-            $stmt = $pdo->prepare($sql." WHERE c.id = :id");
-            $stmt->execute([':id' => $controler_id]);
+            $sql .= sprintf (
+                " %s c.id = '%s'",
+                $player_id !== NULL ? 'AND' : 'WHERE',
+                $controler_id
+            );
         }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $player_id failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -31,4 +34,31 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
     }
 
     return $controlersArray;
+}
+
+function showControlerSelect($controlers, $field_name = 'controler_id' ) {
+
+    if (empty($controlers)) return '';
+    $controlerOptions = '';
+    // Display select list of Controlers
+    foreach ( $controlers as $controler) {
+        $controlerOptions .= sprintf (
+            "<option value='%s'> %s %s </option>",
+            $controler['id'],
+            $controler['firstname'],
+            $controler['lastname']
+        );
+    }
+
+    $showControlerSelect = sprintf('
+        <select id=\'controlerSelect\' name=\'%1$s\'>
+            <option value=\'\'>Select Controler</option>
+            %2$s
+        </select>',
+        $field_name,
+        $controlerOptions
+    );
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControlerSelect: ".var_export($showControlerSelect, true)."<br /><br />";
+
+    return $showControlerSelect;
 }
