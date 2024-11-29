@@ -219,10 +219,14 @@ function investigateMecanic($pdo ) {
     $rapportArray = [];
 
     $txtArray = [];
-    $txtArray['passive'] = getConfig($pdo, 'txt_passive');
-    $txtArray['investigate'] = getConfig($pdo, 'txt_investigate');
-    $txtArray['attack'] = getConfig($pdo, 'txt_attack');
-    $txtArray['claim'] = getConfig($pdo, 'txt_claim');
+    $txtArray['passive']['ps'] = getConfig($pdo, 'txt_ps_passive');
+    $txtArray['investigate']['ps'] = getConfig($pdo, 'txt_ps_investigate');
+    $txtArray['attack']['ps'] = getConfig($pdo, 'txt_ps_attack');
+    $txtArray['claim']['ps'] = getConfig($pdo, 'txt_ps_claim');
+    $txtArray['passive']['inf'] = getConfig($pdo, 'txt_inf_passive');
+    $txtArray['investigate']['inf'] = getConfig($pdo, 'txt_inf_investigate');
+    $txtArray['attack']['inf'] = getConfig($pdo, 'txt_inf_attack');
+    $txtArray['claim']['inf'] = getConfig($pdo, 'txt_inf_claim');
 
     foreach ($investigations as $row) {
         // Build Rapport : 
@@ -230,9 +234,9 @@ function investigateMecanic($pdo ) {
             $rapportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
         // Diff 0
         $rapport = sprintf(
-            "<p> J'ai trouver %s (%s) %s qui n'est pas un agent à nous c'est un %s et un %s. ", 
+            "<p> J'ai trouvé %s (%s) %s qui n'est pas un agent à nous c'est un %s et un %s. ", 
             $row['found_name'], $row['found_id'],
-            empty($row['found_transformation']) ? '' : (cleanAndSplitString($row['found_transformation'])[0]),
+            empty($row['found_transformation']) ? '' : ' un ' (cleanAndSplitString($row['found_transformation'])[0]),
             cleanAndSplitString($row['found_metier'])[0], cleanAndSplitString($row['found_hobby'])[0]
         );
         // Diff 1
@@ -242,17 +246,17 @@ function investigateMecanic($pdo ) {
         }*/
         $discipline = cleanAndSplitString($row['found_discipline']);
         $rapport .= sprintf(
-            "Il démontre une légere maitrise de la dicipline %s alors qu'il %s%s",
+            "Il démontre une légère maitrise de la discipline %s alors qu'il %s%s",
             $discipline[0],
-            $txtArray[$row['found_action']],
+            $txtArray[$row['found_action']]['ps'],
             empty($text_action_params) ? '. ' : ' '
         );
         // Diff 2
         $discipline_2 = '';
         if (! empty($discipline[1]) ) 
-            $discipline_2 = sprintf("Et une légere maitrise de la dicipline %s.", $discipline[1])   ;
+            $discipline_2 = sprintf("Et une maitrise de la discipline %s.", $discipline[1])   ;
         // $rapport .= "Et une légere maitrise de la dicipline {$row['found_discipline_2']}.";
-        $rapport .= sprintf("%s Il fait parti du réseau %s. ", $discipline_2 , $row['found_controler_id'] );
+        $rapport .= sprintf("%s Il fait partie du réseau %s. ", $discipline_2 , $row['found_controler_id'] );
         // Diff 3
         $rapport .= sprintf("Ce réseau répond à %s. ", $row['found_controler_name']);
         $rapport .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";

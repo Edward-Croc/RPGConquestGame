@@ -35,10 +35,14 @@ VALUES
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
-    ('txt_passive', 'se cache', 'Texte for passive action'),
-    ('txt_investigate', 'enquete', 'Texte for investigate action'),
-    ('txt_attack', 'attaque', 'Texte for attack action'),
-    ('txt_claim', 'revendique', 'Texte for claim action');
+    ('txt_ps_passive', 'se cache', 'Texte for passive action'),
+    ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
+    ('txt_ps_attack', 'attaque', 'Texte for attack action'),
+    ('txt_ps_claim', 'revendique le quartier', 'Texte for claim action'),
+    ('txt_inf_passive', 'se cacher', 'Texte for passive action'),
+    ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
+    ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
+    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
