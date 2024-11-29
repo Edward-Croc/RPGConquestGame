@@ -111,9 +111,9 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Eglise'),
         (SELECT ID FROM factions WHERE name = 'Humain')
     ),
-    ('Dark', 'Dimonio', 1, TRUE,
+    ('Sir Dimonio', 'Ricci', 1, TRUE,
         (SELECT ID FROM factions WHERE name = 'Démon'),
-        (SELECT ID FROM factions WHERE name = 'Lassombra')
+        (SELECT ID FROM factions WHERE name = 'Lasombra')
     );
 
 INSERT INTO player_controler (controler_id, player_id)
@@ -155,20 +155,21 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'player9'),
-        (SELECT ID FROM controlers WHERE lastname in 'Der Swartz')
+        (SELECT ID FROM controlers WHERE lastname in ('Sgorina', 'Der Swartz'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player10'),
-        (SELECT ID FROM controlers WHERE lastname in 'Dimonio')
+        (SELECT ID FROM controlers WHERE lastname = 'Ricci')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player11'),
-        (SELECT ID FROM controlers WHERE lastname in 'Lorenzo')
-    )
+        (SELECT ID FROM controlers WHERE lastname = 'Lorenzo')
+    ),
     (
         (SELECT ID FROM players WHERE username = 'player12'),
-        (SELECT ID FROM controlers WHERE lastname in 'Ben Hasan')
-    );
+        (SELECT ID FROM controlers WHERE lastname = 'Ben Hasan')
+    )
+;
 
 INSERT INTO zones (name, description) VALUES
 ('Stazione ferroviaria norte', 'Au nord de Florence se situe Peretola, un village qui c’est fait absorbée pour devenir le quartier des habitations bas de gamme due à la présence du petit aéroport de Florence et des quelques avions qui passe au dessus des habitation.'),
@@ -370,10 +371,10 @@ INSERT INTO power_types (name) VALUES
 
 -- Table of powers
 --
-INSERT INTO powers ( name, enquete, action, defence) VALUES 
-    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2", "turn": "2"}, }'),
-    ('Szlatcha', -1,2,2, '{"limit_recrutment": {"age": "2", "faction: "Tzimisce"}}'),
-    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "faction: "Giovanni"}}')
+INSERT INTO powers ( name, enquete, action, defence, other) VALUES 
+    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2", "turn": "2"} }'),
+    ('Szlatcha', -1,2,2, '{"limit_recrutment": {"age": "2", "controler_power": "Vicissitude"}}'),
+    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "controler_power": "Nécromancie"}}')
     ;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
@@ -586,18 +587,6 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Puissance'
     )),
     ((SELECT ID FROM factions WHERE name = 'Lasombra'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
-    )),
-    ((SELECT ID FROM factions WHERE name = 'Démon'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Obténébration'
-    )),
-    ((SELECT ID FROM factions WHERE name = 'Démon'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
-    )),
-    ((SELECT ID FROM factions WHERE name = 'Eglise'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Domination'
     )),
