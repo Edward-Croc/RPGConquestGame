@@ -311,9 +311,9 @@ INSERT INTO power_types (name) VALUES
 -- Table of powers
 --
 INSERT INTO powers ( name, enquete, action, defence) VALUES 
-    ('Vampire nouveau née', 1,1,1),
-    ('Szlatcha', -1,2,2),
-    ('Fantome', 2,-2,2)
+    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2"}}'),
+    ('Szlatcha', -1,2,2, '{"limit_recrutment": {"age": "2", "faction: "Tzimisce"}}'),
+    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "power: "Nécromancie"}}')
     ;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
