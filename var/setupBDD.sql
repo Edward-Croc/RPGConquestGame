@@ -34,8 +34,7 @@ VALUES
     ('passiveActionActions', '''passive'',''investigate''', 'Liste of passive investigation actions'),
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active investigation actions'),
-    ('ACTIVEACTIONS', 3, 'Liste of active actions');
+    ('activeDefenceActions', '', 'Liste of active investigation actions');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
