@@ -52,7 +52,6 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
 
     $showControlerSelect = sprintf('
         <select id=\'controlerSelect\' name=\'%1$s\'>
-            <option value=\'\'>Select Controler</option>
             %2$s
         </select>',
         $field_name,

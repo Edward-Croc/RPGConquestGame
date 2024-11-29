@@ -306,11 +306,11 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
 
     // get worker action status for turn 
     $worker_actions = getWorkerActions($pdo, $worker_id);
-    if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
     $sql_worker_actions = "UPDATE worker_actions SET ";
     switch($action) {
         case 'attack' :
-            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): attack <br/><br/>";
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): attack <br/><br/>";
             $sql_worker_actions .= " action = '$action' ";
             // Build attack JSON
             $attackScope = '';
@@ -332,7 +332,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             $sql_worker_actions .= ", action_params = '$jsonOutput'";
             break;
         case 'activate' :
-            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): activate <br/><br/>";
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): activate <br/><br/>";
             // if worker is other than passive set passive
             $new_action = 'passive';
             if ( $worker_actions[0]['action'] == 'passive' ) { // if worker is passive set investigating
@@ -341,7 +341,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             $sql_worker_actions .= " action = '$new_action' ";
             break;
         case 'claim' :
-            if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): claim <br/><br/>";
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): claim <br/><br/>";
             $sql_worker_actions .= " action = '$action' ";
             // Create JSON table
             $jsonOutput = json_encode([
@@ -353,7 +353,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     }
     try{
         $sql_worker_actions .= " WHERE id = :id AND turn_number = :turn_number ";
-        if ($_SESSION['DEBUG'] == false) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
+        if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
         // Insert new workers value into the database
         $stmt = $pdo->prepare($sql_worker_actions);
         $stmt->bindParam(':id', $worker_actions[0]['id']);

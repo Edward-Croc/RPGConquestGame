@@ -306,11 +306,15 @@ INSERT INTO power_types (name) VALUES
     ('Hobby'),
     ('Metier'),
     ('Discipline'),
-    ('Etreinte');
+    ('Transformation');
 
 -- Table of powers
 --
-INSERT INTO powers ( name, enquete, action, defence) VALUES ('Vampire', 1,1,1);
+INSERT INTO powers ( name, enquete, action, defence) VALUES 
+    ('Vampire nouveau née', 1,1,1),
+    ('Szlatcha', -1,2,2),
+    ('Fantome', 2,-2,2)
+    ;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Suggested Disciplines
@@ -348,7 +352,9 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Etreinte'),(SELECT ID FROM powers WHERE name = 'Vampire'))
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau née')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome'))
 ;
 
 

@@ -27,7 +27,7 @@ require_once '../base/base_html.php';
                 // violence
             // generate JSon reports
             $turn = $mecanics['turncounter'] + 1;
-            $turnLinesResult = createNewTurnLines($gameReady, $turn);
+            /* $turnLinesResult = createNewTurnLines($gameReady, $turn);
             if ($valsResult) {
                 try{
                     // SQL query to select username from the players table
@@ -40,7 +40,7 @@ require_once '../base/base_html.php';
                 }
                 // Fetch the result
                 $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            }
+            }*/ 
         }
 
 

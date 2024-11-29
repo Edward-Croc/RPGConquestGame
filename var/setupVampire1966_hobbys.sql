@@ -21,7 +21,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Peintre copiste', 1,0,0),
     ('Aristocrate', 1,0,0),
     ('Membre du club de crochet', 1,0,0),
-    ('Possède un chien', 1,0,0),
+    ('Propriétaire de Lévrier Italien', 1,0,0),
     ('Voisin vigilant', 1,0,0),
     -- ('', 0,1,1), => Combatants
     ('Rugbyman du dimanche', 0,1,1),

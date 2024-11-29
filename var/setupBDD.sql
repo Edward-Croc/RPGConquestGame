@@ -21,7 +21,7 @@ CREATE TABLE config (
 
 INSERT INTO config (name, value, description)
 VALUES
-    ('DEBUG', 'true', 'Activates the Debugging texts'),
+    ('DEBUG', 'false', 'Activates the Debugging texts'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
@@ -34,7 +34,11 @@ VALUES
     ('passiveActionActions', '''passive'',''investigate''', 'Liste of passive investigation actions'),
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active investigation actions');
+    ('activeDefenceActions', '', 'Liste of active defense actions'),
+    ('txt_passive', 'se cache', 'Texte for passive action'),
+    ('txt_investigate', 'enquete', 'Texte for investigate action'),
+    ('txt_attack', 'attaque', 'Texte for attack action'),
+    ('txt_claim', 'revendique', 'Texte for claim action');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
