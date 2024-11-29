@@ -18,7 +18,14 @@ INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player2', 'two', false),
     ('player3', 'three', false),
     ('player4', 'four', false),
-    ('player5', 'five', false)
+    ('player5', 'five', false),
+    ('player6', 'six', false),
+    ('player7', 'seven', false),
+    ('player8', 'eight', false),
+    ('player9', 'nine', false),
+    ('player10', 'ten', false),
+    ('player11', 'eleven', false),
+    ('player12', 'twelve', false)
 ;
 
 INSERT INTO factions (name) VALUES
@@ -31,7 +38,7 @@ INSERT INTO factions (name) VALUES
     ('Nosfératu'),
     ('Giovanni'),
     ('Assamites'),
-    ('Discple'),
+    ('Disciple'),
     ('Tzimisce'),
     ('Lasombra'),
     ('Humain'),
@@ -46,17 +53,17 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
     ),
     (
-        --'Angelo', 'Ricciotti',
-        'Antonio', 'Mazzino',
+        --'Sir Angelo', 'Ricciotti',
+        'Sir Antonio', 'Mazzino',
         1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
-    ('Elisa', 'Bonapart', 1, FALSE,
+    ('Dame Elisa', 'Bonapart', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Toréador' ),
         (SELECT ID FROM factions WHERE name = 'Toréador' )
     ),
-    ('Gaetano', 'Trentini', 1, FALSE,
+    ('Sir Gaetano', 'Trentini', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Tremere' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
@@ -69,27 +76,44 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
     ),
     (
-        'Ana', 'Walkil',
-        -- 'Dame', 'Vizirof',
+        'Dame Ana', 'Walkil',
+        -- 'Sir Alban', 'Vizirof',
         1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
-    ('Adamo', 'de Toscane', 1, FALSE,
+    ('Sir Adamo', 'de Toscane', 1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Nosfératu' ),
         (SELECT ID FROM factions WHERE name = 'Nosfératu' )
     ),
-    ('Der', 'Swartz', 1, FALSE,
+    ('Sir Wilhem', 'Der Swartz', -- 'Dame Ana', 'Sgorina',
+        /*Wilhem est né dans une famille allemnde en 1923 sa famille était modeste
+        il a vecu une vie normale jusqu'en 1934. Date ou ses parents quittèrent l'allemagne pour le nord de l'italie
+        afin de vivre dans un petit village, appele SONDRIO où le jeune Wilhem apprit l'italien
+        a l'age de 18 ans wilhem s'engagea comme garde forestier sa famille vivant a l'écart de la guerre
+        il rejoint contre l'accord de ses parents l'armee allemande ou il mena quelque "batailles" ou son aspect solitaire
+        ne lui fit que tres peu d'amis.
+        il se fit etreindre en1953 par un Gangrel de gene 7 qui voulait en faire un leader gangrel..
+        A l'heure actuelle son pere ne le suit plus mais un mentor l'a pris en charge et le "guide"
+        que de maniere sporadiqeu. Wilhem ne connait pas son Sire .
+        Il a recupere par la force un reseau de boites de nuits appartenant a des brujah antitribus.
+        Ce qui lui a valu du prestige en france
+        Il a recemment commis l'amaranthe en hongrie sur un regent tremere d'une fondation dirigée par un baali */
+    1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Tzimisce' ),
         (SELECT ID FROM factions WHERE name = 'Gangrel' )
     ),
+    ('Sir Hassan', 'Ben Hasan', 1, TRUE,
+        (SELECT ID FROM factions WHERE name = 'Disciple' ),
+        (SELECT ID FROM factions WHERE name = 'Disciple' )
+    ),
     ('Frère', 'Lorenzo', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Humain' ),
-        (SELECT ID FROM factions WHERE name = 'Eglise' )
+        (SELECT ID FROM factions WHERE name = 'Eglise'),
+        (SELECT ID FROM factions WHERE name = 'Humain')
     ),
     ('Dark', 'Dimonio', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Humain' ),
-        (SELECT ID FROM factions WHERE name = 'Démon' )
+        (SELECT ID FROM factions WHERE name = 'Démon'),
+        (SELECT ID FROM factions WHERE name = 'Lassombra')
     );
 
 INSERT INTO player_controler (controler_id, player_id)
@@ -108,6 +132,42 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player3'),
         (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof'))
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player4'),
+        (SELECT ID FROM controlers WHERE lastname = 'Bonapart')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player5'),
+        (SELECT ID FROM controlers WHERE lastname = 'Trentini')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player6'),
+        (SELECT ID FROM controlers WHERE lastname = 'Franco')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player7'),
+        (SELECT ID FROM controlers WHERE lastname = 'da Firenze')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player8'),
+        (SELECT ID FROM controlers WHERE lastname = 'de Toscane')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player9'),
+        (SELECT ID FROM controlers WHERE lastname in 'Der Swartz')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player10'),
+        (SELECT ID FROM controlers WHERE lastname in 'Dimonio')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player11'),
+        (SELECT ID FROM controlers WHERE lastname in 'Lorenzo')
+    )
+    (
+        (SELECT ID FROM players WHERE username = 'player12'),
+        (SELECT ID FROM controlers WHERE lastname in 'Ben Hasan')
     );
 
 INSERT INTO zones (name, description) VALUES
@@ -311,9 +371,9 @@ INSERT INTO power_types (name) VALUES
 -- Table of powers
 --
 INSERT INTO powers ( name, enquete, action, defence) VALUES 
-    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2"}}'),
+    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2", "turn": "2"}, }'),
     ('Szlatcha', -1,2,2, '{"limit_recrutment": {"age": "2", "faction: "Tzimisce"}}'),
-    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "power: "Nécromancie"}}')
+    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "faction: "Giovanni"}}')
     ;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
@@ -348,7 +408,10 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Quiétus', 2,1,-1),
     ('Occultation', 2,1,-1),
     -- ('', 2,-1,1),
-    ('Augure', 2,-1,1)
+    ('Augure', 2,-1,1),
+    -- Pouvoirs mortels et démons
+    ('Vraie Foi', -1, 2,3),
+    ('Sentir le mal', 3, 1,1)
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
@@ -375,7 +438,9 @@ INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Thaumaturgie')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Quiétus')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Nécromancie')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Augure'))
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Augure')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Vraie Foi')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Sentir le mal'))
 ;
 
 -- Add base powers to the factions :
@@ -488,15 +553,15 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Quiétus'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+    ((SELECT ID FROM factions WHERE name = 'Disciple'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Serpentis'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+    ((SELECT ID FROM factions WHERE name = 'Disciple'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Endurance'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Discple'), (
+    ((SELECT ID FROM factions WHERE name = 'Disciple'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Présence'
     )),
@@ -523,6 +588,38 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM factions WHERE name = 'Lasombra'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
         WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Démon'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Obténébration'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Démon'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Eglise'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Démon'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Obténébration'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Démon'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Puissance'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Démon'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Domination'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Eglise'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Vraie Foi'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Eglise'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Sentir le mal'
     ))
 ;
 

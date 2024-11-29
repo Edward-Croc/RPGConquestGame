@@ -12,7 +12,6 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- ('', 1,0,0), => Enqueteurs
     ('Plombier', 1,0,0),
     ('Electricien', 1,0,0),
-    ('Volontaire venu de loin', 1,0,0),
     ('Étudiant (Arts, Lettres)', 1,0,0),
     ('Marchand ambulant', 1,0,0),
     ('Retraité curieux', 1,0,0),
@@ -39,4 +38,9 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Enqueteurs
     -- Professeur (Langues, Physique), Directeur, Bibliothécaire, Mère de Famille, Gardien, Boutiquier, Agent de tourisme, Musicien de rue ,  Trader, Secrétaire,Voiturier, 
     -- Détective
+;
+
+INSERT INTO powers ( name, enquete, action, defence, other) VALUES
+    ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": "go_traitor", "controler_lastname": "da Firenze"}}'),
+    ('Pretre', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
 ;

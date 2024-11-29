@@ -19,12 +19,13 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
-            $investigateResult = investigateMecanic($gameReady);
+            // Controlled by IA 
 
-                // enquete
-                // attack
-                // claim
-                // violence
+            // enquete
+            $investigateResult = investigateMecanic($gameReady);
+            // attack
+            // claim
+            // violence
             // generate JSon reports
             $turn = $mecanics['turncounter'] + 1;
             /* $turnLinesResult = createNewTurnLines($gameReady, $turn);
