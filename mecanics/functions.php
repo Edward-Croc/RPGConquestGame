@@ -240,16 +240,19 @@ function investigateMecanic($pdo ) {
         /*if ( !empty($row['found_action_params']) ) {
             $text_action_params = 'tada'; 
         }*/
-        $discipline = cleanAndSplitString($row['found_discipline'])[0];
+        $discipline = cleanAndSplitString($row['found_discipline']);
         $rapport .= sprintf(
             "Il démontre une légere maitrise de la dicipline %s alors qu'il %s%s",
-            $discipline,
+            $discipline[0],
             $txtArray[$row['found_action']],
             empty($text_action_params) ? '. ' : ' '
         );
         // Diff 2
+        $discipline_2 = '';
+        if (! empty($discipline[1]) ) 
+            $discipline_2 = sprintf("Et une légere maitrise de la dicipline %s.", $discipline[1])   ;
         // $rapport .= "Et une légere maitrise de la dicipline {$row['found_discipline_2']}.";
-        $rapport .= sprintf("Il fait parti du réseau %s. ", $row['found_controler_id'] );
+        $rapport .= sprintf("%s Il fait parti du réseau %s. ", $discipline_2 , $row['found_controler_id'] );
         // Diff 3
         $rapport .= sprintf("Ce réseau répond à %s. ", $row['found_controler_name']);
         $rapport .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
