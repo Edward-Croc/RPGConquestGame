@@ -1,6 +1,6 @@
 <?php
+$pageName = 'End Turn';
 
-// require_once '../BDD/db_connector.php';
 require_once '../base/base_php.php';
 
 require_once '../base/base_html.php';
@@ -19,10 +19,12 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
+            $investigateResult = investigateMecanic($gameReady);
+
                 // enquete
                 // attack
                 // claim
-                //
+                // violence
             // generate JSon reports
             $turn = $mecanics['turncounter'] + 1;
             $turnLinesResult = createNewTurnLines($gameReady, $turn);

@@ -115,3 +115,63 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
 }
+
+function getSearcherComparisons($pdo, $threshold = 0, $searcher_id = NULL, $turn_number = NULL ) {
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+    }
+    echo "turn_number : $turn_number <br>";
+    // Define the SQL query
+    $sql = "
+        WITH searchers AS (
+            SELECT 
+                wa.worker_id AS searcher_id,
+                wa.enquete_val AS searcher_enquete_val,
+                wa.zone_id
+            FROM 
+                worker_actions wa
+            WHERE 
+                wa.action IN ('passive', 'investigate')
+                AND turn_number = :turn_number
+        )
+        SELECT 
+            s.searcher_id,
+            s.searcher_enquete_val,
+            wa.worker_id AS found_id,
+            wa.enquete_val AS found_enquete_val,
+            (s.searcher_enquete_val - wa.enquete_val) AS enquete_difference,
+        FROM 
+            searchers s
+        JOIN 
+            worker_actions wa ON 
+                s.zone_id = wa.zone_id AND turn_number = :turn_number
+        WHERE 
+            s.searcher_id != wa.worker_id
+            AND (s.searcher_enquete_val - wa.enquete_val) >= :threshold
+    ";
+    if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
+
+    // Prepare and execute the statement
+    $stmt = $pdo->prepare($sql);
+    if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
+    $stmt->bindParam(':turn_number', $turn_number);
+    $stmt->bindParam(':threshold', $threshold);
+    $stmt->execute();
+
+    // Fetch and return the results
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function investigateMecanic($pdo ) {
+    echo '<div> investigateMecanic :';
+    $investigations = getSearcherComparisons($pdo);
+    foreach ($investigations as $row) {
+        echo  '<p>';
+        echo "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
+        echo "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
+        echo "Difference: {$row['enquete_difference']}\n";
+        echo  '</p>';
+    }
+    echo '<div>';
+}
