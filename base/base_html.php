@@ -37,15 +37,16 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <?php
                 echo'<div>';
                 if ($_SESSION['is_privileged'] == true){
-                    if ($mecanics['gamestat'] == 0) {
-                        echo '<button id="endTurnButton" class="topbar-btn">Start Game</button>';
+                    /*if ($mecanics['gamestat'] == 0) {
+                       echo '<button id="endTurnButton" class="topbar-btn">Start Game</button>';
                     }else{
                         echo '<button id="endTurnButton" class="topbar-btn">End Turn</button>';
-                    }
+                    }*/
+                    echo sprintf ('<a href="/RPGConquestGame/mecanics/end_turn.php" class="topbar-btn">%s</a>', ($mecanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
                     if ($pageName !== 'admin') {
                         echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
                     }
-                }
+                    }
                 if ($pageName !== 'accueil') {
                     echo '<a href="/RPGConquestGame/index.php" class="topbar-btn">Retour</a>';
                 }

@@ -3,6 +3,8 @@
 // require_once '../BDD/db_connector.php';
 require_once '../base/base_php.php';
 
+require_once '../base/base_html.php';
+
         if ($mecanics['gamestat'] == 0) {
             try{
                 // SQL query to update gamestat

@@ -25,8 +25,17 @@ VALUES
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
-    ('MINROLL', 1, 'Minimum Roll for a worker'),
-    ('MAXROLL', 6, 'Maximum valeur Roll for a worker');
+    ('MINROLL', 1, 'Minimum Roll for an active worker'),
+    ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
+    ('PASSIVEVAL', 3, 'Value for passive actions'),
+    -- passive, investigate, attack, claim
+    ('passiveInvestigateActions', '''passive'',''attack''', 'Liste of passive investigation actions'),
+    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of passive investigation actions'),
+    ('passiveActionActions', '''passive'',''investigate''', 'Liste of passive investigation actions'),
+    ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
+    ('activeDefenceActions', '', 'Liste of active investigation actions'),
+    ('ACTIVEACTIONS', 3, 'Liste of active actions');
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
