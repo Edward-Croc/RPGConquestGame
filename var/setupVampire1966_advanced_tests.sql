@@ -64,7 +64,7 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Vampire nouveau née'
+        WHERE powers.name = 'Vampire nouveau né'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
@@ -89,7 +89,7 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Vampire nouveau née'
+        WHERE powers.name = 'Vampire nouveau né'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Lombardi'), (
         SELECT link_power_type.ID FROM link_power_type
@@ -114,6 +114,6 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Lombardi'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Vampire nouveau née'
+        WHERE powers.name = 'Vampire nouveau né'
     ))
 ;
