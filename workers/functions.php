@@ -297,6 +297,7 @@ function moveWorker($pdo, $worker_id, $zone_id) {
         $currentReport = array();
     }
     $zone_name = getZoneName($pdo, $zone_id);
+    if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
     $currentReport['life_report'] .= "J'ai déménager vers $zone_name. ";
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);

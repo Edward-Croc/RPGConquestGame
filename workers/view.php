@@ -66,28 +66,28 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
             if ( !empty($worker_id) ) {
 
-                echo sprintf('<div>
+                echo sprintf('<div class="history">
                     <h3>Historique : </h3>
                     <p>
                         Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
-                        Ses disciplines dévéloppées sont: %4$s <br />
-                        Il as été transformer en: %5$s <br />
+                        %4$s %5$s
                     </p></div>',
                     $worker['origin_name'],
                     empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                     empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
-                    empty($worker['powers']['Discipline']['texte']) ? '' : $worker['powers']['Discipline']['texte'],
-                    empty($worker['powers']['Transformation']['texte']) ? '' : $worker['powers']['Transformation']['texte'],
+                    empty($worker['powers']['Discipline']['texte']) ? '' : 
+                        sprintf("Ses disciplines dévéloppées sont: %s <br />",$worker['powers']['Discipline']['texte']),
+                    empty($worker['powers']['Transformation']['texte']) ? '' :
+                        sprintf("Il as été transformer en: %s <br />", $worker['powers']['Transformation']['texte']),
                 );
-
-                echo sprintf('<div> <p>
-                        <h3>Actions : </h3>
+                echo sprintf('<div class="actions">
+                        <h3>Actions : </h3> <p>
                         <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
                         <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s <br />
                         <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
                         <input type="submit" name="claim" value="Revendiquer le quartier au nom de " class="worker-action-btn">  %5$s
-                    </p> </div>
+                    </p>
                     ',
                     $worker['id'],
                     $showZoneSelect,
@@ -95,18 +95,19 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     true ? "Enqueter" : "Se cacher",
                     $showControlerSelect,
                 );
+                // TODO : ADD powers on age 
+                // $powerDisciplineArray = getBasePowers($gameReady,'3', $controler_id);
+                // If AGE > 0 Should Have 1 discipline
+                // echo showDisciplineSelect($powerDisciplineArray);
+                // If Age > 2 Should Ahev 2 discipline
+                // Check Transformation Conditions 
             }
-            echo ' </form>';
+            echo ' </div> </form>';
 
             if ( !empty($worker_id) ) {
-                echo sprintf('
-                    <p>
-                        <h3>Rapport : </h3>
-                    </p>
-                    '
-                );
+                echo sprintf('<div class="report"> <h3> Rapport : </h3>');
                 foreach ( $worker['actions'] as $turn_number => $action ){
-                    echo "<div> <h4> Semaine $turn_number </h4> ";
+                    echo sprintf('<div class="report week"> <h4> Semaine %s </h4>', $turn_number);
                     if ($_SESSION['DEBUG_REPORT'] == true) "";
                         echo "<p> action: ".var_export($action, true)."</p>";
                     if ($action['report'] != '{}') {
@@ -122,6 +123,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     }
                     echo "</div>";
                 }
+                echo ' </div>';
             }
             echo ' </div>';
         }
