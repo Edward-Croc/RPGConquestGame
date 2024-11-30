@@ -41,12 +41,12 @@ VALUES
     ('DIFF1', 1, 'Value for Level 1 information'),
     ('DIFF2', 2, 'Value for Level 2 information'),
     ('DIFF3', 3, 'Value for Level 3 information'),
-    -- passive, investigate, attack, claim
-    ('passiveInvestigateActions', '''passive'',''attack''', 'Liste of passive investigation actions'),
+    -- passive, investigate, attack, claim, captured, dead
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of passive investigation actions'),
     ('passiveActionActions', '''passive'',''investigate''', 'Liste of passive investigation actions'),
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Texte for passive action'),
@@ -133,6 +133,8 @@ CREATE TABLE workers (
     lastname text NOT NULL,
     origin_id INT NOT NULL,
     zone_id INT NOT NULL,
+    is_alive BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID)
 );
@@ -205,4 +207,19 @@ CREATE TABLE worker_actions (
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
     FOREIGN KEY (controler_id) REFERENCES controlers (ID)
+);
+
+CREATE TABLE controlers_know_enemies (
+    id SERIAL PRIMARY KEY,
+    controler_id INT NOT NULL, -- Controler A
+    discovered_worker_id INT NOT NULL, -- ID of the discovered worker
+    discovered_controler_id INT, -- Optional ID of their controler
+    discovered_controler_name TEXT, -- Optional name of their controler
+    zone_id INT NOT NULL, -- Zone of discovery
+    discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    UNIQUE (controler_id, discovered_worker_id), -- Unicity constraint on controler/worker combo
+    FOREIGN KEY (controler_id) REFERENCES controlers (ID), -- Link to controlers table
+    FOREIGN KEY (discovered_worker_id) REFERENCES workers (ID), -- Link to workers table
+    FOREIGN KEY (discovered_controler_id) REFERENCES controlers (ID), -- Link to controlers table
+    FOREIGN KEY (zone_id) REFERENCES zones (ID) -- Link to zones table
 );

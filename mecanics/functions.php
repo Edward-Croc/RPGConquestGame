@@ -106,6 +106,33 @@ function createNewTurnLines($pdo, $turn_number){
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
     }
+    $sqlSetDead = "
+        UPDATE worker_actions SET action = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
+            SELECT w.id FROM workers w WHERE is_alive = false
+        )
+    ";
+    try {
+        $stmtSetDead = $pdo->prepare($sqlSetDead);
+        $stmtSetDead->execute([':turn_number' => $turn_number]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+        return FALSE;
+    }
+    $sqlSetCaptured = "
+        UPDATE worker_actions SET action = 'captured' WHERE turn_number = :turn_number AND worker_id IN (
+            SELECT worker_id FROM worker_actions WHERE action = 'captured' AND turn_number_n_1 = :turn_number_n_1
+    ";
+    try {
+        $stmtSetDead = $pdo->prepare($sqlSetDead);
+        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
+        $stmtSetDead->execute([':turn_number' => $turn_number]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+        return FALSE;
+    }
+
+    return TRUE;
 }
 function getAttackerComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
     if (empty($turn_number)) {
@@ -147,6 +174,8 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, 
         SELECT
             s.searcher_id,
             s.searcher_enquete_val,
+            s.searcher_controler_id,
+            z.id AS zone_id,
             z.name AS zone_name,
             wa.worker_id AS found_id,
             wa.enquete_val AS found_enquete_val,
@@ -455,6 +484,68 @@ function investigateMecanic($pdo ) {
         $report .= '</p>';
         echo "<div>".var_export( $report, true)."</div>";
         $reportArray[$row['searcher_id']] .= $report;
+
+        if ( (int)$row['enquete_difference'] >= (int)$DIFF0 ) {
+            // Add to controlers_know_enemies
+            try {
+                // Search for the existing Controler-Worker combo
+                $sql = "SELECT id FROM controlers_know_enemies
+                        WHERE controler_id = :searcher_controler_id
+                            AND discovered_worker_id = :found_id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':searcher_controler_id' => $row['searcher_controler_id'],
+                    ':found_id' => $row['found_id']
+                ]);
+                $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($existingRecord) {
+                    // Update if record exists
+                    $sql = "UPDATE controlers_know_enemies
+                            SET discovery_turn = :turn_number, discovery_zone_id = :zone_id
+                            WHERE id = :id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':turn_number' => $turn_number,
+                        ':zone_id' => $row['zone_id'],
+                        ':id' => $existingRecord['id']
+                    ]);
+                } else {
+                    // Insert if record doesn't exist
+                    $sql = "INSERT INTO controlers_know_enemies
+                            (controler_id, discovered_worker_id, discovery_turn, discovery_zone_id)
+                            VALUES (:searcher_controler_id, :found_id, :turn_number, :zone_id)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':searcher_controler_id' => $row['searcher_controler_id'],
+                        ':found_id' => $row['found_id'],
+                        ':turn_number' => $turn_number,
+                        ':zone_id' => $row['zone_id'],
+                    ]);
+                }
+                if ( (int)$row['enquete_difference'] >= (int)$DIFF2 ) {
+                    if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
+                        $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
+                    }
+                    // Update if record exists
+                    $sql = sprintf("UPDATE controlers_know_enemies
+                            SET discovered_controler_id = :discovered_controler_id
+                            %s
+                            WHERE id = :id",
+                            $discovered_controler_name_sql
+                    );
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->bindParam(':discovered_controler_id', $row['found_controler_id']);
+                    $stmt->bindParam(':id',$existingRecord['id']);
+                    if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
+                        $stmt->bindParam(':discovered_controler_name_sql',$row['found_controler_name']);
+                    }
+                    $stmt->execute();
+                }
+            } catch (PDOException $e) {
+                echo "Error: " . $e->getMessage();
+            }
+        }
     }
 
     if ($debug)

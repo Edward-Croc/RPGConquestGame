@@ -369,13 +369,14 @@ INSERT INTO powers ( name, enquete, action, defence, other) VALUES
     ('Vampire nouveau né', 1,1,1, '{"hidden" : "1", "limit_recrutment": {"age": "2", "turn": "2"} }'),
     ('Szlatcha', -1,2,2, '{"hidden" : "0", "limit_recrutment": {"age": "2", "controler_power": "Vicissitude"}}'),
     ('Fantome',3,-2,2, '{"hidden" : "0", "limit_recrutment": {"woker_state": "0", "controler_power": "Nécromancie"}}'),
-    ('Possession', 2,-2,2, '{"hidden" : "2", "limit_recrutment": {"age": "2", "controler_faction": "Démon, Eglise"}}')
+    ('Possession', 2,-2,2, '{"hidden" : "2", "limit_recrutment": {"OR": {"age": "2","woker_state": "0"}, "controler_faction": "Démon, Eglise"}}')
     ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau né')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome'))
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Possession'))
 ;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES

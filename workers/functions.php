@@ -298,7 +298,7 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     }
     $zone_name = getZoneName($pdo, $zone_id);
     if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
-    $currentReport['life_report'] .= "J'ai déménager vers $zone_name. ";
+    $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. ";
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);
     if (json_last_error() !== JSON_ERROR_NONE)
@@ -451,11 +451,16 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     return $worker_id;
 }
 
-function enemyWorkersFind($pdo, $zone_id, $controler_id) {
+function getEnemyWorkers($pdo, $zone_id, $controler_id) {
+    // Select from controlers_know_ennemies by $zone_id, $controler_id
 
+    // return table of : 
+        // A worker discovered_worker_id with no discovered_controler_id
+        // B workers discovered_worker_id with identical discovered_controler_id
+            //Optional discovered_controler_name if is associated to a discovered_controler_id
 }
 
-function enemyWorkersSelect($pdo, $zone_id, $controler_id) {
+function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
     $enemyWorkerOptions = '';
     $enemyWorkerArray = [];
     // Display select list of Controlers

@@ -43,7 +43,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 if ($action['turn_number'] == $mecanics['turncounter']) $currentAction = $action;
             }
 
-            $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
+            $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
             echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>
@@ -78,11 +78,11 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     empty($worker['powers']['Discipline']['texte']) ? '' : 
                         sprintf("Ses disciplines dévéloppées sont: %s <br />",$worker['powers']['Discipline']['texte']),
                     empty($worker['powers']['Transformation']['texte']) ? '' :
-                        sprintf("Il as été transformer en: %s <br />", $worker['powers']['Transformation']['texte']),
+                        sprintf("Il a été transformé en: %s <br />", $worker['powers']['Transformation']['texte']),
                 );
                 echo sprintf('<div class="actions">
                         <h3>Actions : </h3> <p>
-                        <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
+                        <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
                         <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s <br />
                         <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
@@ -92,7 +92,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     $worker['id'],
                     $showZoneSelect,
                     $enemyWorkersSelect,
-                    true ? "Enqueter" : "Se cacher",
+                    ($currentAction['action'] == 'passive') ? "Enquêter" : "Se cacher",
                     $showControlerSelect,
                 );
                 // TODO : ADD powers on age 
@@ -100,9 +100,10 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 // If AGE > 0 Should Have 1 discipline
                 // echo showDisciplineSelect($powerDisciplineArray);
                 // If Age > 2 Should Ahev 2 discipline
-                // Check Transformation Conditions 
+                // Check Transformation Conditions
+                echo "</div>";
             }
-            echo ' </div> </form>';
+            echo '</form>';
 
             if ( !empty($worker_id) ) {
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
