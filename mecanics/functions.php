@@ -38,7 +38,7 @@ function calculateVals($pdo, $turn_number){
     $array[] = ['defence', 'activeDefenceActions',true];
     echo '<div> calculateVals : <p>';
     foreach ($array as $elements) {
-        
+
         $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
         if ($elements[2]) {
             /*$valBaseSQL = "FLOOR(
@@ -233,13 +233,13 @@ function cleanAndSplitString($input) {
 
 function investigateMecanic($pdo ) {
     echo '<div> <h3> investigateMecanic : </h3> ';
-    
+
     if (empty($turn_number)) {
         $mecanics = getMecanics($pdo);
         $turn_number = $mecanics['turncounter'];
     }
     echo "turn_number : $turn_number <br>";
-    
+
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $debug = TRUE;
 
@@ -272,7 +272,7 @@ function investigateMecanic($pdo ) {
         // Build report :
         if ($debug) echo "<p> row : ". var_export($row, true). "</p>";
 
-        // If no report has been created yet for this worker 
+        // If no report has been created yet for this worker
         if ( empty($reportArray[$row['searcher_id']]) )
             $reportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
         if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
