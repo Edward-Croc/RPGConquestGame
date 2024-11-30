@@ -35,6 +35,11 @@ VALUES
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
+    -- Diff vals in rapport 
+    ('DIFF0', 0, 'Value for Level 0 information'),
+    ('DIFF1', 1, 'Value for Level 1 information'),
+    ('DIFF2', 2, 'Value for Level 2 information'),
+    ('DIFF3', 3, 'Value for Level 3 information'),
     -- passive, investigate, attack, claim
     ('passiveInvestigateActions', '''passive'',''attack''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of passive investigation actions'),
@@ -42,7 +47,7 @@ VALUES
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
-    -- action text config
+    -- action text in rapport config
     ('txt_ps_passive', 'se cache', 'Texte for passive action'),
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
     ('txt_ps_attack', 'attaque', 'Texte for attack action'),
@@ -50,7 +55,8 @@ VALUES
     ('txt_inf_passive', 'se cacher', 'Texte for passive action'),
     ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
     ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
-    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action');
+    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action')
+;
 
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
