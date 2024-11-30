@@ -69,7 +69,7 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Punk a chien'
+        WHERE powers.name = 'Punk à chien'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
