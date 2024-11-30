@@ -20,7 +20,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     echo "<div class='workers'>";
     if ( empty($worker_id) ) {
         echo sprintf("
-            <h2>Agents</h2>
+            <h1>Agents</h1>
             <form action='/RPGConquestGame/workers/new.php' method='GET'>
                 <b> Recrutement : </b>
                 <input type='hidden' name='controler_id'  value=%s>
@@ -30,7 +30,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             strval($controler_id)
         );
     } else {
-        echo sprintf("<h2>Agent</h2>");
+        echo sprintf("<h1>Agent</h1>");
     }
 
     if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
@@ -62,7 +62,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             if ( !empty($worker_id) ) {
 
                 echo sprintf('<div>
-                    <h4>Historique : </h4>
+                    <h3>Historique : </h3>
                     <p>
                         Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
                         Ses disciplines dévéloppées sont: %4$s <br />
@@ -76,7 +76,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 );
 
                 echo sprintf('<div> <p>
-                        <h4>Actions : </h4>
+                        <h3>Actions : </h3>
                         <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
                         <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s OU
@@ -95,18 +95,21 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             if ( !empty($worker_id) ) {
                 echo sprintf('
                     <p>
-                        <h4>Rapport : </h4>
+                        <h3>Rapport : </h3>
                     </p>
                     '
                 );
                 foreach ( $worker['actions'] as $turn_number => $action ){
-                    echo "<div> <h5> Semaine $turn_number </h5> ";
+                    echo "<div> <h4> Semaine $turn_number </h4> ";
                     if ($_SESSION['DEBUG_REPORT'] == true) "";
                         echo "<p> action: ".var_export($action, true)."</p>";
                     if ($action['report'] != '{}') {
                         // Decode the existing JSON into an associative array
                         $currentReport = json_decode($action['report'], true);
-                        echo '<h6> Mes investigations : </h6> '.$currentReport['investigate_report'];
+                        if (!empty($currentReport['attack_report']))
+                            echo '<h4> Attaques : </h4> '.$currentReport['attack_report'];
+                        if (!empty($currentReport['investigate_report']))
+                            echo '<h4> Mes investigations : </h4> '.$currentReport['investigate_report'];
                         
                     }
                     echo "</div>";

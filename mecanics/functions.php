@@ -38,25 +38,17 @@ function calculateVals($pdo, $turn_number){
     $array[] = ['defence', 'activeDefenceActions',true];
     echo '<div> calculateVals : <p>';
     foreach ($array as $elements) {
+        
+        $valBaseSQL = "+ (SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
         if ($elements[2]) {
-            $valSQL = sprintf("%s_val = (
-                COALESCE((
-                    SELECT SUM(p.%s)
-                    FROM workers AS w
-                    LEFT JOIN worker_powers wp ON w.id = wp.worker_id
-                    LEFT JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                    LEFT JOIN powers p ON lpt.power_id = p.ID
-                    WHERE worker_actions.worker_id = w.id
-                ), 0)
+            $valBaseSQL = "
                 + FLOOR(
                 RANDOM() *
                 ((SELECT CAST(value AS INT) FROM config WHERE name = 'MAXROLL') -
                 (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL') + 1)
                 + (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL')
-                )
-            )",
-            $elements[0], $elements[0]);
-        } else {
+                )";
+        }
         $valSQL = sprintf("%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
@@ -66,10 +58,9 @@ function calculateVals($pdo, $turn_number){
                 LEFT JOIN powers p ON lpt.power_id = p.ID
                 WHERE worker_actions.worker_id = w.id
             ), 0)
-                + (SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')
+            %s
         )",
-            $elements[0], $elements[0]);
-        }
+        $elements[0], $elements[0], $valBaseSQL );
 
         //
         $config = getConfig($pdo, $elements[1]);

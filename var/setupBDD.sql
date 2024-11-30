@@ -22,7 +22,8 @@ CREATE TABLE config (
 INSERT INTO config (name, value, description)
 VALUES
     ('DEBUG', 'false', 'Activates the Debugging texts'),
-    ('DEBUG_REPORT', 'true', 'Activates the Debugging texts for the report'),
+    ('DEBUG_REPORT', 'true', 'Activates the Debugging texts for the investigation report'),
+    ('DEBUG_ATTACK', 'true', 'Activates the Debugging texts for the attack report mecanics'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),

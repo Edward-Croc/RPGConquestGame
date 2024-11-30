@@ -59,6 +59,10 @@ if (!$gameReady) {
     if (strtolower(getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
         $_SESSION['DEBUG_REPORT'] = true;
     }
+    $_SESSION['DEBUG_ATTACK'] = false;
+    if (strtolower(getConfig($gameReady, 'DEBUG_ATTACK')) == 'true') {
+        $_SESSION['DEBUG_ATTACK'] = true;
+    }
     $gameTitle = getConfig($gameReady, 'TITLE');
     if ($_SESSION['DEBUG'] == true){
         echo "The game is ready.<br />";
