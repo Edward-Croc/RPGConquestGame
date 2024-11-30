@@ -39,15 +39,15 @@ function calculateVals($pdo, $turn_number){
     echo '<div> calculateVals : <p>';
     foreach ($array as $elements) {
         
-        $valBaseSQL = "+ (SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
+        $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
         if ($elements[2]) {
-            $valBaseSQL = "
-                + FLOOR(
+            /*$valBaseSQL = "FLOOR(
                 RANDOM() *
                 ((SELECT CAST(value AS INT) FROM config WHERE name = 'MAXROLL') -
                 (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL') + 1)
                 + (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL')
-                )";
+                )";*/
+            $valBaseSQL = diceSQL();
         }
         $valSQL = sprintf("%s_val = (
             COALESCE((
@@ -58,7 +58,7 @@ function calculateVals($pdo, $turn_number){
                 LEFT JOIN powers p ON lpt.power_id = p.ID
                 WHERE worker_actions.worker_id = w.id
             ), 0)
-            %s
+            + %s
         )",
         $elements[0], $elements[0], $valBaseSQL );
 
