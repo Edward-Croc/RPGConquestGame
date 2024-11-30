@@ -4,7 +4,7 @@ UPDATE config SET value = 0 WHERE name in ( 'DIFF0', 'DIFF1', 'DIFF2', 'DIFF3');
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Harvey', 'Matthews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
     ('Andrei', 'Popescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
-    ('Indro', 'Lombardi', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti'));;
+    ('Indro', 'Lombardi', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti'));
 
 INSERT INTO controler_worker (controler_id, worker_id) VALUES
     (

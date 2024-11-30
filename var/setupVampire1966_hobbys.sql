@@ -37,7 +37,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Dresseur de Pitbulls', -1,2,1),
     -- ('', 1,1,-1), => Glass Canons
     ('Drogué à la LSD', 1,1,-1),
-    ('Punk a chien', 1,1,-1),
+    ('Punk à chien', 1,1,-1),
     -- ('', 2, 0/-1), => Maitres Enqueteurs
     ('Astrologue Amateur', 2,0,-1),
     ('Rôliste', 2,-1,0),

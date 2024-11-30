@@ -292,10 +292,10 @@ function investigateMecanic($pdo ) {
         $transformationTextDiff[3] = '';
         $textesTransformationDiff1 = [
             ' et nous concluons que c\'est un %s',
-            ' ce qui nous fait penser que c\'est un %s',
+            ', ce qui laisse penser que c\'est un %s',
         ];
         $textesTransformationDiff2 = [
-            'C\'est probablement un %s mais le preuves nous manque encore. ',
+            'C\'est probablement un %s mais les preuves nous manquent encore. ',
             'Il n\'est clairement pas normal, peut-être un %s. ',
         ];
 
@@ -324,9 +324,9 @@ function investigateMecanic($pdo ) {
         $local_origin_list = getConfig($pdo, 'local_origin_list');
         if (!in_array($row['found_worker_origin_id'], explode(',',$local_origin_list))) {
             $textesOrigine = [
-                "Etrange pour quelqu'un de %s. ",
-                "En plus, c'est un originaire de %s. ",
-                "Surtout qu'il vient de %s. "
+                "J'ai des raisons de penser qu'il est natif de %s. ",
+                "En plus, il est originaire de %s. ",
+                "Je m'en méfie, il vient de %s. "
             ];
             $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
         }
@@ -360,7 +360,7 @@ function investigateMecanic($pdo ) {
                 'Nous avons repéré un %2$s du nom de %1$s qui %4$s dans notre quartier. %9$s',
                 'En poussant nos recherches il s\'avère qu\'il maitrise %6$s%8$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
             ],[
-                'J\'ai trouvé %1$s %7$s qui n\'est clairement pas un agent à nous c\'est un %2$s et un %3$s. ',
+                'J\'ai trouvé %1$s %7$s, qui n\'est clairement pas un agent à nous, c\'est un %2$s et un %3$s. ',
                 '%9$sIl démontre une légère maitrise de la discipline %6$s%8$s. '
             ],[
                 'Je me suis rendu compte que %1$s, que je prenais pour un simple %3$s, %4$s dans le coin. %9$s',
@@ -375,10 +375,10 @@ function investigateMecanic($pdo ) {
                 'Nous avons repéré un %7$s du nom de %1$s qui %4$s dans notre quartier. %9$s',
                 'En poussant nos recherches il s\'avère qu\'il maitrise %6$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
             ],[
-                'J\'ai trouvé %1$s un %7$s qui n\'est clairement pas un loyal seigneur à vous c\'est un %2$s et un %3$s. %9$s',
+                'J\'ai trouvé %1$s, un %7$s qui n\'est clairement pas un loyal serviteur à vous, c\'est un %2$s et un %3$s. %9$s',
                 'Il démontre une légère maitrise de la discipline %6$s. '
             ],[
-                'Je me suis rendu compte qu\'un %7$s, %4$s dans le coin. On l\as entendu se faire appeler %1$s. %9$s',
+                'Je me suis rendu compte qu\'un %7$s %4$s dans le coin. On l\'a entendu se faire appeler %1$s. %9$s',
                 'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a des pouvoirs de %4$s, ce qui en fait un %2$s un peu trop spécial. '
             ]];
         $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
@@ -427,7 +427,7 @@ function investigateMecanic($pdo ) {
                 '%2$sEn plus, sa famille a des liens avec le réseau %1$s. ',
                 'Il fait partie du réseau %1$s. %2$s',
                 '%2$sEn creusant, il est rattaché au réseau %1$s. ',
-                'Il reçoit un soutient financier du réseau %1$s. %2$s',
+                'Il reçoit un soutien financier du réseau %1$s. %2$s',
                 '%2$sIl traîne avec le réseau %1$s. '
             ];
             $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'], $transformationTextDiff[2], $discipline_2 );
@@ -441,7 +441,7 @@ function investigateMecanic($pdo ) {
                 'A partir de là on a pu remonter jusqu\'à %1$s. ',
                 'Du coup, il travaille forcément pour %1$s. ',
                 'Nous l\'avons vu rencontrer en personne %1$s. ',
-                'Ce qui veut dire que \'est un des types de %1$s. '
+                'Ce qui veut dire que c\'est un des types de %1$s. '
             ];
             $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
         }

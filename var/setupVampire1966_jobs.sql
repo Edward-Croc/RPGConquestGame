@@ -15,32 +15,39 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     ('Étudiant (Arts, Lettres)', 1,0,0),
     ('Marchand ambulant', 1,0,0),
     ('Retraité curieux', 1,0,0),
-    -- ('', 0,1,1), => Combatants
+    ('Professeur (Langues)', 1,0,0),
+    ('Boutiquier', 1,0,0),
+    ('Bibliothécaire', 1,0,0),
+    ('Secrétaire', 1,0,0),
+    -- ('', 0,1,1), => Combattants
     ('Agent de sécurité', 0,1,1),
     ('Pompier', 0,1,1),
     ('Ouvrier du bâtiment', 0,1,1),
     ('Étudiant (Sciences, Chimie)', 0,1,1),
     ('Racaille', 0,1,1),
-    -- ('', 1,1,-1), => Glass canons
+    ('Professeur (Sport)', 0,1,1),
+    ('Camionneur', 0,1,1),
+    ('Manutentionnaire', 0,1,1),
+    -- ('', 1,1,-1), => Glass cannons
     ('Policier', 1,1,-1),
     ('Voleur', 1,1,-1),
     ('Éboueur', 1,1,-1),
+    ('Parent solo de famille nombreuse', 1,1,-1),
     -- ('', 2,0,-1), => Maitres Enqueteurs
     ('Conducteur de taxi', 2,0,-1),
     ('SDF', 2,0,-1),
-    -- ('', -1,2,1), => Maitres Combatants
+    ('Détective privé', 2,0,-1),
+    -- ('', -1,2,1), => Maitres Combattants
     ('Militaire', -1,2,1),
     ('CRS', -1,2,1),
     ('Gardien de zoo', -1,2,1)
     --Violent 
-    -- Garde du Corps, Garde, Manutentionnaire,  
-    -- Professeur (EPS), 
+    -- Garde du Corps, Garde 
     -- Enqueteurs
-    -- Professeur (Langues, Physique), Directeur, Bibliothécaire, Mère de Famille, Gardien, Boutiquier, Agent de tourisme, Musicien de rue ,  Trader, Secrétaire,Voiturier, 
-    -- Détective
+    -- Professeur (Physique), Directeur, Gardien, Agent de tourisme, Trader, Voiturier, 
 ;
 
 INSERT INTO powers ( name, enquete, action, defence, other) VALUES
     ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": "go_traitor", "controler_lastname": "da Firenze"}}'),
-    ('Pretre', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
+    ('Prêtre', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
 ;
