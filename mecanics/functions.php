@@ -325,7 +325,7 @@ function investigateMecanic($pdo ) {
         if (!in_array($row['found_worker_origin_id'], explode(',',$local_origin_list))) {
             $textesOrigine = [
                 "Etrange pour quelqu'un de %s. ",
-                "En plus, c'est un originaire %s. ",
+                "En plus, c'est un originaire de %s. ",
                 "Surtout qu'il vient de %s. "
             ];
             $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
@@ -354,7 +354,7 @@ function investigateMecanic($pdo ) {
         (origin_text) - %9$s
         */
         $textesDiff01Array = [[
-                'J\'ai vu un %3$s du nom de %1$s qui %4$s dans ma zone. %9$s',
+                'J\'ai vu un %3$s du nom de %1$s qui %4$s dans ma zone surveillée. %9$s',
                 'C\'est à la base un %2$s mais je suis sûr qu\'il possède aussi la discipline de %6$s%8$s. '
             ],[
                 'Nous avons repéré un %2$s du nom de %1$s qui %4$s dans notre quartier. %9$s',
