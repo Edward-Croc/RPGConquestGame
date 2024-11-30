@@ -216,7 +216,8 @@ CREATE TABLE controlers_know_enemies (
     discovered_controler_id INT, -- Optional ID of their controler
     discovered_controler_name TEXT, -- Optional name of their controler
     zone_id INT NOT NULL, -- Zone of discovery
-    discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     UNIQUE (controler_id, discovered_worker_id), -- Unicity constraint on controler/worker combo
     FOREIGN KEY (controler_id) REFERENCES controlers (ID), -- Link to controlers table
     FOREIGN KEY (discovered_worker_id) REFERENCES workers (ID), -- Link to workers table

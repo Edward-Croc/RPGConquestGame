@@ -299,7 +299,8 @@ function investigateMecanic($pdo ) {
     foreach ($investigations as $row) {
 
         // Build report :
-        if ($debug) echo "<p> row : ". var_export($row, true). "</p>";
+        if ($debug) echo "<div> 
+            <p> row : ". var_export($row, true). "</p>";
 
         // If no report has been created yet for this worker
         if ( empty($reportArray[$row['searcher_id']]) )
@@ -482,10 +483,11 @@ function investigateMecanic($pdo ) {
             $report .= "Difference: {$row['enquete_difference']}, ";
         }
         $report .= '</p>';
-        echo "<div>".var_export( $report, true)."</div>";
+        echo var_export( $report, true);
         $reportArray[$row['searcher_id']] .= $report;
 
         if ( (int)$row['enquete_difference'] >= (int)$DIFF0 ) {
+            echo "<p> Start controlers_know_enemies - <br /> ";
             // Add to controlers_know_enemies
             try {
                 // Search for the existing Controler-Worker combo
@@ -498,12 +500,14 @@ function investigateMecanic($pdo ) {
                     ':found_id' => $row['found_id']
                 ]);
                 $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+                echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
 
                 if ($existingRecord) {
                     // Update if record exists
                     $sql = "UPDATE controlers_know_enemies
-                            SET discovery_turn = :turn_number, discovery_zone_id = :zone_id
+                            SET last_discovery_turn = :turn_number, zone_id = :zone_id
                             WHERE id = :id";
+                    if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
                         ':turn_number' => $turn_number,
@@ -513,8 +517,9 @@ function investigateMecanic($pdo ) {
                 } else {
                     // Insert if record doesn't exist
                     $sql = "INSERT INTO controlers_know_enemies
-                            (controler_id, discovered_worker_id, discovery_turn, discovery_zone_id)
-                            VALUES (:searcher_controler_id, :found_id, :turn_number, :zone_id)";
+                            (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id)
+                            VALUES (:searcher_controler_id, :found_id, :turn_number, :turn_number, :zone_id)";
+                    if ($debug) echo "sql :".var_export($sql, true)." <br>";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
                         ':searcher_controler_id' => $row['searcher_controler_id'],
@@ -528,23 +533,25 @@ function investigateMecanic($pdo ) {
                         $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
                     }
                     // Update if record exists
-                    $sql = sprintf("UPDATE controlers_know_enemies
+                    $sqlUpdate = sprintf("UPDATE controlers_know_enemies
                             SET discovered_controler_id = :discovered_controler_id
                             %s
                             WHERE id = :id",
                             $discovered_controler_name_sql
                     );
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->bindParam(':discovered_controler_id', $row['found_controler_id']);
-                    $stmt->bindParam(':id',$existingRecord['id']);
+                    if ($debug) echo "sql :".var_export($sqlUpdate, true)." <br>";
+                    $stmtUpdate = $pdo->prepare($sqlUpdate);
+                    $stmtUpdate->bindParam(':discovered_controler_id', $row['found_controler_id']);
+                    $stmtUpdate->bindParam(':id',$existingRecord['id']);
                     if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
-                        $stmt->bindParam(':discovered_controler_name_sql',$row['found_controler_name']);
+                        $stmtUpdate->bindParam(':discovered_controler_name', $row['found_controler_name']);
                     }
-                    $stmt->execute();
+                    $stmtUpdate->execute();
                 }
             } catch (PDOException $e) {
                 echo "Error: " . $e->getMessage();
             }
+            echo " DONE </p>";
         }
     }
 
