@@ -66,11 +66,13 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     <p>
                         Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
                         Ses disciplines dévéloppées sont: %4$s <br />
+                        Il as été transformer en: %5$s <br />
                     </p></div>',
                     $worker['origin_name'],
                     empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                     empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
                     empty($worker['powers']['Discipline']['texte']) ? '' : $worker['powers']['Discipline']['texte'],
+                    empty($worker['powers']['Transformation']['texte']) ? '' : $worker['powers']['Transformation']['texte'],
                 );
 
                 echo sprintf('<div> <p>

@@ -22,9 +22,16 @@ CREATE TABLE config (
 INSERT INTO config (name, value, description)
 VALUES
     ('DEBUG', 'false', 'Activates the Debugging texts'),
+    ('DEBUG_RAPPORT', 'true', 'Activates the Debugging texts for the rapport'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
+    -- worker creation
+    ('first_come_nb_choices', '1', ''),
+    ('recrutement_nb_choices', '3', ''),
+    ('recrutement_origin_list', '1,2,3,4,5', ''),
+    ('local_origin_list', '1', ''),
+    -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
@@ -35,6 +42,7 @@ VALUES
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
+    -- action text config
     ('txt_ps_passive', 'se cache', 'Texte for passive action'),
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
     ('txt_ps_attack', 'attaque', 'Texte for attack action'),

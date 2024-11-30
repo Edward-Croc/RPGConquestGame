@@ -7,12 +7,6 @@ UPDATE config SET
 UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
-INSERT INTO config (name, value) VALUES 
-    ('first_come_nb_choices', '1'),
-    ('recrutement_nb_choices', '2'),
-    ('recrutement_origin_list', '1,2,3,4,5')
-;
-
 INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player1', 'one', false),
     ('player2', 'two', false),
@@ -372,10 +366,17 @@ INSERT INTO power_types (name) VALUES
 -- Table of powers
 --
 INSERT INTO powers ( name, enquete, action, defence, other) VALUES 
-    ('Vampire nouveau née', 1,1,1, '{"limit_recrutment": {"age": "2", "turn": "2"} }'),
-    ('Szlatcha', -1,2,2, '{"limit_recrutment": {"age": "2", "controler_power": "Vicissitude"}}'),
-    ('Fantome', 2,-2,2, '{"limit_recrutment": {"woker_state": "0", "controler_power": "Nécromancie"}}')
+    ('Vampire nouveau née', 1,1,1, '{"hidden" : "1", "limit_recrutment": {"age": "2", "turn": "2"} }'),
+    ('Szlatcha', -1,2,2, '{"hidden" : "0", "limit_recrutment": {"age": "2", "controler_power": "Vicissitude"}}'),
+    ('Fantome',3,-2,2, '{"hidden" : "0", "limit_recrutment": {"woker_state": "0", "controler_power": "Nécromancie"}}'),
+    ('Possession', 2,-2,2, '{"hidden" : "2", "limit_recrutment": {"age": "2", "controler_faction": "Démon, Eglise"}}')
     ;
+
+INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau née')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome'))
+;
 
 INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Suggested Disciplines
@@ -413,12 +414,6 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Pouvoirs mortels et démons
     ('Vraie Foi', -1, 2,3),
     ('Sentir le mal', 3, 1,1)
-;
-
-INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau née')),
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome'))
 ;
 
 

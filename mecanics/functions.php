@@ -146,6 +146,8 @@ function getSearcherComparisons($pdo, $threshold = 0, $searcher_id = NULL, $turn
             wa.action AS found_action,
             wa.action_params AS found_action_params,
             CONCAT(w.firstname, ' ', w.lastname) AS found_name,
+            wo.id AS found_worker_origin_id,
+            wo.name AS found_worker_origin_name,
             cw.controler_id AS found_controler_id,
             CONCAT(c.firstname, ' ', c.lastname) AS found_controler_name,
             (
@@ -180,12 +182,21 @@ function getSearcherComparisons($pdo, $threshold = 0, $searcher_id = NULL, $turn
                 JOIN power_types pt ON lpt.power_type_id = pt.ID
                 WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
             ) AS found_transformation,
+            (
+                SELECT ARRAY_AGG((p.other->>'hidden')::INT)
+                FROM worker_powers wp
+                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                JOIN powers p ON lpt.power_id = p.ID
+                JOIN power_types pt ON lpt.power_type_id = pt.ID
+                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
+            ) AS hidden_transformation,
             (s.searcher_enquete_val - wa.enquete_val) AS enquete_difference
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
         JOIN worker_actions wa ON 
                 s.zone_id = wa.zone_id AND turn_number = :turn_number
         JOIN workers w ON wa.worker_id = w.ID
+        JOIN worker_origins wo ON wo.id = w.origin_id
         JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
         JOIN controlers c ON cw.controler_id = c.ID
         WHERE
@@ -229,42 +240,145 @@ function investigateMecanic($pdo ) {
     $txtArray['claim']['inf'] = getConfig($pdo, 'txt_inf_claim');
 
     foreach ($investigations as $row) {
-        // Build Rapport : 
+        // Build Rapport :
+        if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true') 
+            echo var_export($row, true);
+
         if ( empty($rapportArray[$row['searcher_id']]) )
             $rapportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
-        // Diff 0
-        $rapport = sprintf(
-            "<p> J'ai trouvé %s (%s) %s qui n'est pas un agent à nous c'est un %s et un %s. ", 
-            $row['found_name'], $row['found_id'],
-            empty($row['found_transformation']) ? '' : ' un ' (cleanAndSplitString($row['found_transformation'])[0]),
-            cleanAndSplitString($row['found_metier'])[0], cleanAndSplitString($row['found_hobby'])[0]
-        );
-        // Diff 1
-        $text_action_params = '';
-        /*if ( !empty($row['found_action_params']) ) {
-            $text_action_params = 'tada'; 
-        }*/
+
         $discipline = cleanAndSplitString($row['found_discipline']);
-        $rapport .= sprintf(
-            "Il démontre une légère maitrise de la discipline %s alors qu'il %s%s",
-            $discipline[0],
-            $txtArray[$row['found_action']]['ps'],
-            empty($text_action_params) ? '. ' : ' '
-        );
-        // Diff 2
         $discipline_2 = '';
         if (! empty($discipline[1]) ) 
-            $discipline_2 = sprintf("Et une maitrise de la discipline %s.", $discipline[1])   ;
-        // $rapport .= "Et une légere maitrise de la dicipline {$row['found_discipline_2']}.";
-        $rapport .= sprintf("%s Il fait partie du réseau %s. ", $discipline_2 , $row['found_controler_id'] );
+            $discipline_2 = sprintf("Et une maitrise de la discipline %s.", $discipline[1]);
+        
+        // transformation
+        $hidden_transformation = cleanAndSplitString($row['hidden_transformation']);
+        $found_transformation = cleanAndSplitString($row['found_transformation']);
+        $transformationTextDiff[0] = '';
+        $transformationTextDiff[1] = '';
+        $transformationTextDiff[2] = '';
+        $transformationTextDiff[3] = '';
+        for ($iteration = 0; $iteration < count($hidden_transformation); $iteration++) {
+            $diffval =  $hidden_transformation[$iteration];
+            // C'est probablement un (transformation).
+            $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
+        }
+
+        $text_action_ps = $txtArray[$row['found_action']]['ps'];
+        $text_action_inf = $txtArray[$row['found_action']]['inf'];
+        if ( !empty($row['found_action_params']) ) {
+            $text_action_ps .= ' tada '; 
+            $text_action_inf .= ' tada '; 
+        }
+
+       $originTexte = '';
+        $local_origin_list = getConfig($pdo, 'local_origin_list');
+        if (!in_array($row['found_worker_origin_id'], explode(',',$local_origin_list))) {
+            $textesOrigine = [
+                "Etrange pour un %s. ",
+                "En plus, c'est un %s. ",
+                "Surtout que c'est un %s. "
+            ];
+            $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
+        }
+        $found_hobby = cleanAndSplitString($row['found_hobby']);
+        $found_metier = cleanAndSplitString($row['found_metier']);
+
+        $rapport = "<p>";
+
+        /*
+        (nom(id)) - %1$s
+        (metier) - %7$s/%2$s
+        (hobby) - %3$s
+        (action_ps) - %4$s
+        (action_inf) - %5$s
+        (discipline) - %6$s
+        */
+        $textesDiff01Array = [[
+                'J\'ai vu un %3$s du nom de %1$s qui %4$s dans ma zone. ',
+                'C\'est à la base un %2$s mais je suis sûr qu\'il possède aussi la discipline de %4$s. '
+            ],[
+                'Nous avons repéré un %2$s du nom de %1$s qui %4$s dans notre quartier. ',
+                'En poussant nos recherches il s\'avère qu\'il maitrise %6$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
+            ],[
+                'J\'ai trouvé %1$s %7$s qui n\'est clairement pas un agent à nous c\'est un %2$s et un %3$s. ', 
+                'Il démontre une légère maitrise de la discipline %6$s. '
+            ],[
+                'Je me suis rendu compte que %1$s, que je prenais pour un simple %3$s, %4$s dans le coin. ',
+                'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a en réalité des pouvoirs de %4$s, ce qui en fait un %2$s un peu trop spécial. ' 
+            ],[
+                'On a suivi %1$s parce qu\'on l\'a repéré en train de %4$s, ce qui nous a mis la puce à l\'oreille. C\'est normalement un %2$s mais on a découvert qu\'il était aussi %3$s. ',
+                'Cela dit, le vrai problème, c\'est qu\'il semble maîtriser %6$s, au moins partiellement. ',
+        ]];
+        // ! (transformation0)
+        if (!empty( $transformationTextDiff[0]))
+            $textesDiff01Array = [[
+                'Nous avons repéré un %7$s du nom de %1$s qui %4$s dans notre quartier. ',
+                'En poussant nos recherches il s\'avère qu\'il maitrise %6$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
+            ],[
+                'J\'ai trouvé %1$s un %7$s qui n\'est clairement pas un agent à nous c\'est un %2$s et un %3$s. ', 
+                'Il démontre une légère maitrise de la discipline %6$s. '
+            ],[
+                'Je me suis rendu compte qu\'un %7$s, %4$s dans le coin. ',
+                'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a en réalité des pouvoirs de %4$s, ce qui en fait un %2$s un peu trop spécial. '
+            ]];
+        $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
+
+
+        // Diff 0
+        $rapport = sprintf($texteDiff01[0],
+            sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
+            $found_metier[0], // (metier) - %2$
+            $found_hobby[0], // (hobby) - %3$s
+            $text_action_ps, // (action_ps) - %4$s
+            $text_action_inf, // (action_inf) - %5$s           
+            $discipline[0], // (discipline) - %6$s
+            $transformationTextDiff[0], // (transformation0) - %7$s
+        );
+
+        // Diff 1
+        $rapport .= sprintf($texteDiff01[1],
+            sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
+            $found_metier[0], // (metier) - %2$
+            $found_hobby[0], // (hobby) - %3$s
+            $text_action_ps, // (action_ps) - %4$s
+            $text_action_inf, // (action_inf) - %5$s           
+            $discipline[0], // (discipline) - %6$s
+            $transformationTextDiff[0], // (transformation0) - %7$s
+        );
+
+        // Diff 2
+        $textesDiff2 = [
+            "En plus, sa famille a des liens avec le réseau %s. ",
+            "Il fait partie du réseau %s. ",
+            "En creusant, il est rattaché au réseau %s. ",
+            "Il reçoit un soutient financier du réseau %s. ",
+            "Il traîne avec le réseau %s. "
+        ];
+        $rapport .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'] );
+
         // Diff 3
-        $rapport .= sprintf("Ce réseau répond à %s. ", $row['found_controler_name']);
-        $rapport .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
-        $rapport .= "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
-        $rapport .= "Difference: {$row['enquete_difference']}\n";
+        $textesDiff3 = [
+            "Ce réseau répond à %s. ",
+            "A partir de là on a pu remonter jusqu'à %s. ",
+            "Du coup, il travaille forcément pour %s. ",
+            "Nous l'avons vu rencontrer en personne %s. ",
+            "Ce qui veut dire que c'est un des types de %s. "
+        ];
+        $rapport .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
+
+        // Debug rapport
+        if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true') {
+            $rapport .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
+            $rapport .= "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
+            $rapport .= "Difference: {$row['enquete_difference']}\n";
+        }
         $rapport .= '</p>';
         $rapportArray[$row['searcher_id']] .= $rapport;
-        echo $rapport;
     }
+
+    if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true') 
+        echo var_export( $rapportArray, true);
     echo '<div>';
 }
