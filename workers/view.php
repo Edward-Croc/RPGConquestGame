@@ -36,15 +36,16 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
     if ( !empty($workersArray) ) {
         $showZoneSelect = showZoneSelect($zonesArray);
+        if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
         $controlers = getControlers($gameReady);
         $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
+        $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
+
         foreach ($workersArray as $worker){
             foreach($worker['actions'] as $action) {
                 if ($action['turn_number'] == $mecanics['turncounter']) $currentAction = $action;
             }
 
-            $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
-            if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
             echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>
                 <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> %6$s au %4$s.

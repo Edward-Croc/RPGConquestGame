@@ -209,7 +209,7 @@ CREATE TABLE worker_actions (
     FOREIGN KEY (controler_id) REFERENCES controlers (ID)
 );
 
-CREATE TABLE controlers_know_enemies (
+CREATE TABLE controlers_known_enemies (
     id SERIAL PRIMARY KEY,
     controler_id INT NOT NULL, -- Controler A
     discovered_worker_id INT NOT NULL, -- ID of the discovered worker

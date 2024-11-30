@@ -452,16 +452,72 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
 }
 
 function getEnemyWorkers($pdo, $zone_id, $controler_id) {
-    // Select from controlers_know_ennemies by $zone_id, $controler_id
-
-    // return table of : 
+    // Select from controlers_known_enemies by $zone_id, $controler_id
+        // return table of : 
         // A worker discovered_worker_id with no discovered_controler_id
         // B workers discovered_worker_id with identical discovered_controler_id
-            //Optional discovered_controler_name if is associated to a discovered_controler_id
+            //Optional discovered_controler_name if is associated to a
+    try {
+        // Query for workers with no discovered_controler_id (A)
+        $sqlA = "
+            SELECT 
+                cke.discovered_worker_id,
+                last_discovery_turn,
+                (last_discovery_turn - first_discovery_turn) AS discovery_age
+            FROM 
+                controlers_known_enemies cke
+            WHERE 
+                cke.zone_id = :zone_id 
+                AND cke.controler_id = :controler_id
+                AND cke.discovered_controler_id IS NULL
+        ";
+        $stmtA = $pdo->prepare($sqlA);
+        $stmtA->execute([
+            ':zone_id' => $zone_id,
+            ':controler_id' => $controler_id
+        ]);
+        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_COLUMN); // Only return worker IDs
+
+        // Query for workers with identical discovered_controler_id (B)
+        $sqlB = "
+            SELECT 
+                cke.discovered_worker_id,
+                cke.discovered_controler_id,
+                COALESCE(cke.discovered_controler_name, 'Unknown') AS discovered_controler_name,
+                last_discovery_turn,
+                (last_discovery_turn - first_discovery_turn) AS discovery_age
+            FROM 
+                controlers_known_enemies cke
+            WHERE 
+                cke.zone_id = :zone_id 
+                AND cke.controler_id = :controler_id
+                AND cke.discovered_controler_id IS NOT NULL
+        ";
+        $stmtB = $pdo->prepare($sqlB);
+        $stmtB->execute([
+            ':zone_id' => $zone_id,
+            ':controler_id' => $controler_id
+        ]);
+        $workersWithControler = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+
+        // Return the combined result
+        return [
+            'workers_without_controler' => $workersWithoutControler, // A
+            'workers_with_controler' => $workersWithControler       // B
+        ];
+
+    } catch (PDOException $e) {
+        echo "Error fetching enemy workers: " . $e->getMessage();
+        return [];
+    }        
 }
 
 function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
     $enemyWorkerOptions = '';
+
+    $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controler_id);
+    echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
+    
     $enemyWorkerArray = [];
     // Display select list of Controlers
     foreach ( $enemyWorkerArray as $enemyWorker) {

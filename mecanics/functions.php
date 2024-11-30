@@ -487,11 +487,11 @@ function investigateMecanic($pdo ) {
         $reportArray[$row['searcher_id']] .= $report;
 
         if ( (int)$row['enquete_difference'] >= (int)$DIFF0 ) {
-            echo "<p> Start controlers_know_enemies - <br /> ";
-            // Add to controlers_know_enemies
+            echo "<p> Start controlers_known_enemies - <br /> ";
+            // Add to controlers_known_enemies
             try {
                 // Search for the existing Controler-Worker combo
-                $sql = "SELECT id FROM controlers_know_enemies
+                $sql = "SELECT id FROM controlers_known_enemies
                         WHERE controler_id = :searcher_controler_id
                             AND discovered_worker_id = :found_id";
                 $stmt = $pdo->prepare($sql);
@@ -504,7 +504,7 @@ function investigateMecanic($pdo ) {
 
                 if ($existingRecord) {
                     // Update if record exists
-                    $sql = "UPDATE controlers_know_enemies
+                    $sql = "UPDATE controlers_known_enemies
                             SET last_discovery_turn = :turn_number, zone_id = :zone_id
                             WHERE id = :id";
                     if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
@@ -516,7 +516,7 @@ function investigateMecanic($pdo ) {
                     ]);
                 } else {
                     // Insert if record doesn't exist
-                    $sql = "INSERT INTO controlers_know_enemies
+                    $sql = "INSERT INTO controlers_known_enemies
                             (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id)
                             VALUES (:searcher_controler_id, :found_id, :turn_number, :turn_number, :zone_id)";
                     if ($debug) echo "sql :".var_export($sql, true)." <br>";
@@ -533,7 +533,7 @@ function investigateMecanic($pdo ) {
                         $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
                     }
                     // Update if record exists
-                    $sqlUpdate = sprintf("UPDATE controlers_know_enemies
+                    $sqlUpdate = sprintf("UPDATE controlers_known_enemies
                             SET discovered_controler_id = :discovered_controler_id
                             %s
                             WHERE id = :id",
