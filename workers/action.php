@@ -24,7 +24,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($_SESSION['DEBUG'] == true) echo 'createWorker : DONE <br />';
     }
     if (isset($_GET['move'])){
-        moveWorker($gameReady, $worker_id, $zone_id);
+        if (!empty($zone_id)) moveWorker($gameReady, $worker_id, $zone_id);
     }
     if (isset($_GET['attack'])){
         activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
@@ -34,6 +34,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     if (isset($_GET['claim'])){
         activateWorker($gameReady, $worker_id, 'claim', $claim_controler_id);
+    }
+    if (isset($_GET['gift'])){
+        activateWorker($gameReady, $worker_id, 'gift', $claim_controler_id);
     }
 }
 

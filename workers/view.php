@@ -39,11 +39,15 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
         $controlers = getControlers($gameReady);
         $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
         foreach ($workersArray as $worker){
+            foreach($worker['actions'] as $action) {
+                if ($action['turn_number'] == $mecanics['turncounter']) $currentAction = $action;
+            }
+
             $enemyWorkersSelect = enemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
             if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
             echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>
-                <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> surveille le quartier %4$s.
+                <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> %6$s au %4$s.
                 <div id="info-%1$s" style="%5$s">
                 ',
                 $worker['id'],
@@ -51,6 +55,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['lastname'],
                 $worker['zone_name'],
                 empty($worker_id) ? 'display: none;' : 'display: block;',
+                getConfig($gameReady,'txt_ps_'.$currentAction['action'])
             );
             echo sprintf('<i> Capacité d\'enquete : %1$s. Capacité d\'attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
                 $worker['total_enquete'],
@@ -79,8 +84,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         <h3>Actions : </h3>
                         <input type="submit" name="move" value="Demenager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> OU 
-                        <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s OU
-                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de" class="worker-action-btn"> %5$s
+                        <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %3$s <br />
+                        <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
+                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de " class="worker-action-btn">  %5$s
                     </p> </div>
                     ',
                     $worker['id'],
@@ -106,6 +112,8 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     if ($action['report'] != '{}') {
                         // Decode the existing JSON into an associative array
                         $currentReport = json_decode($action['report'], true);
+                        if (!empty($currentReport['life_report']))
+                            echo '<h4> Changements : </h4> '.$currentReport['life_report'];
                         if (!empty($currentReport['attack_report']))
                             echo '<h4> Attaques : </h4> '.$currentReport['attack_report'];
                         if (!empty($currentReport['investigate_report']))

@@ -49,11 +49,11 @@ VALUES
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- action text in report config
-    ('txt_ps_passive', 'se cache', 'Texte for passive action'),
+    ('txt_ps_passive', 'surveille', 'Texte for passive action'),
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
     ('txt_ps_attack', 'attaque', 'Texte for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Texte for claim action'),
-    ('txt_inf_passive', 'se cacher', 'Texte for passive action'),
+    ('txt_inf_passive', 'surveiller', 'Texte for passive action'),
     ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
     ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action')
@@ -200,7 +200,7 @@ CREATE TABLE worker_actions (
     defence_val INT DEFAULT 0,
     action TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
-    report JSON DEFAULT '{}'::json,
+    report JSON DEFAULT '{}'::json, -- Expected keys investigate_report, attack_report, life_report
     UNIQUE (worker_id, turn_number), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID),

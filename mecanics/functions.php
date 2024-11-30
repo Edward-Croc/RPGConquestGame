@@ -314,10 +314,10 @@ function investigateMecanic($pdo ) {
 
         $text_action_ps = $txtArray[$row['found_action']]['ps'];
         $text_action_inf = $txtArray[$row['found_action']]['inf'];
-        if ( !empty($row['found_action_params']) ) {
+        //if ( $row['found_action_params'] != '{}' ) {
             $text_action_ps .= ' tada ';
             $text_action_inf .= ' tada ';
-        }
+        //}
         if ($debug) echo "Build text_action_ps et text_action_inf <br>";
 
        $originTexte = '';

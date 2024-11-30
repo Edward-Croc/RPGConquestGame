@@ -1,7 +1,21 @@
 <?php
 
+function getZoneName($pdo, $zone_id){
+    try{
+        $sql = "SELECT name FROM zones AS z WHERE id=$zone_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    // Fetch the results
+    $zone = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $zone[0]['name'];
+}
+
 // Function to get Controlers and return as an array
-function getZonesArray($pdo) {
+function getZonesArray($pdo, $zone_id = NULL) {
     $zonesArray = array();
 
     try{

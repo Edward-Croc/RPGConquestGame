@@ -196,7 +196,7 @@ function createWorker($pdo, $array) {
         discipline
         controler_id
     */
-    // Check if worker already exists : 
+    // Check if worker already exists :
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
@@ -261,7 +261,7 @@ function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
     try{
         // Insert new controler_worker value into the database
         $stmt = $pdo->prepare("INSERT
-            INTO worker_actions (worker_id, turn_number, zone_id, controler_id) 
+            INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
              VALUES (:worker_id, :turn_number, :zone_id, :controler_id)");
         $stmt->bindParam(':controler_id', $controler_id,);
         $stmt->bindParam(':worker_id', $worker_id );
@@ -285,13 +285,29 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
-    // get worker action status for turn 
-    $action = getWorkerActions($pdo, $worker_id);
+    // get worker action status for turn
+    $actions = getWorkerActions($pdo, $worker_id);
+    $action = $actions[0];
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
+
+    // Decode the existing JSON into an associative array
+    $currentReport = json_decode($action['report'], true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        $currentReport = array();
+    }
+    $zone_name = getZoneName($pdo, $zone_id);
+    $currentReport['life_report'] .= "J'ai déménager vers $zone_name. ";
+    // Encode the updated array back into JSON
+    $updatedReportJson = json_encode($currentReport);
+    if (json_last_error() !== JSON_ERROR_NONE)
+        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
     try{
         // UPDATE worker_actions values
-        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id WHERE id = :id ");
+        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id, report = :report WHERE id = :id ");
         $stmt->bindParam(':zone_id', $zone_id);
-        $stmt->bindParam(':id', $action['action']['id']);
+        $stmt->bindParam(':id', $action['id']);
+        $stmt->bindParam(':report', $updatedReportJson );
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
@@ -300,7 +316,7 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     return $worker_id;
 }
 
-// get worker action status for turn 
+// get worker action status for turn
 function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
 
     if (empty($turn_number)) {
@@ -310,7 +326,7 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
 
     $sql = "SELECT * FROM worker_actions
         WHERE worker_id = $worker_id
-        AND turn_number = $turn_number 
+        AND turn_number = $turn_number
         ORDER BY id DESC
     ";
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql: ".var_export($sql, true)."<br/><br/>";
@@ -334,14 +350,23 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     $mecanics = getMecanics($pdo);
     $turn_number = $mecanics['turncounter'];
 
-    // get worker action status for turn 
+    // get worker action status for turn
     $worker_actions = getWorkerActions($pdo, $worker_id);
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
+    $currentAction = $worker_actions[0];
+
+    // Decode the existing JSON into an associative array
+    $currentReport = json_decode($currentAction['report'], true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        $currentReport = array();
+    }
     $sql_worker_actions = "UPDATE worker_actions SET ";
+    $new_action = $action;
+    $jsonOutput = '{}';
     switch($action) {
         case 'attack' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): attack <br/><br/>";
-            $sql_worker_actions .= " action = '$action' ";
             // Build attack JSON
             $attackScope = '';
             $attackID = null;
@@ -359,7 +384,6 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
                 'attackScope' => $attackScope,
                 'attackID' => $attackID
             ]);
-            $sql_worker_actions .= ", action_params = '$jsonOutput'";
             break;
         case 'activate' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): activate <br/><br/>";
@@ -368,19 +392,49 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             if ( $worker_actions[0]['action'] == 'passive' ) { // if worker is passive set investigating
                 $new_action = 'investigate';
             }
-            $sql_worker_actions .= " action = '$new_action' ";
             break;
         case 'claim' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): claim <br/><br/>";
-            $sql_worker_actions .= " action = '$action' ";
             // Create JSON table
             $jsonOutput = json_encode([
                 'claim_controler_id' => $extraVal
             ]);
-            $sql_worker_actions .= ", action_params = '$jsonOutput'";
-            
+            break;
+        case 'gift' :
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
+            $new_action = 'passive';
+            if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
+            $currentReport['life_report'] .= "J'ai rejoint un nouveau maitre. ";
+            // Set controler_worker controler_id and set worker_actions controler_id where turn_numer = current_turn to $extraVal
+            try {
+                // Update the controler_worker table
+                $sqlControlerWorker = "UPDATE controler_worker SET controler_id = :extraVal WHERE worker_id = :worker_id";
+                $stmtControlerWorker = $pdo->prepare($sqlControlerWorker);
+                $stmtControlerWorker->execute([
+                    ':extraVal' => $extraVal,
+                    ':worker_id' => $worker_id
+                ]);
+                // Update the worker_actions table
+                $sqlWorkerActions = "UPDATE worker_actions SET controler_id = :extraVal
+                    WHERE worker_id = :worker_id AND turn_number = :turn_number";
+                $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
+                $stmtWorkerActions->execute([
+                    ':extraVal' => $extraVal,
+                    ':worker_id' => $worker_id,
+                    ':turn_number' => $turn_number
+                ]);
+            } catch (PDOException $e) {
+                echo "Failed to update tables: " . $e->getMessage() . "<br />";
+            }
             break;
     }
+    $sql_worker_actions .= " action = '$new_action' ";
+    $sql_worker_actions .= ", action_params = '$jsonOutput'";
+    // Encode the updated array back into JSON
+    $updatedReportJson = json_encode($currentReport);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        $sql_worker_actions .= ", report = :report ";
+    } else { echo "JSON decoding error: " . json_last_error_msg() . "<br />"; }
     try{
         $sql_worker_actions .= " WHERE id = :id AND turn_number = :turn_number ";
         if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
@@ -388,6 +442,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
         $stmt = $pdo->prepare($sql_worker_actions);
         $stmt->bindParam(':id', $worker_actions[0]['id']);
         $stmt->bindParam(':turn_number', $turn_number );
+        $stmt->bindParam(':report', $updatedReportJson );
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
