@@ -49,25 +49,25 @@ function calculateVals($pdo, $turn_number){
                     WHERE worker_actions.worker_id = w.id
                 ), 0)
                 + FLOOR(
-                    RANDOM() *
-                    ((SELECT CAST(value AS INT) FROM config WHERE name = 'MAXROLL') -
-                    (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL') + 1)
-                    + (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL')
+                RANDOM() *
+                ((SELECT CAST(value AS INT) FROM config WHERE name = 'MAXROLL') -
+                (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL') + 1)
+                + (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL')
                 )
             )",
             $elements[0], $elements[0]);
         } else {
-            $valSQL = sprintf("%s_val = (
-                COALESCE((
-                    SELECT SUM(p.%s)
-                    FROM workers AS w
-                    LEFT JOIN worker_powers wp ON w.id = wp.worker_id
-                    LEFT JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                    LEFT JOIN powers p ON lpt.power_id = p.ID
-                    WHERE worker_actions.worker_id = w.id
-                ), 0)
+        $valSQL = sprintf("%s_val = (
+            COALESCE((
+                SELECT SUM(p.%s)
+                FROM workers AS w
+                LEFT JOIN worker_powers wp ON w.id = wp.worker_id
+                LEFT JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                LEFT JOIN powers p ON lpt.power_id = p.ID
+                WHERE worker_actions.worker_id = w.id
+            ), 0)
                 + (SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')
-            )",
+        )",
             $elements[0], $elements[0]);
         }
 
@@ -116,13 +116,29 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
 }
-
-function getSearcherComparisons($pdo, $threshold = 0, $searcher_id = NULL, $turn_number = NULL ) {
+function getAttackerComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
     if (empty($turn_number)) {
         $mecanics = getMecanics($pdo);
         $turn_number = $mecanics['turncounter'];
     }
     echo "turn_number : $turn_number <br>";
+
+    // Define the SQL query
+    $sql = "";
+
+    // Add Limit to only 1 caracter
+    if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
+
+
+}
+
+function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+        echo "turn_number : $turn_number <br>";
+    }
+
     // Define the SQL query
     $sql = "
         WITH searchers AS (
@@ -225,9 +241,30 @@ function cleanAndSplitString($input) {
 }
 
 function investigateMecanic($pdo ) {
-    echo '<div> investigateMecanic :';
-    $investigations = getSearcherComparisons($pdo);
-    $rapportArray = [];
+    echo '<div> <h3> investigateMecanic : </h3> ';
+    
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+    }
+    echo "turn_number : $turn_number <br>";
+    
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $debug = TRUE;
+
+    $DIFF0 = getConfig($pdo, 'DIFF0');
+    $DIFF1 = getConfig($pdo, 'DIFF1');
+    $DIFF2 = getConfig($pdo, 'DIFF2');
+    $DIFF3 = getConfig($pdo, 'DIFF3');
+    if ($debug) {
+        echo "DIFF0 : $DIFF0 <br/>";
+        echo "DIFF1 : $DIFF1 <br/>";
+        echo "DIFF1 : $DIFF1 <br/>";
+        echo "DIFF1 : $DIFF1 <br/>";
+    }
+
+    $investigations = getSearcherComparisons($pdo, $turn_number);
+    $reportArray = [];
 
     $txtArray = [];
     $txtArray['passive']['ps'] = getConfig($pdo, 'txt_ps_passive');
@@ -240,22 +277,20 @@ function investigateMecanic($pdo ) {
     $txtArray['claim']['inf'] = getConfig($pdo, 'txt_inf_claim');
 
     foreach ($investigations as $row) {
-        // Build Rapport :
-        if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true')
-            echo var_export($row, true);
 
-        $DIFF0 = getConfig($pdo, 'DIFF0');
-        $DIFF1 = getConfig($pdo, 'DIFF1');
-        $DIFF2 = getConfig($pdo, 'DIFF2');
-        $DIFF3 = getConfig($pdo, 'DIFF3');
+        // Build report :
+        if ($debug) echo "<p> row : ". var_export($row, true). "</p>";
 
-        if ( empty($rapportArray[$row['searcher_id']]) )
-            $rapportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
+        // If no report has been created yet for this worker 
+        if ( empty($reportArray[$row['searcher_id']]) )
+            $reportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
+        if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
 
         $discipline = cleanAndSplitString($row['found_discipline']);
         $discipline_2 = '';
         if (! empty($discipline[1]) )
             $discipline_2 = sprintf("Et une maitrise de la discipline %s.", $discipline[1]);
+        if ($debug) echo "Prepare discipline_2 string : $discipline_2 <br>";
 
         // transformation
         $hidden_transformation = cleanAndSplitString($row['hidden_transformation']);
@@ -265,8 +300,8 @@ function investigateMecanic($pdo ) {
         $transformationTextDiff[2] = '';
         $transformationTextDiff[3] = '';
         $textesTransformationDiff1 = [
-            ' et nous concluons que c\est un %s',
-            ' ce qui nous fait penser que c\est un %s',
+            ' et nous concluons que c\'est un %s',
+            ' ce qui nous fait penser que c\'est un %s',
         ];
         $textesTransformationDiff2 = [
             'C\'est probablement un %s mais le preuves nous manque encore. ',
@@ -284,6 +319,7 @@ function investigateMecanic($pdo ) {
             if ( $diffval == 2 )
                 $transformationTextDiff[$diffval] .= sprintf($textesTransformationDiff2[array_rand($textesTransformationDiff2)], $found_transformation[$iteration]);
         }
+        if ($debug) echo "Build transformationTextDiff array string :".var_export($transformationTextDiff, true)." <br>";
 
         $text_action_ps = $txtArray[$row['found_action']]['ps'];
         $text_action_inf = $txtArray[$row['found_action']]['inf'];
@@ -291,6 +327,7 @@ function investigateMecanic($pdo ) {
             $text_action_ps .= ' tada ';
             $text_action_inf .= ' tada ';
         }
+        if ($debug) echo "Build text_action_ps et text_action_inf <br>";
 
        $originTexte = '';
         $local_origin_list = getConfig($pdo, 'local_origin_list');
@@ -302,10 +339,17 @@ function investigateMecanic($pdo ) {
             ];
             $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
         }
-        $found_hobby = cleanAndSplitString($row['found_hobby']);
-        $found_metier = cleanAndSplitString($row['found_metier']);
+        if ($debug) echo "Build originTexte : $originTexte <br>";
 
-        $rapport = "<p>";
+        // Extract hobby and metier
+        $found_hobby = cleanAndSplitString($row['found_hobby']);
+        if ($debug) echo "Build found_hobby array :".var_export($found_hobby, true)." <br>";
+
+        $found_metier = cleanAndSplitString($row['found_metier']);
+        if ($debug) echo "Build found_metier array string :".var_export($found_metier, true)." <br>";
+
+        // Start compiling the report
+        $report = "<p>";
 
         /*
         (nom(id)) - %1$s
@@ -349,8 +393,11 @@ function investigateMecanic($pdo ) {
         $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
 
         // Diff 0
-        if ( $row['enquete_difference'] == $DIFF0 ) {
-            $rapport = sprintf($texteDiff01[0],
+        if ($debug) echo "With row['enquete_difference'] AS :".var_export($row['enquete_difference'] , true)." <br>";
+        if ( (int)$row['enquete_difference'] >= (int)$DIFF0 ) {
+            if ($debug) echo " DIFF 0 Start <br>";
+
+            $report = sprintf($texteDiff01[0],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
                 $found_metier[0], // (metier) - %2$
                 $found_hobby[0], // (hobby) - %3$s
@@ -364,8 +411,9 @@ function investigateMecanic($pdo ) {
         }
 
         // Diff 1
-        if ( $row['enquete_difference'] == $DIFF1 ) {
-            $rapport .= sprintf($texteDiff01[1],
+        if ( (int)$row['enquete_difference'] >= (int)$DIFF1 ) {
+            if ($debug) echo " DIFF 1 Start <br>";
+            $report .= sprintf($texteDiff01[1],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
                 $found_metier[0], // (metier) - %2$
                 $found_hobby[0], // (hobby) - %3$s
@@ -382,7 +430,8 @@ function investigateMecanic($pdo ) {
         // %1$s - réseau
         // %2$s - (transformation2)
         // %3$s - (discipline_2)
-        if ( $row['enquete_difference'] == $DIFF2 ) {
+        if ( (int)$row['enquete_difference'] >= (int)$DIFF2 ) {
+            if ($debug) echo " DIFF 3 Start <br>";
             $textesDiff2 = [
                 '%2$sEn plus, sa famille a des liens avec le réseau %1$s. ',
                 'Il fait partie du réseau %1$s. %2$s',
@@ -390,11 +439,12 @@ function investigateMecanic($pdo ) {
                 'Il reçoit un soutient financier du réseau %1$s. %2$s',
                 '%2$sIl traîne avec le réseau %1$s. '
             ];
-            $rapport .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'], $transformationTextDiff[2], $discipline_2 );
+            $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'], $transformationTextDiff[2], $discipline_2 );
         }
 
         // Diff 3
-        if ( $row['enquete_difference'] == $DIFF2 ) {
+        if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
+            if ($debug) echo " DIFF 3 Start <br>";
             $textesDiff3 = [
                 'Ce réseau répond à %1$s. ',
                 'A partir de là on a pu remonter jusqu\'à %1$s. ',
@@ -402,20 +452,80 @@ function investigateMecanic($pdo ) {
                 'Nous l\'avons vu rencontrer en personne %1$s. ',
                 'Ce qui veut dire que \'est un des types de %1$s. '
             ];
-            $rapport .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
+            $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
         }
 
-        // Debug rapport
-        if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true') {
-            $rapport .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
-            $rapport .= "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
-            $rapport .= "Difference: {$row['enquete_difference']}\n";
+        // Debug report
+        if ($debug) {
+            $report .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
+            $report .= "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
+            $report .= "Difference: {$row['enquete_difference']}, ";
         }
-        $rapport .= '</p>';
-        $rapportArray[$row['searcher_id']] .= $rapport;
+        $report .= '</p>';
+        echo "<div>".var_export( $report, true)."</div>";
+        $reportArray[$row['searcher_id']] .= $report;
     }
 
-    if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true')
-        echo var_export( $rapportArray, true);
-    echo '<div>';
+    if ($debug)
+        echo "<div>".var_export( $reportArray, true)."</div>";
+
+    foreach ($reportArray as $worker_id => $report){
+        try{
+            $selectSql  = 'SELECT report FROM worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number';
+            $selectStmt = $pdo->prepare($selectSql);
+            $selectStmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+            $selectStmt->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+            // Execute the query
+            $selectStmt->execute();
+        } catch (PDOException $e) {
+            echo "Failed to select data for worker_id $worker_id: " . $e->getMessage() . "<br />";
+            break;
+        }
+        // Fetch the results
+        $workerReport = $selectStmt->fetchALL(PDO::FETCH_ASSOC);
+        if ($debug) echo "<p> workerReport: ".var_export($workerReport,true)."</p>";
+
+        // Decode the existing JSON into an associative array
+        $currentReport = json_decode($workerReport[0]['report'], true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            // Replace the "investigate_report" key with the new report
+            $currentReport['investigate_report'] = $report;
+
+            // Encode the updated array back into JSON
+            $updatedReportJson = json_encode($currentReport);
+            if ($debug) echo "<p> updatedReportJson: ".var_export($updatedReportJson,true)."</p>";
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                try{
+                    $updateSql  = 'UPDATE worker_actions set report = :jsonreport WHERE worker_id = :worker_id AND turn_number = :turn_number';
+                    $updateStmt  = $pdo->prepare($updateSql );
+                    $updateStmt->bindParam(':jsonreport', $updatedReportJson);
+                    $updateStmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+                    $updateStmt->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+                    // Execute the query
+                    $updateStmt->execute();
+                } catch (PDOException $e) {
+                    echo "Failed to insert data for worker_id {$worker_id}: " . $e->getMessage() . "<br />";
+                }
+            } else {
+                echo "JSON encoding error: " . json_last_error_msg() . "<br />";
+            }
+        } else {
+            echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        }
+    }
+
+    echo '</div>';
+}
+
+function attackMecanic($pdo){
+    echo '<div> <h3>  attackMecanic : </h3> ';
+    $attacks = getAttackerComparisons($pdo);
+    if (empty($attacks)) { echo 'All is calm </div>'; return TRUE;}
+    foreach ($attacks as $row) {
+        // Build report :
+        if ($debug)
+            echo var_export($row, true);
+    }
+    echo '</div>';
 }

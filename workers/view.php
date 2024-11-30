@@ -99,6 +99,18 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     </p>
                     '
                 );
+                foreach ( $worker['actions'] as $turn_number => $action ){
+                    echo "<div> <h5> Semaine $turn_number </h5> ";
+                    if ($_SESSION['DEBUG_REPORT'] == true) "";
+                        echo "<p> action: ".var_export($action, true)."</p>";
+                    if ($action['report'] != '{}') {
+                        // Decode the existing JSON into an associative array
+                        $currentReport = json_decode($action['report'], true);
+                        echo '<h6> Mes investigations : </h6> '.$currentReport['investigate_report'];
+                        
+                    }
+                    echo "</div>";
+                }
             }
             echo ' </div>';
         }

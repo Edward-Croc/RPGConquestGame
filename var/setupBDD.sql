@@ -22,7 +22,7 @@ CREATE TABLE config (
 INSERT INTO config (name, value, description)
 VALUES
     ('DEBUG', 'false', 'Activates the Debugging texts'),
-    ('DEBUG_RAPPORT', 'true', 'Activates the Debugging texts for the rapport'),
+    ('DEBUG_REPORT', 'true', 'Activates the Debugging texts for the report'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
@@ -35,7 +35,7 @@ VALUES
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
-    -- Diff vals in rapport 
+    -- Diff vals in report 
     ('DIFF0', 0, 'Value for Level 0 information'),
     ('DIFF1', 1, 'Value for Level 1 information'),
     ('DIFF2', 2, 'Value for Level 2 information'),
@@ -47,7 +47,7 @@ VALUES
     ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
-    -- action text in rapport config
+    -- action text in report config
     ('txt_ps_passive', 'se cache', 'Texte for passive action'),
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
     ('txt_ps_attack', 'attaque', 'Texte for attack action'),
@@ -200,6 +200,7 @@ CREATE TABLE worker_actions (
     action TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
     report JSON DEFAULT '{}'::json,
+    UNIQUE (worker_id, turn_number), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
     FOREIGN KEY (controler_id) REFERENCES controlers (ID)

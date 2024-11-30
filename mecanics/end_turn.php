@@ -20,10 +20,10 @@ require_once '../base/base_html.php';
         if ($valsResult) {
             // do end_turn actions
             // Controlled by IA 
-
+            // attack
+            $investigateResult = attackMecanic($gameReady);
             // enquete
             $investigateResult = investigateMecanic($gameReady);
-            // attack
             // claim
             // violence
             // generate JSon reports

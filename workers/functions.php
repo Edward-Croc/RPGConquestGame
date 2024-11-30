@@ -57,8 +57,19 @@ function getWorkers($pdo, $worker_ids) {
         $workerPowersById[$worker_id][$power_type][] = $power['name'];
     }
 
+    // Select  all entries to worker_actions for a worker_id
+    $worker_actions = getActionsByWorkers($pdo, $worker_id_str);
+    // Index $worker_actions by worker_id for faster lookup
+    $workerActionsById = [];
+    foreach ($worker_actions as $action) {
+        if (empty($workerActionsById[$worker_id][$action['turn_number']])) $workerActionsById[$worker_id][$action['turn_number']] = [];
+        $worker_id = $action['worker_id'];
+        $workerActionsById[$worker_id][$action['turn_number']] =  $action;
+    }
+
     foreach ($workersArray as $key => $worker) {
         $workersArray[$key]['powers'] = $workerPowersById[$worker['id']] ?? []; // Add powers or empty array if none
+        $workersArray[$key]['actions'] = $workerActionsById[$worker['id']] ?? []; // Add actons or empty array if none
     }
     if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
 
@@ -89,6 +100,25 @@ function getWorkersByControler($pdo, $controler_id) {
     }
 
     return getWorkers($pdo, $worker_ids);
+}
+
+function getActionsByWorkers($pdo, $worker_id_str){
+    $sql = "SELECT * FROM worker_actions w
+        WHERE worker_id IN ($worker_id_str)
+        ORDER BY worker_id ASC, turn_number ASC
+    ";
+    try {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    } catch (PDOException $e) {
+    echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+    return NULL;
+    }
+    // Fetch the results
+    $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SESSION['DEBUG'] == true) echo sprintf("worker_actions: %s <br /> <br />", var_export($workers_powers,true));
+
+    return $worker_actions;
 }
 
 function randomWorkerOrigin($pdo, $limit = 1, $origin_list = '') {

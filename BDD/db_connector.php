@@ -253,7 +253,7 @@ function gameReady() {
                 }
                
                 $sqlFile =  $path.'/var/setupVampire1966_advanced.sql';
-                if (strtolower(getConfig($pdo, 'DEBUG_RAPPORT')) == 'true') 
+                if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') 
                     $sqlFile =  $path.'/var/setupVampire1966_advanced_tests.sql';
 
                 echo "Loading $sqlFile ...<br />";
