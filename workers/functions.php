@@ -376,9 +376,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
                 $attackScope = '';
                 $attackID = null;
                 // Determine scope and ID
-                if ($val === 'carnage') {
-                    $attackScope = $val;
-                } elseif (preg_match('/^(network|worker)_(\d+)$/', $extraVal, $matches)) {
+                if (preg_match('/^(network|worker)_(\d+)$/', $val, $matches)) {
                     $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
                     $attackID = intval($matches[2]); // Extract ID as integer
                 } else {
@@ -563,7 +561,6 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
     }
     $enemyWorkersSelect = sprintf("
         <select id='enemyWorkersSelect' name='enemy_worker_id[]' multiple>
-            <option value='future'>Ceux que vous trouverez!</option>
             %s
         </select>
         ",

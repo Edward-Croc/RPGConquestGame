@@ -134,21 +134,6 @@ function createNewTurnLines($pdo, $turn_number){
 
     return TRUE;
 }
-function getAttackerComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
-    if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
-    }
-    echo "turn_number : $turn_number <br>";
-
-    // Define the SQL query
-    $sql = "";
-
-    // Add Limit to only 1 caracter
-    if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
-
-
-}
 
 function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
     if (empty($turn_number)) {
@@ -299,7 +284,7 @@ function investigateMecanic($pdo ) {
     foreach ($investigations as $row) {
 
         // Build report :
-        if ($debug) echo "<div> 
+        if ($debug) echo "<div>
             <p> row : ". var_export($row, true). "</p>";
 
         // If no report has been created yet for this worker
@@ -531,6 +516,7 @@ function investigateMecanic($pdo ) {
                     $cke_existing_record_id = $pdo->lastInsertId();
                 }
                 if ( (int)$row['enquete_difference'] >= (int)$DIFF2 ) {
+                    $discovered_controler_name_sql = '';
                     if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
                         $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
                     }
@@ -609,14 +595,101 @@ function investigateMecanic($pdo ) {
     echo '</div>';
 }
 
+function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, $threshold = 0 ) {
+    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
+
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+    }
+    echo "turn_number : $turn_number <br>";
+    try{
+        // Define the SQL query
+        $sql = "SELECT
+                wa.worker_id AS attacker_id,
+                wa.action_params AS params,
+                wa.controler_id,
+                wa.zone_id
+            FROM
+                worker_actions wa
+            WHERE
+                wa.action IN ('attack')
+                AND turn_number = :turn_number";
+
+        // Add Limit to only 1 caracter
+        if ( !EMPTY($attacker_id) ) $sql .= " AND s.attacker_id = :attacker_id";
+
+        // Prepare and execute the statement
+        $stmt = $pdo->prepare($sql);
+        if ( !EMPTY($attacker_id) ) $stmt->bindParam(':attacker_id', $attacker_id);
+        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo "Failed to SELECT list of attackers: " . $e->getMessage() . "<br />";
+    }
+    $attackersActionArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($debug)
+        echo sprintf("attackersActionArray : %s <br/>", var_export($attackersActionArray, true));
+
+    $attackArray = array();
+    foreach ($attackersActionArray AS $attackAction){
+        if (!empty($attackAction['params'])) {
+            $attackParams = json_decode($attackAction['params'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+            }
+            foreach($attackParams AS $param){
+                if ($param['attackScope'] == 'network'){
+                    try{
+                        $sqlNetworkSearch ="SELECT discovered_worker_id FROM controlers_known_enemies
+                             WHERE zone_id = :zone_id AND discovered_controler_id = :network_id AND controler_id = :controler_id";
+                        $stmtNetworkSearch = $pdo->prepare($sqlNetworkSearch);
+                        $stmtNetworkSearch->bindParam(':network_id', $param['attackID']);
+                        $stmtNetworkSearch->bindParam(':zone_id', $attackAction['zone_id']);
+                        $stmtNetworkSearch->bindParam(':controler_id', $attackAction['controler_id']);
+                        $stmtNetworkSearch->execute();
+                    } catch (PDOException $e) {
+                        echo "Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
+                    }
+                    $networkWorkersList = $stmtNetworkSearch->fetchAll(PDO::FETCH_COLUMN);
+                    if ($debug)
+                        echo sprintf("networkWorkersList : %s <br/>", var_export($networkWorkersList, true));
+                    foreach($networkWorkersList AS $woker_id){
+                        $attackArray[$attack['attacker_id']][] = $woker_id;
+                    }
+                } elseif ($param['attackScope'] == 'worker') {
+                    if (in_array($param['attackID'], $attackArray) ) {
+                        $attackArray[$attack['attacker_id']][] = $param['attackID'];
+                    }
+                }
+            }
+        }
+    }
+
+    if ($debug) '';
+    echo sprintf("attackArray : %s <br/>", var_export($attackArray, true));
+    // Fetch and return the 
+    
+    return $attackArray;
+
+}
+
 function attackMecanic($pdo){
     echo '<div> <h3>  attackMecanic : </h3> ';
+
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
+
     $attacks = getAttackerComparisons($pdo);
+    if ($debug) '';
+    echo sprintf("attacks : %s <br/>", var_export($attacks, true));
     if (empty($attacks)) { echo 'All is calm </div>'; return TRUE;}
     foreach ($attacks as $row) {
         // Build report :
         if ($debug)
             echo var_export($row, true);
     }
+
+
     echo '</div>';
 }

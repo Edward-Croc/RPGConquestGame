@@ -23,7 +23,7 @@ require_once '../base/base_html.php';
             // attack
             $investigateResult = attackMecanic($gameReady);
             // enquete
-            $investigateResult = investigateMecanic($gameReady);
+            // $investigateResult = investigateMecanic($gameReady);
             // claim
             // violence
             // generate JSon reports
