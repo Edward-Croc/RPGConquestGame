@@ -501,8 +501,9 @@ function investigateMecanic($pdo ) {
                 ]);
                 $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
                 echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
-
-                if ($existingRecord) {
+                $cke_existing_record_id = '';
+                if (!empty($existingRecord)) {
+                    $cke_existing_record_id = $existingRecord['id'];
                     // Update if record exists
                     $sql = "UPDATE controlers_known_enemies
                             SET last_discovery_turn = :turn_number, zone_id = :zone_id
@@ -527,6 +528,7 @@ function investigateMecanic($pdo ) {
                         ':turn_number' => $turn_number,
                         ':zone_id' => $row['zone_id'],
                     ]);
+                    $cke_existing_record_id = $pdo->lastInsertId();
                 }
                 if ( (int)$row['enquete_difference'] >= (int)$DIFF2 ) {
                     if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
@@ -542,7 +544,7 @@ function investigateMecanic($pdo ) {
                     if ($debug) echo "sql :".var_export($sqlUpdate, true)." <br>";
                     $stmtUpdate = $pdo->prepare($sqlUpdate);
                     $stmtUpdate->bindParam(':discovered_controler_id', $row['found_controler_id']);
-                    $stmtUpdate->bindParam(':id',$existingRecord['id']);
+                    $stmtUpdate->bindParam(':id',$cke_existing_record_id);
                     if ( (int)$row['enquete_difference'] >= (int)$DIFF3 ) {
                         $stmtUpdate->bindParam(':discovered_controler_name', $row['found_controler_name']);
                     }
