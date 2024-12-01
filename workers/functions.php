@@ -367,24 +367,31 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     $jsonOutput = '{}';
     switch($action) {
         case 'attack' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): attack <br/><br/>";
+            if ($_SESSION['DEBUG_ATTACK'] == true){
+                echo sprintf("%s(): attack %s <br/><br/>",__FUNCTION__, var_export($extraVal,true)) ;
+            }
             // Build attack JSON
-            $attackScope = '';
-            $attackID = null;
-            // Determine scope and ID
-            if ($extraVal === 'carnage') {
-                $attackScope = $extraVal;
-            } elseif (preg_match('/^(network|worker)_(\d+)$/', $extraVal, $matches)) {
-                $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
-                $attackID = intval($matches[2]); // Extract ID as integer
-            } else {
-                throw new Exception('Invalid extraVal format');
+            $chosenAttackOptions = array();
+            foreach ($extraVal as $val){
+                $attackScope = '';
+                $attackID = null;
+                // Determine scope and ID
+                if ($val === 'carnage') {
+                    $attackScope = $val;
+                } elseif (preg_match('/^(network|worker)_(\d+)$/', $extraVal, $matches)) {
+                    $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
+                    $attackID = intval($matches[2]); // Extract ID as integer
+                } else {
+                    throw new Exception('Invalid extraVal format');
+                }
+                $chosenAttackOptions[] =
+                [
+                    'attackScope' => $attackScope,
+                    'attackID' => $attackID
+                ];
             }
             // Create JSON table
-            $jsonOutput = json_encode([
-                'attackScope' => $attackScope,
-                'attackID' => $attackID
-            ]);
+            $jsonOutput = json_encode($chosenAttackOptions);
             break;
         case 'activate' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): activate <br/><br/>";
