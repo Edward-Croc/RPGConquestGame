@@ -41,10 +41,10 @@ VALUES
     ('REPORTFDIFF1', 1, 'Value for Level 1 information'),
     ('REPORTFDIFF2', 2, 'Value for Level 2 information'),
     ('REPORTFDIFF3', 3, 'Value for Level 3 information'),
-    -- Diff vals in report 
+    -- Diff vals in report
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
-    ('RIPOSTDIFF3', 2, 'Value for Succesful Ripost'),
+    ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
     -- passive, investigate, attack, claim, captured, dead
     ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),

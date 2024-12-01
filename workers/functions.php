@@ -10,11 +10,13 @@ function getWorkers($pdo, $worker_ids) {
             w.*,
             wo.name AS origin_name,
             z.name AS zone_name,
+            cw.is_primary_controler,
             COALESCE(SUM(p.enquete), 0) AS total_enquete,
             COALESCE(SUM(p.action), 0) AS total_action,
             COALESCE(SUM(p.defence), 0) AS total_defence
         FROM
             workers AS w
+        JOIN controler_worker AS cw ON cw.worker_id = w.id
         JOIN
             worker_origins AS wo ON wo.id = w.origin_id
         JOIN

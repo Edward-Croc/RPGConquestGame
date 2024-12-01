@@ -14,7 +14,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
                 wa.worker_id AS attacker_id,
                 wa.action_params AS params,
                 wa.controler_id,
-                wa.zone_id
+                wa.zone_id,
+                wa.turn_number
             FROM
                 worker_actions wa
             WHERE
@@ -82,9 +83,12 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
             wa.worker_id AS attacker_id,
             wa.action_val AS attacker_action_val,
             wa.defence_val AS attacker_defence_val,
-            wa.zone_id
+            wa.controler_id AS attacker_controler_id,
+            wa.zone_id,
+            CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name
         FROM
             worker_actions wa
+            JOIN controlers c ON wa.controler_id = c.ID
         WHERE
             wa.worker_id = :attacker_id
             AND turn_number = :turn_number
@@ -93,22 +97,28 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
         a.attacker_id,
         a.attacker_action_val,
         a.attacker_defence_val,
+        a.attacker_controler_id,
+        a.attacker_controler_name,
         z.id AS zone_id,
         z.name AS zone_name,
-        wa.worker_id AS attacked_id,
-        wa.action_val AS attacked_action_val,
-        wa.defence_val AS attacked_defence_val,
-        CONCAT(w.firstname, ' ', w.lastname) AS attacked_name,
-        wo.id AS attacked_origin_id,
-        wo.name AS attacked_origin_name,
+        wa.turn_number,
+        wa.worker_id AS defender_id,
+        wa.action_val AS defender_action_val,
+        wa.defence_val AS defender_defence_val,
+        CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
+        wo.id AS defender_origin_id,
+        wo.name AS defender_origin_name,
         (a.attacker_action_val - wa.defence_val) AS attack_difference,
-        (wa.action_val - a.attacker_defence_val) AS riposte_difference
+        (wa.action_val - a.attacker_defence_val) AS riposte_difference,
+        cke.id AS defender_knows_enemy
     FROM attackers a
     JOIN zones z ON z.id = a.zone_id
     JOIN worker_actions wa ON
-            a.zone_id = wa.zone_id AND turn_number = :turn_number
+            a.zone_id = wa.zone_id AND wa.turn_number = :turn_number
     JOIN workers w ON wa.worker_id = w.ID
     JOIN worker_origins wo ON wo.id = w.origin_id
+    JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
+    LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
     WHERE w.id IN (%s)
     ";
     $final_attacks_aggregate = array();
@@ -142,12 +152,12 @@ function attackMecanic($pdo){
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
     $ATTACKDIFF0 = getConfig($pdo, 'ATTACKDIFF0');
     $ATTACKDIFF1 = getConfig($pdo, 'ATTACKDIFF1');
-    $RIPOSTDIFF3 = getConfig($pdo, 'RIPOSTDIFF3');
+    $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
     $RIPOSTONDEATH = getConfig($pdo, 'RIPOSTONDEATH');
     if ($debug) {
         echo "ATTACKDIFF0 : $ATTACKDIFF0 <br/>";
         echo "ATTACKDIFF1 : $ATTACKDIFF1 <br/>";
-        echo "RIPOSTDIFF3 : $RIPOSTDIFF3 <br/>";
+        echo "RIPOSTDIFF : $RIPOSTDIFF <br/>";
         echo "REPORTFDIFF1 : $REPORTFDIFF1 <br/>";
     }
 
@@ -160,14 +170,63 @@ function attackMecanic($pdo){
         if ($debug)
             echo sprintf("attacker_id: %s =>row %s <br/>", $attacker_id, var_export($defenders, true));
         foreach ($defenders as $defender) {
-            if ($defender['attack_difference'] < 1 ){
-                echo $defender['attacked_name']. ' Escaped !';
+            $survived = true;
+            if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
+                $survived = false;
+                echo $defender['defender_name']. ' HAS DIED !';
+                // in  workers
+                // set  is_alive  FALSE,
+                // set  is_active FASLE,
+                // for  id = defender_id
+                // in worker_actions
+                // set action   'dead'
+                // set report life_report append Tué 
+                // for worker_id = defender_id AND turn_number = turn 
+                // in worker_actions
+                // set report attack_report append attaque OK
+                // for worker_id = attacker_id AND turn_number = turn
+                if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
+                    // in workers
+                    // set  is_alive  TRUE,
+                    // set  is_active FASLE,
+                    // for  id = defender_id
+                    // in worker_actions
+                    // set action   'captured'
+                    // set report life_report append Disparu 
+                    // for worker_id = defender_id AND turn_number = turn
+                    // in controler_worker
+                    // insert attacker_controler_id, defender_id, is_primary_controler = false 
+                    // in worker_actions
+                    // set report attack_report append attaque OK
+                    // for worker_id = attacker_id AND turn_number = turn
+                    echo $defender['defender_name']. ' Was Captured !';
+                }
             }
-            if ($defender['attack_difference'] >= 1 ){
-                echo $defender['attacked_name']. ' HAS DIED !';
+            if ($defender['attack_difference'] < (INT)$ATTACKDIFF0 ){
+                // $defender['defender_knows_enemy']
+                    // in worker_actions
+                    // set action   'captured'
+                    // set report life_report append Disparu 
+                    // for worker_id = defender_id AND turn_number = turn 
+                    // in worker_actions
+                    // set report attack_report append attaque OK
+                    // for worker_id = attacker_id AND turn_number = turn
+                echo $defender['defender_name']. ' Escaped !';
+                $report = 'J\ai été attaquer, mais je me suis éch';
             }
-            if ($defender['riposte_difference'] >= 1 ){
-                echo $defender['attacked_name']. ' Riposte !';
+            if (($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
+                // in  workers
+                // set  is_alive  FALSE,
+                // set  is_active FASLE,
+                // for  id = attacker_id
+                // in worker_actions
+                // set action   'dead'
+                // set report life_report append Tué 
+                // for worker_id = attacker_id AND turn_number = turn 
+                // in worker_actions
+                // set report attack_report append riposte
+                // for worker_id = defender_id AND turn_number = turn
+                echo $defender['defender_name']. ' Riposte !';
             }
         }
     }

@@ -12,6 +12,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
 
     $workersArray = [];
+    // TODO Change view for DEAD, CAPTURED and Non Primary controler
     if ( !empty ($worker_id) ) {
         $workersArray = getWorkers($gameReady, [$worker_id]);
     } else {
@@ -103,7 +104,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 // If AGE > 0 Should Have 1 discipline
                 // echo showDisciplineSelect($powerDisciplineArray);
                 // If Age > 2 Should Ahev 2 discipline
-                // Check Transformation Conditions
+                // TODO : Check Transformation Conditions
                 echo "</div>";
             }
             echo '</form>';
