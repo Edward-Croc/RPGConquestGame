@@ -6,6 +6,7 @@ function getWorkers($pdo, $worker_ids) {
     if ( empty($worker_ids) ) return NULL;
     $worker_id_str = implode(',', $worker_ids);
 
+    // TODO add worker AGE math
     $sql = "SELECT
             w.*,
             wo.name AS origin_name,
