@@ -372,7 +372,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             $attackScope = '';
             $attackID = null;
             // Determine scope and ID
-            if ($extraVal === 'carnage' || $extraVal === 'allknown') {
+            if ($extraVal === 'carnage') {
                 $attackScope = $extraVal;
             } elseif (preg_match('/^(network|worker)_(\d+)$/', $extraVal, $matches)) {
                 $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
@@ -453,45 +453,57 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
 
 function getEnemyWorkers($pdo, $zone_id, $controler_id) {
     // Select from controlers_known_enemies by $zone_id, $controler_id
-        // return table of : 
+        // return table of :
         // A worker discovered_worker_id with no discovered_controler_id
         // B workers discovered_worker_id with identical discovered_controler_id
             //Optional discovered_controler_name if is associated to a
+    if ($_SESSION['DEBUG_ATTACK'] == true) {
+        echo sprintf("zone_id: %s <br/> " , var_export($zone_id, true));
+        echo sprintf("controler_id: %s <br/> " , var_export($controler_id, true));
+    }
     try {
         // Query for workers with no discovered_controler_id (A)
         $sqlA = "
-            SELECT 
-                cke.discovered_worker_id,
+            SELECT
+                CONCAT(w.firstname, ' ', w.lastname) AS name,
+                cke.id,
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
-            FROM 
+            FROM
                 controlers_known_enemies cke
-            WHERE 
-                cke.zone_id = :zone_id 
+            JOIN
+                workers AS w ON cke.discovered_worker_id = w.id
+            WHERE
+                cke.zone_id = :zone_id
                 AND cke.controler_id = :controler_id
                 AND cke.discovered_controler_id IS NULL
+            ORDER BY last_discovery_turn DESC
         ";
         $stmtA = $pdo->prepare($sqlA);
         $stmtA->execute([
             ':zone_id' => $zone_id,
             ':controler_id' => $controler_id
         ]);
-        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_COLUMN); // Only return worker IDs
+        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
 
         // Query for workers with identical discovered_controler_id (B)
         $sqlB = "
-            SELECT 
-                cke.discovered_worker_id,
+            SELECT
+                CONCAT(w.firstname, ' ', w.lastname) AS name,
+                cke.id,
                 cke.discovered_controler_id,
                 COALESCE(cke.discovered_controler_name, 'Unknown') AS discovered_controler_name,
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
-            FROM 
+            FROM
                 controlers_known_enemies cke
-            WHERE 
-                cke.zone_id = :zone_id 
+            JOIN
+                workers AS w ON cke.discovered_worker_id = w.id
+            WHERE
+                cke.zone_id = :zone_id
                 AND cke.controler_id = :controler_id
                 AND cke.discovered_controler_id IS NOT NULL
+            ORDER BY discovered_controler_name ASC, discovered_controler_id ASC, last_discovery_turn DESC
         ";
         $stmtB = $pdo->prepare($sqlB);
         $stmtB->execute([
@@ -509,25 +521,42 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
     } catch (PDOException $e) {
         echo "Error fetching enemy workers: " . $e->getMessage();
         return [];
-    }        
+    }
 }
 
 function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
     $enemyWorkerOptions = '';
 
     $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controler_id);
-    echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
-    
-    $enemyWorkerArray = [];
-    // Display select list of Controlers
-    foreach ( $enemyWorkerArray as $enemyWorker) {
-        $enemyWorkerOptions .= "<option value='" . $enemyWorker['id'] . "'>" . $enemyWorker['name'] . " </option>";
+
+    if ($_SESSION['DEBUG_ATTACK'] == true) {
+        echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
     }
 
+    if (!empty($enemyWorkersArray['workers_without_controler'])){
+        // Display select list of Controlers
+        foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {
+            $enemyWorkerOptions .= "<option value='worker_" . $enemyWorker['id'] . "'>" . $enemyWorker['name'] . " </option>";
+        }
+    }
+    if (!empty($enemyWorkersArray['workers_with_controler'])) {
+        $discovered_controler_id = 0;
+        // Display select list of Controlers
+        foreach ( $enemyWorkersArray['workers_with_controler'] as $enemyWorker) {
+            if ( $discovered_controler_id != $enemyWorker['discovered_controler_id']){
+                $discovered_controler_id = $enemyWorker['discovered_controler_id'];
+                $enemyWorkerOptions .= sprintf(
+                    '<option value=\'network_%1$s\'>Réseau %1$s - %2$s</option>',
+                    $enemyWorker['discovered_controler_id'],
+                    $enemyWorker['discovered_controler_name'],
+                );
+            }
+            $enemyWorkerOptions .= "<option value='worker_".$enemyWorker['id']."'> - ".$enemyWorker['name']." </option>";
+        }
+    }
     $enemyWorkersSelect = sprintf("
-        <select id='enemyWorkersSelect' name='enemy_worker_id'>
-            <option value='carnage'>Carnage!</option>
-            <option value='allknown'>Tous les connus!</option>
+        <select id='enemyWorkersSelect' name='enemy_worker_id[]' multiple>
+            <option value='future'>Ceux que vous trouverez!</option>
             %s
         </select>
         ",

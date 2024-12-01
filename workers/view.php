@@ -37,9 +37,11 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     if ( !empty($workersArray) ) {
         $showZoneSelect = showZoneSelect($zonesArray);
         if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
-        $controlers = getControlers($gameReady);
-        $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
-        $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
+
+        if ( !empty($worker_id) ) {
+            $controlers = getControlers($gameReady);
+            $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
+        }
 
         foreach ($workersArray as $worker){
             foreach($worker['actions'] as $action) {
@@ -66,6 +68,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             );
 
             if ( !empty($worker_id) ) {
+                $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
 
                 echo sprintf('<div class="history">
                     <h3>Historique : </h3>
@@ -110,7 +113,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf('<div class="report week"> <h4> Semaine %s </h4>', $turn_number);
-                    if ($_SESSION['DEBUG_REPORT'] == true) "";
+                    if ($_SESSION['DEBUG_REPORT'] == true)
                         echo "<p> action: ".var_export($action, true)."</p>";
                     if ($action['report'] != '{}') {
                         // Decode the existing JSON into an associative array
