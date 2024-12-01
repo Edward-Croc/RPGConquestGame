@@ -538,6 +538,8 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
         echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
     }
 
+    if (empty($enemyWorkersArray['workers_without_controler']) && empty($enemyWorkersArray['workers_with_controler'])) return '';
+
     if (!empty($enemyWorkersArray['workers_without_controler'])){
         // Display select list of Controlers
         foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {

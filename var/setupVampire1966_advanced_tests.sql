@@ -1,5 +1,5 @@
 
--- UPDATE config SET value = 0 WHERE name in ( 'DIFF0', 'DIFF1', 'DIFF2', 'DIFF3');
+-- UPDATE config SET value = 0 WHERE name in ( 'REPORTFDIFF0', 'REPORTFDIFF1', 'REPORTFDIFF2', 'REPORTFDIFF3');
 
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Harvey', 'Matthews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
