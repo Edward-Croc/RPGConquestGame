@@ -202,6 +202,7 @@ function createWorker($pdo, $array) {
         power_metier_id
         zone
         discipline
+        transformation
         controler_id
     */
     // Check if worker already exists :
@@ -249,7 +250,8 @@ function createWorker($pdo, $array) {
     $link_power_type_id_array = [];
     if (!empty($array['power_hobby_id'])) $link_power_type_id_array[] = $array['power_hobby_id'];
     if (!empty($array['power_metier_id'])) $link_power_type_id_array[] = $array['power_metier_id'];
-    if (!empty($array['discipline'])) $link_power_type_id_array[] = $array['discipline'];
+    if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
+    if (!empty($array['transformation']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
         try{
             // Insert new worker_powers value into the database

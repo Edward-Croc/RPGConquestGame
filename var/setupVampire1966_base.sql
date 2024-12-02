@@ -366,14 +366,15 @@ INSERT INTO power_types (name) VALUES
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, action, defence, other) VALUES
-    ('Goule', 0,0,1, '{"hidden" : "1", "on_recrutment": "TRUE", "on_transformation": "FASLE" }'),
+    ('Goule', 0,0,1, '{"hidden" : "1", "on_recrutment": "TRUE", "on_transformation": {"age": "0", "turn": "0"} }'),
     ('Vampire nouveau né', 1,1,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"age": "2", "turn": "2"} }'),
-    ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"age": "2", "controler_power": "Vicissitude"}}'),
-    ('Fantome',3,-2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"woker_state": "0", "controler_power": "Nécromancie"}}'),
-    ('Possession', 2,-1,2, '{"hidden" : "2", "on_recrutment": "FALSE", "on_transformation": {"OR": {"age": "2","woker_state": "0"}, "controler_faction": "Démon, Eglise"}}')
+    ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"age": "2", "controler_faction": "Tzimisce"}}'),
+    ('Fantome',3,-2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"woker_is_alive": "0", "controler_faction": "Giovanni"}}'),
+    ('Possession', 2,-1,2, '{"hidden" : "2", "on_recrutment": "FALSE", "on_transformation": {"OR": {"age": "2","woker_is_alive": "0"}, "controler_faction": "Démon, Eglise"}}')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Goule')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau né')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome')),

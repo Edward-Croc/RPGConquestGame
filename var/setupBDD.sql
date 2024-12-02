@@ -22,8 +22,9 @@ CREATE TABLE config (
 INSERT INTO config (name, value, description)
 VALUES
     ('DEBUG', 'false', 'Activates the Debugging texts'),
-    ('DEBUG_REPORT', 'fasle', 'Activates the Debugging texts for the investigation report'),
+    ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
     ('DEBUG_ATTACK', 'true', 'Activates the Debugging texts for the attack report mecanics'),
+    ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
@@ -36,7 +37,7 @@ VALUES
     -- ('recrutement_hobby', '1', ''),
     -- ('recrutement_metier', '1', ''),
     ('recrutement_disciplines', '1', ''),
-    -- ('recrutement_transformation', '1', ''),
+    ('recrutement_transformation', '{"action": "check"}', ''),
     -- Worker experience
     ('age_hobby', 'FALSE', ''),
     ('age_metier', 'FALSE', ''),

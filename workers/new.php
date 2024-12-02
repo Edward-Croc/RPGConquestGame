@@ -54,7 +54,7 @@ if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
 $nameArray = randomWorkerName($gameReady, $originList, $nbChoices);
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
-$powerDisciplineArray = getBasePowers($gameReady,'3', $controler_id);
+$powerDisciplineArray = getPowersByType($gameReady,'3', $controler_id, TRUE);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true){
     echo "nameArray: ".var_export($nameArray, true)."<br /><br />";
@@ -102,6 +102,24 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     );
 
     echo showDisciplineSelect($powerDisciplineArray);
+
+    // Check Transformation Conditions
+    $recrutement_transformation_json = getConfig($gameReady, 'recrutement_transformation');
+    $recrutement_transformation_array = json_decode($recrutement_transformation_json, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+    }
+    if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("recrutement_transformation_array :%s  <br>", var_export($recrutement_transformation_array,true));
+    if (!empty($recrutement_transformation_array['action']) && $recrutement_transformation_array['action'] == 'check' ) {
+        // get transformations
+        $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
+        if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
+        $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, NULL, $mecanics['turncounter'], 'on_recrutment' );
+        if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
+        if (! empty($powerTransformationArray) ) 
+            echo showTransformationSelect($powerTransformationArray, TRUE);
+    }
+
     echo showZoneSelect($zonesArray);
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 

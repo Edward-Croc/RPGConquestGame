@@ -53,6 +53,7 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
     return $powerArray;
 }
 
+/*
 function getPowersByType($pdo, $type_list) {
     $powerArray = array();
     $power_text = getSQLPowerText();
@@ -71,20 +72,30 @@ function getPowersByType($pdo, $type_list) {
     // Fetch the results
     $powerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return $powerArray;
-}
+}*/
 
-function getBasePowers($pdo, $type_list, $controler_id = null) {
+function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRUE) {
     $powerArray = array();
     $power_text = getSQLPowerText();
 
     $basePowerNames = '';
-    $configBasePowerNames = getConfig($pdo, 'basePowerNames');
-    if ( !empty($configBasePowerNames) ) {
-        $basePowerNames = $configBasePowerNames;
+    if ( $add_base ){
+        $configBasePowerNames = getConfig($pdo, 'basePowerNames');
+        if ( !empty($configBasePowerNames) ) {
+            $basePowerNames = $configBasePowerNames;
+        }
+    }
+
+    $conditions = '';
+    if ($controler_id != "" || $basePowerNames != "") {
+    $conditions = sprintf("AND ( %s %s %s )",
+        $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
+        ($controler_id != "" && $basePowerNames != "") ? "OR" : '',
+        $controler_id != "" ? "controlers.id IN ($controler_id)" : '');
     }
 
     // Get all powers from a type_list
-    $sql = sprintf('SELECT p.*, %5$s, link_power_type.id as link_power_type_id
+    $sql = sprintf('SELECT p.*, %3$s, link_power_type.id as link_power_type_id
         FROM powers AS p
         JOIN link_power_type ON link_power_type.power_id = p.id
         WHERE p.id IN (
@@ -95,19 +106,17 @@ function getBasePowers($pdo, $type_list, $controler_id = null) {
             LEFT JOIN factions ON factions.id = faction_powers.faction_id
             LEFT JOIN controlers ON controlers.faction_id = factions.id
             WHERE link_power_type.power_type_id IN ( %1$s )
-            AND ( %2$s %3$s %4$s )
+            %2$s
         )',
         $type_list,
-        $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
-        ($controler_id != "" && $basePowerNames != "") ? "OR" : '',
-        $controler_id != "" ? "controlers.id IN ($controler_id)" : '',
+        $conditions,
         $power_text,
     );
     if ($_SESSION['DEBUG'] == true){
         echo __FUNCTION__."(): $sql <br />";
     }
-    try{
 
+    try{
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -120,7 +129,7 @@ function getBasePowers($pdo, $type_list, $controler_id = null) {
     return $powerArray;
 }
 
-function showDisciplineSelect($powerDisciplineArray){
+function showDisciplineSelect($powerDisciplineArray, $show_text = true){
     if (empty($powerDisciplineArray)) return '';
 
     $disciplinesOptions = '';
@@ -129,17 +138,116 @@ function showDisciplineSelect($powerDisciplineArray){
     foreach ( $powerDisciplineArray as $powerDiscipline) {
         $disciplinesOptions .= "<option value='" . $powerDiscipline['link_power_type_id'] . "'>" . $powerDiscipline['power_text'] . " </option>";
     }
-    $showDisciplineSelect = sprintf(" Discipline:
+    $showDisciplineSelect = sprintf(" %s
         <select id='disciplineSelect' name='discipline'>
             <option value=\'\'>Select Discipline</option>
             %s
         </select>
         <br />
         ",
+        $show_text ? ' Discipline:' : '',
         $disciplinesOptions
     );
 
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showDisciplineSelect: ".var_export($showDisciplineSelect, true)."<br /><br />";
 
     return $showDisciplineSelect;
+}
+
+function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $worker_id, $turn_number, $state_text ){
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') $debug = TRUE;
+
+    $workersArray = array();
+    if (!empty($worker_id))
+        $workersArray = getWorkers($pdo, [$worker_id]);
+    $controlersArray = array();
+    if (!empty($controler_id))
+        $controlersArray = getControlers($pdo, NULL, $controler_id,);
+
+    if ($debug) 
+        echo sprintf("<p> powerArray : %s<br/>
+            workersArray: %s <br/>
+            controlersArray: %s<p/>
+         ",var_export($powerArray,true),var_export($workersArray,true),var_export($controlersArray,true)
+        );
+
+    foreach ( $powerArray AS $key => $power ) {
+        $powerConditions = json_decode($power['other'], true);
+        if ($debug) echo sprintf("power(%s) : %s ==> json powerConditions : %s <br>", $key, var_export($power, true), var_export($powerConditions,true));
+        $keepElement = FALSE;
+        if (!empty($powerConditions[$state_text]) ){
+            if ($powerConditions[$state_text] == 'TRUE'){
+                $keepElement = TRUE;
+            }
+            else if( is_array($powerConditions[$state_text]) ) {
+                $keepElement = TRUE;
+                if (!empty($powerConditions[$state_text]['OR']) ){
+                    if ($debug) echo 'test the OR condition : <br/>' ;
+                    $OR = FALSE;
+                    foreach ($powerConditions[$state_text]['OR'] AS $element){
+                        if (!empty($workersArray) ) {
+                            if (!empty($element['age']) && ($element['age'] <= $workersArray[0]['age']) ) {
+                                if ($debug) echo 'test PASSE the age condition : <br/>' ;
+                                $OR = $OR || TRUE;
+                            }
+                            if (!empty($element['woker_is_alive']) && ((BOOL)$element['woker_is_alive'] == (BOOL)$workersArray[0]['is_alive'])) {
+                                if ($debug) echo 'test PASSED the woker_is_alive condition : <br/>' ;
+                                $OR = $OR || TRUE;
+                            }
+                        }
+                    }
+                    $keepElement = $OR;
+                }
+                if (!empty($workersArray) ) {
+                    if (!empty($powerConditions[$state_text]['age']) && ($powerConditions[$state_text]['age'] > $workersArray[0]['age']) ) {
+                        if ($debug) echo 'test FAILED the age condition : <br/>' ;
+                        $keepElement = FALSE;
+                    }
+                    if (!empty($powerConditions[$state_text]['woker_is_alive']) && ((BOOL)$powerConditions[$state_text]['woker_is_alive'] != (BOOL)$workersArray[0]['is_alive'])) {
+                        $keepElement = FALSE;
+                    }
+                } else 
+                    $keepElement = FALSE;
+                if (!empty($powerConditions[$state_text]['turn']) && $powerConditions[$state_text]['turn'] > $turn_number) {
+                    if ($debug) echo 'test FAILED the turn condition : <br/>' ;
+                    $keepElement = FALSE;
+                }
+                if (!empty($powerConditions[$state_text]['controler_faction']) && $powerConditions[$state_text]['controler_faction'] != $controlersArray[0]['faction_name']){
+                    $keepElement = FALSE;
+                }
+            }
+        }
+        if (!$keepElement){
+            if ($debug) echo sprintf("kill power(%s) <br>", $key);
+            unset($powerArray[$key]);
+        }
+    }
+    if ($debug) echo sprintf("Whats left of powerArray : %s <br>", var_export($powerArray,true));
+    return empty($powerArray) ? NULL : $powerArray ;
+}
+
+function showTransformationSelect($powerTransformationArray, $show_text = true){
+    if (empty($powerTransformationArray)) return '';
+
+    $transformationsOptions = '';
+
+    // Display select list of Controlers
+    foreach ( $powerTransformationArray as $powerTransformation) {
+        $transformationsOptions .= "<option value='" . $powerTransformation['link_power_type_id'] . "'>" . $powerTransformation['power_text'] . " </option>";
+    }
+    $showTransformationSelect = sprintf("%s
+        <select id='transformationSelect' name='transformation'>
+            <option value=\'\'>Select Transformation</option>
+            %s
+        </select>
+        <br />
+        ",
+        $show_text ? 'Transformation :' : '',
+        $transformationsOptions
+    );
+
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showTransformationSelect: ".var_export($showTransformationSelect, true)."<br /><br />";
+
+    return $showTransformationSelect;
 }

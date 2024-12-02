@@ -38,6 +38,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['gift'])){
         activateWorker($gameReady, $worker_id, 'gift', $claim_controler_id);
     }
+    if (isset($_GET['teach_discipline']) ){
+        // TODO : ADD Dicipline to worker
+    }
+    if (isset($_GET['transform'])){
+        // TODO : ADD replace worker tranformation
+    }
+    
 }
 
 require_once '../base/base_html.php';

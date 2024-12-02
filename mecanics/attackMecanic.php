@@ -1,6 +1,7 @@
 <?php
 
 function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, $atk_threshold = 0, $rpst_threshold = 0 ) {
+    $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
 
     if (empty($turn_number)) {
