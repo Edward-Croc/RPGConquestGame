@@ -40,7 +40,7 @@ VALUES
     -- Worker experience
     ('age_hobby', 'FALSE', ''),
     ('age_metier', 'FALSE', ''),
-    ('age_discipline', '{"age": {"2",}}', ''),
+    ('age_discipline', '{"age": ["2"]}', ''),
     ('age_transformation', '{"action": "check"}', ''),
     -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
