@@ -1,6 +1,6 @@
 <?php
 
-function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, $threshold = 0 ) {
+function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, $atk_threshold = 0, $rpst_threshold = 0 ) {
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
 
     if (empty($turn_number)) {
@@ -119,7 +119,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
     JOIN worker_origins wo ON wo.id = w.origin_id
     JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
     LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
-    WHERE w.id IN (%s)
+    WHERE w.id IN (%s) 
+        AND (a.attacker_action_val - wa.defence_val) >= :atk_threshold
+        AND (wa.action_val - a.attacker_defence_val) >= :rpst_threshold
     ";
     $final_attacks_aggregate = array();
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
@@ -132,6 +134,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
             );
             $stmtValCompare->bindParam(':turn_number', $turn_number);
             $stmtValCompare->bindParam(':attacker_id', $compared_attacker_id);
+            $stmtValCompare->bindParam(':atk_threshold', $atk_threshold, PDO::PARAM_INT);
+            $stmtValCompare->bindParam(':rpst_threshold', $rpst_threshold, PDO::PARAM_INT);
             $stmtValCompare->execute();
         } catch (PDOException $e) {
             echo "Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
@@ -154,14 +158,17 @@ function attackMecanic($pdo){
     $ATTACKDIFF1 = getConfig($pdo, 'ATTACKDIFF1');
     $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
     $RIPOSTONDEATH = getConfig($pdo, 'RIPOSTONDEATH');
+    $RIPOSTACTIVE = getConfig($pdo, 'RIPOSTACTIVE');
+    
     if ($debug) {
         echo "ATTACKDIFF0 : $ATTACKDIFF0 <br/>";
         echo "ATTACKDIFF1 : $ATTACKDIFF1 <br/>";
         echo "RIPOSTDIFF : $RIPOSTDIFF <br/>";
-        echo "REPORTFDIFF1 : $REPORTFDIFF1 <br/>";
+        echo "RIPOSTONDEATH : $RIPOSTONDEATH <br/>";
+        echo "RIPOSTACTIVE : $RIPOSTACTIVE <br/>";
     }
 
-    $attacksArray = getAttackerComparisons($pdo);
+    $attacksArray = getAttackerComparisons($pdo, NULL, NULL, (INT)$ATTACKDIFF0 , (INT)$RIPOSTDIFF);
     if ($debug)
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
@@ -214,7 +221,7 @@ function attackMecanic($pdo){
                 echo $defender['defender_name']. ' Escaped !';
                 $report = 'J\ai été attaquer, mais je me suis éch';
             }
-            if (($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
+            if ((BOOL)$RIPOSTACTIVE && ($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                 // in  workers
                 // set  is_alive  FALSE,
                 // set  is_active FASLE,

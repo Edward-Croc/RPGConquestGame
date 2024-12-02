@@ -21,27 +21,24 @@ require_once '../base/base_html.php';
             // do end_turn actions
             // Controlled by IA 
             // attack
-            $investigateResult = attackMecanic($gameReady);
+            $attackResult = attackMecanic($gameReady);
             // enquete
-            // $investigateResult = investigateMecanic($gameReady);
+            $investigateResult = investigateMecanic($gameReady);
             // claim
-            // violence
-            // generate JSon reports
+            $claimResult = claimMecanic($gameReady);
             $turn = $mecanics['turncounter'] + 1;
             /* $turnLinesResult = createNewTurnLines($gameReady, $turn);
-            if ($valsResult) {
-                try{
-                    // SQL query to select username from the players table
-                    $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
-                    // Prepare and execute SQL query
-                    $stmt = $gameReady->prepare($sql);
-                    $stmt->execute();
-                } catch (PDOException $e) {
-                    echo "UPDATE config Failed: " . $e->getMessage()."<br />";
-                }
-                // Fetch the result
-                $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            }*/ 
+            // Advance Turn counter 
+            try{
+                // SQL query to select username from the players table
+                $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
+                // Prepare and execute SQL query
+                $stmt = $gameReady->prepare($sql);
+                $stmt->execute();
+            } catch (PDOException $e) {
+                echo "UPDATE config Failed: " . $e->getMessage()."<br />";
+            }
+            }*/
         }
 
 

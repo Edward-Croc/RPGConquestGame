@@ -37,15 +37,16 @@ VALUES
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
     -- Diff vals in report 
-    ('REPORTFDIFF0', 0, 'Value for Level 0 information'),
-    ('REPORTFDIFF1', 1, 'Value for Level 1 information'),
-    ('REPORTFDIFF2', 2, 'Value for Level 2 information'),
-    ('REPORTFDIFF3', 3, 'Value for Level 3 information'),
+    ('REPORTDIFF0', 0, 'Value for Level 0 information'),
+    ('REPORTDIFF1', 1, 'Value for Level 1 information'),
+    ('REPORTDIFF2', 2, 'Value for Level 2 information'),
+    ('REPORTDIFF3', 3, 'Value for Level 3 information'),
     -- Diff vals in report
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
-    ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
+    ('RIPOSTACTIVE', TRUE, 'Value for Succesful Ripost'),
     ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
+    ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     -- passive, investigate, attack, claim, captured, dead
     ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of passive investigation actions'),

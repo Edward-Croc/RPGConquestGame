@@ -30,7 +30,7 @@ function getWorkers($pdo, $worker_ids) {
             powers p ON lpt.power_id = p.ID
         WHERE
             w.id IN ($worker_id_str)
-        GROUP BY w.id, wo.name, z.name
+        GROUP BY w.id, wo.name, z.name, cw.is_primary_controler
         ORDER BY w.id ASC
     ";
     try {

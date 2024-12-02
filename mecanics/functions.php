@@ -110,8 +110,20 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
     $sqlSetDead = "
+        UPDATE worker_actions SET action = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
+            SELECT w.id FROM worker_actions wa WHERE action = 'claim' AND is_active = true
+        )
+    ";
+    try {
+        $stmtSetDead = $pdo->prepare($sqlSetDead);
+        $stmtSetDead->execute([':turn_number' => $turn_number]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+        return FALSE;
+    }
+    $sqlSetDead = "
         UPDATE worker_actions SET action = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT w.id FROM workers w WHERE is_alive = false
+            SELECT w.id FROM workers w WHERE is_alive = false AND is_active = false
         )
     ";
     try {
@@ -136,4 +148,8 @@ function createNewTurnLines($pdo, $turn_number){
     }
 
     return TRUE;
+}
+
+function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
+
 }

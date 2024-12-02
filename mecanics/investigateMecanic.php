@@ -122,18 +122,18 @@ function investigateMecanic($pdo ) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $debug = TRUE;
 
-    $REPORTFDIFF0 = getConfig($pdo, 'REPORTFDIFF0');
-    $REPORTFDIFF1 = getConfig($pdo, 'REPORTFDIFF1');
-    $REPORTFDIFF2 = getConfig($pdo, 'REPORTFDIFF2');
-    $REPORTFDIFF3 = getConfig($pdo, 'REPORTFDIFF3');
+    $REPORTDIFF0 = getConfig($pdo, 'REPORTDIFF0');
+    $REPORTDIFF1 = getConfig($pdo, 'REPORTDIFF1');
+    $REPORTDIFF2 = getConfig($pdo, 'REPORTDIFF2');
+    $REPORTDIFF3 = getConfig($pdo, 'REPORTDIFF3');
     if ($debug) {
-        echo "REPORTFDIFF0 : $REPORTFDIFF0 <br/>";
-        echo "REPORTFDIFF1 : $REPORTFDIFF1 <br/>";
-        echo "REPORTFDIFF1 : $REPORTFDIFF1 <br/>";
-        echo "REPORTFDIFF1 : $REPORTFDIFF1 <br/>";
+        echo "REPORTDIFF0 : $REPORTDIFF0 <br/>";
+        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
+        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
+        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
     }
 
-    $investigations = getSearcherComparisons($pdo, $turn_number);
+    $investigations = getSearcherComparisons($pdo, $turn_number, NULL, (INT)$REPORTDIFF0);
     $reportArray = [];
 
     $txtArray = [];
@@ -265,8 +265,8 @@ function investigateMecanic($pdo ) {
 
         // Diff 0
         if ($debug) echo "With row['enquete_difference'] AS :".var_export($row['enquete_difference'] , true)." <br>";
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF0 ) {
-            if ($debug) echo " REPORTFDIFF 0 Start <br>";
+        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
+            if ($debug) echo " REPORTDIFF 0 Start <br>";
 
             $report = sprintf($texteDiff01[0],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
@@ -282,8 +282,8 @@ function investigateMecanic($pdo ) {
         }
 
         // Diff 1
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF1 ) {
-            if ($debug) echo " REPORTFDIFF 1 Start <br>";
+        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF1 ) {
+            if ($debug) echo " REPORTDIFF 1 Start <br>";
             $report .= sprintf($texteDiff01[1],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
                 $found_metier[0], // (metier) - %2$
@@ -301,8 +301,8 @@ function investigateMecanic($pdo ) {
         // %1$s - réseau
         // %2$s - (transformation2)
         // %3$s - (discipline_2)
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF2 ) {
-            if ($debug) echo " REPORTFDIFF 3 Start <br>";
+        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
+            if ($debug) echo " REPORTDIFF 3 Start <br>";
             $textesDiff2 = [
                 '%2$sEn plus, sa famille a des liens avec le réseau %1$s. ',
                 'Il fait partie du réseau %1$s. %2$s',
@@ -314,8 +314,8 @@ function investigateMecanic($pdo ) {
         }
 
         // Diff 3
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF3 ) {
-            if ($debug) echo " REPORTFDIFF 3 Start <br>";
+        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
+            if ($debug) echo " REPORTDIFF 3 Start <br>";
             $textesDiff3 = [
                 'Ce réseau répond à %1$s. ',
                 'A partir de là on a pu remonter jusqu\'à %1$s. ',
@@ -336,7 +336,7 @@ function investigateMecanic($pdo ) {
         echo var_export( $report, true);
         $reportArray[$row['searcher_id']] .= $report;
 
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF0 ) {
+        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
             echo "<p> Start controlers_known_enemies - <br /> ";
             // Add to controlers_known_enemies
             try {
@@ -380,9 +380,9 @@ function investigateMecanic($pdo ) {
                     ]);
                     $cke_existing_record_id = $pdo->lastInsertId();
                 }
-                if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF2 ) {
+                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
                     $discovered_controler_name_sql = '';
-                    if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF3 ) {
+                    if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
                         $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
                     }
                     // Update if record exists
@@ -396,7 +396,7 @@ function investigateMecanic($pdo ) {
                     $stmtUpdate = $pdo->prepare($sqlUpdate);
                     $stmtUpdate->bindParam(':discovered_controler_id', $row['found_controler_id']);
                     $stmtUpdate->bindParam(':id',$cke_existing_record_id);
-                    if ( (int)$row['enquete_difference'] >= (int)$REPORTFDIFF3 ) {
+                    if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
                         $stmtUpdate->bindParam(':discovered_controler_name', $row['found_controler_name']);
                     }
                     $stmtUpdate->execute();
