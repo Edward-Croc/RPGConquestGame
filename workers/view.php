@@ -99,17 +99,44 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     ($currentAction['action'] == 'passive') ? "Enquêter" : "Se cacher",
                     $showControlerSelect,
                 );
-                // TODO : ADD powers on age 
-                // $powerDisciplineArray = getBasePowers($gameReady,'3', $controler_id);
-                // If AGE > 0 Should Have 1 discipline
-                // echo showDisciplineSelect($powerDisciplineArray);
-                // If Age > 2 Should Ahev 2 discipline
-                // TODO : Check Transformation Conditions
                 echo "</div>";
             }
             echo '</form>';
 
             if ( !empty($worker_id) ) {
+                $upgrade_HTML = sprintf('<div class="upgrade"> <h3> Evolutions : </h3>');
+                // TODO : UPDATE powers on age code.
+                /* ('age_hobby', 'FALSE', ''),
+                ('age_metier', 'FALSE', ''), */
+                $age_discipline_json = getConfig($gameReady, 'age_discipline');
+                echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
+                $age_discipline_array = json_decode($age_discipline_json, true);
+                echo sprintf("age_discipline_array :%s  <br>", $age_dicipline_array);
+                $powerDisciplineArray = getBasePowers($gameReady,'3', $controler_id);
+                $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
+                echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
+                foreach ($age_discipline_array['age'] as $age) {
+                    if ($age_discipline >= $worker['age']) {
+                        $nb_disciplines += 1;
+                    }
+                }
+                $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
+                echo sprintf(
+                    "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>", 
+                    count($nb_current_disciplines), var_export($nb_current_disciplines, true), $nb_disciplines
+                );
+                if ( count($nb_current_disciplines) < $nb_disciplines) {
+                    $upgrade_HTML .= sprintf('
+                        <input type="submit" name="teach_discipline" value="Enseigner une discipline" class="worker-upgrade-btn"> %$1s ' , showDisciplineSelect($powerDisciplineArray)
+                    );
+                }
+                // TODO : Check Transformation Conditions
+                $age_dicipline_json = getConfig($gameReady, 'age_dicipline');
+
+                $upgrade_HTML .= sprintf('</div >');
+                echo $upgrade_HTML;
+
+
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf('<div class="report week"> <h4> Semaine %s </h4>', $turn_number);

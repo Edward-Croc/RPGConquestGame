@@ -29,9 +29,19 @@ VALUES
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
     -- worker creation
     ('first_come_nb_choices', '1', ''),
+    ('first_come_origin_list', 'rand', ''),
     ('recrutement_nb_choices', '3', ''),
     ('recrutement_origin_list', '1,2,3,4,5', ''),
     ('local_origin_list', '1', ''),
+    -- ('recrutement_hobby', '1', ''),
+    -- ('recrutement_metier', '1', ''),
+    ('recrutement_disciplines', '1', ''),
+    -- ('recrutement_transformation', '1', ''),
+    -- Worker experience
+    ('age_hobby', 'FALSE', ''),
+    ('age_metier', 'FALSE', ''),
+    ('age_discipline', '{"age": {"2",}}', ''),
+    ('age_transformation', '{"action": "check"}', ''),
     -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),

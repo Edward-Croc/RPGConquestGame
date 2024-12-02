@@ -12,6 +12,11 @@ function getWorkers($pdo, $worker_ids) {
             wo.name AS origin_name,
             z.name AS zone_name,
             cw.is_primary_controler,
+            (SELECT MAX(wa.turn_number) - MIN(wa.turn_number)
+                FROM worker_actions wa
+                WHERE wa.worker_id = w.id
+                GROUP BY wa.worker_id
+            ) AS age,
             COALESCE(SUM(p.enquete), 0) AS total_enquete,
             COALESCE(SUM(p.action), 0) AS total_action,
             COALESCE(SUM(p.defence), 0) AS total_defence
@@ -276,6 +281,35 @@ function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
     }
     // Get the last inserted ID
     return $pdo->lastInsertId();
+}
+
+function countWorkerDisciplines($pdo, $worker_id = NULL) {
+    try {
+        $sql = sprintf("SELECT 
+                wp.worker_id, 
+                COUNT(*) AS discipline_count
+            FROM 
+                worker_powers wp
+            INNER JOIN 
+                link_power_type lpt ON wp.link_power_type_id = lpt.ID
+            INNER JOIN 
+                power_types pt ON lpt.power_type_id = pt.ID
+            WHERE 
+                pt.name = 'Discipline'
+                %s
+            GROUP BY 
+                wp.worker_id",
+            empty($worker_id) ? "" : sprintf(" AND wp.worker_id IN (%s) ", implode(',',$worker_id))
+        );
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo "Error counting worker disciplines: " . $e->getMessage();
+        return [];
+    }
 }
 
 function moveWorker($pdo, $worker_id, $zone_id) {
