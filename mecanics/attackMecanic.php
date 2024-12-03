@@ -182,59 +182,62 @@ function attackMecanic($pdo){
             if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
                 $survived = false;
                 echo $defender['defender_name']. ' HAS DIED !';
-                // in  workers
-                // set  is_alive  FALSE,
-                // set  is_active FASLE,
-                // for  id = defender_id
-                // in worker_actions
-                // set action   'dead'
+                // in  workers set  is_alive  FALSE,  is_active FASLE,
+                updateWorkerStatus($pdo, $defender['defender_id'], FALSE, FALSE);
+                // for id = defender_id in worker_actions  set action   'dead'
                 // set report life_report append Tué 
-                // for worker_id = defender_id AND turn_number = turn 
-                // in worker_actions
-                // set report attack_report append attaque OK
-                // for worker_id = attacker_id AND turn_number = turn
+                $life_report = "Tué";
+                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], 'dead', $life_report );
+                // Start report attack_report append attaque OK
+                $attack_report = $defender['defender_name'].' attaque OK';
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
-                    // in workers
-                    // set  is_alive  TRUE,
-                    // set  is_active FASLE,
-                    // for  id = defender_id
-                    // in worker_actions
-                    // set action   'captured'
-                    // set report life_report append Disparu 
-                    // for worker_id = defender_id AND turn_number = turn
-                    // in controler_worker
-                    // insert attacker_controler_id, defender_id, is_primary_controler = false 
-                    // in worker_actions
-                    // set report attack_report append attaque OK
+                    // in workers set  is_alive  TRUE, is_active FASLE, for  id = defender_id
+                    updateWorkerStatus($pdo, $defender['defender_id'], TRUE, FALSE);
+                    // in worker_actions set action   'captured' et report life_report append Disparu   for worker_id = defender_id AND turn_number = turn
+                    $life_report = "Disparu";
+                    updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], 'captured', $life_report);
+                    // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = false 
+                    $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id, is_primary_controler) VALUES (:controler_id, :worker_id, :is_primary)");
+                    $stmt->execute([
+                        'controler_id' => $defender['attacker_controler_id'],
+                        'worker_id' => $defender['defender_id'],
+                        'is_primary' => TRUE
+                    ]);
+                    // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = false 
+                    $stmt = $pdo->prepare("UPDATE controler_worker SET is_primary_controler = :is_primary WHERE controler_id = :controler_id AND worker_id = :worker_id");
+                    $stmt->execute([
+                        'controler_id' => $defender['attacker_controler_id'],
+                        'worker_id' => $defender['defender_id'],
+                        'is_primary' => FALSE
+                    ]);
+                    // in worker_actions set report attack_report append attaque OK
                     // for worker_id = attacker_id AND turn_number = turn
                     echo $defender['defender_name']. ' Was Captured !';
+                    $attack_report .= 'Capturer';
                 }
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, NULL, $attack_report );
             }
             if ($defender['attack_difference'] < (INT)$ATTACKDIFF0 ){
                 // $defender['defender_knows_enemy']
-                    // in worker_actions
-                    // set action   'captured'
-                    // set report life_report append Disparu 
-                    // for worker_id = defender_id AND turn_number = turn 
-                    // in worker_actions
-                    // set report attack_report append attaque OK
-                    // for worker_id = attacker_id AND turn_number = turn
+                // in worker_actions
+                // set report attack_report append attaque FAIL
+                // for worker_id = attacker_id AND turn_number = turn
                 echo $defender['defender_name']. ' Escaped !';
-                $report = 'J\ai été attaquer, mais je me suis éch';
+                $life_report = 'J\ai été attaquer, mais je me suis échapper!';
+                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $life_report);
+                $attack_report =  sprintf('J\ai échouer dans l\attaque de %s !',  $defender['defender_name']);
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, NULL, $attack_report );
             }
             if ((BOOL)$RIPOSTACTIVE && ($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
-                // in  workers
-                // set  is_alive  FALSE,
-                // set  is_active FASLE,
-                // for  id = attacker_id
-                // in worker_actions
-                // set action   'dead'
+                // in  workers set  is_alive  FALSE et  is_active FASLE for  id = attacker_id
+                updateWorkerStatus($pdo, $defender['attacker_id'], FALSE, FALSE);
+                // in worker_actions set action   'dead' for worker_id = attacker_id AND turn_number = turn 
                 // set report life_report append Tué 
-                // for worker_id = attacker_id AND turn_number = turn 
-                // in worker_actions
-                // set report attack_report append riposte
-                // for worker_id = defender_id AND turn_number = turn
-                echo $defender['defender_name']. ' Riposte !';
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], 'dead', $life_report , $attack_report );
+                // in worker_actions set report attack_report append riposte  for worker_id = defender_id AND turn_number = turn
+                $life_report = $defender['defender_name']. ' Riposte !';
+                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $life_report );
+                echo $life_report ;
             }
         }
     }

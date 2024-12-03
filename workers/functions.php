@@ -1,12 +1,53 @@
 <?php
 
+function updateWorkerStatus($pdo, $workerId, $isAlive = null, $isActive = null) {
+    $query = "UPDATE workers SET ";
+    $updates = [];
+    $params = ['worker_id' => $workerId];
+    if ($isActive) {
+        $updates[] = "is_active = :is_active";
+        $params['is_active'] = $isActive;
+    }
+    if ($isAlive) {
+        $updates[] = "is_alive = :is_alive";
+        $params['is_alive'] = $isAlive;
+    }
+    $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+}
+
+function updateWorkerAction($pdo, $workerId, $turnNumber, $action = null, $lifeReportAppend = null, $attackReportAppend = null) {
+    $query = "UPDATE worker_actions SET ";
+    $updates = [];
+    $params = ['worker_id' => $workerId, 'turn_number' => $turnNumber];
+
+    if ($action) {
+        $updates[] = "action = :action";
+        $params['action'] = $action;
+    }
+    /*
+    if ($lifeReportAppend) {
+        $updates[] = "life_report = CONCAT(life_report, :life_report)";
+        $params['life_report'] = $lifeReportAppend;
+    }
+    if ($attackReportAppend) {
+        $updates[] = "attack_report = CONCAT(attack_report, :attack_report)";
+        $params['attack_report'] = $attackReportAppend;
+    }*/
+
+    $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+}
+
 // Function to get Controlers and return as an array
 function getWorkers($pdo, $worker_ids) {
 
     if ( empty($worker_ids) ) return NULL;
     $worker_id_str = implode(',', $worker_ids);
 
-    // TODO add worker AGE math
     $sql = "SELECT
             w.*,
             wo.name AS origin_name,
