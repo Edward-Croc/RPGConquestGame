@@ -39,10 +39,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'gift', $claim_controler_id);
     }
     if (isset($_GET['teach_discipline']) ){
-        // TODO : ADD Dicipline to worker
+        upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
     }
     if (isset($_GET['transform'])){
-        // TODO : ADD replace worker tranformation
+        upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
     }
     
 }

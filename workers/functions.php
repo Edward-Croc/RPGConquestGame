@@ -253,18 +253,23 @@ function createWorker($pdo, $array) {
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
     if (!empty($array['transformation']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
-        try{
-            // Insert new worker_powers value into the database
-            $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
-            $stmt->bindParam(':link_power_type_id', $link_power_type_id);
-            $stmt->bindParam(':worker_id', $worker_id );
-            $stmt->execute();
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
-        }
+        upgradeWorker($pdo, $worker_id, $link_power_type_id);
     }
     return $worker_id;
 }
+
+function upgradeWorker($pdo, $worker_id, $link_power_type_id){
+    try{
+        // Insert new worker_powers value into the database
+        $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
+        $stmt->bindParam(':link_power_type_id', $link_power_type_id);
+        $stmt->bindParam(':worker_id', $worker_id );
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
+    }
+}
+
 
 function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
     $mecanics = getMecanics($pdo);
