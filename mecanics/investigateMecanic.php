@@ -194,10 +194,54 @@ function investigateMecanic($pdo ) {
 
         $text_action_ps = $txtArray[$row['found_action']]['ps'];
         $text_action_inf = $txtArray[$row['found_action']]['inf'];
-        //if ( $row['found_action_params'] != '{}' ) {
-            $text_action_ps .= ' tada ';
-            $text_action_inf .= ' tada ';
-        //}
+        // get action info from params
+        echo "row['found_action'] : ".$row['found_action']."; row['found_action_params']:".$row['found_action_params']."; <br>";
+        if ( $row['found_action'] == 'claim' && $row['found_action_params'] != '{}' ) {
+            $found_action_params = json_decode($row['found_action_params'],true);
+            if (is_array($found_action_params)) {
+                // USE $found_action_params['claim_controler_id']
+                $controlers = getControlers($pdo, NULL, $found_action_params['claim_controler_id']);
+                $text_action_ps .= ' au nom de '.$controlers[0]['firstname']. " ".$controlers[0]['lastname'];
+                $text_action_inf .= ' au nom de '.$controlers[0]['firstname']. " ".$controlers[0]['lastname'];
+            }
+        }
+        if ( $row['found_action'] == 'attack' && $row['found_action_params'] != '{}' ) {
+            $found_action_params = json_decode($row['found_action_params'],true);
+            if (is_array($found_action_params)) {
+                $networkIDs = [];
+                $workerIDs = [];
+            
+                // Iterate through the decoded array
+                foreach ($found_action_params as $param) {
+                    if (isset($param['attackScope']) && isset($param['attackID'])) {
+                        if ($param['attackScope'] === 'network') {
+                            $networkIDs[] = $param['attackID']; // Collect network IDs
+                        } elseif ($param['attackScope'] === 'worker') {
+                            $workerIDs[] = $param['attackID']; // Collect worker IDs
+                        }
+                    }
+                }
+            }
+            if ( count($networkIDs) != 0 ){
+                $text_action_ps .= ' plusieurs réseaux ';
+                $text_action_inf .= ' plusieurs réseaux ';
+                if ( count($networkIDs) ==1 ){
+                    $text_action_ps .= ' le réseau '.$$networkIDs[0];
+                    $text_action_inf .= ' le réseau '.$$networkIDs[0];
+                }else{
+                    $text_action_ps .= ' plusieurs réseaux ';
+                    $text_action_inf .= ' plusieurs réseaux ';
+                }
+            }else if (count($workerIDs) != 0) {
+                if (count($networkIDs) == 1){
+                    $text_action_ps .= ' une personne ';
+                    $text_action_inf .= ' une personne ';
+                }else{
+                    $text_action_ps .= ' plusieurs personnes ';
+                    $text_action_inf .= ' plusieurs personnes ';
+                }
+            }
+        }
         if ($debug) echo "Build text_action_ps et text_action_inf <br>";
 
        $originTexte = '';
