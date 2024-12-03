@@ -36,7 +36,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
     if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
     if ( !empty($workersArray) ) {
-        $showZoneSelect = showZoneSelect($zonesArray);
+        $showZoneSelect = showZoneSelect($zonesArray, FALSE, FALSE);
         if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
         if ( !empty($worker_id) ) {

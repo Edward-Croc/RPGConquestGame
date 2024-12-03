@@ -57,7 +57,7 @@ function getLocationsArray($pdo) {
     return $locationsArray;
 }
 
-function showZoneSelect($zonesArray){
+function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
 
     if (empty($zonesArray)) return '';
 
@@ -67,12 +67,14 @@ function showZoneSelect($zonesArray){
         $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
     }
 
-    $showZoneSelect = sprintf("
+    $showZoneSelect = sprintf(" %s
         <select id='zoneSelect' name='zone_id'>
-            <option value=''>Select Zone</option>
+            %s
             %s
         </select>
         ",
+        $show_text ? 'Quartier :' : '',
+        $place_holder ? "<option value=''>Select Zone</option>": '',
         $zoneOptions
     );
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
