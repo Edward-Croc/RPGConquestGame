@@ -53,27 +53,6 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
     return $powerArray;
 }
 
-/*
-function getPowersByType($pdo, $type_list) {
-    $powerArray = array();
-    $power_text = getSQLPowerText();
-
-    // Get all powers from a type_list
-    try{
-        $sql = "SELECT p.*, $power_text FROM powers
-        INNER JOIN link_power_type ON link_power_type.power_id = p.id
-        WHERE link_power_type.power_type_id IN ($type_list)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-        return NULL;
-    }
-    // Fetch the results
-    $powerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    return $powerArray;
-}*/
-
 function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRUE) {
     $powerArray = array();
     $power_text = getSQLPowerText();

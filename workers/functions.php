@@ -398,7 +398,7 @@ function countWorkerDisciplines($pdo, $worker_id = NULL) {
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo "Error counting worker disciplines: " . $e->getMessage();
+        echo __FUNCTION__." (): Error counting worker disciplines: " . $e->getMessage();
         return [];
     }
 }
@@ -558,7 +558,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
                     ':turn_number' => $turn_number
                 ]);
             } catch (PDOException $e) {
-                echo "Failed to update tables: " . $e->getMessage() . "<br />";
+                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
             break;
     }
@@ -652,7 +652,7 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
         ];
 
     } catch (PDOException $e) {
-        echo "Error fetching enemy workers: " . $e->getMessage();
+        echo __FUNCTION__." (): Error fetching enemy workers: " . $e->getMessage();
         return [];
     }
 }

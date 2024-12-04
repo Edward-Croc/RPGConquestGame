@@ -13,7 +13,7 @@ require_once '../base/base_html.php';
                 $stmt = $gameReady->prepare($sql);
                 $stmt->execute();
             } catch (PDOException $e) {
-                echo "UPDATE config Failed: " . $e->getMessage()."<br />";
+                echo __FUNCTION__."():UPDATE config Failed: " . $e->getMessage()."<br />";
             }
         }
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
@@ -26,8 +26,9 @@ require_once '../base/base_html.php';
             $investigateResult = investigateMecanic($gameReady);
             // claim
             $claimResult = claimMecanic($gameReady);
+
             $turn = $mecanics['turncounter'] + 1;
-            /* $turnLinesResult = createNewTurnLines($gameReady, $turn);
+            $turnLinesResult = createNewTurnLines($gameReady, $turn);
             // Advance Turn counter 
             try{
                 // SQL query to select username from the players table
@@ -36,9 +37,8 @@ require_once '../base/base_html.php';
                 $stmt = $gameReady->prepare($sql);
                 $stmt->execute();
             } catch (PDOException $e) {
-                echo "UPDATE config Failed: " . $e->getMessage()."<br />";
+                echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
             }
-            }*/
         }
 
 

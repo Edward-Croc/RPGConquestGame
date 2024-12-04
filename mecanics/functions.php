@@ -22,7 +22,7 @@ function diceRoll() {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo "UPDATE config Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
         return NULL;
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
@@ -91,6 +91,7 @@ function calculateVals($pdo, $turn_number){
 }
 
 function createNewTurnLines($pdo, $turn_number){
+    echo '<div> <h3>  createNewTurnLines : </h3> ';
     $turn_number = 2; // Example turn number
     $sql = "
         INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
@@ -109,14 +110,14 @@ function createNewTurnLines($pdo, $turn_number){
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
     }
-    $sqlSetDead = "
+    $sqlSetClaim = "
         UPDATE worker_actions SET action_choice = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
             SELECT w.id FROM worker_actions wa WHERE action_choice = 'claim' AND is_active = true
         )
     ";
     try {
-        $stmtSetDead = $pdo->prepare($sqlSetDead);
-        $stmtSetDead->execute([':turn_number' => $turn_number]);
+        $stmtSetClaim = $pdo->prepare($sqlSetClaim);
+        $stmtSetClaim->execute([':turn_number' => $turn_number]);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
@@ -138,10 +139,10 @@ function createNewTurnLines($pdo, $turn_number){
             SELECT worker_id FROM worker_actions WHERE action_choice = 'captured' AND turn_number_n_1 = :turn_number_n_1
     ";
     try {
-        $stmtSetDead = $pdo->prepare($sqlSetDead);
-        $stmt->bindParam(':turn_number', $turn_number);
-        $stmt->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
-        $stmtSetDead->execute([':turn_number' => $turn_number]);
+        $stmtSetCaptured = $pdo->prepare($sqlSetCaptured);
+        $stmtSetCaptured->bindParam(':turn_number', $turn_number);
+        $stmtSetCaptured->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
+        $stmtSetCaptured->execute([':turn_number' => $turn_number]);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
@@ -150,6 +151,63 @@ function createNewTurnLines($pdo, $turn_number){
     return TRUE;
 }
 
-function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
 
+function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
+    echo '<div> <h3>  claimMecanic : </h3> ';
+
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+        echo "turn_number : $turn_number <br>";
+    }
+
+    // Define the SQL query
+    $sql = "
+    WITH (
+        SELECT
+            wa.worker_id AS claimer_id,
+            wa.controler_id AS claimer_controler_id,
+            wa.enquete_val AS claimer_enquete_val,
+            wa.attack_val AS claimer_attack_val,
+            wa.action_params AS claimer_params
+            wa.zone_id AS claimer_zone
+        FROM
+            worker_actions wa
+        WHERE
+            wa.action_choice IN ('claim')
+            AND turn_number = :turn_number
+    )
+    SELECT
+        c.claimer_id,
+        c.claimer_enquete_val,
+        c.claimer_attack_val,
+        c.claimer_params,
+        c.claimer_controler_id,
+        z.id AS zone_id,
+        z.name AS zone_name,
+        (c.claimer_enquete_val - z.defence_val) AS discrete_claim,
+        (c.claimer_attack_val -z.defence_val) AS violent_claim,
+        FROM claimer c
+        JOIN zones z ON z.id = s.zone_id
+        JOIN worker_actions wa ON
+                c.zone_id = wa.zone_id AND turn_number = :turn_number AND wa.action_choice IN ('claim')
+        WHERE
+            c.claimer_id != a.id
+    ";
+    if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
+    try{
+        // Prepare and execute the statement
+        $stmt = $pdo->prepare($sql);
+        if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
+        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+    }
+    // Fetch and return the results
+    $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo sprintf("%s(): claimerArray %s", __FUNCTION__, var_export($claimerArray,true));
+
+    return TRUE;
 }
+

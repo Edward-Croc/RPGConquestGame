@@ -93,7 +93,7 @@ if (
             echo "No matching record found.";
         }
     } catch (PDOException $e) {
-        echo "Get player failed: " . $e->getMessage()."<br/>";
+        echo __FUNCTION__."(): Get player failed: " . $e->getMessage()."<br/>";
         exit();
     }
 }

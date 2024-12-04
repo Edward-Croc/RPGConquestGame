@@ -32,7 +32,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
         $stmt->bindParam(':turn_number', $turn_number);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo "Failed to SELECT list of attackers: " . $e->getMessage() . "<br />";
+        echo __FUNCTION__."(): Failed to SELECT list of attackers: " . $e->getMessage() . "<br />";
     }
     $attackersActionArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($debug)
@@ -57,7 +57,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
                         $stmtNetworkSearch->bindParam(':controler_id', $attackAction['controler_id']);
                         $stmtNetworkSearch->execute();
                     } catch (PDOException $e) {
-                        echo "Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
+                        echo __FUNCTION__."(): Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
                     }
                     $networkWorkersList = $stmtNetworkSearch->fetchAll(PDO::FETCH_COLUMN);
                     if ($debug)
@@ -142,7 +142,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
             $stmtValCompare->bindParam(':rpst_threshold', $rpst_threshold, PDO::PARAM_INT);
             $stmtValCompare->execute();
         } catch (PDOException $e) {
-            echo "Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
+            echo __FUNCTION__."():Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
         }
         $final_attacks_aggregate[$compared_attacker_id] = $stmtValCompare->fetchAll(PDO::FETCH_ASSOC);
         if ($debug)
@@ -233,7 +233,7 @@ function attackMecanic($pdo){
             'L\'assaut de %1$s n\'a pas eu le résultat escompté, je suis parvenu à m\'enfuir indemne.'
     );
     $attackFailedAndCountered = array(
-        'J\'ai échouer....'
+        'Il m\'as eu...'
     );
     $counterAttackTexts = array(
         '%1$s m\'a attaqué, j\'ai survécu et ma riposte l\'a anéanti, j\'ai jetter son cadavre dans l\'Arno.',

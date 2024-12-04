@@ -69,7 +69,7 @@ function tableExists($pdo, $tableName) {
         )");
         $stmt->execute([':tableName' => $tableName]);
     } catch (PDOException $e) {
-        echo __FUNCTION__."$tableName failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): $tableName failed: " . $e->getMessage()."<br />";
         return NULL;
     }
     return $stmt->fetchColumn();

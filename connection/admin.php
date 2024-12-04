@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':value', $value);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo "INSERT config Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): INSERT config Failed: " . $e->getMessage()."<br />";
         }
     }
 
@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':id', $id);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo "DELETE config Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): DELETE config Failed: " . $e->getMessage()."<br />";
         }
     }
 
@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':value', $value);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo "UPDATE config Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
         }
     }
 
@@ -67,7 +67,7 @@ try{
     $stmt = $gameReady->query("SELECT * FROM config ORDER BY ID ASC");
     $config_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    echo "GET config Failed: " . $e->getMessage()."<br />";
+    echo __FUNCTION__."(): GET config Failed: " . $e->getMessage()."<br />";
 }
 
 require_once '../base/base_html.php';

@@ -117,7 +117,10 @@ CREATE TABLE player_controler (
 CREATE TABLE zones (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
-    description text NOT NULL
+    description text NOT NULL,
+    defence_val INT DEFAULT 6,
+    claimer_controler_id INT, 
+    holder_controler_id INT
 );
 
 CREATE TABLE locations (

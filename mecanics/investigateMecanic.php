@@ -7,7 +7,7 @@ function cleanAndSplitString($input) {
     return array_map('trim', explode(',', $cleaned));
 }
 
-function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, $threshold = 0 ) {
+function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     if (empty($turn_number)) {
         $mecanics = getMecanics($pdo);
         $turn_number = $mecanics['turncounter'];
@@ -95,17 +95,18 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, 
         WHERE
             s.searcher_id != wa.worker_id
             AND s.searcher_controler_id != wa.controler_id
-            AND (s.searcher_enquete_val - wa.enquete_val) >= :threshold
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
+    try{
+        // Prepare and execute the statement
+        $stmt = $pdo->prepare($sql);
+        if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
+        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->execute();
 
-    // Prepare and execute the statement
-    $stmt = $pdo->prepare($sql);
-    if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
-    $stmt->bindParam(':turn_number', $turn_number);
-    $stmt->bindParam(':threshold', $threshold);
-    $stmt->execute();
-
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error: " . $e->getMessage();
+    }
     // Fetch and return the results
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -154,7 +155,7 @@ function investigateMecanic($pdo ) {
 
         // If no report has been created yet for this worker
         if ( empty($reportArray[$row['searcher_id']]) )
-            $reportArray[$row['searcher_id']] = sprintf( "<p> Dans le quartier %s.</p>", $row['zone_name'] );
+            $reportArray[$row['searcher_id']] = sprintf( "<p> Nous avons mener l'enquête dans le quartier %s.</p>", $row['zone_name'] );
         if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
 
         $discipline = cleanAndSplitString($row['found_discipline']);
@@ -446,7 +447,7 @@ function investigateMecanic($pdo ) {
                     $stmtUpdate->execute();
                 }
             } catch (PDOException $e) {
-                echo "Error: " . $e->getMessage();
+                echo __FUNCTION__."(): Error: " . $e->getMessage();
             }
             echo " DONE </p>";
         }
@@ -464,7 +465,7 @@ function investigateMecanic($pdo ) {
             // Execute the query
             $selectStmt->execute();
         } catch (PDOException $e) {
-            echo "Failed to select data for worker_id $worker_id: " . $e->getMessage() . "<br />";
+            echo __FUNCTION__." (): Failed to select data for worker_id $worker_id: " . $e->getMessage() . "<br />";
             break;
         }
         // Fetch the results
@@ -491,7 +492,7 @@ function investigateMecanic($pdo ) {
                     // Execute the query
                     $updateStmt->execute();
                 } catch (PDOException $e) {
-                    echo "Failed to insert data for worker_id {$worker_id}: " . $e->getMessage() . "<br />";
+                    echo __FUNCTION__." (): Failed to insert data for worker_id {$worker_id}: " . $e->getMessage() . "<br />";
                 }
             } else {
                 echo "JSON encoding error: " . json_last_error_msg() . "<br />";
