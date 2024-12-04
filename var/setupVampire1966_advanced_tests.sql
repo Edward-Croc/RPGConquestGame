@@ -18,7 +18,7 @@ INSERT INTO controler_worker (controler_id, worker_id) VALUES
         (SELECT ID FROM workers WHERE lastname in ('Lombardi'))
     );
 
-INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id, action) VALUES 
+INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id, action_choice) VALUES 
     (
         (SELECT ID FROM workers WHERE lastname = 'Matthews'),
         (SELECT controler_id FROM controler_worker JOIN workers ON workers.ID = controler_worker.worker_id WHERE workers.lastname = 'Matthews'),

@@ -1,5 +1,5 @@
 
-INSERT INTO powers ( name, enquete, action, defence) VALUES
+INSERT INTO powers ( name, enquete, attack, defence) VALUES
     -- Suggested Jobs :
     -- Possible Values Based on +1 :
     -- ('', 1,0,0), ('', 0,1,1), ('', 0,0,1),
@@ -47,7 +47,7 @@ INSERT INTO powers ( name, enquete, action, defence) VALUES
     -- Professeur (Physique), Directeur, Gardien, Agent de tourisme, Trader, Voiturier, 
 ;
 
-INSERT INTO powers ( name, enquete, action, defence, other) VALUES
+INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": "go_traitor", "controler_lastname": "da Firenze"}}'),
     ('Prêtre', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
 ;

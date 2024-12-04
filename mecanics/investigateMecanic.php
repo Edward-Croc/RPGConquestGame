@@ -25,7 +25,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, 
             FROM
                 worker_actions wa
             WHERE
-                wa.action IN ('passive', 'investigate')
+                wa.action_choice IN ('passive', 'investigate')
                 AND turn_number = :turn_number
         )
         SELECT
@@ -36,7 +36,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL, 
             z.name AS zone_name,
             wa.worker_id AS found_id,
             wa.enquete_val AS found_enquete_val,
-            wa.action AS found_action,
+            wa.action_choice AS found_action,
             wa.action_params AS found_action_params,
             CONCAT(w.firstname, ' ', w.lastname) AS found_name,
             wo.id AS found_worker_origin_id,

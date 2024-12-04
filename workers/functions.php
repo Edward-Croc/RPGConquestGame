@@ -4,28 +4,37 @@ function updateWorkerStatus($pdo, $workerId, $isAlive = null, $isActive = null) 
     $query = "UPDATE workers SET ";
     $updates = [];
     $params = ['worker_id' => $workerId];
-    if ($isActive) {
+    if (!empty($isActive)) {
         $updates[] = "is_active = :is_active";
         $params['is_active'] = $isActive;
     }
-    if ($isAlive) {
+    if (!empty($isAlive)) {
         $updates[] = "is_alive = :is_alive";
         $params['is_alive'] = $isAlive;
     }
-    $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id";
+    if (count($updates)>0) {
+        $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id";
+        echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
 
-    $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
+        try{
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+        } catch (PDOException $e) {
+            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 
-function updateWorkerAction($pdo, $workerId, $turnNumber, $action = null, $reportAppendArray = null) {
+function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null, $reportAppendArray = null) {
     $query = "UPDATE worker_actions SET ";
     $updates = [];
     $params = ['worker_id' => $workerId, 'turn_number' => $turnNumber];
 
-    if ($action) {
-        $updates[] = "action = :action";
-        $params['action'] = $action;
+    if (!empty($action_choice)) {
+        $updates[] = "action_choice = '$action_choice'";
     }
     if (!empty($reportAppendArray)) {
         // Step 1: Fetch the existing report
@@ -60,9 +69,20 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action = null, $repor
         }
     }
 
-    $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
-    $stmt = $pdo->prepare($query);
-    $stmt->execute($params);
+    if (count($updates)>0) {
+        $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
+        echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
+
+        try{
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+        } catch (PDOException $e) {
+            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // Function to get Controlers and return as an array
@@ -82,7 +102,7 @@ function getWorkers($pdo, $worker_ids) {
                 GROUP BY wa.worker_id
             ) AS age,
             COALESCE(SUM(p.enquete), 0) AS total_enquete,
-            COALESCE(SUM(p.action), 0) AS total_action,
+            COALESCE(SUM(p.attack), 0) AS total_attack,
             COALESCE(SUM(p.defence), 0) AS total_defence
         FROM
             workers AS w
@@ -503,7 +523,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): activate <br/><br/>";
             // if worker is other than passive set passive
             $new_action = 'passive';
-            if ( $worker_actions[0]['action'] == 'passive' ) { // if worker is passive set investigating
+            if ( $worker_actions[0]['action_choice'] == 'passive' ) { // if worker is passive set investigating
                 $new_action = 'investigate';
             }
             break;
@@ -542,7 +562,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             }
             break;
     }
-    $sql_worker_actions .= " action = '$new_action' ";
+    $sql_worker_actions .= " action_choice = '$new_action' ";
     $sql_worker_actions .= ", action_params = '$jsonOutput'";
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);

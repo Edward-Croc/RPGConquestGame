@@ -60,9 +60,9 @@ VALUES
     ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     -- passive, investigate, attack, claim, captured, dead
     ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
-    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of passive investigation actions'),
-    ('passiveActionActions', '''passive'',''investigate''', 'Liste of passive investigation actions'),
-    ('activeActionActions', '''attack'',''claim''', 'Liste of passive investigation actions'),
+    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
+    ('passiveAttackActions', '''passive'',''investigate''', 'Liste of passive attack actions'),
+    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- action text in report config
@@ -176,7 +176,7 @@ CREATE TABLE powers (
     ID SERIAL PRIMARY KEY,
     name text NOT NULL,
     enquete INT DEFAULT 0,
-    action INT DEFAULT 0,
+    attack INT DEFAULT 0,
     defence INT DEFAULT 0,
     other JSON
 );
@@ -215,9 +215,9 @@ CREATE TABLE worker_actions (
     zone_id INT NOT NULL,
     controler_id INT NOT NULL,
     enquete_val INT DEFAULT 0,
-    action_val INT DEFAULT 0,
+    attack_val INT DEFAULT 0,
     defence_val INT DEFAULT 0,
-    action TEXT DEFAULT 'passive',
+    action_choice TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
     report JSON DEFAULT '{}'::json, -- Expected keys investigate_report, attack_report, life_report
     UNIQUE (worker_id, turn_number), -- Adding unique constraint

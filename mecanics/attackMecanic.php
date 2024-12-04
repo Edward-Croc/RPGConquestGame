@@ -20,7 +20,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
             FROM
                 worker_actions wa
             WHERE
-                wa.action IN ('attack')
+                wa.action_choice IN ('attack')
                 AND turn_number = :turn_number";
 
         // Add Limit to only 1 caracter
@@ -82,7 +82,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
         SELECT
             wa.worker_id AS attacker_id,
             CONCAT(w.firstname, ' ', w.lastname) AS attacker_name,
-            wa.action_val AS attacker_action_val,
+            wa.attack_val AS attacker_attack_val,
             wa.defence_val AS attacker_defence_val,
             wa.controler_id AS attacker_controler_id,
             wa.zone_id,
@@ -98,7 +98,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
     SELECT
         a.attacker_id,
         a.attacker_name,
-        a.attacker_action_val,
+        a.attacker_attack_val,
         a.attacker_defence_val,
         a.attacker_controler_id,
         a.attacker_controler_name,
@@ -106,14 +106,14 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
         z.name AS zone_name,
         wa.turn_number,
         wa.worker_id AS defender_id,
-        wa.action_val AS defender_action_val,
+        wa.attack_val AS defender_attack_val,
         wa.defence_val AS defender_defence_val,
         CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
         wo.id AS defender_origin_id,
         wo.name AS defender_origin_name,
         cw.controler_id as defender_controler_id,
-        (a.attacker_action_val - wa.defence_val) AS attack_difference,
-        (wa.action_val - a.attacker_defence_val) AS riposte_difference,
+        (a.attacker_attack_val - wa.defence_val) AS attack_difference,
+        (wa.attack_val - a.attacker_defence_val) AS riposte_difference,
         cke.id AS defender_knows_enemy
     FROM attackers a
     JOIN zones z ON z.id = a.zone_id
@@ -124,8 +124,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
     JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
     LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
     WHERE w.id IN (%s)
-        AND (a.attacker_action_val - wa.defence_val) >= :atk_threshold
-        AND (wa.action_val - a.attacker_defence_val) >= :rpst_threshold
+        AND (a.attacker_attack_val - wa.defence_val) >= :atk_threshold
+        AND (wa.attack_val - a.attacker_defence_val) >= :rpst_threshold
     ";
     $final_attacks_aggregate = array();
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
@@ -236,7 +236,7 @@ function attackMecanic($pdo){
         'J\'ai échouer....'
     );
     $counterAttackTexts = array(
-        '%1$s m\'a attaqué, j\'ai survécu et ma riposte a anéanti leur assaut.',
+        '%1$s m\'a attaqué, j\'ai survécu et ma riposte l\'a anéanti, j\'ai jetter son cadavre dans l\'Arno.',
         'Après avoir été attaqué par %1$s, j\'ai non seulement survécu, mais ma riposte a fait saigner leur ego.',
         '%1$s a cru m\'avoir, mais ma riposte a brisé leurs espoirs et les a détruits.',
         'Ils ont tenté de me réduire au silence, mais après avoir survécu à l\'attaque de %1$s, j\'ai répondu avec une riposte fatale.',

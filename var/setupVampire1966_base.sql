@@ -365,7 +365,7 @@ INSERT INTO power_types (name) VALUES
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
-INSERT INTO powers ( name, enquete, action, defence, other) VALUES
+INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Goule', 0,0,1, '{"hidden" : "2", "on_recrutment": "TRUE", "on_transformation": {"age": "0", "turn": "0"} }'),
     ('Vampire nouveau né', 1,1,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"age": "2", "turn": "2"} }'),
     ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"age": "2", "controler_faction": "Tzimisce"}}'),
@@ -381,7 +381,7 @@ INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Possession'))
 ;
 
-INSERT INTO powers ( name, enquete, action, defence) VALUES
+INSERT INTO powers ( name, enquete, attack, defence) VALUES
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
     -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),

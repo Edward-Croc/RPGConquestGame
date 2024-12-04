@@ -35,8 +35,8 @@ function calculateVals($pdo, $turn_number){
     $array = [];
     $array[] = ['enquete', 'passiveInvestigateActions',false];
     $array[] = ['enquete', 'activeInvestigateActions',true];
-    $array[] = ['action', 'passiveActionActions',false];
-    $array[] = ['action', 'activeActionActions',true];
+    $array[] = ['attack', 'passiveAttackActions',false];
+    $array[] = ['attack', 'activeAttackActions',true];
     $array[] = ['defence', 'passiveDefenceActions',false];
     $array[] = ['defence', 'activeDefenceActions',true];
     echo '<div> calculateVals : <p>';
@@ -70,7 +70,7 @@ function calculateVals($pdo, $turn_number){
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
         if (!empty($config)){
             $sqlArray[] = sprintf('UPDATE worker_actions SET %1$s
-                WHERE turn_number = %2$s AND action IN (%3$s)', $valSQL, $turn_number, $config );
+                WHERE turn_number = %2$s AND action_choice IN (%3$s)', $valSQL, $turn_number, $config );
         }
     }
     echo '</p>';
@@ -110,8 +110,8 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
     $sqlSetDead = "
-        UPDATE worker_actions SET action = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT w.id FROM worker_actions wa WHERE action = 'claim' AND is_active = true
+        UPDATE worker_actions SET action_choice = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
+            SELECT w.id FROM worker_actions wa WHERE action_choice = 'claim' AND is_active = true
         )
     ";
     try {
@@ -122,7 +122,7 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
     $sqlSetDead = "
-        UPDATE worker_actions SET action = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
+        UPDATE worker_actions SET action_choice = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
             SELECT w.id FROM workers w WHERE is_alive = false AND is_active = false
         )
     ";
@@ -134,8 +134,8 @@ function createNewTurnLines($pdo, $turn_number){
         return FALSE;
     }
     $sqlSetCaptured = "
-        UPDATE worker_actions SET action = 'captured' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT worker_id FROM worker_actions WHERE action = 'captured' AND turn_number_n_1 = :turn_number_n_1
+        UPDATE worker_actions SET action_choice = 'captured' WHERE turn_number = :turn_number AND worker_id IN (
+            SELECT worker_id FROM worker_actions WHERE action_choice = 'captured' AND turn_number_n_1 = :turn_number_n_1
     ";
     try {
         $stmtSetDead = $pdo->prepare($sqlSetDead);
