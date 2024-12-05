@@ -112,11 +112,12 @@ function createNewTurnLines($pdo, $turn_number){
     }
     $sqlSetClaim = "
         UPDATE worker_actions SET action_choice = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT w.id FROM worker_actions wa WHERE action_choice = 'claim' AND is_active = true
+            SELECT worker_id FROM worker_actions wa WHERE action_choice = 'claim' AND turn_number = :turn_number_n_1
         )
     ";
     try {
         $stmtSetClaim = $pdo->prepare($sqlSetClaim);
+        $stmtSetClaim->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
         $stmtSetClaim->execute([':turn_number' => $turn_number]);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
@@ -136,7 +137,7 @@ function createNewTurnLines($pdo, $turn_number){
     }
     $sqlSetCaptured = "
         UPDATE worker_actions SET action_choice = 'captured' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT worker_id FROM worker_actions WHERE action_choice = 'captured' AND turn_number_n_1 = :turn_number_n_1
+            SELECT worker_id FROM worker_actions WHERE action_choice = 'captured' AND turn_number = :turn_number_n_1
     ";
     try {
         $stmtSetCaptured = $pdo->prepare($sqlSetCaptured);
