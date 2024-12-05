@@ -44,12 +44,6 @@ function calculateVals($pdo, $turn_number){
 
         $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
         if ($elements[2]) {
-            /*$valBaseSQL = "FLOOR(
-                RANDOM() *
-                ((SELECT CAST(value AS INT) FROM config WHERE name = 'MAXROLL') -
-                (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL') + 1)
-                + (SELECT CAST(value AS INT) FROM config WHERE name = 'MINROLL')
-                )";*/
             $valBaseSQL = diceSQL();
         }
         $valSQL = sprintf("%s_val = (
@@ -92,7 +86,6 @@ function calculateVals($pdo, $turn_number){
 
 function createNewTurnLines($pdo, $turn_number){
     echo '<div> <h3>  createNewTurnLines : </h3> ';
-    $turn_number = 2; // Example turn number
     $sql = "
         INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
         SELECT
@@ -117,7 +110,7 @@ function createNewTurnLines($pdo, $turn_number){
     ";
     try {
         $stmtSetClaim = $pdo->prepare($sqlSetClaim);
-        $stmtSetClaim->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
+        $stmtSetClaim->bindParam(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
         $stmtSetClaim->execute([':turn_number' => $turn_number]);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
@@ -142,12 +135,14 @@ function createNewTurnLines($pdo, $turn_number){
     try {
         $stmtSetCaptured = $pdo->prepare($sqlSetCaptured);
         $stmtSetCaptured->bindParam(':turn_number', $turn_number);
-        $stmtSetCaptured->bindParam(':turn_number_n_1', $turn_number-1, PDO::PARAM_INT);
+        $stmtSetCaptured->bindParam(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
         $stmtSetCaptured->execute([':turn_number' => $turn_number]);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
     }
+
+    echo '<p>DONE</p> </div>';
 
     return TRUE;
 }
@@ -164,16 +159,27 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
 
     // Define the SQL query
     $sql = "
-    WITH (
+    WITH claimers AS  (
         SELECT
             wa.worker_id AS claimer_id,
             wa.controler_id AS claimer_controler_id,
             wa.enquete_val AS claimer_enquete_val,
             wa.attack_val AS claimer_attack_val,
-            wa.action_params AS claimer_params
+            wa.action_params AS claimer_params,
             wa.zone_id AS claimer_zone
         FROM
             worker_actions wa
+        WHERE
+            wa.action_choice IN ('claim')
+            AND turn_number = :turn_number
+    )
+    WITH claimed_zones AS (
+        SELECT
+            z.*
+        FROM
+            zones z
+        JOIN workers AS w ON w.zone_id z.id AND w.is_active = TRUE
+        JOIN controler_worker AS cw ON cw.worker_id = w.id AND z.holder_controler_id = cw.controler_id AND cw.is_primary_controler = TRUE
         WHERE
             wa.action_choice IN ('claim')
             AND turn_number = :turn_number
@@ -188,8 +194,8 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
         z.name AS zone_name,
         (c.claimer_enquete_val - z.defence_val) AS discrete_claim,
         (c.claimer_attack_val -z.defence_val) AS violent_claim,
-        FROM claimer c
-        JOIN zones z ON z.id = s.zone_id
+        FROM claimers c
+        JOIN zones z ON z.id = c.zone_id
         JOIN worker_actions wa ON
                 c.zone_id = wa.zone_id AND turn_number = :turn_number AND wa.action_choice IN ('claim')
         WHERE
@@ -207,7 +213,9 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
     }
     // Fetch and return the results
     $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo sprintf("%s(): claimerArray %s", __FUNCTION__, var_export($claimerArray,true));
+    echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
+
+    echo '<p>DONE</p> </div>';
 
     return TRUE;
 }

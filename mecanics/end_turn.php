@@ -27,17 +27,19 @@ require_once '../base/base_html.php';
             // claim
             $claimResult = claimMecanic($gameReady);
 
-            $turn = $mecanics['turncounter'] + 1;
-            $turnLinesResult = createNewTurnLines($gameReady, $turn);
-            // Advance Turn counter 
-            try{
-                // SQL query to select username from the players table
-                $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
-                // Prepare and execute SQL query
-                $stmt = $gameReady->prepare($sql);
-                $stmt->execute();
-            } catch (PDOException $e) {
-                echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+            if ($attackResult &&  $investigateResult && $claimResult) {
+                $turn = (INT)$mecanics['turncounter'] + 1;
+                $turnLinesResult = createNewTurnLines($gameReady, $turn);
+                // Advance Turn counter 
+                try{
+                    // SQL query to select username from the players table
+                    $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
+                    // Prepare and execute SQL query
+                    $stmt = $gameReady->prepare($sql);
+                    $stmt->execute();
+                } catch (PDOException $e) {
+                    echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+                }
             }
         }
 

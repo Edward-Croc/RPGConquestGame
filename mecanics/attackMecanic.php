@@ -176,6 +176,7 @@ function attackMecanic($pdo){
     if ($debug)
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
+
     $disapearenceTextes = array(
         'Cet agent a disparu sans laisser de trace à partir de la semaine %s. ',
         'Depuis la semaine %s, plus aucun signal ni message de cet agent. ',
@@ -312,4 +313,5 @@ function attackMecanic($pdo){
     }
 
     echo '</div>';
+    return TRUE;
 }

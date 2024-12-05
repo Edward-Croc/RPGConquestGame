@@ -493,14 +493,19 @@ function investigateMecanic($pdo ) {
                     $updateStmt->execute();
                 } catch (PDOException $e) {
                     echo __FUNCTION__." (): Failed to insert data for worker_id {$worker_id}: " . $e->getMessage() . "<br />";
+                    break;
                 }
             } else {
                 echo "JSON encoding error: " . json_last_error_msg() . "<br />";
+                break;
             }
         } else {
             echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+            break;
         }
     }
 
     echo '</div>';
+
+    return TRUE;
 }
