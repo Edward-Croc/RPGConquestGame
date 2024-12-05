@@ -27,8 +27,8 @@ require_once '../base/base_html.php';
             // claim
             $claimResult = claimMecanic($gameReady);
 
+            $turn = (INT)$mecanics['turncounter'] + 1;
             if ($attackResult &&  $investigateResult && $claimResult) {
-                $turn = (INT)$mecanics['turncounter'] + 1;
                 $turnLinesResult = createNewTurnLines($gameReady, $turn);
                 // Advance Turn counter 
                 try{
@@ -41,7 +41,6 @@ require_once '../base/base_html.php';
                     echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
                 }
             }
+            echo "Semaine : $turn";
         }
 
-
-        echo "Semaine : $turn";

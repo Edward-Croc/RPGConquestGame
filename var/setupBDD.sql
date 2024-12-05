@@ -119,6 +119,7 @@ CREATE TABLE zones (
     name text NOT NULL,
     description text NOT NULL,
     defence_val INT DEFAULT 6,
+    calculated_defence_val INT DEFAULT 6,
     claimer_controler_id INT, 
     holder_controler_id INT
 );

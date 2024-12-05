@@ -80,7 +80,38 @@ function calculateVals($pdo, $turn_number){
         }
         echo "DONE <br></p>";
     }
+
+    echo '<p>';
+    try {
+        $sql = "UPDATE zones
+            SET calculated_defence_val = defence_val + subquery.worker_count
+            FROM (
+                SELECT
+                    z.id AS zone_id,
+                    COALESCE(COUNT(w.id), 0) AS worker_count
+                FROM
+                    zones z
+                LEFT JOIN
+                    workers w ON w.zone_id = z.id
+                LEFT JOIN
+                    controler_worker cw ON cw.worker_id = w.id AND cw.is_primary_controler = TRUE
+                WHERE
+                    z.holder_controler_id = cw.controler_id
+                GROUP BY
+                    z.id
+            ) AS subquery
+            WHERE zones.id = subquery.zone_id
+        ";
+        // Prepare and execute SQL query
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+        return FALSE;
+    }
+
     echo '</p></div>';
+
     return TRUE;
 }
 
@@ -110,8 +141,9 @@ function createNewTurnLines($pdo, $turn_number){
     ";
     try {
         $stmtSetClaim = $pdo->prepare($sqlSetClaim);
-        $stmtSetClaim->bindParam(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
-        $stmtSetClaim->execute([':turn_number' => $turn_number]);
+        $stmtSetClaim->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmtSetClaim->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+        $stmtSetClaim->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
@@ -134,9 +166,9 @@ function createNewTurnLines($pdo, $turn_number){
     ";
     try {
         $stmtSetCaptured = $pdo->prepare($sqlSetCaptured);
-        $stmtSetCaptured->bindParam(':turn_number', $turn_number);
-        $stmtSetCaptured->bindParam(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
-        $stmtSetCaptured->execute([':turn_number' => $turn_number]);
+        $stmtSetCaptured->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmtSetCaptured->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+        $stmtSetCaptured->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
@@ -159,7 +191,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
 
     // Define the SQL query
     $sql = "
-    WITH claimers AS  (
+    WITH claimers AS (
         SELECT
             wa.worker_id AS claimer_id,
             wa.controler_id AS claimer_controler_id,
@@ -170,19 +202,8 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
         FROM
             worker_actions wa
         WHERE
-            wa.action_choice IN ('claim')
-            AND turn_number = :turn_number
-    )
-    WITH claimed_zones AS (
-        SELECT
-            z.*
-        FROM
-            zones z
-        JOIN workers AS w ON w.zone_id z.id AND w.is_active = TRUE
-        JOIN controler_worker AS cw ON cw.worker_id = w.id AND z.holder_controler_id = cw.controler_id AND cw.is_primary_controler = TRUE
-        WHERE
-            wa.action_choice IN ('claim')
-            AND turn_number = :turn_number
+            wa.action_choice = 'claim'
+            AND wa.turn_number = :turn_number
     )
     SELECT
         c.claimer_id,
@@ -192,14 +213,13 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
         c.claimer_controler_id,
         z.id AS zone_id,
         z.name AS zone_name,
-        (c.claimer_enquete_val - z.defence_val) AS discrete_claim,
-        (c.claimer_attack_val -z.defence_val) AS violent_claim,
-        FROM claimers c
-        JOIN zones z ON z.id = c.zone_id
-        JOIN worker_actions wa ON
-                c.zone_id = wa.zone_id AND turn_number = :turn_number AND wa.action_choice IN ('claim')
-        WHERE
-            c.claimer_id != a.id
+        (c.claimer_enquete_val - z.calculated_defence_val) AS discrete_claim,
+        (c.claimer_attack_val - z.calculated_defence_val) AS violent_claim
+    FROM
+        claimers c
+    JOIN zones z ON z.id = c.claimer_zone
+    WHERE
+        c.claimer_id != z.claimer_controler_id; -- Prevents self-comparison
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
     try{

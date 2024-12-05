@@ -460,7 +460,7 @@ function investigateMecanic($pdo ) {
         try{
             $selectSql  = 'SELECT report FROM worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number';
             $selectStmt = $pdo->prepare($selectSql);
-            $selectStmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+            $selectStmt->bindValue(':worker_id', $worker_id, PDO::PARAM_INT);
             $selectStmt->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
             // Execute the query
             $selectStmt->execute();
