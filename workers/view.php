@@ -46,7 +46,10 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
         foreach ($workersArray as $worker){
             foreach($worker['actions'] as $action) {
-                if ($action['turn_number'] == $mecanics['turncounter']) $currentAction = $action;
+                if (
+                    !empty($action['turn_number'])
+                    && $action['turn_number'] == $mecanics['turncounter']
+                ) $currentAction = $action;
             }
 
             echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">

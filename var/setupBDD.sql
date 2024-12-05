@@ -73,7 +73,10 @@ VALUES
     ('txt_inf_passive', 'surveiller', 'Texte for passive action'),
     ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
     ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
-    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action')
+    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action'),
+    -- 
+    ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
+    ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
 ;
 
 CREATE TABLE players (
