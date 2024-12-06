@@ -1,31 +1,42 @@
 <?php
 
-function updateWorkerStatus($pdo, $workerId, $isAlive = null, $isActive = null) {
-    $query = "UPDATE workers SET ";
-    $updates = [];
-    $params = ['worker_id' => $workerId];
-    if (!empty($isActive)) {
-        $updates[] = "is_active = :is_active";
-        $params['is_active'] = $isActive;
+function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
+    if (is_null($isActive)) {
+        echo  __FUNCTION__."(): isActive: NULL<br />";
+        return FALSE;
     }
-    if (!empty($isAlive)) {
-        $updates[] = "is_alive = :is_alive";
-        $params['is_alive'] = $isAlive;
-    }
-    if (count($updates)>0) {
-        $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id";
-        echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
 
-        try{
-            $stmt = $pdo->prepare($query);
-            $stmt->execute($params);
-        } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-            return FALSE;
-        }
-        return TRUE;
+    $query = sprintf("UPDATE workers SET is_active = FALSE WHERE id = %s",$workerId);
+    if ($isActive) $query = sprintf("UPDATE workers SET is_active = TRUE WHERE id = %s", $workerId);
+    echo sprintf(" query : %s, ", $query);
+
+    try{
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return FALSE;
     }
-    return FALSE;
+    return TRUE;
+}
+
+function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
+    if (is_null($isAlive)) {
+        echo  __FUNCTION__."(): isAlive: NULL<br />";
+        return FALSE;
+    }
+
+    $query = sprintf("UPDATE workers SET is_alive = FALSE WHERE id = %s", $workerId );
+    if ($isAlive) $query = sprintf("UPDATE workers SET is_alive = TRUE WHERE id = %s", $workerId);
+    echo sprintf(" query : %s, ", $query);
+    try{
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return FALSE;
+    }
+    return TRUE;
 }
 
 function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null, $reportAppendArray = null) {

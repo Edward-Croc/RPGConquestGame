@@ -231,14 +231,14 @@ function investigateMecanic($pdo ) {
                 $text_action_ps .= ' plusieurs réseaux ';
                 $text_action_inf .= ' plusieurs réseaux ';
                 if ( count($networkIDs) ==1 ){
-                    $text_action_ps .= ' le réseau '.$$networkIDs[0];
-                    $text_action_inf .= ' le réseau '.$$networkIDs[0];
+                    $text_action_ps .= ' le réseau '.$networkIDs[0];
+                    $text_action_inf .= ' le réseau '.$networkIDs[0];
                 }else{
-                    $text_action_ps .= ' plusieurs réseaux ';
-                    $text_action_inf .= ' plusieurs réseaux ';
+                    $text_action_ps .= ' les réseaux '. implode(', ',$networkIDs);
+                    $text_action_inf .= ' les réseaux '. implode(', ',$networkIDs);
                 }
             }else if (count($workerIDs) != 0) {
-                if (count($networkIDs) == 1){
+                if (count($workerIDs) == 1){
                     $text_action_ps .= ' une personne ';
                     $text_action_inf .= ' une personne ';
                 }else{

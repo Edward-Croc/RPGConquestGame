@@ -126,34 +126,36 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 ('age_metier', 'FALSE', ''), */
 
                 // Allow Discipline teaching via age_discipline param
-                $age_discipline_json = getConfig($gameReady, 'age_discipline');
-                if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
-                $age_discipline_array = json_decode($age_discipline_json, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                }
-                if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array,true));
-                $powerDisciplineArray = getPowersByType($gameReady,'3', $controler_id, TRUE);
-                if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
-                $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
-                if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
-                foreach ($age_discipline_array['age'] as $age) {
-                    if ($age <= $worker['age']) {
-                        $nb_disciplines += 1;
+
+                if ($worker['is_active']) {
+                    $age_discipline_json = getConfig($gameReady, 'age_discipline');
+                    if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
+                    $age_discipline_array = json_decode($age_discipline_json, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
+                    if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array,true));
+                    $powerDisciplineArray = getPowersByType($gameReady,'3', $controler_id, TRUE);
+                    if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
+                    $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
+                    if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
+                    foreach ($age_discipline_array['age'] as $age) {
+                        if ($age <= $worker['age']) {
+                            $nb_disciplines += 1;
+                        }
+                    }
+                    $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
+                    if ($_SESSION['DEBUG_TRANSFORM']) 
+                        echo sprintf(
+                            "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>", 
+                            count($nb_current_disciplines), var_export($nb_current_disciplines, true), $nb_disciplines
+                        );
+                    if ( (INT)count($nb_current_disciplines) < (INT)$nb_disciplines) {
+                        $upgrade_HTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner la discipline" class="worker-upgrade-btn"> %1$s ',
+                            showDisciplineSelect($powerDisciplineArray, false)
+                        );
                     }
                 }
-                $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
-                if ($_SESSION['DEBUG_TRANSFORM']) 
-                    echo sprintf(
-                        "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>", 
-                        count($nb_current_disciplines), var_export($nb_current_disciplines, true), $nb_disciplines
-                    );
-                if ( (INT)count($nb_current_disciplines) < (INT)$nb_disciplines) {
-                    $upgrade_HTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner la discipline" class="worker-upgrade-btn"> %1$s ',
-                        showDisciplineSelect($powerDisciplineArray, false)
-                    );
-                }
-
                 // Check Transformation Conditions
                 $age_transformation_json = getConfig($gameReady, 'age_transformation');
                 $age_transformation_array = json_decode($age_transformation_json, true);
@@ -178,7 +180,10 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
                 foreach ( $worker['actions'] as $turn_number => $action ){
-                    echo sprintf('<div class="report week"> <h4> Semaine %s </h4>', $turn_number);
+                    echo sprintf(
+                        '<div class="report week"> <h4> %s </h4>',
+                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? "Cette semaine" : sprintf("Semaine %s", $turn_number )
+                    );
                     if ($_SESSION['DEBUG_REPORT'])
                         echo "<p> action: ".var_export($action, true)."</p>";
                     if ($action['report'] != '{}') {
