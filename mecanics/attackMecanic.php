@@ -1,6 +1,6 @@
 <?php
 
-function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, $atk_threshold = 0, $rpst_threshold = 0 ) {
+function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
 
@@ -124,8 +124,6 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
     JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
     LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
     WHERE w.id IN (%s)
-        AND (a.attacker_attack_val - wa.defence_val) >= :atk_threshold
-        AND (wa.attack_val - a.attacker_defence_val) >= :rpst_threshold
     ";
     $final_attacks_aggregate = array();
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
@@ -138,8 +136,6 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL, 
             );
             $stmtValCompare->bindParam(':turn_number', $turn_number);
             $stmtValCompare->bindParam(':attacker_id', $compared_attacker_id);
-            $stmtValCompare->bindParam(':atk_threshold', $atk_threshold, PDO::PARAM_INT);
-            $stmtValCompare->bindParam(':rpst_threshold', $rpst_threshold, PDO::PARAM_INT);
             $stmtValCompare->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__."():Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
@@ -274,19 +270,19 @@ function attackMecanic($pdo){
                     $is_alive=TRUE;
                     $defender_status = 'captured';
                     $attackerReport['attack_report'] = sprintf($captureSuccessTextes[array_rand($captureSuccessTextes)], $defender['defender_name']);
-                    // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = true
-                    $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id, is_primary_controler) VALUES (:controler_id, :worker_id, :is_primary)");
-                    $stmt->execute([
-                        'controler_id' => $defender['attacker_controler_id'],
-                        'worker_id' => $defender['defender_id'],
-                        'is_primary' => TRUE
-                    ]);
                     // in controler_worker update defender_controler_id, defender_id, is_primary_controler = false
                     $stmt = $pdo->prepare("UPDATE controler_worker SET is_primary_controler = :is_primary WHERE controler_id = :controler_id AND worker_id = :worker_id");
                     $stmt->execute([
                         'controler_id' => $defender['defender_controler_id'],
                         'worker_id' => $defender['defender_id'],
                         'is_primary' => FALSE
+                    ]);
+                    // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = true
+                    $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id, is_primary_controler) VALUES (:controler_id, :worker_id, :is_primary)");
+                    $stmt->execute([
+                        'controler_id' => $defender['attacker_controler_id'],
+                        'worker_id' => $defender['defender_id'],
+                        'is_primary' => TRUE
                     ]);
                 }
                 updateWorkerStatus($pdo, $defender['defender_id'], $is_alive, $is_active);
