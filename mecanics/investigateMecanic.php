@@ -87,7 +87,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
         JOIN worker_actions wa ON
-                s.zone_id = wa.zone_id AND turn_number = :turn_number
+                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('claim', 'captured')
         JOIN workers w ON wa.worker_id = w.ID
         JOIN worker_origins wo ON wo.id = w.origin_id
         JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
@@ -142,10 +142,14 @@ function investigateMecanic($pdo ) {
     $txtArray['investigate']['ps'] = getConfig($pdo, 'txt_ps_investigate');
     $txtArray['attack']['ps'] = getConfig($pdo, 'txt_ps_attack');
     $txtArray['claim']['ps'] = getConfig($pdo, 'txt_ps_claim');
+    $txtArray['captured']['ps'] = getConfig($pdo, 'txt_ps_captured');
+    $txtArray['dead']['ps'] = getConfig($pdo, 'txt_ps_dead');
     $txtArray['passive']['inf'] = getConfig($pdo, 'txt_inf_passive');
     $txtArray['investigate']['inf'] = getConfig($pdo, 'txt_inf_investigate');
     $txtArray['attack']['inf'] = getConfig($pdo, 'txt_inf_attack');
     $txtArray['claim']['inf'] = getConfig($pdo, 'txt_inf_claim');
+    $txtArray['captured']['inf'] = getConfig($pdo, 'txt_inf_captured');
+    $txtArray['dead']['inf'] = getConfig($pdo, 'txt_inf_dead');
 
     foreach ($investigations as $row) {
 

@@ -44,13 +44,19 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
         }
 
+        if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));
+        $currentAction = array();
         foreach ($workersArray as $worker){
+            if ( $_SESSION['DEBUG'] == true ) echo sprintf('mecanics[turncounter] : %s  <br>', var_export($mecanics['turncounter'],true));
             foreach($worker['actions'] as $action) {
-                if (
-                    !empty($action['turn_number'])
-                    && $action['turn_number'] == $mecanics['turncounter']
-                ) $currentAction = $action;
+                if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
+                if ( $_SESSION['DEBUG'] == true ) echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
+                if ( (INT)$action['turn_number'] == (INT)$mecanics['turncounter'] ) {
+                    if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
+                    $currentAction = $action;
+                }
             }
+            if ( $_SESSION['DEBUG'] == true ) echo sprintf('currentAction : %s  <br>', var_export($currentAction,true));
 
             echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
                 <input type="hidden" name="worker_id" value=%1$s>

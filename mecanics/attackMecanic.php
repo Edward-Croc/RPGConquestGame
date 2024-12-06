@@ -293,8 +293,8 @@ function attackMecanic($pdo){
                 echo $defender['defender_name']. ' Escaped !';
                 $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
                 $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], $defender['turn_number'] );
-                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $life_report);
-                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attack_report );
+                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $defenderReport);
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attackerReport );
             }
             if ((BOOL)$RIPOSTACTIVE && ($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                 echo $defender['defender_name']. ' RIPOSTE !';

@@ -662,7 +662,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
 
     $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controler_id);
 
-    if ($_SESSION['DEBUG_ATTACK'] == true) {
+    if ($_SESSION['DEBUG_ATTACK']) {
         echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
     }
 

@@ -23,7 +23,7 @@ INSERT INTO config (name, value, description)
 VALUES
     ('DEBUG', 'false', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
-    ('DEBUG_ATTACK', 'true', 'Activates the Debugging texts for the attack report mecanics'),
+    ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
@@ -70,10 +70,14 @@ VALUES
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
     ('txt_ps_attack', 'attaque', 'Texte for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Texte for claim action'),
+    ('txt_ps_captured', '', 'Texte for captured action'),
+    ('txt_ps_dead', '', 'Texte for dead action'),
     ('txt_inf_passive', 'surveiller', 'Texte for passive action'),
     ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
     ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action'),
+    ('txt_inf_captured', 'as été capturer', 'Texte for captured action'),
+    ('txt_inf_dead', 'est mort', 'Texte for claim action'),
     -- 
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
