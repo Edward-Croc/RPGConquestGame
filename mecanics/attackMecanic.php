@@ -190,59 +190,60 @@ function attackMecanic($pdo){
         'J\'ai accompli l\'attaque sur %1$s, il a trouvé son repos final. ',
         'Notre cible %1$s as été accompatgner a l\'hopital dans un état critique, nous n\avons plus rien à craindre. ',
         'Il y aura un succidé retrouvé dans l\Arno demain, %1$s n\'est plus des notres. ',
-        'Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel.',
-        'Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.',
-        'Mission accomplie : %1$s est désormais une simple note dans les annales de l\'histoire.'
+        'Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel. ',
+        'Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé. ',
+        'Mission accomplie : %1$s est désormais une simple note dans les annales de l\'histoire. '
     );
     $captureSuccessTextes = array(
-        'La mission est un succès total %1$s est désormais entre nos mains et nous allons le questionner.',
-        'La mission s\'est déroulée comme prévu : %1$s est capturé et prêt à livrer ses secrets.',
-        'Succès complet sur %1$s, il est désormais sous notre garde et n\'aura d\'autre choix que de parler.',
-        'Nous avons maîtrisé %1$s, il est maintenant entre nos mains, prêt pour l\'interrogatoire.',
-        'Mission accomplie : %1$s est capturé et en sécurité pour un débriefing approfondi.',
-        'L\'objectif %1$s est neutralisé et sous notre contrôle. L\'interrogatoire peut commencer.',
-        'Nous avons pris %1$s sans heurt : il est désormais à notre merci pour un échange d\'informations.',
-        'Le succès est total : %1$s est retenu, et ses paroles seront bientôt nôtres.',
+        'La mission est un succès total %1$s est désormais entre nos mains et nous allons le questionner. ',
+        'La mission s\'est déroulée comme prévu : %1$s est capturé et prêt à livrer ses secrets. ',
+        'Succès complet sur %1$s, il est désormais sous notre garde et n\'aura d\'autre choix que de parler. ',
+        'Nous avons maîtrisé %1$s, il est maintenant entre nos mains, prêt pour l\'interrogatoire. ',
+        'Mission accomplie : %1$s est capturé et en sécurité pour un débriefing approfondi. ',
+        'L\'objectif %1$s est neutralisé et sous notre contrôle. L\'interrogatoire peut commencer. ',
+        'Nous avons pris %1$s sans heurt : il est désormais à notre merci pour un échange d\'informations. ',
+        'Le succès est total : %1$s est retenu, et ses paroles seront bientôt nôtres. ',
         'Mission terminée avec brio : %1$s est capturé et ne nous échappera plus.'
     );
     $failedAttackTextes = array(
-        'Malheureusement, %1$s a réussi à nous échapper et reste en vie.',
-        'L\'opération contre %1$s a échoué. La cible a survécu et demeure une menace.',
-        'Notre tentative contre %1$s s\'est soldée par un échec. Il est toujours actif.',
-        'L\'attaque n\'a pas atteint son objectif : %1$s a survécu et garde sa liberté.',
-        'Nous n\'avons pas pu neutraliser %1$s. Il reste introuvable après l\'affrontement.',
-        'La mission a été un revers : %1$s est toujours debout et hors de notre portée.',
-        'Malgré nos efforts, %1$s s\'est défendu avec succès et a réussi à fuir.',
-        'Notre assaut n\'a pas suffi : %1$s a survécu et continue d\'agir.',
-        'La cible %1$s s\'est montrée plus résistante que prévu. Elle a échappé à notre emprise.',
-        'Nous avons échoué à neutraliser %1$s. Il demeure vivant et peut encore riposter.'
+        'Malheureusement, %1$s a réussi à nous échapper et reste en vie. ',
+        'L\'opération contre %1$s a échoué. La cible a survécu et demeure une menace. ',
+        'Notre tentative contre %1$s s\'est soldée par un échec. Il est toujours actif. ',
+        'L\'attaque n\'a pas atteint son objectif : %1$s a survécu et garde sa liberté. ',
+        'Nous n\'avons pas pu neutraliser %1$s. Il reste introuvable après l\'affrontement. ',
+        'La mission a été un revers : %1$s est toujours debout et hors de notre portée. ',
+        'Malgré nos efforts, %1$s s\'est défendu avec succès et a réussi à fuir. ',
+        'Notre assaut n\'a pas suffi : %1$s a survécu et continue d\'agir. ',
+        'La cible %1$s s\'est montrée plus résistante que prévu. Elle a échappé à notre emprise. ',
+        'Nous avons échoué à neutraliser %1$s. Il demeure vivant et peut encore riposter. '
     );
     $escapeTextes = array(
-            'J\'ai été pris pour cible par %1$s, mais j\'ai réussi à leur échapper de justesse.',
-            'Une attaque orchestrée par %1$s a failli m\'avoir, mais j\'ai pu me faufiler hors de leur portée.',
-            'L\'embuscade tendue par %1$s n\'a pas suffi à me retenir, j\'ai pu m\'échapper.',
-            'J\'ai croisé %1$s sur ma route, ils ont tenté de m\'intercepter, mais j\'ai fui avant qu\'il ne soit trop tard.',
-            'L\'attaque de %1$s a échoué, je suis sain et sauf et hors de danger.',
-            'Un assaut surprise de %1$s m\'a pris au dépourvu, mais j\'ai esquivé leurs griffes à temps.',
-            'Malgré une attaque menée par %1$s, j\'ai gardé mon calme et trouvé un chemin pour m\'échapper.',
-            'J\'ai senti %1$s venir et, bien qu\'ils m\'aient surpris, j\'ai su échapper à leur piège.',
-            'Ils ont tenté de me capturer sous la conduite de %1$s, mais ma fuite a été rapide et efficace.',
-            'L\'assaut de %1$s n\'a pas eu le résultat escompté, je suis parvenu à m\'enfuir indemne.'
+            'J\'ai été pris pour cible par %1$s, mais j\'ai réussi à leur échapper de justesse. ',
+            'Une attaque orchestrée par %1$s a failli m\'avoir, mais j\'ai pu me faufiler hors de leur portée. ',
+            'L\'embuscade tendue par %1$s n\'a pas suffi à me retenir, j\'ai pu m\'échapper. ',
+            'J\'ai croisé %1$s sur ma route, ils ont tenté de m\'intercepter, mais j\'ai fui avant qu\'il ne soit trop tard. ',
+            'L\'attaque de %1$s a échoué, je suis sain et sauf et hors de danger. ',
+            'Un assaut surprise de %1$s m\'a pris au dépourvu, mais j\'ai esquivé leurs griffes à temps. ',
+            'Malgré une attaque menée par %1$s, j\'ai gardé mon calme et trouvé un chemin pour m\'échapper. ',
+            'J\'ai senti %1$s venir et, bien qu\'ils m\'aient surpris, j\'ai su échapper à leur piège. ',
+            'Ils ont tenté de me capturer sous la conduite de %1$s, mais ma fuite a été rapide et efficace. ',
+            'L\'assaut de %1$s n\'a pas eu le résultat escompté, je suis parvenu à m\'enfuir indemne. '
     );
     $attackFailedAndCountered = array(
-        'Il m\'as eu...'
+        'Je part mettre en route le plan d\assassinat de %s. ',
+        'Début de la mission : %s. [Le rapport n\'as jamais été terminer.] '
     );
     $counterAttackTexts = array(
-        '%1$s m\'a attaqué, j\'ai survécu et ma riposte l\'a anéanti, j\'ai jetter son cadavre dans l\'Arno.',
-        'Après avoir été attaqué par %1$s, j\'ai non seulement survécu, mais ma riposte a fait saigner leur ego.',
-        '%1$s a cru m\'avoir, mais ma riposte a brisé leurs espoirs et les a détruits.',
-        'Ils ont tenté de me réduire au silence, mais après avoir survécu à l\'attaque de %1$s, j\'ai répondu avec une riposte fatale.',
-        'Malgré l\'assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à leurs ambitions.',
-        'Attaqué par %1$s, j\'ai résisté et ma riposte les a anéantis sans retour.',
-        'Ils ont cherché à me faire tomber, mais ma riposte après l\'attaque de %1$s a effacé toute menace.',
-        'L\'attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.',
-        'Je me suis retrouvé face à %1$s, mais après avoir survécu à leur attaque, ma riposte a scellé leur destin.',
-        'Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu\'ils n\'aient plus rien à revendiquer.'
+        '%1$s m\'a attaqué, j\'ai survécu et ma riposte l\'a anéanti, j\'ai jetter son cadavre dans l\'Arno. ',
+        'Après avoir été attaqué par %1$s, j\'ai non seulement survécu, mais ma riposte a fait saigner leur ego. ',
+        '%1$s a cru m\'avoir, mais ma riposte a brisé leurs espoirs et les a détruits. ',
+        'Ils ont tenté de me réduire au silence, mais après avoir survécu à l\'attaque de %1$s, j\'ai répondu avec une riposte fatale. ',
+        'Malgré l\'assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à leurs ambitions. ',
+        'Attaqué par %1$s, j\'ai résisté et ma riposte les a anéantis sans retour. ',
+        'Ils ont cherché à me faire tomber, mais ma riposte après l\'attaque de %1$s a effacé toute menace. ',
+        'L\'attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive. ',
+        'Je me suis retrouvé face à %1$s, mais après avoir survécu à leur attaque, ma riposte a scellé leur destin. ',
+        'Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu\'ils n\'aient plus rien à revendiquer. '
     );
     
     
