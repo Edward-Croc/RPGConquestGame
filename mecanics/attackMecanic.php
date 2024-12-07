@@ -291,7 +291,36 @@ function attackMecanic($pdo){
             if ($defender['attack_difference'] < (INT)$ATTACKDIFF0 ){
                 echo $defender['defender_name']. ' Escaped !';
                 $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
-                $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], $defender['turn_number'] );
+                // Check if attaker is in know ennemies
+                try{
+                    $knownEnemyControler = '';
+                    $sql_known_ennemies = sprintf(
+                        "SELECT * FROM controlers_known_enemies WHERE controler_id = %s AND discovered_worker_id = %s AND zone_id = %s",
+                        $defender['defender_controler_id'], $defender['attacker_id'],  $defender['zone_id'] );
+                    $stmtA = $pdo->prepare($sql_known_ennemies);
+                    $stmtA->execute();
+                    $knownEnemy = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
+                    if (!empty($knownEnemy)) {
+                        // Yes and is controler known ? Add to report
+                        if (!empty($knownEnemy[0]['discovered_controler_id'])) {
+                            $knownEnemyControler .= sprintf(' du résseau %s', $knownEnemy[0]['discovered_controler_id']);
+                        }
+                        if (!empty($knownEnemy[0]['discovered_controler_name'])) {
+                            $knownEnemyControler .= sprintf(' des agents de %s', $knownEnemy[0]['discovered_controler_name']);
+                        }
+                    } else {
+                        // No Add to know ennemies
+                        $sqlInsert = sprintf(
+                            "INSERT INTO controlers_known_enemies (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
+                            $defender['defender_controler_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
+                        $stmtInsert = $pdo->prepare($sqlInsert);
+                        $stmtInsert->execute();
+                    }
+                } catch (PDOException $e) {
+                    echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
+                    return [];
+                }
+                $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemyControler));
                 updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $defenderReport);
                 updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attackerReport );
             }
