@@ -228,8 +228,8 @@ function investigateMecanic($pdo ) {
                 }
             }
             if ( count($networkIDs) != 0 ){
-                $text_action_ps .= ' plusieurs réseaux ';
-                $text_action_inf .= ' plusieurs réseaux ';
+                $text_action_ps .= '';
+                $text_action_inf .= '';
                 if ( count($networkIDs) ==1 ){
                     $text_action_ps .= ' le réseau '.$networkIDs[0];
                     $text_action_inf .= ' le réseau '.$networkIDs[0];

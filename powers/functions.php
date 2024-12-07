@@ -150,15 +150,12 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
     if (!empty($controler_id))
         $controlersArray = getControlers($pdo, NULL, $controler_id,);
 
-
-    $debug = TRUE;
     if ($debug) 
         echo sprintf("<p> powerArray : %s<br/>
             workersArray: %s <br/>
             controlersArray: %s<p/>
          ",var_export($powerArray,true),var_export($workersArray,true),var_export($controlersArray,true)
         );
-        $debug = TRUE;
     foreach ( $powerArray AS $key => $power ) {
         if (!empty($worker_id) && !empty($workersPowersArray) && in_array($power['id'],$workersPowersList,true) ){
             if ($debug) echo sprintf("kill power(%s) <br>", $key);
@@ -173,6 +170,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
                 $keepElement = TRUE;
             }
             else if( is_array($powerConditions[$state_text]) ) {
+                if ($debug) echo sprintf("powerConditions[%s] is array : %s  <br>", $state_text, var_export($powerConditions[$state_text], true));
                 $keepElement = TRUE;
                 if (!empty($powerConditions[$state_text]['OR']) ){
                     if ($debug) echo 'test the OR condition : <br/>' ;
@@ -192,25 +190,38 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
                     $keepElement = $OR;
                 }
                 if (!empty($workersArray) ) {
-                    if (!empty($powerConditions[$state_text]['age']) && ($powerConditions[$state_text]['age'] > $workersArray[0]['age']) ) {
+                    if ($debug) echo sprintf("!empty(workersArray) (%s): %s <br>", $workersArray, var_export($workersArray,true));
+                    if (isset($powerConditions[$state_text]['age']) && ($powerConditions[$state_text]['age'] > $workersArray[0]['age']) ) {
                         if ($debug) echo 'test FAILED the age condition : <br/>' ;
                         $keepElement = FALSE;
                     }
-                    if (!empty($powerConditions[$state_text]['worker_is_alive']) && ((INT)$powerConditions[$state_text]['worker_is_alive'] != (INT)$workersArray[0]['is_alive'])) {
-                        if ($debug) echo 'test FAILD the worker_is_alive condition : <br/>' ;
-                        $keepElement = FALSE;
+                    if (isset($powerConditions[$state_text]['worker_is_alive'])){
+                        if ($debug) echo 'test the worker_is_alive condition :';
+                        if ($debug) echo sprintf(' $workersArray[0][is_alive] (%s): %s ',  gettype( $workersArray[0]['is_alive']),  $workersArray[0]['is_alive']);
+                        if ($debug) echo sprintf(' $powerConditions[$state_text][worker_is_alive] (%s): %s ',  gettype( $powerConditions[$state_text]['worker_is_alive']),  $powerConditions[$state_text]['worker_is_alive']);
+                        $should_be_alive = TRUE;
+                        if ($powerConditions[$state_text]['worker_is_alive'] == "0" ) $should_be_alive = FALSE;
+                        if ($debug) echo sprintf(' $should_be_alive (%s): %s ',  gettype($should_be_alive), $should_be_alive );
+                        if ( $workersArray[0]['is_alive'] !== $should_be_alive ) {
+                            if ($debug) echo ' FAILD' ;
+                            $keepElement = FALSE;
+                        }
+                        if ($debug) echo ' <br/>' ;
                     }
                 } else 
                     $keepElement = FALSE;
-                if (!empty($powerConditions[$state_text]['turn']) && $powerConditions[$state_text]['turn'] > $turn_number) {
+                if (isset($powerConditions[$state_text]['turn']) && $powerConditions[$state_text]['turn'] > $turn_number) {
                     if ($debug) echo 'test FAILED the turn condition : <br/>' ;
                     $keepElement = FALSE;
                 }
                 if (!empty($powerConditions[$state_text]['controler_faction']) && $powerConditions[$state_text]['controler_faction'] != $controlersArray[0]['faction_name']){
-                    if ($debug) echo 'test FAILD the worker_is_alive condition : <br/>' ;
+                    if ($debug) echo 'test FAILD the controler_faction condition : <br/>' ;
                     $keepElement = FALSE;
                 }
             }
+        }
+        else{
+            if ($debug) echo sprintf("powerConditions[%s] is empty : %s ", $state_text, $powerConditions[$state_text]);
         }
         if (!$keepElement){
             if ($debug) echo sprintf("kill power(%s) <br>", $key);
