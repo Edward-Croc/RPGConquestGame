@@ -166,19 +166,19 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
 ;
 
 INSERT INTO zones (name, description) VALUES
-('Stazione ferroviaria norte', 'Au nord de Florence se situe Peretola, un village qui c’est fait absorbée pour devenir le quartier des habitations bas de gamme due à la présence du petit aéroport de Florence et des quelques avions qui passe au dessus des habitation.'),
-('Le Cascine', 'Le quartier de Le Cascine tire son nom de son parc, le plus grand parc public de la ville de Florence qui tire son nom des anciennes fermes grand-ducales. Le quartier est principalement occupée par les halles du Mercatello delle Cascine plus vaste marché de la ville. '),
-('Monticelli', 'Située de l’autre côté du Fleuve Arno face au parc Cascine c’est ici dans ce quartier excentrée de florence que l’on trouve les étudiants et ceux qui tiennent les boutiques du Mercatello delle Cascine.'),
-('Fortezza Basso', 'La massive Forteresse de Basso du 16eme siècle qui est désormais devenu un palais des exposition donne son nom au quartier qui contient aussi le Centre hospitalier universitaire et la Scuola di ingegneria.'),
-('Santa Maria Novella', 'Ce quartier qui est un centre-ville commerçant tire son nom de sa basilique Sainte Marie nouvelle. Ce quartier est traversée par la rue commerçante Sainte marie qui mène de la gare Santa maria de Firenze jusqu’au au Mercato di San Lorenzo.'),
-('Indipendenza', 'Le quartier de l''indépendance et la place publique dont elle tire le nom sont situées au coeur du centre historique de Firenze et sont faciles à atteindre de la gare principale de Santa Maria Novella.'),
-('Duomo', 'Le Duomo est l’autre nom de la Cathédrale Santa Maria del Fiore, la 5eme église d’europe qui préside la Piazza del Duomo. Cette place du centre ville piétonnier est bordée du musée de l’opéra et de plusieurs Palazzos.'),
+('Railway Station', '(Stazione ferroviaria norte) Au nord de Florence se situe Peretola, un village qui s’est fait absorbé pour devenir le quartier des habitations bas de gamme à cause de la présence du petit aéroport de Florence et des quelques avions qui passent au-dessus des habitation.'),
+('Le Cascine', 'Le quartier du Cascine tire son nom de son parc, le plus grand parc public de la ville de Florence qui tire son nom des anciennes fermes grand-ducales. Le quartier est principalement occupé par les halles du Mercatello delle Cascine, le plus vaste marché de la ville.'),
+('Monticelli', 'Situé de l’autre côté du Fleuve Arno face au parc Cascine c’est dans ce quartier excentré de florence que l’on trouve les étudiants et les maison ceux qui tiennent les boutiques du Mercatello delle Cascine.'),
+('Fortezza Basso', 'La massive Forteresse de Basso du 16eme siècle, qui est désormais devenu un palais des expositions, donne son nom au quartier qui contient aussi le Centre hospitalier universitaire et la Scuola di ingegneria.'),
+('Santa Maria Novella', 'Ce quartier qui est un centre-ville commerçant qui tire son nom de sa basilique Sainte Marie nouvelle. Ce quartier est traversé par la rue commerçante Sainte marie qui mène de la gare Santa maria de Firenze jusqu’au au Mercato di San Lorenzo.'),
+('Indipendenza', 'Le quartier de l''indépendance et la place publique dont elle tire le nom sont situés au coeur du centre historique de Firenze et sont faciles à atteindre depuis la gare principale de Santa Maria Novella.'),
+('Duomo', 'Le Duomo est l’autre nom de la Cathédrale Santa Maria del Fiore, la 5eme église d’europe qui domine la Piazza del Duomo. Cette place du centre ville piétonnier est bordée du musée de l’opéra et de plusieurs Palazzos.'),
 ('Palazzo Pitti', 'Au centre du quartier domine le Palazzo Pitti, un sublime palais de la renaissance qui forme le coeur des affaire du sénéchal actuelle de la ville. Ce quartier est située de l’autre côté de l’arno et connectée au centre ville par le fameux Ponte Vecchio.'),
-('Santa Croce', 'Entre la basilique Santa Croce et la place du buste de Guglielmo Oberdan ce trouve ce que l’on peut qualifier de quartier financier de Florence.  Et ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza)'),
-('Oberdan', 'Entre la basilique Santa Croce et la place du buste de Guglielmo Oberdan ce trouve ce que l’on peut qualifier de quartier financier de Florence.  Et ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza)'),
-('Piazza della Liberta & Savonarola', 'La place de la liberté marque la fin du centre ville et le début du quartier des universités anciennes de la ville ou l’on peut trouver la Universite de Syracuse et la Instituto Leonardo Da Vinci.'),
-('Michelangelo-Gavinana', 'Ce quartier du sud de Florence est le plus étendu des quartiers composée de bâtiments qui longe le fleuve Arno. On y trouve un golfe, des hôtels de luxe, une parfumerie et la Viale Europa qui travers le quartier de part en part.'),
-('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est sa gare fret du champ de mars.');
+('Santa Croce', ' ??? '),
+('Oberdan', 'Entre la basilique Santa Croce et la place du buste de Guglielmo. Oberdan est ce que l’on peut qualifier de quartier financier de Florence. Ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza) sont le fruit d''une influence notable.'),
+('Piazza della Liberta & Savonarola', 'La place de la liberté marque la fin du centre ville et le début du quartier des universités anciennes de la ville. L’on peut trouver la Universite de Syracuse et la Instituto Leonardo Da Vinci.'),
+('Michelangelo-Gavinana', 'Ce quartier du sud de Florence est le plus étendu des quartiers, il est composé de bâtiments qui longe le fleuve Arno. On y trouve un golf, des hôtels de luxe, une parfumerie et la Viale Europa qui traverse le quartier de part en part.'),
+('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est la gare de fret du champ de mars.');
 
 
 -- Insert the data
