@@ -68,7 +68,7 @@ require_once '../base/base_html.php';
 
 echo "
     <div> <h2> $pageTitle </h2> </div>
-    <div class='flex'>
+    <div >
 ";
 
 for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
