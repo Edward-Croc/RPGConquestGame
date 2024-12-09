@@ -33,30 +33,6 @@ function getZonesArray($pdo, $zone_id = NULL) {
     return $zones;
 }
 
-// Function to get Controlers and return as an array
-function getLocationsArray($pdo) {
-    $locationsArray = array();
-
-    try{
-        $sql = "SELECT * FROM locations AS z";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-        return NULL;
-    }
-
-    // Fetch the results
-    $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Store Controlers in the array
-    foreach ($locations as $location) {
-        $locationsArray[] = $location;
-    }
-
-    return $locationsArray;
-}
-
 function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
 
     if (empty($zonesArray)) return '';
@@ -81,3 +57,45 @@ function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
 
     return $showZoneSelect;
 }
+
+// Function to get Controlers and return as an array
+function getLocationsArray($pdo) {
+    $locationsArray = array();
+
+    try{
+        $sql = "SELECT * FROM locations AS z";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+
+    // Fetch the results
+    $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Store Controlers in the array
+    foreach ($locations as $location) {
+        $locationsArray[] = $location;
+    }
+
+    return $locationsArray;
+}
+
+// calculateSecretLocationDefence
+// get BaseLaireDef from config 
+// add current turn + setup_turn
+// OR
+// get BaseSecretDef from config
+
+// add servants in zone if controler_id is set
+
+
+// showControlerKnownSecrets
+// Get elements from controler_known_locations by controler ID for Zone_id
+// show name and text for location 
+// Destroy location 
+// if can_be_destroyed that add button for servants attack on location
+// and button for vampire attack on location
+
+
