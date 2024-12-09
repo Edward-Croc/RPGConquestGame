@@ -47,6 +47,13 @@ VALUES
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
+    -- passive, investigate, attack, claim, captured, dead
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
+    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
+    ('passiveAttackActions', '''passive'',''investigate''', 'Liste of passive attack actions'),
+    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
+    ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- Diff vals in report 
     ('REPORTDIFF0', 0, 'Value for Level 0 information'),
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
@@ -58,13 +65,9 @@ VALUES
     ('RIPOSTACTIVE', TRUE, 'Value for Succesful Ripost'),
     ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
     ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
-    -- passive, investigate, attack, claim, captured, dead
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
-    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate''', 'Liste of passive attack actions'),
-    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active defense actions'),
+    -- Diff vals in claim
+    ('DISCRETECLAIMDIFF', 1, 'Value for discrete claim'),
+    ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Texte for passive action'),
     ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
@@ -135,9 +138,24 @@ CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
     description text NOT NULL,
-    is_secret INT DEFAULT 0,
     zone_id INT,
+    setup_turn INT DEFAULT 0,
+    discovery_diff INT DEFAULT 0,
+    controler_id INT DEFAULT NULL,
+    can_be_destroyed BOOLEAN DEFAULT FALSE,
+    is_lair  INT DEFAULT 0,
     FOREIGN KEY (zone_id) REFERENCES zones (ID)
+);
+
+CREATE TABLE controler_known_locations (
+    id SERIAL PRIMARY KEY,
+    controler_id INT NOT NULL,
+    location_id INT NOT NULL,
+    first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    UNIQUE (controler_id, location_id), -- Unicity constraint on controler/worker combo
+    FOREIGN KEY (controler_id) REFERENCES controlers (ID), -- Link to controlers table
+    FOREIGN KEY (location_id) REFERENCES locations (ID), -- Link to locations table
 );
 
 -- Prepare the Worker Origins
