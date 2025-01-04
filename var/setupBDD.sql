@@ -155,7 +155,7 @@ CREATE TABLE controler_known_locations (
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     UNIQUE (controler_id, location_id), -- Unicity constraint on controler/worker combo
     FOREIGN KEY (controler_id) REFERENCES controlers (ID), -- Link to controlers table
-    FOREIGN KEY (location_id) REFERENCES locations (ID), -- Link to locations table
+    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
 );
 
 -- Prepare the Worker Origins

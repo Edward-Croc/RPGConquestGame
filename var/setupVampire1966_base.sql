@@ -198,6 +198,7 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 ('Le rituel','', 8, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
 ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
 ('Facolta di Ingegneria', '', 6, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
+('Cairn', '', 8, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
 ('Gare/Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
 ('Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
 ('Instituto Leonardo Da Vinci','', 0, (SELECT ID FROM zones WHERE name = 'Indipendenza')),
