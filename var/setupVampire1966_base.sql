@@ -177,7 +177,7 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
 
 INSERT INTO zones (name, description) VALUES
 ('Railway Station', '(Stazione ferroviaria norte) Au nord de Florence se situe Peretola, un village qui s’est fait absorber pour devenir un quartier d''habitations bas de gamme à cause de la présence du petit aéroport de Florence et des quelques avions qui passent au-dessus des habitations.'),
-('Le Cascine', 'Le quartier du Cascine tire son nom de son parc, le plus grand parc public de la ville de Florence issu des anciennes fermes grand-ducales. Le quartier est principalement occupé par les halles du Mercatello delle Cascine, le plus vaste marché de la ville.'),
+('Le Cascine', 'Le quartier du Cascine tire son nom de son parc, le plus grand parc public de la ville de Florence, issu des anciennes fermes grand-ducales. Le quartier est principalement occupé par les halles du Mercatello delle Cascine, le plus vaste marché de la ville.'),
 ('Monticelli', 'Situé de l’autre côté du Fleuve Arno face au parc Cascine, c’est dans ce quartier excentré de Florence que l’on trouve les étudiants et les maisons de ceux qui tiennent les boutiques du Mercatello delle Cascine.'),
 ('Fortezza Basso', 'La Forteresse de Basso est une construction massive datant du 16ème siècle, qui est désormais devenue un palais des expositions. Elle donne son nom au quartier qui contient aussi le Centre hospitalier universitaire et la Scuola di ingegneria.'),
 ('Santa Maria Novella', 'Ce quartier est un centre-ville commerçant qui tire son nom de sa basilique Sainte Marie Nouvelle. Ce quartier est traversé par la rue commerçante Sainte Marie qui mène de la gare Santa Maria de Firenze jusqu’au au Mercato di San Lorenzo.'),
@@ -185,33 +185,40 @@ INSERT INTO zones (name, description) VALUES
 ('Duomo', 'Le Duomo est l’autre nom de la Cathédrale Santa Maria del Fiore, la 5ème église d’Europe qui domine la Piazza del Duomo. Cette place du centre ville piétonnier est bordée du musée de l’opéra et de plusieurs Palazzos.'),
 ('Palazzo Pitti', 'Ce quartier est dominé par le Palazzo Pitti, un sublime palais de la Renaissance qui forme le centre des affaires du dernier Sénéchal de la ville. Ce quartier est situé de l’autre côté de l’Arno et connecté au centre ville par le fameux Ponte Vecchio.'),
 ('Santa Croce - Oberdan', 'Entre la basilique Santa Croce et la place du buste de Guglielmo, Oberdan est le quartier financier de Florence. Ses multiples ‘rue Giovanni’ (Angelico, Bovio, Ciambue et Lanza) sont le fruit d''une influence notable.'),
-('Piazza della Liberta & Savonarola', 'La place de la Liberté marque la fin du centre ville et le début du quartier des universités anciennes de la ville. L’on peut trouver l''Université de Syracuse et l''Instituto Leonardo Da Vinci.'),
+('Piazza della Liberta & Savonarola', 'La place de la Liberté marque la fin du centre ville et le début du quartier des universités anciennes de la ville. L’on peut y trouver l''Université de Syracuse et l''Instituto Leonardo Da Vinci.'),
 ('Michelangelo-Gavinana', 'Ce quartier du sud de Florence est le plus étendu des quartiers, il est composé de bâtiments qui longent le fleuve Arno. On y trouve un golf, des hôtels de luxe, une parfumerie et la Viale Europa qui traverse le quartier de part en part.'),
-('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est la gare de fret du Champ de Mars.');
+('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est la gare de fret du Champ de Mars.'),
+('Bosco Bello', '')
+;
 
 
 -- Insert the data
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-('Gare', '', 0, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
-('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
-('Le barrage','', 6, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
-('Le rituel','', 8, (SELECT ID FROM zones WHERE name = 'Stazione ferroviaria norte')),
+('Stazione ferroviaria', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Le barrage','', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
+('Linfant', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
+('Cairn','', 6, (SELECT ID FROM zones WHERE name = 'Monticelli')),
 ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
 ('Facolta di Ingegneria', '', 6, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
-('Cairn', '', 8, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
 ('Gare/Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
 ('Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella')),
 ('Instituto Leonardo Da Vinci','', 0, (SELECT ID FROM zones WHERE name = 'Indipendenza')),
 ('Piazza della Liberta','', 0, (SELECT ID FROM zones WHERE name = 'Indipendenza')),
 ('Palazzo Vecchio', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
 ('Duomo', '', 0, (SELECT ID FROM zones WHERE name = 'Duomo')),
-('Cairn','', 6, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
 ('Palazzo Pitti','', 0, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
+('Ponte Vecchio','', 6, (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
 ('Santa Croce', '', 6, (SELECT ID FROM zones WHERE name = 'Santa Croce - Oberdan')),
 ('Banca Di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Santa Croce - Oberdan')),
 ('Piazza della Liberta', '', 0,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
 ('Pallazzo Medeci Ricardi', '', 6,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola')),
-('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo'));
+('Musée Degli di Firenze','', 0, (SELECT ID FROM zones WHERE name = 'Michelangelo-Gavinana')),
+('Stazione ferroviaria fret', '', 0, (SELECT ID FROM zones WHERE name = 'Campo di Marte')),
+('Le prince', '', 8, (SELECT ID FROM zones WHERE name = 'Campo di Marte')),
+('Cairn', '', 8, (SELECT ID FROM zones WHERE name = 'Bosco Bello')),
+('Le rituel','', 8, (SELECT ID FROM zones WHERE name = 'Bosco Bello'));
 
 -- Insert names into worker_origins
 INSERT INTO worker_origins (name) VALUES
