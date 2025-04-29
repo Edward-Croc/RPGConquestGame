@@ -3,6 +3,9 @@
 require_once '../mecanics/attackMecanic.php';
 require_once '../mecanics/investigateMecanic.php';
 
+/** 
+ * Build base randomisation SQL
+ */
 function diceSQL() {
     return "FLOOR(
         RANDOM() * (
@@ -13,6 +16,9 @@ function diceSQL() {
     )";
 }
 
+/** 
+ * Return value of a dice roll
+ */
 function diceRoll() {
     $diceSQL = diceSQL();
     $sql = "SELECT $diceSQL as roll";
@@ -29,23 +35,31 @@ function diceRoll() {
     return $roll[0]['roll'];
 }
 
+/**
+ * Calculates the final values for each worker depending on thier chosen action.
+ */
 function calculateVals($pdo, $turn_number){
 
     $sqlArray = [];
     $array = [];
-    $array[] = ['enquete', 'passiveInvestigateActions',false];
-    $array[] = ['enquete', 'activeInvestigateActions',true];
-    $array[] = ['attack', 'passiveAttackActions',false];
-    $array[] = ['attack', 'activeAttackActions',true];
-    $array[] = ['defence', 'passiveDefenceActions',false];
-    $array[] = ['defence', 'activeDefenceActions',true];
+    $array[] = ['enquete', 'passiveInvestigateActions', false];
+    $array[] = ['enquete', 'activeInvestigateActions', true];
+    $array[] = ['attack', 'passiveAttackActions', false];
+    $array[] = ['attack', 'activeAttackActions', true];
+    $array[] = ['defence', 'passiveDefenceActions', false];
+    $array[] = ['defence', 'activeDefenceActions', true];
     echo '<div> calculateVals : <p>';
+
+    // foreach type of action
     foreach ($array as $elements) {
 
+        // chose SQL for value generation
         $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
         if ($elements[2]) {
             $valBaseSQL = diceSQL();
         }
+
+        // build SQL for value math adding bonuses from powers, and previous value
         $valSQL = sprintf("%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
@@ -59,15 +73,17 @@ function calculateVals($pdo, $turn_number){
         )",
         $elements[0], $elements[0], $valBaseSQL );
 
-        //
+        // get list of actions to calibrate
         $config = getConfig($pdo, $elements[1]);
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
         if (!empty($config)){
+            // add to list of updates
             $sqlArray[] = sprintf('UPDATE worker_actions SET %1$s
                 WHERE turn_number = %2$s AND action_choice IN (%3$s)', $valSQL, $turn_number, $config );
         }
     }
     echo '</p>';
+    // Execute SQLs
     foreach ($sqlArray as $sql) {
         echo "<p>DO SQL : <br> $sql <br>";
         try {
@@ -82,6 +98,7 @@ function calculateVals($pdo, $turn_number){
     }
 
     echo '<p>';
+    // Calculate zone defense values
     try {
         $sql = "UPDATE zones
             SET calculated_defence_val = defence_val + subquery.worker_count
@@ -115,6 +132,11 @@ function calculateVals($pdo, $turn_number){
     return TRUE;
 }
 
+/**
+ * Creation of new worker action lines for each worker for the new turn
+ * maintaining certain action continuation (investigate and claim)
+ * setting dead and captured status
+ */
 function createNewTurnLines($pdo, $turn_number){
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
@@ -263,7 +285,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
             // compare discrete_claim
             $sql = sprintf("UPDATE zone SET claimer_controler_id = %s , holder_controler_id = %s WHERE zone_id = %s", $claimer['claimer_controler_id'], $claimer['claimer_params'], $claimer['zone_id'] );
             echo $sql. "</br>";
-            
+
         } elseif ((INT) $claimer['violent_claim'] >= (INT)$VIOLENTCLAIMDIFF ) {
             // compare violent_claim
             $sql = sprintf("UPDATE zone SET claimer_controler_id = %s, holder_controler_id = %s WHERE zone_id = %s", $claimer['claimer_controler_id'], $claimer['claimer_params'], $claimer['zone_id'] );

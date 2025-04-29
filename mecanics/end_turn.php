@@ -19,18 +19,29 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
-            // Controlled by IA 
-            // attack
+
+            // TODO : Set Controlled by IA actions
+
+            // check attacks
             $attackResult = attackMecanic($gameReady);
-            // enquete
+
+            // TODO : Build attacks on bases ?
+
+            // check investigations
             $investigateResult = investigateMecanic($gameReady);
-            // claim
+
+            // check claiming territory
             $claimResult = claimMecanic($gameReady);
 
+            // update turn counter
             $turn = (INT)$mecanics['turncounter'] + 1;
+
+            // if no errors occured create new turn lines
+            // and advance turn counter
             if ($attackResult &&  $investigateResult && $claimResult) {
                 $turnLinesResult = createNewTurnLines($gameReady, $turn);
-                // Advance Turn counter 
+
+                // Advance Turn counter
                 try{
                     // SQL query to select username from the players table
                     $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
