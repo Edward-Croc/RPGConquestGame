@@ -36,6 +36,9 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
     return $controlersArray;
 }
 
+/**
+ * Show list of controler options for à controler select field.
+ */
 function showControlerSelect($controlers, $field_name = 'controler_id' ) {
 
     if (empty($controlers)) return '';
@@ -66,9 +69,9 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
 // select from locations where controler_id = controler.id
 
 
-// create lair 
+// create lair
 // insert into locations (zone_id, name, description, controler_id, discovery_diff) VALUES
-// "Repaire de %s." Controler Name, "Nous avons trouver le repaire de "Controler Name". Ses serviteurs ne semblent pas avoir fini de rer-mettre en place les défences qui existaient avant la crue. 
+// "Repaire de %s." Controler Name, "Nous avons trouver le repaire de "Controler Name". Ses serviteurs ne semblent pas avoir fini de rer-mettre en place les défences qui existaient avant la crue.
 // En attaquant ce lieu nous pourrions lui porte un coup fatal.
 // Sa disiparition causerait certainement quelques questions a l'Elyséum, mais un joueur en moins sur léchéquier politique est toujours bénéfique.
 // Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de semaine en semaine.

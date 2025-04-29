@@ -4,14 +4,22 @@ session_start(); // Start the session
 require_once '../BDD/db_connector.php';
 require_once '../controlers/functions.php';
 
+
+/**
+ *  Extract configuration value from the database by key
+ * copy of getConfig function from base_php.php because the function is unavailable here
+ *
+ * @param $pdo : database connection
+ * @param $configName : configuration key
+ */
 function getConfig($pdo, $configName) {
     try{
-        $stmt = $pdo->prepare("SELECT value 
-            FROM config 
+        $stmt = $pdo->prepare("SELECT value
+            FROM config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();  
+        return $stmt->fetchColumn();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -35,7 +43,7 @@ if (!$gameReady) {
 if (
     isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
     && isset($_SESSION['username'])
-) {    
+) {
     if ($_SESSION['DEBUG'] == true){
         echo "Redirect the user to a logged-in page.<br />";
     }
@@ -62,7 +70,7 @@ if (
         if ($_SESSION['DEBUG'] == true){
             echo "search SQL: $sql <br\>";
         }
-        
+
         // Prepare and execute SQL query
         $stmt = $gameReady->prepare($sql);
         $stmt->execute();
@@ -77,11 +85,11 @@ if (
             if ($_SESSION['DEBUG'] == true){
                 echo "ID: " . $_SESSION['user_id']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
-        
+
             // Get Controlers array
             $controlers = getControlers($gameReady, $_SESSION['user_id']);
             if (count($controlers) == 1) {
-                $_SESSION['controler'] = $controlers[0]; 
+                $_SESSION['controler'] = $controlers[0];
             }
 
             // Redirect the user to a logged-in page
@@ -114,7 +122,7 @@ if (
 </div>
 <div class="content flex">
     <form action="login_form.php" method="post">
-        <h3> Please log in : </H3> 
+        <h3> Please log in : </H3>
     <p>Username: <input type="text" name="username" /></p>
     <p>Password: <input type="password" name="passwd" /></p>
     <input type="submit" name="submit" value="Submit" />
