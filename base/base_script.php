@@ -1,5 +1,5 @@
-    
-    
+
+
 <script>
     // Function to handle the "End Turn" button click
     document.addEventListener("DOMContentLoaded", function () {
@@ -35,7 +35,7 @@
             description.style.display = 'none';
         }
     }
-    
+
     function toggleInfo(id) {
         const info = document.getElementById('info-' + id);
         if (info.style.display === 'none') {

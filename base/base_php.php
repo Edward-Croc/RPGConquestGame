@@ -14,20 +14,34 @@ require_once '../workers/functions.php';
 require_once '../zones/functions.php';
 require_once '../mecanics/functions.php';
 
+
+/**
+ *  Extract configuration value from the database by key
+ *
+ * @param $pdo : database connection
+ * @param $configName : configuration key
+ */
 function getConfig($pdo, $configName) {
     try{
-        $stmt = $pdo->prepare("SELECT value 
-            FROM config 
+        $stmt = $pdo->prepare("SELECT value
+            FROM config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();  
+        return $stmt->fetchColumn();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }
 
+/**
+ *  Extract elements of mecanics from database
+ *
+ * @param : $pdo
+ *
+ * @return : array | NULL
+ */
 function getMecanics($pdo) {
     try{
         $stmt = $pdo->query("SELECT * FROM mecanics");
@@ -46,11 +60,13 @@ function getMecanics($pdo) {
 
 // Call the gameReady() function from dbConnector.php
 $gameReady = gameReady();
+
 // Use the return value
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
 }else{
+    // Set the session debug status
     $_SESSION['DEBUG'] = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
@@ -67,16 +83,20 @@ if (!$gameReady) {
     if (strtolower(getConfig($gameReady, 'DEBUG_TRANSFORM')) == 'true') {
         $_SESSION['DEBUG_TRANSFORM'] = true;
     }
+
+    // Set game title
     $gameTitle = getConfig($gameReady, 'TITLE');
     if ($_SESSION['DEBUG'] == true){
         echo "The game is ready.<br />";
         echo "The gameTitle is : '$gameTitle'.<br />";
     }
 
+    // Get mecanics values
     $mecanics = getMecanics($gameReady);
 }
 
 if ($_SESSION['DEBUG'] == true){
+    // print debug values
     echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
     echo "Turn : ".$mecanics['turncounter']."; gamestat : '".$mecanics['gamestat']. "' <br />";
 }

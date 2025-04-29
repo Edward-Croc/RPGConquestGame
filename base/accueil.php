@@ -6,7 +6,7 @@ require_once '../base/base_php.php';
 if (
     !empty($_GET['controler_id'])
 ) {
-    
+    // GET CONTROLER_ID and controlers list so page does not fail.
     if ($_SESSION['DEBUG'] == true) echo "_GET['controler_id']:". var_export($_GET['controler_id'], true).'<br/><br/>';
     $controlers = getControlers($gameReady, NULL, $_GET['controler_id']);
     if ($_SESSION['DEBUG'] == true) echo "controlers:". var_export($controlers, true).'<br/><br/>';
@@ -17,21 +17,21 @@ if (
 require_once '../base/base_html.php';
 
 $controlers = getControlers($gameReady, $_SESSION['user_id']);
+// Show factions if Multiple controlers are available
 if (count($controlers) > 1) {
 ?>
     <div class="factions">
         <h2>Factions</h2>
-        <!-- Add content for factions here -->
         <form action="/RPGConquestGame/base/accueil.php" method="GET">
             <?php
             echo showControlerSelect($controlers);
             ?>
         <input type="submit" name="chosir" value="Choisir" />
         </form>
-<?php 
+<?php
     }
 ?>
-        <!-- Display Controler details section (initially hidden) -->
+        <!-- Display Controler details section (initially hidden) changed by the select action-->
         <div id='ControlerDetails' style='display: none;'>";
         </div>
 </div>

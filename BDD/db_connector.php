@@ -251,7 +251,7 @@ function gameReady() {
                         }
                     echo "SQL INSERT link_power_type executed successfully.<br />";
                 }
-               
+
                 $sqlFile =  $path.'/var/setupVampire1966_advanced.sql';
                 if (
                     (strtolower(getConfig($pdo, 'DEBUG')) == 'true')

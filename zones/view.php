@@ -4,7 +4,9 @@
 
 <div class="zones">
     <h2>Zones</h2>
-    <img src="/RPGConquestGame/img/carte_quartiers_florence.jpg" alt="Carte des Quartiers de Florence" style="max-width:100%; height:auto;">
+    <h4 onclick="toggleDescription('carte')" style="cursor: pointer;"> Carte </h4>
+                <i id="description-carte" style="display: none;"><img src="/RPGConquestGame/img/carte_quartiers_florence.jpg" alt="Carte des Quartiers de Florence" style="max-width:100%; height:auto;"></i>
+            
     <!-- Add content for zones here -->
     <?php
         // Display select list of Controlers
