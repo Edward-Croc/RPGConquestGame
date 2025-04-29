@@ -1,16 +1,21 @@
 <?php
 
+/**
+ * Search database for all workers in attack mode and return their targets and combat power differences.
+ */
 function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
 
+    // Check turn number is selected
     if (empty($turn_number)) {
         $mecanics = getMecanics($pdo);
         $turn_number = $mecanics['turncounter'];
     }
-    echo "turn_number : $turn_number <br>";
+    if ($debug) echo "turn_number : $turn_number <br>";
+
     try{
-        // Define the SQL query
+        // Define the SQL query to get all attackers for the turn
         $sql = "SELECT
                 wa.worker_id AS attacker_id,
                 wa.action_params AS params,
@@ -34,11 +39,13 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
     } catch (PDOException $e) {
         echo __FUNCTION__."(): Failed to SELECT list of attackers: " . $e->getMessage() . "<br />";
     }
+
     $attackersActionArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($debug)
         echo sprintf("attackersActionArray : %s <br/>", var_export($attackersActionArray, true));
 
     $attackArray = array();
+    // For each attacker we get the targets of the action
     foreach ($attackersActionArray AS $attackAction){
         if (!empty($attackAction['params'])) {
             $attackArray[$attackAction['attacker_id']]=array();
@@ -47,6 +54,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 echo "JSON decoding error: " . json_last_error_msg() . "<br />";
             }
             foreach($attackParams AS $param){
+                // If the attacker targets the network
                 if ($param['attackScope'] == 'network'){
                     try{
                         $sqlNetworkSearch ="SELECT discovered_worker_id FROM controlers_known_enemies
@@ -65,6 +73,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                     foreach($networkWorkersList AS $woker_id){
                         $attackArray[$attackAction['attacker_id']][] = $woker_id;
                     }
+                // If the attacker choses a specific target
                 } elseif ($param['attackScope'] == 'worker') {
                     if (!in_array($param['attackID'], $attackArray) ) {
                         $attackArray[$attackAction['attacker_id']][] = $param['attackID'];
@@ -77,6 +86,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
     if ($debug)
         echo sprintf("attackArray : %s <br/>", var_export($attackArray, true));
 
+    // Build SQL to compare attacker value to target value
     $sqlValCompare = "
     WITH attackers AS (
         SELECT
@@ -148,7 +158,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
 }
 
-
+/**
+* Main function to calculate attack results.
+*/
 function attackMecanic($pdo){
     echo '<div> <h3>  attackMecanic : </h3> ';
 
@@ -168,7 +180,7 @@ function attackMecanic($pdo){
         echo "RIPOSTACTIVE : $RIPOSTACTIVE <br/>";
     }
 
-    $attacksArray = getAttackerComparisons($pdo, NULL, NULL, (INT)$ATTACKDIFF0 , (INT)$RIPOSTDIFF);
+    $attacksArray = getAttackerComparisons($pdo, NULL, NULL);
     if ($debug)
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
@@ -245,8 +257,8 @@ function attackMecanic($pdo){
         '<p>Je me suis retrouvé face à %1$s, mais après avoir survécu à leur attaque, ma riposte a scellé leur destin.</p>',
         '<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu\'ils n\'aient plus rien à revendiquer.</p>'
     );
-    
-    
+
+
     foreach ($attacksArray as $attacker_id => $defenders) {
         // Build report :
         if ($debug)
