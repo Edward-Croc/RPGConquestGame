@@ -143,7 +143,7 @@ CREATE TABLE locations (
     discovery_diff INT DEFAULT 0,
     controler_id INT DEFAULT NULL,
     can_be_destroyed BOOLEAN DEFAULT FALSE,
-    is_lair  INT DEFAULT 0,
+    is_base BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (zone_id) REFERENCES zones (ID)
 );
 

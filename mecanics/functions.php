@@ -289,7 +289,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
         } elseif ((INT) $claimer['violent_claim'] >= (INT)$VIOLENTCLAIMDIFF ) {
             // compare violent_claim
             $sql = sprintf("UPDATE zone SET claimer_controler_id = %s, holder_controler_id = %s WHERE zone_id = %s", $claimer['claimer_controler_id'], $claimer['claimer_params'], $claimer['zone_id'] );
-            // Warn controlers of worker
+            // TODO: Warn controlers of worker
             // get workers of zone
             // update controler_known_enemies for controlers of workers in zone
             // with network and name of targer controler

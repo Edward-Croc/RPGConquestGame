@@ -375,6 +375,8 @@ function investigateMecanic($pdo ) {
             $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
         }
 
+        // TODO detect locations 
+
         // Debug report
         if ($debug) {
             $report .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";

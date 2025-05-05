@@ -85,20 +85,19 @@ function getLocationsArray($pdo) {
     return $locationsArray;
 }
 
-// calculateSecretLocationDefence
-// get BaseLaireDef from config 
-// add current turn + setup_turn
-// OR
-// get BaseSecretDef from config
+// TODO calculateSecretLocationDefence
+    // get BasesDef from config 
+    // add current turn + setup_turn
+    // OR
+    // get BaseSecretDef from config
+    // add servants in zone if controler_id is set
 
-// add servants in zone if controler_id is set
 
-
-// showControlerKnownSecrets
-// Get elements from controler_known_locations by controler ID for Zone_id
-// show name and text for location 
-// Destroy location 
-// if can_be_destroyed that add button for servants attack on location
-// and button for vampire attack on location
+// TODO showControlerKnownSecrets
+    // Get elements from controler_known_locations by controler ID for Zone_id
+    // show name and text for location 
+    // Destroy location 
+    // if can_be_destroyed that add button for servants attack on location ?
+    // and button for vampire attack on location
 
 

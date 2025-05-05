@@ -19,13 +19,10 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
-
             // TODO : Set Controlled by IA actions
 
             // check attacks
             $attackResult = attackMecanic($gameReady);
-
-            // TODO : Build attacks on bases ?
 
             // check investigations
             $investigateResult = investigateMecanic($gameReady);

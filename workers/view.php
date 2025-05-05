@@ -121,7 +121,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 $worker['id']
                 );
 
-                // TODO : UPDATE powers on age code.
+                // TODO : UPDATE powers on age code ?
                 /* ('age_hobby', 'FALSE', ''),
                 ('age_metier', 'FALSE', ''), */
 
