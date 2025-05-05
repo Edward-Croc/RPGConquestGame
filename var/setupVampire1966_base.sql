@@ -41,44 +41,91 @@ INSERT INTO factions (name) VALUES
     ('Démon'),
     ('Garou');
 
+-- players with start worker limits
 INSERT INTO controlers (
-    firstname, lastname, startworkers, is_AI, faction_id, fake_faction_id
+    firstname, lastname,
+    start_workers, recruted_workers, turn_recruted_workers,
+    faction_id, fake_faction_id
 ) VALUES
-    ('Dame', 'Calabreze', 0, FALSE,
+    (
+        'Dame', 'Calabreze',
+        0, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
     ),
     (
         --'Sir Angelo', 'Ricciotti',
         'Sir Antonio', 'Mazzino',
-        1, FALSE,
+        1,1,1,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
-    ('Dame Elisa', 'Bonapart', 1, FALSE,
+    (
+        'Duca Gaston', 'da Firenze',
+        10, 0, 0,
+        (SELECT ID FROM factions WHERE name = 'Giovanni' ),
+        (SELECT ID FROM factions WHERE name = 'Giovanni' )
+    )
+;
+
+-- IA with no start workers
+INSERT INTO controlers (
+    firstname, lastname, ia_type,
+    faction_id, fake_faction_id
+) VALUES
+    (
+        'Sir Hassan', 'Ben Hasan', 'passive',
+        (SELECT ID FROM factions WHERE name = 'Disciple' ),
+        (SELECT ID FROM factions WHERE name = 'Disciple' )
+    ),
+    (
+        'Frère', 'Lorenzo', 'passive',
+        (SELECT ID FROM factions WHERE name = 'Eglise'),
+        (SELECT ID FROM factions WHERE name = 'Humain')
+    ),
+    ('Sir Dimonio', 'Ricci', 'serching',
+        (SELECT ID FROM factions WHERE name = 'Démon'),
+        (SELECT ID FROM factions WHERE name = 'Lasombra')
+    )
+;
+
+-- IA with start workers
+INSERT INTO controlers (
+    firstname, lastname, ia_type,
+    start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
+    faction_id, fake_faction_id
+) VALUES
+    ('Signore Arno', 'Cacciatore', 'violent',
+        1, 2, 1, 1,
+        (SELECT ID FROM factions WHERE name = 'Garou'),
+        (SELECT ID FROM factions WHERE name = 'Humain')
+    )
+;
+
+-- players with no start worker limits
+INSERT INTO controlers (
+    firstname, lastname,
+    faction_id, fake_faction_id
+) VALUES
+    ('Dame Elisa', 'Bonapart',
         (SELECT ID FROM factions WHERE name = 'Toréador' ),
         (SELECT ID FROM factions WHERE name = 'Toréador' )
     ),
-    ('Sir Gaetano', 'Trentini', 1, FALSE,
+    ('Sir Gaetano', 'Trentini',
         (SELECT ID FROM factions WHERE name = 'Tremere' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
-    ('Duca Amandin', 'Franco', 1, FALSE,
+    ('Duca Amandin', 'Franco',
         (SELECT ID FROM factions WHERE name = 'Ventrue' ),
         (SELECT ID FROM factions WHERE name = 'Ventrue' )
-    ),
-    ('Duca Gaston', 'da Firenze', 10, FALSE,
-        (SELECT ID FROM factions WHERE name = 'Giovanni' ),
-        (SELECT ID FROM factions WHERE name = 'Giovanni' )
     ),
     (
         -- 'Dame Ana', 'Walkil',
         'Dame Albane', 'Vizirof',
-        1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
-    ('Sir Adamo', 'de Toscane', 1, FALSE,
+    ('Sir Adamo', 'de Toscane',
         (SELECT ID FROM factions WHERE name = 'Nosfératu' ),
         (SELECT ID FROM factions WHERE name = 'Nosfératu' )
     ),
@@ -95,26 +142,10 @@ INSERT INTO controlers (
         Il a recupere par la force un reseau de boites de nuits appartenant a des brujah antitribus.
         Ce qui lui a valu du prestige en france
         Il a recemment commis l'amaranthe en hongrie sur un regent tremere d'une fondation dirigée par un baali */
-    1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Tzimisce' ),
         (SELECT ID FROM factions WHERE name = 'Gangrel' )
-    ),
-    ('Sir Hassan', 'Ben Hasan', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Disciple' ),
-        (SELECT ID FROM factions WHERE name = 'Disciple' )
-    ),
-    ('Frère', 'Lorenzo', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Eglise'),
-        (SELECT ID FROM factions WHERE name = 'Humain')
-    ),
-    ('Sir Dimonio', 'Ricci', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Démon'),
-        (SELECT ID FROM factions WHERE name = 'Lasombra')
-    ),
-    ('Signore Arno', 'Cacciatore', 1, TRUE,
-        (SELECT ID FROM factions WHERE name = 'Garou'),
-        (SELECT ID FROM factions WHERE name = 'Humain')
-    );
+    )
+;
 
 INSERT INTO player_controler (controler_id, player_id)
     SELECT ID, (SELECT ID FROM players WHERE username = 'gm')

@@ -2,7 +2,7 @@
 
 require_once '../mecanics/attackMecanic.php';
 require_once '../mecanics/investigateMecanic.php';
-require_once '../mecanics/IAMecanic.php';
+require_once '../mecanics/aiMecanic.php';
 require_once '../mecanics/locationSearchMecanic.php';
 
 /** 

@@ -600,7 +600,7 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
         // return table of :
         // A worker discovered_worker_id with no discovered_controler_id
         // B workers discovered_worker_id with identical discovered_controler_id
-            //Optional discovered_controler_name if is associated to a
+            // Optional discovered_controler_name if is associated to a
     if ($_SESSION['DEBUG_ATTACK'] == true) {
         echo sprintf("zone_id: %s <br/> " , var_export($zone_id, true));
         echo sprintf("controler_id: %s <br/> " , var_export($controler_id, true));

@@ -1,7 +1,7 @@
 <?php
 
-function IAMecanic($pdo ) {
-    echo '<div> <h3> IAMecanic : </h3> ';
+function aiMecanic($pdo ) {
+    echo '<div> <h3> aiMecanic : </h3> ';
 
     if (empty($turn_number)) {
         $mecanics = getMecanics($pdo);
@@ -13,6 +13,8 @@ function IAMecanic($pdo ) {
     if (strtolower(getConfig($pdo, 'DEBUG_IA')) == 'true') $debug = TRUE;
 
     // TODO : Set Controlled by IA actions
+    // Upgrade Workers
+
     // If type is 'passive'
         // Check if worker disapeared (worker_actions turn_number = current_turn action_choice in ('dead', 'captured') and worker_actions turn_number = last_turn  )
             // Become serching
@@ -27,18 +29,19 @@ function IAMecanic($pdo ) {
         // Create workers in new adjacent zone
         // Set workers to investigate
 
-    // If type is 'agressive'
+    // If type is 'agressive' or 'violent'
         // For zone with known enemies
-            // If worker creation in limiot -> Create worker in zone
+            // If worker creation in limit -> Create worker in zone
             // Set workers to attack known enemy
         // For workers in zone with no known enemies
-            // If zone with known enemies exists and >1 worker is in current zone
-                // Move to zone with non known enemies
+            // If zone with known enemies exists and > 1 worker is in current zone
+                // Move to zone with known enemies
                 // Set workers to attack known enemy
-            // Else
+            // Else if 'agressive'
                 // if >1 worker is in current zone
                     // Move to adjacent zone
                 // Set workers to investigate
+        // If worker creation in limit -> Create worker in start zone
 
     echo '</div>';
 

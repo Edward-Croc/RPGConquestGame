@@ -22,7 +22,7 @@ require_once '../base/base_html.php';
             // TODO : Save End Turn step to restart after bug ? 
 
             // set Controlled by IA actions
-            $IAResult = IAMecanicattackMecanic($gameReady);
+            $IAResult = aiMecanic($gameReady);
 
             // check attacks
             $attackResult = attackMecanic($gameReady);
