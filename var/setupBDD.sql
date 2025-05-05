@@ -1,4 +1,4 @@
-
+-- Necessary base SQL setup
 -- DROP DATABASE IF EXISTS RPGConquestGame;
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -12,11 +12,12 @@ CREATE TABLE mecanics (
 INSERT INTO mecanics (turncounter, gamestat)
 VALUES (0, 0);
 
+-- create configuration table
 CREATE TABLE config (
     ID SERIAL PRIMARY KEY,
-    name text UNIQUE NOT NULL,
-    value text DEFAULT '',
-    description text
+    name text UNIQUE NOT NULL, --name used key
+    value text DEFAULT '', --value to be read
+    description text -- explain configuration usage
 );
 
 INSERT INTO config (name, value, description)
@@ -29,20 +30,20 @@ VALUES
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
     -- worker creation
-    ('first_come_nb_choices', '1', ''),
-    ('first_come_origin_list', 'rand', ''),
-    ('recrutement_nb_choices', '3', ''),
-    ('recrutement_origin_list', '1,2,3,4,5', ''),
-    ('local_origin_list', '1', ''),
-    -- ('recrutement_hobby', '1', ''),
-    -- ('recrutement_metier', '1', ''),
-    ('recrutement_disciplines', '1', ''),
-    ('recrutement_transformation', '{"action": "check"}', ''),
+    ('first_come_nb_choices', '1', 'Number of worker options presented for 1st come recrutment'),
+    ('first_come_origin_list', 'rand', 'Origins used for worker generation'),
+    ('recrutement_nb_choices', '3', 'Number of choices presented for recrutment'),
+    ('recrutement_origin_list', '1,2,3,4,5', 'Origins used for worker generation'),
+    ('local_origin_list', '1', 'Spécific list of local origins for investigations textes'),
+    -- ('recrutement_hobby', '1', 'Number of hobbies added on generation'),
+    -- ('recrutement_metier', '1', 'Number of jobs added on generation'),
+    ('recrutement_disciplines', '1', 'Number of disciplines allowed on recrutment'),
+    ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
     -- Worker experience
-    ('age_hobby', 'FALSE', ''),
-    ('age_metier', 'FALSE', ''),
-    ('age_discipline', '{"age": ["2"]}', ''),
-    ('age_transformation', '{"action": "check"}', ''),
+    -- ('age_hobby', 'FALSE', ' If hobbys can be gained with AGE'),
+    -- ('age_metier', 'FALSE', 'If jobs can be gained with AGE'),
+    ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
+    ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
     -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
@@ -80,28 +81,31 @@ VALUES
     ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action'),
     ('txt_inf_captured', 'as été capturer', 'Texte for captured action'),
-    ('txt_inf_dead', 'est mort', 'Texte for claim action'),
-    -- 
+    ('txt_inf_dead', 'est mort', 'Texte for dead action'),
+    -- Action End turn effects
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
 ;
 
+-- player tables
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     passwd VARCHAR(64) NOT NULL,
-    is_privileged BOOLEAN DEFAULT FALSE
+    is_privileged BOOLEAN DEFAULT FALSE -- does player have god mode
 );
 
 INSERT INTO players (username, passwd, is_privileged)
 VALUES
     ('gm', 'orga', true);
 
+-- faction tables
 CREATE TABLE factions (
     ID SERIAL PRIMARY KEY,
     name text NOT NULL
 );
 
+-- controler / character tables
 CREATE TABLE controlers (
     ID SERIAL PRIMARY KEY,
     firstname text NOT NULL,
@@ -114,6 +118,7 @@ CREATE TABLE controlers (
     FOREIGN KEY (fake_faction_id) REFERENCES factions (ID)
 );
 
+-- player to controler link
 CREATE TABLE player_controler (
     controler_id INT NOT NULL,
     player_id INT NOT NULL,
@@ -121,7 +126,6 @@ CREATE TABLE player_controler (
     FOREIGN KEY (controler_id) REFERENCES controlers (ID),
     FOREIGN KEY (player_id) REFERENCES players (ID)
 );
-
 
 -- Create the zones and locations
 CREATE TABLE zones (
