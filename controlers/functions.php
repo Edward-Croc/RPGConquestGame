@@ -18,6 +18,7 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
                 $controler_id
             );
         }
+        $sql .= ' ORDER BY c.id';
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
