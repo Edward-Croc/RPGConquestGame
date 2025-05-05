@@ -72,8 +72,8 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
     ),
     (
-        'Dame Ana', 'Walkil',
-        -- 'Sir Alban', 'Vizirof',
+        -- 'Dame Ana', 'Walkil',
+        'Dame Albane', 'Vizirof',
         1, FALSE,
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
@@ -188,7 +188,7 @@ INSERT INTO zones (name, description) VALUES
 ('Piazza della Liberta & Savonarola', 'La place de la Liberté marque la fin du centre ville et le début du quartier des universités anciennes de la ville. L’on peut y trouver l''Université de Syracuse et l''Instituto Leonardo Da Vinci.'),
 ('Michelangelo-Gavinana', 'Ce quartier du sud de Florence est le plus étendu des quartiers, il est composé de bâtiments qui longent le fleuve Arno. On y trouve un golf, des hôtels de luxe, une parfumerie et la Viale Europa qui traverse le quartier de part en part.'),
 ('Campo di Marte', 'L’ancien Champ de mars de Firenze est devenue un immense complexe sportif au milieu d’un quartier plus résidentiel. L’autre grand élément de ce quartier est la gare de fret du Champ de Mars.'),
-('Bosco Bello', '')
+('Bosco Bello', 'Niché sur les hauteurs boisées à l''est de Florence, les villas de la Renaissance aux murs couverts de lierre côtoient de petites chapelles oubliées, au milieu des vignes. Considéré comme un lieu de retraite pour les nobles et les artistes, le Bosco Bello est un quartier discret, empreint de mystère et de sérénité.')
 ;
 
 
@@ -398,6 +398,7 @@ INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Vampire nouveau né')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Szlatcha')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Fantome')),
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Gargouille')),
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Possession'))
 ;
 
