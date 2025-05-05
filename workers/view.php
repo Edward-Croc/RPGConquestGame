@@ -97,10 +97,10 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 if ($worker['is_active'])
                     echo sprintf('<div class="actions">
                         <h3>Actions : </h3> <p>
-                        <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
+                        <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
-                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de " class="worker-action-btn">  %5$s
+                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de " class="worker-action-btn"> %5$s <br />
                         </p></div>
                         ',
                         $worker['id'],
@@ -126,7 +126,6 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 ('age_metier', 'FALSE', ''), */
 
                 // Allow Discipline teaching via age_discipline param
-
                 if ($worker['is_active']) {
                     $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
                     $age_discipline_json = getConfig($gameReady, 'age_discipline');

@@ -346,7 +346,7 @@ function createWorker($pdo, $array) {
     if (!empty($array['power_hobby_id'])) $link_power_type_id_array[] = $array['power_hobby_id'];
     if (!empty($array['power_metier_id'])) $link_power_type_id_array[] = $array['power_metier_id'];
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
-    if (!empty($array['transformation']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
+    if (!empty($array['transformation']) && $array['transformation'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
         upgradeWorker($pdo, $worker_id, $link_power_type_id);
     }
