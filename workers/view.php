@@ -20,16 +20,34 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     }
     echo "<div class='workers'>";
     if ( empty($worker_id) ) {
+        $controlerValues = getControlers($gameReady, NULL, $controler_id);
         echo sprintf("
             <h1>Agents</h1>
             <form action='/RPGConquestGame/workers/new.php' method='GET'>
                 <b> Recrutement : </b>
                 <input type='hidden' name='controler_id'  value=%s>
-                <input type='submit' name='first_come'  value='Prendre le premier venu'>
-                <input type='submit' name='recrutement' value='Recruter un serviteur'>
+                %s
+                %s
             </form>",
-            strval($controler_id)
+            strval($controler_id),
+            // limit recrutment by controler
+            (
+                ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
+            ) || (
+             ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+            ) 
+                ? "<input type='submit' name='recrutement' value='Recruter un serviteur'>" : "",
+            ( (INT)$controlerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers') )
+                ? "<input type='submit' name='first_come'  value='Prendre le premier venu'>" : ""
         );
+        if ( $_SESSION['DEBUG'] == true )
+            echo '<p>turncounter: '. (INT)$mecanics['turncounter'] 
+                .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
+                .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
+                .'; start_workers :'. $controlerValues[0]['start_workers'] 
+                .'; turn_recruted_workers :'. $controlerValues[0]['turn_recruted_workers'] 
+                .'; turn_firstcome_workers :'. $controlerValues[0]['turn_firstcome_workers']
+            .'</p>';
     } else {
         echo sprintf("<h1>Agent</h1>");
     }

@@ -14,13 +14,52 @@ if (isset($_SESSION['controler'])){
 if (isset($_GET['controler_id'])){
     $controler_id = $_GET['controler_id'];
 }
+$controlerValues = getControlers($gameReady, NULL, $controler_id);
+$recrutment_allowed = TRUE;
 
 $buttonClicked = 'first_come';
 $pageTitle = 'Recruter le premier venu';
+
+if ( $_SESSION['DEBUG'] == true )
+echo '<p>turncounter: '. (INT)$mecanics['turncounter'] 
+    .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
+    .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
+    .'; start_workers :'. $controlerValues[0]['start_workers'] 
+    .'; turn_recruted_workers :'. $controlerValues[0]['turn_recruted_workers'] 
+    .'; turn_firstcome_workers :'. $controlerValues[0]['turn_firstcome_workers']
+.'</p>';
+
 if (isset($_GET['recrutement'])){
     $buttonClicked = 'recrutement';
     $pageTitle = "Recrutement d'un Agent";
+    if ( !((
+        ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
+        ) || (
+        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$recrutmencontrolerValuestValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+        ) )
+    ) $recrutment_allowed = FALSE;
+} else {
+    if ( !((INT)$controlerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = FALSE;
 }
+if ( !$recrutment_allowed ){
+    require_once '../base/base_html.php';
+        echo " <div> <h2> $pageTitle </h2> </div>
+        <div >
+                Le recrutement n'est pas permis !
+            </div>
+        </body>";
+        return 0;
+}
+
+// increment recrutment values
+$sqlUpdateRecrutementCounter = sprintf(
+    'UPDATE controlers SET %1$s = %1$s +1 WHERE id = :controler_id',
+    $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruted_workers'
+);
+$stmtUpdateRecrutementCounter = $gameReady->prepare($sqlUpdateRecrutementCounter);
+$stmtUpdateRecrutementCounter->execute([
+    ':controler_id' => $controler_id
+]);
 
 if ($_SESSION['DEBUG'] == true){
     echo "buttonClicked : $buttonClicked";
