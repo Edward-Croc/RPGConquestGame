@@ -40,7 +40,10 @@ function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
     $zoneOptions = '';
     // Display select list of Controlers
     foreach ( $zonesArray as $zone) {
-        $zoneOptions .= "<option value='" . $zone['id'] . "'>" . $zone['name'] . " </option>";
+        $zoneOptions .= sprintf(
+            '<option value=\'%1$s\'> %2$s (%1$s) </option>',
+            $zone['id'], $zone['name']
+        );
     }
 
     $showZoneSelect = sprintf(" %s
