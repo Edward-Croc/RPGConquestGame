@@ -215,7 +215,7 @@ function investigateMecanic($pdo ) {
             if (is_array($found_action_params)) {
                 $networkIDs = [];
                 $workerIDs = [];
-            
+
                 // Iterate through the decoded array
                 foreach ($found_action_params as $param) {
                     if (isset($param['attackScope']) && isset($param['attackID'])) {
