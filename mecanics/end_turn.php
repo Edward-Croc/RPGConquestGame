@@ -19,13 +19,19 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
-            // TODO : Set Controlled by IA actions
+            // TODO : Save End Turn step to restart after bug ? 
+
+            // set Controlled by IA actions
+            $IAResult = IAMecanicattackMecanic($gameReady);
 
             // check attacks
             $attackResult = attackMecanic($gameReady);
 
             // check investigations
             $investigateResult = investigateMecanic($gameReady);
+
+            // check locations seach
+            $locationsearchResult = locationSearchMecanic($gameReady);
 
             // check claiming territory
             $claimResult = claimMecanic($gameReady);
@@ -35,7 +41,7 @@ require_once '../base/base_html.php';
 
             // if no errors occured create new turn lines
             // and advance turn counter
-            if ($attackResult &&  $investigateResult && $claimResult) {
+            if ($attackResult &&  $investigateResult && $claimResult && $IAResult && $locationsearchResult) {
                 $turnLinesResult = createNewTurnLines($gameReady, $turn);
 
                 // Advance Turn counter

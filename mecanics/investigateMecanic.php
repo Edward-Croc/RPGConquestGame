@@ -134,7 +134,7 @@ function investigateMecanic($pdo ) {
         echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
     }
 
-    $investigations = getSearcherComparisons($pdo, $turn_number, NULL, (INT)$REPORTDIFF0);
+    $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
     $reportArray = [];
 
     $txtArray = [];
