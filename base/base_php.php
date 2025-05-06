@@ -1,9 +1,10 @@
 <?php
 if ( !isset($_SESSION['DEBUG']) ){
     session_start(); // Start the session
+    $_SESSION['DEBUG'] = false;
 }
 
-if ( $_SESSION['DEBUG'] == true ){
+if ($_SESSION['DEBUG'] == true ){
     echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
@@ -13,7 +14,6 @@ require_once '../powers/functions.php';
 require_once '../workers/functions.php';
 require_once '../zones/functions.php';
 require_once '../mecanics/functions.php';
-
 
 /**
  *  Extract configuration value from the database by key
