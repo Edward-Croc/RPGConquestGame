@@ -226,7 +226,7 @@ function createNewTurnLines($pdo, $turn_number){
 }
 
 
-function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
+function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     echo '<div> <h3>  claimMecanic : </h3> ';
 
     if (empty($turn_number)) {
@@ -264,7 +264,6 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
     FROM
         claimers c
     JOIN zones z ON z.id = c.claimer_zone
---    WHERE c.claimer_controler_id != z.holder_controler_id
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
     try{
@@ -280,8 +279,11 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL){
     $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
 
-    $DISCRETECLAIMDIFF = getConfig($pdo, 'DISCRETECLAIMDIFF');
-    $VIOLENTCLAIMDIFF = getConfig($pdo, 'VIOLENTCLAIMDIFF');
+    $arrayZoneInfo = array();
+    $DISCRETECLAIMDIFF = (INT)getConfig($pdo, 'DISCRETECLAIMDIFF');
+    $VIOLENTCLAIMDIFF = (INT)getConfig($pdo, 'VIOLENTCLAIMDIFF');
+    $CLAIMTYPEDIFF = $DISCRETECLAIMDIFF - $VIOLENTCLAIMDIFF;
+
     foreach( $claimerArray AS $claimer ) {
         if ( (INT)$claimer['discrete_claim'] >= (INT)$DISCRETECLAIMDIFF ) {
             // compare discrete_claim

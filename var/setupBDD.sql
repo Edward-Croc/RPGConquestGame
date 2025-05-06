@@ -69,7 +69,7 @@ VALUES
     ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
     ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     -- Diff vals in claim
-    ('DISCRETECLAIMDIFF', 1, 'Value for discrete claim'),
+    ('DISCRETECLAIMDIFF', 2, 'Value for discrete claim'),
     ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Texte for passive action'),
@@ -137,10 +137,10 @@ CREATE TABLE zones (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
     description text NOT NULL,
-    defence_val INT DEFAULT 6,
-    calculated_defence_val INT DEFAULT 6,
-    claimer_controler_id INT, 
-    holder_controler_id INT
+    defence_val INT DEFAULT 6, -- Base defence to claim the zone
+    calculated_defence_val INT DEFAULT 6, -- Updated defence value when actively protected
+    claimer_controler_id INT, -- ID of controler officialy claiming the zone
+    holder_controler_id INT   -- ID of controler defending the zone
 );
 
 CREATE TABLE locations (
