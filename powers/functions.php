@@ -208,8 +208,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
                         }
                         if ($debug) echo ' <br/>' ;
                     }
-                } else 
-                    $keepElement = FALSE;
+                }
                 if (isset($powerConditions[$state_text]['turn']) && $powerConditions[$state_text]['turn'] > $turn_number) {
                     if ($debug) echo 'test FAILED the turn condition : <br/>' ;
                     $keepElement = FALSE;
