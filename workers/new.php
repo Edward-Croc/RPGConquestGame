@@ -35,7 +35,7 @@ if (isset($_GET['recrutement'])){
     if ( !((
         ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
         ) || (
-        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$recrutmencontrolerValuestValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
         ) )
     ) $recrutment_allowed = FALSE;
 } else {
