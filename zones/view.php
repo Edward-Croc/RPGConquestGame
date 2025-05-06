@@ -16,6 +16,7 @@
                 <i id="description-%2$s" style="display: none;">%3$s</i>
             ',
             $zone['name'], $zone['id'], $zone['description']);
+            // TODO: show claimed zone
             // TODO: show found locations
             // TODO: show location actions
         }
