@@ -48,6 +48,6 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
 ;
 
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": "go_traitor", "controler_lastname": "da Firenze"}}'),
-    ('Prêtre', 1,1,1,'{"on_recrutment": {"action": "add_opposition", "controler_lastname": "Lorenzo"}}')
+    ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": {"type":"go_traitor", "controler_lastname": "da Firenze"} } }'),
+    ('Prêtre', 1,1,1,'{"on_recrutment": {"action": {"type":"add_opposition", "controler_lastname": "Lorenzo"} } }')
 ;
