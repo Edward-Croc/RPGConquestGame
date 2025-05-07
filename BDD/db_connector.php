@@ -154,9 +154,9 @@ function gameReady() {
                         $sqlQueries = file_get_contents($sqlFile);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
-                        echo "SQL file executed successfully.<br />";
+                        echo "SQL file $sqlFile executed successfully.<br />";
                         try{
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "SELECT id FROM power_types WHERE name = 'Hobby'";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
@@ -167,7 +167,7 @@ function gameReady() {
                         // Fetch the results
                         $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "SELECT id FROM powers WHERE id NOT IN
                                 ( SELECT power_id FROM link_power_type )";
                             $stmt = $pdo->prepare($sql);
@@ -178,7 +178,7 @@ function gameReady() {
                         }
                         // Fetch the results
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
                             $firstIter = True;
                             foreach ($powers as $power){
@@ -208,9 +208,9 @@ function gameReady() {
                         $sqlQueries = file_get_contents($sqlFile);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
-                        echo "SQL file executed successfully.<br />";
+                        echo "SQL file $sqlFile executed successfully.<br />";
                         try{
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "SELECT id FROM power_types WHERE name = 'Metier'";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
@@ -221,7 +221,7 @@ function gameReady() {
                         // Fetch the results
                         $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "SELECT id FROM powers WHERE id NOT IN
                                 ( SELECT power_id FROM link_power_type )";
                             $stmt = $pdo->prepare($sql);
@@ -232,7 +232,7 @@ function gameReady() {
                         }
                         // Fetch the results
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            // Get all popwers with no link_power_type
+                            // Get all powers with no link_power_type
                             $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
                             $firstIter = True;
                             foreach ($powers as $power){
@@ -269,7 +269,7 @@ function gameReady() {
                         $sqlQueries = file_get_contents($sqlFile);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
-                        echo "SQL file executed successfully.<br />";
+                        echo "SQL file $sqlFile executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
                 }
 

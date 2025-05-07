@@ -6,7 +6,7 @@ require_once '../mecanics/aiMecanic.php';
 require_once '../mecanics/locationSearchMecanic.php';
 
 /** 
- * Build base randomisation SQL
+ * Build base randomization SQL
  */
 function diceSQL() {
     return "FLOOR(
@@ -38,7 +38,7 @@ function diceRoll() {
 }
 
 /**
- * Calculates the final values for each worker depending on thier chosen action.
+ * Calculates the final values for each worker depending on their chosen action.
  */
 function calculateVals($pdo, $turn_number){
 
@@ -60,6 +60,8 @@ function calculateVals($pdo, $turn_number){
         if ($elements[2]) {
             $valBaseSQL = diceSQL();
         }
+
+        // TODO if worker is in zone held by controler give bonus from config ??
 
         // build SQL for value math adding bonuses from powers, and previous value
         $valSQL = sprintf("%s_val = (
