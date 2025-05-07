@@ -21,7 +21,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <div class="header">
         <?php echo sprintf('
             <div>
-                <h1> %s </h1>
+                <h1 id="gameTitle"> %s </h1>
                 <div id="endTurnCounter">
                     <!-- This is where the current end turn count will be displayed -->
                     Semaine %s

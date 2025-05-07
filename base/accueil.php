@@ -16,6 +16,9 @@ if (
 
 require_once '../base/base_html.php';
 
+$intro = getConfig($gameReady, 'PRESENTATION');
+echo sprintf("<div class='intro'> %s </div>", $intro);
+
 $controlers = getControlers($gameReady, $_SESSION['user_id']);
 // Show factions if Multiple controlers are available
 if (count($controlers) > 1) {
@@ -28,13 +31,13 @@ if (count($controlers) > 1) {
             ?>
         <input type="submit" name="chosir" value="Choisir" />
         </form>
-<?php
-    }
-?>
-        <!-- Display Controler details section (initially hidden) changed by the select action-->
-        <div id='ControlerDetails' style='display: none;'>";
-        </div>
+    <!-- Display Controler details section (initially hidden) changed by the select action-->
+    <div id='ControlerDetails' style='display: none;'>";
+    </div>
 </div>
+<?php
+}
+?>
 <div class="content flex">
     <?php require_once '../workers/view.php'; ?>
     <?php require_once '../zones/view.php'; ?>
