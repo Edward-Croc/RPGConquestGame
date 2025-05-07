@@ -48,6 +48,9 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
 ;
 
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Volontaire venu de loin', 1,0,0,'{"on_recrutment": {"action": {"type":"go_traitor", "controler_lastname": "da Firenze"} } }'),
-    ('Prêtre', 1,1,1,'{"on_recrutment": {"action": {"type":"add_opposition", "controler_lastname": "Lorenzo"} } }')
+    ('Angeli Del Fango ', 1,0,1,'{"on_recrutment": {"action":  {"type":""go_traitor", "controler_lastname": "da Firenze"} } }'),
+    ('Angels of the Mud ', 1,0,1,'{"on_recrutment": {"action":  {"type":""go_traitor", "controler_lastname": "da Firenze"} } }'),
+    ('Mud Angels', 1,0,1,'{"on_recrutment": {"action":  {"type":""go_traitor", "controler_lastname": "Franco"} } }'),
+    ('Ange de la boue', 1,0,1,'{"on_recrutment": {"action": {"type":" "go_traitor", "controler_lastname": "Bonapart"} } }'),
+    ('Prêtre', 1,1,1,'{"on_recrutment": {"controler_lastname": "Lorenzo"}}')
 ;

@@ -136,18 +136,6 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Nosfératu' )
     ),
     ('Sir Wilhem', 'Der Swartz', -- 'Dame Ana', 'Sgorina',
-        /*Wilhem est né dans une famille allemnde en 1923 sa famille était modeste
-        il a vecu une vie normale jusqu'en 1934. Date ou ses parents quittèrent l'allemagne pour le nord de l'italie
-        afin de vivre dans un petit village, appele SONDRIO où le jeune Wilhem apprit l'italien
-        a l'age de 18 ans wilhem s'engagea comme garde forestier sa famille vivant a l'écart de la guerre
-        il rejoint contre l'accord de ses parents l'armee allemande ou il mena quelque "batailles" ou son aspect solitaire
-        ne lui fit que tres peu d'amis.
-        il se fit etreindre en1953 par un Gangrel de gene 7 qui voulait en faire un leader gangrel..
-        A l'heure actuelle son pere ne le suit plus mais un mentor l'a pris en charge et le "guide"
-        que de maniere sporadiqeu. Wilhem ne connait pas son Sire .
-        Il a recupere par la force un reseau de boites de nuits appartenant a des brujah antitribus.
-        Ce qui lui a valu du prestige en france
-        Il a recemment commis l'amaranthe en hongrie sur un regent tremere d'une fondation dirigée par un baali */
         (SELECT ID FROM factions WHERE name = 'Tzimisce' ),
         (SELECT ID FROM factions WHERE name = 'Gangrel' )
     )
