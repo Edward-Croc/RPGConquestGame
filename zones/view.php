@@ -1,11 +1,14 @@
 <?php
     $zones = getZonesArray($gameReady);
+    $mapFile = getConfig($gameReady, 'map_file');
+    $mapAlt = getConfig($gameReady, 'map_alt');
+    $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
 ?>
 
 <div class="zones">
     <h2>Zones</h2>
     <h4 onclick="toggleDescription('carte')" style="cursor: pointer;"> Carte </h4>
-                <i id="description-carte" style="display: none;"><img src="/RPGConquestGame/img/carte_quartiers_florence.jpg" alt="Carte des Quartiers de Florence" style="max-width:100%; height:auto;"></i>
+                <i id="description-carte" style="display: none;"><?php echo $imgString; ?></i>
 
     <!-- Add content for zones here -->
     <?php

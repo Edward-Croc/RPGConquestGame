@@ -22,6 +22,7 @@ CREATE TABLE config (
 
 INSERT INTO config (name, value, description)
 VALUES
+    -- Debugs vals
     ('DEBUG', 'false', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
     ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mecanics'),
