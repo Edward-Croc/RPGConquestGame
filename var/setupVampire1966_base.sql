@@ -11,7 +11,9 @@ INSERT INTO config (name, value, description)
 VALUES
     -- MAP INFO
     ('map_file', 'carte_quartiers_florence.jpg', 'Map file to use'),
-    ('map_alt', 'Carte des Quartiers de Florence', 'Map alt');
+    ('map_alt', 'Carte des Quartiers de Florence', 'Map alt'),
+    ('time_value', 'Semaine', 'Text for time span')
+    ;
 
 UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
