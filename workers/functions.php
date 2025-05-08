@@ -609,8 +609,9 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
         // Query for workers with no discovered_controler_id (A)
         $sqlA = "
             SELECT
-                CONCAT(w.firstname, ' ', w.lastname) AS name,
                 cke.id,
+                cke.discovered_worker_id,
+                CONCAT(w.firstname, ' ', w.lastname) AS name,
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
             FROM
@@ -628,13 +629,14 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
             ':zone_id' => $zone_id,
             ':controler_id' => $controler_id
         ]);
-        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
+        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_ASSOC);
 
         // Query for workers with identical discovered_controler_id (B)
         $sqlB = "
             SELECT
-                CONCAT(w.firstname, ' ', w.lastname) AS name,
                 cke.id,
+                cke.discovered_worker_id,
+                CONCAT(w.firstname, ' ', w.lastname) AS name,
                 cke.discovered_controler_id,
                 COALESCE(cke.discovered_controler_name, 'Unknown') AS discovered_controler_name,
                 last_discovery_turn,
@@ -681,14 +683,20 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
 
     if (!empty($enemyWorkersArray['workers_without_controler'])){
         // Display select list of Controlers
+
+        // TODO add a configurable time limit on last discovery turn
+
         foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {
-            $enemyWorkerOptions .= "<option value='worker_" . $enemyWorker['id'] . "'>" . $enemyWorker['name'] . " </option>";
+            $enemyWorkerOptions .= "<option value='worker_" . $enemyWorker['discovered_worker_id'] . "'>" . $enemyWorker['name'] . " </option>";
         }
     }
     if (!empty($enemyWorkersArray['workers_with_controler'])) {
         $discovered_controler_id = 0;
         // Display select list of Controlers
         foreach ( $enemyWorkersArray['workers_with_controler'] as $enemyWorker) {
+            
+            // TODO add a configurable time limit on last discovery turn
+
             if ( $discovered_controler_id != $enemyWorker['discovered_controler_id']){
                 $discovered_controler_id = $enemyWorker['discovered_controler_id'];
                 $enemyWorkerOptions .= sprintf(

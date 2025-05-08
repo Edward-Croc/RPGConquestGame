@@ -88,6 +88,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         echo sprintf("attackArray : %s <br/>", var_export($attackArray, true));
 
     // Build SQL to compare attacker value to target value
+    // TODO change SQL to get by listed workers so as to break the zone limit
     $sqlValCompare = "
     WITH attackers AS (
         SELECT
