@@ -143,7 +143,18 @@ function gameReady() {
                         $sqlQueries = file_get_contents($sqlFile);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
-                        echo "SQL file executed successfully.<br />";
+                        echo "SQL file $sqlFile executed successfully.<br />";
+                    } else echo "SQL file $sqlFile UNFOUND.<br />";
+
+                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_worker_names.sql';
+                    echo "Loading $sqlFile ...<br />";
+                    if (file_exists($sqlFile)) {
+                        echo 'Start <br />';
+                        // Read SQL file
+                        $sqlQueries = file_get_contents($sqlFile);
+                        // Execute SQL queries
+                        $pdo->exec($sqlQueries);
+                        echo "SQL file $sqlFile executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
                     $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_hobbys.sql';
