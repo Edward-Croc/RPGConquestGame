@@ -204,7 +204,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf(
                         '<div class="report week"> <h4> %s </h4>',
-                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? sprintf("%s %s", $timeTextThis, $timeText ): sprintf("%s %s", $timeText, $turn_number )
+                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? ucfirst(sprintf("%s %s", $timeTextThis, $timeText )) : ucfirst(sprintf("%s %s", $timeText, $turn_number ))
                     );
                     if ($_SESSION['DEBUG_REPORT'])
                         echo "<p> action: ".var_export($action, true)."</p>";

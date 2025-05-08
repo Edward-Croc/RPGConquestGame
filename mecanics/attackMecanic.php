@@ -189,7 +189,8 @@ function attackMecanic($pdo){
     $timeTextThe = getConfig($gameReady, 'time_denominator_the');
     $timeTextOfThe = getConfig($gameReady, 'time_denominator_ofthe');
     $timeTextThis = getConfig($gameReady, 'time_denominator_this');
-    
+    // TODO : search and replace place to throw a body and place of healing
+
     $disapearenceTextes = array(
         '<p>Cet agent a disparu sans laisser de trace à partir '.$timeTextOfThe.' '.$timeText.' %s.</p>',
         '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, plus aucun signal ni message de cet agent.</p>',
@@ -197,10 +198,10 @@ function attackMecanic($pdo){
         '<p>À partir '.$timeTextOfThe.' '.$timeText.' %s, cet agent semble s\'être volatilisé dans la nature.</p>',
         '<p>Nous avons perdu toute communication avec cet agent depuis '.$timeTextThe.' '.$timeText.' %s.</p>',
         '<p>La dernière trace de cet agent remonte à '.$timeTextThe.' '.$timeText.' %s, depuis il est aux abonnés absents.</p>',
-        '<p>'.$timeTextThe.' '.$timeText.' %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>',
+        '<p>'.ucfirst($timeTextThe).' '.$timeText.' %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>',
         '<p>L\'agent s\'est évanoui dans la nature après '.$timeTextThe.' '.$timeText.' %s. Aucune nouvelle depuis.</p>',
         '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, cet agent est un fantôme, insaisissable et introuvable.</p>',
-        '<p>'.$timeTextThe.' '.$timeText.' %s signe le début du silence radio complet de cet agent.</p>'
+        '<p>'.ucfirst($timeTextThe).' '.$timeText.' %s signe le début du silence radio complet de cet agent.</p>'
     );
     $attackSuccessTextes = array(
         '<p>J\'ai pu mener à bien ma mission sur %1$s son silence est assuré.</p>',

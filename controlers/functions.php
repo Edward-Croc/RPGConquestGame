@@ -70,10 +70,13 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
     //  select from locations where controler_id = controler.id and is_base = TRUE;
 
 // TODO: create base
-    // $description = "Repaire de %s." Controler Name, "Nous avons trouver le repaire de "Controler Name". Ses serviteurs ne semblent pas avoir fini de rer-mettre en place les défences qui existaient avant la crue.
+    // $description = sprintf (
+    //  "Nous avons trouver le repaire de %$1s. Ses serviteurs ne semblent pas avoir fini de re-mettre en place les défences qui existaient avant la crue.
     // En attaquant ce lieu nous pourrions lui porte un coup fatal.
-    // Sa disiparition causerait certainement quelques questions a l'Elyséum, mais un joueur en moins sur léchéquier politique est toujours bénéfique.
-    // Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de semaine en semaine.
+    // Sa disiparition causerait certainement quelques questions à l'Elyséum, mais un joueur en moins sur l'échéquier politique est toujours bénéfique.
+    // Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de %$2s en %$2s.
+    // Controler Name,
+    // getConfig($gameReady, 'time_value')
     // insert into locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed) VALUES
 
 

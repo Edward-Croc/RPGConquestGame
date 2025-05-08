@@ -156,6 +156,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
             controlersArray: %s<p/>
          ",var_export($powerArray,true),var_export($workersArray,true),var_export($controlersArray,true)
         );
+    // TODO : Implement NOT Effect ?? NOT controler X
     foreach ( $powerArray AS $key => $power ) {
         if (!empty($worker_id) && !empty($workersPowersArray) && in_array($power['id'],$workersPowersList,true) ){
             if ($debug) echo sprintf("kill power(%s) <br>", $key);

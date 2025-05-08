@@ -28,7 +28,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </div>
             </div>',
             $gameTitle,
-            getConfig($gameReady, 'time_value'),
+            ucfirst(getConfig($gameReady, 'time_value')),
             $mecanics['turncounter']
         );
         if ( isset($_SESSION['controler']) )
@@ -51,6 +51,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             ?>
             <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
         </div>
+        <!-- TODO : Add rollout side bar for acces to Worker page, Zone page, Controler page, Game system page -->
     </div>
 <?php
     require_once '../base/base_script.php';
