@@ -109,7 +109,7 @@ function calculateVals($pdo, $turn_number){
             FROM (
                 SELECT
                     z.id AS zone_id,
-                    COALESCE(COUNT(w.id), 0) AS worker_count
+                    COALESCE(COUNT(w.id)+1, 0) AS worker_count
                 FROM
                     zones z
                 LEFT JOIN
@@ -261,11 +261,13 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
         c.claimer_controler_id,
         z.id AS zone_id,
         z.name AS zone_name,
+        z.holder_controler_id AS holder_controler_id,
         (c.claimer_enquete_val - z.calculated_defence_val) AS discrete_claim,
         (c.claimer_attack_val - z.calculated_defence_val) AS violent_claim
     FROM
         claimers c
     JOIN zones z ON z.id = c.claimer_zone
+    ORDER BY z.id, c.claimer_attack_val DESC
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
     try{
@@ -286,21 +288,68 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     $VIOLENTCLAIMDIFF = (INT)getConfig($pdo, 'VIOLENTCLAIMDIFF');
     $CLAIMTYPEDIFF = $DISCRETECLAIMDIFF - $VIOLENTCLAIMDIFF;
 
-    foreach( $claimerArray AS $claimer ) {
-        if ( (INT)$claimer['discrete_claim'] >= (INT)$DISCRETECLAIMDIFF ) {
-            // compare discrete_claim
-            $sql = sprintf("UPDATE zone SET claimer_controler_id = %s , holder_controler_id = %s WHERE zone_id = %s", $claimer['claimer_controler_id'], $claimer['claimer_params'], $claimer['zone_id'] );
-            echo $sql. "</br>";
+    foreach( $claimerArray AS $key => $claimer ) {
+        // claims are generally violent
+        $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = TRUE;
+        // claim are not generally successful
+        $success = FALSE;
 
-        } elseif ((INT) $claimer['violent_claim'] >= (INT)$VIOLENTCLAIMDIFF ) {
-            // compare violent_claim
-            $sql = sprintf("UPDATE zone SET claimer_controler_id = %s, holder_controler_id = %s WHERE zone_id = %s", $claimer['claimer_controler_id'], $claimer['claimer_params'], $claimer['zone_id'] );
-            // TODO: Warn controlers of worker
+        // if its the 1st and only claim for a previously unclaimed zone then
+        if ($claimer['holder_controler_id'] == NULL 
+            && empty($zoneInfo[$claimer['zone_id']]) 
+            && $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
+        ){
+            // if discrete_claim or violent_claim is sufficient to claim
+            if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
+                // mark as success
+                $success = TRUE;
+                // Save claimer info
+                $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
+                // Check if it is exceptionnaly a discret claim
+                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF ) 
+                    $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = FALSE;
+            }
+
+        // if its not the 1st claim found for the zone or the zone was already claimed then
+        } else {
+            // if no successful claimer has been found yet
+            if ( empty($zoneInfo[$claimer['zone_id']]) ) {
+                // if discrete_claim or violent_claim is sufficient to claim
+                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
+                    // mark as success
+                    $success = TRUE;
+                    // Save claimer info
+                    $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
+                }
+            }
+        }
+
+        // TODO: Warn controlers of workers that violence happened and if it was successful or not
+        if ($zoneInfo['is_violent_claim']) {
             // get workers of zone
+            // add description of violent claim to report
             // update controler_known_enemies for controlers of workers in zone
-            // with network and name of targer controler
+            // with network
         }
     }
+
+    foreach ( $arrayZoneInfo as $zoneInfo ) {
+
+        $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
+        $sql = sprintf(
+            "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE zone_id = %s",
+                $zoneInfo['claimer']['claimer_controler_id'], $claimer_params['claim_controler_id'], $zoneInfo['claimer']['zone_id']
+        );
+        try{
+            // Update config value in the database
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+        }
+        echo $sql. "</br>";
+    }
+
     echo '<p>DONE</p> </div>';
 
     return TRUE;
