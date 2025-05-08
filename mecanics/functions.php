@@ -146,27 +146,32 @@ function createNewTurnLines($pdo, $turn_number){
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
-        INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
+        INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id, action_choice, action_params)
         SELECT
             w.id AS worker_id,
             :turn_number AS turn_number,
             w.zone_id AS zone_id,
-            cw.controler_id AS controler_id
+            cw.controler_id AS controler_id,
+            wa.action_choice,
+            wa.action_params
         FROM workers w
         JOIN controler_worker AS cw ON cw.worker_id = w.id AND is_primary_controler = true
+        JOIN worker_actions AS wa ON wa.worker_id = w.id AND turn_number = :turn_number_n_1
     ";
     try {
         $stmtInsert = $pdo->prepare($sqlInsert);
-        $stmtInsert->execute([':turn_number' => $turn_number]);
+        $stmtInsert->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmtInsert->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+        $stmtInsert->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql INSERT FAILED : ".$e->getMessage()."<br/> sql: $sql<br/>";
         return FALSE;
     }
 
     $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
-        if ($config_continuing_investigate_action){
+    if (!$config_continuing_investigate_action){
         $sqlSetInvestigate = "
-            UPDATE worker_actions SET action_choice = 'investigate' WHERE turn_number = :turn_number AND worker_id IN (
+            UPDATE worker_actions SET action_choice = 'passive' WHERE turn_number = :turn_number AND worker_id IN (
                 SELECT worker_id FROM worker_actions wa WHERE action_choice = 'investigate' AND turn_number = :turn_number_n_1
             )
         ";
@@ -181,9 +186,9 @@ function createNewTurnLines($pdo, $turn_number){
         }
     }
     $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
-        if ($config_continuing_claimed_action){
+        if (!$config_continuing_claimed_action){
         $sqlSetClaim = "
-            UPDATE worker_actions SET action_choice = 'claim' WHERE turn_number = :turn_number AND worker_id IN (
+            UPDATE worker_actions SET action_choice = 'passive' WHERE turn_number = :turn_number AND worker_id IN (
                 SELECT worker_id FROM worker_actions wa WHERE action_choice = 'claim' AND turn_number = :turn_number_n_1
             )
         ";
@@ -197,6 +202,7 @@ function createNewTurnLines($pdo, $turn_number){
             return FALSE;
         }
     }
+/*
     $sqlSetDead = "
         UPDATE worker_actions SET action_choice = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
             SELECT w.id FROM workers w WHERE is_alive = false AND is_active = false
@@ -223,6 +229,7 @@ function createNewTurnLines($pdo, $turn_number){
         echo __FUNCTION__." (): sql UPDATE captured FAILED : ".$e->getMessage()."<br />$sql<br/>";
         return FALSE;
     }
+    */
 
     echo '<p>DONE</p> </div>';
 
@@ -331,31 +338,41 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
         }
 
         // TODO: Warn controlers of workers that violence happened and if it was successful or not
-        if ($zoneInfo['is_violent_claim']) {
+        if ($arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']) {
             // get workers of zone
-            // add description of violent claim to report
+            // add description of violent claim to report  $success
             // update controler_known_enemies for controlers of workers in zone
             // with network
         }
     }
 
-    foreach ( $arrayZoneInfo as $zoneInfo ) {
+    foreach ( $arrayZoneInfo as $key => $zoneInfo ) {
+        if ( ! empty($zoneInfo['claimer']) )  {
+            if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true);
 
-        if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true);
-        $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
-        if ($debug) echo "claimer_params :". var_export($claimer_params, true);
-        $sql = sprintf(
-            "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE zone_id = %s",
-                $zoneInfo['claimer']['claimer_controler_id'], $claimer_params['claim_controler_id'], $zoneInfo['claimer']['zone_id']
-        );
-        try{
-            // Update config value in the database
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute();
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
-        }
-        echo $sql. "</br>";
+            $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+                $claimer_params = array();
+            }
+            if ($debug) echo "claimer_params :". var_export($claimer_params, true);
+
+            $holder_controler_id = $zoneInfo['claimer']['claimer_controler_id'];
+            if ( !empty($claimer_params['claim_controler_id'])) $holder_controler_id = $claimer_params['claim_controler_id'];
+            
+            $sql = sprintf(
+                "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE id = %s",
+                    $zoneInfo['claimer']['claimer_controler_id'], $holder_controler_id , $zoneInfo['claimer']['zone_id']
+            );
+            try{
+                // Update config value in the database
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute();
+            } catch (PDOException $e) {
+                echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
+            }
+            echo $sql. "</br>";
+        } echo "Zone $key Unclaimed";
     }
 
     echo '<p>DONE</p> </div>';
