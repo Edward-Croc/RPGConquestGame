@@ -408,13 +408,6 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Alexandru', 'Gheorghe', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'));
 
 
--- Table of Power Types
-INSERT INTO power_types (name) VALUES
-    ('Hobby'),
-    ('Metier'),
-    ('Discipline'),
-    ('Transformation');
-
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES

@@ -197,13 +197,6 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 ;
 */
 
--- Table of Power Types
-INSERT INTO power_types (name) VALUES
-    ('Hobby'),
-    ('Metier'),
-    ('Discipline'),
-    ('Transformation');
-
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
