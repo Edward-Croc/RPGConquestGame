@@ -113,6 +113,7 @@ CREATE TABLE controlers (
     ID SERIAL PRIMARY KEY,
     firstname text NOT NULL,
     lastname text NOT NULL,
+    story text,
     start_workers INT DEFAULT 1,
     recruted_workers INT DEFAULT 0,
     turn_recruted_workers INT DEFAULT 0,
