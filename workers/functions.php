@@ -58,7 +58,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
         // Step 2: Decode the JSON report
         $report = json_decode($row['report'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception("Failed to decode JSON: " . json_last_error_msg());
+            throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
         }
         // Step 3: Append the new element to the specified key
         if (!empty($reportAppendArray['life_report'])){
@@ -432,7 +432,7 @@ function moveWorker($pdo, $worker_id, $zone_id) {
     // Decode the existing JSON into an associative array
     $currentReport = json_decode($action['report'], true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
         $currentReport = array();
     }
     $zone_name = getZoneName($pdo, $zone_id);
@@ -498,7 +498,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     // Decode the existing JSON into an associative array
     $currentReport = json_decode($currentAction['report'], true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
         $currentReport = array();
     }
     $sql_worker_actions = "UPDATE worker_actions SET ";

@@ -51,7 +51,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             $attackArray[$attackAction['attacker_id']]=array();
             $attackParams = json_decode($attackAction['params'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+                $attackParams = array();
             }
             foreach($attackParams AS $param){
                 // If the attacker targets the network
@@ -185,10 +186,10 @@ function attackMecanic($pdo){
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
 
-    $timeText = getConfig($gameReady, 'time_value');
-    $timeTextThe = getConfig($gameReady, 'time_denominator_the');
-    $timeTextOfThe = getConfig($gameReady, 'time_denominator_ofthe');
-    $timeTextThis = getConfig($gameReady, 'time_denominator_this');
+    $timeText = getConfig($pdo, 'time_value');
+    $timeTextThe = getConfig($pdo, 'time_denominator_the');
+    $timeTextOfThe = getConfig($pdo, 'time_denominator_ofthe');
+    $timeTextThis = getConfig($pdo, 'time_denominator_this');
     // TODO : search and replace place to throw a body and place of healing
 
     $disapearenceTextes = array(
