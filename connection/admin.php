@@ -105,7 +105,8 @@ require_once '../base/base_html.php';
             <form action="/RPGConquestGame/connection/admin.php" method="post">
                 <h2> FULL Reset :
                     <select id="configSelect" name="config_name">
-                        <option  value='Vampire1966'> Firenze Vampire1966 </option>
+                        <option  value='Vampire1966'> Firenze Vampire 1966 </option>
+                        <option  value='Japon1555'> Shikoku Succession 1555 </option>
                     </select>
                     <input type="hidden" name="resetBDD" />
                     <input type="submit" name="submit" value="Submit" />
