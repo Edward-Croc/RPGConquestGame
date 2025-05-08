@@ -87,7 +87,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
         JOIN worker_actions wa ON
-                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('claim', 'captured')
+            s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured')
         JOIN workers w ON wa.worker_id = w.ID
         JOIN worker_origins wo ON wo.id = w.origin_id
         JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
