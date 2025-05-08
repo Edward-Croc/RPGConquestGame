@@ -13,7 +13,7 @@ require_once '../base/base_html.php';
                 $stmt = $gameReady->prepare($sql);
                 $stmt->execute();
             } catch (PDOException $e) {
-                echo __FUNCTION__."():UPDATE config Failed: " . $e->getMessage()."<br />";
+                echo __FUNCTION__."():UPDATE mecanics Failed: " . $e->getMessage()."<br />";
             }
         }
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
@@ -52,7 +52,7 @@ require_once '../base/base_html.php';
                     $stmt = $gameReady->prepare($sql);
                     $stmt->execute();
                 } catch (PDOException $e) {
-                    echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+                    echo __FUNCTION__."(): UPDATE mecanics Failed: " . $e->getMessage()."<br />";
                 }
             }
             echo ucfirst(getConfig($gameReady, 'time_value')).": $turn";

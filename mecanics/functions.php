@@ -30,7 +30,7 @@ function diceRoll() {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): SELECT diceSQL Failed: " . $e->getMessage()."<br />";
         return NULL;
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
@@ -142,6 +142,8 @@ function calculateVals($pdo, $turn_number){
  * setting dead and captured status
  */
 function createNewTurnLines($pdo, $turn_number){
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
         INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
@@ -229,6 +231,9 @@ function createNewTurnLines($pdo, $turn_number){
 
 
 function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+
     echo '<div> <h3>  claimMecanic : </h3> ';
 
     if (empty($turn_number)) {
@@ -281,6 +286,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     }
     // Fetch and return the results
     $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    //if ($debug) 
     echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
 
     $arrayZoneInfo = array();
@@ -335,7 +341,9 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
 
     foreach ( $arrayZoneInfo as $zoneInfo ) {
 
+        if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true);
         $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
+        if ($debug) echo "claimer_params :". var_export($claimer_params, true);
         $sql = sprintf(
             "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE zone_id = %s",
                 $zoneInfo['claimer']['claimer_controler_id'], $claimer_params['claim_controler_id'], $zoneInfo['claimer']['zone_id']
@@ -345,7 +353,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
         }
         echo $sql. "</br>";
     }
