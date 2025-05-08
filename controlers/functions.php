@@ -66,19 +66,44 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
     return $showControlerSelect;
 }
 
-// TODO: has base
+// TODO: function has_base ($pdo, $controler_id) {}
     //  select from locations where controler_id = controler.id and is_base = TRUE;
 
-// TODO: create base
-    // $description = sprintf (
-    //  "Nous avons trouver le repaire de %$1s. Ses serviteurs ne semblent pas avoir fini de re-mettre en place les défences qui existaient avant la crue.
-    // En attaquant ce lieu nous pourrions lui porte un coup fatal.
-    // Sa disiparition causerait certainement quelques questions à l'Elyséum, mais un joueur en moins sur l'échéquier politique est toujours bénéfique.
-    // Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de %$2s en %$2s.
-    // Controler Name,
-    // getConfig($gameReady, 'time_value')
-    // insert into locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed) VALUES
+/**
+ * 
+ */
+function create_base($pdo, $controler_id, $zone_id) {
+    
+    $controlers = getControlers($pdo, NULL, $controler_id);
+    $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
 
+    $discovery_diff = 6;
+    $power_list = getPowersByType($pdo,'3', $controler_id, FALSE);
+    foreach ($power_list as $power ) {
+        $discovery_diff += $power['enquete'];
+    }
+
+    $description = sprintf (
+        "Nous avons trouver le repaire de %$1s. Ses serviteurs ne semblent pas avoir fini de re-mettre en place les défences qui existaient avant la crue.
+        En attaquant ce lieu nous pourrions lui porte un coup fatal.
+        Sa disiparition causerait certainement quelques questions à l'Elyséum, mais un joueur en moins sur l'échéquier politique est toujours bénéfique.
+        Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de %$2s en %$2s.",
+        $controler_name,
+        getConfig($pdo, 'time_value')
+    );
+    $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
+        ($zone_id, 'Repaire', $description, $controler_id, $discovery_diff, TRUE, TRUE)";
+
+    try{
+        // Update config value in the database
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
+        return false;
+    }
+    return true;
+}
 
 // TODO: move base
     // update locations set zone_id where controler_id = "%s";

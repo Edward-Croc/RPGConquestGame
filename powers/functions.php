@@ -33,6 +33,7 @@ function getPowersByWorkers($pdo, $worker_id_str) {
     return $workers_powers;
 }
 
+// TODO : Add a select limit by controler_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
     $powerArray = array();
     $power_text = getSQLPowerText();
