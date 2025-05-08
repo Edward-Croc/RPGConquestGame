@@ -12,7 +12,10 @@ VALUES
     -- MAP INFO
     ('map_file', 'carte_quartiers_florence.jpg', 'Map file to use'),
     ('map_alt', 'Carte des Quartiers de Florence', 'Map alt'),
-    ('time_value', 'Semaine', 'Text for time span')
+    ('time_value', 'semaine', 'Text for time span'),
+    ('time_denominator_the', 'la', 'Denominator ''the'' for time text'),
+    ('time_denominator_ofthe', 'de la', 'Denominator ''of the'' for time text'),
+    ('time_denominator_this', 'cette', 'Denominator ''this'' for time text')
     ;
 
 UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''

@@ -198,10 +198,13 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 echo $upgrade_HTML;
 
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
+
+                $timeText = getConfig($gameReady, 'time_value');
+                $timeTextThis = getConfig($gameReady, 'time_denominator_this');
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf(
                         '<div class="report week"> <h4> %s </h4>',
-                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? "Cette semaine" : sprintf("Semaine %s", $turn_number )
+                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? sprintf("%s %s", $timeTextThis, $timeText ): sprintf("%s %s", $timeText, $turn_number )
                     );
                     if ($_SESSION['DEBUG_REPORT'])
                         echo "<p> action: ".var_export($action, true)."</p>";

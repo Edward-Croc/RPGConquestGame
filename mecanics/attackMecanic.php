@@ -185,17 +185,22 @@ function attackMecanic($pdo){
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
 
+    $timeText = getConfig($gameReady, 'time_value');
+    $timeTextThe = getConfig($gameReady, 'time_denominator_the');
+    $timeTextOfThe = getConfig($gameReady, 'time_denominator_ofthe');
+    $timeTextThis = getConfig($gameReady, 'time_denominator_this');
+    
     $disapearenceTextes = array(
-        '<p><p>Cet agent a disparu sans laisser de trace à partir de la semaine %s.</p>',
-        '<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>',
-        '<p>La connexion avec l\'agent s\'est perdue la semaine %s, et nous ignorons où il se trouve.</p>',
-        '<p>À partir de la semaine %s, cet agent semble s\'être volatilisé dans la nature.</p>',
-        '<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>',
-        '<p>La dernière trace de cet agent remonte à la semaine %s, depuis il est aux abonnés absents.</p>',
-        '<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>',
-        '<p>L\'agent s\'est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>',
-        '<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>',
-        '<p>La semaine %s signe le début du silence radio complet de cet agent.</p>'
+        '<p>Cet agent a disparu sans laisser de trace à partir '.$timeTextOfThe.' '.$timeText.' %s.</p>',
+        '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, plus aucun signal ni message de cet agent.</p>',
+        '<p>La connexion avec l\'agent s\'est perdue la '.$timeTextThe.' '.$timeText.' %s, et nous ignorons où il se trouve.</p>',
+        '<p>À partir '.$timeTextOfThe.' '.$timeText.' %s, cet agent semble s\'être volatilisé dans la nature.</p>',
+        '<p>Nous avons perdu toute communication avec cet agent depuis '.$timeTextThe.' '.$timeText.' %s.</p>',
+        '<p>La dernière trace de cet agent remonte à '.$timeTextThe.' '.$timeText.' %s, depuis il est aux abonnés absents.</p>',
+        '<p>'.$timeTextThe.' '.$timeText.' %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>',
+        '<p>L\'agent s\'est évanoui dans la nature après '.$timeTextThe.' '.$timeText.' %s. Aucune nouvelle depuis.</p>',
+        '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, cet agent est un fantôme, insaisissable et introuvable.</p>',
+        '<p>'.$timeTextThe.' '.$timeText.' %s signe le début du silence radio complet de cet agent.</p>'
     );
     $attackSuccessTextes = array(
         '<p>J\'ai pu mener à bien ma mission sur %1$s son silence est assuré.</p>',

@@ -55,6 +55,6 @@ require_once '../base/base_html.php';
                     echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
                 }
             }
-            echo "Semaine : $turn";
+            echo getConfig($gameReady, 'time_value').": $turn";
         }
 
