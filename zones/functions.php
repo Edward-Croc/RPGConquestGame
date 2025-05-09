@@ -19,7 +19,9 @@ function getZonesArray($pdo, $zone_id = NULL) {
     $zonesArray = array();
 
     try{
-        $sql = "SELECT * FROM zones AS z";
+        $sql = "SELECT z.id AS zone_id, c.id AS controler_id, * FROM zones AS z
+            LEFT JOIN controlers AS c ON c.id = z.claimer_controler_id
+            ORDER BY z.id ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -42,7 +44,7 @@ function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
     foreach ( $zonesArray as $zone) {
         $zoneOptions .= sprintf(
             '<option value=\'%1$s\'> %2$s (%1$s) </option>',
-            $zone['id'], $zone['name']
+            $zone['zone_id'], $zone['name']
         );
     }
 
