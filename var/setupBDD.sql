@@ -209,15 +209,9 @@ CREATE TABLE controler_worker (
 CREATE TABLE power_types (
     ID SERIAL PRIMARY KEY,
     name text NOT NULL,
+    description text,
     activation JSON
 );
-
--- Table of Fixed Power Types used by code
-INSERT INTO power_types (name, description) VALUES
-    ('Hobby', ''),
-    ('Metier', ''),
-    ('Discipline', ''),
-    ('Transformation', '');
 
 CREATE TABLE powers (
     ID SERIAL PRIMARY KEY,

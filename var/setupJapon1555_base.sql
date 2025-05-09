@@ -34,11 +34,13 @@ INSERT INTO players (username, passwd, is_privileged) VALUES
 ;
 
 INSERT INTO factions (name) VALUES
-    ('Samouraïl')
-    ,('Moine')
-    ,('Chrétien') -- https://histoiredujapon.com/2021/04/05/etrangers-japon-ancien/#index_id1
+    ('Samouraï Chōsokabe')
+    ,('Samouraï Miyoshi')
+    ,('Samouraï Hosokawa')
+    ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū')
+    ,('Chrétiens') -- https://histoiredujapon.com/2021/04/05/etrangers-japon-ancien/#index_id1
     ,('Yōkai')
 ;
 
@@ -52,8 +54,8 @@ INSERT INTO controlers (
     (
         'Régence Motochika', 'Chōsokabe', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
         1, 0, 0,
-        (SELECT ID FROM factions WHERE name = 'Samouraïl' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïl' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         'Kunichika Chōsokabe est présumé mort.
         Le fils Motochika Chōsokabe n''as pas encore l''age pour être Daimyo.
         Vous vous devez de tenir la barre du clan durant cette période de transition.
@@ -74,7 +76,12 @@ INSERT INTO controlers (
     ('Yōkai', 'Shikoku', 'violent', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
-        (SELECT ID FROM factions WHERE name = 'Moine')
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
+    ),
+    ('Kūkai', 'Kōbō-Daishi', 'passif',
+        2, 1, 1, 0,
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     )
 ;
 
@@ -85,8 +92,8 @@ INSERT INTO controlers (
     story
 ) VALUES
     ('Daïmyo Nagayoshi', 'Miyoshi',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
-        (SELECT ID FROM factions WHERE name = 'Chrétien' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïl' ),
+        (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
         'Motonaga Miyoshi votre père et Daimyo précédent est présumé mort.
         Vous êtes enfin Daimyo et libre de vos actes.
 
@@ -102,7 +109,7 @@ INSERT INTO controlers (
     ),
     ('Shinshō-in', 'Rennyo', -- https://fr.wikipedia.org/wiki/Rennyo
         (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
-        (SELECT ID FROM factions WHERE name = 'Moine' ),
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
         'Vous êtes le 8eme abbé du mouvement boudique Jōdo shinshū (la Véritable école de la Terre pure).
         Les Ikkō-ikki sont la face visible du Jōdo shinshū composé des petits nobles-locaux, des paysans, des moines guerriers des pretres shintos qui se rebellent ouvertement contre la caste des samourails.
         
@@ -121,8 +128,8 @@ INSERT INTO controlers (
         '
     ),
     ('Daïmyo Tadaoki', 'Hosokawa', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
-        (SELECT ID FROM factions WHERE name = 'Samouraïl' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïl' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         ' Fujitaka Hosokawa votre père et Daimyo précédent est présumé mort.
           Vous êtes désormais Daimyo. Vous vous devez de tenir la barre du clan durant cette période de troubles.
           Malheureusement sans grande assistance vue que vos meilleurs éléments ne sont jamais rentrée de guerre.
@@ -187,9 +194,10 @@ INSERT INTO zones (name, description) VALUES
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
 -- Insert the data
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-    ('Stazione ferroviaria', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station'))
-    , ('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine'))
-    , ('Cairn','', 6, (SELECT ID FROM zones WHERE name = 'Monticelli'))
+    ('Port d''Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d''Echime))
+    , ('Port d''Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d''Echime))
+    , ('Port de Matsuyama', '', 0, (SELECT ID FROM zones WHERE name = 'Montagnes d''Echime'))
+    , ('Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d''Echime'))
     , ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso'))
     , ('Facolta di Ingegneria', '', 6, (SELECT ID FROM zones WHERE name = 'Fortezza Basso'))
     , ('Gare/Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella'))
@@ -197,20 +205,29 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 ;
 */
 
+-- Table of Fixed Power Types used by code
+INSERT INTO power_types (id, name, description) VALUES
+    (1, 'Hobby', ''),
+    (2, 'Metier', ''),
+    (3, 'Discipline', ''),
+    (4, 'Transformation', '');
+
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Cheval Kagawa', 1,1,1, '{"hidden" : "2", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }')
-    , ('Armure en fer de Kochi', 0,2,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
-    , ('Thé d''Oboké et d''Iya', 2,0,1, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
+    ('Cheval Kagawa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }')
+    , ('Armure en fer de Kochi', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
+    , ('Thé d''Oboké et d''Iya', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
+    , ('Encens Coréen', 1, 0,0 '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure'))
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Kagawa'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Kochi'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d''Oboké et d''Iya'))
 ;
 
-UPDATE config SET value = '''Yari (la lance)'', ''Yumi (l\''arc)'', ''Puissance'''
+UPDATE config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''
 WHERE name = 'basePowerNames';
 --https://fr.wikipedia.org/wiki/Ashigaru
 INSERT INTO powers ( name, enquete, attack, defence) VALUES
@@ -224,67 +241,191 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
     -- ('', 2,0,0), ('', 0,2,1), ('', 0,1,2),
     -- ('', -1,2,2), ('', 2,-1,1), ('', 2,2,-1),
     -- ('', 1,1,1),
-    ('Kenjutsu', 1,1,1),
-    ('Naginatajutsu', 1,1,1),
-    ('Bajutsu', 1,1,1),
-    ('Tantōjutsu', 1,1,1),
-    -- ('', 0,1,2),
-    ('Sōjutsu', 0,1,2),
-    ('Iaijutsu', 0,1,2),
-    -- ('', 0,2,1),
-    ('Kyūjutsu', 0,2,1),
-    
-    -- ('', 2,0,0),
-    ('Jūjutsu', 2,0,0),
-    -- ('', 2,2,-1),
-    ('Occultation', 2,1,-1),
-    -- ('', 2,-1,1),
-    ('Augure', 2,-1,1),
-    -- Pouvoirs mortels et démons
-    ('Hōjutsu', -1, 3,2), -- 
-    ('Sentir le mal', 3, 1,1)
-;
-/*
-1. Kenjutsu (剣術) – Art du sabre
-2. Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement
-3. Sōjutsu (槍術) – Art de la lance (Yari)
-4. Naginatajutsu (薙刀術) – Art de la hallebarde 
-5. Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)
-6. Bajutsu (馬術) – Art de l'équitation militaire
-7. Tantōjutsu (短刀術) – Combat au couteau
-8. Jūjutsu (柔術) – Techniques de lutte à mains nues
-9. Hōjutsu (砲術) – Art des armes à feu (teppō)
-1. Chadō (茶道) – Voie du thé
-2. Shodō (書道) – Calligraphie
-3. Kadō / Ikebana (華道 / 生け花) – Art floral
-4. Ninjutsu (忍術) – Techniques d’espionnage et de guérilla
-5. Heihō (兵法) – Stratégie militaire
-6. Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu
-7. Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques
-1. Haikai / Haiku (俳諧 / 俳句) – Poésie courte
-2. Waka (和歌) – Poésie classique
-3. Shigin (詩吟) – Chant poétique
-4. Gagaku (雅楽) – Musique de cour
-5. Bugaku (舞楽) – Danse de cour
-6. Kōdō (香道) – Voie de l'encens
-*/
-/*
-INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Naginata (lance)'))
-    ,((SELECT ID FROM power_types WHERE name = 'Discipline'),(SELECT ID FROM powers WHERE name = 'Katana (sabre)'))
-;
-*/
+    -- Basiques
+    ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 0,2)
+    ,('Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)', 0, 2,0)
+    ,('Shodō (書道) – Calligraphie', 1, 0,1)
+    ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 2, 0,0)
 
-/*
--- Add base powers to the factions :
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Brujah'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
-    )),
-    ((SELECT ID FROM factions WHERE name = 'Brujah'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
-    ))
+    -- Samouraï Chōsokabe
+    ,('Kenjutsu (剣術) – Art du sabre', 0, 2,1) 
+    ,('Heihō (兵法) – Stratégie militaire', 1, 1,1)
+    ,('Waka (和歌) – Poésie classique', 2, 0,0)
+
+    -- Miyoshi Samouraï
+    ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 3,2)
+    ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1)
+    ,('Gagaku (雅楽) – Musique de cour', 2, 0,0)
+
+    -- Samouraï Hosokawa
+    ,('Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement', 0, 2,1)
+    ,('Bugaku (舞楽) – Danse de cour', 1, 1,1)
+    ,('Chadō (茶道) – Voie du thé', 2, -1,1)
+
+    -- Ikkō-ikki
+    ,('Jūjutsu (柔術) – Techniques de lutte à mains nues', 1, 1,1)
+    ,('Ninjutsu (忍術) – Techniques d’espionnage et de guérilla', 2, 1,-1)
+    ,('Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques', 1, 1,1)
+
+    -- Moines Bouddhistes
+    ,('Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu', 1, 1,1)
+    ,('Naginatajutsu (薙刀術) – Art de la hallebarde', 0, 1,2)
+    ,('Haikai / Haiku (俳諧 / 俳句) – Poésie courte', 2, 0,1)
+
+    -- Kaizokushū Pirates
+    ,('Tantōjutsu (短刀術) – Combat au couteau', 0, 2,1)
+    ,('Shigin (詩吟) – Chant poétique', 2, 0,0)
+    ,('Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer', 0, 1,2)
+
+    -- Yōkai 
+    ,('Kōdō (香道) – Voie de l’encens', 2, 0,0)
+    ,('Kagenkō (影言講) – L’art de la parole de l’ombre', 1, 1,1)
+    ,('Kagekui-ryū (影喰流) – École du Mange-Ombre', 0, 2,2)
 ;
-*/
+
+INSERT INTO link_power_type (power_type_id, power_id) VALUES
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Sōjutsu (槍術) – Art de la lance (Yari)')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Shodō (書道) – Calligraphie')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kadō / Ikebana (華道 / 生け花) – Art floral')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kenjutsu (剣術) – Art du sabre')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Heihō (兵法) – Stratégie militaire')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Waka (和歌) – Poésie classique')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bajutsu (馬術) – Art de l’équitation militaire')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Gagaku (雅楽) – Musique de cour')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bugaku (舞楽) – Danse de cour')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Chadō (茶道) – Voie du thé')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Naginatajutsu (薙刀術) – Art de la hallebarde')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tantōjutsu (短刀術) – Combat au couteau')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Shigin (詩吟) – Chant poétique')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kōdō (香道) – Voie de l’encens')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagenkō (影言講) – L’art de la parole de l’ombre')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'));
+
+
+-- Add base powers to the factions :
+-- Samouraï Chōsokabe
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Kenjutsu (剣術) – Art du sabre'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Waka (和歌) – Poésie classique'
+    ));
+
+-- Samouraï Miyoshi /Chrétiens 
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
+    ));
+
+-- Samouraï Hosokawa
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+    ));
+
+-- Ikkō-ikki
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
+    ));
+
+-- Moines Bouddhistes
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Naginatajutsu (薙刀術) – Art de la hallebarde'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
+    ));
+
+-- Kaizokushū Pirates
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Tantōjutsu (短刀術) – Combat au couteau'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Shigin (詩吟) – Chant poétique'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
+    ));
+
+-- Yōkai
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Kōdō (香道) – Voie de l’encens'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Kagenkō (影言講) – L’art de la parole de l’ombre'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
+    ));
+
