@@ -7,6 +7,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         echo "turn_number : $turn_number <br>";
     }
 
+    return array();
 }
 
 function locationSearchMecanic($pdo ) {
