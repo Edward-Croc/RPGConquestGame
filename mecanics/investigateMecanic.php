@@ -159,7 +159,7 @@ function investigateMecanic($pdo ) {
 
         // If no report has been created yet for this worker
         if ( empty($reportArray[$row['searcher_id']]) )
-            $reportArray[$row['searcher_id']] = sprintf( "<p> Nous avons mener l'enquête dans le quartier %s.</p>", $row['zone_name'] );
+            $reportArray[$row['searcher_id']] = sprintf( "<p> Nous avons mené l'enquête dans le quartier %s.</p>", $row['zone_name'] );
         if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
 
         $discipline = cleanAndSplitString($row['found_discipline']);
