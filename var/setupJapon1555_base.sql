@@ -180,7 +180,7 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
 INSERT INTO zones (name, description) VALUES
       ('Cote Ouest d''Echime', 'La porte vers l''ile de Kyushu')
     , ('Montagnes d''Echime', 'Entourant le pic Ishizuchi cette chaine de montagne est sacrée.')
-    , ('Cape sud de Kochi', 'Ressource Fer, gare à l''océan pacific')
+    , ('Cap sud de Kochi', 'Ressource Fer, gare à l''océan pacific')
     , ('Grande Baie de Kochi', 'Siege du clan Chōsokabe')
     , ('Vallées d''Iya et d''Oboké de Tokushima', 'Ressource Thé')
     , ('Cote Est de Tokushima', 'Siege du clan Miyoshi')
@@ -242,10 +242,10 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
     -- ('', -1,2,2), ('', 2,-1,1), ('', 2,2,-1),
     -- ('', 1,1,1),
     -- Basiques
-    ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 0,2)
+    ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 1,1)
     ,('Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)', 0, 2,0)
-    ,('Shodō (書道) – Calligraphie', 1, 0,1)
-    ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 2, 0,0)
+    ,('Shodō (書道) – Calligraphie', 1, 1,0)
+    ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 1, 0,1)
 
     -- Samouraï Chōsokabe
     ,('Kenjutsu (剣術) – Art du sabre', 0, 2,1) 
@@ -263,14 +263,14 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
     ,('Chadō (茶道) – Voie du thé', 2, -1,1)
 
     -- Ikkō-ikki
-    ,('Jūjutsu (柔術) – Techniques de lutte à mains nues', 1, 1,1)
+    ,('Jūjutsu (柔術) – Techniques de lutte à mains nues', 0, 1,2)
     ,('Ninjutsu (忍術) – Techniques d’espionnage et de guérilla', 2, 1,-1)
-    ,('Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques', 1, 1,1)
+    ,('Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques', 1, 0,2)
 
     -- Moines Bouddhistes
-    ,('Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu', 1, 1,1)
+    ,('Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu', 0, 2,1)
     ,('Naginatajutsu (薙刀術) – Art de la hallebarde', 0, 1,2)
-    ,('Haikai / Haiku (俳諧 / 俳句) – Poésie courte', 2, 0,1)
+    ,('Haikai / Haiku (俳諧 / 俳句) – Poésie courte', 2, 0,0)
 
     -- Kaizokushū Pirates
     ,('Tantōjutsu (短刀術) – Combat au couteau', 0, 2,1)
