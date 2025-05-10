@@ -687,14 +687,14 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
         // TODO add a configurable time limit on last discovery turn
 
         foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {
-            $enemyWorkerOptions .= "<option value='worker_" . $enemyWorker['discovered_worker_id'] . "'>" . $enemyWorker['name'] . " </option>";
+            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
     if (!empty($enemyWorkersArray['workers_with_controler'])) {
         $discovered_controler_id = 0;
         // Display select list of Controlers
         foreach ( $enemyWorkersArray['workers_with_controler'] as $enemyWorker) {
-            
+
             // TODO add a configurable time limit on last discovery turn
 
             if ( $discovered_controler_id != $enemyWorker['discovered_controler_id']){
@@ -705,7 +705,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
                     $enemyWorker['discovered_controler_name'],
                 );
             }
-            $enemyWorkerOptions .= "<option value='worker_".$enemyWorker['id']."'> - ".$enemyWorker['name']." </option>";
+            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['id'],  $enemyWorker['name']);
         }
     }
     $enemyWorkersSelect = sprintf("
