@@ -66,8 +66,29 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
     return $showControlerSelect;
 }
 
-// TODO: function has_base ($pdo, $controler_id) {}
-    //  select from locations where controler_id = controler.id and is_base = TRUE;
+/**
+ * This function returns an array of all bases a controler has or a NULL
+ * 
+ * params
+ *  $controler_id string
+ * 
+ * returns
+ * array() | NULL
+ */
+function has_base ($pdo, $controler_id) {
+
+    $sql = "SELECT zone_id FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
+    try{
+        // Update config value in the database
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':controler_id' => $controler_id]);
+        $bases = $stmt->fetchALL(PDO::FETCH_ASSOC);
+        return $bases;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+}
 
 /**
  * 
