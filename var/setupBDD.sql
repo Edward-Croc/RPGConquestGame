@@ -217,6 +217,7 @@ CREATE TABLE power_types (
 CREATE TABLE powers (
     ID SERIAL PRIMARY KEY,
     name text NOT NULL,
+    description text,
     enquete INT DEFAULT 0,
     attack INT DEFAULT 0,
     defence INT DEFAULT 0,
