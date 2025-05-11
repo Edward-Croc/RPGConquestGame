@@ -30,7 +30,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 %s
             </form>",
             strval($controler_id),
-            // limit recrutment by controler
+            // limit recrutment for controler
             (
                 ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
             ) || (
