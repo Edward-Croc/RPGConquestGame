@@ -106,7 +106,7 @@ require_once '../base/base_html.php';
                 <h2> FULL Reset :
                     <select id="configSelect" name="config_name">
                         <option  value='Vampire1966'> Firenze Vampire 1966 </option>
-                        <option  value='Japon1555'> Shikoku Succession 1555 </option>
+                        <option  value='Japon1555'> Shikoku (四国) Succession 1555 </option>
                     </select>
                     <input type="hidden" name="resetBDD" />
                     <input type="submit" name="submit" value="Submit" />

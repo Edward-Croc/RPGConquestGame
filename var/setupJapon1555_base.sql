@@ -1,5 +1,5 @@
 
-UPDATE config SET value = 'Shikoku 1555' WHERE name = 'TITLE';
+UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 -- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku
 UPDATE config SET
     value = '<p> En plein Sengoku Jidai, les turbulences sociales, intrigues politiques et conflits militaires, divise le Japon.
@@ -39,7 +39,7 @@ INSERT INTO factions (name) VALUES
     ,('Samouraï Hosokawa')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
-    ,('Kaizokushū')
+    ,('Kaizokushū') -- (海賊衆)
     ,('Chrétiens') -- https://histoiredujapon.com/2021/04/05/etrangers-japon-ancien/#index_id1
     ,('Yōkai')
 ;
@@ -52,7 +52,7 @@ INSERT INTO controlers (
     story
 ) VALUES
     (
-        'Régence Motochika', 'Chōsokabe', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
+        'Régence Motochika (元親)', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
         1, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
@@ -73,12 +73,12 @@ INSERT INTO controlers (
     start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
-    ('Yōkai', 'Shikoku', 'violent', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
+    ('Yōkai (妖怪)', 'Shikoku (四国)', 'violent', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
-    ('Kūkai', 'Kōbō-Daishi', 'passif',
+    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif',
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
@@ -91,7 +91,7 @@ INSERT INTO controlers (
     faction_id, fake_faction_id,
     story
 ) VALUES
-    ('Daïmyo Nagayoshi', 'Miyoshi',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
+    ('Daïmyo Nagayoshi (長慶)', 'Miyoshi (三好氏)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
         'Motonaga Miyoshi votre père et Daimyo précédent est présumé mort.
@@ -107,7 +107,7 @@ INSERT INTO controlers (
         Ou pas, car c''est temps troubles seraient le moment opportun pour vous éxtraire de la position de clan vassal et de devenir enfin maitre de l''ile.
         '
     ),
-    ('Shinshō-in', 'Rennyo', -- https://fr.wikipedia.org/wiki/Rennyo
+    ('Shinshō-in (信証院)', 'Rennyo (蓮如)', -- https://fr.wikipedia.org/wiki/Rennyo
         (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
         'Vous êtes le 8eme abbé du mouvement boudique Jōdo shinshū (la Véritable école de la Terre pure).
@@ -127,7 +127,7 @@ INSERT INTO controlers (
         Peut être qu''en eveillant quelques Yōkais vous pourrez rendre votre conquête plus facile.
         '
     ),
-    ('Daïmyo Tadaoki', 'Hosokawa', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
+    ('Daïmyo Tadaoki (忠興)', 'Hosokawa (細川氏)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         ' Fujitaka Hosokawa votre père et Daimyo précédent est présumé mort.
@@ -139,7 +139,7 @@ INSERT INTO controlers (
           Il ne vous reste plus qu''à bien jouer vos cartes pour profiter de la faiblesse du clan Chōsokabe, vous avez 5 ans devant vous avant que Motochika soit asser agé pour gouverner seul.
           Peut-être est-ce le temps du renouveau.'
     ),
-    ('Murai', 'Wako', --
+    ('Murai', 'Wako (和光)', --
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         ''
@@ -153,27 +153,31 @@ INSERT INTO player_controler (controler_id, player_id)
 INSERT INTO player_controler (player_id, controler_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player0'),
-        (SELECT ID FROM controlers WHERE lastname in ('Shikoku'))
+        (SELECT ID FROM controlers WHERE lastname in ('Shikoku (四国)'))
     ), -- player1 controls  Angelo Ricciotti/Antonio Mazzino,
     (
         (SELECT ID FROM players WHERE username = 'player1'),
-        (SELECT ID FROM controlers WHERE lastname = 'Chōsokabe')
+        (SELECT ID FROM controlers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player2'),
-        (SELECT ID FROM controlers WHERE lastname in ('Miyoshi'))
+        (SELECT ID FROM controlers WHERE lastname in ('Miyoshi (三好氏)'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player3'),
-        (SELECT ID FROM controlers WHERE lastname = 'Rennyo')
+        (SELECT ID FROM controlers WHERE lastname = 'Rennyo (蓮如)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player4'),
-        (SELECT ID FROM controlers WHERE lastname = 'Hosokawa')
+        (SELECT ID FROM controlers WHERE lastname = 'Hosokawa (細川氏)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player5'),
-        (SELECT ID FROM controlers WHERE lastname = 'Wako')
+        (SELECT ID FROM controlers WHERE lastname = 'Wako (和光)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player6'),
+        (SELECT ID FROM controlers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     )
 ;
 
@@ -218,7 +222,7 @@ INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Cheval Kagawa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }')
     , ('Armure en fer de Kochi', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
     , ('Thé d''Oboké et d''Iya', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
-    , ('Encens Coréen', 1, 0,0 '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
+    , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
