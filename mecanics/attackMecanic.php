@@ -88,24 +88,42 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         echo sprintf("attackArray : %s <br/>", var_export($attackArray, true));
 
     // Build SQL to compare attacker value to target value
-    // TODO change SQL to get by listed workers so as to break the zone limit
     $sqlValCompare = "
-    WITH attackers AS (
+    WITH attacker AS (
         SELECT
             wa.worker_id AS attacker_id,
             CONCAT(w.firstname, ' ', w.lastname) AS attacker_name,
             wa.attack_val AS attacker_attack_val,
             wa.defence_val AS attacker_defence_val,
             wa.controler_id AS attacker_controler_id,
-            wa.zone_id,
-            CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name
+            CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name,
+            wa.turn_number
         FROM
             worker_actions wa
             JOIN workers w ON w.id = wa.worker_id
             JOIN controlers c ON wa.controler_id = c.ID
         WHERE
             wa.worker_id = :attacker_id
-            AND turn_number = :turn_number
+            AND wa.turn_number = :turn_number
+    ),
+     defenders AS (
+        SELECT 
+        wa.worker_id AS defender_id,
+        wa.attack_val AS defender_attack_val,
+        wa.defence_val AS defender_defence_val,
+        CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
+        wo.id AS defender_origin_id,
+        wo.name AS defender_origin_name,
+        cw.controler_id as defender_controler_id,
+        z.id AS zone_id,
+        z.name AS zone_name
+        FROM workers w
+        JOIN zones z ON z.id = w.zone_id
+        JOIN worker_actions wa ON
+            w.id = wa.worker_id AND wa.turn_number = :turn_number
+        JOIN worker_origins wo ON wo.id = w.origin_id
+        JOIN controler_worker cw ON w.id = cw.worker_id AND is_primary_controler = true
+            WHERE w.id IN (%s)
     )
     SELECT
         a.attacker_id,
@@ -114,29 +132,73 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         a.attacker_defence_val,
         a.attacker_controler_id,
         a.attacker_controler_name,
-        z.id AS zone_id,
-        z.name AS zone_name,
-        wa.turn_number,
-        wa.worker_id AS defender_id,
-        wa.attack_val AS defender_attack_val,
-        wa.defence_val AS defender_defence_val,
-        CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
-        wo.id AS defender_origin_id,
-        wo.name AS defender_origin_name,
-        cw.controler_id as defender_controler_id,
-        (a.attacker_attack_val - wa.defence_val) AS attack_difference,
-        (wa.attack_val - a.attacker_defence_val) AS riposte_difference,
-        cke.id AS defender_knows_enemy
-    FROM attackers a
-    JOIN zones z ON z.id = a.zone_id
-    JOIN worker_actions wa ON
-            a.zone_id = wa.zone_id AND wa.turn_number = :turn_number
-    JOIN workers w ON wa.worker_id = w.ID
-    JOIN worker_origins wo ON wo.id = w.origin_id
-    JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
-    LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
-    WHERE w.id IN (%s)
+        a.turn_number,
+        d.defender_id,
+        d.defender_attack_val,
+        d.defender_defence_val,
+        d.defender_name,
+        d.defender_origin_id,
+        d.defender_origin_name,
+        d.defender_controler_id,
+        d.zone_id,
+        d.zone_name,
+        cke.id AS defender_knows_enemy,
+        (a.attacker_attack_val - d.defender_defence_val) AS attack_difference,
+        (d.defender_attack_val - a.attacker_defence_val) AS riposte_difference
+        FROM attacker a
+        CROSS JOIN defenders d
+        LEFT JOIN controlers_known_enemies cke ON cke.controler_id = d.defender_controler_id AND cke.discovered_worker_id = a.attacker_id
     ";
+
+    if ( (bool)getConfig($pdo, 'LIMIT_ATTACK_BY_ZONE') )
+        $sqlValCompare = "
+        WITH attacker AS (
+            SELECT
+                wa.worker_id AS attacker_id,
+                CONCAT(w.firstname, ' ', w.lastname) AS attacker_name,
+                wa.attack_val AS attacker_attack_val,
+                wa.defence_val AS attacker_defence_val,
+                wa.controler_id AS attacker_controler_id,
+                wa.zone_id,
+                CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name
+            FROM
+                worker_actions wa
+                JOIN workers w ON w.id = wa.worker_id
+                JOIN controlers c ON wa.controler_id = c.ID
+            WHERE
+                wa.worker_id = :attacker_id
+                AND turn_number = :turn_number
+        )
+        SELECT
+            a.attacker_id,
+            a.attacker_name,
+            a.attacker_attack_val,
+            a.attacker_defence_val,
+            a.attacker_controler_id,
+            a.attacker_controler_name,
+            z.id AS zone_id,
+            z.name AS zone_name,
+            wa.turn_number,
+            wa.worker_id AS defender_id,
+            wa.attack_val AS defender_attack_val,
+            wa.defence_val AS defender_defence_val,
+            CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
+            wo.id AS defender_origin_id,
+            wo.name AS defender_origin_name,
+            cw.controler_id as defender_controler_id,
+            (a.attacker_attack_val - wa.defence_val) AS attack_difference,
+            (wa.attack_val - a.attacker_defence_val) AS riposte_difference,
+            cke.id AS defender_knows_enemy
+        FROM attacker a
+        JOIN zones z ON z.id = a.zone_id
+        JOIN worker_actions wa ON
+                a.zone_id = wa.zone_id AND wa.turn_number = :turn_number
+        JOIN workers w ON wa.worker_id = w.ID
+        JOIN worker_origins wo ON wo.id = w.origin_id
+        JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
+        LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
+        WHERE w.id IN (%s)
+        ";
     $final_attacks_aggregate = array();
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
         try {
@@ -293,14 +355,14 @@ function attackMecanic($pdo){
                     $stmt->execute([
                         'controler_id' => $defender['defender_controler_id'],
                         'worker_id' => $defender['defender_id'],
-                        'is_primary' => FALSE
+                        'is_primary' => 0
                     ]);
                     // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = true
                     $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id, is_primary_controler) VALUES (:controler_id, :worker_id, :is_primary)");
                     $stmt->execute([
                         'controler_id' => $defender['attacker_controler_id'],
                         'worker_id' => $defender['defender_id'],
-                        'is_primary' => TRUE
+                        'is_primary' => 1
                     ]);
                 }
                 updateWorkerActiveStatus($pdo, $defender['defender_id']);

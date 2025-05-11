@@ -64,9 +64,10 @@ VALUES
     ('REPORTDIFF2', 2, 'Value for Level 2 information'),
     ('REPORTDIFF3', 3, 'Value for Level 3 information'),
     -- Diff vals in report
+    ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack heppen if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
-    ('RIPOSTACTIVE', TRUE, 'Value for Succesful Ripost'),
+    ('RIPOSTACTIVE', TRUE, 'Activate Ripost when attacked'),
     ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
     ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     -- Diff vals in claim
