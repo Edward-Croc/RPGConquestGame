@@ -12,6 +12,12 @@ UPDATE config SET
         </p>'
     WHERE name = 'PRESENTATION';
 
+UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
+UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
+UPDATE config SET value =  '2' WHERE name = 'recrutement_disciplines';
+UPDATE config SET value =  'Est un.e %5$s avec un.e %4$s' WHERE name = 'recrutement_job_hobby_text';
+UPDATE config SET value =  'c’est un.e %2$s avec un.e %3$s ' WHERE name = 'worker_view_job_hobby_text';
+
 INSERT INTO config (name, value, description)
 VALUES
     -- MAP INFO
