@@ -1,11 +1,12 @@
 <?php
 
-function getSQLPowerText() {
-    return "CONCAT(p.name, p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+function getSQLPowerText($short = TRUE) {
+    if (!$short) return "CONCAT(p.name, p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+    return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
 function getPowersByWorkers($pdo, $worker_id_str) {
-    $power_text = getSQLPowerText();
+    $power_text = getSQLPowerText(FALSE);
     $sql = "SELECT
         w.id AS worker_id,
         p.*,
