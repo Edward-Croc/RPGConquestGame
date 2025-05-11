@@ -3,12 +3,12 @@ UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 -- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku
 UPDATE config SET
     value = '<p> En plein Sengoku Jidai, les turbulences sociales, intrigues politiques et conflits militaires, divise le Japon.
-        Les guerres fratricides font rage sur l''archipel nippon, et le Shoguna Ashikaga fragilisé peine à rétablir la paix.
+        Les guerres fratricides font rage sur l’archipel nippon, et le Shoguna Ashikaga fragilisé peine à rétablir la paix.
         Au printemps 1555 les forces du Daïmyo de Shikoku Kunichika Chōsokabe, accompagné de ses vassaux Fujitaka Hosokawa et Motonaga Miyoshi,
-         sont partis sur Honshu déféndre Kyoto contre les forces de du clan Takeda. Espérant s''attrirer les faveurs du Shogun Ashikaga.
-        Les rares survivants rentrées de la campagne parlent d''une defaite cuisante, d''une rébélion paysanne et du déshonneur du Daïmyo et de ses vassaux.
+         sont partis sur Honshu déféndre Kyoto contre les forces de du clan Takeda. Espérant s’attrirer les faveurs du Shogun Ashikaga.
+        Les rares survivants rentrées de la campagne parlent d’une defaite cuisante, d’une rébélion paysanne et du déshonneur du Daïmyo et de ses vassaux.
         Le controle du clan Chōsokabe vassille sur Shikoku et les vassaux même du clan voyent la disparition de Kunichika comme une opportunité sans précédent.
-        Celui qui pourra s''octroyer l''allégence de la majorité des 4 provinces sera Maitre de l''ile.
+        Celui qui pourra s’octroyer l’allégence de la majorité des 4 provinces sera Maitre de l’ile.
         </p>'
     WHERE name = 'PRESENTATION';
 
@@ -18,9 +18,9 @@ VALUES
     ('map_file', 'shikoku.png', 'Map file to use'),
     ('map_alt', 'Carte de Shikoku', 'Map alt'),
     ('time_value', 'Trimestre', 'Text for time span'),
-    ('time_denominator_the', 'le', 'Denominator ''the'' for time text'),
-    ('time_denominator_ofthe', 'du', 'Denominator ''of the'' for time text'),
-    ('time_denominator_this', 'ce', 'Denominator ''this'' for time text');
+    ('time_denominator_the', 'le', 'Denominator ’the’ for time text'),
+    ('time_denominator_ofthe', 'du', 'Denominator ’of the’ for time text'),
+    ('time_denominator_this', 'ce', 'Denominator ’this’ for time text');
 
 
 INSERT INTO players (username, passwd, is_privileged) VALUES
@@ -57,11 +57,11 @@ INSERT INTO controlers (
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         'Kunichika Chōsokabe est présumé mort.
-        Le fils Motochika Chōsokabe n''as pas encore l''age pour être Daimyo.
+        Le fils Motochika Chōsokabe n’as pas encore l’age pour être Daimyo.
         Vous vous devez de tenir la barre du clan durant cette période de transition.
         Malheureusement sans grande assistance vue que vos meilleurs éléments ne sont jamais rentrée de guerre.
         Heuresement vous avez un accord avec Miyoshi, Fudžisan la petit soeur de leur héritier, désormais devenu Daimyo, épousera Motochika.
-        Les enfants, de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l''ile et le clan Miyoshi en administrera la moitiée.
+        Les enfants, de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l’ile et le clan Miyoshi en administrera la moitiée.
         Il suffit de tenir 2 ans que Motochika soit un adulte.
         '
     )
@@ -98,13 +98,13 @@ INSERT INTO controlers (
         Vous êtes enfin Daimyo et libre de vos actes.
 
         Personnellement vous avez abandonnée le boudhisme pour une nouvelle religion, celle du christ precher par les moines accompagnant les vaisseaux noirs des portugais.
-        Vous avez passer un marché avec eux et avez accès aux fusils à meches un avantage non négligeable et pour l''instant secret.
+        Vous avez passer un marché avec eux et avez accès aux fusils à meches un avantage non négligeable et pour l’instant secret.
         Ces temps troubles sont peut-être le bon moment pour un changement religieux dans la région.
 
         Votre père avait un accord avec le clan Chōsokabe, Fudžisan votre petite soeur épousera Motochika Chōsokabe le futur Daimyo de Shikoku quand il sera majeur.
-        Vos neuveux, les enfants de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l''ile et vos enfants le clan Miyoshi en administrera la moitiée.
+        Vos neuveux, les enfants de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l’ile et vos enfants le clan Miyoshi en administrera la moitiée.
         Il suffit de tenir 2 ans que Motochika soit un adulte et que les noces ait lieu.
-        Ou pas, car c''est temps troubles seraient le moment opportun pour vous éxtraire de la position de clan vassal et de devenir enfin maitre de l''ile.
+        Ou pas, car c’est temps troubles seraient le moment opportun pour vous éxtraire de la position de clan vassal et de devenir enfin maitre de l’ile.
         '
     ),
     ('Shinshō-in (信証院)', 'Rennyo (蓮如)', -- https://fr.wikipedia.org/wiki/Rennyo
@@ -113,18 +113,18 @@ INSERT INTO controlers (
         'Vous êtes le 8eme abbé du mouvement boudique Jōdo shinshū (la Véritable école de la Terre pure).
         Les Ikkō-ikki sont la face visible du Jōdo shinshū composé des petits nobles-locaux, des paysans, des moines guerriers des pretres shintos qui se rebellent ouvertement contre la caste des samourails.
         
-        Vous avez quitté Fukui à l''ouest de Honshu à la tête d''une armée Ikko-ikki bien décidé a boutter le Shougunat hors de Kyoto, et levé le joug des Samourails sur l''autorité de l''empereur.
+        Vous avez quitté Fukui à l’ouest de Honshu à la tête d’une armée Ikko-ikki bien décidé a boutter le Shougunat hors de Kyoto, et levé le joug des Samourails sur l’autorité de l’empereur.
         Mais les plaines autour de la capitale sont une zone dangereuse en ce moment et vos troupes ont été défaites par celles de Kunichika Chōsokabe.
         Nos sans que vous leur ayez donné du fil à retordre.
 
         Vus avez pu vous échapper et avez appris peut de temps plus tard que la force blessé de Chōsokabe avait affronter désastreusement la cavalerie Takeda.
 
-        La disparitions de Kunichika Chōsokabe et ses vassaux va crée un confit de pouvoir entre les clans de l''ile de Shikoku. 
+        La disparitions de Kunichika Chōsokabe et ses vassaux va crée un confit de pouvoir entre les clans de l’ile de Shikoku. 
         Vous avez appelé certains de vos fils pour venir lancé le mouvement Ikkō-ikki dans la région.
-        Et vous avez acheter votre passage sur l''ile auprès des Marins Wano.
+        Et vous avez acheter votre passage sur l’ile auprès des Marins Wano.
 
         Désormais depuis votre repaire dans le mont Ishizuchi vous préparez votre conquête.
-        Peut être qu''en eveillant quelques Yōkais vous pourrez rendre votre conquête plus facile.
+        Peut être qu’en eveillant quelques Yōkais vous pourrez rendre votre conquête plus facile.
         '
     ),
     ('Daïmyo Tadaoki (忠興)', 'Hosokawa (細川氏)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
@@ -133,10 +133,10 @@ INSERT INTO controlers (
         ' Fujitaka Hosokawa votre père et Daimyo précédent est présumé mort.
           Vous êtes désormais Daimyo. Vous vous devez de tenir la barre du clan durant cette période de troubles.
           Malheureusement sans grande assistance vue que vos meilleurs éléments ne sont jamais rentrée de guerre.
-          Vous venez d''une illustre famille sur le déclin. Vous êtes capable de tracé vos racines jusqu''a la lignée de l''empereur Seiwa Gengi il y a 700 ans.
-          Il y a peinne 100ans Votre clan dominait Tokushima, Awaji, Kawaga et même jusqu''e Settsu sur Honshu. Mais assassinats et guerres fratricides vous on fait perdre la face.
+          Vous venez d’une illustre famille sur le déclin. Vous êtes capable de tracé vos racines jusqu’a la lignée de l’empereur Seiwa Gengi il y a 700 ans.
+          Il y a peinne 100ans Votre clan dominait Tokushima, Awaji, Kawaga et même jusqu’e Settsu sur Honshu. Mais assassinats et guerres fratricides vous on fait perdre la face.
           Désormais vous êtes un clan vasal des Chōsokabe, mais plus pour longtemps la mort de Kunichika Chōsokabe, accompagné de son vassal Fujitaka Hosokawa ont laissé une faille.
-          Il ne vous reste plus qu''à bien jouer vos cartes pour profiter de la faiblesse du clan Chōsokabe, vous avez 5 ans devant vous avant que Motochika soit asser agé pour gouverner seul.
+          Il ne vous reste plus qu’à bien jouer vos cartes pour profiter de la faiblesse du clan Chōsokabe, vous avez 5 ans devant vous avant que Motochika soit asser agé pour gouverner seul.
           Peut-être est-ce le temps du renouveau.'
     ),
     ('Murai', 'Wako (和光)', --
@@ -182,32 +182,37 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
 ;
 
 INSERT INTO zones (name, description) VALUES
-      ('Cote Ouest d''Echime', 'La porte vers l''ile de Kyushu')
-    , ('Montagnes d''Echime', 'Entourant le pic Ishizuchi cette chaine de montagne est sacrée.')
-    , ('Cap sud de Kochi', 'Ressource Fer, gare à l''océan pacific')
+      ('Cote Ouest d’Echime', 'La porte vers l’ile de Kyushu')
+    , ('Montagnes d’Echime', 'Entourant le pic Ishizuchi cette chaine de montagne est sacrée.')
+    , ('Cap sud de Kochi', 'Ressource Fer, gare à l’océan pacific')
     , ('Grande Baie de Kochi', 'Siege du clan Chōsokabe')
-    , ('Vallées d''Iya et d''Oboké de Tokushima', 'Ressource Thé')
+    , ('Vallées d’Iya et d’Oboké de Tokushima', 'Ressource Thé')
     , ('Cote Est de Tokushima', 'Siege du clan Miyoshi')
     , ('Prefecture de Kagawa', 'Ressource Cheval')
-    , ('Ile de Awaji', 'La porte vers Honshu et la capitale, gare au vent')
+    , ('Ile d’Awaji', 'La porte vers Honshu et la capitale, gare au vent')
     , ('Ile de Shödoshima', ' Refuge des pirates Wako, gare a la paresse ')
     , ('Cité Impériale de Kyoto', 'Parce que les intrigues de cours ne sont jamais loin')
 ;
 
-/*
+
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
 -- Insert the data
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-    ('Port d''Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d''Echime))
-    , ('Port d''Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d''Echime))
-    , ('Port de Matsuyama', '', 0, (SELECT ID FROM zones WHERE name = 'Montagnes d''Echime'))
-    , ('Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d''Echime'))
-    , ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso'))
-    , ('Facolta di Ingegneria', '', 6, (SELECT ID FROM zones WHERE name = 'Fortezza Basso'))
-    , ('Gare/Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella'))
-    , ('Balistero','', 0, (SELECT ID FROM zones WHERE name = 'Santa Maria Novella'))
+    ('Port d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
+    , ('Plaine d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
+    , ('Port de Matsuyama', '', 0, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
+    , ('Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
+    , ('Mine de fer de Kubokawa', '', 8, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'))
+    , ('Port de Kochi', '', 0, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'))
+    , ('Ikeda', '', 0, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
+    , ('Oboke', '', 8, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
+    , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
+    , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'))
+    , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+    , ('Les geoles impériales', '', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
-*/
+
 
 -- Table of Fixed Power Types used by code
 INSERT INTO power_types (id, name, description) VALUES
@@ -221,14 +226,14 @@ INSERT INTO power_types (id, name, description) VALUES
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Cheval Kagawa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }')
     , ('Armure en fer de Kochi', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
-    , ('Thé d''Oboké et d''Iya', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
+    , ('Thé d’Oboké et d’Iya', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
     , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Kagawa'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Kochi'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d''Oboké et d''Iya'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké et d’Iya'))
 ;
 
 UPDATE config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''

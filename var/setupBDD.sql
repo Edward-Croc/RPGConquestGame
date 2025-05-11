@@ -29,7 +29,7 @@ VALUES
     ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
-    ('basePowerNames', '''power2'',''power2''', 'List of Powers accessible to all workers'),
+    ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
     -- worker creation
     ('turn_recrutable_workers', '1', 'Number of workers recrutable per turn'),
     ('turn_firstcome_workers', '1', 'Number of worker recrutable by firstcome pick per turn'),
