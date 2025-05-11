@@ -240,12 +240,14 @@ INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Kagawa'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Kochi'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké et d’Iya'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Encens Coréen'))
 ;
 
 UPDATE config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''
 WHERE name = 'basePowerNames';
+
 --https://fr.wikipedia.org/wiki/Ashigaru
-INSERT INTO powers ( name, enquete, attack, defence) VALUES
+INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
     -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),
@@ -257,50 +259,76 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
     -- ('', -1,2,2), ('', 2,-1,1), ('', 2,2,-1),
     -- ('', 1,1,1),
     -- Basiques
-    ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 1,1)
-    ,('Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)', 0, 2,0)
-    ,('Shodō (書道) – Calligraphie', 1, 1,0)
-    ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 1, 0,1)
+    ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 1,1,
+      ', l’utilisation du yari à pied ou à cheval' )
+    ,('Kyūjutsu (弓術) – Art du tir à l’arc', 0, 2,0,
+      ', ancien kyūdō)' )
+    ,('Shodō (書道) – Calligraphie', 1, 1,0,
+      ', le maniement du pinceau, reflet de l’esprit' )
+    ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 1, 0,1,
+      ', pratiqué pour l’harmonie intérieure' )
 
     -- Samouraï Chōsokabe
-    ,('Kenjutsu (剣術) – Art du sabre', 0, 2,1) 
-    ,('Heihō (兵法) – Stratégie militaire', 1, 1,1)
-    ,('Waka (和歌) – Poésie classique', 2, 0,0)
+    ,('Kenjutsu (剣術) – Art du sabre', 0, 2,1,
+      ', la pratique du katana en combat' )
+    ,('Heihō (兵法) – Stratégie militaire', 1, 1,1,
+      ', l’étude de la tactique, souvent influencée par les textes chinois comme le Sun Tzu' )
+    ,('Waka (和歌) – Poésie classique', 2, 0,0,
+      ', plus ancienne que le haïku, utilisée dans les échanges lettrés et parfois politiques' )
 
     -- Miyoshi Samouraï
-    ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 3,2)
-    ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1)
-    ,('Gagaku (雅楽) – Musique de cour', 2, 0,0)
+    ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 3,2,
+      ', le développement après l’introduction des mousquets portugais vers 1543' )
+    ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1,
+      ', inclut la cavalerie et le tir à l’arc monté' )
+    ,('Gagaku (雅楽) – Musique de cour', 2, 0,0,
+      ', peu courante chez les samouraïs de terrain, mais appréciée dans les cercles aristocratiques ou les familles cultivées' )
 
     -- Samouraï Hosokawa
-    ,('Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement', 0, 2,1)
-    ,('Bugaku (舞楽) – Danse de cour', 1, 1,1)
-    ,('Chadō (茶道) – Voie du thé', 2, -1,1)
+    ,('Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement', 0, 2,1,
+      '' )
+    ,('Bugaku (舞楽) – Danse de cour', 1, 1,1,
+      ', parfois pratiquée dans le cadre de cérémonies religieuses ou impériales' )
+    ,('Chadō (茶道) – Voie du thé', 2, -1,1,
+      ', cérémonie du thé comme forme de discipline spirituelle et esthétique' )
 
     -- Ikkō-ikki
-    ,('Jūjutsu (柔術) – Techniques de lutte à mains nues', 0, 1,2)
-    ,('Ninjutsu (忍術) – Techniques d’espionnage et de guérilla', 2, 1,-1)
-    ,('Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques', 1, 0,2)
+    ,('Jūjutsu (柔術) – Techniques de lutte à mains nues', 0, 1,2,
+      ', techniques de projection, immobilisation, étranglement ou désarmement' )
+    ,('Ninjutsu (忍術) – Techniques d’espionnage et de guérilla', 2, 1,-1,
+      'moins honorable, mais parfois utilisé par certains samouraïs ou leurs agents' )
+    ,('Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques', 1, 0,2,
+      '' )
 
     -- Moines Bouddhistes
-    ,('Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu', 0, 2,1)
-    ,('Naginatajutsu (薙刀術) – Art de la hallebarde', 0, 1,2)
-    ,('Haikai / Haiku (俳諧 / 俳句) – Poésie courte', 2, 0,0)
+    ,('Yawara (和) – Ancienne forme de techniques de soumission', 0, 2,1,
+        ', liée au jūjutsu')
+    ,('Naginatajutsu (薙刀術) – Art de la hallebarde', 0, 1,2,
+      '' )
+    ,('Haikai / Haiku (俳諧 / 俳句) – Poésie courte', 2, 0,0,
+      ', forme brève, souvent liée à la nature et à la spiritualité zen' )
 
     -- Kaizokushū Pirates
-    ,('Tantōjutsu (短刀術) – Combat au couteau', 0, 2,1)
-    ,('Shigin (詩吟) – Chant poétique', 2, 0,0)
-    ,('Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer', 0, 1,2)
+    ,('Tantōjutsu (短刀術) – Combat au couteau', 0, 2,1,
+      ', surtout utilisé en combat rapproché ou en cas de désarmement' )
+    ,('Shigin (詩吟) – Chant poétique', 2, 0,0,
+      ', récitation chantée de poèmes chinois ou japonais, souvent associé à une posture noble et une pratique méditative' )
+    ,('Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer', 0, 1,2,
+      ', pratiqué par les samouraïs, notamment lorsqu’ils étaient désarmés, en visite à la cour ou dans des lieux où le port du sabre était interdit'
+    )
 
     -- Yōkai 
-    ,('Kōdō (香道) – Voie de l’encens', 2, 0,0)
-    ,('Kagenkō (影言講) – L’art de la parole de l’ombre', 1, 1,1)
-    ,('Kagekui-ryū (影喰流) – École du Mange-Ombre', 0, 2,2)
+    ,('Kōdō (香道) – Voie de l’encens', 2, 0,0,
+      ', art de « sentir » et d’apprécier les parfums rares dans des rituels très codifiés' )
+    ,('Kagenkō (影言講) – L’art de la parole de l’ombre', 1, 1,1,
+      ', art oratoire utilisé par les yōkai pour semer la confusion ou manipuler les humains en jouant avec les doubles sens, les murmures et les voix venues des ténèbres' )
+    ,('Kagekui-ryū (影喰流) – École du Mange-Ombre', 0, 2,2, 
+     ', art martial occulte / discipline hybride entre ninjutsu et pratiques yōkai' )
 ;
 
 INSERT INTO link_power_type (power_type_id, power_id) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Sōjutsu (槍術) – Art de la lance (Yari)')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kyūjutsu (弓術) – Art du tir à l’arc (ancien kyūdō)')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kyūjutsu (弓術) – Art du tir à l’arc')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Shodō (書道) – Calligraphie')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kadō / Ikebana (華道 / 生け花) – Art floral')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kenjutsu (剣術) – Art du sabre')),
@@ -315,7 +343,7 @@ INSERT INTO link_power_type (power_type_id, power_id) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Yawara (和) – Ancienne forme de techniques de soumission')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Naginatajutsu (薙刀術) – Art de la hallebarde')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tantōjutsu (短刀術) – Combat au couteau')),
@@ -403,7 +431,7 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Yawara (和) – Ancienne forme de techniques de soumission, liée au jūjutsu'
+        WHERE powers.name = 'Yawara (和) – Ancienne forme de techniques de soumission'
     )),
     ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
