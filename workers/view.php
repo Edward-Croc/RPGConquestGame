@@ -101,7 +101,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 echo sprintf('<div class="history">
                     <h3>Historique : </h3>
                     <p>
-                        Originaire de %1$s, c\'etait un %2$s et il est un %3$s <br />
+                        Originaire de %1$s, '.getConfig($gameReady, 'worker_view_job_hobby_text').' <br />
                         %4$s %5$s
                     </p></div>',
                     $worker['origin_name'],

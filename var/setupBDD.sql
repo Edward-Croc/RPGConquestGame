@@ -38,10 +38,13 @@ VALUES
     ('recrutement_nb_choices', '3', 'Number of choices presented for recrutment'),
     ('recrutement_origin_list', '1,2,3,4,5', 'Origins used for worker generation'),
     ('local_origin_list', '1', 'Spécific list of local origins for investigations textes'),
+    ('recrutement_job_hobby_text', '%4$s, %5$s', 'string to present hobby %4$s and job %5$s on recrutement'),
     -- ('recrutement_hobby', '1', 'Number of hobbies added on generation'),
     -- ('recrutement_metier', '1', 'Number of jobs added on generation'),
     ('recrutement_disciplines', '1', 'Number of disciplines allowed on recrutment'),
     ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
+    -- Worker view
+    ('worker_view_job_hobby_text','c’etait un %3$s et il est un %2$s', 'string to present hobby %2$s and job %3$s view of worker'),
     -- Worker experience
     -- ('age_hobby', 'FALSE', ' If hobbys can be gained with AGE'),
     -- ('age_metier', 'FALSE', 'If jobs can be gained with AGE'),

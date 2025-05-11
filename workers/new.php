@@ -116,7 +116,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     <form action="/RPGConquestGame/workers/action.php" method="GET">
         <p>
         %1$s  %2$s de %3$s <br />
-        %4$s, %5$s  <br />
+        '.getConfig($gameReady, 'recrutement_job_hobby_text').' <br />
         <!-- Hidden inputs -->
         <input type="hidden" name="creation" value="true">
         <input type="hidden" name="firstname" value="%1$s">
