@@ -1,75 +1,128 @@
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-        }
-        .header h1 {
-            margin: 0;
-        }
-        .topbar-btn {
-            background-color: #4936f4;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .topbar-btn:hover {
-            background-color: #4936f4e0;
-        }
-        .logout-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .logout-btn:hover {
-            background-color: #d32f2f;
-        }
-        .content {
-            height: calc(100vh - 40px); /* Adjust based on header height */
-            background-color: #f2f2f2;
-        }
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
 
-        .intro {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-        }
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 25px 20px;
+}
+.topbar-btn {
+    background-color: #4936f4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+}
+.topbar-btn:hover {
+    background-color: #4936f4e0;
+}
+.logout-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+}
+.logout-btn:hover {
+    background-color: #d32f2f;
+}
+.content {
+    height: calc(100vh - 40px); /* Adjust based on header height */
+    background-color: #f2f2f2;
+}
 
-        .flex { display: flex; }
+.intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+}
 
-        .workers, .zones, .factions, .config, .mecanics {
-            flex: 1;
-            padding: 20px;
-        }
-        .workers {
-            background-color: #c3e5f8;
-        }
-        .zones, .factions { 
-            background-color: #f8c3c3;
-        }
-        
-        .config, .mecanics {
-            display: block;
-            padding: 20px;
-        }
+.flex { display: flex; }
+
+.workers, .zones, .factions, .config, .mecanics {
+    flex: 1;
+    padding: 20px;
+}
+.workers {
+    background-color: #c3e5f8;
+}
+.zones, .factions { 
+    background-color: #f8c3c3;
+}
+
+.config, .mecanics {
+    display: block;
+    padding: 20px;
+}
+
+
+/* Sidebar Styles */
+.sidebar {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 10;
+    top: 0;
+    left: 0;
+    background-color: #333;
+    overflow-x: hidden;
+    transition: 0.4s;
+    padding-top: 60px;
+}
+.sidebar a, .sidebar div {
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 18px;
+    color: white;
+    display: block;
+    transition: 0.2s;
+}
+.sidebar a:hover {
+    background-color: #575757;
+}
+.sidebar .closebtn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 24px;
+}
+.openbtn {
+    font-size: 20px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    position: fixed;
+    top: 5px;
+    left: 5px;
+    z-index: 11;
+}
+.sidebar.active {
+    width: 250px;
+}
+
+
+/* Phone setup */
+
+@media (max-width: 768px) {
+    
+
+}

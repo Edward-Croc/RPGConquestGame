@@ -27,6 +27,10 @@
         });
     });
 
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+
     function toggleDescription(id) {
         const description = document.getElementById('description-' + id);
         if (description.style.display === 'none') {

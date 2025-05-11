@@ -19,11 +19,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 </head>
 <body class='content'>
     <div class="header">
+        <!-- OLD HEADDER 
         <?php echo sprintf('
             <div>
                 <h1 id="gameTitle"> %s </h1>
                 <div id="endTurnCounter">
-                    <!-- This is where the current end turn count will be displayed -->
                     %s %s
                 </div>
             </div>',
@@ -51,8 +51,37 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             ?>
             <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
         </div>
-        <!-- TODO : Add rollout side bar for acces to Worker page, Zone page, Controler page, Game system page -->
+        -->
     </div>
+    <!-- Sidebar MENU -->
+    <div id="sidebar" class="sidebar">
+        <?php echo sprintf('<div> %s %s</div>', 
+            ucfirst(getConfig($gameReady, 'time_value')), $mecanics['turncounter']
+            ); 
+            if (!empty($_SESSION['controler']['firstname']))
+                echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
+        ?>
+        <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
+        <a href="/RPGConquestGame/base/accueil.php">Accueil</a>
+        <a href="/RPGConquestGame/workers/action.php">Agent</a>
+        <a href="/RPGConquestGame/zones/action.php">Zones</a>
+        <a href="/RPGConquestGame/controlers/action.php">Controlers</a>
+        <a href="/RPGConquestGame/base/system_presentation.php">Game System</a>
+        <?php
+            if ($_SESSION['is_privileged'] == true){
+                echo sprintf ('<a href="/RPGConquestGame/mecanics/end_turn.php" class="topbar-btn">%s</a>', ($mecanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
+                if ($pageName !== 'admin') {
+                    echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
+                }
+            }
+            if ($pageName !== 'accueil') {
+                echo '<a href="/RPGConquestGame/index.php" class="topbar-btn">Retour</a>';
+            }
+        ?>
+        <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
+    </div>
+    <!-- Sidebar Toggle Button -->
+    <span class="openbtn" onclick="toggleSidebar()"> <?php echo sprintf('☰ %s',$gameTitle); ?></span>
 <?php
     require_once '../base/base_script.php';
 ?>
