@@ -75,7 +75,7 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
  * returns
  * array() | NULL
  */
-function has_base ($pdo, $controler_id) {
+function has_base($pdo, $controler_id) {
 
     $sql = "SELECT zone_id FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
     try{
