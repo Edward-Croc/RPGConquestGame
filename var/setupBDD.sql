@@ -27,6 +27,7 @@ VALUES
     ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
     ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
+    ('DEBUG_ZONE', 'false', 'Activates the Debugging texts for the zones page'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
