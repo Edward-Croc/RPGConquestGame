@@ -65,10 +65,10 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Tetsubō (鉄棒) — Masse de guerre en fer', ', capable d’écraser les armures, prisée par les moines-soldats', -1, 2,1),
 
     -- ('', 1,1,-1), => Glass cannons
-    ('Inrō (印籠) – Une petite boîte à la ceinture', ', utilisée pour transporter des médicaments, du poison, ou de minuscules outils', 1, 1,-1,),
-    ('Kanzashi (簪) – Épingles à cheveux', ', parfois dotées de fonctions symboliques ou défensives', 1, 1,-1,),
-    ('Yakuyō bako (薬用箱) – Boîte à remèdes', ', contenant des plantes médicinales', 1, 1,-1,),
-    ('Shōyaku fukuro (生薬袋) – Sachets de plantes', ', à infuser ou brûler à des fins curatives', 1, 1,-1,),
-    ('Zudabukuro (頭陀袋) – Une besace de pèlerin', ', utile pour transporter discrètement messages, herbes médicinales ou objets de culte', 1, 1,-1,),
-    ('Kiseru (煙管) – Une pipe à tabac', ', parfois modifiée pour dissimuler des messages roulés ou une poudre soporifique', 1, 1,-1,)
+    ('Inrō (印籠) – Une petite boîte à la ceinture', ', utilisée pour transporter des médicaments, du poison, ou de minuscules outils', 1, 1,-1),
+    ('Kanzashi (簪) – Épingles à cheveux', ', parfois dotées de fonctions symboliques ou défensives', 1, 1,-1),
+    ('Yakuyō bako (薬用箱) – Boîte à remèdes', ', contenant des plantes médicinales', 1, 1,-1),
+    ('Shōyaku fukuro (生薬袋) – Sachets de plantes', ', à infuser ou brûler à des fins curatives', 1, 1,-1),
+    ('Zudabukuro (頭陀袋) – Une besace de pèlerin', ', utile pour transporter discrètement messages, herbes médicinales ou objets de culte', 1, 1,-1),
+    ('Kiseru (煙管) – Une pipe à tabac', ', parfois modifiée pour dissimuler des messages roulés ou une poudre soporifique', 1, 1,-1)
 ;
