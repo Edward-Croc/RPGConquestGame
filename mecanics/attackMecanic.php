@@ -72,11 +72,13 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                     if ($debug)
                         echo sprintf("networkWorkersList : %s <br/>", var_export($networkWorkersList, true));
                     foreach($networkWorkersList AS $woker_id){
-                        $attackArray[$attackAction['attacker_id']][] = $woker_id;
+                        if (!in_array($woker_id, $attackArray[$attackAction['attacker_id']]) ) {
+                            $attackArray[$attackAction['attacker_id']][] = $woker_id;
+                        }
                     }
                 // If the attacker choses a specific target
                 } elseif ($param['attackScope'] == 'worker') {
-                    if (!in_array($param['attackID'], $attackArray) ) {
+                    if (!in_array($param['attackID'], $attackArray[$attackAction['attacker_id']]) ) {
                         $attackArray[$attackAction['attacker_id']][] = $param['attackID'];
                     }
                 }
@@ -120,7 +122,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         FROM workers w
         JOIN zones z ON z.id = w.zone_id
         JOIN worker_actions wa ON
-            w.id = wa.worker_id AND wa.turn_number = :turn_number
+            w.id = wa.worker_id AND wa.turn_number = :turn_number AND wa.action_choice not in ('captured', 'dead')
         JOIN worker_origins wo ON wo.id = w.origin_id
         JOIN controler_worker cw ON w.id = cw.worker_id AND is_primary_controler = true
             WHERE w.id IN (%s)
@@ -312,7 +314,7 @@ function attackMecanic($pdo){
             '<p>L\'assaut de %1$s n\'a pas eu le résultat escompté, je suis parvenu à m\'enfuir indemne.</p>'
     );
     $attackFailedAndCountered = array(
-        '<p>Je part mettre en route le plan d\assassinat de %s.</p>',
+        '<p>Je part mettre en route le plan d\'assassinat de %s.</p>',
         '<p>Début de la mission : %s. [Le rapport n\'as jamais été terminer.]</p>'
     );
     $counterAttackTexts = array(
@@ -406,6 +408,10 @@ function attackMecanic($pdo){
                 updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $defenderReport);
                 updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attackerReport );
             }
+            if ($debug)
+                echo sprintf("RIPOSTACTIVE : %s <br/> survived : %s <br/> RIPOSTONDEATH : %s <br/>", (BOOL)$RIPOSTACTIVE, $survived, (BOOL)$RIPOSTONDEATH);
+            if ($debug)
+                echo sprintf("(survived || (BOOL)RIPOSTONDEATH) : %s <br/>", ($survived || (BOOL)$RIPOSTONDEATH));
             if ((BOOL)$RIPOSTACTIVE && ($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                 echo $defender['defender_name']. ' RIPOSTE !';
                 $attackerReport['attack_report'] = sprintf($attackFailedAndCountered[array_rand($attackFailedAndCountered)], $defender['defender_name']);
