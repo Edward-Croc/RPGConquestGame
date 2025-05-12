@@ -43,6 +43,7 @@ require_once '../base/base_html.php';
             // and advance turn counter
             if ($attackResult &&  $investigateResult && $claimResult && $IAResult && $locationsearchResult) {
                 $turnLinesResult = createNewTurnLines($gameReady, $turn);
+                $restartRecrutementCount = restartTurnRecrutementCount($gameReady);
 
                 // Advance Turn counter
                 try{

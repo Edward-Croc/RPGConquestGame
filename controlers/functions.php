@@ -66,6 +66,20 @@ function showControlerSelect($controlers, $field_name = 'controler_id' ) {
     return $showControlerSelect;
 }
 
+/** This function resets the turn_recruted_workers and turn_firstcome_workers to 0 for every controler */
+function  restartTurnRecrutementCount($pdo){
+    $sql = 'UPDATE controlers SET turn_firstcome_workers=0, turn_recruted_workers=0 WHERE TRUE';
+    try{
+        // Update config value in the database
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        return TRUE;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+}
+
 /**
  * This function returns an array of all bases a controler has or a NULL
  * 
