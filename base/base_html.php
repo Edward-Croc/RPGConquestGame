@@ -62,8 +62,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
         ?>
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
-        <a href="/RPGConquestGame/base/accueil.php">Accueil</a>
-        <a href="/RPGConquestGame/workers/action.php">Agent</a>
+        <?php if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; ?>
+        <a href="/RPGConquestGame/workers/action.php">Agents</a>
         <a href="/RPGConquestGame/zones/action.php">Zones</a>
         <a href="/RPGConquestGame/controlers/action.php">Controlers</a>
         <a href="/RPGConquestGame/base/system_presentation.php">Game System</a>
@@ -73,9 +73,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 if ($pageName !== 'admin') {
                     echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
                 }
-            }
-            if ($pageName !== 'accueil') {
-                echo '<a href="/RPGConquestGame/index.php" class="topbar-btn">Retour</a>';
             }
         ?>
         <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
