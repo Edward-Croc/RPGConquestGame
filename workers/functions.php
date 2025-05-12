@@ -705,7 +705,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
                     $enemyWorker['discovered_controler_name'],
                 );
             }
-            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['id'],  $enemyWorker['name']);
+            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
     $enemyWorkersSelect = sprintf("
