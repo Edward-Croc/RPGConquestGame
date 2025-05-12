@@ -295,7 +295,7 @@ function investigateMecanic($pdo ) {
                 'Je me suis rendu compte que %1$s, que je prenais pour un simple %3$s, %4$s dans le coin. %9$s',
                 'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a en réalité des pouvoirs de %6$s, ce qui en fait un %2$s un peu trop spécial%8$s. '
             ],[
-                'On a suivi %1$s parce qu\'on l\'a repéré en train de %4$s, ce qui nous a mis la puce à l\'oreille. C\'est normalement un %2$s mais on a découvert qu\'il était aussi %3$s. ',
+                'On a suivi %1$s parce qu\'on l\'a repéré en train de %5$s, ce qui nous a mis la puce à l\'oreille. C\'est normalement un %2$s mais on a découvert qu\'il était aussi %3$s. ',
                 '%9$sCela dit, le vrai problème, c\'est qu\'il semble maîtriser %6$s, au moins partiellement%8$s. ',
         ]];
         // ! (transformation0)
