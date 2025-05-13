@@ -134,28 +134,19 @@ function gameReady() {
 
 
                 if ( isset($_POST['config_name']) ) {
-
-                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_base.sql';
-                    echo "Loading $sqlFile ...<br />";
-                    if (file_exists($sqlFile)) {
-                        echo 'Start <br />';
-                        // Read SQL file
-                        $sqlQueries = file_get_contents($sqlFile);
-                        // Execute SQL queries
-                        $pdo->exec($sqlQueries);
-                        echo "SQL file $sqlFile executed successfully.<br />";
-                    } else echo "SQL file $sqlFile UNFOUND.<br />";
-
-                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_worker_names.sql';
-                    echo "Loading $sqlFile ...<br />";
-                    if (file_exists($sqlFile)) {
-                        echo 'Start <br />';
-                        // Read SQL file
-                        $sqlQueries = file_get_contents($sqlFile);
-                        // Execute SQL queries
-                        $pdo->exec($sqlQueries);
-                        echo "SQL file $sqlFile executed successfully.<br />";
-                    } else echo "SQL file $sqlFile UNFOUND.<br />";
+                    $fileNames = ['base', 'textes', 'worker_names'];
+                    foreach ( $fileNames as $fileName ) {
+                        $sqlFile =  sprintf('%s/var/setup%s_%s.sql',  $path, $_POST['config_name'], $fileName);
+                        echo "Loading $sqlFile ...<br />";
+                        if (file_exists($sqlFile)) {
+                            echo 'Start <br />';
+                            // Read SQL file
+                            $sqlQueries = file_get_contents($sqlFile);
+                            // Execute SQL queries
+                            $pdo->exec($sqlQueries);
+                            echo "SQL file $sqlFile executed successfully.<br />";
+                        } else echo "SQL file $sqlFile UNFOUND.<br />";
+                    }
 
                     $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_hobbys.sql';
                     echo "Loading $sqlFile ...<br />";
