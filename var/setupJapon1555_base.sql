@@ -147,7 +147,7 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player0'),
         (SELECT ID FROM controlers WHERE lastname in ('Shikoku (四国)'))
-    ), -- player1 controls  Angelo Ricciotti/Antonio Mazzino,
+    ),
     (
         (SELECT ID FROM players WHERE username = 'player1'),
         (SELECT ID FROM controlers WHERE lastname = 'Chōsokabe (長宗我部)')
