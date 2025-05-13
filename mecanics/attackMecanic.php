@@ -258,74 +258,74 @@ function attackMecanic($pdo){
     $disapearenceTextes = array(
         '<p>Cet agent a disparu sans laisser de trace à partir '.$timeTextOfThe.' '.$timeText.' %s.</p>',
         '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, plus aucun signal ni message de cet agent.</p>',
-        '<p>La connexion avec l\'agent s\'est perdue la '.$timeTextThe.' '.$timeText.' %s, et nous ignorons où il se trouve.</p>',
-        '<p>À partir '.$timeTextOfThe.' '.$timeText.' %s, cet agent semble s\'être volatilisé dans la nature.</p>',
+        '<p>La connexion avec l’agent s’est perdue la '.$timeTextThe.' '.$timeText.' %s, et nous ignorons où il se trouve.</p>',
+        '<p>À partir '.$timeTextOfThe.' '.$timeText.' %s, cet agent semble s’être volatilisé dans la nature.</p>',
         '<p>Nous avons perdu toute communication avec cet agent depuis '.$timeTextThe.' '.$timeText.' %s.</p>',
         '<p>La dernière trace de cet agent remonte à '.$timeTextThe.' '.$timeText.' %s, depuis il est aux abonnés absents.</p>',
         '<p>'.ucfirst($timeTextThe).' '.$timeText.' %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>',
-        '<p>L\'agent s\'est évanoui dans la nature après '.$timeTextThe.' '.$timeText.' %s. Aucune nouvelle depuis.</p>',
+        '<p>L’agent s’est évanoui dans la nature après '.$timeTextThe.' '.$timeText.' %s. Aucune nouvelle depuis.</p>',
         '<p>Depuis '.$timeTextThe.' '.$timeText.' %s, cet agent est un fantôme, insaisissable et introuvable.</p>',
         '<p>'.ucfirst($timeTextThe).' '.$timeText.' %s signe le début du silence radio complet de cet agent.</p>'
     );
     $attackSuccessTextes = array(
-        '<p>J\'ai pu mener à bien ma mission sur %1$s son silence est assuré.</p>',
-        '<p>J\'ai accompli l\'attaque sur %1$s, il a trouvé son repos final.</p>',
-        '<p>Notre cible %1$s as été accompatgner a l\'hopital dans un état critique, nous n\avons plus rien à craindre.</p>',
-        '<p>Il y aura un succidé retrouvé dans l\Arno demain, %1$s n\'est plus des notres.</p>',
+        '<p>J’ai pu mener à bien ma mission sur %1$s son silence est assuré.</p>',
+        '<p>J’ai accompli l’attaque sur %1$s, il a trouvé son repos final.</p>',
+        '<p>Notre cible %1$s as été accompatgner a l’hopital dans un état critique, nous n\avons plus rien à craindre.</p>',
+        '<p>Il y aura un succidé retrouvé dans l\Arno demain, %1$s n’est plus des notres.</p>',
         '<p>Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel.</p>',
         '<p>Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.</p>',
-        '<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l\'histoire.</p>'
+        '<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>'
     );
     $captureSuccessTextes = array(
         '<p>La mission est un succès total %1$s est désormais entre nos mains et nous allons le questionner.</p>',
-        '<p>La mission s\'est déroulée comme prévu : %1$s est capturé et prêt à livrer ses secrets.</p>',
-        '<p>Succès complet sur %1$s, il est désormais sous notre garde et n\'aura d\'autre choix que de parler.</p>',
-        '<p>Nous avons maîtrisé %1$s, il est maintenant entre nos mains, prêt pour l\'interrogatoire.</p>',
+        '<p>La mission s’est déroulée comme prévu : %1$s est capturé et prêt à livrer ses secrets.</p>',
+        '<p>Succès complet sur %1$s, il est désormais sous notre garde et n’aura d’autre choix que de parler.</p>',
+        '<p>Nous avons maîtrisé %1$s, il est maintenant entre nos mains, prêt pour l’interrogatoire.</p>',
         '<p>Mission accomplie : %1$s est capturé et en sécurité pour un débriefing approfondi.</p>',
-        '<p>L\'objectif %1$s est neutralisé et sous notre contrôle. L\'interrogatoire peut commencer.</p>',
-        '<p>Nous avons pris %1$s sans heurt : il est désormais à notre merci pour un échange d\'informations.</p>',
+        '<p>L’objectif %1$s est neutralisé et sous notre contrôle. L’interrogatoire peut commencer.</p>',
+        '<p>Nous avons pris %1$s sans heurt : il est désormais à notre merci pour un échange d’informations.</p>',
         '<p>Le succès est total : %1$s est retenu, et ses paroles seront bientôt nôtres.</p>',
         '<p>Mission terminée avec brio : %1$s est capturé et ne nous échappera plus.</p>'
     );
     $failedAttackTextes = array(
         '<p>Malheureusement, %1$s a réussi à nous échapper et reste en vie.</p>',
-        '<p>L\'opération contre %1$s a échoué. La cible a survécu et demeure une menace.</p>',
-        '<p>Notre tentative contre %1$s s\'est soldée par un échec. Il est toujours actif.</p>',
-        '<p>L\'attaque n\'a pas atteint son objectif : %1$s a survécu et garde sa liberté.</p>',
-        '<p>Nous n\'avons pas pu neutraliser %1$s. Il reste introuvable après l\'affrontement.</p>',
+        '<p>L’opération contre %1$s a échoué. La cible a survécu et demeure une menace.</p>',
+        '<p>Notre tentative contre %1$s s’est soldée par un échec. Il est toujours actif.</p>',
+        '<p>L’attaque n’a pas atteint son objectif : %1$s a survécu et garde sa liberté.</p>',
+        '<p>Nous n’avons pas pu neutraliser %1$s. Il reste introuvable après l’affrontement.</p>',
         '<p>La mission a été un revers : %1$s est toujours debout et hors de notre portée.</p>',
-        '<p>Malgré nos efforts, %1$s s\'est défendu avec succès et a réussi à fuir.</p>',
-        '<p>Notre assaut n\'a pas suffi : %1$s a survécu et continue d\'agir.</p>',
-        '<p>La cible %1$s s\'est montrée plus résistante que prévu. Elle a échappé à notre emprise.</p>',
+        '<p>Malgré nos efforts, %1$s s’est défendu avec succès et a réussi à fuir.</p>',
+        '<p>Notre assaut n’a pas suffi : %1$s a survécu et continue d’agir.</p>',
+        '<p>La cible %1$s s’est montrée plus résistante que prévu. Elle a échappé à notre emprise.</p>',
         '<p>Nous avons échoué à neutraliser %1$s. Il demeure vivant et peut encore riposter.</p>'
     );
     $escapeTextes = array(
-            '<p>J\'ai été pris pour cible par %1$s, mais j\'ai réussi à leur échapper de justesse.</p>',
-            '<p>Une attaque orchestrée par %1$s a failli m\'avoir, mais j\'ai pu me faufiler hors de leur portée.</p>',
-            '<p>L\'embuscade tendue par %1$s n\'a pas suffi à me retenir, j\'ai pu m\'échapper.</p>',
-            '<p>J\'ai croisé %1$s sur ma route, ils ont tenté de m\'intercepter, mais j\'ai fui avant qu\'il ne soit trop tard.</p>',
-            '<p>L\'attaque de %1$s a échoué, je suis sain et sauf et hors de danger.</p>',
-            '<p>Un assaut surprise de %1$s m\'a pris au dépourvu, mais j\'ai esquivé leurs griffes à temps.</p>',
-            '<p>Malgré une attaque menée par %1$s, j\'ai gardé mon calme et trouvé un chemin pour m\'échapper.</p>',
-            '<p>J\'ai senti %1$s venir et, bien qu\'ils m\'aient surpris, j\'ai su échapper à leur piège.</p>',
+            '<p>J’ai été pris pour cible par %1$s, mais j’ai réussi à leur échapper de justesse.</p>',
+            '<p>Une attaque orchestrée par %1$s a failli m’avoir, mais j’ai pu me faufiler hors de leur portée.</p>',
+            '<p>L’embuscade tendue par %1$s n’a pas suffi à me retenir, j’ai pu m’échapper.</p>',
+            '<p>J’ai croisé %1$s sur ma route, ils ont tenté de m’intercepter, mais j’ai fui avant qu’il ne soit trop tard.</p>',
+            '<p>L’attaque de %1$s a échoué, je suis sain et sauf et hors de danger.</p>',
+            '<p>Un assaut surprise de %1$s m’a pris au dépourvu, mais j’ai esquivé leurs griffes à temps.</p>',
+            '<p>Malgré une attaque menée par %1$s, j’ai gardé mon calme et trouvé un chemin pour m’échapper.</p>',
+            '<p>J’ai senti %1$s venir et, bien qu’ils m’aient surpris, j’ai su échapper à leur piège.</p>',
             '<p>Ils ont tenté de me capturer sous la conduite de %1$s, mais ma fuite a été rapide et efficace.</p>',
-            '<p>L\'assaut de %1$s n\'a pas eu le résultat escompté, je suis parvenu à m\'enfuir indemne.</p>'
+            '<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu à m’enfuir indemne.</p>'
     );
     $attackFailedAndCountered = array(
-        '<p>Je part mettre en route le plan d\'assassinat de %s.</p>',
-        '<p>Début de la mission : %s. [Le rapport n\'as jamais été terminer.]</p>'
+        '<p>Je part mettre en route le plan d’assassinat de %s.</p>',
+        '<p>Début de la mission : %s. [Le rapport n’as jamais été terminer.]</p>'
     );
     $counterAttackTexts = array(
-        '<p>%1$s m\'a attaqué, j\'ai survécu et ma riposte l\'a anéanti, j\'ai jetter son cadavre dans l\'Arno.</p>',
-        '<p>Après avoir été attaqué par %1$s, j\'ai non seulement survécu, mais ma riposte a fait saigner leur ego.</p>',
-        '<p>%1$s a cru m\'avoir, mais ma riposte a brisé leurs espoirs et les a détruits.</p>',
-        '<p>Ils ont tenté de me réduire au silence, mais après avoir survécu à l\'attaque de %1$s, j\'ai répondu avec une riposte fatale.</p>',
-        '<p>Malgré l\'assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à leurs ambitions.</p>',
-        '<p>Attaqué par %1$s, j\'ai résisté et ma riposte les a anéantis sans retour.</p>',
-        '<p>Ils ont cherché à me faire tomber, mais ma riposte après l\'attaque de %1$s a effacé toute menace.</p>',
-        '<p>L\'attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>',
+        '<p>%1$s m’a attaqué, j’ai survécu et ma riposte l’a anéanti, j’ai jetter son cadavre dans l’Arno.</p>',
+        '<p>Après avoir été attaqué par %1$s, j’ai non seulement survécu, mais ma riposte a fait saigner leur ego.</p>',
+        '<p>%1$s a cru m’avoir, mais ma riposte a brisé leurs espoirs et les a détruits.</p>',
+        '<p>Ils ont tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu avec une riposte fatale.</p>',
+        '<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à leurs ambitions.</p>',
+        '<p>Attaqué par %1$s, j’ai résisté et ma riposte les a anéantis sans retour.</p>',
+        '<p>Ils ont cherché à me faire tomber, mais ma riposte après l’attaque de %1$s a effacé toute menace.</p>',
+        '<p>L’attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>',
         '<p>Je me suis retrouvé face à %1$s, mais après avoir survécu à leur attaque, ma riposte a scellé leur destin.</p>',
-        '<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu\'ils n\'aient plus rien à revendiquer.</p>'
+        '<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’ils n’aient plus rien à revendiquer.</p>'
     );
 
 
