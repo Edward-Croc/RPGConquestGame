@@ -372,7 +372,8 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
                 echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
             }
             echo $sql. "</br>";
-        } echo "Zone $key Unclaimed";
+        }
+        else { echo "Zone $key Unclaimed";}
     }
 
     echo '<p>DONE</p> </div>';
