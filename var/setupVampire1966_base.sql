@@ -1,12 +1,4 @@
 
-UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
-UPDATE config SET
-    value = '<p>Le 6 novembre 1966, l’Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d’œuvre et deplacent la population du centre ville.
-        Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.
-        Dans les jours suivant la catastrophe les forces surnaturelles reprennent doucement pied dans le la ville. Retrouverez vous votre pouvoir d’antant ?
-        </p>'
-    WHERE name = 'PRESENTATION';
-
 INSERT INTO config (name, value, description)
 VALUES
     -- MAP INFO

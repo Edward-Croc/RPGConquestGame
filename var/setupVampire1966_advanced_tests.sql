@@ -41,6 +41,7 @@ INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id, actio
 
 -- Add base powers to the workers :
 INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
+-- Matthews
     ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on powers.ID = link_power_type.power_id
@@ -66,6 +67,12 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
         JOIN powers on  powers.ID = link_power_type.power_id
         WHERE powers.name = 'Vampire nouveau né'
     )),
+    ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Goule'
+    )),
+-- Popescu
     ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
@@ -91,6 +98,12 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
         JOIN powers on  powers.ID = link_power_type.power_id
         WHERE powers.name = 'Vampire nouveau né'
     )),
+    ((SELECT ID FROM workers WHERE lastname = 'Popescu'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Goule'
+    )),
+-- Lombardi
     ((SELECT ID FROM workers WHERE lastname = 'Lombardi'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
@@ -110,6 +123,11 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
         WHERE powers.name = 'Augure'
+    )),
+    ((SELECT ID FROM workers WHERE lastname = 'Lombardi'), (
+        SELECT link_power_type.ID FROM link_power_type
+        JOIN powers on  powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Goule'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Lombardi'), (
         SELECT link_power_type.ID FROM link_power_type

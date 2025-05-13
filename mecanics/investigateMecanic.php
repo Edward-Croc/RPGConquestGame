@@ -159,13 +159,16 @@ function investigateMecanic($pdo ) {
 
         // If no report has been created yet for this worker
         if ( empty($reportArray[$row['searcher_id']]) )
-            $reportArray[$row['searcher_id']] = sprintf( "<p> Nous avons mené l'enquête dans le quartier %s.</p>", $row['zone_name'] );
+            $reportArray[$row['searcher_id']] = sprintf( getConfig($pdo,'textesStartInvestigate'), $row['zone_name'] );
         if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
 
-        $discipline = cleanAndSplitString($row['found_discipline']);
+        $disciplines = cleanAndSplitString($row['found_discipline']);
         $discipline_2 = '';
-        if (! empty($discipline[1]) )
-            $discipline_2 = sprintf("Et une maitrise de la discipline %s.", $discipline[1]);
+        $textesFoundDisciplines = json_decode(getConfig($pdo,'textesFoundDisciplines'), true);
+        foreach ($disciplines AS $key => $discipline) {
+            if ($key == 0) continue;
+            $discipline_2 .= sprintf($textesFoundDisciplines[array_rand($textesFoundDisciplines)], $discipline);
+        }
         if ($debug) echo "Prepare discipline_2 string : $discipline_2 <br>";
 
         // transformation
@@ -175,18 +178,12 @@ function investigateMecanic($pdo ) {
         $transformationTextDiff[1] = '';
         $transformationTextDiff[2] = '';
         $transformationTextDiff[3] = '';
-        $textesTransformationDiff1 = [
-            ' et nous concluons que c\'est un %s',
-            ', ce qui laisse penser que c\'est un %s',
-        ];
-        $textesTransformationDiff2 = [
-            'C\'est probablement un %s mais les preuves nous manquent encore. ',
-            'Il n\'est clairement pas normal, peut-être un %s. ',
-        ];
+        $textesTransformationDiff1 = json_decode(getConfig($pdo,'textesTransformationDiff1'), true);
+        $textesTransformationDiff2 = json_decode(getConfig($pdo,'textesTransformationDiff2'), true);        
 
-        for ($iteration = 0; $iteration < count($hidden_transformation); $iteration++) {
-            $diffval = $hidden_transformation[$iteration];
-            if ( $iteration > 0 )
+        // for ($iteration = 0; $iteration < count($hidden_transformation); $iteration++) {
+        foreach ($hidden_transformation AS $iteration => $diffval ) {
+            if ( $iteration > 0 && !empty($transformationTextDiff[$diffval]))
                 $transformationTextDiff[$diffval] .= ' et ';
             if ( $diffval == 0 || $diffval == 3)
                 $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
@@ -252,11 +249,7 @@ function investigateMecanic($pdo ) {
        $originTexte = '';
         $local_origin_list = getConfig($pdo, 'local_origin_list');
         if (!in_array($row['found_worker_origin_id'], explode(',',$local_origin_list))) {
-            $textesOrigine = [
-                "J'ai des raisons de penser qu'il est natif de %s. ",
-                "En plus, il est originaire de %s. ",
-                "Je m'en méfie, il vient de %s. "
-            ];
+            $textesOrigine = json_decode(getConfig($pdo,'textesOrigine'), true);
             $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
         }
         if ($debug) echo "Build originTexte : $originTexte <br>";
@@ -270,11 +263,12 @@ function investigateMecanic($pdo ) {
 
         // Start compiling the report
         $report = "<p>";
-
+        
         /*
+        textesDiff01Array
         (nom(id)) - %1$s
-        (metier) - %7$s/%2$s
-        (hobby) - %3$s
+        (metier/role) - %2$s
+        (hobby/objet) - %3$s
         (action_ps) - %4$s
         (action_inf) - %5$s
         (discipline) - %6$s
@@ -282,34 +276,10 @@ function investigateMecanic($pdo ) {
         (transformation1) - %8$s
         (origin_text) - %9$s
         */
-        $textesDiff01Array = [[
-                'J\'ai vu un %3$s du nom de %1$s qui %4$s dans ma zone surveillée. %9$s',
-                'C\'est à la base un %2$s mais je suis sûr qu\'il possède aussi la discipline de %6$s%8$s. '
-            ],[
-                'Nous avons repéré un %2$s du nom de %1$s qui %4$s dans notre quartier. %9$s',
-                'En poussant nos recherches il s\'avère qu\'il maitrise %6$s%8$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
-            ],[
-                'J\'ai trouvé %1$s %7$s, qui n\'est clairement pas un agent à nous, c\'est un %2$s et un %3$s. ',
-                '%9$sIl démontre une légère maitrise de la discipline %6$s%8$s. '
-            ],[
-                'Je me suis rendu compte que %1$s, que je prenais pour un simple %3$s, %4$s dans le coin. %9$s',
-                'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a en réalité des pouvoirs de %6$s, ce qui en fait un %2$s un peu trop spécial%8$s. '
-            ],[
-                'On a suivi %1$s parce qu\'on l\'a repéré en train de %5$s, ce qui nous a mis la puce à l\'oreille. C\'est normalement un %2$s mais on a découvert qu\'il était aussi %3$s. ',
-                '%9$sCela dit, le vrai problème, c\'est qu\'il semble maîtriser %6$s, au moins partiellement%8$s. ',
-        ]];
+        $textesDiff01Array = json_decode(getConfig($pdo,'textesDiff01Array'), true);
         // ! (transformation0)
         if (!empty( $transformationTextDiff[0]))
-            $textesDiff01Array = [[
-                'Nous avons repéré un %7$s du nom de %1$s qui %4$s dans notre quartier. %9$s',
-                'En poussant nos recherches il s\'avère qu\'il maitrise %6$s. Il est aussi %3$s, mais cette information n\'est pas pertinente. '
-            ],[
-                'J\'ai trouvé %1$s, un %7$s qui n\'est clairement pas un loyal serviteur à vous, c\'est un %2$s et un %3$s. %9$s',
-                'Il démontre une légère maitrise de la discipline %6$s. '
-            ],[
-                'Je me suis rendu compte qu\'un %7$s %4$s dans le coin. On l\'a entendu se faire appeler %1$s. %9$s',
-                'C\'était louche, alors j\'ai enquêté et trouvé qu\'il a des pouvoirs de %4$s, ce qui en fait un %2$s un peu trop spécial. '
-            ]];
+            $textesDiff01Array = json_decode(getConfig($pdo,'textesDiff01TransformationDiff0Array'), true);
         $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
 
         // Diff 0
@@ -323,7 +293,7 @@ function investigateMecanic($pdo ) {
                 $found_hobby[0], // (hobby) - %3$s
                 $text_action_ps, // (action_ps) - %4$s
                 $text_action_inf, // (action_inf) - %5$s
-                $discipline[0], // (discipline) - %6$s
+                $disciplines[0], // (discipline) - %6$s
                 $transformationTextDiff[0], // (transformation0) - %7$s
                 $transformationTextDiff[1], //(transformation1) - %8$s
                 $originTexte, // (origin_text) - %9$s
@@ -339,7 +309,7 @@ function investigateMecanic($pdo ) {
                 $found_hobby[0], // (hobby) - %3$s
                 $text_action_ps, // (action_ps) - %4$s
                 $text_action_inf, // (action_inf) - %5$s
-                $discipline[0], // (discipline) - %6$s
+                $disciplines[0], // (discipline) - %6$s
                 $transformationTextDiff[0], // (transformation0) - %7$s
                 $transformationTextDiff[1], //(transformation1) - %8$s
                 $originTexte, // (origin_text) - %9$s
@@ -352,30 +322,17 @@ function investigateMecanic($pdo ) {
         // %3$s - (discipline_2)
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
             if ($debug) echo " REPORTDIFF 3 Start <br>";
-            $textesDiff2 = [
-                '%2$sEn plus, sa famille a des liens avec le réseau %1$s. ',
-                'Il fait partie du réseau %1$s. %2$s',
-                '%2$sEn creusant, il est rattaché au réseau %1$s. ',
-                'Il reçoit un soutien financier du réseau %1$s. %2$s',
-                '%2$sIl traîne avec le réseau %1$s. '
-            ];
+            $textesDiff2 = json_decode(getConfig($pdo,'textesDiff2'), true);
             $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'], $transformationTextDiff[2], $discipline_2 );
         }
 
         // Diff 3
+        // %1$s - found_controler_name
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
             if ($debug) echo " REPORTDIFF 3 Start <br>";
-            $textesDiff3 = [
-                'Ce réseau répond à %1$s. ',
-                'A partir de là on a pu remonter jusqu\'à %1$s. ',
-                'Du coup, il travaille forcément pour %1$s. ',
-                'Nous l\'avons vu rencontrer en personne %1$s. ',
-                'Ce qui veut dire que c\'est un des types de %1$s. '
-            ];
+            $textesDiff3 = json_decode(getConfig($pdo,'textesDiff3'), true);
             $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
         }
-
-        // TODO detect locations 
 
         // Debug report
         if ($debug) {

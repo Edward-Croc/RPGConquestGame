@@ -1,17 +1,4 @@
 
-UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
--- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku
-UPDATE config SET
-    value = '<p> En plein Sengoku Jidai, les turbulences sociales, intrigues politiques et conflits militaires, divise le Japon.
-        Les guerres fratricides font rage sur l’archipel nippon, et le Shoguna Ashikaga fragilisé peine à rétablir la paix.
-        Au printemps 1555 les forces du Daïmyo de Shikoku Kunichika Chōsokabe, accompagné de ses vassaux Fujitaka Hosokawa et Motonaga Miyoshi,
-         sont partis sur Honshu déféndre Kyoto contre les forces de du clan Takeda. Espérant s’attrirer les faveurs du Shogun Ashikaga.
-        Les rares survivants rentrées de la campagne parlent d’une defaite cuisante, d’une rébélion paysanne et du déshonneur du Daïmyo et de ses vassaux.
-        Le controle du clan Chōsokabe vassille sur Shikoku et les vassaux même du clan voyent la disparition de Kunichika comme une opportunité sans précédent.
-        Celui qui pourra s’octroyer l’allégence de la majorité des 4 provinces sera Maitre de l’ile.
-        </p>'
-    WHERE name = 'PRESENTATION';
-
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
 UPDATE config SET value =  '2' WHERE name = 'recrutement_disciplines';
