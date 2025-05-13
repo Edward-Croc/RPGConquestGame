@@ -9,15 +9,12 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     $zone_id = NULL;
     if ( !empty($_GET['zone_id']) ) $zone_id = $_GET['zone_id'];
     if ( $_SESSION['DEBUG_ZONE'] == true ) echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
-    
+
     if (isset($_GET['attack'])){
-        activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
-    }
-    if (isset($_GET['activate'])){
-        activateWorker($gameReady, $worker_id, 'activate');
+        activateWorker($gameReady, $zone_id, 'attack', $location_id);
     }
     if (isset($_GET['gift'])){
-        activateWorker($gameReady, $worker_id, 'gift', $claim_controler_id);
+        giftControledZone($gameReady, $zone_id, 'gift', $claim_controler_id);
     }
     
 }
