@@ -310,6 +310,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
         // if its the 1st and only claim for a previously unclaimed zone then
         if ($claimer['holder_controler_id'] == NULL 
             && empty($zoneInfo[$claimer['zone_id']]) 
+            && !empty($claimerArray[$key+1])
             && $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
         ){
             // if discrete_claim or violent_claim is sufficient to claim
