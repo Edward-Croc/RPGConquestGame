@@ -179,7 +179,7 @@ function investigateMecanic($pdo ) {
         $transformationTextDiff[2] = '';
         $transformationTextDiff[3] = '';
         $textesTransformationDiff1 = json_decode(getConfig($pdo,'textesTransformationDiff1'), true);
-        $textesTransformationDiff2 = json_decode(getConfig($pdo,'textesTransformationDiff2'), true);        
+        $textesTransformationDiff2 = json_decode(getConfig($pdo,'textesTransformationDiff2'), true);
 
         // for ($iteration = 0; $iteration < count($hidden_transformation); $iteration++) {
         foreach ($hidden_transformation AS $iteration => $diffval ) {
@@ -263,7 +263,7 @@ function investigateMecanic($pdo ) {
 
         // Start compiling the report
         $report = "<p>";
-        
+
         /*
         textesDiff01Array
         (nom(id)) - %1$s
@@ -348,47 +348,10 @@ function investigateMecanic($pdo ) {
             echo "<p> Start controlers_known_enemies - <br /> ";
             // Add to controlers_known_enemies
             try {
-                // Search for the existing Controler-Worker combo
-                $sql = "SELECT id FROM controlers_known_enemies
-                        WHERE controler_id = :searcher_controler_id
-                            AND discovered_worker_id = :found_id";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':searcher_controler_id' => $row['searcher_controler_id'],
-                    ':found_id' => $row['found_id']
-                ]);
-                $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
-                echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
-                $cke_existing_record_id = '';
-                if (!empty($existingRecord)) {
-                    $cke_existing_record_id = $existingRecord['id'];
-                    // Update if record exists
-                    $sql = "UPDATE controlers_known_enemies
-                            SET last_discovery_turn = :turn_number, zone_id = :zone_id
-                            WHERE id = :id";
-                    if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([
-                        ':turn_number' => $turn_number,
-                        ':zone_id' => $row['zone_id'],
-                        ':id' => $existingRecord['id']
-                    ]);
-                } else {
-                    // Insert if record doesn't exist
-                    $sql = "INSERT INTO controlers_known_enemies
-                            (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id)
-                            VALUES (:searcher_controler_id, :found_id, :turn_number, :turn_number, :zone_id)";
-                    if ($debug) echo "sql :".var_export($sql, true)." <br>";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([
-                        ':searcher_controler_id' => $row['searcher_controler_id'],
-                        ':found_id' => $row['found_id'],
-                        ':turn_number' => $turn_number,
-                        ':zone_id' => $row['zone_id'],
-                    ]);
-                    $cke_existing_record_id = $pdo->lastInsertId();
-                }
-                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
+
+                $cke_existing_record_id = addWorkerToCKE($pdo, $row['searcher_controler_id'], $row['found_id'], $turn_number, $row['zone_id'] ) ;
+
+                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 && $cke_existing_record_id !== NULL ) {
                     $discovered_controler_name_sql = '';
                     if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
                         $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
@@ -421,49 +384,9 @@ function investigateMecanic($pdo ) {
 
     foreach ($reportArray as $worker_id => $report){
         try{
-            $selectSql  = 'SELECT report FROM worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number';
-            $selectStmt = $pdo->prepare($selectSql);
-            $selectStmt->bindValue(':worker_id', $worker_id, PDO::PARAM_INT);
-            $selectStmt->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            // Execute the query
-            $selectStmt->execute();
-        } catch (PDOException $e) {
-            echo __FUNCTION__." (): Failed to select data for worker_id $worker_id: " . $e->getMessage() . "<br />";
-            break;
-        }
-        // Fetch the results
-        $workerReport = $selectStmt->fetchALL(PDO::FETCH_ASSOC);
-        if ($debug) echo "<p> workerReport: ".var_export($workerReport,true)."</p>";
-
-        // Decode the existing JSON into an associative array
-        $currentReport = json_decode($workerReport[0]['report'], true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            // Replace the "investigate_report" key with the new report
-            $currentReport['investigate_report'] = $report;
-
-            // Encode the updated array back into JSON
-            $updatedReportJson = json_encode($currentReport);
-            if ($debug) echo "<p> updatedReportJson: ".var_export($updatedReportJson,true)."</p>";
-
-            if (json_last_error() === JSON_ERROR_NONE) {
-                try{
-                    $updateSql  = 'UPDATE worker_actions set report = :jsonreport WHERE worker_id = :worker_id AND turn_number = :turn_number';
-                    $updateStmt  = $pdo->prepare($updateSql );
-                    $updateStmt->bindParam(':jsonreport', $updatedReportJson);
-                    $updateStmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
-                    $updateStmt->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-                    // Execute the query
-                    $updateStmt->execute();
-                } catch (PDOException $e) {
-                    echo __FUNCTION__." (): Failed to insert data for worker_id {$worker_id}: " . $e->getMessage() . "<br />";
-                    break;
-                }
-            } else {
-                echo "JSON encoding error: " . json_last_error_msg() . "<br />";
-                break;
-            }
-        } else {
-            echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+            updateWorkerAction($pdo, $worker_id,  $turn_number, NULL, ['investigate_report' => $report]);
+        } catch (Exception $e) {
+            echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
             break;
         }
     }

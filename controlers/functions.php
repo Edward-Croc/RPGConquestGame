@@ -89,7 +89,7 @@ function  restartTurnRecrutementCount($pdo){
  * returns
  * array() | NULL
  */
-function has_base($pdo, $controler_id) {
+function hasBase($pdo, $controler_id) {
 
     $sql = "SELECT zone_id FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
     try{
@@ -107,7 +107,7 @@ function has_base($pdo, $controler_id) {
 /**
  * 
  */
-function create_base($pdo, $controler_id, $zone_id) {
+function createBase($pdo, $controler_id, $zone_id) {
     
     $controlers = getControlers($pdo, NULL, $controler_id);
     $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
@@ -145,3 +145,59 @@ function create_base($pdo, $controler_id, $zone_id) {
 
 
 // TODO: attack ennemy base
+
+
+/**
+ * 
+ * 
+ */
+
+
+function addWorkerToCKE($pdo, $searcher_controler_id, $found_id, $turn_number, $zone_id) {
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+
+    $cke_existing_record_id = NULL;
+
+    // Search for the existing Controler-Worker combo
+    $sql = "SELECT id FROM controlers_known_enemies
+        WHERE controler_id = :searcher_controler_id
+            AND discovered_worker_id = :found_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':searcher_controler_id' => $searcher_controler_id,
+        ':found_id' => $found_id 
+    ]);
+    $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+    echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+
+    if (!empty($existingRecord)) {
+        $cke_existing_record_id = $existingRecord['id'];
+        // Update if record exists
+        $sql = "UPDATE controlers_known_enemies
+            SET last_discovery_turn = :turn_number, zone_id = :zone_id
+            WHERE id = :id";
+        if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':turn_number' => $turn_number,
+            ':zone_id' => $zone_id,
+            ':id' => $existingRecord['id']
+        ]);
+    } else {
+        // Insert if record doesn't exist
+        $sql = "INSERT INTO controlers_known_enemies
+            (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id)
+            VALUES (:searcher_controler_id, :found_id, :turn_number, :turn_number, :zone_id)";
+        if ($debug) echo "sql :".var_export($sql, true)." <br>";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+        ':searcher_controler_id' => $searcher_controler_id,
+        ':found_id' => $found_id,
+        ':turn_number' => $turn_number,
+        ':zone_id' => $zone_id,
+        ]);
+        $cke_existing_record_id = $pdo->lastInsertId();
+    }
+    return $cke_existing_record_id;
+}
