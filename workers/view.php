@@ -88,7 +88,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 empty($worker_id) ? 'display: none;' : 'display: block;',
                 getConfig($gameReady,'txt_ps_'.$currentAction['action_choice'])
             );
-            echo sprintf('<i> Capacité d\'enquete : %1$s. Capacité d\'attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
+            echo sprintf('<i> Capacité d’enquete : %1$s. Capacité d’attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
                 $worker['total_enquete'],
                 $worker['total_attack'],
                 $worker['total_defence'],
