@@ -289,7 +289,7 @@ function investigateMecanic($pdo ) {
 
             $report = sprintf($texteDiff01[0],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
-                $found_metier[0], // (metier) - %2$
+                $found_metier[0], // (metier) - %2$s
                 $found_hobby[0], // (hobby) - %3$s
                 $text_action_ps, // (action_ps) - %4$s
                 $text_action_inf, // (action_inf) - %5$s
@@ -305,7 +305,7 @@ function investigateMecanic($pdo ) {
             if ($debug) echo " REPORTDIFF 1 Start <br>";
             $report .= sprintf($texteDiff01[1],
                 sprintf('%s (%s)',$row['found_name'], $row['found_id']), // (nom(id)) - %1$s
-                $found_metier[0], // (metier) - %2$
+                $found_metier[0], // (metier) - %2$s
                 $found_hobby[0], // (hobby) - %3$s
                 $text_action_ps, // (action_ps) - %4$s
                 $text_action_inf, // (action_inf) - %5$s
