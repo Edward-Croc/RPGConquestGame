@@ -5,7 +5,7 @@ require_once '../mecanics/investigateMecanic.php';
 require_once '../mecanics/aiMecanic.php';
 require_once '../mecanics/locationSearchMecanic.php';
 
-/** 
+/**
  * Build base randomization SQL
  */
 function diceSQL() {
@@ -18,7 +18,7 @@ function diceSQL() {
     )";
 }
 
-/** 
+/**
  * Return value of a dice roll
  */
 function diceRoll() {
@@ -250,36 +250,27 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     }
 
     // Define the SQL query
-    $sql = "
-    WITH claimers AS (
-        SELECT
+    $sql = "SELECT
             wa.worker_id AS claimer_id,
-            wa.controler_id AS claimer_controler_id,
+            CONCAT(w.firstname, ' ', w.lastname) AS claimer_name,
             wa.enquete_val AS claimer_enquete_val,
             wa.attack_val AS claimer_attack_val,
             wa.action_params AS claimer_params,
-            wa.zone_id AS claimer_zone
-        FROM
-            worker_actions wa
+            wa.controler_id AS claimer_controler_id,
+            z.id AS zone_id,
+            z.name AS zone_name,
+            z.holder_controler_id,
+            (wa.enquete_val - z.calculated_defence_val) AS discrete_claim,
+            (wa.attack_val - z.calculated_defence_val) AS violent_claim
+        FROM worker_actions wa
+        JOIN zones z ON z.id = wa.zone_id
+        JOIN workers w ON w.id = wa.worker_id
+        -- JOIN controler c ON c.id = wa.controler_id
         WHERE
             wa.action_choice = 'claim'
             AND wa.turn_number = :turn_number
-    )
-    SELECT
-        c.claimer_id,
-        c.claimer_enquete_val,
-        c.claimer_attack_val,
-        c.claimer_params,
-        c.claimer_controler_id,
-        z.id AS zone_id,
-        z.name AS zone_name,
-        z.holder_controler_id AS holder_controler_id,
-        (c.claimer_enquete_val - z.calculated_defence_val) AS discrete_claim,
-        (c.claimer_attack_val - z.calculated_defence_val) AS violent_claim
-    FROM
-        claimers c
-    JOIN zones z ON z.id = c.claimer_zone
-    ORDER BY z.id, c.claimer_attack_val DESC
+        ORDER BY
+            z.id, wa.attack_val DESC
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
     try{
@@ -293,7 +284,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     }
     // Fetch and return the results
     $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    //if ($debug) 
+    //if ($debug)
     echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
 
     $arrayZoneInfo = array();
@@ -302,14 +293,16 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     $CLAIMTYPEDIFF = $DISCRETECLAIMDIFF - $VIOLENTCLAIMDIFF;
 
     foreach( $claimerArray AS $key => $claimer ) {
+        $worker_id = $claimer['claimer_id'];
+
         // claims are generally violent
         $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = TRUE;
         // claim are not generally successful
         $success = FALSE;
 
         // if its the 1st and only claim for a previously unclaimed zone then
-        if ($claimer['holder_controler_id'] == NULL 
-            && empty($zoneInfo[$claimer['zone_id']]) 
+        if ($claimer['holder_controler_id'] == NULL
+            && empty($zoneInfo[$claimer['zone_id']])
             && !empty($claimerArray[$key+1])
             && $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
         ){
@@ -320,7 +313,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
                 // Save claimer info
                 $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
                 // Check if it is exceptionnaly a discret claim
-                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF ) 
+                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF )
                     $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = FALSE;
             }
 
@@ -340,10 +333,53 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
 
         // TODO: Warn controlers of workers that violence happened and if it was successful or not
         if ($arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']) {
-            // get workers of zone
-            // add description of violent claim to report  $success
-            // update controler_known_enemies for controlers of workers in zone
-            // with network
+            // get all workers of zone
+            $sql_workers_by_zone = "SELECT *
+                FROM workers w
+                JOIN controler_worker cw ON cw.worker_id = w.id
+                WHERE zone_id = :zone_id AND is_active = TRUE";
+            try {
+                $stmt = $pdo->prepare($sql_workers_by_zone);
+                $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
+                $stmt->execute();
+                $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                echo "getWorkersByZone(): Failed to fetch workers: " . $e->getMessage();
+                continue;
+            }
+            //if ($debug) 
+                echo "sql_workers_by_zone => workers :". var_export($workers, true);
+            foreach ( $workers AS $ $worker) {
+                //textesClaimFailViewArray / textesClaimSuccessViewArray
+                // (nom) - %1$s
+                // (zone) - %2$s
+                $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimFailViewArray'), true);
+                if ($success)
+                    $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessViewArray'), true);
+                $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
+                
+                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']);
+                // add description of violent claim to report and if $success
+                updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
+                // update controler_known_enemies for controlers of workers in zone
+                //if ($debug) 
+                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s):", $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
+                addWorkerToCKE($pdo, $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
+            }
+        }
+        // For Worker add message if claim is successful or failed ($success) an if it was violent or not $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']
+        // (nom) - %1$s
+        // (zone) - %2$s
+        $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimFailArray'), true);
+        if ($success)
+            $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessArray'), true);
+        $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
+        $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']);
+        try{
+            updateWorkerAction($pdo, $worker_id,  $turn_number, NULL, ['claim_report' => $report]);
+        } catch (Exception $e) {
+            echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
+            break;
         }
     }
 
@@ -360,7 +396,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
 
             $holder_controler_id = $zoneInfo['claimer']['claimer_controler_id'];
             if ( !empty($claimer_params['claim_controler_id'])) $holder_controler_id = $claimer_params['claim_controler_id'];
-            
+
             $sql = sprintf(
                 "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE id = %s",
                     $zoneInfo['claimer']['claimer_controler_id'], $holder_controler_id , $zoneInfo['claimer']['zone_id']

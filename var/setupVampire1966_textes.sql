@@ -136,3 +136,37 @@ VALUES
     "C’est probablement un.e %s mais les preuves nous manquent encore. ",
     "Iel n’est clairement pas normal, peut-être un.e %s. "
 ]', 'Texts for transformation level 2');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- Observers of a **failed** violent claim
+('textesClaimFailViewArray', '[
+    "J’ai vu %1$s tenter de prendre le contrôle du quartier %2$s, mais la défense l’a repoussé brutalement.",
+    "L’assaut de %1$s sur le quartier %2$s a échoué ; c’était un vrai carnage.",
+    "%1$s a voulu s’imposer au %2$s, sans succès. Iel a été forcé.e de battre en retraite.",
+    "Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé."
+]', 'Texts the workers observing the failed violent claiming of a zone'),
+
+-- Observers of a **successful** violent claim
+('textesClaimSuccessViewArray', '[
+    "J’ai vu %1$s renverser l’autorité sur %2$s. La zone as changé de main.",
+    "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",
+    "L’opération de %1$s sur %2$s a été une réussite totale, malgrès les dégats.",
+    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance."
+]', 'Texts the workers observing the successful violent claiming of a zone'),
+
+-- Report to the **claiming worker** on failure
+('textesClaimFailArray', '[
+    "Notre tentative de prise de contrôle de %2$s a échoué. La défense était trop solide.",
+    "Nous avons échoué à imposer notre force sur %2$s. Il faudra retenter plus tard.",
+    "L’assaut sur %2$s a été un échec. Les forces en place ont tenu bon.",
+    "La mission de domination de %2$s n’a pas abouti. Trop de résistance à notre autorité sur place."
+]', 'Texts for the fail report of the claiming worker'),
+
+-- Report to the **claiming worker** on success
+('textesClaimSuccessArray', '[
+    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
+    "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
+    "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
+    "%2$s est tombée sous votre coupe."
+]', 'Texts for the success report of the claiming worker');
