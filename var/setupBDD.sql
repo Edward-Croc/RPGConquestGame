@@ -25,7 +25,7 @@ VALUES
     -- Debugs vals
     ('DEBUG', 'false', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
-    ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mecanics'),
+    ('DEBUG_ATTACK', 'true', 'Activates the Debugging texts for the attack report mecanics'),
     ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
     ('DEBUG_ZONE', 'false', 'Activates the Debugging texts for the zones page'),
     ('TITLE', 'RPGConquest', 'Name of game'),
@@ -71,8 +71,7 @@ VALUES
     ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack heppen if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
-    ('RIPOSTACTIVE', TRUE, 'Activate Ripost when attacked'),
-    ('RIPOSTONDEATH', FALSE, 'When Killed or Captured still riposts'),
+    ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
     ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
     -- Diff vals in claim
     ('DISCRETECLAIMDIFF', 2, 'Value for discrete claim'),

@@ -235,14 +235,12 @@ function attackMecanic($pdo){
     $ATTACKDIFF0 = getConfig($pdo, 'ATTACKDIFF0');
     $ATTACKDIFF1 = getConfig($pdo, 'ATTACKDIFF1');
     $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
-    $RIPOSTONDEATH = getConfig($pdo, 'RIPOSTONDEATH');
     $RIPOSTACTIVE = getConfig($pdo, 'RIPOSTACTIVE');
 
     if ($debug) {
         echo "ATTACKDIFF0 : $ATTACKDIFF0 <br/>";
         echo "ATTACKDIFF1 : $ATTACKDIFF1 <br/>";
         echo "RIPOSTDIFF : $RIPOSTDIFF <br/>";
-        echo "RIPOSTONDEATH : $RIPOSTONDEATH <br/>";
         echo "RIPOSTACTIVE : $RIPOSTACTIVE <br/>";
     }
 
@@ -338,6 +336,8 @@ function attackMecanic($pdo){
         foreach ($defenders as $defender) {
             $attackerReport= array();
             $defenderReport= array();
+            $defender_status = NULL;
+            $attacker_status = NULL;
             $survived = true;
             $is_alive = NULL;
             if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
@@ -369,10 +369,7 @@ function attackMecanic($pdo){
                 }
                 updateWorkerActiveStatus($pdo, $defender['defender_id']);
                 updateWorkerAliveStatus($pdo, $defender['defender_id'], $is_alive);
-                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attackerReport );
-                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status , $defenderReport );
-            }
-            if ($defender['attack_difference'] < (INT)$ATTACKDIFF0 ){
+            } else {
                 echo $defender['defender_name']. ' Escaped !';
                 $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
                 // Check if attaker is in know ennemies
@@ -405,23 +402,19 @@ function attackMecanic($pdo){
                     return [];
                 }
                 $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemyControler));
-                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $defenderReport);
-                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], NULL, $attackerReport );
             }
             if ($debug)
-                echo sprintf("RIPOSTACTIVE : %s <br/> survived : %s <br/> RIPOSTONDEATH : %s <br/>", (BOOL)$RIPOSTACTIVE, $survived, (BOOL)$RIPOSTONDEATH);
-            if ($debug)
-                echo sprintf("(survived || (BOOL)RIPOSTONDEATH) : %s <br/>", ($survived || (BOOL)$RIPOSTONDEATH));
-            if ((BOOL)$RIPOSTACTIVE && ($survived || (BOOL)$RIPOSTONDEATH) && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
+                echo sprintf("(survived  : %s <br/>", ($survived ));
+            if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
+                $attacker_status = 'dead';
                 echo $defender['defender_name']. ' RIPOSTE !';
                 $attackerReport['attack_report'] = sprintf($attackFailedAndCountered[array_rand($attackFailedAndCountered)], $defender['defender_name']);
                 $attackerReport['life_report'] = sprintf($disapearenceTextes[array_rand($disapearenceTextes)], $defender['turn_number'] );
                 updateWorkerActiveStatus($pdo, $defender['attacker_id']);
                 updateWorkerAliveStatus($pdo, $defender['attacker_id']);
-                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], 'dead', $attackerReport);
-                $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], $defender['attacker_name']);
-                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], NULL, $defenderReport );
             }
+            updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport );
+            updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status , $defenderReport );
         }
     }
 
