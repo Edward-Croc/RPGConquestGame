@@ -237,7 +237,7 @@ function createNewTurnLines($pdo, $turn_number){
 }
 
 
-function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
+function claimMecanic($pdo, $turn_number = NULL) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
 
@@ -259,7 +259,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
             wa.controler_id AS claimer_controler_id,
             z.id AS zone_id,
             z.name AS zone_name,
-            z.holder_controler_id,
+            z.holder_controler_id AS zone_holder_controler_id,
             (wa.enquete_val - z.calculated_defence_val) AS discrete_claim,
             (wa.attack_val - z.calculated_defence_val) AS violent_claim
         FROM worker_actions wa
@@ -272,7 +272,6 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
         ORDER BY
             z.id, wa.attack_val DESC
     ";
-    if ( !EMPTY($searcher_id) ) $sql .= " AND w.worker_id = :worker_id";
     try{
         // Prepare and execute the statement
         $stmt = $pdo->prepare($sql);
@@ -295,17 +294,38 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
     foreach( $claimerArray AS $key => $claimer ) {
         $worker_id = $claimer['claimer_id'];
 
+        if ($debug)
+            echo sprintf("<p> %s(): checking key %s => claimer: %s </br>", __FUNCTION__, $key, var_export($claimer,true));
+
         // claims are generally violent
         $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = TRUE;
         // claim are not generally successful
         $success = FALSE;
 
+        if ($debug) {
+            echo sprintf(
+                "%s(): zone_holder_controler_id : '%s', zone has not been claimed this turn: '%s', next key exists : '%s'",
+                __FUNCTION__,
+                var_export($claimer['zone_holder_controler_id'],true),
+                var_export(empty($arrayZoneInfo[$claimer['zone_id']]['claimer']),true), 
+                var_export(!empty($claimerArray[$key+1]),true)
+            );
+            echo sprintf("%s(): It is this 1st iteration and only for active zone %s: ", __FUNCTION__, $claimer['zone_id']);
+        }
         // if its the 1st and only claim for a previously unclaimed zone then
-        if ($claimer['holder_controler_id'] == NULL
-            && empty($zoneInfo[$claimer['zone_id']])
-            && !empty($claimerArray[$key+1])
-            && $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
+        if (
+            $claimer['zone_holder_controler_id'] == NULL
+            && empty($arrayZoneInfo[$claimer['zone_id']]['claimer'])
+            && (
+                $key-1 < 0
+                || $claimerArray[$key-1]['zone_id'] != $claimer['zone_id']
+            )
+            && (
+                empty($claimerArray[$key+1])
+                || $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
+            )
         ){
+            if ($debug) echo " -> yes ";
             // if discrete_claim or violent_claim is sufficient to claim
             if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
                 // mark as success
@@ -319,10 +339,13 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
 
         // if its not the 1st claim found for the zone or the zone was already claimed then
         } else {
+            if ($debug) echo " -> no  ";
             // if no successful claimer has been found yet
-            if ( empty($zoneInfo[$claimer['zone_id']]) ) {
+            if ( empty($arrayZoneInfo[$claimer['zone_id']]['claimer']) ) {
+                if ($debug) echo " -> is Allowed to claim ";
                 // if discrete_claim or violent_claim is sufficient to claim
                 if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
+                    if ($debug) echo " -> Success ";
                     // mark as success
                     $success = TRUE;
                     // Save claimer info
@@ -330,26 +353,38 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
                 }
             }
         }
-
-        // TODO: Warn controlers of workers that violence happened and if it was successful or not
+        //if ($debug)
+        if ($debug) echo " </br>";
+        
+        //if ($debug)
+        if ($debug) echo sprintf(
+                "Warn controlers of workers that violence happened : %s and if it was successful or not : %s",
+                var_export( $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'], true),
+                var_export( $success, true)
+            );
         if ($arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']) {
             // get all workers of zone
             $sql_workers_by_zone = "SELECT *
                 FROM workers w
                 JOIN controler_worker cw ON cw.worker_id = w.id
-                WHERE zone_id = :zone_id AND is_active = TRUE";
+                WHERE
+                    w.zone_id = :zone_id
+                    AND cw.controler_id != :controler_id
+                    AND w.is_active = True";
             try {
                 $stmt = $pdo->prepare($sql_workers_by_zone);
-                $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
+                $stmt->bindParam(':zone_id', $claimer['zone_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':controler_id', $claimer['claimer_controler_id'], PDO::PARAM_INT);
                 $stmt->execute();
                 $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } catch (PDOException $e) {
                 echo "getWorkersByZone(): Failed to fetch workers: " . $e->getMessage();
                 continue;
             }
-            //if ($debug) 
-                echo "sql_workers_by_zone => workers :". var_export($workers, true);
-            foreach ( $workers AS $ $worker) {
+            if ($debug) 
+                echo sprintf ("sql_workers_by_zone => workers : %s <br>", var_export($workers, true) );
+            foreach ( $workers AS $worker) {
+                if ($debug)  echo sprintf ("for worker : %s <br>", var_export($worker, true) );
                 //textesClaimFailViewArray / textesClaimSuccessViewArray
                 // (nom) - %1$s
                 // (zone) - %2$s
@@ -362,8 +397,8 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
                 // add description of violent claim to report and if $success
                 updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
                 // update controler_known_enemies for controlers of workers in zone
-                //if ($debug) 
-                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s):", $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
+                if ($debug) 
+                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s) <br>", $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
                 addWorkerToCKE($pdo, $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
             }
         }
@@ -381,11 +416,13 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
             echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
             break;
         }
+
+        if ($debug) echo '</p>';
     }
 
     foreach ( $arrayZoneInfo as $key => $zoneInfo ) {
         if ( ! empty($zoneInfo['claimer']) )  {
-            if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true);
+            if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true). "<br />";
 
             $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -410,7 +447,7 @@ function claimMecanic($pdo, $turn_number = NULL, $claimer_id = NULL) {
             }
             echo $sql. "</br>";
         }
-        else { echo "Zone $key Unclaimed";}
+        else { echo "Zone $key Unclaimed. <br />";}
     }
 
     echo '<p>DONE</p> </div>';
