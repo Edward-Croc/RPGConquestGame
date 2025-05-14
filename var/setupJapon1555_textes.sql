@@ -17,7 +17,7 @@ VALUES
  ('textRecrutementJobHobby', 'Est un.e %5$s avec un.e %4$s', 'string to present hobby %4$s and job %5$s on recrutement')
  ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s ', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
- ,('textViewWorkerTransformations', 'Iel a été transformé en : %s <br />', 'Texts for worker view page transformations')
+ ,('textViewWorkerTransformations', 'Iel a été équipé de : %s <br />', 'Texts for worker view page transformations')
 ;
 
 INSERT INTO config (name, value, description)
@@ -27,10 +27,10 @@ VALUES
 ,(
     'textesFoundDisciplines',
     '[
-        "Et avec une maitrise de la discipline %s.",
-        "Et maitrise l’art %s.",
-        "En plus de maitriser l’art %s.",
-        "Cumulant aussi la discipline %s."
+        "Iel a de plus une maitrise de la discipline %s. ",
+        "En plus, iel maitrise l’art du %s. ",
+        "Nous avons également remarqué sa pratique de l’art %s. ",
+        "Ces observations se cumulent avec son utilisation de la discipline %s. "
     ]',
     'Texts for extra disciplines'
 )

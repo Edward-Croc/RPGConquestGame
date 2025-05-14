@@ -22,10 +22,10 @@ VALUES
 ,(
     'textesFoundDisciplines',
     '[
-        "Et avec une maitrise de la discipline %s.",
-        "Et maitrise la discipline %s.",
-        "En plus de maitriser la discipline %s.",
-        "Cumulant aussi la discipline %s."
+        "Iel a de plus une maitrise de la discipline %s. ",
+        "En plus, iel maitrise la discipline %s. ",
+        "Nous avons également remarqué sa pratique de la discipline %s. ",
+        "Ces observations se cumulent avec son utilisation de la discipline %s. "
     ]',
     'Texts for extra disciplines'
 )
