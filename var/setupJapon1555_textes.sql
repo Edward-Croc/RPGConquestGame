@@ -2,13 +2,13 @@
 UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 -- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku
 UPDATE config SET
-    value = '<p> En plein Sengoku Jidai, les turbulences sociales, intrigues politiques et conflits militaires, divise le Japon.
-        Les guerres fratricides font rage sur l’archipel nippon, et le Shoguna Ashikaga fragilisé peine à rétablir la paix.
-        Au printemps 1555 les forces du Daïmyo de Shikoku Kunichika Chōsokabe, accompagné de ses vassaux Fujitaka Hosokawa et Motonaga Miyoshi,
-         sont partis sur Honshu déféndre Kyoto contre les forces de du clan Takeda. Espérant s’attrirer les faveurs du Shogun Ashikaga.
-        Les rares survivants rentrées de la campagne parlent d’une defaite cuisante, d’une rébélion paysanne et du déshonneur du Daïmyo et de ses vassaux.
-        Le controle du clan Chōsokabe vassille sur Shikoku et les vassaux même du clan voyent la disparition de Kunichika comme une opportunité sans précédent.
-        Celui qui pourra s’octroyer l’allégence de la majorité des 4 provinces sera Maitre de l’ile.
+    value = '<p> En plein Sengoku Jidai, les turbulences sociales, intrigues politiques et conflits militaires divisent le Japon.
+        Les guerres fratricides font rage sur l’archipel nippon, et le Shogunat Ashikaga fragilisé peine à rétablir la paix.
+        Au printemps 1555, les forces du Daïmyo de Shikoku, sire Kunichika Chōsokabe, accompagné de ses vassaux Fujitaka Hosokawa et Motonaga Miyoshi,
+         sont partis sur Honshu défendre Kyoto contre les forces de du clan Takeda, espérant ainsi s’attirer les faveurs du Shogun Ashikaga.
+        Les rares survivants rentrés de la campagne parlent d’une défaite cuisante, d’une rébellion paysanne et du déshonneur du Daïmyo et de ses vassaux.
+        Le controle du clan Chōsokabe vacille sur Shikoku et les vassaux même du clan voient la disparition de Kunichika Chōsokabe comme une opportunité sans précédent.
+        Celui qui pourra s’octroyer l’allégeance de la majorité des 4 provinces sera maitre de l’ile de Shikoku.
         </p>'
     WHERE name = 'PRESENTATION';
 
@@ -28,8 +28,8 @@ VALUES
     'textesFoundDisciplines',
     '[
         "Et avec une maitrise de la discipline %s.",
-        "Et maitrise de la discipline %s.",
-        "En plus de maitrisé la discipline %s.",
+        "Et maitrise l’art %s.",
+        "En plus de maitriser l’art %s.",
         "Cumulant aussi la discipline %s."
     ]',
     'Texts for extra disciplines'
@@ -70,7 +70,7 @@ VALUES
             "En poussant nos recherches il s’avère qu’iel maitrise %6$s%8$s. Iel a aussi été vu.e avec un.e %3$s, mais cette information n’est pas si pertinente."
         ],
         [
-            "J’ai trouvé %1$s %7$s, qui n’est clairement pas un agent à nous, c’est un.e %2$s avec un.e %3$s.",
+            "J’ai trouvé %1$s, qui n’est clairement pas un agent à nous, c’est un.e %2$s avec un.e %3$s.",
             "%9$sIel démontre une légère maitrise de la discipline %6$s%8$s."
         ],
         [
@@ -119,20 +119,21 @@ VALUES
 (
     'textesDiff2', '[
         "%2$sEn plus, sa famille a des liens avec le réseau %1$s. %3$s",
-        "Il fait partie du réseau %1$s. %3$s %2$s ",
-        "%2$sEn creusant, il est rattaché au réseau %1$s. %3$s ",
-        "%3$s Il reçoit un soutien financier du réseau %1$s. %2$s",
-        "%2$sIl traîne avec le réseau %1$s. %3$s"
+        "Iel fait partie du réseau %1$s. %3$s %2$s ",
+        "%2$sEn creusant, iel est rattaché.e au réseau %1$s. %3$s ",
+        "%3$s Iel reçoit un soutien financier du réseau %1$s. %2$s",
+        "%2$sIel travaille avec le réseau %1$s. %3$s"
     ]', 'Texts for search results level 2'),
 --  Diff 3
 -- %1$s - found_controler_name
+-- %2$s - found_controler_faction
 (
     'textesDiff3', '[
         "Ce réseau répond à %1$s. ",
-        "A partir de là on a pu remonter jusqu’à %1$s. ",
-        "Du coup, il travaille forcément pour %1$s. ",
+        "A partir de là nous avons pu remonter jusqu’à %1$s. ",
+        "Cela signifie qu’iel travaille forcément pour %1$s. ",
         "Nous l’avons vu rencontrer en personne %1$s. ",
-        "Ce qui veut dire que c’est un des types de %1$s. "
+        "Ce qui veut dire que c’est un serviteur de %1$s. "
     ]',
     'Texts for search results level 3'
 );
@@ -143,9 +144,44 @@ VALUES
 ('textesTransformationDiff1', '[
     " et nous concluons que c’est un %s",
     ", ce qui laisse penser que c’est un %s"
-]', 'Texts for transformation level 1'),
-
-('textesTransformationDiff2', '[
+]', 'Texts for transformation level 1')
+,('textesTransformationDiff2', '[
     "C’est probablement un %s mais les preuves nous manquent encore. ",
     "Il n’est clairement pas normal, peut-être un %s. "
-]', 'Texts for transformation level 2');
+]', 'Texts for transformation level 2')
+;
+
+
+INSERT INTO config (name, value, description)
+VALUES
+-- Observers of a **failed** violent claim
+('textesClaimFailViewArray', '[
+    "J’ai vu %1$s tenter de prendre le contrôle du quartier %2$s, mais la défense l’a repoussé.e brutalement.",
+    "L’assaut de %1$s sur le quartier %2$s a échoué ; c’était un vrai carnage.",
+    "%1$s a voulu s’imposer au %2$s, sans succès. Iel a été forcé.e de battre en retraite.",
+    "Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé."
+]', 'Texts the workers observing the failed violent claiming of a zone'),
+
+-- Observers of a **successful** violent claim
+('textesClaimSuccessViewArray', '[
+    "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.",
+    "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",
+    "L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.",
+    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance."
+]', 'Texts the workers observing the successful violent claiming of a zone'),
+
+-- Report to the **claiming worker** on failure
+('textesClaimFailArray', '[
+    "Notre tentative de prise de contrôle de %2$s a échoué. La défense était trop solide.",
+    "Nous avons échoué à nous imposer en force sur %2$s. Il faudra retenter plus tard.",
+    "L’assaut sur %2$s a été un échec. Les forces en place ont tenu bon.",
+    "La mission de domination de %2$s n’a pas abouti. Trop de résistance à notre autorité sur place."
+]', 'Texts for the fail report of the claiming worker'),
+
+-- Report to the **claiming worker** on success
+('textesClaimSuccessArray', '[
+    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
+    "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
+    "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
+    "%2$s est tombé.e sous votre coupe."
+]', 'Texts for the success report of the claiming worker');
