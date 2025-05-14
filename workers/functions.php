@@ -666,8 +666,14 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
     }
 }
 
-function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
+function showEnemyWorkersSelect($pdo, $zone_id, $controler_id, $turn_number = NULL) {
     $enemyWorkerOptions = '';
+
+    if (empty($turn_number)) {
+        $mecanics = getMecanics($pdo);
+        $turn_number = $mecanics['turncounter'];
+    }
+    echo "turn_number : $turn_number <br>";
 
     $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controler_id);
 
@@ -677,31 +683,37 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id) {
 
     if (empty($enemyWorkersArray['workers_without_controler']) && empty($enemyWorkersArray['workers_with_controler'])) return '';
 
+    // Prepare config val
+    $attackTimeWindow = getConfig($pdo, 'attackTimeWindow');
+    if (empty($attackTimeWindow)) $attackTimeWindow = $turn_number;
+    $canAttackNetwork = getConfig($pdo, 'canAttackNetwork');
+    if (empty($attackTimeWindow)) $attackTimeWindow = 0;
+
     if (!empty($enemyWorkersArray['workers_without_controler'])){
-        // Display select list of Controlers
-
-        // TODO add a configurable time limit on last discovery turn
-
+        // Display select list of workers
         foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {
-            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
+            if (!isset($enemyWorker['last_discovery_turn'])) continue;
+            if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow))
+                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
     if (!empty($enemyWorkersArray['workers_with_controler'])) {
         $discovered_controler_id = 0;
         // Display select list of Controlers
         foreach ( $enemyWorkersArray['workers_with_controler'] as $enemyWorker) {
+            if (!isset($enemyWorker['last_discovery_turn'])) continue;
+            if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow)) {
 
-            // TODO add a configurable time limit on last discovery turn
-
-            if ( $discovered_controler_id != $enemyWorker['discovered_controler_id']){
-                $discovered_controler_id = $enemyWorker['discovered_controler_id'];
-                $enemyWorkerOptions .= sprintf(
-                    '<option value=\'network_%1$s\'>Réseau %1$s - %2$s</option>',
-                    $enemyWorker['discovered_controler_id'],
-                    $enemyWorker['discovered_controler_name'],
-                );
+                if ( $discovered_controler_id != $enemyWorker['discovered_controler_id'] && $canAttackNetwork > 0){
+                    $discovered_controler_id = $enemyWorker['discovered_controler_id'];
+                    $enemyWorkerOptions .= sprintf(
+                        '<option value=\'network_%1$s\'>Réseau %1$s - %2$s</option>',
+                        $enemyWorker['discovered_controler_id'],
+                        $enemyWorker['discovered_controler_name'],
+                    );
+                }
+                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
             }
-            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
     $enemyWorkersSelect = sprintf("

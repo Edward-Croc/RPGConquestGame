@@ -67,8 +67,11 @@ VALUES
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
     ('REPORTDIFF2', 2, 'Value for Level 2 information'),
     ('REPORTDIFF3', 3, 'Value for Level 3 information'),
-    -- Diff vals in report
-    ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack heppen if worker leave zone, > 0 then attack is limited to workers in zone'),
+    -- Attack choices
+    ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
+    ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
+    -- Diff vals for attack results
+    ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
     ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
