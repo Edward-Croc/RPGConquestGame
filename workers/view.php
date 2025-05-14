@@ -101,16 +101,16 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 echo sprintf('<div class="history">
                     <h3>Historique : </h3>
                     <p>
-                        Originaire de %1$s, '.getConfig($gameReady, 'worker_view_job_hobby_text').' <br />
+                        Originaire de %1$s, '.getConfig($gameReady, 'textViewWorkerJobHobby').' <br />
                         %4$s %5$s
                     </p></div>',
                     $worker['origin_name'],
                     empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                     empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
                     empty($worker['powers']['Discipline']['texte']) ? '' : 
-                        sprintf("Ses disciplines dévéloppées sont: %s <br />",$worker['powers']['Discipline']['texte']),
+                        sprintf(getConfig($gameReady, 'textViewWorkerDisciplines'),$worker['powers']['Discipline']['texte']),
                     empty($worker['powers']['Transformation']['texte']) ? '' :
-                        sprintf("Il a été transformé en: %s <br />", $worker['powers']['Transformation']['texte']),
+                        sprintf(getConfig($gameReady, 'textViewWorkerTransformations'), $worker['powers']['Transformation']['texte']),
                 );
                 if ($worker['is_active'])
                     echo sprintf('<div class="actions">

@@ -14,6 +14,14 @@ UPDATE config SET
 
 INSERT INTO config (name, value, description)
 VALUES
+ ('textRecrutementJobHobby', 'Est un.e %5$s avec un.e %4$s', 'string to present hobby %4$s and job %5$s on recrutement')
+ ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s ', 'string to present hobby %2$s and job %3$s view of worker')
+ ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
+ ,('textViewWorkerTransformations', 'Iel a été transformé en : %s <br />', 'Texts for worker view page transformations')
+;
+
+INSERT INTO config (name, value, description)
+VALUES
  (
     'textesStartInvestigate', '<p> Nous avons mené l’enquête dans le territoire %s.</p>', 'Texts for start of investigation')
 ,(
