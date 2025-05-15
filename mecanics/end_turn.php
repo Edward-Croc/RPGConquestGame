@@ -56,6 +56,6 @@ require_once '../base/base_html.php';
                     echo __FUNCTION__."(): UPDATE mecanics Failed: " . $e->getMessage()."<br />";
                 }
             }
-            echo ucfirst(getConfig($gameReady, 'time_value')).": $turn";
+            echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
         }
 

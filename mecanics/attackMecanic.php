@@ -249,7 +249,7 @@ function attackMecanic($pdo){
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
 
-    $timeText = getConfig($pdo, 'time_value');
+    $timeText = getConfig($pdo, 'timeValue');
     $timeTextThe = getConfig($pdo, 'time_denominator_the');
     $timeTextOfThe = getConfig($pdo, 'time_denominator_ofthe');
     $timeTextThis = getConfig($pdo, 'time_denominator_this');

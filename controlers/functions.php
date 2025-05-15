@@ -108,7 +108,9 @@ function hasBase($pdo, $controler_id) {
  * 
  */
 function createBase($pdo, $controler_id, $zone_id) {
-    
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+
     $controlers = getControlers($pdo, NULL, $controler_id);
     $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
 
@@ -118,13 +120,17 @@ function createBase($pdo, $controler_id, $zone_id) {
         $discovery_diff += $power['enquete'];
     }
 
-    $description = sprintf (
+    echo sprintf("controler_name : %s", $controler_name);
+    $timeValue = getConfig($pdo, 'timeValue');
+    echo sprintf("timeValue : %s", $timeValue);
+
+    $description = sprintf(
         "Nous avons trouver le repaire de %$1s. Ses serviteurs ne semblent pas avoir fini de re-mettre en place les défences qui existaient avant la crue.
         En attaquant ce lieu nous pourrions lui porte un coup fatal.
         Sa disiparition causerait certainement quelques questions à l'Elyséum, mais un joueur en moins sur l'échéquier politique est toujours bénéfique.
         Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de %$2s en %$2s.",
         $controler_name,
-        getConfig($pdo, 'time_value')
+        $timeValue
     );
     $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
         ($zone_id, 'Repaire', $description, $controler_id, $discovery_diff, TRUE, TRUE)";

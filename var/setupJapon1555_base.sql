@@ -8,7 +8,7 @@ VALUES
     -- MAP INFO
     ('map_file', 'shikoku.png', 'Map file to use'),
     ('map_alt', 'Carte de Shikoku', 'Map alt'),
-    ('time_value', 'Trimestre', 'Text for time span'),
+    ('timeValue', 'Trimestre', 'Text for time span'),
     ('time_denominator_the', 'le', 'Denominator ’the’ for time text'),
     ('time_denominator_ofthe', 'du', 'Denominator ’of the’ for time text'),
     ('time_denominator_this', 'ce', 'Denominator ’this’ for time text');
