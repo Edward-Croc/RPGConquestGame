@@ -91,7 +91,7 @@ function  restartTurnRecrutementCount($pdo){
  */
 function hasBase($pdo, $controler_id) {
 
-    $sql = "SELECT zone_id FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
+    $sql = "SELECT * FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -113,31 +113,38 @@ function createBase($pdo, $controler_id, $zone_id) {
 
     $controlers = getControlers($pdo, NULL, $controler_id);
     $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
+    echo sprintf("controler_name : %s </br>", $controler_name);
 
     $discovery_diff = 6;
     $power_list = getPowersByType($pdo,'3', $controler_id, FALSE);
+    echo sprintf("power_list : %s </br>", $power_list);
     foreach ($power_list as $power ) {
         $discovery_diff += $power['enquete'];
     }
+    echo sprintf("discovery_diff : %s </br>", $discovery_diff);
 
-    echo sprintf("controler_name : %s", $controler_name);
     $timeValue = getConfig($pdo, 'timeValue');
-    echo sprintf("timeValue : %s", $timeValue);
+    echo sprintf("timeValue : %s </br>", $timeValue);
 
-    $description = sprintf(
-        "Nous avons trouver le repaire de %$1s. Ses serviteurs ne semblent pas avoir fini de re-mettre en place les défences qui existaient avant la crue.
-        En attaquant ce lieu nous pourrions lui porte un coup fatal.
-        Sa disiparition causerait certainement quelques questions à l'Elyséum, mais un joueur en moins sur l'échéquier politique est toujours bénéfique.
-        Nous ne devons pas tarder a prendre notre décision, ses defenses se refenforcent de %$2s en %$2s.",
+    $description = sprintf('
+        Nous avons trouvé le repaire de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
+        En attaquant ce lieu nous pourrions lui porter un coup fatal.
+        Sa disparition causerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
+        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de %2$s en %2$s.',
         $controler_name,
         $timeValue
     );
-    $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        ($zone_id, 'Repaire', $description, $controler_id, $discovery_diff, TRUE, TRUE)";
 
+    $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
+        (:zone_id, 'Repaire', :description, :controler_id, :discovery_diff, TRUE, TRUE)";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
+        
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':controler_id', $controler_id, PDO::PARAM_INT);
+        $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";

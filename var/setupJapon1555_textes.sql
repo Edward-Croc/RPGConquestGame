@@ -22,6 +22,11 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
+ ('textControlerActionCreateBase', 'Crée une forteresse dans la région :', 'create base texte in controler view actions')
+;
+
+INSERT INTO config (name, value, description)
+VALUES
  (
     'textesStartInvestigate', '<p> Nous avons mené l’enquête dans le territoire %s.</p>', 'Texts for start of investigation')
 ,(
