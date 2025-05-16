@@ -202,34 +202,6 @@ function createNewTurnLines($pdo, $turn_number){
             return FALSE;
         }
     }
-/*
-    $sqlSetDead = "
-        UPDATE worker_actions SET action_choice = 'dead' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT w.id FROM workers w WHERE is_alive = false AND is_active = false
-        )
-    ";
-    try {
-        $stmtSetDead = $pdo->prepare($sqlSetDead);
-        $stmtSetDead->execute([':turn_number' => $turn_number]);
-    } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql UPDATE dead FAILED : ".$e->getMessage()."<br />$sql<br/>";
-        return FALSE;
-    }
-    $sqlSetCaptured = "
-        UPDATE worker_actions SET action_choice = 'captured' WHERE turn_number = :turn_number AND worker_id IN (
-            SELECT worker_id FROM worker_actions WHERE action_choice = 'captured' AND turn_number = :turn_number_n_1
-        )
-    ";
-    try {
-        $stmtSetCaptured = $pdo->prepare($sqlSetCaptured);
-        $stmtSetCaptured->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-        $stmtSetCaptured->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
-        $stmtSetCaptured->execute();
-    } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql UPDATE captured FAILED : ".$e->getMessage()."<br />$sql<br/>";
-        return FALSE;
-    }
-    */
 
     echo '<p>DONE</p> </div>';
 

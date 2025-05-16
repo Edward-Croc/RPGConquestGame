@@ -9,9 +9,9 @@ VALUES
     ('map_file', 'shikoku.png', 'Map file to use'),
     ('map_alt', 'Carte de Shikoku', 'Map alt'),
     ('timeValue', 'Trimestre', 'Text for time span'),
-    ('time_denominator_the', 'le', 'Denominator ’the’ for time text'),
-    ('time_denominator_ofthe', 'du', 'Denominator ’of the’ for time text'),
-    ('time_denominator_this', 'ce', 'Denominator ’this’ for time text');
+    ('timeDenominatorThe', 'le', 'Denominator ’the’ for time text'),
+    ('timeDenominatorOfThe', 'du', 'Denominator ’of the’ for time text'),
+    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text');
 
 
 INSERT INTO players (username, passwd, is_privileged) VALUES

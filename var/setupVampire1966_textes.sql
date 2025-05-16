@@ -207,3 +207,106 @@ VALUES
     "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
     "%2$s est tombé.e sous votre coupe."
 ]', 'Texts for the success report of the claiming worker');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %s - week number
+('workerDisappearanceTexts', '[
+    "<p>Cet agent a disparu sans laisser de trace à partir de la semaine %s.</p>",
+    "<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>",
+    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où il se trouve.</p>",
+    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé dans la nature.</p>",
+    "<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>",
+    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis il est aux abonnés absents.</p>",
+    "<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>",
+    "<p>L’agent s’est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>",
+    "<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>",
+    "<p>La semaine %s signe le début du silence radio complet de cet agent.</p>"
+]', 'Templates used for worker disappearance text with a week number placeholder');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s - target name
+('attackSuccessTexts', '[
+    "<p>J’ai pu mener à bien ma mission sur %1$s, son silence est assuré.</p>",
+    "<p>J’ai accompli l’attaque sur %1$s, il a trouvé son repos final.</p>",
+    "<p>Notre cible %1$s a été accompagnée à l’hôpital dans un état critique, nous n’avons plus rien à craindre.</p>",
+    "<p>Un suicidé sera retrouvé dans l’Arno demain, %1$s n’est plus des nôtres.</p>",
+    "<p>Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel.</p>",
+    "<p>Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.</p>",
+    "<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>"
+]', 'Templates for successful attack reports mentioning the target name');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s - target name
+('captureSuccessTexts', '[
+    "<p>La mission est un succès total : %1$s est désormais entre nos mains, et nous allons mener l’interrogatoire.</p>",
+    "<p>La mission s’est déroulée comme prévu : %1$s est capturé.e et prêt.e à livrer ses secrets.</p>",
+    "<p>Succès complet sur %1$s : iel est désormais sous notre garde et n’aura d’autre choix que de parler.</p>",
+    "<p>Nous avons maîtrisé %1$s : iel est maintenant entre nos mains, prêt.e pour l’interrogatoire.</p>",
+    "<p>Mission accomplie : %1$s est capturé.e et en sécurité pour un débriefing approfondi.</p>",
+    "<p>L’objectif %1$s est neutralisé et sous notre contrôle. L’interrogatoire peut commencer.</p>",
+    "<p>Nous avons intercepté %1$s sans heurt : iel est désormais à notre merci pour un échange d’informations.</p>",
+    "<p>Le succès est total : %1$s est retenu.e, et ses révélations ne tarderont pas.</p>",
+    "<p>Mission terminée avec brio : %1$s est capturé.e et ne nous échappera plus.</p>"
+]', 'Inclusive templates for successful capture reports mentioning the target name');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s - target name
+('failedAttackTextes', '[
+    "<p>Malheureusement, %1$s a réussi à nous échapper et reste en vie.</p>",
+    "<p>L’opération contre %1$s a échoué. La cible a survécu et demeure une menace.</p>",
+    "<p>Notre tentative contre %1$s s’est soldée par un échec. Iel est toujours actif.ve.</p>",
+    "<p>L’attaque n’a pas atteint son objectif : %1$s a survécu et garde sa liberté.</p>",
+    "<p>Nous n’avons pas pu neutraliser %1$s. Iel reste introuvable après l’affrontement.</p>",
+    "<p>La mission a été un revers : %1$s est toujours debout et hors de notre portée.</p>",
+    "<p>Malgré nos efforts, %1$s s’est défendu.e avec succès et a réussi à fuir.</p>",
+    "<p>Notre assaut n’a pas suffi : %1$s a survécu et continue d’agir.</p>",
+    "<p>La cible %1$s s’est montrée plus résistant.e que prévu. Iel a échappé à notre emprise.</p>",
+    "<p>Nous avons échoué à neutraliser %1$s. Iel demeure vivant.e et peut encore riposter.</p>"
+]', 'Texts for failed attacks in inclusive language');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s - attacker name
+('escapeTextes', '[
+    "<p>J’ai été pris.e pour cible par %1$s, mais j’ai réussi à lui échapper de justesse.</p>",
+    "<p>Une attaque orchestrée par %1$s a failli m’avoir, mais j’ai pu me faufiler hors de sa portée.</p>",
+    "<p>L’embuscade tendue par %1$s n’a pas suffi à me retenir, j’ai pu m’échapper.</p>",
+    "<p>J’ai croisé %1$s sur ma route, iel a tenté de m’intercepter, mais j’ai fui avant qu’il ne soit trop tard.</p>",
+    "<p>L’attaque de %1$s a échoué, je suis sauf.ve et hors de danger.</p>",
+    "<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai esquivé ses griffes à temps.</p>",
+    "<p>Malgré une attaque menée par %1$s, j’ai gardé mon calme et trouvé un chemin pour m’échapper.</p>",
+    "<p>J’ai senti %1$s venir et, bien que surpris.e, j’ai su échapper à son piège.</p>",
+    "<p>Iel a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>",
+    "<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>"
+]', 'Texts for successful escapes in inclusive language');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %s - target name
+('textesAttackFailedAndCountered', '[
+    "<p>Je pars mettre en route le plan d’assassinat de %s.</p>",
+    "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé·e.]</p>",
+    "<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur %s.</p>",
+    "<p>Le silence radio après le lancement de la mission contre %s est inquiétant…</p>",
+    "<p>L’équipe envoyée pour neutraliser %s n’est jamais revenue.</p>"
+]', 'Texts for missions that fail and result in counter-attack or disappearance');
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %s - Assaulter name 
+('counterAttackTexts', '[
+    "<p>%1$s m’a attaqué·e, j’ai survécu et ma riposte l’a anéanti·e. J’ai jeté son corps dans l’Arno.</p>",
+    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte a fait saigner son ego.</p>",
+    "<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit·e.</p>",
+    "<p>Iel a tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu par une riposte fatale.</p>",
+    "<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à ses ambitions.</p>",
+    "<p>Attaqué·e par %1$s, j’ai résisté et ma riposte l’a anéanti·e sans retour.</p>",
+    "<p>Iels ont cherché à me faire tomber, mais ma riposte après l’attaque de %1$s a effacé toute menace.</p>",
+    "<p>L’attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>",
+    "<p>Je me suis retrouvé·e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>",
+    "<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>"
+]', 'Texts for the worker who was atacked an the successfully countered');

@@ -196,7 +196,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                 echo sprintf('<div class="report"> <h3> Rapport : </h3>');
 
                 $timeText = getConfig($gameReady, 'timeValue');
-                $timeTextThis = getConfig($gameReady, 'time_denominator_this');
+                $timeTextThis = getConfig($gameReady, 'timeDenominatorThis');
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf(
                         '<div class="report week"> <h4> %s </h4>',
