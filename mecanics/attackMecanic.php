@@ -253,7 +253,6 @@ function attackMecanic($pdo){
     $timeTextThe = getConfig($pdo, 'timeDenominatorThe');
     $timeTextOfThe = getConfig($pdo, 'timeDenominatorOfThe');
     $timeTextThis = getConfig($pdo, 'timeDenominatorThis');
-    // TODO : search and replace place to throw a body and place of healing
 
     $disapearenceTextes = json_decode(getConfig($pdo,'disapearenceTextes'), true);
     $attackSuccessTextes = json_decode(getConfig($pdo,'attackSuccessTextes'), true);
