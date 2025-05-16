@@ -82,6 +82,26 @@ function locationSearchMecanic($pdo ) {
             $reportArray[$row['searcher_id']] = sprintf( "<p> Dans lea %s %s.</p>", getConfig($pdo, 'textForZoneType'), $row['zone_name'] );
         if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
 
+        // if location has controler_id and its the same as searcher controler then exclude
+        // If enquete_difference if < than LOCATIONNAMEDIFF
+            // $reportElement = Configurable sentence for found_name 
+            // If enquete_difference if < than LOCATIONINFORMATIONDIFF
+                // Add location to the controler_known_locations if not already know else update last_discovery_turn
+                    // Select ID FROM controler_known_locations WHERE controler_id =searcher_controler_id and location_id = found_id
+                    //If empty 
+                        /* INSERT INTO CREATE TABLE controler_known_locations (
+                            controler_id INT NOT NULL, 
+                            location_id INT NOT NULL,  found_id
+                            first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+                            last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+                            VALUES (searcher_controler_id, found_id, $turn_number, $turn_number)
+                        );*/
+                    //ELSE 
+                        // UPDATE controler_known_locations SET last_discovery_turn= $turn_number where id = ID
+                // $reportElement .=  Configurable sentence for found_description 
+                // IF found_can_be_destroyed 
+                    // $reportElement .=  Configurable sentence for you can ordre the distruction
+            // $reportArray[$row['searcher_id']] .= '<p>'. $reportElement .'</p>';
     }
 
     echo '</div>';
