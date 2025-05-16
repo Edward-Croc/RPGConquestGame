@@ -167,13 +167,7 @@ function createBase($pdo, $controler_id, $zone_id) {
     $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
     echo sprintf("controler_name : %s </br>", $controler_name);
 
-    $base_discovery_diff = (INT)getConfig($pdo, 'base_discovery_diff');
-    $power_list = getPowersByType($pdo,'3', $controler_id, FALSE);
-    echo sprintf("power_list : %s </br>", $power_list);
-    foreach ($power_list as $power ) {
-        $base_discovery_diff += $power['enquete'];
-    }
-    echo sprintf("base_discovery_diff : %s </br>", $base_discovery_diff);
+    $discovery_diff = calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id);
 
     $timeValue = getConfig($pdo, 'timeValue');
     echo sprintf("timeValue : %s </br>", var_export($timeValue, true));
@@ -247,8 +241,6 @@ function moveBase($pdo, $base_id, $zone_id) {
  *
  *
  */
-
-
 function addWorkerToCKE($pdo, $searcher_controler_id, $found_id, $turn_number, $zone_id) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;

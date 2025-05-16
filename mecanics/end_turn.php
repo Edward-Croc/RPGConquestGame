@@ -19,7 +19,8 @@ require_once '../base/base_html.php';
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         if ($valsResult) {
             // do end_turn actions
-            // TODO : Save End Turn step to restart after bug ? 
+            // TODO : Save End Turn step to restart after bug ?
+            $bdrResult = recalculateBaseDefence($gameReady);
 
             // set Controlled by IA actions
             $IAResult = aiMecanic($gameReady);
