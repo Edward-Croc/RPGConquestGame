@@ -91,7 +91,9 @@ VALUES
     ('txt_inf_dead', 'est mort', 'Texte for dead action'),
     -- Action End turn effects
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
-    ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
+    ('continuing_claimed_action', FALSE, 'Does the claim action stay active' ),
+    -- Base information
+    ('base_discovery_diff', 6, 'Base discovery value for bases' )
 ;
 
 -- player tables

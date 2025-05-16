@@ -28,7 +28,7 @@
     }
 
     if ( isset($_SESSION['controler']) ) {
-        $controlers = getControlers($gameReady, NULL, $_GET['controler_id'])[0];
+        $controlers = getControlers($gameReady, NULL, $_SESSION['controler']['id'])[0];
         echo sprintf (
             "Vous êtes %s %s (%s) de lea faction %s (%s)",
             $controlers['firstname'],
@@ -44,15 +44,32 @@
             $controlers['id']
         );
 
-        $base = hasBase($gameReady, $controlers['id']);
-        if (empty($base)) {
+        $bases = hasBase($gameReady, $controlers['id']);
+        if (empty($bases)) {
             echo sprintf(
                 '<input type="submit" name="createBase" value="%1$s" class="worker-action-btn"> %2$s <br />',
                 getConfig($gameReady, 'textControlerActionCreateBase'),
                 $showZoneSelect
             );
         } else {
-            echo sprintf('%s', var_export($base, true));
+            echo sprintf('<p> %s </p>', var_export($bases, true));
+            $textControlerActionMoveBase = getConfig($gameReady, 'textControlerActionMoveBase');
+            echo '<p>';
+            foreach ($bases as $base ){
+                echo sprintf('
+                    <input type="hidden" name="base_id" value=%3$s>
+                    Lea %4$s a %5$s, ne sera découvert que sur un %6$s si découvert donne le texte : <br /> %7$s<br />
+                    <input type="submit" name="moveBase" value="%1$s" class="worker-action-btn"> %2$s <br /><br />',
+                    $textControlerActionMoveBase,
+                    $showZoneSelect,
+                    $base['id'],
+                    $base['name'],
+                    $base['zone_name'],
+                    $base['discovery_diff'],
+                    $base['description']
+                );
+            }
+            echo '</p>';
         }
         echo '
         </p>

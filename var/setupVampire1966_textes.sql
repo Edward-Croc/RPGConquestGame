@@ -13,17 +13,21 @@ VALUES
  ,('textViewWorkerJobHobby','c’etait un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
  ,('textViewWorkerTransformations', 'Iel a été transformé en : %s <br />', 'Texts for worker view page transformations')
- ,('texteBaseRepaire', '
+ ,('texteDescriptionBase', '
         Nous avons trouvé le repaire de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
         En attaquant ce lieu nous pourrions lui porter un coup fatal.
         Sa disparition causerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
         Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de semaine en semaine.
+    ','Texts for worker view page transformations')
+ ,('texteHiddenFactionBase', '
+        %s
     ','Texts for worker view page transformations')
 ;
 
 INSERT INTO config (name, value, description)
 VALUES
  ('textControlerActionCreateBase', 'Crée un repere dans le quartier :', 'create base texte in controler view actions')
+ ,('textControlerActionMoveBase', 'Déplacer le repere vers le quartier :', 'move base texte in controler view actions')
  ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repere.', 'needed base for recrutment')
 ;
 

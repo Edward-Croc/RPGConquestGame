@@ -18,7 +18,7 @@ VALUES
  ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s ', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
  ,('textViewWorkerTransformations', 'Iel a été équipé de : %s <br />', 'Texts for worker view page transformations')
- ,('texteBaseRepaire', '
+ ,('texteDescriptionBase', '
         Nous avons trouvé la forteresse de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses. En attaquant ce lieu nous pourrions lui porter un coup fatal.
         Sa disparition causerait certainement quelques questions à la coure, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
         Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent.
@@ -28,6 +28,7 @@ VALUES
 INSERT INTO config (name, value, description)
 VALUES
  ('textControlerActionCreateBase', 'Crée une forteresse dans la région :', 'create base texte in controler view actions')
+ ,('textControlerActionMoveBase', 'Déplacer la forteresse vers la région :', 'move base texte in controler view actions')
  ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir une forteresse.', 'needed base for recrutment')
 ;
 

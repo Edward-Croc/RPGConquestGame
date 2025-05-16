@@ -140,7 +140,10 @@ function canStartRecrutement($pdo, $controler_id, $turnNumber){
  */
 function hasBase($pdo, $controler_id) {
 
-    $sql = "SELECT * FROM locations WHERE controler_id = :controler_id and is_base = TRUE";
+    $sql = "SELECT l.*, z.name AS zone_name FROM locations l
+        LEFT JOIN zones z ON l.zone_id = z.ID
+        WHERE controler_id = :controler_id and is_base = TRUE
+    ";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -164,23 +167,29 @@ function createBase($pdo, $controler_id, $zone_id) {
     $controler_name = $controlers[0]['firstname']. ' '. $controlers[0]['lastname'];
     echo sprintf("controler_name : %s </br>", $controler_name);
 
-    $discovery_diff = 6;
+    $base_discovery_diff = (INT)getConfig($pdo, 'base_discovery_diff');
     $power_list = getPowersByType($pdo,'3', $controler_id, FALSE);
     echo sprintf("power_list : %s </br>", $power_list);
     foreach ($power_list as $power ) {
-        $discovery_diff += $power['enquete'];
+        $base_discovery_diff += $power['enquete'];
     }
-    echo sprintf("discovery_diff : %s </br>", $discovery_diff);
+    echo sprintf("base_discovery_diff : %s </br>", $base_discovery_diff);
 
     $timeValue = getConfig($pdo, 'timeValue');
-    echo sprintf("timeValue : %s </br>", $timeValue);
+    echo sprintf("timeValue : %s </br>", var_export($timeValue, true));
 
     $description = sprintf(
-        getConfig($pdo, 'texteBaseRepaire'),
+        getConfig($pdo, 'texteDescriptionBase'),
         $controler_name,
         $timeValue
     );
+    if ($controlers[0]['faction_id'] != $controlers[0]['fake_faction_id'])
+        $description .= sprintf(
+            getConfig($pdo, 'texteHiddenFactionBase'),
+            $controlers[0]['fake_faction_name']
+        );
 
+    try{
     // Check if base already exists for this controler in the zone
     $checkSql = "SELECT COUNT(*) FROM locations WHERE zone_id = :zone_id AND controler_id = :controler_id AND is_base = TRUE";
     $checkStmt = $pdo->prepare($checkSql);
@@ -189,9 +198,12 @@ function createBase($pdo, $controler_id, $zone_id) {
         ':controler_id' => $controler_id
     ]);
 
-    if ($checkStmt->fetchColumn() > 0) {
-        if ($debug) echo "Base already exists for this controler in this zone.<br />";
-        return false;
+        if ($checkStmt->fetchColumn() > 0) {
+            if ($debug) echo "Base already exists for this controler in this zone.<br />";
+            return false;
+        }
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
     }
 
     $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
@@ -212,9 +224,21 @@ function createBase($pdo, $controler_id, $zone_id) {
     return true;
 }
 
-// TODO: move base
+function moveBase($pdo, $base_id, $zone_id) {
     // update locations set zone_id where controler_id = "%s";
+    $sql = "UPDATE locations SET zone_id = :zone_id,setup_turn = (SELECT turncounter FROM mecanics LIMIT 1) WHERE id = :base_id";
+    try{
+        // Update config value in the database
+        $stmt = $pdo->prepare($sql);
 
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
+        return false;
+    }
+}
 
 // TODO: attack ennemy base
 
