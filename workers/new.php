@@ -160,7 +160,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
             echo showTransformationSelect($powerTransformationArray, TRUE);
     }
 
-    echo showZoneSelect($zonesArray, FALSE, FALSE);
+    echo showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
 
     echo "<input type='submit' name='chosir' value='Affecter' /> 
     </p>

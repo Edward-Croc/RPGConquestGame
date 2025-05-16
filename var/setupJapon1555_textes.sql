@@ -168,8 +168,8 @@ INSERT INTO config (name, value, description)
 VALUES
 -- Observers of a **failed** violent claim
 ('textesClaimFailViewArray', '[
-    "J’ai vu %1$s tenter de prendre le contrôle du quartier %2$s, mais la défense l’a repoussé.e brutalement.",
-    "L’assaut de %1$s sur le quartier %2$s a échoué ; c’était un vrai carnage.",
+    "J’ai vu %1$s tenter de prendre le contrôle du territoire %2$s, mais la défense l’a repoussé.e brutalement.",
+    "L’assaut de %1$s sur le territoire %2$s a échoué ; c’était un vrai carnage.",
     "%1$s a voulu s’imposer au %2$s, sans succès. Iel a été forcé.e de battre en retraite.",
     "Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé."
 ]', 'Texts the workers observing the failed violent claiming of a zone'),
@@ -192,7 +192,7 @@ VALUES
 
 -- Report to the **claiming worker** on success
 ('textesClaimSuccessArray', '[
-    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
+    "Nous avons pris le contrôle du territoire %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
     "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
     "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
     "%2$s est tombé.e sous votre coupe."

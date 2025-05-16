@@ -1,7 +1,7 @@
 <?php
 
     $zonesArray = getZonesArray($gameReady);
-    $showZoneSelect = showZoneSelect($zonesArray, FALSE, FALSE);
+    $showZoneSelect = showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
     $mapFile = getConfig($gameReady, 'map_file');
     $mapAlt = getConfig($gameReady, 'map_alt');
     $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';

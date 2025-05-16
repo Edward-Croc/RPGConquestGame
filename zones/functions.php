@@ -35,7 +35,7 @@ function getZonesArray($pdo, $zone_id = NULL) {
     return $zones;
 }
 
-function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
+function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = true){
 
     if (empty($zonesArray)) return '';
 
@@ -54,7 +54,7 @@ function showZoneSelect($zonesArray, $show_text = false, $place_holder = true){
             %s
         </select>
         ",
-        $show_text ? 'Quartier :' : '',
+        $show_text ? ucfirst(getConfig($pdo, 'textForZoneType')) : '',
         $place_holder ? "<option value=''>Select Zone</option>": '',
         $zoneOptions
     );

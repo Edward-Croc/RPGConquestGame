@@ -5,6 +5,7 @@ VALUES
     ('map_file', 'carte_quartiers_florence.jpg', 'Map file to use'),
     ('map_alt', 'Carte des Quartiers de Florence', 'Map alt'),
     ('timeValue', 'Semaine', 'Text for time span'),
+    ('textForZoneType', 'quartier', 'Text for the type of zone'),
     ('timeDenominatorThe', 'la', 'Denominator ’the’ for time text'),
     ('timeDenominatorOfThe', 'de la', 'Denominator ’of the’ for time text'),
     ('timeDenominatorThis', 'cette', 'Denominator ’this’ for time text')
@@ -216,14 +217,13 @@ INSERT INTO zones (name, description) VALUES
 ('Bosco Bello', 'Niché sur les hauteurs boisées à l’est de Florence, les villas de la Renaissance aux murs couverts de lierre côtoient de petites chapelles oubliées, au milieu des vignes. Considéré comme un lieu de retraite pour les nobles et les artistes, le Bosco Bello est un quartier discret, empreint de mystère et de sérénité.')
 ;
 
-
 -- Insert the data
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 ('Stazione ferroviaria', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
 ('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
 ('Le barrage','', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
 ('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
-('Linfant', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
+('L’infant', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
 ('Cairn','', 6, (SELECT ID FROM zones WHERE name = 'Monticelli')),
 ('Fortezza da Basso', '', 0, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
 ('Facolta di Ingegneria', '', 6, (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),

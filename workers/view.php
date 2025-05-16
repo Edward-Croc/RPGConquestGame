@@ -50,7 +50,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
     if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
     if ( !empty($workersArray) ) {
-        $showZoneSelect = showZoneSelect($zonesArray, FALSE, FALSE);
+        $showZoneSelect = showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
         if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
         if ( !empty($worker_id) ) {
@@ -114,7 +114,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
                         <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                         <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
-                        <input type="submit" name="claim" value="Revendiquer le quartier au nom de " class="worker-action-btn"> %5$s <br />
+                        <input type="submit" name="claim" value="Revendiquer le '.getConfig($gameReady, 'textForZoneType').' au nom de " class="worker-action-btn"> %5$s <br />
                         </p></div>
                         ',
                         $worker['id'],
