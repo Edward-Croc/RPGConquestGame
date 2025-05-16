@@ -81,11 +81,55 @@ function  restartTurnRecrutementCount($pdo){
 }
 
 /**
+ *
+ */
+function canStartFirstCome($pdo, $controler_id) {
+
+    $controlerValues = getControlers($pdo, NULL, $controler_id);
+    if ( $_SESSION['DEBUG'] == true )
+    echo '<p>'
+        .'; turn_firstcome_workers: '. getConfig($pdo, 'turn_firstcome_workers')
+        .'; turn_firstcome_workers :'. $controlerValues[0]['turn_firstcome_workers']
+    .'</p>';
+    if (
+        (INT)$controlerValues[0]['turn_firstcome_workers'] < (INT)getConfig($pdo, 'turn_firstcome_workers')
+    )  return true;
+    return false;
+}
+
+/**
+ *
+ */
+function canStartRecrutement($pdo, $controler_id, $turnNumber){
+
+    $controlerValues = getControlers($pdo, NULL, $controler_id);
+    if ( $_SESSION['DEBUG'] == true )
+    echo '<p>turncounter: '. $turnNumber
+        .'; turn_recrutable_workers: '. getConfig($pdo, 'turn_recrutable_workers')
+        .'; start_workers :'. $controlerValues[0]['start_workers']
+        .'; turn_recruted_workers :'. $controlerValues[0]['turn_recruted_workers']
+    .'</p>';
+
+    if (
+        hasBase($pdo, $controler_id)
+        &&
+        (
+            ( $turnNumber == 0 )
+            && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
+        ) || (
+            ( (INT)$turnNumber > 0 )
+            && ( $controlerValues[0]['turn_recruted_workers'] < (INT)getConfig($pdo, 'turn_recrutable_workers') )
+        )
+    ) return true;
+    return false;
+}
+
+/**
  * This function returns an array of all bases a controler has or a NULL
- * 
+ *
  * params
  *  $controler_id string
- * 
+ *
  * returns
  * array() | NULL
  */
@@ -100,12 +144,12 @@ function hasBase($pdo, $controler_id) {
         return $bases;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
-        return NULL;
     }
+    return NULL;
 }
 
 /**
- * 
+ *
  */
 function createBase($pdo, $controler_id, $zone_id) {
     $debug = FALSE;
@@ -126,21 +170,31 @@ function createBase($pdo, $controler_id, $zone_id) {
     $timeValue = getConfig($pdo, 'timeValue');
     echo sprintf("timeValue : %s </br>", $timeValue);
 
-    $description = sprintf('
-        Nous avons trouvé le repaire de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
-        En attaquant ce lieu nous pourrions lui porter un coup fatal.
-        Sa disparition causerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
-        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de %2$s en %2$s.',
+    $description = sprintf(
+        getConfig($pdo, 'texteBaseRepaire'),
         $controler_name,
         $timeValue
     );
+
+    // Check if base already exists for this controler in the zone
+    $checkSql = "SELECT COUNT(*) FROM locations WHERE zone_id = :zone_id AND controler_id = :controler_id AND is_base = TRUE";
+    $checkStmt = $pdo->prepare($checkSql);
+    $checkStmt->execute([
+        ':zone_id' => $zone_id,
+        ':controler_id' => $controler_id
+    ]);
+
+    if ($checkStmt->fetchColumn() > 0) {
+        if ($debug) echo "Base already exists for this controler in this zone.<br />";
+        return false;
+    }
 
     $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
         (:zone_id, 'Repaire', :description, :controler_id, :discovery_diff, TRUE, TRUE)";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
-        
+
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':controler_id', $controler_id, PDO::PARAM_INT);
@@ -161,8 +215,8 @@ function createBase($pdo, $controler_id, $zone_id) {
 
 
 /**
- * 
- * 
+ *
+ *
  */
 
 
@@ -179,7 +233,7 @@ function addWorkerToCKE($pdo, $searcher_controler_id, $found_id, $turn_number, $
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':searcher_controler_id' => $searcher_controler_id,
-        ':found_id' => $found_id 
+        ':found_id' => $found_id
     ]);
     $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
     echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));

@@ -18,36 +18,32 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
     } else {
         $workersArray = getWorkersByControler($gameReady, $controler_id);
     }
+
     echo "<div class='workers'>";
     if ( empty($worker_id) ) {
-        $controlerValues = getControlers($gameReady, NULL, $controler_id);
-        echo sprintf("
+        $recruitButton = "";
+        if (canStartRecrutement($gameReady, $controler_id, (INT)$mecanics['turncounter'])){
+            $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur'>";
+        } elseif (empty(hasBase($gameReady, $controler_id))) {
+            $recruitButton = getConfig($gameReady, 'textControlerRecrutmentNeedsBase');
+        }
+
+        $firstComeButton = "";
+        if (canStartFirstCome($gameReady, $controler_id))
+            $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu'>";
+
+            echo sprintf("
             <h1>Agents</h1>
             <form action='/RPGConquestGame/workers/new.php' method='GET'>
                 <b> Recrutement : </b>
-                <input type='hidden' name='controler_id'  value=%s>
+                <input type='hidden' name='controler_id' value='%s'>
                 %s
                 %s
             </form>",
-            strval($controler_id),
-            // limit recrutment for controler
-            (
-                ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
-            ) || (
-             ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
-            ) 
-                ? "<input type='submit' name='recrutement' value='Recruter un serviteur'>" : "",
-            ( (INT)$controlerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers') )
-                ? "<input type='submit' name='first_come'  value='Prendre le premier venu'>" : ""
+            htmlspecialchars($controler_id),
+            $firstComeButton,
+            $recruitButton
         );
-        if ( $_SESSION['DEBUG'] == true )
-            echo '<p>turncounter: '. (INT)$mecanics['turncounter'] 
-                .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
-                .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
-                .'; start_workers :'. $controlerValues[0]['start_workers'] 
-                .'; turn_recruted_workers :'. $controlerValues[0]['turn_recruted_workers'] 
-                .'; turn_firstcome_workers :'. $controlerValues[0]['turn_firstcome_workers']
-            .'</p>';
     } else {
         echo sprintf("<h1>Agent</h1>");
     }
