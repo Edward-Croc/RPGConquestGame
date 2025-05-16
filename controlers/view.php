@@ -28,23 +28,23 @@
     }
 
     if ( isset($_SESSION['controler']) ) {
+        $controlers = getControlers($gameReady, NULL, $_GET['controler_id'])[0];
         echo sprintf (
             "Vous êtes %s %s (%s) de lea faction %s (%s)",
-            $_SESSION['controler']['firstname'],
-            $_SESSION['controler']['lastname'],
-            $_SESSION['controler']['id'],
-            $_SESSION['controler']['faction_name'],
-            ""
-            //$_SESSION['controler']['fake_faction_name']
+            $controlers['firstname'],
+            $controlers['lastname'],
+            $controlers['id'],
+            $controlers['faction_name'],
+            $controlers['fake_faction_name']
         );
 
         echo sprintf('<div ><form action="/RPGConquestGame/controlers/action.php" method="GET">
             <input type="hidden" name="controler_id" value=%1$s>
             <h3>Actions : </h3> <p>',
-            $_SESSION['controler']['id']
+            $controlers['id']
         );
 
-        $base = hasBase($gameReady, $_SESSION['controler']['id']);
+        $base = hasBase($gameReady, $controlers['id']);
         if (empty($base)) {
             echo sprintf(
                 '<input type="submit" name="createBase" value="%1$s" class="worker-action-btn"> %2$s <br />',

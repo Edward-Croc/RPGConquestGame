@@ -5,7 +5,12 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
     $controlersArray = array();
 
     try{
-        $sql = "SELECT c.*, f.name AS faction_name FROM controlers c LEFT JOIN factions f ON c.faction_id = f.ID";
+        $sql = "SELECT c.*,
+            f.name AS faction_name, 
+            ff.name AS fake_faction_name
+            FROM controlers c
+            LEFT JOIN factions f ON c.faction_id = f.ID
+            LEFT JOIN factions ff ON c.fake_faction_id = ff.ID";
         if ($player_id !== NULL){
             $sql .= "
                 INNER JOIN player_controler pc ON pc.controler_id = c.id
