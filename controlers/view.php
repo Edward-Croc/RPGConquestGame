@@ -34,7 +34,8 @@
             $_SESSION['controler']['lastname'],
             $_SESSION['controler']['id'],
             $_SESSION['controler']['faction_name'],
-            $_SESSION['controler']['fake_faction_name']
+            ""
+            //$_SESSION['controler']['fake_faction_name']
         );
 
         echo sprintf('<div ><form action="/RPGConquestGame/controlers/action.php" method="GET">
