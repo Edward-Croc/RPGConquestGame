@@ -219,8 +219,8 @@ INSERT INTO zones (name, description) VALUES
 
 -- Insert the data
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-('Stazione ferroviaria', '', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
-('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Stazione ferroviaria', 'Test Description', 0, (SELECT ID FROM zones WHERE name = 'Railway Station')),
+('Les anges de la boue', 'Test Description', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
 ('Le barrage','', 6, (SELECT ID FROM zones WHERE name = 'Railway Station')),
 ('Les anges de la boue', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),
 ('L’infant', '', 6, (SELECT ID FROM zones WHERE name = 'Le Cascine')),

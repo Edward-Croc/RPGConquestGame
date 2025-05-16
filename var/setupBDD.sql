@@ -64,6 +64,8 @@ VALUES
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
     ('REPORTDIFF2', 2, 'Value for Level 2 information'),
     ('REPORTDIFF3', 3, 'Value for Level 3 information'),
+    ('LOCATIONNAMEDIFF', 0, 'Value for Location Name'),
+    ('LOCATIONINFORMATIONDIFF', 1, 'Value for Location Information'),
     -- Attack choices
     ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
     ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
