@@ -92,7 +92,7 @@ function getLocationsArray($pdo) {
  */
 function recalculateBaseDefence($pdo) {
     // Get all bases with their controler and zone
-    $sql = "SELECT id, controler_id, zone_id FROM location WHERE is_base = TRUE";
+    $sql = "SELECT id, controler_id, zone_id FROM locations WHERE is_base = TRUE";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -105,8 +105,8 @@ function recalculateBaseDefence($pdo) {
 
         // Update base with new difficulty
         $update_sql = "
-            UPDATE bases 
-            SET discovery_difficulty = :new_diff 
+            UPDATE locations 
+            SET discovery_diff = :new_diff 
             WHERE id = :id
         ";
         $update_stmt = $pdo->prepare($update_sql);
@@ -191,7 +191,7 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id){
             $discoveryDiff += $turn_diff * $baseDiscoveryDiffAddTurns;
         }
 
-        echo sprintf("discoveryDiff : %s </br>", $base_discovery_diff);
+        echo sprintf("discoveryDiff : %s </br>", $discoveryDiff);
     }
 
     return $discoveryDiff;
