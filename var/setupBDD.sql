@@ -146,7 +146,9 @@ CREATE TABLE zones (
     defence_val INT DEFAULT 6, -- Base defence to claim the zone
     calculated_defence_val INT DEFAULT 6, -- Updated defence value when actively protected
     claimer_controler_id INT, -- ID of controler officialy claiming the zone
-    holder_controler_id INT   -- ID of controler defending the zone
+    holder_controler_id INT,   -- ID of controler defending the zone
+    FOREIGN KEY (claimer_controler_id) REFERENCES controlers (ID),
+    FOREIGN KEY (holder_controler_id) REFERENCES controlers (ID)
 );
 
 CREATE TABLE locations (
@@ -159,7 +161,8 @@ CREATE TABLE locations (
     controler_id INT DEFAULT NULL,
     can_be_destroyed BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (zone_id) REFERENCES zones (ID)
+    FOREIGN KEY (zone_id) REFERENCES zones (ID),
+    FOREIGN KEY (controler_id) REFERENCES controlers (ID)
 );
 
 CREATE TABLE controler_known_locations (
