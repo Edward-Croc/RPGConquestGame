@@ -30,7 +30,7 @@
     if ( isset($_SESSION['controler']) ) {
         $controlers = getControlers($gameReady, NULL, $_SESSION['controler']['id'])[0];
         echo sprintf (
-            "Vous êtes %s %s (%s) de lea faction %s (%s)",
+            "Vous êtes %s %s (réseau %s) de la faction %s (%s)",
             $controlers['firstname'],
             $controlers['lastname'],
             $controlers['id'],
@@ -58,8 +58,8 @@
             foreach ($bases as $base ){
                 echo sprintf('
                     <input type="hidden" name="base_id" value=%3$s>
-                    Lea %4$s a %5$s, ne sera découvert que sur un %6$s si découvert donne le texte : <br /> %7$s<br />
-                    <input type="submit" name="moveBase" value="%1$s" class="worker-action-btn"> %2$s <br /><br />',
+                    Votre %4$s à %5$s ne sera découvert que sur une valeur d’enquête de %6$s ou plus, si découvert, le texte suivant sera présenté à l’enquêteur : <br /> %7$s<br />
+                    <input type="submit" name="moveBase" value="%1$s" class="controler-action-btn"> %2$s <br /><br />',
                     $textControlerActionMoveBase,
                     $showZoneSelect,
                     $base['id'],
@@ -75,7 +75,7 @@
         </p>
         </form>';
   } ?>
-    </div>
+</div>
 
 
 
