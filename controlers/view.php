@@ -7,6 +7,8 @@
     $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
 
     $controlers = getControlers($gameReady, $_SESSION['user_id']);
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
     ?>
 
     <div class="factions">
