@@ -10,9 +10,9 @@ UPDATE config SET
 INSERT INTO config (name, value, description)
 VALUES
  ('textRecrutementJobHobby', '%4$s, %5$s', 'string to present hobby %4$s and job %5$s on recrutement')
- ,('textViewWorkerJobHobby','c’etait un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
+ ,('textViewWorkerJobHobby','c’était un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
- ,('textViewWorkerTransformations', 'Iel a été transformé en : %s <br />', 'Texts for worker view page transformations')
+ ,('textViewWorkerTransformations', 'Iel a été transformé.e en : %s <br />', 'Texts for worker view page transformations')
   -- %1$s Fake Faction name
  ,('texteNameBase', 'Repaire %s', 'Text for Name of base')
  -- %1$s Controler name
@@ -21,21 +21,21 @@ VALUES
  ,('texteDescriptionBase', '
         Nous avons trouvé le repaire de %1$s des %2$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
         En attaquant ce lieu nous pourrions lui porter un coup fatal.
-        Sa disparition causerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
+        Sa disparition provoquerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
         Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de %3$s en %3$s.
     ','Texts for description of base')
  -- %1$s Fake Faction name
  -- %2$s True Faction name
  ,('texteHiddenFactionBase', '
-       Il nous apparait en fouillant le lieu que ce quelqu’un c’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %2$s, mais en réalité son propriétaire est du clan %1$s.
+       Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %2$s, mais en réalité son propriétaire est du clan %1$s.
     ','Texts for secret faction description of base')
 ;
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textControlerActionCreateBase', 'Crée un repere dans le quartier :', 'create base texte in controler view actions')
- ,('textControlerActionMoveBase', 'Déplacer le repere vers le quartier :', 'move base texte in controler view actions')
- ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repere.', 'needed base for recrutment')
+ ('textControlerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controler view actions')
+ ,('textControlerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controler view actions')
+ ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repaire.', 'needed base for recrutment')
 ;
 
 INSERT INTO config (name, value, description)
@@ -58,9 +58,9 @@ VALUES
 (
     'textesOrigine',
     '[
-        "J’ai des raisons de penser qu’il est natif de %s. ",
-        "En plus, il est originaire de %s. ",
-        "Je m’en méfie, il vient de %s. "
+        "J’ai des raisons de penser qu’iel est natif.ve de %s. ",
+        "En plus, iel est originaire de %s. ",
+        "Je m’en méfie, iel vient de %s. "
     ]',
     'Texts for origin detection'
 );
@@ -96,8 +96,8 @@ VALUES
             "C’était louche, alors j’ai enquêté et trouvé qu’iel a en réalité des pouvoirs de %6$s, ce qui en fait un.e %2$s un peu trop spécial.e%8$s. "
         ],
         [
-            "On a suivi %1$s parce qu’on l’a repéré.e en train de %5$s, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’il était aussi un.e %3$s. ",
-            "%9$sCela dit, le vrai problème, c’est qu’il semble maîtriser %6$s, au moins partiellement%8$s. "
+            "On a suivi %1$s parce qu’on l’a repéré.e en train de %5$s, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’iel était aussi un.e %3$s. ",
+            "%9$sCela dit, le vrai problème, c’est qu’iel semble maîtriser %6$s, au moins partiellement%8$s. "
         ]
     ]',
     'Texts for search results level 1 (structured dialogue in pairs)'
@@ -138,7 +138,7 @@ VALUES
     'textesDiff2', '[
         "%2$sEn plus, sa famille a des liens avec le réseau %1$s. %3$s",
         "Iel fait partie du réseau %1$s. %3$s %2$s",
-        "%2$sEn creusant, iel est rattaché au réseau %1$s. %3$s",
+        "%2$sEn creusant, iel est rattaché.e au réseau %1$s. %3$s",
         "%3$s Iel reçoit un soutien financier du réseau %1$s. %2$s",
         "%2$sIel traîne avec le réseau %1$s. %3$s"
     ]', 'Texts for search results level 2'),
@@ -151,7 +151,7 @@ VALUES
         "A partir de là on a pu remonter jusqu’à %1$s. ",
         "Du coup, iel travaille forcément pour %1$s. ",
         "Nous l’avons vu.e rencontrer en personne %1$s. ",
-        "Ce qui veut dire que c’est un des types de %1$s. "
+        "Ce qui veut dire que c’est un des agents de %1$s. "
     ]',
     'Texts for search results level 3'
 );
@@ -192,7 +192,7 @@ VALUES
     "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.",
     "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",
     "L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.",
-    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance."
+    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance aux défenseurs."
 ]', 'Texts the workers observing the successful violent claiming of a zone'),
 
 -- Report to the **claiming worker** on failure
@@ -209,9 +209,9 @@ VALUES
 -- %1$s - worker name
 -- %2$s - zone name
 ('textesClaimSuccessArray', '[
-    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
+    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations, vous en êtes désormais le maitre.",
     "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
-    "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
+    "Nous avons su imposer votre autorité sur %2$s. Le quartier vous obéit désormais.",
     "%2$s est tombé.e sous votre coupe."
 ]', 'Texts for the success report of the claiming worker');
 
@@ -221,10 +221,10 @@ VALUES
 ('workerDisappearanceTexts', '[
     "<p>Cet agent a disparu sans laisser de trace à partir de la semaine %s.</p>",
     "<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>",
-    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où il se trouve.</p>",
-    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé dans la nature.</p>",
+    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où iel se trouve.</p>",
+    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé.e dans la nature.</p>",
     "<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>",
-    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis il est aux abonnés absents.</p>",
+    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis iel est aux abonnés absents.</p>",
     "<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>",
     "<p>L’agent s’est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>",
     "<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>",
@@ -236,10 +236,10 @@ VALUES
 -- %1$s - target name
 ('attackSuccessTexts', '[
     "<p>J’ai pu mener à bien ma mission sur %1$s, son silence est assuré.</p>",
-    "<p>J’ai accompli l’attaque sur %1$s, il a trouvé son repos final.</p>",
+    "<p>J’ai accompli l’attaque sur %1$s, iel a trouvé son repos final.</p>",
     "<p>Notre cible %1$s a été accompagnée à l’hôpital dans un état critique, nous n’avons plus rien à craindre.</p>",
-    "<p>Un suicidé sera retrouvé dans l’Arno demain, %1$s n’est plus des nôtres.</p>",
-    "<p>Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel.</p>",
+    "<p>Un.e suicidé.e sera retrouvé dans l’Arno demain, %1$s n’est plus des nôtres.</p>",
+    "<p>Je confirme que %1$s ne posera plus jamais problème, iel a rejoint le silence éternel.</p>",
     "<p>Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.</p>",
     "<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>"
 ]', 'Templates for successful attack reports mentioning the target name');
@@ -271,7 +271,7 @@ VALUES
     "<p>La mission a été un revers : %1$s est toujours debout et hors de notre portée.</p>",
     "<p>Malgré nos efforts, %1$s s’est défendu.e avec succès et a réussi à fuir.</p>",
     "<p>Notre assaut n’a pas suffi : %1$s a survécu et continue d’agir.</p>",
-    "<p>La cible %1$s s’est montrée plus résistant.e que prévu. Iel a échappé à notre emprise.</p>",
+    "<p>La cible %1$s s’est montrée plus résistante que prévu. Iel a échappé à notre emprise.</p>",
     "<p>Nous avons échoué à neutraliser %1$s. Iel demeure vivant.e et peut encore riposter.</p>"
 ]', 'Texts for failed attacks in inclusive language');
 
@@ -284,10 +284,10 @@ VALUES
     "<p>L’embuscade tendue par %1$s n’a pas suffi à me retenir, j’ai pu m’échapper.</p>",
     "<p>J’ai croisé %1$s sur ma route, iel a tenté de m’intercepter, mais j’ai fui avant qu’il ne soit trop tard.</p>",
     "<p>L’attaque de %1$s a échoué, je suis sauf.ve et hors de danger.</p>",
-    "<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai esquivé ses griffes à temps.</p>",
+    "<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai échappé à ses griffes à temps.</p>",
     "<p>Malgré une attaque menée par %1$s, j’ai gardé mon calme et trouvé un chemin pour m’échapper.</p>",
     "<p>J’ai senti %1$s venir et, bien que surpris.e, j’ai su échapper à son piège.</p>",
-    "<p>Iel a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>",
+    "<p>%1$s a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>",
     "<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>"
 ]', 'Texts for successful escapes in inclusive language');
 
@@ -295,7 +295,7 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s - target name
 ('textesAttackFailedAndCountered', '[
-    "<p>Je pars mettre en route le plan d’assassinat de %s.</p>",
+    "<p>Je pars mettre en route le plan d’assassinat de %s. [Le rapport n’a jamais été terminé·e.]</p>",
     "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé·e.]</p>",
     "<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur %s.</p>",
     "<p>Le silence radio après le lancement de la mission contre %s est inquiétant…</p>",
@@ -307,7 +307,7 @@ VALUES
 -- %s - Assaulter name 
 ('counterAttackTexts', '[
     "<p>%1$s m’a attaqué·e, j’ai survécu et ma riposte l’a anéanti·e. J’ai jeté son corps dans l’Arno.</p>",
-    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte a fait saigner son ego.</p>",
+    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte nous assure qu’iel ne posera plus problème.</p>",
     "<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit·e.</p>",
     "<p>Iel a tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu par une riposte fatale.</p>",
     "<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à ses ambitions.</p>",
@@ -324,7 +324,7 @@ VALUES
 -- %s = nom de la localisation
 ('TEXT_LOCATION_DISCOVERED_NAME', '[
     "Nous avons identifié une installation appelée %s.",
-    "Des signes pointent vers une présence nommée %s."
+    "Des signes pointent vers une présence suspecte à l’endroit de %s."
 ]', 'Phrases pour signaler qu’une localisation a été découverte (nom uniquement)'),
 
 -- %s = description de la localisation

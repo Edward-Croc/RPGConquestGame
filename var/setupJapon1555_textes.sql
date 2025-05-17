@@ -24,7 +24,7 @@ VALUES
  -- %2$s FakeFaction name
  -- %3$s Time values
  ,('texteDescriptionBase', '
-        Nous avons trouvé le forteresse de %1$s des %2$s. Les serviteurs de confiance manquent encore à l’appel pour avoir des défenses solides.
+        Nous avons trouvé la forteresse de %1$s des %2$s. Les serviteurs de confiance leur manquent encore pour avoir des défenses solides.
         En attaquant ce lieu nous pourrions lui porter un coup fatal.
         Sa disparition causerait certainement quelques questions à la cour du Shogun, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
         Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent chaque %3$s.
@@ -32,15 +32,15 @@ VALUES
  -- %1$s Fake Faction name
  -- %2$s True Faction name
  ,('texteHiddenFactionBase', '
-       Il nous apparait en fouillant le lieu que ce quelqu’un c’est donné beaucoup de mal pour que ce fortersse donne l’impression d’être liée aux %2$s, mais en réalité son propriétaire est des %1$s.
+       Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux %2$s, mais en réalité son propriétaire est des %1$s.
     ','Texts for secret faction description of base')
 ;
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textControlerActionCreateBase', 'Crée une forteresse dans la région :', 'create base texte in controler view actions')
- ,('textControlerActionMoveBase', 'Déplacer la forteresse vers la région :', 'move base texte in controler view actions')
- ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir une forteresse.', 'needed base for recrutment')
+ ('textControlerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controler view actions')
+ ,('textControlerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controler view actions')
+ ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir établi une forteresse.', 'needed base for recrutment')
 ;
 
 INSERT INTO config (name, value, description)
@@ -63,9 +63,9 @@ VALUES
 (
     'textesOrigine',
     '[
-        "J’ai des raisons de penser qu’il est natif de %s. ",
-        "En plus, il est originaire de %s. ",
-        "Je m’en méfie, il vient de %s. "
+        "J’ai des raisons de penser qu’iel est natif.ve de %s. ",
+        "En plus, iel est originaire de %s. ",
+        "Je m’en méfie, iel vient de %s. "
     ]',
     'Texts for origin detection'
 );
@@ -141,18 +141,18 @@ VALUES
 -- %3$s - (disciplines si plus d'une)
 (
     'textesDiff2', '[
-        "%2$sEn plus, sa famille a des liens avec le réseau %1$s. %3$s",
-        "Iel fait partie du réseau %1$s. %3$s %2$s ",
-        "%2$sEn creusant, iel est rattaché.e au réseau %1$s. %3$s ",
-        "%3$s Iel reçoit un soutien financier du réseau %1$s. %2$s",
-        "%2$sIel travaille avec le réseau %1$s. %3$s"
+        "%2$sEn plus, sa famille a des liens avec la faction %1$s. %3$s",
+        "Iel fait partie de la faction %1$s. %3$s %2$s ",
+        "%2$sEn creusant, iel est rattaché.e à la faction %1$s. %3$s ",
+        "%3$s Iel reçoit un soutien financier de la faction %1$s. %2$s",
+        "%2$sIel travaille avec la faction %1$s. %3$s"
     ]', 'Texts for search results level 2'),
 --  Diff 3
 -- %1$s - found_controler_name
 -- %2$s - found_controler_faction
 (
     'textesDiff3', '[
-        "Ce réseau répond à %1$s. ",
+        "Ce réseau d’informateurs répond à %1$s. ",
         "A partir de là nous avons pu remonter jusqu’à %1$s. ",
         "Cela signifie qu’iel travaille forcément pour %1$s. ",
         "Nous l’avons vu rencontrer en personne %1$s. ",
@@ -165,12 +165,12 @@ VALUES
 INSERT INTO config (name, value, description)
 VALUES
 ('textesTransformationDiff1', '[
-    " et nous concluons que c’est un %s",
-    ", ce qui laisse penser que c’est un %s"
+    " et nous observons qu’iel possède un.e %s",
+    ", de plus iel laisse penser qu’iel a un.e %s"
 ]', 'Texts for transformation level 1')
 ,('textesTransformationDiff2', '[
-    "C’est probablement un %s mais les preuves nous manquent encore. ",
-    "Il n’est clairement pas normal, peut-être un %s. "
+    "Iel a probablement un.e %s mais les preuves nous manquent encore. ",
+    "Iel est clairement atypique, iel possède un.e %s. "
 ]', 'Texts for transformation level 2')
 ;
 
@@ -182,7 +182,7 @@ VALUES
     "J’ai vu %1$s tenter de prendre le contrôle du territoire %2$s, mais la défense l’a repoussé.e brutalement.",
     "L’assaut de %1$s sur le territoire %2$s a échoué ; c’était un vrai carnage.",
     "%1$s a voulu s’imposer au %2$s, sans succès. Iel a été forcé.e de battre en retraite.",
-    "Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé."
+    "Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé, iel a échoué."
 ]', 'Texts the workers observing the failed violent claiming of a zone'),
 
 -- Observers of a **successful** violent claim
@@ -190,7 +190,7 @@ VALUES
     "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.",
     "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",
     "L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.",
-    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance."
+    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance aux défenseurs."
 ]', 'Texts the workers observing the successful violent claiming of a zone'),
 
 -- Report to the **claiming worker** on failure
@@ -205,7 +205,7 @@ VALUES
 ('textesClaimSuccessArray', '[
     "Nous avons pris le contrôle du territoire %2$s avec succès. Félicitations vous en êtes désormais le maitre.",
     "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
-    "Nous avons su imposer votre autorité sur %2$s. La zone vous obéit désormais.",
+    "Nous avons su imposer votre autorité sur %2$s. La région vous obéit désormais.",
     "%2$s est tombé.e sous votre coupe."
 ]', 'Texts for the success report of the claiming worker');
 
@@ -213,16 +213,16 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s - week number
 ('workerDisappearanceTexts', '[
-    "<p>Cet agent a disparu sans laisser de trace à partir de la semaine %s.</p>",
+    "<p>Cet agent a disparu sans laisser de traces à partir de la semaine %s.</p>",
     "<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>",
-    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où il se trouve.</p>",
-    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé dans la nature.</p>",
+    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où iel se trouve.</p>",
+    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé.e dans la nature.</p>",
     "<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>",
-    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis il est aux abonnés absents.</p>",
+    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis iel est porté.e disparu.e.</p>",
     "<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>",
     "<p>L’agent s’est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>",
     "<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>",
-    "<p>La semaine %s signe le début du silence radio complet de cet agent.</p>"
+    "<p>La semaine %s signe le début du silence complet de cet agent.</p>"
 ]', 'Templates used for worker disappearance text with a week number placeholder');
 
 INSERT INTO config (name, value, description)
@@ -230,12 +230,12 @@ VALUES
 -- %1$s - target name
 ('attackSuccessTexts', '[
     "<p>J’ai pu mener à bien ma mission sur %1$s, son silence est assuré.</p>",
-    "<p>J’ai accompli l’attaque sur %1$s, il a trouvé son repos final.</p>",
-    "<p>Notre cible %1$s a été accompagnée à l’hôpital dans un état critique, nous n’avons plus rien à craindre.</p>",
-    "<p>Un suicidé sera retrouvé dans l’Arno demain, %1$s n’est plus des nôtres.</p>",
-    "<p>Je confirme que %1$s ne posera plus jamais problème, il a rejoint le silence éternel.</p>",
-    "<p>Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.</p>",
-    "<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>"
+    "<p>J’ai accompli l’attaque sur %1$s, iel a trouvé son repos final.</p>",
+    "<p>Notre cible %1$s a été accompagnée chez le médecin dans un état critique, nous n’avons plus rien à craindre.</p>",
+    "<p>Un.e suicidé.e sera retrouvé.e dans la mer demain, %1$s n’est plus des nôtres.</p>",
+    "<p>Je confirme que %1$s ne posera plus jamais problème, iel a rejoint le silence éternel.</p>",
+    "<p>L’histoire de %1$s est officiellement terminée. Son existence appartient désormais au passé.</p>",
+    "<p>Mission accomplie : %1$s est désormais une simple note dans les rouleaux de l’histoire.</p>"
 ]', 'Templates for successful attack reports mentioning the target name');
 
 INSERT INTO config (name, value, description)
@@ -246,11 +246,11 @@ VALUES
     "<p>La mission s’est déroulée comme prévu : %1$s est capturé.e et prêt.e à livrer ses secrets.</p>",
     "<p>Succès complet sur %1$s : iel est désormais sous notre garde et n’aura d’autre choix que de parler.</p>",
     "<p>Nous avons maîtrisé %1$s : iel est maintenant entre nos mains, prêt.e pour l’interrogatoire.</p>",
-    "<p>Mission accomplie : %1$s est capturé.e et en sécurité pour un débriefing approfondi.</p>",
+    "<p>Mission accomplie : %1$s est capturé.e et en sécurité pour une conversation approfondie.</p>",
     "<p>L’objectif %1$s est neutralisé et sous notre contrôle. L’interrogatoire peut commencer.</p>",
     "<p>Nous avons intercepté %1$s sans heurt : iel est désormais à notre merci pour un échange d’informations.</p>",
     "<p>Le succès est total : %1$s est retenu.e, et ses révélations ne tarderont pas.</p>",
-    "<p>Mission terminée avec brio : %1$s est capturé.e et ne nous échappera plus.</p>"
+    "<p>Mission terminée brillamment : %1$s est capturé.e et ne nous échappera plus.</p>"
 ]', 'Inclusive templates for successful capture reports mentioning the target name');
 
 INSERT INTO config (name, value, description)
@@ -258,7 +258,7 @@ VALUES
 -- %1$s - target name
 ('failedAttackTextes', '[
     "<p>Malheureusement, %1$s a réussi à nous échapper et reste en vie.</p>",
-    "<p>L’opération contre %1$s a échoué. La cible a survécu et demeure une menace.</p>",
+    "<p>La conspiration contre %1$s a échoué. La cible a survécu et demeure une menace.</p>",
     "<p>Notre tentative contre %1$s s’est soldée par un échec. Iel est toujours actif.ve.</p>",
     "<p>L’attaque n’a pas atteint son objectif : %1$s a survécu et garde sa liberté.</p>",
     "<p>Nous n’avons pas pu neutraliser %1$s. Iel reste introuvable après l’affrontement.</p>",
@@ -274,14 +274,14 @@ VALUES
 -- %1$s - attacker name
 ('escapeTextes', '[
     "<p>J’ai été pris.e pour cible par %1$s, mais j’ai réussi à lui échapper de justesse.</p>",
-    "<p>Une attaque orchestrée par %1$s a failli m’avoir, mais j’ai pu me faufiler hors de sa portée.</p>",
+    "<p>Une attaque orchestrée par %1$s a failli avoir raison de moi, mais j’ai pu me faufiler hors de sa portée.</p>",
     "<p>L’embuscade tendue par %1$s n’a pas suffi à me retenir, j’ai pu m’échapper.</p>",
     "<p>J’ai croisé %1$s sur ma route, iel a tenté de m’intercepter, mais j’ai fui avant qu’il ne soit trop tard.</p>",
     "<p>L’attaque de %1$s a échoué, je suis sauf.ve et hors de danger.</p>",
-    "<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai esquivé ses griffes à temps.</p>",
+    "<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai échappé à ses griffes à temps.</p>",
     "<p>Malgré une attaque menée par %1$s, j’ai gardé mon calme et trouvé un chemin pour m’échapper.</p>",
     "<p>J’ai senti %1$s venir et, bien que surpris.e, j’ai su échapper à son piège.</p>",
-    "<p>Iel a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>",
+    "<p>%1$s a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>",
     "<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>"
 ]', 'Texts for successful escapes in inclusive language');
 
@@ -289,22 +289,22 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s - target name
 ('textesAttackFailedAndCountered', '[
-    "<p>Je pars mettre en route le plan d’assassinat de %s.</p>",
-    "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé·e.]</p>",
+    "<p>Je pars mettre en route le plan d’assassinat de %s. [Le rouleau s’arrête ici.]</p>",
+    "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé.]</p>",
     "<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur %s.</p>",
-    "<p>Le silence radio après le lancement de la mission contre %s est inquiétant…</p>",
-    "<p>L’équipe envoyée pour neutraliser %s n’est jamais revenue.</p>"
+    "<p>Le silence total après le lancement de la mission contre %s est inquiétant…</p>",
+    "<p>Le groupe envoyé pour neutraliser %s n’est jamais revenu.</p>"
 ]', 'Texts for missions that fail and result in counter-attack or disappearance');
 
 INSERT INTO config (name, value, description)
 VALUES
 -- %s - Assaulter name 
 ('counterAttackTexts', '[
-    "<p>%1$s m’a attaqué·e, j’ai survécu et ma riposte l’a anéanti·e. J’ai jeté son corps dans l’Arno.</p>",
-    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte a fait saigner son ego.</p>",
+    "<p>%1$s m’a attaqué·e, j’ai survécu et ma riposte l’a anéanti·e. J’ai jeté son corps dans la mer.</p>",
+    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte nous assure qu’iel cesse définitivement ses activités.</p>",
     "<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit·e.</p>",
     "<p>Iel a tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu par une riposte fatale.</p>",
-    "<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à ses ambitions.</p>",
+    "<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis complètement fin à ses ambitions.</p>",
     "<p>Attaqué·e par %1$s, j’ai résisté et ma riposte l’a anéanti·e sans retour.</p>",
     "<p>Iels ont cherché à me faire tomber, mais ma riposte après l’attaque de %1$s a effacé toute menace.</p>",
     "<p>L’attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>",
@@ -316,8 +316,8 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s = nom de la localisation
 ('TEXT_LOCATION_DISCOVERED_NAME', '[
-    "Nous avons identifié une installation appelée %s.",
-    "Des signes pointent vers une présence nommée %s."
+    "Nous avons identifié une information intéressante : %s.",
+    "Des signes pointent vers la présence de : %s, nous avons enquêté à ce sujet."
 ]', 'Phrases pour signaler qu’une localisation a été découverte (nom uniquement)'),
 
 -- %s = description de la localisation
@@ -328,7 +328,7 @@ VALUES
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
 ('TEXT_LOCATION_CAN_BE_DESTROYED', '[
-    " Cette localisation peut être ciblée pour destruction.",
-    " Il est possible d’organiser une opération pour la neutraliser."
+    " Nous pouvons retourner cette information contre son maître et nous y attaquer.",
+    " Il est possible d’organiser une mission pour faire disparaître ce problème."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
 ;
