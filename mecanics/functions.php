@@ -61,9 +61,11 @@ function calculateVals($pdo, $turn_number){
             $valBaseSQL = diceSQL();
         }
 
-        // TODO if worker is in zone held by controler give bonus from config ??
+        // Nom du bonus zone configuré (ex : ENQUETE_ZONE_BONUS)
+        $bonusColumn = strtoupper("{$elements[0]}_zone_bonus");
+        $bonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $bonusColumn);
 
-        // build SQL for value math adding bonuses from powers, and previous value
+        // Construction de la requête SQL principale avec bonus conditionnel
         $valSQL = sprintf("%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
@@ -74,8 +76,20 @@ function calculateVals($pdo, $turn_number){
                 WHERE worker_actions.worker_id = w.id
             ), 0)
             + %s
+            + CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM workers w2
+                    JOIN zones z2 ON w2.zone_id = z2.id
+                    JOIN controler_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controler = TRUE
+                    WHERE w2.id = worker_actions.worker_id
+                      AND z2.holder_controler_id = cw2.controler_id
+                )
+                THEN %s
+                ELSE 0
+            END
         )",
-        $elements[0], $elements[0], $valBaseSQL );
+        $elements[0], $elements[0], $valBaseSQL, $bonusSQL );
 
         // get list of actions to calibrate
         $config = getConfig($pdo, $elements[1]);
@@ -87,6 +101,7 @@ function calculateVals($pdo, $turn_number){
         }
     }
     echo '</p>';
+
     // Execute SQLs
     foreach ($sqlArray as $sql) {
         echo "<p>DO SQL : <br> $sql <br>";
@@ -364,8 +379,8 @@ function claimMecanic($pdo, $turn_number = NULL) {
                 if ($success)
                     $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessViewArray'), true);
                 $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
-                
-                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']);
+
+                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']).'<br/>';
                 // add description of violent claim to report and if $success
                 updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
                 // update controler_known_enemies for controlers of workers in zone

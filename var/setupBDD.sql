@@ -52,6 +52,9 @@ VALUES
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', 3, 'Value for passive actions'),
+    ('ENQUETE_ZONE_BONUS', 0, 'Bonus à la valeur enquete si le worker est dans une zone contrôlée'),
+    ('ATTACK_ZONE_BONUS', 0, 'Bonus à la valeur attaque si le worker est dans une zone contrôlée'),
+    ('DEFENCE_ZONE_BONUS', 1, 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
     -- passive, investigate, attack, claim, captured, dead
     ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
