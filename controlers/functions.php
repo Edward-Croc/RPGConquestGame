@@ -243,7 +243,49 @@ function moveBase($pdo, $base_id, $zone_id) {
     }
 }
 
-// TODO: attack ennemy base
+/**
+ * Affiche les options de sélection pour les bases connues et attaquables par un contrôleur
+ * 
+ * @param PDO $pdo
+ * @param int $controler_id
+ */
+function showAttackableControlerKnownLocations($pdo, $controler_id) {
+    $returnText = '';
+    // Requête SQL pour récupérer les localisations connues et destructibles
+    $sql = "
+        SELECT 
+            l.id AS location_id,
+            l.name AS location_name,
+            z.name AS zone_name
+        FROM locations l
+        JOIN controler_known_locations ckl ON ckl.location_id = l.id
+        JOIN zones z ON z.id = l.zone_id
+        WHERE 
+            l.can_be_destroyed = TRUE
+            AND ckl.controler_id = :controler_id
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':controler_id' => $controler_id]);
+    $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Affichage des options HTML
+    if (!empty($locations)) {
+        $returnText .= '<select name="target_location_id">';
+        foreach ($locations as $loc) {
+            $label = sprintf("%s (%s) - %s", $loc['location_name'], $loc['location_id'],  $loc['zone_name']);
+            $returnText .= sprintf('<option value="%d">%s</option>', $loc['location_id'], htmlspecialchars($label));
+        }
+        $returnText .= '</select>';
+    } else {
+        $returnText .= '<p>Aucun lieu connu attaquable.</p>';
+    }
+    return $returnText;
+}
+
+// TODO: attack_location ($pdo, $controler_id, $location_id)
+    // 
+    // 
 
 
 /**

@@ -71,6 +71,12 @@
             }
             echo '</p>';
         }
+        echo sprintf('<form action="/RPGConquestGame/controlers/action.php" method="GET">
+                <input type="hidden" name="controler_id" value=%1$s>
+                <input type="submit" name="attack" value="Attaquer personnelement le : " class="controler-action-btn"> %2$s',
+                $controlers['id'],
+             showAttackableControlerKnownLocations($gameReady, $controlers['id'])
+        ); 
         echo '
         </p>
         </form>';
