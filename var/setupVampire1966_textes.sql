@@ -13,15 +13,22 @@ VALUES
  ,('textViewWorkerJobHobby','c’etait un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
  ,('textViewWorkerTransformations', 'Iel a été transformé en : %s <br />', 'Texts for worker view page transformations')
+  -- %1$s Fake Faction name
+ ,('texteNameBase', 'Repaire %s', 'Text for Name of base')
+ -- %1$s Controler name
+ -- %2$s FakeFaction name
+ -- %3$s Time values
  ,('texteDescriptionBase', '
-        Nous avons trouvé le repaire de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
+        Nous avons trouvé le repaire de %1$s des %2$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
         En attaquant ce lieu nous pourrions lui porter un coup fatal.
         Sa disparition causerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
-        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de semaine en semaine.
-    ','Texts for worker view page transformations')
+        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de %3$s en %3$s.
+    ','Texts for description of base')
+ -- %1$s Fake Faction name
+ -- %2$s True Faction name
  ,('texteHiddenFactionBase', '
-        %s
-    ','Texts for worker view page transformations')
+       Il nous apparait en fouillant le lieu que ce quelqu’un c’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %2$s, mais en réalité son propriétaire est du clan %1$s.
+    ','Texts for secret faction description of base')
 ;
 
 INSERT INTO config (name, value, description)
@@ -323,7 +330,7 @@ VALUES
 -- %s = description de la localisation
 ('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
     " Description : %s.",
-    " Détails révélés : %s."
+    " Détails révélés : %s"
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction

@@ -18,11 +18,22 @@ VALUES
  ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s ', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
  ,('textViewWorkerTransformations', 'Iel a été équipé de : %s <br />', 'Texts for worker view page transformations')
+-- %1$s Fake Faction name
+ ,('texteNameBase', 'Repaire %s', 'Text for Name of base')
+ -- %1$s Controler name
+ -- %2$s FakeFaction name
+ -- %3$s Time values
  ,('texteDescriptionBase', '
-        Nous avons trouvé la forteresse de %1$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses. En attaquant ce lieu nous pourrions lui porter un coup fatal.
-        Sa disparition causerait certainement quelques questions à la coure, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
-        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent.
-    ','Texts for worker view page transformations')
+        Nous avons trouvé le forteresse de %1$s des %2$s. Les serviteurs de confiance manquent encore à l’appel pour avoir des défenses solides.
+        En attaquant ce lieu nous pourrions lui porter un coup fatal.
+        Sa disparition causerait certainement quelques questions à la cour du Shogun, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
+        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent chaque %3$s.
+    ','Texts for description of base')
+ -- %1$s Fake Faction name
+ -- %2$s True Faction name
+ ,('texteHiddenFactionBase', '
+       Il nous apparait en fouillant le lieu que ce quelqu’un c’est donné beaucoup de mal pour que ce fortersse donne l’impression d’être liée aux %2$s, mais en réalité son propriétaire est des %1$s.
+    ','Texts for secret faction description of base')
 ;
 
 INSERT INTO config (name, value, description)
@@ -312,7 +323,7 @@ VALUES
 -- %s = description de la localisation
 ('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
     " Description : %s.",
-    " Détails révélés : %s."
+    " Détails révélés : %s"
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction

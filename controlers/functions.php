@@ -172,15 +172,22 @@ function createBase($pdo, $controler_id, $zone_id) {
     $timeValue = getConfig($pdo, 'timeValue');
     echo sprintf("timeValue : %s </br>", var_export($timeValue, true));
 
+    $baseName = sprintf(
+        getConfig($pdo, 'texteNameBase'),
+        $controlers[0]['fake_faction_name']
+    );
+
     $description = sprintf(
         getConfig($pdo, 'texteDescriptionBase'),
         $controler_name,
+        $controlers[0]['fake_faction_name'],
         $timeValue
     );
     if ($controlers[0]['faction_id'] != $controlers[0]['fake_faction_id'])
         $description .= sprintf(
             getConfig($pdo, 'texteHiddenFactionBase'),
-            $controlers[0]['fake_faction_name']
+            $controlers[0]['fake_faction_name'],
+            $controlers[0]['faction_name']
         );
 
     try{
@@ -201,12 +208,13 @@ function createBase($pdo, $controler_id, $zone_id) {
     }
 
     $sql = "INSERT INTO locations (zone_id, name, description, controler_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        (:zone_id, 'Repaire', :description, :controler_id, :discovery_diff, TRUE, TRUE)";
+        (:zone_id, :baseName, :description, :controler_id, :discovery_diff, TRUE, TRUE)";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
 
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->bindParam(':baseName', $baseName);
         $stmt->bindParam(':description', $description);
         $stmt->bindParam(':controler_id', $controler_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
