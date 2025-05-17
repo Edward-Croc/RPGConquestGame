@@ -310,3 +310,26 @@ VALUES
     "<p>Je me suis retrouvé·e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>",
     "<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>"
 ]', 'Texts for the worker who was atacked an the successfully countered');
+
+
+INSERT INTO config (name, value, description)
+VALUES
+-- %s = nom de la localisation
+('TEXT_LOCATION_DISCOVERED_NAME', '[
+    "Nous avons identifié une installation appelée %s.",
+    "Des signes pointent vers une présence nommée %s."
+]', 'Phrases pour signaler qu’une localisation a été découverte (nom uniquement)'),
+
+-- %s = description de la localisation
+('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
+    " Description : %s.",
+    " Détails révélés : %s."
+]', 'Phrases pour décrire une localisation après enquête'),
+
+-- Aucun paramètre : simple indication de la possibilité de destruction
+('TEXT_LOCATION_CAN_BE_DESTROYED', '[
+    " Cette localisation peut être ciblée pour destruction.",
+    " Il est possible d’organiser une opération pour la neutraliser."
+]', 'Phrases pour signaler qu’une localisation peut être détruite')
+;
+

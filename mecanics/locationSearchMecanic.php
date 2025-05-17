@@ -1,10 +1,9 @@
 <?php
 
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
-
     // Define the SQL query
     $sql = "
-        WITH searchers AS (
+                WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
                 wa.controler_id AS searcher_controler_id,
@@ -28,83 +27,106 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             l.description AS found_description,
             l.can_be_destroyed AS found_can_be_destroyed,
             l.controler_id AS location_controler,
-            lc.name
+            CONCAT(lc.firstname, ' ', lc.lastname) AS location_controler_name,
             (s.searcher_enquete_val - l.discovery_diff) AS enquete_difference
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
-        JOIN locations l ON
-            s.zone_id = l.zone_id
+        JOIN locations l ON s.zone_id = l.zone_id
         LEFT JOIN controlers lc ON l.controler_id = lc.id
     ";
-    if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
-    try{
-        // Prepare and execute the statement
-        $stmt = $pdo->prepare($sql);
-        if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
-        $stmt->bindParam(':turn_number', $turn_number);
-        $stmt->execute();
 
+    if (!empty($searcher_id)) $sql .= " WHERE s.searcher_id = :searcher_id";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':turn_number', $turn_number);
+        if (!empty($searcher_id)) $stmt->bindParam(':searcher_id', $searcher_id);
+        $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error: " . $e->getMessage();
+        echo __FUNCTION__ . "(): Error: " . $e->getMessage();
+        return [];
     }
-    // Fetch and return the results
+
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function locationSearchMecanic($pdo ) {
-    echo '<div> <h3> locationSearchMecanic : </h3> ';
+function locationSearchMecanic($pdo) {
+    echo '<div><h3>locationSearchMecanic :</h3>';
 
-    if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
-    }
+    $mecanics = getMecanics($pdo);
+    $turn_number = $mecanics['turncounter'];
     echo "turn_number : $turn_number <br>";
 
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
     $debug = TRUE;
 
     $locationsInvestigation = getLocationSearcherComparisons($pdo, $turn_number);
-    if ($debug) echo " <p> locationsInvestigation : ". var_export($locationsInvestigation, true). "</p>";
-    $reportArray = [];
+    if ($debug) echo "<p>locationsInvestigation : " . var_export($locationsInvestigation, true) . "</p>";
 
-    $LOCATIONDISCOVERYDIFF = getConfig($pdo, 'LOCATIONNAMEDIFF');
-    $LOCATIONDISCOVERYDIFF = getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
+    $reportArray = [];
+    $LOCATIONNAMEDIFF = getConfig($pdo, 'LOCATIONNAMEDIFF');
+    $LOCATIONINFORMATIONDIFF = getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
+
+    // Fetch dynamic text templates
+    $locationNameText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_NAME'), true);
+    $locationDescText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true);
+    $locationDestroyableText =  json_decode(getConfig($pdo,'TEXT_LOCATION_CAN_BE_DESTROYED'), true);
 
     foreach ($locationsInvestigation as $row) {
+        if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
 
-        // Build report :
-        if ($debug) echo "<div>
-            <p> row : ". var_export($row, true). "</p>";
+        if (empty($reportArray[$row['searcher_id']])) {
+            $reportArray[$row['searcher_id']] = sprintf(
+                "<p>Dans lea %s %s.</p>",
+                getConfig($pdo, 'textForZoneType'),
+                $row['zone_name']
+            );
+        }
 
-        // If no report has been created yet for this worker
-        if ( empty($reportArray[$row['searcher_id']]) )
-            $reportArray[$row['searcher_id']] = sprintf( "<p> Dans lea %s %s.</p>", getConfig($pdo, 'textForZoneType'), $row['zone_name'] );
-        if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
+        if ($row['searcher_controler_id'] == $row['location_controler']) continue;
 
-        // if location has controler_id and its the same as searcher controler then exclude
-        // If enquete_difference if < than LOCATIONNAMEDIFF
-            // $reportElement = Configurable sentence for found_name 
-            // If enquete_difference if < than LOCATIONINFORMATIONDIFF
-                // Add location to the controler_known_locations if not already know else update last_discovery_turn
-                    // Select ID FROM controler_known_locations WHERE controler_id =searcher_controler_id and location_id = found_id
-                    //If empty 
-                        /* INSERT INTO CREATE TABLE controler_known_locations (
-                            controler_id INT NOT NULL, 
-                            location_id INT NOT NULL,  found_id
-                            first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
-                            last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
-                            VALUES (searcher_controler_id, found_id, $turn_number, $turn_number)
-                        );*/
-                    //ELSE 
-                        // UPDATE controler_known_locations SET last_discovery_turn= $turn_number where id = ID
-                // $reportElement .=  Configurable sentence for found_description 
-                // IF found_can_be_destroyed 
-                    // $reportElement .=  Configurable sentence for you can ordre the distruction
-            // $reportArray[$row['searcher_id']] .= '<p>'. $reportElement .'</p>';
+        if ($row['enquete_difference'] >= $LOCATIONNAMEDIFF) {
+            $reportElement = sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
+
+            if ($row['enquete_difference'] >= $LOCATIONINFORMATIONDIFF) {
+                $checkStmt = $pdo->prepare("SELECT id FROM controler_known_locations WHERE controler_id = :cid AND location_id = :lid");
+                $checkStmt->execute([
+                    ':cid' => $row['searcher_controler_id'],
+                    ':lid' => $row['found_id']
+                ]);
+
+                if ($known = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $updateStmt = $pdo->prepare("UPDATE controler_known_locations SET last_discovery_turn = :turn WHERE id = :id");
+                    $updateStmt->execute([
+                        ':turn' => $turn_number,
+                        ':id' => $known['id']
+                    ]);
+                } else {
+                    $insertStmt = $pdo->prepare("INSERT INTO controler_known_locations (controler_id, location_id, first_discovery_turn, last_discovery_turn) VALUES (:cid, :lid, :turn, :turn)");
+                    $insertStmt->execute([
+                        ':cid' => $row['searcher_controler_id'],
+                        ':lid' => $row['found_id'],
+                        ':turn' => $turn_number
+                    ]);
+                }
+
+                $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
+
+                if ($row['found_can_be_destroyed']) {
+                    $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
+                }
+            }
+
+            $reportArray[$row['searcher_id']] .= $reportElement;
+        }
+
+        if ($debug) echo "<p>Updated reportArray: " . var_export($reportArray[$row['searcher_id']], true) . "</p></div>";
+    }
+
+    foreach ($reportArray AS $worker_id => $report) {
+        updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['secrets_report' => $report]);
     }
 
     echo '</div>';
-
-    return TRUE;
+    return $report;
 }

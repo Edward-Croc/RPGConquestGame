@@ -279,7 +279,7 @@ CREATE TABLE worker_actions (
     defence_val INT DEFAULT 0,
     action_choice TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
-    report JSON DEFAULT '{}'::json, -- Expected keys investigate_report, attack_report, life_report
+    report JSON DEFAULT '{}'::json, -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
     UNIQUE (worker_id, turn_number), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID),

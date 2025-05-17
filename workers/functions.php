@@ -61,7 +61,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
             throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
         }
         // Step 3: Append the new element to the specified key
-        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report'];
+        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
         foreach ($reportTypes as $reportType) {
             if (!empty($reportAppendArray[$reportType])){
                 if (empty($report[$reportType])) $report[$reportType]=''; 
