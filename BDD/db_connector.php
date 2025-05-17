@@ -261,6 +261,8 @@ function gameReady() {
                         (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
                         ||(strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
                         || (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
+                        || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
+                        || (strtolower(getConfig($pdo, 'DEBUG_ZONE')) == 'true')
                     )
                         $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced_tests.sql';
 

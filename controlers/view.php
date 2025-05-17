@@ -52,7 +52,7 @@
                 $showZoneSelect
             );
         } else {
-            echo sprintf('<p> %s </p>', var_export($bases, true));
+            if ($debug) echo sprintf('<p> %s </p>', var_export($bases, true));
             $textControlerActionMoveBase = getConfig($gameReady, 'textControlerActionMoveBase');
             echo '<p>';
             foreach ($bases as $base ){
