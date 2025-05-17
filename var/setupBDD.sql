@@ -98,10 +98,13 @@ VALUES
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
     -- Base information
-    ,('baseDiscoveryDiff', 5, 'Base discovery value for bases' )
+    ,('baseDiscoveryDiff', 4, 'Base discovery value for bases' )
     ,('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddWorkers', 1, 'Base discovery value worker presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddTurns', 1, 'Base discovery value base age presence ponderation 0 for no' )
+    ,('maxBonusDiscoveryDiffPowers', 3, 'Maximum bonus obtainable from power presence' )
+    ,('maxBonusDiscoveryDiffWorkers', 3, 'Maximum bonus obtainable from worker presence' )
+    ,('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' )
     ,('baseDefenceDiff', 2, 'Base defence value for bases' )
     ,('baseDefenceDiffAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
     ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )

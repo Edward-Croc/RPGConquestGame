@@ -127,35 +127,39 @@ function recalculateBaseDefence($pdo) {
 
 /**
  * calculateSecretLocationDefence
-*/
-function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id){
-
+ */
+function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id) {
     // Get baseDiscoveryDiff from config
-    $baseDiscoveryDiff = (INT)getConfig($pdo, 'baseDiscoveryDiff');
+    $baseDiscoveryDiff = (int)getConfig($pdo, 'baseDiscoveryDiff');
     $discoveryDiff = (!empty($baseDiscoveryDiff)) ? $baseDiscoveryDiff : 0;
-    echo sprintf("discoveryDiff : %s </br>", $discoveryDiff);
+    echo sprintf("discoveryDiff (base) : %s </br>", $discoveryDiff);
 
-    // Add powers from Controler
-    $baseDiscoveryDiffAddPowers = (INT)getConfig($pdo, 'baseDiscoveryDiffAddPowers');
-    if ($baseDiscoveryDiffAddPowers != 0) {
-        $power_list = getPowersByType($pdo,'3', $controler_id, FALSE);
+    // Add bonus from powers
+    $baseDiscoveryDiffAddPowers = (int)getConfig($pdo, 'baseDiscoveryDiffAddPowers'); // bonus value from each power
+    $maxBonusPowers = (int)getConfig($pdo, 'maxBonusDiscoveryDiffPowers'); // max bonus from powers
+    if ($baseDiscoveryDiffAddPowers !== 0) {
+        $power_list = getPowersByType($pdo, '3', $controler_id, false);
         echo sprintf("power_list : %s </br>", var_export($power_list, true));
-        foreach ($power_list as $power ) {
-            $discoveryDiff += $power['enquete'] *$baseDiscoveryDiffAddPowers;
+        $powerBonus = 0;
+        foreach ($power_list as $power) {
+            $powerBonus += $power['enquete'] * $baseDiscoveryDiffAddPowers;
         }
-        echo sprintf("discoveryDiff : %s </br>", $discoveryDiff);
+        if ($maxBonusPowers > 0) $powerBonus = min($powerBonus, $maxBonusPowers);
+        $discoveryDiff += $powerBonus;
+        echo sprintf("discoveryDiff (+powers) : %s </br>", $discoveryDiff);
     }
 
-    // Add worker from Controler in the Zone
-    $baseDiscoveryDiffAddWorkers = (INT)getConfig($pdo, 'baseDiscoveryDiffAddWorkers');
-    if ($baseDiscoveryDiffAddWorkers != 0) {
+    // Add bonus from workers
+    $baseDiscoveryDiffAddWorkers = (int)getConfig($pdo, 'baseDiscoveryDiffAddWorkers');
+    $maxBonusWorkers = (int)getConfig($pdo, 'maxBonusDiscoveryDiffWorkers'); // max bonus from workers
+    if ($baseDiscoveryDiffAddWorkers !== 0) {
         $sql = "
             SELECT COUNT(*) AS worker_count 
             FROM workers w
-            JOIN controler_worker cw on cw.worker_id = w.id
+            JOIN controler_worker cw ON cw.worker_id = w.id
             WHERE cw.controler_id = :controler_id 
-                AND w.zone_id = :zone_id 
-                AND w.is_active = TRUE
+              AND w.zone_id = :zone_id 
+              AND w.is_active = TRUE
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -163,16 +167,18 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id){
             ':zone_id' => $zone_id
         ]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $worker_count = $result ? (INT)$result['worker_count'] : 0;
+        $worker_count = $result ? (int)$result['worker_count'] : 0;
         echo sprintf("valid worker count : %s </br>", $worker_count);
-        $discoveryDiff += $worker_count * $baseDiscoveryDiffAddWorkers;
-
-        echo sprintf("discoveryDiff : %s </br>", $discoveryDiff);
+        $workerBonus = $worker_count * $baseDiscoveryDiffAddWorkers;
+        if ($maxBonusWorkers > 0) $workerBonus = min($workerBonus, $maxBonusWorkers);
+        $discoveryDiff += $workerBonus;
+        echo sprintf("discoveryDiff (+workers) : %s </br>", $discoveryDiff);
     }
 
-    // Add age of base as difficulty (turns since setup)
+    // Add bonus from base age
     $baseDiscoveryDiffAddTurns = (int)getConfig($pdo, 'baseDiscoveryDiffAddTurns');
-    if ( $baseDiscoveryDiffAddTurns != 0 ) {
+    $maxBonusTurns = (int)getConfig($pdo, 'maxBonusDiscoveryDiffTurns'); // max bonus from turns
+    if ($baseDiscoveryDiffAddTurns !== 0) {
         $mecanics = getMecanics($pdo);
         $turn_number = $mecanics['turncounter'];
         echo "turn_number : $turn_number <br>";
@@ -180,7 +186,7 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id){
             SELECT setup_turn 
             FROM locations 
             WHERE controler_id = :controler_id 
-                AND zone_id = :zone_id 
+              AND zone_id = :zone_id 
             LIMIT 1
         ";
         $stmt = $pdo->prepare($sql);
@@ -193,15 +199,16 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id){
             $setup_turn = (int)$base['setup_turn'];
             $turn_diff = max(0, $turn_number - $setup_turn);
             echo sprintf("Base age in turns: %s (current_turn %s - setup_turn %s)</br>", $turn_diff, $turn_number, $setup_turn);
-
-            $discoveryDiff += $turn_diff * $baseDiscoveryDiffAddTurns;
+            $turnBonus = $turn_diff * $baseDiscoveryDiffAddTurns;
+            if ($maxBonusTurns > 0) $turnBonus = min($turnBonus, $maxBonusTurns);
+            $discoveryDiff += $turnBonus;
         }
-
-        echo sprintf("discoveryDiff : %s </br>", $discoveryDiff);
+        echo sprintf("discoveryDiff (+turns) : %s </br>", $discoveryDiff);
     }
 
     return $discoveryDiff;
 }
+
 
 /**
  * calculateSecretLocationDefence
