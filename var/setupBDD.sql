@@ -102,7 +102,7 @@ VALUES
     ,('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddWorkers', 1, 'Base discovery value worker presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddTurns', 1, 'Base discovery value base age presence ponderation 0 for no' )
-    ,('maxBonusDiscoveryDiffPowers', 3, 'Maximum bonus obtainable from power presence' )
+    ,('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' )
     ,('maxBonusDiscoveryDiffWorkers', 3, 'Maximum bonus obtainable from worker presence' )
     ,('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' )
     ,('baseDefenceDiff', 2, 'Base defence value for bases' )
