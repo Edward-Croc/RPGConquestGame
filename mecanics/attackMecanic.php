@@ -254,7 +254,7 @@ function attackMecanic($pdo){
     $timeTextOfThe = getConfig($pdo, 'timeDenominatorOfThe');
     $timeTextThis = getConfig($pdo, 'timeDenominatorThis');
 
-    $disapearenceTextes = json_decode(getConfig($pdo,'disapearenceTextes'), true);
+    $workerDisappearanceTexts = json_decode(getConfig($pdo,'workerDisappearanceTexts'), true);
     $attackSuccessTextes = json_decode(getConfig($pdo,'attackSuccessTextes'), true);
     $captureSuccessTexts = json_decode(getConfig($pdo,'captureSuccessTexts'), true);
     $failedAttackTextes = json_decode(getConfig($pdo,'failedAttackTextes'), true);
@@ -279,7 +279,7 @@ function attackMecanic($pdo){
                 $defender_status = 'dead';
                 $is_alive = FALSE;
                 $attackerReport['attack_report'] = sprintf($attackSuccessTextes[array_rand($attackSuccessTextes)], $defender['defender_name']);
-                $defenderReport['life_report'] = sprintf($disapearenceTextes[array_rand($disapearenceTextes)], $defender['turn_number'] );
+                $defenderReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
                     $is_alive = NULL;
                     echo $defender['defender_name']. ' Was Captured !';
@@ -341,8 +341,8 @@ function attackMecanic($pdo){
             if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                 $attacker_status = 'dead';
                 echo $defender['defender_name']. ' RIPOSTE !';
-                $attackerReport['attack_report'] = sprintf($attackFailedAndCountered[array_rand($attackFailedAndCountered)], $defender['defender_name']);
-                $attackerReport['life_report'] = sprintf($disapearenceTextes[array_rand($disapearenceTextes)], $defender['turn_number'] );
+                $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
+                $attackerReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 updateWorkerActiveStatus($pdo, $defender['attacker_id']);
                 updateWorkerAliveStatus($pdo, $defender['attacker_id']);
             }
