@@ -77,7 +77,7 @@ function locationSearchMecanic($pdo) {
 
         if (empty($reportArray[$row['searcher_id']])) {
             $reportArray[$row['searcher_id']] = sprintf(
-                "<p>Dans lea %s %s.</p>",
+                "<p>Dans la.le %s %s.</p>",
                 getConfig($pdo, 'textForZoneType'),
                 $row['zone_name']
             );
@@ -108,16 +108,15 @@ function locationSearchMecanic($pdo) {
                         ':lid' => $row['found_id'],
                         ':turn' => $turn_number
                     ]);
-                }
 
-                $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
-
-                if ($row['found_can_be_destroyed']) {
-                    $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
+                    $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
+                    if ($row['found_can_be_destroyed']) {
+                        $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
+                    }
                 }
             }
 
-            $reportArray[$row['searcher_id']] .= $reportElement;
+            $reportArray[$row['searcher_id']] .= $reportElement. '<br />';
         }
 
         if ($debug) echo "<p>Updated reportArray: " . var_export($reportArray[$row['searcher_id']], true) . "</p></div>";
