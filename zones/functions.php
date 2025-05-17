@@ -103,20 +103,26 @@ function recalculateBaseDefence($pdo) {
 
         $new_diff = calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id);
 
-        // Update base with new difficulty
-        $update_sql = "
-            UPDATE locations 
-            SET discovery_diff = :new_diff 
-            WHERE id = :id
-        ";
-        $update_stmt = $pdo->prepare($update_sql);
-        $update_stmt->execute([
-            ':new_diff' => $new_diff,
-            ':id' => $base['id']
-        ]);
+        try {
+            // Update base with new difficulty
+            $update_sql = "
+                UPDATE locations 
+                SET discovery_diff = :new_diff 
+                WHERE id = :id
+            ";
+            $update_stmt = $pdo->prepare($update_sql);
+            $update_stmt->execute([
+                ':new_diff' => $new_diff,
+                ':id' => $base['id']
+            ]);
+        } catch (PDOException $e) {
+            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+            return FALSE;
+        }
 
         echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controler_id, $zone_id, $new_diff);
     }
+    return TRUE;
 }
 
 /**
