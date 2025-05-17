@@ -27,7 +27,7 @@ VALUES
  -- %1$s Fake Faction name
  -- %2$s True Faction name
  ,('texteHiddenFactionBase', '
-       Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %2$s, mais en réalité son propriétaire est du clan %1$s.
+       Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %1$s, mais en réalité son propriétaire est du clan %2$s.
     ','Texts for secret faction description of base')
 ;
 
