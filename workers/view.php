@@ -214,7 +214,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         if (!empty($currentReport['investigate_report']))
                             echo '<h4> Mes investigations : </h4> '.$currentReport['investigate_report'];
                         if (!empty($currentReport['secrets_report']))
-                            echo '<h4> Mes investigations : </h4> '.$currentReport['secrets_report'];
+                            echo '<h4> Mes recherches : </h4> '.$currentReport['secrets_report'];
                         if (!empty($currentReport['claim_report']))
                             echo '<h4> Controle: </h4> '.$currentReport['claim_report'];
                     }
