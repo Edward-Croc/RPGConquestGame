@@ -418,16 +418,19 @@ function claimMecanic($pdo, $turn_number = NULL) {
             }
             if ($debug) echo "claimer_params :". var_export($claimer_params, true);
 
-            $holder_controler_id = $zoneInfo['claimer']['claimer_controler_id'];
-            if ( !empty($claimer_params['claim_controler_id'])) $holder_controler_id = $claimer_params['claim_controler_id'];
+            $claimer_controler_id = $zoneInfo['claimer']['claimer_controler_id'];
+            if ( !empty($claimer_params['claim_controler_id'])) {
+                $claimer_controler_id = $claimer_params['claim_controler_id'];
+                if ($claimer_params['claim_controler_id'] == 'null') $claimer_controler_id = Null;
+            } 
 
-            $sql = sprintf(
-                "UPDATE zones SET claimer_controler_id = %s , holder_controler_id = %s WHERE id = %s",
-                    $zoneInfo['claimer']['claimer_controler_id'], $holder_controler_id , $zoneInfo['claimer']['zone_id']
-            );
+            $sql = "UPDATE zones SET claimer_controler_id = :claimer_controler_id , holder_controler_id = :holder_controler_id WHERE id = :id";
             try{
                 // Update config value in the database
                 $stmt = $pdo->prepare($sql);
+                $stmt->bindParam(':id', $zoneInfo['claimer']['zone_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':holder_controler_id', $zoneInfo['claimer']['claimer_controler_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':claimer_controler_id', $claimer_controler_id);
                 $stmt->execute();
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";

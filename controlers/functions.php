@@ -45,10 +45,11 @@ function getControlers($pdo, $player_id = NULL, $controler_id = NULL) {
 /**
  * Show list of controler options for à controler select field.
  */
-function showControlerSelect($controlers, $field_name = 'controler_id' ) {
+function showControlerSelect($controlers, $field_name = 'controler_id', $addEmptySpace = FALSE ) {
 
     if (empty($controlers)) return '';
     $controlerOptions = '';
+    if ($addEmptySpace) $controlerOptions .= "<option value='null'> </option>";
     // Display select list of Controlers
     foreach ( $controlers as $controler) {
         $controlerOptions .= sprintf (

@@ -55,7 +55,8 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
 
         if ( !empty($worker_id) ) {
             $controlers = getControlers($gameReady);
-            $showControlerSelect = showControlerSelect($controlers, 'claim_controler_id');
+            $showControlersSelect = showControlerSelect($controlers, 'gift_controler_id');
+            $showListClaimTargetsSelect = showControlerSelect($controlers, 'claim_controler_id', TRUE);
         }
 
         if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));
@@ -113,15 +114,16 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         <h3>Actions : </h3> <p>
                         <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
                         <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
-                        <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> OU
                         <input type="submit" name="claim" value="Revendiquer le '.getConfig($gameReady, 'textForZoneType').' au nom de " class="worker-action-btn"> %5$s <br />
+                        <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
                         </p></div>
                         ',
                         $worker['id'],
                         $showZoneSelect,
                         (empty($enemyWorkersSelect)) ? '' : sprintf(' OU <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s ', $enemyWorkersSelect),
                         ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
-                        $showControlerSelect,
+                        $showListClaimTargetsSelect,
+                        $showControlersSelect
                     );
             }
             echo '</form>';
