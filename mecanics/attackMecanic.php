@@ -255,7 +255,7 @@ function attackMecanic($pdo){
     $timeTextThis = getConfig($pdo, 'timeDenominatorThis');
 
     $workerDisappearanceTexts = json_decode(getConfig($pdo,'workerDisappearanceTexts'), true);
-    $attackSuccessTextes = json_decode(getConfig($pdo,'attackSuccessTextes'), true);
+    $attackSuccessTexts = json_decode(getConfig($pdo,'attackSuccessTexts'), true);
     $captureSuccessTexts = json_decode(getConfig($pdo,'captureSuccessTexts'), true);
     $failedAttackTextes = json_decode(getConfig($pdo,'failedAttackTextes'), true);
     $escapeTextes = json_decode(getConfig($pdo,'escapeTextes'), true);
@@ -278,7 +278,7 @@ function attackMecanic($pdo){
                 $survived = false;
                 $defender_status = 'dead';
                 $is_alive = FALSE;
-                $attackerReport['attack_report'] = sprintf($attackSuccessTextes[array_rand($attackSuccessTextes)], $defender['defender_name']);
+                $attackerReport['attack_report'] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
                 $defenderReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
                     $is_alive = NULL;
