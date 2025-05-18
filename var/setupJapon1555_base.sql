@@ -174,16 +174,16 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
 ;
 
 INSERT INTO zones (name, description) VALUES
-      ('Cote Ouest d’Echime', 'La porte vers l’ile de Kyushu')
-    , ('Montagnes d’Echime', 'Entourant le pic Ishizuchi cette chaine de montagne est sacrée.')
-    , ('Cap sud de Kochi', 'Ressource Fer, gare à l’océan pacific')
-    , ('Grande Baie de Kochi', 'Siege du clan Chōsokabe')
-    , ('Vallées d’Iya et d’Oboké de Tokushima', 'Ressource Thé')
-    , ('Cote Est de Tokushima', 'Siege du clan Miyoshi')
-    , ('Prefecture de Kagawa', 'Ressource Cheval')
-    , ('Ile d’Awaji', 'La porte vers Honshu et la capitale, gare au vent')
-    , ('Ile de Shödoshima', ' Refuge des pirates Wako, gare a la paresse ')
-    , ('Cité Impériale de Kyoto', 'Parce que les intrigues de cours ne sont jamais loin')
+      ('Cote Ouest d’Echime', 'La porte vers l’île de Kyūshū, cette bande littorale est animée par les flux incessants de navires marchands, pêcheurs et patrouilleurs. Les criques cachent parfois des comptoirs discrets ou des avant-postes de contrebandiers. Les brumes marines y sont fréquentes, rendant les approches aussi incertaines que les intentions de ses habitants.')
+    , ('Montagnes d’Echime', 'Entourant le redouté mont Ishizuchi, plus haut sommet de Shikoku, ces montagnes sacrées sont le domaine des ascètes, des yamabushi et des esprits anciens. Les chemins escarpés sont peuplés de temples isolés, de cascades énigmatiques, et d’histoires transmises à demi-mot. Nul ne traverse ces hauteurs sans y laisser un peu de son âme.')
+    , ('Cap sud de Kochi', 'Battue par les vents de l’océan Pacifique, cette pointe rocheuse est riche en minerai de fer, extrait dans la sueur et le sel. Le paysage austère dissuade les faibles, mais attire les clans ambitieux. Les tempêtes y sont violentes, et même les dragons du ciel semblent redouter ses falaises noires.')
+    , ('Grande Baie de Kochi', 'Centre de pouvoir du clan Chōsokabe, cette baie est à la fois un havre de paix et un verrou stratégique. Bordée de rizières fertiles et de ports animés, elle est défendue par des flottes aguerries et des forteresses discrètes. On dit que ses eaux reflètent les ambitions de ceux qui la contrôlent.')
+    , ('Vallées d’Iya et d’Oboké de Tokushima', 'Ces vallées profondes, creusées par les torrents et le temps, abritent des plantations de thé précieuses et des villages suspendus au flanc des falaises. Peu accessibles, elles sont le refuge de ceux qui fuient la guerre, la loi ou le destin. Le thé qui y pousse a le goût amer des secrets oubliés.')
+    , ('Cote Est de Tokushima', 'Sur cette façade tournée vers le large, le clan Miyoshi établit son pouvoir entre les ports et les postes fortifiés. Bien que prospère, la région est sous tension : les vassaux y sont fiers, les ambitions grandes, et les flottes ennemies jamais loin. La mer y apporte autant de trésors que de périls.')
+    , ('Prefecture de Kagawa', 'Plaine fertile dominée par les haras impériaux et les sanctuaires oubliés, Kagawa est renommée pour ses chevaux rapides et robustes. Les émissaires s’y rendent pour négocier montures de guerre, messagers ou montures sacrées. C’est aussi une terre de festivals éclatants et de compétitions féroces.')
+    , ('Ile d’Awaji', 'Pont vivant entre Shikoku et Honshū, Awaji est stratégiquement vitale et toujours convoitée. Les vents y sont brutaux, les détroits traîtres, et les seigneurs prudents. Ses collines cachent des fortins, ses criques des repaires, et ses chemins sont surveillés par des yeux invisibles.')
+    , ('Ile de Shödoshima', 'Ile montagneuse et sauvage, jadis sanctuaire, aujourd’hui repaire des pirates Wako. Ses ports semblent paisibles, mais ses criques abritent des embarcations rapides prêtes à fondre sur les convois marchands. Les autorités ferment souvent les yeux, car même le vice paie tribut.')
+    , ('Cité Impériale de Kyoto', 'Capitale impériale, centre des arts, des lettres et des poisons subtils. Les palais y cachent les plus anciennes lignées, les ruelles les complots les plus jeunes. Kyōto ne brandit pas l’épée, mais ceux qui y règnent peuvent faire plier des provinces entières par un sourire ou un silence.')
 ;
 
 
@@ -199,12 +199,14 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     , ('Ikeda', '', 0, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
     , ('Oboke', '', 8, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
     , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
-    , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'))
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')) -- TEMPLE VENT
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima')) --PARRESSE
     , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
     , ('Les geoles impériales', '', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
-
+INSERT INTO locations (name, description, discovery_diff, zone_id, controler_id) VALUES
+    ('Geoles Pirates', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controlers WHERE lastname = 'Wako (和光)')) --PARRESSE
+;
 
 -- Table of Fixed Power Types used by code
 INSERT INTO power_types (id, name, description) VALUES
