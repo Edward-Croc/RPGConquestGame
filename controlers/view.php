@@ -8,7 +8,7 @@
 
     $controlers = getControlers($gameReady, $_SESSION['user_id']);
     $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = TRUE;
     ?>
 
     <div class="factions">
