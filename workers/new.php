@@ -140,7 +140,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $controler_id,
     );
 
-    echo showDisciplineSelect($powerDisciplineArray);
+    echo showDisciplineSelect($gameReady, $powerDisciplineArray);
 
     // Check Transformation Conditions
     $recrutement_transformation_json = getConfig($gameReady, 'recrutement_transformation');
@@ -157,7 +157,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, NULL, $mecanics['turncounter'], 'on_recrutment' );
         if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
         if (! empty($powerTransformationArray) ) 
-            echo showTransformationSelect($powerTransformationArray, TRUE);
+            echo showTransformationSelect($gameReady, $powerTransformationArray, TRUE);
     }
 
     echo showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);

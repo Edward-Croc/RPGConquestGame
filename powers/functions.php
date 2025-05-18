@@ -1,10 +1,31 @@
 <?php
+/**
+ *
+ * @param PDO $pdo
+ */
+function getPowerTypesDescription($pdo, $name){
+    try{
+        $stmt = $pdo->prepare("SELECT description
+            FROM power_types
+            WHERE name = :name
+        ");
+        $stmt->execute([':name' => $name]);
+        return $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+}
 
 function getSQLPowerText($short = TRUE) {
     if (!$short) return "CONCAT(p.name, p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
     return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
+/**
+ *
+ * @param PDO $pdo
+ */
 function getPowersByWorkers($pdo, $worker_id_str) {
     $power_text = getSQLPowerText(FALSE);
     $sql = "SELECT
@@ -34,6 +55,10 @@ function getPowersByWorkers($pdo, $worker_id_str) {
     return $workers_powers;
 }
 
+/**
+ *
+ * @param PDO $pdo
+ */
 // TODO : Add a select limit by controler_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
     $powerArray = array();
@@ -55,6 +80,10 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
     return $powerArray;
 }
 
+/**
+ *
+ * @param PDO $pdo
+ */
 function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRUE) {
     $powerArray = array();
     $power_text = getSQLPowerText();
@@ -110,7 +139,7 @@ function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRU
     return $powerArray;
 }
 
-function showDisciplineSelect($powerDisciplineArray, $show_text = true){
+function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
     if (empty($powerDisciplineArray)) return '';
 
     $disciplinesOptions = '';
@@ -121,12 +150,13 @@ function showDisciplineSelect($powerDisciplineArray, $show_text = true){
     }
     $showDisciplineSelect = sprintf(" %s
         <select id='disciplineSelect' name='discipline'>
-            <option value=\'\'>Select Discipline</option>
+            <option value=\'\'>Select %s</option>
             %s
         </select>
         <br />
         ",
-        $show_text ? ' Discipline:' : '',
+        $show_text ? getPowerTypesDescription($pdo, 'Discipline').' :' : '',
+        getPowerTypesDescription($pdo, 'Discipline'),
         $disciplinesOptions
     );
 
@@ -152,7 +182,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
     if (!empty($controler_id))
         $controlersArray = getControlers($pdo, NULL, $controler_id,);
 
-    if ($debug) 
+    if ($debug)
         echo sprintf("<p> powerArray : %s<br/>
             workersArray: %s <br/>
             controlersArray: %s<p/>
@@ -235,7 +265,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
     return empty($powerArray) ? NULL : $powerArray ;
 }
 
-function showTransformationSelect($powerTransformationArray, $show_text = true){
+function showTransformationSelect($pdo, $powerTransformationArray, $show_text = true){
     if (empty($powerTransformationArray)) return '';
 
     $transformationsOptions = '';
@@ -246,12 +276,13 @@ function showTransformationSelect($powerTransformationArray, $show_text = true){
     }
     $showTransformationSelect = sprintf("%s
         <select id='transformationSelect' name='transformation'>
-            <option value=\'\'>Select Transformation</option>
+            <option value=\'\'>Select %s</option>
             %s
         </select>
         <br />
         ",
-        $show_text ? 'Transformation :' : '',
+        $show_text ? getPowerTypesDescription($pdo, 'Transformation').' :' : '',
+        getPowerTypesDescription($pdo, 'Transformation'),
         $transformationsOptions
     );
 

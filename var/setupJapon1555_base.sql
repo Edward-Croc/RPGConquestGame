@@ -208,10 +208,10 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 
 -- Table of Fixed Power Types used by code
 INSERT INTO power_types (id, name, description) VALUES
-    (1, 'Hobby', ''),
-    (2, 'Metier', ''),
-    (3, 'Discipline', ''),
-    (4, 'Transformation', '');
+    (1, 'Hobby', 'Objet fétiche'),
+    (2, 'Metier', 'Rôle'),
+    (3, 'Discipline', 'Maitrise des Arts'),
+    (4, 'Transformation', 'Equipements Rares');
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation

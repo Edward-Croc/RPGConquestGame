@@ -167,8 +167,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                             $nb_current_disciplines[0]['discipline_count'], var_export($nb_current_disciplines, true), $nb_disciplines
                         );
                     if ( (INT)$nb_current_disciplines[0]['discipline_count'] < (INT)$nb_disciplines) {
-                        $upgrade_HTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner la discipline" class="worker-upgrade-btn"> %1$s ',
-                            showDisciplineSelect($powerDisciplineArray, false)
+                        $upgrade_HTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner une %2$s " class="worker-upgrade-btn"> %1$s ',
+                            showDisciplineSelect($gameReady, $powerDisciplineArray, false),
+                            strtolower(getPowerTypesDescription($gameReady, 'Discipline'))
                         );
                     }
                 }
@@ -187,8 +188,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, $worker['id'], $mecanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
                     if (! empty($powerTransformationArray) ) 
-                        $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Transformer en " class="worker-upgrade-btn"> %1$s ',
-                            showTransformationSelect($powerTransformationArray, FALSE)
+                        $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
+                            showTransformationSelect($gameReady, $powerTransformationArray, FALSE),
+                            strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );  
                 }
 

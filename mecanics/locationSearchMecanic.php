@@ -77,7 +77,7 @@ function locationSearchMecanic($pdo) {
 
         if (empty($reportArray[$row['searcher_id']])) {
             $reportArray[$row['searcher_id']] = sprintf(
-                "<p>Dans la.le %s %s.</p>",
+                "<p>Dans le %s %s :</p>",
                 getConfig($pdo, 'textForZoneType'),
                 $row['zone_name']
             );
