@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Recupere le nom de la zone
+ * 
+ * @param PDO $pdo
+ * @param int $zone_id
+ * 
+ */
 function getZoneName($pdo, $zone_id){
     try{
         $sql = "SELECT name FROM zones AS z WHERE id=$zone_id";
@@ -14,7 +21,13 @@ function getZoneName($pdo, $zone_id){
     return $zone[0]['name'];
 }
 
-// Function to get Controlers and return as an array
+/**
+ * Function to get ZONEs and return as an array
+ * 
+ * @param PDO $pdo
+ * @param int $zone_id | NULL
+ * 
+ */
 function getZonesArray($pdo, $zone_id = NULL) {
     $zonesArray = array();
 
@@ -35,6 +48,15 @@ function getZonesArray($pdo, $zone_id = NULL) {
     return $zones;
 }
 
+/**
+ * Function to prepare the zone selector from à list of zones
+ * 
+ * @param PDO $pdo
+ * @param array $zonesArray
+ * @param bool $show_text default: false ->
+ * @param bool $place_holder default: true -> Do we start with and empty spot
+ * 
+ */
 function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = true){
 
     if (empty($zonesArray)) return '';
@@ -63,7 +85,9 @@ function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = t
     return $showZoneSelect;
 }
 
-// Function to get Controlers and return as an array
+/** Function to get Locations and return as an array
+ * @param PDO $pdo
+*/
 function getLocationsArray($pdo) {
     $locationsArray = array();
 
@@ -88,7 +112,8 @@ function getLocationsArray($pdo) {
 }
 
 /**
- * recalculateBaseDefence
+ * Function to recalculateBaseDefence
+ * @param PDO $pdo
  */
 function recalculateBaseDefence($pdo) {
     // Get all bases with their controler and zone
@@ -126,7 +151,11 @@ function recalculateBaseDefence($pdo) {
 }
 
 /**
- * calculateSecretLocationDefence
+ * calculateSecretLocationDiscoveryDiff
+ * 
+ * @param PDO $pdo
+ * @param int $controler_id
+ * @param int $zone_id
  */
 function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id) {
     // Get baseDiscoveryDiff from config
@@ -213,7 +242,7 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id) {
 /**
  * calculateSecretLocationDefence
 */
-function calculateSecretLocationDefence(){
+function calculateSecretLocationDefence($pdo){
 
     // Get BasesDef from config
     $baseDefenceDiff = (INT)getConfig($pdo, 'baseDefenceDiff');
