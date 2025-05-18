@@ -288,12 +288,79 @@ function calculateSecretLocationDefence(){
     return $defenceDiff;
 }
 
+/**
+ * Affiche les bases connues ou possédées dans une zone par un contrôleur
+ * Permet d'attaquer les bases destructibles
+ * 
+ * @param PDO $pdo
+ * @param int $controler_id
+ * @param int $zone_id
+ */
+function showControlerKnownSecrets($pdo, $controler_id, $zone_id) {
+    $returnText = '';
+    // Bases possédées par ce contrôleur dans la zone
+    $sql = "
+        SELECT l.id, l.name, l.can_be_destroyed, l.description
+        FROM locations l
+        WHERE l.controler_id = :controler_id
+        AND l.zone_id = :zone_id
+    ";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':controler_id' => $controler_id,
+        ':zone_id' => $zone_id
+    ]);
+    $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// TODO showControlerKnownSecrets
-    // Get elements from controler_known_locations by controler ID for Zone_id
-    // show name and text for location 
-    // Destroy location 
-    // if can_be_destroyed that add button for servants attack on location ?
-    // and button for vampire attack on location
+    if (!empty($owned_bases)) {
+        $returnText .= "<p><strong>Vos lieux secrets:</strong><br />";
+        foreach ($owned_bases as $base) {
+            $returnText .=  sprintf(
+                "<b>%s</b><br><em>%s</em><br />",
+                htmlspecialchars($base['name']),
+                htmlspecialchars($base['description'])
+            );
+        }
+        $returnText .=  "</p>";
+    }
 
+    // Bases ennemies connues dans la zone
+    $sql = "
+        SELECT l.id, l.name, l.can_be_destroyed, l.description
+        FROM controler_known_locations ckl
+        JOIN locations l ON ckl.location_id = l.id
+        WHERE ckl.controler_id = :controler_id
+        AND l.zone_id = :zone_id
+    ";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':controler_id' => $controler_id,
+        ':zone_id' => $zone_id
+    ]);
+    $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    if (!empty($known_bases)) {
+        $returnText .=  "<p><strong>Lieux découverts :</strong><br />";
+        foreach ($known_bases as $base) {
+            $returnText .=  sprintf(
+                "<b>%s</b><br/><em>%s</em><br/>",
+                htmlspecialchars($base['name']),
+                htmlspecialchars($base['description'])
+            );
+
+            if ($base['can_be_destroyed']) {
+                $returnText .=  sprintf('
+                    <form action="/RPGConquestGame/controlers/action.php" method="GET">
+                        <input type="hidden" name="controler_id" value="%d">
+                        <input type="hidden" name="location_id" value="%d">
+                        <input type="submit" name="attack" value="Attaquer personnellement cette base" class="controler-action-btn">
+                    </form>',
+                    $controler_id,
+                    $base['id']
+                );
+            }
+        }
+        $returnText .=  '</p>';
+    }
+    return $returnText;
+}

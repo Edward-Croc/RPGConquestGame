@@ -16,14 +16,18 @@
             // TODO: show location actions
             $descritpion = $zone['description'];
             echo sprintf('
-                <h4 onclick="toggleDescription(%2$s)" style="cursor: pointer;"> %1$s (%2$s) %4$s </h4>
-                <i id="description-%2$s" style="display: none;">%3$s</i>
+                <h3 onclick="toggleDescription(%2$s)" style="cursor: pointer;"> %1$s (%2$s) %4$s </h3>
+                <div id="description-%2$s" style="display: none;"> 
+                    <i>%3$s</i>
+                    %5$s
+                </div>
                 ',
                 $zone['name'], $zone['zone_id'], 
                 $descritpion,
                 (!empty($zone['controler_id'])) 
                     ? sprintf('sous la banière de %s %s', $zone['firstname'], $zone['lastname'])
-                    : ''
+                    : '',
+                showControlerKnownSecrets($gameReady, $_SESSION['controler']['id'], $zone['zone_id'])
             );
         }
     ?>
