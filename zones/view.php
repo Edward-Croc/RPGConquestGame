@@ -12,8 +12,6 @@
     <?php 
         // Display list of Zones
         foreach ($zones as $zone) {
-            // TODO: show found locations
-            // TODO: show location actions
             $descritpion = $zone['description'];
             echo sprintf('
                 <h3 onclick="toggleDescription(%2$s)" style="cursor: pointer;"> %1$s (%2$s) %4$s </h3>
