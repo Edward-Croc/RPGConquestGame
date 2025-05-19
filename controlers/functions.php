@@ -250,7 +250,7 @@ function moveBase($pdo, $base_id, $zone_id) {
  * @param int $controler_id
  */
 function showAttackableControlerKnownLocations($pdo, $controler_id) {
-    $returnText = '';
+    $returnText = NULL;
     // Requête SQL pour récupérer les localisations connues et destructibles
     $sql = "
         SELECT 
@@ -277,8 +277,6 @@ function showAttackableControlerKnownLocations($pdo, $controler_id) {
             $returnText .= sprintf('<option value="%d">%s</option>', $loc['location_id'], htmlspecialchars($label));
         }
         $returnText .= '</select>';
-    } else {
-        $returnText .= '<p>Aucun lieu connu attaquable.</p>';
     }
     return $returnText;
 }
