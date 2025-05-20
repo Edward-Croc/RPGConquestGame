@@ -22,13 +22,15 @@ INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player3', 'three', false),
     ('player4', 'four', false),
     ('player5', 'five', false),
-    ('player6', 'six', false)
+    ('player6', 'six', false),
+    ('player7', 'seven', false)
 ;
 
 INSERT INTO factions (name) VALUES
     ('Samouraï Chōsokabe')
     ,('Samouraï Miyoshi')
     ,('Samouraï Hosokawa')
+    ,('Samouraï Ashikaga')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
@@ -74,6 +76,11 @@ INSERT INTO controlers (
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
+    ),
+    ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif',
+        2, 1, 1, 0,
+        (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
     )
 ;
 
@@ -170,6 +177,10 @@ INSERT INTO player_controler (player_id, controler_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player6'),
         (SELECT ID FROM controlers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'player7'),
+        (SELECT ID FROM controlers WHERE lastname = 'Ashikaga (足利)')
     )
 ;
 
@@ -396,6 +407,21 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
     )),
     ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+    ));
+
+-- Samouraï Ashikaga
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     ));
