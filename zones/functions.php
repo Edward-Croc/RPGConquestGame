@@ -261,8 +261,8 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
 
 
 /**
- * Affiche les bases connues ou possédées dans une zone par un contrôleur
- * Permet d'attaquer les bases destructibles
+* Displays the known or owned bases in a zone by a controller
+* Allows attacking destructible bases
  *
  * @param PDO $pdo
  * @param int $controller_id
@@ -270,7 +270,7 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
  */
 function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
     $returnText = '';
-    // Bases possédées par ce contrôleur dans la zone
+    // Bases owned by this controller in the zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description
         FROM locations l
@@ -296,7 +296,7 @@ function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
         $returnText .=  "</p>";
     }
 
-    // Bases ennemies connues dans la zone
+    // Known enemy bases in the zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description
         FROM controller_known_locations ckl
