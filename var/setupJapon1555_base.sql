@@ -40,7 +40,7 @@ INSERT INTO factions (name) VALUES
 -- players with start worker limits
 INSERT INTO controllers (
     firstname, lastname,
-    start_workers, recruted_workers, turn_recruted_workers,
+    start_workers, recruited_workers, turn_recruited_workers,
     faction_id, fake_faction_id,
     story
 ) VALUES
@@ -63,7 +63,7 @@ INSERT INTO controllers (
 -- IA with start workers limits
 INSERT INTO controllers (
     firstname, lastname, ia_type,
-    start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
+    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
     ('Yōkai (妖怪)', 'Shikoku (四国)', 'violent', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.

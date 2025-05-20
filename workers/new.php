@@ -25,7 +25,7 @@ echo '<p>turncounter: '. (INT)$mechanics['turncounter']
     .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
     .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
     .'; start_workers :'. $controllerValues[0]['start_workers']
-    .'; turn_recruted_workers :'. $controllerValues[0]['turn_recruted_workers']
+    .'; turn_recruited_workers :'. $controllerValues[0]['turn_recruited_workers']
     .'; turn_firstcome_workers :'. $controllerValues[0]['turn_firstcome_workers']
 .'</p>';
 
@@ -33,9 +33,9 @@ if (isset($_GET['recrutement'])){
     $buttonClicked = 'recrutement';
     $pageTitle = "Recrutement d'un Agent";
     if ( !((
-        ( (INT)$mechanics['turncounter'] == 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)$controllerValues[0]['start_workers'] )
+        ( (INT)$mechanics['turncounter'] == 0 ) && ( (INT)$controllerValues[0]['turn_recruited_workers'] < (INT)$controllerValues[0]['start_workers'] )
         ) || (
-        ( (INT)$mechanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+        ( (INT)$mechanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruited_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
         ) )
     ) $recrutment_allowed = FALSE;
 } else {
@@ -54,7 +54,7 @@ if ( !$recrutment_allowed ){
 // increment recrutment values
 $sqlUpdateRecrutementCounter = sprintf(
     'UPDATE controllers SET %1$s = %1$s +1 WHERE id = :controller_id',
-    $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruted_workers'
+    $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruited_workers'
 );
 $stmtUpdateRecrutementCounter = $gameReady->prepare($sqlUpdateRecrutementCounter);
 $stmtUpdateRecrutementCounter->execute([

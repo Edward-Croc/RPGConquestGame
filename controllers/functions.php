@@ -72,9 +72,9 @@ function showcontrollerSelect($controllers, $field_name = 'controller_id', $addE
     return $showcontrollerSelect;
 }
 
-/** This function resets the turn_recruted_workers and turn_firstcome_workers to 0 for every controller */
+/** This function resets the turn_recruited_workers and turn_firstcome_workers to 0 for every controller */
 function  restartTurnRecrutementCount($pdo){
-    $sql = 'UPDATE controllers SET turn_firstcome_workers=0, turn_recruted_workers=0 WHERE TRUE';
+    $sql = 'UPDATE controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE TRUE';
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -113,7 +113,7 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
     echo '<p>turncounter: '. $turnNumber
         .'; turn_recrutable_workers: '. getConfig($pdo, 'turn_recrutable_workers')
         .'; start_workers :'. $controllerValues[0]['start_workers']
-        .'; turn_recruted_workers :'. $controllerValues[0]['turn_recruted_workers']
+        .'; turn_recruited_workers :'. $controllerValues[0]['turn_recruited_workers']
     .'</p>';
 
     if (
@@ -121,10 +121,10 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
         &&
         (
             ( $turnNumber == 0 )
-            && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)$controllerValues[0]['start_workers'] )
+            && ( (INT)$controllerValues[0]['turn_recruited_workers'] < (INT)$controllerValues[0]['start_workers'] )
         ) || (
             ( (INT)$turnNumber > 0 )
-            && ( $controllerValues[0]['turn_recruted_workers'] < (INT)getConfig($pdo, 'turn_recrutable_workers') )
+            && ( $controllerValues[0]['turn_recruited_workers'] < (INT)getConfig($pdo, 'turn_recrutable_workers') )
         )
     ) return true;
     return false;

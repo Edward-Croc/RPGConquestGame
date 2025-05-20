@@ -17,19 +17,19 @@ function aiMechanic($pdo ) {
 
     // If type is 'passive'
         // Check if worker disapeared (worker_actions turn_number = current_turn action_choice in ('dead', 'captured') and worker_actions turn_number = last_turn  )
-            // Become serching
+            // Become searching
             // Continue
         // Create 1 worker in start zone or adjacent zone
         // Leave workers on passive
 
-    // If type is 'serching'
+    // If type is 'searching'
         // Check if has known enemies above threshhold
-            // Become agressive
+            // Become aggressive
             // Continue
         // Create workers in new adjacent zone
         // Set workers to investigate
 
-    // If type is 'agressive' or 'violent'
+    // If type is 'aggressive' or 'violent'
         // For zone with known enemies
             // If worker creation in limit -> Create worker in zone
             // Set workers to attack known enemy
@@ -37,7 +37,7 @@ function aiMechanic($pdo ) {
             // If zone with known enemies exists and > 1 worker is in current zone
                 // Move to zone with known enemies
                 // Set workers to attack known enemy
-            // Else if 'agressive'
+            // Else if 'aggressive'
                 // if >1 worker is in current zone
                     // Move to adjacent zone
                 // Set workers to investigate

@@ -49,7 +49,7 @@ INSERT INTO factions (name) VALUES
 -- players with start worker limits
 INSERT INTO controllers (
     firstname, lastname,
-    start_workers, recruted_workers, turn_recruted_workers,
+    start_workers, recruited_workers, turn_recruited_workers,
     faction_id, fake_faction_id
 ) VALUES
     (
@@ -88,7 +88,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Eglise'),
         (SELECT ID FROM factions WHERE name = 'Humain')
     ),
-    ('Sir Dimonio', 'Ricci', 'serching',
+    ('Sir Dimonio', 'Ricci', 'searching',
         (SELECT ID FROM factions WHERE name = 'Démon'),
         (SELECT ID FROM factions WHERE name = 'Lasombra')
     )
@@ -97,7 +97,7 @@ INSERT INTO controllers (
 -- IA with start workers
 INSERT INTO controllers (
     firstname, lastname, ia_type,
-    start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
+    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
     ('Signore Arno', 'Cacciatore', 'violent',
