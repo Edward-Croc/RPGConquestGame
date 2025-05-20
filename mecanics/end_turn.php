@@ -18,12 +18,12 @@ require_once '../base/base_html.php';
         }
         $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
         // TODO ADD calulated vals to worker report
-        
+
         $bdrResult = recalculateBaseDefence($gameReady);
 
         if ($valsResult && $bdrResult) {
             // do end_turn actions
-            
+
             // TODO : Save End Turn step to restart after bug ?
 
             // set Controlled by IA actions

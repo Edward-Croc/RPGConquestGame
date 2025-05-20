@@ -7,12 +7,12 @@ require_once './BDD/db_connector.php';
 
 function getConfig($pdo, $configName) {
     try{
-        $stmt = $pdo->prepare("SELECT value 
-            FROM config 
+        $stmt = $pdo->prepare("SELECT value
+            FROM config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();  
+        return $stmt->fetchColumn();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
         return NULL;

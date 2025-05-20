@@ -64,7 +64,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
         $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
         foreach ($reportTypes as $reportType) {
             if (!empty($reportAppendArray[$reportType])){
-                if (empty($report[$reportType])) $report[$reportType]=''; 
+                if (empty($report[$reportType])) $report[$reportType]='';
                 $report[$reportType] .= $reportAppendArray[$reportType];
             }
         }
@@ -383,26 +383,26 @@ function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
 
 function countWorkerDisciplines($pdo, $worker_id = NULL) {
     try {
-        $sql = sprintf("SELECT 
-                wp.worker_id, 
+        $sql = sprintf("SELECT
+                wp.worker_id,
                 COUNT(*) AS discipline_count
-            FROM 
+            FROM
                 worker_powers wp
-            INNER JOIN 
+            INNER JOIN
                 link_power_type lpt ON wp.link_power_type_id = lpt.ID
-            INNER JOIN 
+            INNER JOIN
                 power_types pt ON lpt.power_type_id = pt.ID
-            WHERE 
+            WHERE
                 pt.name = 'Discipline'
                 %s
-            GROUP BY 
+            GROUP BY
                 wp.worker_id",
             empty($worker_id) ? "" : sprintf(" AND wp.worker_id IN (%s) ", implode(',',$worker_id))
         );
-        
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
-        
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         echo __FUNCTION__." (): Error counting worker disciplines: " . $e->getMessage();

@@ -55,9 +55,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     </div>
     <!-- Sidebar MENU -->
     <div id="sidebar" class="sidebar">
-        <?php echo sprintf('<div> %s %s</div>', 
+        <?php echo sprintf('<div> %s %s</div>',
             ucfirst(getConfig($gameReady, 'timeValue')), $mecanics['turncounter']
-            ); 
+            );
             if (!empty($_SESSION['controler']['firstname']))
                 echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
         ?>

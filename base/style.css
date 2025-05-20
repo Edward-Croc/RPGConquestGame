@@ -63,7 +63,7 @@ body {
 .workers {
     background-color: #c3e5f8;
 }
-.zones, .factions { 
+.zones, .factions {
     background-color: #f8c3c3;
 }
 
@@ -123,6 +123,6 @@ body {
 /* Phone setup */
 
 @media (max-width: 768px) {
-    
+
 
 }

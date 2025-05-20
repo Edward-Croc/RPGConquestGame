@@ -109,7 +109,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             AND wa.turn_number = :turn_number
     ),
      defenders AS (
-        SELECT 
+        SELECT
         wa.worker_id AS defender_id,
         wa.attack_val AS defender_attack_val,
         wa.defence_val AS defender_defence_val,

@@ -31,10 +31,10 @@ JOIN controler_worker cw ON cw.worker_id = w.id;
 
 -- Add powers to the workers :
 INSERT INTO worker_powers (worker_id, link_power_type_id)
-SELECT 
+SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM 
+FROM
     workers w
 JOIN (
     SELECT 'Kotatsu' AS lastname, 'Kōdō (香道) – Voie de l’encens' AS power_name

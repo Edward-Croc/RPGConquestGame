@@ -22,7 +22,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     $gift_controler_id = NULL;
     if ( !empty($_GET['gift_controler_id']) ) $gift_controler_id = $_GET['gift_controler_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "gift_controler_id: ".var_export($gift_controler_id, true)."<br /><br />";
-    
+
 
     if (isset($_GET['creation'])){
         $worker_id = createWorker($gameReady, $_GET);
@@ -49,7 +49,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['transform'])){
         upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
     }
-    
+
 }
 
 require_once '../base/base_html.php';

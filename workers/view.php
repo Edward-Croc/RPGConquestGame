@@ -1,5 +1,4 @@
-<?php 
-
+<?php
 if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
 
 if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
@@ -104,7 +103,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     $worker['origin_name'],
                     empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                     empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
-                    empty($worker['powers']['Discipline']['texte']) ? '' : 
+                    empty($worker['powers']['Discipline']['texte']) ? '' :
                         sprintf(getConfig($gameReady, 'textViewWorkerDisciplines'),$worker['powers']['Discipline']['texte']),
                     empty($worker['powers']['Transformation']['texte']) ? '' :
                         sprintf(getConfig($gameReady, 'textViewWorkerTransformations'), $worker['powers']['Transformation']['texte']),
@@ -129,7 +128,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             echo '</form>';
 
             if ( !empty($worker_id) ) {
-                $upgrade_HTML = sprintf('<div class="upgrade"> 
+                $upgrade_HTML = sprintf('<div class="upgrade">
                     <h3> Evolutions : </h3>
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
@@ -161,9 +160,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         }
                     }
                     $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
-                    if ( $debug_discipline_age ) 
+                    if ( $debug_discipline_age )
                         echo sprintf(
-                            "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>", 
+                            "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>",
                             $nb_current_disciplines[0]['discipline_count'], var_export($nb_current_disciplines, true), $nb_disciplines
                         );
                     if ( (INT)$nb_current_disciplines[0]['discipline_count'] < (INT)$nb_disciplines) {
@@ -187,7 +186,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, $worker['id'], $mecanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
-                    if (! empty($powerTransformationArray) ) 
+                    if (! empty($powerTransformationArray) )
                         $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
                             showTransformationSelect($gameReady, $powerTransformationArray, FALSE),
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))

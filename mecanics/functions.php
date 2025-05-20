@@ -294,7 +294,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
                 "%s(): zone_holder_controler_id : '%s', zone has not been claimed this turn: '%s', next key exists : '%s'",
                 __FUNCTION__,
                 var_export($claimer['zone_holder_controler_id'],true),
-                var_export(empty($arrayZoneInfo[$claimer['zone_id']]['claimer']),true), 
+                var_export(empty($arrayZoneInfo[$claimer['zone_id']]['claimer']),true),
                 var_export(!empty($claimerArray[$key+1]),true)
             );
             echo sprintf("%s(): It is this 1st iteration and only for active zone %s: ", __FUNCTION__, $claimer['zone_id']);
@@ -342,7 +342,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
         }
         //if ($debug)
         if ($debug) echo " </br>";
-        
+
         //if ($debug)
         if ($debug) echo sprintf(
                 "Warn controlers of workers that violence happened : %s and if it was successful or not : %s",
@@ -368,7 +368,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
                 echo "getWorkersByZone(): Failed to fetch workers: " . $e->getMessage();
                 continue;
             }
-            if ($debug) 
+            if ($debug)
                 echo sprintf ("sql_workers_by_zone => workers : %s <br>", var_export($workers, true) );
             foreach ( $workers AS $worker) {
                 if ($debug)  echo sprintf ("for worker : %s <br>", var_export($worker, true) );
@@ -384,7 +384,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
                 // add description of violent claim to report and if $success
                 updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
                 // update controler_known_enemies for controlers of workers in zone
-                if ($debug) 
+                if ($debug)
                     echo sprintf("addWorkerToCKE (%s, %s, %s, %s) <br>", $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
                 addWorkerToCKE($pdo, $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
             }
@@ -422,7 +422,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
             if ( !empty($claimer_params['claim_controler_id'])) {
                 $claimer_controler_id = $claimer_params['claim_controler_id'];
                 if ($claimer_params['claim_controler_id'] == 'null') $claimer_controler_id = Null;
-            } 
+            }
 
             $sql = "UPDATE zones SET claimer_controler_id = :claimer_controler_id , holder_controler_id = :holder_controler_id WHERE id = :id";
             try{
