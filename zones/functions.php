@@ -2,10 +2,10 @@
 
 /**
  * Recupere le nom de la zone
- * 
+ *
  * @param PDO $pdo
  * @param int $zone_id
- * 
+ *
  */
 function getZoneName($pdo, $zone_id){
     try{
@@ -23,10 +23,10 @@ function getZoneName($pdo, $zone_id){
 
 /**
  * Function to get ZONEs and return as an array
- * 
+ *
  * @param PDO $pdo
  * @param int $zone_id | NULL
- * 
+ *
  */
 function getZonesArray($pdo, $zone_id = NULL) {
     $zonesArray = array();
@@ -50,12 +50,12 @@ function getZonesArray($pdo, $zone_id = NULL) {
 
 /**
  * Function to prepare the zone selector from à list of zones
- * 
+ *
  * @param PDO $pdo
  * @param array $zonesArray
  * @param bool $show_text default: false ->
  * @param bool $place_holder default: true -> Do we start with and empty spot
- * 
+ *
  */
 function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = true){
 
@@ -320,7 +320,7 @@ function calculateSecretLocationDefence($pdo){
 /**
  * Affiche les bases connues ou possédées dans une zone par un contrôleur
  * Permet d'attaquer les bases destructibles
- * 
+ *
  * @param PDO $pdo
  * @param int $controler_id
  * @param int $zone_id
