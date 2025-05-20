@@ -177,7 +177,8 @@ CREATE TABLE locations (
     discovery_diff INT DEFAULT 0,
     controler_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed BOOLEAN DEFAULT FALSE,
-    is_base BOOLEAN DEFAULT FALSE,
+    is_base BOOLEAN DEFAULT FALSE, -- Is a Controlers Base
+    activate_json JSON DEFAULT '{}'::json,
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
     FOREIGN KEY (controler_id) REFERENCES controlers (ID)
 );

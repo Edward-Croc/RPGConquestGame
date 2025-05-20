@@ -9,43 +9,32 @@
     $controlers = getControlers($gameReady, $_SESSION['user_id']);
     $debug = FALSE;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = TRUE;
-    ?>
-
-    <div class="factions">
-        <h2>Factions</h2>
-        <?php
-        // Show factions if Multiple controlers are available
-        if (count($controlers) > 1) {
-        ?>
+     echo '<div class="factions"><h2>Factions</h2>';
+    // Show factions if Multiple controlers are available
+    if (count($controlers) > 1) {
+        echo sprintf('
             <form action="/RPGConquestGame/base/accueil.php" method="GET">
-                <?php
-                echo showControlerSelect($controlers);
-                ?>
+                %s
             <input type="submit" name="chosir" value="Choisir" />
             </form>
-        <!-- Display Controler details section (initially hidden) changed by the select action-->
-        <div id='ControlerDetails' style='display: none;'>";
-        </div>
-    <?php
+            <!-- Display Controler details section (initially hidden) changed by the select action-->
+            <div id="ControlerDetails" style="display: none;"> </div>', 
+            showControlerSelect($controlers)
+        );
     }
-
     if ( isset($_SESSION['controler']) ) {
         $controlers = getControlers($gameReady, NULL, $_SESSION['controler']['id'])[0];
-        echo sprintf (
-            "Vous êtes %s %s (réseau %s) de la faction %s (%s)",
+        echo sprintf ('<h2>Votre Faction </h2>
+            Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)
+            <div ><form action="/RPGConquestGame/controlers/action.php" method="GET">
+            <input type="hidden" name="controler_id" value=%3$s>
+            <h3>Actions : </h3> <p>',
             $controlers['firstname'],
             $controlers['lastname'],
             $controlers['id'],
             $controlers['faction_name'],
             $controlers['fake_faction_name']
         );
-
-        echo sprintf('<div ><form action="/RPGConquestGame/controlers/action.php" method="GET">
-            <input type="hidden" name="controler_id" value=%1$s>
-            <h3>Actions : </h3> <p>',
-            $controlers['id']
-        );
-
         $bases = hasBase($gameReady, $controlers['id']);
         if (empty($bases)) {
             echo sprintf(
@@ -71,17 +60,21 @@
                     $base['description']
                 );
             }
-            echo '</p>';
         }
+        echo '</p><p>';
 
         $showAttackableControlerKnownLocations = showAttackableControlerKnownLocations($gameReady, $controlers['id']);
         if($showAttackableControlerKnownLocations !== NULL)
             echo sprintf('<form action="/RPGConquestGame/controlers/action.php" method="GET">
                     <input type="hidden" name="controler_id" value=%1$s>
-                    <input type="submit" name="attack" value="Attaquer personnelement le : " class="controler-action-btn"> %2$s',
+                    <input type="submit" name="attackLocation" value="Intéragir avec : " class="controler-action-btn"> %4$s',
                     $controlers['id'],
+                    $showAttackableControlerKnownLocations
             ); 
-        else echo '<p>Aucun lieu connu attaquable.</p>';
+        else echo 'Aucun lieu connu attaquable.';
+
+       if (!empty($attackLocationResult['message']))
+            echo sprintf('%s', $attackLocationResult['message']);
         echo '
         </p>
         </form>';

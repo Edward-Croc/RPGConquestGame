@@ -282,10 +282,38 @@ function showAttackableControlerKnownLocations($pdo, $controler_id) {
     return $returnText;
 }
 
-// TODO: attack_location ($pdo, $controler_id, $location_id)
-    // 
-    // 
+function attackLocation($pdo, $controler_id, $target_location_id) {
+    $return = array('success'=> false, 'message' => '');
+    try{
+        // Get ZONE ID from target_location_id
+        $sql = "SELECT * FROM locations WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':id' => $target_location_id]);
+        $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    $zone_id = $location[0]['zone_id'];
+    $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
+    $locationDefence = calculateSecretLocationDefence($pdo, $controler_id, $zone_id, $target_location_id);
+    $controlerAttack = calculateControlerAttack($pdo, $controler_id, $zone_id);
+
+    // Check result
+    if (($controlerAttack - $locationDefence) > $attackLocationDiff){
+        // Do actions depending on JSON for location
+            $activate_json = json_decode($location[0]['activate_json'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+                $activate_json = array();
+            }
+            // Print Call GM Txt
+            // Create New location
+            //
+    }
+    return $return;
+}
 
 /**
  *
