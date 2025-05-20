@@ -19,7 +19,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 </head>
 <body class='content'>
     <div class="header">
-        <!-- OLD HEADDER 
+        <!-- OLD HEADER
         <?php echo sprintf('
             <div>
                 <h1 id="gameTitle"> %s </h1>
