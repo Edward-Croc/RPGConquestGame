@@ -173,9 +173,9 @@ CREATE TABLE locations (
     name text NOT NULL,
     description text NOT NULL,
     zone_id INT,
-    setup_turn INT DEFAULT 0,
+    setup_turn INT DEFAULT 0, -- Turn in which the location was created
     discovery_diff INT DEFAULT 0,
-    controler_id INT DEFAULT NULL,
+    controler_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
@@ -233,8 +233,7 @@ CREATE TABLE controler_worker (
 CREATE TABLE power_types (
     ID SERIAL PRIMARY KEY,
     name text NOT NULL,
-    description text,
-    activation JSON
+    description text
 );
 
 CREATE TABLE powers (
@@ -244,7 +243,7 @@ CREATE TABLE powers (
     enquete INT DEFAULT 0,
     attack INT DEFAULT 0,
     defence INT DEFAULT 0,
-    other JSON
+    other JSON DEFAULT '{}'::json
 );
 
 CREATE TABLE link_power_type (
