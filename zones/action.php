@@ -13,9 +13,6 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['attack'])){
         activateWorker($gameReady, $zone_id, 'attack', $location_id);
     }
-    if (isset($_GET['gift'])){
-        giftControledZone($gameReady, $zone_id, 'gift', $claim_controler_id);
-    }
     
 }
 

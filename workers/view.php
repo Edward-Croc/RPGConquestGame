@@ -190,7 +190,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
                             showTransformationSelect($gameReady, $powerTransformationArray, FALSE),
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
-                        );  
+                        );
                 }
 
                 $upgrade_HTML .= sprintf('</form> </div >');
