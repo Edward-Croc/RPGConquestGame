@@ -10,7 +10,7 @@
         endTurnButton.addEventListener("click", function () {
             // Create a new XMLHttpRequest
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", "../mecanics/end_turn.php", true);
+            xhr.open("POST", "../mechanics/end_turn.php", true);
 
             // Handle the response
             xhr.onload = function () {

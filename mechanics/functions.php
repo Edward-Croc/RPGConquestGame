@@ -1,9 +1,9 @@
 <?php
 
-require_once '../mecanics/attackMecanic.php';
-require_once '../mecanics/investigateMecanic.php';
-require_once '../mecanics/aiMecanic.php';
-require_once '../mecanics/locationSearchMecanic.php';
+require_once '../mechanics/attackMechanic.php';
+require_once '../mechanics/investigateMechanic.php';
+require_once '../mechanics/aiMechanic.php';
+require_once '../mechanics/locationSearchMechanic.php';
 
 /**
  * Build base randomization SQL
@@ -225,15 +225,15 @@ function createNewTurnLines($pdo, $turn_number){
 }
 
 
-function claimMecanic($pdo, $turn_number = NULL) {
+function claimMechanic($pdo, $turn_number = NULL) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
 
-    echo '<div> <h3>  claimMecanic : </h3> ';
+    echo '<div> <h3>  claimMechanic : </h3> ';
 
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
         echo "turn_number : $turn_number <br>";
     }
 

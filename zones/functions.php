@@ -218,8 +218,8 @@ function calculatecontrollerValue($pdo, $controller_id, $zone_id = null, $locati
     $turnMultiplier = (int)getConfig($pdo, "base{$type}AddTurns");
     $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
     if ($turnMultiplier !== 0 && $location_id !== NUll) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
         echo "turn_number : $turn_number <br>";
 
         $sql = "

@@ -13,7 +13,7 @@ require_once '../controllers/functions.php';
 require_once '../powers/functions.php';
 require_once '../workers/functions.php';
 require_once '../zones/functions.php';
-require_once '../mecanics/functions.php';
+require_once '../mechanics/functions.php';
 
 /**
  *  Extract configuration value from the database by key
@@ -36,22 +36,22 @@ function getConfig($pdo, $configName) {
 }
 
 /**
- *  Extract elements of mecanics from database
+ *  Extract elements of mechanics from database
  *
  * @param : $pdo
  *
  * @return : array | NULL
  */
-function getMecanics($pdo) {
+function getMechanics($pdo) {
     try{
-        $stmt = $pdo->query("SELECT * FROM mecanics");
-        $mecanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->query("SELECT * FROM mechanics");
+        $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if ($_SESSION['DEBUG'] == true){
-            echo "mecanics :  <br />";
-            print_r ($mecanics);
+            echo "mechanics :  <br />";
+            print_r ($mechanics);
             echo "<br />";
         }
-        return $mecanics[0];
+        return $mechanics[0];
     } catch (PDOException $e) {
         echo __FUNCTION__."(): failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -91,14 +91,14 @@ if (!$gameReady) {
         echo "The gameTitle is : '$gameTitle'.<br />";
     }
 
-    // Get mecanics values
-    $mecanics = getMecanics($gameReady);
+    // Get mechanics values
+    $mechanics = getMechanics($gameReady);
 }
 
 if ($_SESSION['DEBUG'] == true){
     // print debug values
     echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
-    echo "Turn : ".$mecanics['turncounter']."; gamestat : '".$mecanics['gamestat']. "' <br />";
+    echo "Turn : ".$mechanics['turncounter']."; gamestat : '".$mechanics['gamestat']. "' <br />";
 }
 
 

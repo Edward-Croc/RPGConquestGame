@@ -363,7 +363,7 @@ function upgradeWorker($pdo, $worker_id, $link_power_type_id){
 
 
 function addWorkerAction($pdo, $worker_id, $controller_id, $zone_id){
-    $mecanics = getMecanics($pdo);
+    $mechanics = getMechanics($pdo);
     try{
         // Insert new controller_worker value into the database
         $stmt = $pdo->prepare("INSERT
@@ -372,7 +372,7 @@ function addWorkerAction($pdo, $worker_id, $controller_id, $zone_id){
         $stmt->bindParam(':controller_id', $controller_id,);
         $stmt->bindParam(':worker_id', $worker_id );
         $stmt->bindParam(':zone_id', $zone_id );
-        $stmt->bindParam(':turn_number', $mecanics['turncounter']);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter']);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
@@ -456,8 +456,8 @@ function moveWorker($pdo, $worker_id, $zone_id) {
 function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
 
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
     }
 
     $sql = "SELECT * FROM worker_actions
@@ -483,8 +483,8 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
 
 function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
 
-    $mecanics = getMecanics($pdo);
-    $turn_number = $mecanics['turncounter'];
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
 
     // get worker action status for turn
     $worker_actions = getWorkerActions($pdo, $worker_id);
@@ -670,8 +670,8 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
     $enemyWorkerOptions = '';
 
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
     }
     echo "turn_number : $turn_number <br>";
 

@@ -229,7 +229,7 @@ function createBase($pdo, $controller_id, $zone_id) {
 
 function moveBase($pdo, $base_id, $zone_id) {
     // update locations set zone_id where controller_id = "%s";
-    $sql = "UPDATE locations SET zone_id = :zone_id,setup_turn = (SELECT turncounter FROM mecanics LIMIT 1) WHERE id = :base_id";
+    $sql = "UPDATE locations SET zone_id = :zone_id,setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);

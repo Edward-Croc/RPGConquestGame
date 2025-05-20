@@ -29,7 +29,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </div>',
             $gameTitle,
             ucfirst(getConfig($gameReady, 'timeValue')),
-            $mecanics['turncounter']
+            $mechanics['turncounter']
         );
         if ( isset($_SESSION['controller']) )
         echo sprintf ("%s %s (%s)<br /> %s ", $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
@@ -38,7 +38,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <?php
                 echo'<div>';
                 if ($_SESSION['is_privileged'] == true){
-                    echo sprintf ('<a href="/RPGConquestGame/mecanics/end_turn.php" class="topbar-btn">%s</a>', ($mecanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
+                    echo sprintf ('<a href="/RPGConquestGame/mechanics/end_turn.php" class="topbar-btn">%s</a>', ($mechanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
                     if ($pageName !== 'admin') {
                         echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
                     }
@@ -56,7 +56,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <!-- Sidebar MENU -->
     <div id="sidebar" class="sidebar">
         <?php echo sprintf('<div> %s %s</div>',
-            ucfirst(getConfig($gameReady, 'timeValue')), $mecanics['turncounter']
+            ucfirst(getConfig($gameReady, 'timeValue')), $mechanics['turncounter']
             );
             if (!empty($_SESSION['controller']['firstname']))
                 echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
@@ -69,7 +69,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <a href="/RPGConquestGame/base/system_presentation.php">Game System</a>
         <?php
             if ($_SESSION['is_privileged'] == true){
-                echo sprintf ('<a href="/RPGConquestGame/mecanics/end_turn.php" class="topbar-btn">%s</a>', ($mecanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
+                echo sprintf ('<a href="/RPGConquestGame/mechanics/end_turn.php" class="topbar-btn">%s</a>', ($mechanics['gamestat'] == 0) ? 'Start Game' : 'End Turn' );
                 if ($pageName !== 'admin') {
                     echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
                 }

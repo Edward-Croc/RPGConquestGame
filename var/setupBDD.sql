@@ -3,13 +3,13 @@
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE mecanics (
+CREATE TABLE mechanics (
     ID SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
     gamestat INTEGER DEFAULT 0
 );
 
-INSERT INTO mecanics (turncounter, gamestat)
+INSERT INTO mechanics (turncounter, gamestat)
 VALUES (0, 0);
 
 -- create configuration table
@@ -25,8 +25,8 @@ VALUES
     -- Debugs vals
     ('DEBUG', 'false', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
-    ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mecanics'),
-    ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mecanics'),
+    ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mechanics'),
+    ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mechanics'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),

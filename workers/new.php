@@ -21,7 +21,7 @@ $buttonClicked = 'first_come';
 $pageTitle = 'Recruter le premier venu';
 
 if ( $_SESSION['DEBUG'] == true )
-echo '<p>turncounter: '. (INT)$mecanics['turncounter']
+echo '<p>turncounter: '. (INT)$mechanics['turncounter']
     .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
     .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
     .'; start_workers :'. $controllerValues[0]['start_workers']
@@ -33,9 +33,9 @@ if (isset($_GET['recrutement'])){
     $buttonClicked = 'recrutement';
     $pageTitle = "Recrutement d'un Agent";
     if ( !((
-        ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)$controllerValues[0]['start_workers'] )
+        ( (INT)$mechanics['turncounter'] == 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)$controllerValues[0]['start_workers'] )
         ) || (
-        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+        ( (INT)$mechanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
         ) )
     ) $recrutment_allowed = FALSE;
 } else {
@@ -90,6 +90,7 @@ if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
     $originList = $tmpOrigine;
 }
 
+// TODO : Allow locking certain origins/Hobbys/Metiers by controler, Hobbys/Metiers by origin !
 $nameArray = randomWorkerName($gameReady, $originList, $nbChoices);
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
@@ -154,7 +155,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         // get transformations
         $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
         if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
-        $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, NULL, $mecanics['turncounter'], 'on_recrutment' );
+        $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, NULL, $mechanics['turncounter'], 'on_recrutment' );
         if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
         if (! empty($powerTransformationArray) )
             echo showTransformationSelect($gameReady, $powerTransformationArray, TRUE);

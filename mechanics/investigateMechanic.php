@@ -9,8 +9,8 @@ function cleanAndSplitString($input) {
 
 function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
         echo "turn_number : $turn_number <br>";
     }
 
@@ -111,12 +111,12 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function investigateMecanic($pdo ) {
-    echo '<div> <h3> investigateMecanic : </h3> ';
+function investigateMechanic($pdo ) {
+    echo '<div> <h3> investigateMechanic : </h3> ';
 
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
     }
     echo "turn_number : $turn_number <br>";
 

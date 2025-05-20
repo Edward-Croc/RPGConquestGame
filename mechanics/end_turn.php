@@ -5,18 +5,18 @@ require_once '../base/base_php.php';
 
 require_once '../base/base_html.php';
 
-        if ($mecanics['gamestat'] == 0) {
+        if ($mechanics['gamestat'] == 0) {
             try{
                 // SQL query to update gamestat
-                $sql = "UPDATE mecanics SET gamestat = 1 WHERE ID = '".$mecanics['id']."'";
+                $sql = "UPDATE mechanics SET gamestat = 1 WHERE ID = '".$mechanics['id']."'";
                 // Prepare and execute SQL query
                 $stmt = $gameReady->prepare($sql);
                 $stmt->execute();
             } catch (PDOException $e) {
-                echo __FUNCTION__."():UPDATE mecanics Failed: " . $e->getMessage()."<br />";
+                echo __FUNCTION__."():UPDATE mechanics Failed: " . $e->getMessage()."<br />";
             }
         }
-        $valsResult = calculateVals($gameReady, $mecanics['turncounter']);
+        $valsResult = calculateVals($gameReady, $mechanics['turncounter']);
         // TODO ADD calulated vals to worker report
 
         $bdrResult = recalculateBaseDefence($gameReady);
@@ -27,22 +27,22 @@ require_once '../base/base_html.php';
             // TODO : Save End Turn step to restart after bug ?
 
             // set Controlled by IA actions
-            $IAResult = aiMecanic($gameReady);
+            $IAResult = aiMechanic($gameReady);
 
             // check attacks
-            $attackResult = attackMecanic($gameReady);
+            $attackResult = attackMechanic($gameReady);
 
             // check investigations
-            $investigateResult = investigateMecanic($gameReady);
+            $investigateResult = investigateMechanic($gameReady);
 
             // check locations seach
-            $locationsearchResult = locationSearchMecanic($gameReady);
+            $locationsearchResult = locationSearchMechanic($gameReady);
 
             // check claiming territory
-            $claimResult = claimMecanic($gameReady);
+            $claimResult = claimMechanic($gameReady);
 
             // update turn counter
-            $turn = (INT)$mecanics['turncounter'] + 1;
+            $turn = (INT)$mechanics['turncounter'] + 1;
 
             // if no errors occured create new turn lines
             // and advance turn counter
@@ -53,12 +53,12 @@ require_once '../base/base_html.php';
                 // Advance Turn counter
                 try{
                     // SQL query to select username from the players table
-                    $sql = "UPDATE mecanics set turncounter ='".$turn."' WHERE ID='".$mecanics['id']."'";
+                    $sql = "UPDATE mechanics set turncounter ='".$turn."' WHERE ID='".$mechanics['id']."'";
                     // Prepare and execute SQL query
                     $stmt = $gameReady->prepare($sql);
                     $stmt->execute();
                 } catch (PDOException $e) {
-                    echo __FUNCTION__."(): UPDATE mecanics Failed: " . $e->getMessage()."<br />";
+                    echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
                 }
             }
             echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";

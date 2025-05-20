@@ -21,7 +21,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     echo "<div class='workers'>";
     if ( empty($worker_id) ) {
         $recruitButton = "";
-        if (canStartRecrutement($gameReady, $controller_id, (INT)$mecanics['turncounter'])){
+        if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
             $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur'>";
         } elseif (empty(hasBase($gameReady, $controller_id))) {
             $recruitButton = getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase');
@@ -61,11 +61,11 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));
         $currentAction = array();
         foreach ($workersArray as $worker){
-            if ( $_SESSION['DEBUG'] == true ) echo sprintf('mecanics[turncounter] : %s  <br>', var_export($mecanics['turncounter'],true));
+            if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
             foreach($worker['actions'] as $action) {
                 if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
                 if ( $_SESSION['DEBUG'] == true ) echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
-                if ( (INT)$action['turn_number'] == (INT)$mecanics['turncounter'] ) {
+                if ( (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
                     if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
                     $currentAction = $action;
                 }
@@ -140,6 +140,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 /* ('age_hobby', 'FALSE', ''),
                 ('age_metier', 'FALSE', ''), */
 
+                // TODO do not show discipline in double.... 
+
                 // Allow Discipline teaching via age_discipline param
                 if ($worker['is_active']) {
                     $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
@@ -184,7 +186,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     // get transformations
                     $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
-                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mecanics['turncounter'], 'on_transformation' );
+                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
                     if (! empty($powerTransformationArray) )
                         $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
@@ -203,7 +205,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 foreach ( $worker['actions'] as $turn_number => $action ){
                     echo sprintf(
                         '<div class="report week"> <h4> %s </h4>',
-                        ( (INT)$turn_number == (INT)$mecanics['turncounter'] ) ? ucfirst(sprintf("%s %s", $timeTextThis, $timeText )) : ucfirst(sprintf("%s %s", $timeText, $turn_number ))
+                        ( (INT)$turn_number == (INT)$mechanics['turncounter'] ) ? ucfirst(sprintf("%s %s", $timeTextThis, $timeText )) : ucfirst(sprintf("%s %s", $timeText, $turn_number ))
                     );
                     if ($_SESSION['DEBUG_REPORT'])
                         echo "<p> action: ".var_export($action, true)."</p>";

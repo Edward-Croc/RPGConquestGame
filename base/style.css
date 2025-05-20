@@ -56,7 +56,7 @@ body {
 
 .flex { display: flex; }
 
-.workers, .zones, .factions, .config, .mecanics {
+.workers, .zones, .factions, .config, .mechanics {
     flex: 1;
     padding: 20px;
 }
@@ -67,7 +67,7 @@ body {
     background-color: #f8c3c3;
 }
 
-.config, .mecanics {
+.config, .mechanics {
     display: block;
     padding: 20px;
 }

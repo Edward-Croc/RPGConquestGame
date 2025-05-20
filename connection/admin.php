@@ -78,10 +78,10 @@ require_once '../base/base_html.php';
 
 <div class="content">
     <div class="flex">
-        <div  class="mecanics">
-            <h1>Mecanics</h1>
+        <div  class="mechanics">
+            <h1>Mechanics</h1>
         </div>
-        <div class="mecanics">
+        <div class="mechanics">
         <table border="1">
             <tr>
                 <th> Key </th>
@@ -89,7 +89,7 @@ require_once '../base/base_html.php';
             </tr>
             <?php
            // Display config values in a table
-            foreach ($mecanics as $key => $value) {
+            foreach ($mechanics as $key => $value) {
             echo" <tr>
                 <td> $key </td>
                 <td> $value </td>

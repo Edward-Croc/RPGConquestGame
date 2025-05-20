@@ -1,11 +1,11 @@
 <?php
 
-function aiMecanic($pdo ) {
-    echo '<div> <h3> aiMecanic : </h3> ';
+function aiMechanic($pdo ) {
+    echo '<div> <h3> aiMechanic : </h3> ';
 
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
     }
     echo "turn_number : $turn_number <br>";
 

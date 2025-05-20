@@ -50,11 +50,11 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function locationSearchMecanic($pdo) {
-    echo '<div><h3>locationSearchMecanic :</h3>';
+function locationSearchMechanic($pdo) {
+    echo '<div><h3>locationSearchMechanic :</h3>';
 
-    $mecanics = getMecanics($pdo);
-    $turn_number = $mecanics['turncounter'];
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
     echo "turn_number : $turn_number <br>";
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';

@@ -9,8 +9,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
     // Check turn number is selected
     if (empty($turn_number)) {
-        $mecanics = getMecanics($pdo);
-        $turn_number = $mecanics['turncounter'];
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
     }
     if ($debug) echo "turn_number : $turn_number <br>";
 
@@ -227,8 +227,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 /**
 * Main function to calculate attack results.
 */
-function attackMecanic($pdo){
-    echo '<div> <h3>  attackMecanic : </h3> ';
+function attackMechanic($pdo){
+    echo '<div> <h3>  attackMechanic : </h3> ';
 
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
