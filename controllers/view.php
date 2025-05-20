@@ -26,7 +26,7 @@
         $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
         echo sprintf ('<h2>Votre Faction </h2>
             Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)<br>
-            %6$s<br>
+            %6$s %7$s
             <div ><form action="/RPGConquestGame/controllers/action.php" method="GET">
             <input type="hidden" name="controller_id" value=%3$s>
             <h3>Actions : </h3> <p>',
@@ -35,7 +35,8 @@
             $controllers['id'],
             $controllers['faction_name'],
             $controllers['fake_faction_name'],
-            !empty($controllers['story']) ? '<button onclick="window.open(\''.$controllers['story'].'\', \'_blank\')"> This is your story </button>' : ''
+            !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> This is your url </button><br>' : '',
+            !empty($controllers['story']) ? $controllers['story'] : ''
         );
         $bases = hasBase($gameReady, $controllers['id']);
         if (empty($bases)) {

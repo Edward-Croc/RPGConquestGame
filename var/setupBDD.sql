@@ -133,6 +133,7 @@ CREATE TABLE controllers (
     ID SERIAL PRIMARY KEY,
     firstname text NOT NULL,
     lastname text NOT NULL,
+    url text,
     story text,
     start_workers INT DEFAULT 1,
     recruited_workers INT DEFAULT 0,

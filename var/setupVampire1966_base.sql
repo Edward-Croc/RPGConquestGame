@@ -48,12 +48,13 @@ INSERT INTO factions (name) VALUES
 
 -- players with start worker limits
 INSERT INTO controllers (
-    firstname, lastname,
+    firstname, lastname, url,
     start_workers, recruited_workers, turn_recruited_workers,
     faction_id, fake_faction_id
 ) VALUES
     (
         'Dame', 'Calabreze',
+        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
         0, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
@@ -61,12 +62,14 @@ INSERT INTO controllers (
     (
         --'Sir Angelo', 'Ricciotti',
         'Sir Antonio', 'Mazzino',
+        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
         1,1,1,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
     (
         'Duca Gaston', 'da Firenze',
+        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
         10, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Giovanni' ),
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
