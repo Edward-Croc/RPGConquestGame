@@ -249,11 +249,6 @@ function attackMecanic($pdo){
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
 
-    $timeText = getConfig($pdo, 'timeValue');
-    $timeTextThe = getConfig($pdo, 'timeDenominatorThe');
-    $timeTextOfThe = getConfig($pdo, 'timeDenominatorOfThe');
-    $timeTextThis = getConfig($pdo, 'timeDenominatorThis');
-
     $workerDisappearanceTexts = json_decode(getConfig($pdo,'workerDisappearanceTexts'), true);
     $attackSuccessTexts = json_decode(getConfig($pdo,'attackSuccessTexts'), true);
     $captureSuccessTexts = json_decode(getConfig($pdo,'captureSuccessTexts'), true);

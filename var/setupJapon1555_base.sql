@@ -10,9 +10,8 @@ VALUES
     ('map_alt', 'Carte de Shikoku', 'Map alt'),
     ('textForZoneType', 'territoire', 'Text for the type of zone'),
     ('timeValue', 'Trimestre', 'Text for time span'),
-    ('timeDenominatorThe', 'le', 'Denominator ’the’ for time text'),
-    ('timeDenominatorOfThe', 'du', 'Denominator ’of the’ for time text'),
-    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text');
+    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text')
+;
 
 
 INSERT INTO players (username, passwd, is_privileged) VALUES

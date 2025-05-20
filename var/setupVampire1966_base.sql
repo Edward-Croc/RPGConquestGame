@@ -6,8 +6,6 @@ VALUES
     ('map_alt', 'Carte des Quartiers de Florence', 'Map alt'),
     ('timeValue', 'Semaine', 'Text for time span'),
     ('textForZoneType', 'quartier', 'Text for the type of zone'),
-    ('timeDenominatorThe', 'la', 'Denominator ’the’ for time text'),
-    ('timeDenominatorOfThe', 'de la', 'Denominator ’of the’ for time text'),
     ('timeDenominatorThis', 'cette', 'Denominator ’this’ for time text')
     ;
 
