@@ -12,7 +12,7 @@ function getPowerTypesDescription($pdo, $name){
         $stmt->execute([':name' => $name]);
         return $stmt->fetchColumn();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        echo  __FUNCTION__."(): $name failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 }

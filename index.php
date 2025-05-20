@@ -1,5 +1,5 @@
 <?php
-session_start(); // Start the 
+session_start(); // Start the
 
 $pageName = 'index';
 

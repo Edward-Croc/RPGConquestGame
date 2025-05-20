@@ -20,8 +20,9 @@ function diceSQL() {
 
 /**
  * Return value of a dice roll
+ *  $pdo
  */
-function diceRoll() {
+function diceRoll($pdo) {
     $diceSQL = diceSQL();
     $sql = "SELECT $diceSQL as roll";
 
@@ -179,7 +180,7 @@ function createNewTurnLines($pdo, $turn_number){
         $stmtInsert->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
         $stmtInsert->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql INSERT FAILED : ".$e->getMessage()."<br/> sql: $sql<br/>";
+        echo __FUNCTION__." (): sql INSERT FAILED : ".$e->getMessage()."<br/> sql: $sqlInsert<br/>";
         return FALSE;
     }
 
@@ -196,7 +197,7 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetInvestigate->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
             $stmtSetInvestigate->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql UPDATE investigate FAILED : ".$e->getMessage()."<br />$sql<br/>";
+            echo __FUNCTION__." (): sql UPDATE investigate FAILED : ".$e->getMessage()."<br />$sqlSetInvestigate<br/>";
             return FALSE;
         }
     }
@@ -213,7 +214,7 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetClaim->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
             $stmtSetClaim->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql UPDATE claim FAILED : ".$e->getMessage()."<br />$sql<br/>";
+            echo __FUNCTION__." (): sql UPDATE claim FAILED : ".$e->getMessage()."<br />$sqlSetClaim<br/>";
             return FALSE;
         }
     }

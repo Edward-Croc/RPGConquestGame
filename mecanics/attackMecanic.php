@@ -279,7 +279,7 @@ function attackMecanic($pdo){
                     $is_alive = NULL;
                     echo $defender['defender_name']. ' Was Captured !';
                     $defender_status = 'captured';
-                    $attackerReport['attack_report'] = sprintf($captureSuccessTextes[array_rand($captureSuccessTextes)], $defender['defender_name']);
+                    $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
                     // in controler_worker update defender_controler_id, defender_id, is_primary_controler = false
                     $stmt = $pdo->prepare("UPDATE controler_worker SET is_primary_controler = :is_primary WHERE controler_id = :controler_id AND worker_id = :worker_id");
                     $stmt->execute([
@@ -338,6 +338,7 @@ function attackMecanic($pdo){
                 echo $defender['defender_name']. ' RIPOSTE !';
                 $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
                 $attackerReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
+                $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemyControler));
                 updateWorkerActiveStatus($pdo, $defender['attacker_id']);
                 updateWorkerAliveStatus($pdo, $defender['attacker_id']);
             }

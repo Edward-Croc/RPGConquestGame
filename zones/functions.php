@@ -101,9 +101,9 @@ function getLocationsArray($pdo) {
     }
 
     // Fetch the results
-    $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Store Controlers in the array
+    // Store locations in the array
     foreach ($locations as $location) {
         $locationsArray[] = $location;
     }

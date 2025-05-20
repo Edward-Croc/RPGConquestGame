@@ -14,7 +14,7 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
         $stmt = $pdo->prepare($query);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
         return FALSE;
     }
     return TRUE;
@@ -33,7 +33,7 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
         $stmt = $pdo->prepare($query);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
         return FALSE;
     }
     return TRUE;
@@ -84,7 +84,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
         } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
             return FALSE;
         }
         return TRUE;
@@ -215,7 +215,7 @@ function getActionsByWorkers($pdo, $worker_id_str){
     }
     // Fetch the results
     $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("worker_actions: %s <br /> <br />", var_export($workers_powers,true));
+    if ($_SESSION['DEBUG'] == true) echo sprintf("worker_actions: %s <br /> <br />", var_export($worker_actions,true));
 
     return $worker_actions;
 }
