@@ -31,8 +31,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             ucfirst(getConfig($gameReady, 'timeValue')),
             $mecanics['turncounter']
         );
-        if ( isset($_SESSION['controler']) )
-        echo sprintf ("%s %s (%s)<br /> %s ", $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
+        if ( isset($_SESSION['controller']) )
+        echo sprintf ("%s %s (%s)<br /> %s ", $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
         ?>
         <div class="menu_top_left">
             <?php
@@ -58,14 +58,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <?php echo sprintf('<div> %s %s</div>',
             ucfirst(getConfig($gameReady, 'timeValue')), $mecanics['turncounter']
             );
-            if (!empty($_SESSION['controler']['firstname']))
-                echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controler']['firstname'], $_SESSION['controler']['lastname'], $_SESSION['controler']['id'], $_SESSION['controler']['faction_name']);
+            if (!empty($_SESSION['controller']['firstname']))
+                echo sprintf('<div> %s %s (%s) les %s </div>', $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
         ?>
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; ?>
         <a href="/RPGConquestGame/workers/action.php">Agents</a>
         <a href="/RPGConquestGame/zones/action.php">Zones</a>
-        <a href="/RPGConquestGame/controlers/action.php">Controlers</a>
+        <a href="/RPGConquestGame/controllers/action.php">Controllers</a>
         <a href="/RPGConquestGame/base/system_presentation.php">Game System</a>
         <?php
             if ($_SESSION['is_privileged'] == true){

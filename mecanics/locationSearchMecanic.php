@@ -6,7 +6,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
                 WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
-                wa.controler_id AS searcher_controler_id,
+                wa.controller_id AS searcher_controller_id,
                 wa.enquete_val AS searcher_enquete_val,
                 wa.zone_id
             FROM
@@ -18,7 +18,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         SELECT
             s.searcher_id,
             s.searcher_enquete_val,
-            s.searcher_controler_id,
+            s.searcher_controller_id,
             z.id AS zone_id,
             z.name AS zone_name,
             l.id AS found_id,
@@ -26,13 +26,13 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             l.name AS found_name,
             l.description AS found_description,
             l.can_be_destroyed AS found_can_be_destroyed,
-            l.controler_id AS location_controler,
-            CONCAT(lc.firstname, ' ', lc.lastname) AS location_controler_name,
+            l.controller_id AS location_controller,
+            CONCAT(lc.firstname, ' ', lc.lastname) AS location_controller_name,
             (s.searcher_enquete_val - l.discovery_diff) AS enquete_difference
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
         JOIN locations l ON s.zone_id = l.zone_id
-        LEFT JOIN controlers lc ON l.controler_id = lc.id
+        LEFT JOIN controllers lc ON l.controller_id = lc.id
     ";
 
     if (!empty($searcher_id)) $sql .= " WHERE s.searcher_id = :searcher_id";
@@ -83,28 +83,28 @@ function locationSearchMecanic($pdo) {
             );
         }
 
-        if ($row['searcher_controler_id'] == $row['location_controler']) continue;
+        if ($row['searcher_controller_id'] == $row['location_controller']) continue;
 
         if ($row['enquete_difference'] >= $LOCATIONNAMEDIFF) {
             $reportElement = sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
 
             if ($row['enquete_difference'] >= $LOCATIONINFORMATIONDIFF) {
-                $checkStmt = $pdo->prepare("SELECT id FROM controler_known_locations WHERE controler_id = :cid AND location_id = :lid");
+                $checkStmt = $pdo->prepare("SELECT id FROM controller_known_locations WHERE controller_id = :cid AND location_id = :lid");
                 $checkStmt->execute([
-                    ':cid' => $row['searcher_controler_id'],
+                    ':cid' => $row['searcher_controller_id'],
                     ':lid' => $row['found_id']
                 ]);
 
                 if ($known = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $updateStmt = $pdo->prepare("UPDATE controler_known_locations SET last_discovery_turn = :turn WHERE id = :id");
+                    $updateStmt = $pdo->prepare("UPDATE controller_known_locations SET last_discovery_turn = :turn WHERE id = :id");
                     $updateStmt->execute([
                         ':turn' => $turn_number,
                         ':id' => $known['id']
                     ]);
                 } else {
-                    $insertStmt = $pdo->prepare("INSERT INTO controler_known_locations (controler_id, location_id, first_discovery_turn, last_discovery_turn) VALUES (:cid, :lid, :turn, :turn)");
+                    $insertStmt = $pdo->prepare("INSERT INTO controller_known_locations (controller_id, location_id, first_discovery_turn, last_discovery_turn) VALUES (:cid, :lid, :turn, :turn)");
                     $insertStmt->execute([
-                        ':cid' => $row['searcher_controler_id'],
+                        ':cid' => $row['searcher_controller_id'],
                         ':lid' => $row['found_id'],
                         ':turn' => $turn_number
                     ]);

@@ -15,7 +15,7 @@ VALUES
  ,('textViewWorkerTransformations', 'Iel a été transformé.e en : %s <br />', 'Texts for worker view page transformations')
   -- %1$s Fake Faction name
  ,('texteNameBase', 'Repaire %s', 'Text for Name of base')
- -- %1$s Controler name
+ -- %1$s controller name
  -- %2$s FakeFaction name
  -- %3$s Time values
  ,('texteDescriptionBase', '
@@ -33,9 +33,9 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textControlerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controler view actions')
- ,('textControlerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controler view actions')
- ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repaire.', 'needed base for recrutment')
+ ('textcontrollerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controller view actions')
+ ,('textcontrollerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controller view actions')
+ ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repaire.', 'needed base for recrutment')
 ;
 
 INSERT INTO config (name, value, description)
@@ -143,8 +143,8 @@ VALUES
         "%2$sIel traîne avec le réseau %1$s. %3$s"
     ]', 'Texts for search results level 2'),
 --  Diff 3
--- %1$s - found_controler_name
--- %2$s - found_controler_faction
+-- %1$s - found_controller_name
+-- %2$s - found_controller_faction
 (
     'textesDiff3', '[
         "Ce réseau répond à %1$s. ",
@@ -187,7 +187,7 @@ VALUES
 -- Observers of a **successful** violent claim
 -- %1$s - worker name
 -- %2$s - zone name
--- %2$s - new controler name
+-- %2$s - new controller name
 ('textesClaimSuccessViewArray', '[
     "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.",
     "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",

@@ -15,67 +15,67 @@ INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Mercury', 'Messala', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
     ('Maria', 'Marotta', (SELECT ID FROM worker_origins WHERE name = 'Venezia'), (SELECT ID FROM zones WHERE name = 'Fortezza Basso'));
 
-INSERT INTO controler_worker (controler_id, worker_id) VALUES
+INSERT INTO controller_worker (controller_id, worker_id) VALUES
     -- Base test claim, passive, investigate
     (
-        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
         (SELECT ID FROM workers WHERE lastname in ('Matthews'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Calabreze')),
+        (SELECT ID FROM controllers WHERE lastname in ('Calabreze')),
         (SELECT ID FROM workers WHERE lastname in ('Lombardi'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
         (SELECT ID FROM workers WHERE lastname in ('Popescu'))
     )
     -- Multi claim, should be violent
     ,(
-        (SELECT ID FROM controlers WHERE lastname in ('da Firenze')),
+        (SELECT ID FROM controllers WHERE lastname in ('da Firenze')),
         (SELECT ID FROM workers WHERE lastname in ('Honorius'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
         (SELECT ID FROM workers WHERE lastname in ('Aliev'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
         (SELECT ID FROM workers WHERE lastname in ('Martino'))
     )
     -- Attacking ?
     ,(
-        (SELECT ID FROM controlers WHERE lastname in ('da Firenze')),
+        (SELECT ID FROM controllers WHERE lastname in ('da Firenze')),
         (SELECT ID FROM workers WHERE lastname in ('Messala'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
         (SELECT ID FROM workers WHERE lastname in ('Ionescu'))
     ), (
-        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
         (SELECT ID FROM workers WHERE lastname in ('Marotta'))
     )
 ;
 
 -- Add actions to the workers :
 INSERT INTO worker_actions (
-    worker_id, controler_id, turn_number, zone_id, action_choice, action_params
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
 )
 SELECT
     w.id,
-    cw.controler_id,
+    cw.controller_id,
     0,
     w.zone_id,
     entry.action_choice,
     entry.action_params::json
 FROM (
     -- Base test claim, passive, investigate
-    SELECT 'Matthews' AS lastname, 'claim' AS action_choice, '{"claim_controler_id":"2"}' AS action_params
+    SELECT 'Matthews' AS lastname, 'claim' AS action_choice, '{"claim_controller_id":"2"}' AS action_params
     UNION ALL
     SELECT 'Popescu', 'passive', '{}'  -- empty JSON object
     UNION ALL
     SELECT 'Lombardi', 'investigate', '{}'
     -- Multi claim, should be violent
     UNION ALL
-    SELECT 'Honorius', 'claim', '{"claim_controler_id":"2"}'
+    SELECT 'Honorius', 'claim', '{"claim_controller_id":"2"}'
     UNION ALL
-    SELECT 'Aliev', 'claim', '{"claim_controler_id":"2"}'
+    SELECT 'Aliev', 'claim', '{"claim_controller_id":"2"}'
     UNION ALL
-    SELECT 'Martino', 'claim', '{"claim_controler_id":"2"}'
+    SELECT 'Martino', 'claim', '{"claim_controller_id":"2"}'
     -- Attacking ?
     UNION ALL
     SELECT 'Messala', 'investigate', '{}'
@@ -85,7 +85,7 @@ FROM (
     SELECT 'Marotta', 'investigate', '{}'
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
-JOIN controler_worker cw ON cw.worker_id = w.id;
+JOIN controller_worker cw ON cw.worker_id = w.id;
 
 -- Add powers to the workers :
 INSERT INTO worker_powers (worker_id, link_power_type_id)

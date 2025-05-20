@@ -82,9 +82,9 @@ function calculateVals($pdo, $turn_number){
                     SELECT 1
                     FROM workers w2
                     JOIN zones z2 ON w2.zone_id = z2.id
-                    JOIN controler_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controler = TRUE
+                    JOIN controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = TRUE
                     WHERE w2.id = worker_actions.worker_id
-                      AND z2.holder_controler_id = cw2.controler_id
+                      AND z2.holder_controller_id = cw2.controller_id
                 )
                 THEN %s
                 ELSE 0
@@ -131,9 +131,9 @@ function calculateVals($pdo, $turn_number){
                 LEFT JOIN
                     workers w ON w.zone_id = z.id
                 LEFT JOIN
-                    controler_worker cw ON cw.worker_id = w.id AND cw.is_primary_controler = TRUE
+                    controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = TRUE
                 WHERE
-                    z.holder_controler_id = cw.controler_id
+                    z.holder_controller_id = cw.controller_id
                 GROUP BY
                     z.id
             ) AS subquery
@@ -162,16 +162,16 @@ function createNewTurnLines($pdo, $turn_number){
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
-        INSERT INTO worker_actions (worker_id, turn_number, zone_id, controler_id, action_choice, action_params)
+        INSERT INTO worker_actions (worker_id, turn_number, zone_id, controller_id, action_choice, action_params)
         SELECT
             w.id AS worker_id,
             :turn_number AS turn_number,
             w.zone_id AS zone_id,
-            cw.controler_id AS controler_id,
+            cw.controller_id AS controller_id,
             wa.action_choice,
             wa.action_params
         FROM workers w
-        JOIN controler_worker AS cw ON cw.worker_id = w.id AND is_primary_controler = true
+        JOIN controller_worker AS cw ON cw.worker_id = w.id AND is_primary_controller = true
         JOIN worker_actions AS wa ON wa.worker_id = w.id AND turn_number = :turn_number_n_1
     ";
     try {
@@ -244,16 +244,16 @@ function claimMecanic($pdo, $turn_number = NULL) {
             wa.enquete_val AS claimer_enquete_val,
             wa.attack_val AS claimer_attack_val,
             wa.action_params AS claimer_params,
-            wa.controler_id AS claimer_controler_id,
+            wa.controller_id AS claimer_controller_id,
             z.id AS zone_id,
             z.name AS zone_name,
-            z.holder_controler_id AS zone_holder_controler_id,
+            z.holder_controller_id AS zone_holder_controller_id,
             (wa.enquete_val - z.calculated_defence_val) AS discrete_claim,
             (wa.attack_val - z.calculated_defence_val) AS violent_claim
         FROM worker_actions wa
         JOIN zones z ON z.id = wa.zone_id
         JOIN workers w ON w.id = wa.worker_id
-        -- JOIN controler c ON c.id = wa.controler_id
+        -- JOIN controller c ON c.id = wa.controller_id
         WHERE
             wa.action_choice = 'claim'
             AND wa.turn_number = :turn_number
@@ -292,9 +292,9 @@ function claimMecanic($pdo, $turn_number = NULL) {
 
         if ($debug) {
             echo sprintf(
-                "%s(): zone_holder_controler_id : '%s', zone has not been claimed this turn: '%s', next key exists : '%s'",
+                "%s(): zone_holder_controller_id : '%s', zone has not been claimed this turn: '%s', next key exists : '%s'",
                 __FUNCTION__,
-                var_export($claimer['zone_holder_controler_id'],true),
+                var_export($claimer['zone_holder_controller_id'],true),
                 var_export(empty($arrayZoneInfo[$claimer['zone_id']]['claimer']),true),
                 var_export(!empty($claimerArray[$key+1]),true)
             );
@@ -302,7 +302,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
         }
         // if its the 1st and only claim for a previously unclaimed zone then
         if (
-            $claimer['zone_holder_controler_id'] == NULL
+            $claimer['zone_holder_controller_id'] == NULL
             && empty($arrayZoneInfo[$claimer['zone_id']]['claimer'])
             && (
                 $key-1 < 0
@@ -346,7 +346,7 @@ function claimMecanic($pdo, $turn_number = NULL) {
 
         //if ($debug)
         if ($debug) echo sprintf(
-                "Warn controlers of workers that violence happened : %s and if it was successful or not : %s",
+                "Warn controllers of workers that violence happened : %s and if it was successful or not : %s",
                 var_export( $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'], true),
                 var_export( $success, true)
             );
@@ -354,15 +354,15 @@ function claimMecanic($pdo, $turn_number = NULL) {
             // get all workers of zone
             $sql_workers_by_zone = "SELECT *
                 FROM workers w
-                JOIN controler_worker cw ON cw.worker_id = w.id
+                JOIN controller_worker cw ON cw.worker_id = w.id
                 WHERE
                     w.zone_id = :zone_id
-                    AND cw.controler_id != :controler_id
+                    AND cw.controller_id != :controller_id
                     AND w.is_active = True";
             try {
                 $stmt = $pdo->prepare($sql_workers_by_zone);
                 $stmt->bindParam(':zone_id', $claimer['zone_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':controler_id', $claimer['claimer_controler_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':controller_id', $claimer['claimer_controller_id'], PDO::PARAM_INT);
                 $stmt->execute();
                 $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } catch (PDOException $e) {
@@ -384,10 +384,10 @@ function claimMecanic($pdo, $turn_number = NULL) {
                 $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']).'<br/>';
                 // add description of violent claim to report and if $success
                 updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
-                // update controler_known_enemies for controlers of workers in zone
+                // update controller_known_enemies for controllers of workers in zone
                 if ($debug)
-                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s) <br>", $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
-                addWorkerToCKE($pdo, $worker['controler_id'], $worker_id, $turn_number, $claimer['zone_id']);
+                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s) <br>", $worker['controller_id'], $worker_id, $turn_number, $claimer['zone_id']);
+                addWorkerToCKE($pdo, $worker['controller_id'], $worker_id, $turn_number, $claimer['zone_id']);
             }
         }
         // For Worker add message if claim is successful or failed ($success) an if it was violent or not $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']
@@ -419,19 +419,19 @@ function claimMecanic($pdo, $turn_number = NULL) {
             }
             if ($debug) echo "claimer_params :". var_export($claimer_params, true);
 
-            $claimer_controler_id = $zoneInfo['claimer']['claimer_controler_id'];
-            if ( !empty($claimer_params['claim_controler_id'])) {
-                $claimer_controler_id = $claimer_params['claim_controler_id'];
-                if ($claimer_params['claim_controler_id'] == 'null') $claimer_controler_id = Null;
+            $claimer_controller_id = $zoneInfo['claimer']['claimer_controller_id'];
+            if ( !empty($claimer_params['claim_controller_id'])) {
+                $claimer_controller_id = $claimer_params['claim_controller_id'];
+                if ($claimer_params['claim_controller_id'] == 'null') $claimer_controller_id = Null;
             }
 
-            $sql = "UPDATE zones SET claimer_controler_id = :claimer_controler_id , holder_controler_id = :holder_controler_id WHERE id = :id";
+            $sql = "UPDATE zones SET claimer_controller_id = :claimer_controller_id , holder_controller_id = :holder_controller_id WHERE id = :id";
             try{
                 // Update config value in the database
                 $stmt = $pdo->prepare($sql);
                 $stmt->bindParam(':id', $zoneInfo['claimer']['zone_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':holder_controler_id', $zoneInfo['claimer']['claimer_controler_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':claimer_controler_id', $claimer_controler_id);
+                $stmt->bindParam(':holder_controller_id', $zoneInfo['claimer']['claimer_controller_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':claimer_controller_id', $claimer_controller_id);
                 $stmt->execute();
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";

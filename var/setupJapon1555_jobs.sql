@@ -69,7 +69,7 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
 ;
 
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Prêtre chrétien', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controler_lastname": "Miyoshi (三好氏)"} } }'),
-    ('Marin Portugais', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controler_lastname": "Miyoshi (三好氏)"} } }')
+    ('Prêtre chrétien', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好氏)"} } }'),
+    ('Marin Portugais', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好氏)"} } }')
 ;
 

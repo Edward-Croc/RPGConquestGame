@@ -19,7 +19,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         $sql = "SELECT
                 wa.worker_id AS attacker_id,
                 wa.action_params AS params,
-                wa.controler_id,
+                wa.controller_id,
                 wa.zone_id,
                 wa.turn_number
             FROM
@@ -58,12 +58,12 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 // If the attacker targets the network
                 if ($param['attackScope'] == 'network'){
                     try{
-                        $sqlNetworkSearch ="SELECT discovered_worker_id FROM controlers_known_enemies
-                            WHERE zone_id = :zone_id AND discovered_controler_id = :network_id AND controler_id = :controler_id";
+                        $sqlNetworkSearch ="SELECT discovered_worker_id FROM controllers_known_enemies
+                            WHERE zone_id = :zone_id AND discovered_controller_id = :network_id AND controller_id = :controller_id";
                         $stmtNetworkSearch = $pdo->prepare($sqlNetworkSearch);
                         $stmtNetworkSearch->bindParam(':network_id', $param['attackID']);
                         $stmtNetworkSearch->bindParam(':zone_id', $attackAction['zone_id']);
-                        $stmtNetworkSearch->bindParam(':controler_id', $attackAction['controler_id']);
+                        $stmtNetworkSearch->bindParam(':controller_id', $attackAction['controller_id']);
                         $stmtNetworkSearch->execute();
                     } catch (PDOException $e) {
                         echo __FUNCTION__."(): Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
@@ -97,13 +97,13 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             CONCAT(w.firstname, ' ', w.lastname) AS attacker_name,
             wa.attack_val AS attacker_attack_val,
             wa.defence_val AS attacker_defence_val,
-            wa.controler_id AS attacker_controler_id,
-            CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name,
+            wa.controller_id AS attacker_controller_id,
+            CONCAT(c.firstname, ' ', c.lastname) AS attacker_controller_name,
             wa.turn_number
         FROM
             worker_actions wa
             JOIN workers w ON w.id = wa.worker_id
-            JOIN controlers c ON wa.controler_id = c.ID
+            JOIN controllers c ON wa.controller_id = c.ID
         WHERE
             wa.worker_id = :attacker_id
             AND wa.turn_number = :turn_number
@@ -116,7 +116,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
         wo.id AS defender_origin_id,
         wo.name AS defender_origin_name,
-        cw.controler_id as defender_controler_id,
+        cw.controller_id as defender_controller_id,
         z.id AS zone_id,
         z.name AS zone_name
         FROM workers w
@@ -124,7 +124,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         JOIN worker_actions wa ON
             w.id = wa.worker_id AND wa.turn_number = :turn_number AND wa.action_choice not in ('captured', 'dead')
         JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controler_worker cw ON w.id = cw.worker_id AND is_primary_controler = true
+        JOIN controller_worker cw ON w.id = cw.worker_id AND is_primary_controller = true
             WHERE w.id IN (%s)
     )
     SELECT
@@ -132,8 +132,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         a.attacker_name,
         a.attacker_attack_val,
         a.attacker_defence_val,
-        a.attacker_controler_id,
-        a.attacker_controler_name,
+        a.attacker_controller_id,
+        a.attacker_controller_name,
         a.turn_number,
         d.defender_id,
         d.defender_attack_val,
@@ -141,7 +141,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         d.defender_name,
         d.defender_origin_id,
         d.defender_origin_name,
-        d.defender_controler_id,
+        d.defender_controller_id,
         d.zone_id,
         d.zone_name,
         cke.id AS defender_knows_enemy,
@@ -149,7 +149,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         (d.defender_attack_val - a.attacker_defence_val) AS riposte_difference
         FROM attacker a
         CROSS JOIN defenders d
-        LEFT JOIN controlers_known_enemies cke ON cke.controler_id = d.defender_controler_id AND cke.discovered_worker_id = a.attacker_id
+        LEFT JOIN controllers_known_enemies cke ON cke.controller_id = d.defender_controller_id AND cke.discovered_worker_id = a.attacker_id
     ";
 
     if ( (bool)getConfig($pdo, 'LIMIT_ATTACK_BY_ZONE') )
@@ -160,13 +160,13 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 CONCAT(w.firstname, ' ', w.lastname) AS attacker_name,
                 wa.attack_val AS attacker_attack_val,
                 wa.defence_val AS attacker_defence_val,
-                wa.controler_id AS attacker_controler_id,
+                wa.controller_id AS attacker_controller_id,
                 wa.zone_id,
-                CONCAT(c.firstname, ' ', c.lastname) AS attacker_controler_name
+                CONCAT(c.firstname, ' ', c.lastname) AS attacker_controller_name
             FROM
                 worker_actions wa
                 JOIN workers w ON w.id = wa.worker_id
-                JOIN controlers c ON wa.controler_id = c.ID
+                JOIN controllers c ON wa.controller_id = c.ID
             WHERE
                 wa.worker_id = :attacker_id
                 AND turn_number = :turn_number
@@ -176,8 +176,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             a.attacker_name,
             a.attacker_attack_val,
             a.attacker_defence_val,
-            a.attacker_controler_id,
-            a.attacker_controler_name,
+            a.attacker_controller_id,
+            a.attacker_controller_name,
             z.id AS zone_id,
             z.name AS zone_name,
             wa.turn_number,
@@ -187,7 +187,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
             wo.id AS defender_origin_id,
             wo.name AS defender_origin_name,
-            cw.controler_id as defender_controler_id,
+            cw.controller_id as defender_controller_id,
             (a.attacker_attack_val - wa.defence_val) AS attack_difference,
             (wa.attack_val - a.attacker_defence_val) AS riposte_difference,
             cke.id AS defender_knows_enemy
@@ -197,8 +197,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 a.zone_id = wa.zone_id AND wa.turn_number = :turn_number
         JOIN workers w ON wa.worker_id = w.ID
         JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
-        LEFT JOIN controlers_known_enemies cke ON cke.controler_id = cw.controler_id AND cke.discovered_worker_id = a.attacker_id
+        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = true
+        LEFT JOIN controllers_known_enemies cke ON cke.controller_id = cw.controller_id AND cke.discovered_worker_id = a.attacker_id
         WHERE w.id IN (%s)
         ";
     $final_attacks_aggregate = array();
@@ -280,17 +280,17 @@ function attackMecanic($pdo){
                     echo $defender['defender_name']. ' Was Captured !';
                     $defender_status = 'captured';
                     $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
-                    // in controler_worker update defender_controler_id, defender_id, is_primary_controler = false
-                    $stmt = $pdo->prepare("UPDATE controler_worker SET is_primary_controler = :is_primary WHERE controler_id = :controler_id AND worker_id = :worker_id");
+                    // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
+                    $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
                     $stmt->execute([
-                        'controler_id' => $defender['defender_controler_id'],
+                        'controller_id' => $defender['defender_controller_id'],
                         'worker_id' => $defender['defender_id'],
                         'is_primary' => 0
                     ]);
-                    // in controler_worker insert attacker_controler_id, defender_id, is_primary_controler = true
-                    $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id, is_primary_controler) VALUES (:controler_id, :worker_id, :is_primary)");
+                    // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
+                    $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
                     $stmt->execute([
-                        'controler_id' => $defender['attacker_controler_id'],
+                        'controller_id' => $defender['attacker_controller_id'],
                         'worker_id' => $defender['defender_id'],
                         'is_primary' => 1
                     ]);
@@ -302,26 +302,26 @@ function attackMecanic($pdo){
                 $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
                 // Check if attaker is in know ennemies
                 try{
-                    $knownEnemyControler = '';
+                    $knownEnemycontroller = '';
                     $sql_known_ennemies = sprintf(
-                        "SELECT * FROM controlers_known_enemies WHERE controler_id = %s AND discovered_worker_id = %s AND zone_id = %s",
-                        $defender['defender_controler_id'], $defender['attacker_id'],  $defender['zone_id'] );
+                        "SELECT * FROM controllers_known_enemies WHERE controller_id = %s AND discovered_worker_id = %s AND zone_id = %s",
+                        $defender['defender_controller_id'], $defender['attacker_id'],  $defender['zone_id'] );
                     $stmtA = $pdo->prepare($sql_known_ennemies);
                     $stmtA->execute();
                     $knownEnemy = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
                     if (!empty($knownEnemy)) {
-                        // Yes and is controler known ? Add to report
-                        if (!empty($knownEnemy[0]['discovered_controler_id'])) {
-                            $knownEnemyControler .= sprintf(' du résseau %s', $knownEnemy[0]['discovered_controler_id']);
+                        // Yes and is controller known ? Add to report
+                        if (!empty($knownEnemy[0]['discovered_controller_id'])) {
+                            $knownEnemycontroller .= sprintf(' du résseau %s', $knownEnemy[0]['discovered_controller_id']);
                         }
-                        if (!empty($knownEnemy[0]['discovered_controler_name'])) {
-                            $knownEnemyControler .= sprintf(' des agents de %s', $knownEnemy[0]['discovered_controler_name']);
+                        if (!empty($knownEnemy[0]['discovered_controller_name'])) {
+                            $knownEnemycontroller .= sprintf(' des agents de %s', $knownEnemy[0]['discovered_controller_name']);
                         }
                     } else {
                         // No Add to know ennemies
                         $sqlInsert = sprintf(
-                            "INSERT INTO controlers_known_enemies (controler_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
-                            $defender['defender_controler_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
+                            "INSERT INTO controllers_known_enemies (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
+                            $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
                         $stmtInsert = $pdo->prepare($sqlInsert);
                         $stmtInsert->execute();
                     }
@@ -329,7 +329,7 @@ function attackMecanic($pdo){
                     echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
                     return [];
                 }
-                $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemyControler));
+                $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
             }
             if ($debug)
                 echo sprintf("(survived  : %s <br/>", ($survived ));
@@ -338,7 +338,7 @@ function attackMecanic($pdo){
                 echo $defender['defender_name']. ' RIPOSTE !';
                 $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
                 $attackerReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
-                $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemyControler));
+                $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
                 updateWorkerActiveStatus($pdo, $defender['attacker_id']);
                 updateWorkerAliveStatus($pdo, $defender['attacker_id']);
             }

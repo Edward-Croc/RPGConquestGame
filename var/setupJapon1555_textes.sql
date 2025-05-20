@@ -20,7 +20,7 @@ VALUES
  ,('textViewWorkerTransformations', 'Iel a été équipé de : %s <br />', 'Texts for worker view page transformations')
 -- %1$s Fake Faction name
  ,('texteNameBase', 'Repaire %s', 'Text for Name of base')
- -- %1$s Controler name
+ -- %1$s controller name
  -- %2$s FakeFaction name
  -- %3$s Time values
  ,('texteDescriptionBase', '
@@ -38,9 +38,9 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textControlerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controler view actions')
- ,('textControlerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controler view actions')
- ,('textControlerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir établi une forteresse.', 'needed base for recrutment')
+ ('textcontrollerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controller view actions')
+ ,('textcontrollerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controller view actions')
+ ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir établi une forteresse.', 'needed base for recrutment')
 ;
 
 INSERT INTO config (name, value, description)
@@ -148,8 +148,8 @@ VALUES
         "%2$sIel travaille avec la faction %1$s. %3$s"
     ]', 'Texts for search results level 2'),
 --  Diff 3
--- %1$s - found_controler_name
--- %2$s - found_controler_faction
+-- %1$s - found_controller_name
+-- %2$s - found_controller_faction
 (
     'textesDiff3', '[
         "Ce réseau d’informateurs répond à %1$s. ",

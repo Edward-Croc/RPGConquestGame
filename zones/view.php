@@ -22,10 +22,10 @@
                 ',
                 $zone['name'], $zone['zone_id'],
                 $descritpion,
-                (!empty($zone['controler_id']))
+                (!empty($zone['controller_id']))
                     ? sprintf('sous la banière de %s %s', $zone['firstname'], $zone['lastname'])
                     : '',
-                showControlerKnownSecrets($gameReady, $_SESSION['controler']['id'], $zone['zone_id'])
+                showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id'])
             );
         }
     ?>

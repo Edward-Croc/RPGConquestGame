@@ -92,7 +92,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
     return FALSE;
 }
 
-// Function to get Controlers and return as an array
+// Function to get controllers and return as an array
 function getWorkers($pdo, $worker_ids) {
 
     if ( empty($worker_ids) ) return NULL;
@@ -102,7 +102,7 @@ function getWorkers($pdo, $worker_ids) {
             w.*,
             wo.name AS origin_name,
             z.name AS zone_name,
-            cw.is_primary_controler,
+            cw.is_primary_controller,
             (SELECT MAX(wa.turn_number) - MIN(wa.turn_number)
                 FROM worker_actions wa
                 WHERE wa.worker_id = w.id
@@ -113,7 +113,7 @@ function getWorkers($pdo, $worker_ids) {
             COALESCE(SUM(p.defence), 0) AS total_defence
         FROM
             workers AS w
-        JOIN controler_worker AS cw ON cw.worker_id = w.id
+        JOIN controller_worker AS cw ON cw.worker_id = w.id
         JOIN
             worker_origins AS wo ON wo.id = w.origin_id
         JOIN
@@ -126,7 +126,7 @@ function getWorkers($pdo, $worker_ids) {
             powers p ON lpt.power_id = p.ID
         WHERE
             w.id IN ($worker_id_str)
-        GROUP BY w.id, wo.name, z.name, cw.is_primary_controler
+        GROUP BY w.id, wo.name, z.name, cw.is_primary_controller
         ORDER BY w.id ASC
     ";
     try {
@@ -175,27 +175,27 @@ function getWorkers($pdo, $worker_ids) {
     return $workersArray;
 }
 
-// Function to get Controlers and return as an array
-function getWorkersByControler($pdo, $controler_id) {
+// Function to get controllers and return as an array
+function getWorkersBycontroller($pdo, $controller_id) {
     $workersArray = array();
 
-    $sql = " SELECT * FROM controler_worker AS cw
-        WHERE cw.controler_id = :controler_id
+    $sql = " SELECT * FROM controller_worker AS cw
+        WHERE cw.controller_id = :controller_id
     ";
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':controler_id' => $controler_id]);
+        $stmt->execute([':controller_id' => $controller_id]);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 
     // Fetch the results
-    $controler_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $controller_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $worker_ids = NULL;
-    // Store Controlers in the array
-    foreach ($controler_workers as $controler_worker) {
-        $worker_ids[] = $controler_worker['worker_id'];
+    // Store controllers in the array
+    foreach ($controller_workers as $controller_worker) {
+        $worker_ids[] = $controller_worker['worker_id'];
     }
 
     return getWorkers($pdo, $worker_ids);
@@ -294,18 +294,18 @@ function createWorker($pdo, $array) {
         zone
         discipline
         transformation
-        controler_id
+        controller_id
     */
     // Check if worker already exists :
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
-        INNER JOIN controler_worker AS cw ON cw.worker_id = w.id
-        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controler_id = :controler_id");
+        INNER JOIN controller_worker AS cw ON cw.worker_id = w.id
+        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
         $stmt->bindParam(':firstname', $array['firstname']);
         $stmt->bindParam(':lastname', $array['lastname']);
         $stmt->bindParam(':origin_id', $array['origin_id']);
-        $stmt->bindParam(':controler_id', $array['controler_id']);
+        $stmt->bindParam(':controller_id', $array['controller_id']);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
@@ -326,16 +326,16 @@ function createWorker($pdo, $array) {
     // Get the last inserted ID
     $worker_id = $pdo->lastInsertId();
 
-    addWorkerAction($pdo, $worker_id, $array['controler_id'], $array['zone_id']);
+    addWorkerAction($pdo, $worker_id, $array['controller_id'], $array['zone_id']);
 
     try{
-        // Insert new controler_worker value into the database
-        $stmt = $pdo->prepare("INSERT INTO controler_worker (controler_id, worker_id) VALUES (:controler_id, :worker_id)");
-        $stmt->bindParam(':controler_id', $array['controler_id']);
+        // Insert new controller_worker value into the database
+        $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id) VALUES (:controller_id, :worker_id)");
+        $stmt->bindParam(':controller_id', $array['controller_id']);
         $stmt->bindParam(':worker_id', $worker_id );
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT controler_worker Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
     }
 
     $link_power_type_id_array = [];
@@ -362,20 +362,20 @@ function upgradeWorker($pdo, $worker_id, $link_power_type_id){
 }
 
 
-function addWorkerAction($pdo, $worker_id, $controler_id, $zone_id){
+function addWorkerAction($pdo, $worker_id, $controller_id, $zone_id){
     $mecanics = getMecanics($pdo);
     try{
-        // Insert new controler_worker value into the database
+        // Insert new controller_worker value into the database
         $stmt = $pdo->prepare("INSERT
-            INTO worker_actions (worker_id, turn_number, zone_id, controler_id)
-             VALUES (:worker_id, :turn_number, :zone_id, :controler_id)");
-        $stmt->bindParam(':controler_id', $controler_id,);
+            INTO worker_actions (worker_id, turn_number, zone_id, controller_id)
+             VALUES (:worker_id, :turn_number, :zone_id, :controller_id)");
+        $stmt->bindParam(':controller_id', $controller_id,);
         $stmt->bindParam(':worker_id', $worker_id );
         $stmt->bindParam(':zone_id', $zone_id );
         $stmt->bindParam(':turn_number', $mecanics['turncounter']);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT controler_worker Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
     }
     // Get the last inserted ID
     return $pdo->lastInsertId();
@@ -538,7 +538,7 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): claim <br/><br/>";
             // Create JSON table
             $jsonOutput = json_encode([
-                'claim_controler_id' => $extraVal
+                'claim_controller_id' => $extraVal
             ]);
             break;
         case 'gift' :
@@ -546,17 +546,17 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             $new_action = 'passive';
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
             $currentReport['life_report'] .= "J'ai rejoint un nouveau maitre. ";
-            // Set controler_worker controler_id and set worker_actions controler_id where turn_numer = current_turn to $extraVal
+            // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
-                // Update the controler_worker table
-                $sqlControlerWorker = "UPDATE controler_worker SET controler_id = :extraVal WHERE worker_id = :worker_id";
-                $stmtControlerWorker = $pdo->prepare($sqlControlerWorker);
-                $stmtControlerWorker->execute([
+                // Update the controller_worker table
+                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
                     ':worker_id' => $worker_id
                 ]);
                 // Update the worker_actions table
-                $sqlWorkerActions = "UPDATE worker_actions SET controler_id = :extraVal
+                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
@@ -591,18 +591,18 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     return $worker_id;
 }
 
-function getEnemyWorkers($pdo, $zone_id, $controler_id) {
-    // Select from controlers_known_enemies by $zone_id, $controler_id
+function getEnemyWorkers($pdo, $zone_id, $controller_id) {
+    // Select from controllers_known_enemies by $zone_id, $controller_id
         // return table of :
-        // A worker discovered_worker_id with no discovered_controler_id
-        // B workers discovered_worker_id with identical discovered_controler_id
-            // Optional discovered_controler_name if is associated to a
+        // A worker discovered_worker_id with no discovered_controller_id
+        // B workers discovered_worker_id with identical discovered_controller_id
+            // Optional discovered_controller_name if is associated to a
     if ($_SESSION['DEBUG_ATTACK'] == true) {
         echo sprintf("zone_id: %s <br/> " , var_export($zone_id, true));
-        echo sprintf("controler_id: %s <br/> " , var_export($controler_id, true));
+        echo sprintf("controller_id: %s <br/> " , var_export($controller_id, true));
     }
     try {
-        // Query for workers with no discovered_controler_id (A)
+        // Query for workers with no discovered_controller_id (A)
         $sqlA = "
             SELECT
                 cke.id,
@@ -611,53 +611,53 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
             FROM
-                controlers_known_enemies cke
+                controllers_known_enemies cke
             JOIN
                 workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
-                AND cke.controler_id = :controler_id
-                AND cke.discovered_controler_id IS NULL
+                AND cke.controller_id = :controller_id
+                AND cke.discovered_controller_id IS NULL
             ORDER BY last_discovery_turn DESC
         ";
         $stmtA = $pdo->prepare($sqlA);
         $stmtA->execute([
             ':zone_id' => $zone_id,
-            ':controler_id' => $controler_id
+            ':controller_id' => $controller_id
         ]);
-        $workersWithoutControler = $stmtA->fetchAll(PDO::FETCH_ASSOC);
+        $workersWithoutcontroller = $stmtA->fetchAll(PDO::FETCH_ASSOC);
 
-        // Query for workers with identical discovered_controler_id (B)
+        // Query for workers with identical discovered_controller_id (B)
         $sqlB = "
             SELECT
                 cke.id,
                 cke.discovered_worker_id,
                 CONCAT(w.firstname, ' ', w.lastname) AS name,
-                cke.discovered_controler_id,
-                COALESCE(cke.discovered_controler_name, 'Unknown') AS discovered_controler_name,
+                cke.discovered_controller_id,
+                COALESCE(cke.discovered_controller_name, 'Unknown') AS discovered_controller_name,
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
             FROM
-                controlers_known_enemies cke
+                controllers_known_enemies cke
             JOIN
                 workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
-                AND cke.controler_id = :controler_id
-                AND cke.discovered_controler_id IS NOT NULL
-            ORDER BY discovered_controler_name ASC, discovered_controler_id ASC, last_discovery_turn DESC
+                AND cke.controller_id = :controller_id
+                AND cke.discovered_controller_id IS NOT NULL
+            ORDER BY discovered_controller_name ASC, discovered_controller_id ASC, last_discovery_turn DESC
         ";
         $stmtB = $pdo->prepare($sqlB);
         $stmtB->execute([
             ':zone_id' => $zone_id,
-            ':controler_id' => $controler_id
+            ':controller_id' => $controller_id
         ]);
-        $workersWithControler = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+        $workersWithcontroller = $stmtB->fetchAll(PDO::FETCH_ASSOC);
 
         // Return the combined result
         return [
-            'workers_without_controler' => $workersWithoutControler, // A
-            'workers_with_controler' => $workersWithControler       // B
+            'workers_without_controller' => $workersWithoutcontroller, // A
+            'workers_with_controller' => $workersWithcontroller       // B
         ];
 
     } catch (PDOException $e) {
@@ -666,7 +666,7 @@ function getEnemyWorkers($pdo, $zone_id, $controler_id) {
     }
 }
 
-function showEnemyWorkersSelect($pdo, $zone_id, $controler_id, $turn_number = NULL) {
+function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
     $enemyWorkerOptions = '';
 
     if (empty($turn_number)) {
@@ -675,13 +675,13 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id, $turn_number = NU
     }
     echo "turn_number : $turn_number <br>";
 
-    $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controler_id);
+    $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controller_id);
 
     if ($_SESSION['DEBUG_ATTACK']) {
         echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
     }
 
-    if (empty($enemyWorkersArray['workers_without_controler']) && empty($enemyWorkersArray['workers_with_controler'])) return '';
+    if (empty($enemyWorkersArray['workers_without_controller']) && empty($enemyWorkersArray['workers_with_controller'])) return '';
 
     // Prepare config val
     $attackTimeWindow = getConfig($pdo, 'attackTimeWindow');
@@ -689,27 +689,27 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controler_id, $turn_number = NU
     $canAttackNetwork = getConfig($pdo, 'canAttackNetwork');
     if (empty($attackTimeWindow)) $attackTimeWindow = 0;
 
-    if (!empty($enemyWorkersArray['workers_without_controler'])){
+    if (!empty($enemyWorkersArray['workers_without_controller'])){
         // Display select list of workers
-        foreach ( $enemyWorkersArray['workers_without_controler'] as $enemyWorker) {
+        foreach ( $enemyWorkersArray['workers_without_controller'] as $enemyWorker) {
             if (!isset($enemyWorker['last_discovery_turn'])) continue;
             if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow))
                 $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
-    if (!empty($enemyWorkersArray['workers_with_controler'])) {
-        $discovered_controler_id = 0;
-        // Display select list of Controlers
-        foreach ( $enemyWorkersArray['workers_with_controler'] as $enemyWorker) {
+    if (!empty($enemyWorkersArray['workers_with_controller'])) {
+        $discovered_controller_id = 0;
+        // Display select list of controllers
+        foreach ( $enemyWorkersArray['workers_with_controller'] as $enemyWorker) {
             if (!isset($enemyWorker['last_discovery_turn'])) continue;
             if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow)) {
 
-                if ( $discovered_controler_id != $enemyWorker['discovered_controler_id'] && $canAttackNetwork > 0){
-                    $discovered_controler_id = $enemyWorker['discovered_controler_id'];
+                if ( $discovered_controller_id != $enemyWorker['discovered_controller_id'] && $canAttackNetwork > 0){
+                    $discovered_controller_id = $enemyWorker['discovered_controller_id'];
                     $enemyWorkerOptions .= sprintf(
                         '<option value=\'network_%1$s\'>Réseau %1$s - %2$s</option>',
-                        $enemyWorker['discovered_controler_id'],
-                        $enemyWorker['discovered_controler_name'],
+                        $enemyWorker['discovered_controller_id'],
+                        $enemyWorker['discovered_controller_name'],
                     );
                 }
                 $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);

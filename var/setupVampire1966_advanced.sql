@@ -3,14 +3,14 @@
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Harvey', 'Matthews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti'));
 -- Link Matthews to 'Mazzino/Ricciotti'
-INSERT INTO controler_worker (controler_id, worker_id) VALUES (
-    (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+INSERT INTO controller_worker (controller_id, worker_id) VALUES (
+    (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
     (SELECT ID FROM workers WHERE lastname in ('Matthews'))
 );
 -- Add base actions
-INSERT INTO worker_actions (worker_id, controler_id, turn_number, zone_id) VALUES (
+INSERT INTO worker_actions (worker_id, controller_id, turn_number, zone_id) VALUES (
     (SELECT ID FROM workers WHERE lastname = 'Matthews'),
-    (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti')),
+    (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
     0,
     (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')
 );
@@ -42,20 +42,20 @@ INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Natalia', 'Cacciatore', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Monticelli'))
 ;
 -- Link Matthews to 'Mazzino/Ricciotti'
-INSERT INTO controler_worker (controler_id, worker_id) VALUES 
-    ((SELECT ID FROM controlers WHERE lastname in ('Cacciatore')),(SELECT ID FROM workers WHERE lastname in ('Marsala'))),
-    ((SELECT ID FROM controlers WHERE lastname in ('Cacciatore')),(SELECT ID FROM workers WHERE lastname in ('Cacciatore')))
+INSERT INTO controller_worker (controller_id, worker_id) VALUES 
+    ((SELECT ID FROM controllers WHERE lastname in ('Cacciatore')),(SELECT ID FROM workers WHERE lastname in ('Marsala'))),
+    ((SELECT ID FROM controllers WHERE lastname in ('Cacciatore')),(SELECT ID FROM workers WHERE lastname in ('Cacciatore')))
 ;
 -- Add base actions
-INSERT INTO worker_actions (worker_id, controler_id, zone_id) VALUES 
+INSERT INTO worker_actions (worker_id, controller_id, zone_id) VALUES 
     (
         (SELECT ID FROM workers WHERE lastname = 'Marsala'),
-        (SELECT ID FROM controlers WHERE lastname in ('Cacciatore')),
+        (SELECT ID FROM controllers WHERE lastname in ('Cacciatore')),
         (SELECT ID FROM zones WHERE name = 'Bosco Bello')
     ),
     (
         (SELECT ID FROM workers WHERE lastname = 'Cacciatore'),
-        (SELECT ID FROM controlers WHERE lastname in ('Cacciatore')),
+        (SELECT ID FROM controllers WHERE lastname in ('Cacciatore')),
         (SELECT ID FROM zones WHERE name = 'Monticelli')
     )
 ;

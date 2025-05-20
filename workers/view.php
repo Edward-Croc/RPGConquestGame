@@ -1,45 +1,45 @@
 <?php
 if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
 
-if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
+if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
-    if ( $_SESSION['DEBUG'] == true ) echo "_SESSION['controler']['id']: ".var_export($_SESSION['controler']['id'], true)."<br /><br />";
-    if ( empty($controler_id) ) $controler_id = $_SESSION['controler']['id'];
-    if ( $_SESSION['DEBUG'] == true ) echo "controler_id: ".var_export($controler_id, true)."<br /><br />";
+    if ( $_SESSION['DEBUG'] == true ) echo "_SESSION['controller']['id']: ".var_export($_SESSION['controller']['id'], true)."<br /><br />";
+    if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
     $zonesArray = getZonesArray($gameReady);
     if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
 
     $workersArray = [];
-    // TODO Change view for DEAD, CAPTURED and Non Primary controler
+    // TODO Change view for DEAD, CAPTURED and Non Primary controller
     if ( !empty ($worker_id) ) {
         $workersArray = getWorkers($gameReady, [$worker_id]);
     } else {
-        $workersArray = getWorkersByControler($gameReady, $controler_id);
+        $workersArray = getWorkersBycontroller($gameReady, $controller_id);
     }
 
     echo "<div class='workers'>";
     if ( empty($worker_id) ) {
         $recruitButton = "";
-        if (canStartRecrutement($gameReady, $controler_id, (INT)$mecanics['turncounter'])){
+        if (canStartRecrutement($gameReady, $controller_id, (INT)$mecanics['turncounter'])){
             $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur'>";
-        } elseif (empty(hasBase($gameReady, $controler_id))) {
-            $recruitButton = getConfig($gameReady, 'textControlerRecrutmentNeedsBase');
+        } elseif (empty(hasBase($gameReady, $controller_id))) {
+            $recruitButton = getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase');
         }
 
         $firstComeButton = "";
-        if (canStartFirstCome($gameReady, $controler_id))
+        if (canStartFirstCome($gameReady, $controller_id))
             $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu'>";
 
             echo sprintf("
             <h1>Agents</h1>
             <form action='/RPGConquestGame/workers/new.php' method='GET'>
                 <b> Recrutement : </b>
-                <input type='hidden' name='controler_id' value='%s'>
+                <input type='hidden' name='controller_id' value='%s'>
                 %s
                 %s
             </form>",
-            htmlspecialchars($controler_id),
+            htmlspecialchars($controller_id),
             $firstComeButton,
             $recruitButton
         );
@@ -53,9 +53,9 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
         if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
         if ( !empty($worker_id) ) {
-            $controlers = getControlers($gameReady);
-            $showControlersSelect = showControlerSelect($controlers, 'gift_controler_id');
-            $showListClaimTargetsSelect = showControlerSelect($controlers, 'claim_controler_id', TRUE);
+            $controllers = getcontrollers($gameReady);
+            $showcontrollersSelect = showcontrollerSelect($controllers, 'gift_controller_id');
+            $showListClaimTargetsSelect = showcontrollerSelect($controllers, 'claim_controller_id', TRUE);
         }
 
         if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));
@@ -92,7 +92,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
             );
 
             if ( !empty($worker_id) ) {
-                $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controler_id);
+                $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
 
                 echo sprintf('<div class="history">
                     <h3>Historique : </h3>
@@ -122,7 +122,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         (empty($enemyWorkersSelect)) ? '' : sprintf(' OU <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s ', $enemyWorkersSelect),
                         ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
                         $showListClaimTargetsSelect,
-                        $showControlersSelect
+                        $showcontrollersSelect
                     );
             }
             echo '</form>';
@@ -150,7 +150,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                         echo "JSON decoding error: " . json_last_error_msg() . "<br />";
                     }
                     if ( $debug_discipline_age ) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array,true));
-                    $powerDisciplineArray = getPowersByType($gameReady,'3', $controler_id, TRUE);
+                    $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, TRUE);
                     if ( $debug_discipline_age ) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
                     $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
                     if ( $debug_discipline_age ) echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
@@ -184,7 +184,7 @@ if ( !empty($_SESSION['controler']) ||  !empty($controler_id) ) {
                     // get transformations
                     $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
-                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, $worker['id'], $mecanics['turncounter'], 'on_transformation' );
+                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mecanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
                     if (! empty($powerTransformationArray) )
                         $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',

@@ -16,12 +16,12 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ( !empty($_GET['enemy_worker_id']) ) $enemy_worker_id = $_GET['enemy_worker_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "enemy_worker_id: ".var_export($enemy_worker_id, true)."<br /><br />";
 
-    $claim_controler_id = NULL;
-    if ( !empty($_GET['claim_controler_id']) ) $claim_controler_id = $_GET['claim_controler_id'];
-    if ( $_SESSION['DEBUG'] == true ) echo "claim_controler_id: ".var_export($claim_controler_id, true)."<br /><br />";
-    $gift_controler_id = NULL;
-    if ( !empty($_GET['gift_controler_id']) ) $gift_controler_id = $_GET['gift_controler_id'];
-    if ( $_SESSION['DEBUG'] == true ) echo "gift_controler_id: ".var_export($gift_controler_id, true)."<br /><br />";
+    $claim_controller_id = NULL;
+    if ( !empty($_GET['claim_controller_id']) ) $claim_controller_id = $_GET['claim_controller_id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "claim_controller_id: ".var_export($claim_controller_id, true)."<br /><br />";
+    $gift_controller_id = NULL;
+    if ( !empty($_GET['gift_controller_id']) ) $gift_controller_id = $_GET['gift_controller_id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "gift_controller_id: ".var_export($gift_controller_id, true)."<br /><br />";
 
 
     if (isset($_GET['creation'])){
@@ -38,10 +38,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'activate');
     }
     if (isset($_GET['claim'])){
-        activateWorker($gameReady, $worker_id, 'claim', $claim_controler_id);
+        activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])){
-        activateWorker($gameReady, $worker_id, 'gift', $gift_controler_id);
+        activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
     }
     if (isset($_GET['teach_discipline']) ){
         upgradeWorker($gameReady, $worker_id, $_GET['discipline']);

@@ -38,7 +38,7 @@ INSERT INTO factions (name) VALUES
 ;
 
 -- players with start worker limits
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname,
     start_workers, recruted_workers, turn_recruted_workers,
     faction_id, fake_faction_id,
@@ -61,7 +61,7 @@ INSERT INTO controlers (
 ;
 
 -- IA with start workers limits
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname, ia_type,
     start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
@@ -84,7 +84,7 @@ INSERT INTO controlers (
 ;
 
 -- players with no start worker limits
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname,
     faction_id, fake_faction_id,
     story
@@ -144,42 +144,42 @@ INSERT INTO controlers (
     )
 ;
 
-INSERT INTO player_controler (controler_id, player_id)
+INSERT INTO player_controller (controller_id, player_id)
     SELECT ID, (SELECT ID FROM players WHERE username = 'gm')
-    FROM controlers;
+    FROM controllers;
 
-INSERT INTO player_controler (player_id, controler_id) VALUES
+INSERT INTO player_controller (player_id, controller_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player0'),
-        (SELECT ID FROM controlers WHERE lastname in ('Shikoku (四国)'))
+        (SELECT ID FROM controllers WHERE lastname in ('Shikoku (四国)'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player1'),
-        (SELECT ID FROM controlers WHERE lastname = 'Chōsokabe (長宗我部)')
+        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player2'),
-        (SELECT ID FROM controlers WHERE lastname in ('Miyoshi (三好氏)'))
+        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好氏)'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player3'),
-        (SELECT ID FROM controlers WHERE lastname = 'Rennyo (蓮如)')
+        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player4'),
-        (SELECT ID FROM controlers WHERE lastname = 'Hosokawa (細川氏)')
+        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川氏)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player5'),
-        (SELECT ID FROM controlers WHERE lastname = 'Wako (和光)')
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player6'),
-        (SELECT ID FROM controlers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player7'),
-        (SELECT ID FROM controlers WHERE lastname = 'Ashikaga (足利)')
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
     )
 ;
 
@@ -214,8 +214,8 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
     , ('Les geoles impériales', '', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
-INSERT INTO locations (name, description, discovery_diff, zone_id, controler_id) VALUES
-    ('Geoles Pirates', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controlers WHERE lastname = 'Wako (和光)')) --PARRESSE
+INSERT INTO locations (name, description, discovery_diff, zone_id, controller_id) VALUES
+    ('Geoles Pirates', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')) --PARRESSE
 ;
 
 -- Table of Fixed Power Types used by code

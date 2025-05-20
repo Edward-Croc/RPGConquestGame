@@ -57,8 +57,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if ( isset($_POST['resetBDD']) ) {
-        // empty controler SESSION
-        $_SESSION['controler'] = NULL;
+        // empty controller SESSION
+        $_SESSION['controller'] = NULL;
         destroyAllTables($gameReady);
         $gameReady = gameReady();
     }

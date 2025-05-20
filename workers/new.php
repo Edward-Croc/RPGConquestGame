@@ -8,13 +8,13 @@ if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Location: connection/login_form.php');
 }
 
-if (isset($_SESSION['controler'])){
-    $controler_id = $_SESSION['controler']['id'];
+if (isset($_SESSION['controller'])){
+    $controller_id = $_SESSION['controller']['id'];
 }
-if (isset($_GET['controler_id'])){
-    $controler_id = $_GET['controler_id'];
+if (isset($_GET['controller_id'])){
+    $controller_id = $_GET['controller_id'];
 }
-$controlerValues = getControlers($gameReady, NULL, $controler_id);
+$controllerValues = getcontrollers($gameReady, NULL, $controller_id);
 $recrutment_allowed = TRUE;
 
 $buttonClicked = 'first_come';
@@ -24,22 +24,22 @@ if ( $_SESSION['DEBUG'] == true )
 echo '<p>turncounter: '. (INT)$mecanics['turncounter']
     .'; turn_firstcome_workers: '. getConfig($gameReady, 'turn_firstcome_workers')
     .'; turn_recrutable_workers: '. getConfig($gameReady, 'turn_recrutable_workers')
-    .'; start_workers :'. $controlerValues[0]['start_workers']
-    .'; turn_recruted_workers :'. $controlerValues[0]['turn_recruted_workers']
-    .'; turn_firstcome_workers :'. $controlerValues[0]['turn_firstcome_workers']
+    .'; start_workers :'. $controllerValues[0]['start_workers']
+    .'; turn_recruted_workers :'. $controllerValues[0]['turn_recruted_workers']
+    .'; turn_firstcome_workers :'. $controllerValues[0]['turn_firstcome_workers']
 .'</p>';
 
 if (isset($_GET['recrutement'])){
     $buttonClicked = 'recrutement';
     $pageTitle = "Recrutement d'un Agent";
     if ( !((
-        ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)$controlerValues[0]['start_workers'] )
+        ( (INT)$mecanics['turncounter'] == 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)$controllerValues[0]['start_workers'] )
         ) || (
-        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controlerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
+        ( (INT)$mecanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruted_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
         ) )
     ) $recrutment_allowed = FALSE;
 } else {
-    if ( !((INT)$controlerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = FALSE;
+    if ( !((INT)$controllerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = FALSE;
 }
 if ( !$recrutment_allowed ){
     require_once '../base/base_html.php';
@@ -53,12 +53,12 @@ if ( !$recrutment_allowed ){
 
 // increment recrutment values
 $sqlUpdateRecrutementCounter = sprintf(
-    'UPDATE controlers SET %1$s = %1$s +1 WHERE id = :controler_id',
+    'UPDATE controllers SET %1$s = %1$s +1 WHERE id = :controller_id',
     $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruted_workers'
 );
 $stmtUpdateRecrutementCounter = $gameReady->prepare($sqlUpdateRecrutementCounter);
 $stmtUpdateRecrutementCounter->execute([
-    ':controler_id' => $controler_id
+    ':controller_id' => $controller_id
 ]);
 
 if ($_SESSION['DEBUG'] == true){
@@ -93,7 +93,7 @@ if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
 $nameArray = randomWorkerName($gameReady, $originList, $nbChoices);
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
-$powerDisciplineArray = getPowersByType($gameReady,'3', $controler_id, TRUE);
+$powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, TRUE);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true){
     echo "nameArray: ".var_export($nameArray, true)."<br /><br />";
@@ -127,7 +127,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         <input type="hidden" name="origin_id" value="%6$s">
         <input type="hidden" name="power_hobby_id" value="%7$s">
         <input type="hidden" name="power_metier_id" value="%8$s">
-        <input type="hidden" name="controler_id" value="%9$s">
+        <input type="hidden" name="controller_id" value="%9$s">
     ',
     $nameArray[$iteration]['firstname'],
     $nameArray[$iteration]['lastname'],
@@ -137,7 +137,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $nameArray[$iteration]['origin_id'],
     $powerHobbyArray[$iteration]['id'],
     $powerMetierArray[$iteration]['id'],
-    $controler_id,
+    $controller_id,
     );
 
     echo showDisciplineSelect($gameReady, $powerDisciplineArray);
@@ -154,7 +154,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         // get transformations
         $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
         if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
-        $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controler_id, NULL, $mecanics['turncounter'], 'on_recrutment' );
+        $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, NULL, $mecanics['turncounter'], 'on_recrutment' );
         if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
         if (! empty($powerTransformationArray) )
             echo showTransformationSelect($gameReady, $powerTransformationArray, TRUE);

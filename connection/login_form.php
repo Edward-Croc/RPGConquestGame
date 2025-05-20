@@ -2,7 +2,7 @@
 session_start(); // Start the session
 
 require_once '../BDD/db_connector.php';
-require_once '../controlers/functions.php';
+require_once '../controllers/functions.php';
 
 
 /**
@@ -86,10 +86,10 @@ if (
                 echo "ID: " . $_SESSION['user_id']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
 
-            // Get Controlers array
-            $controlers = getControlers($gameReady, $_SESSION['user_id']);
-            if (count($controlers) == 1) {
-                $_SESSION['controler'] = $controlers[0];
+            // Get controllers array
+            $controllers = getcontrollers($gameReady, $_SESSION['user_id']);
+            if (count($controllers) == 1) {
+                $_SESSION['controller'] = $controllers[0];
             }
 
             // Redirect the user to a logged-in page

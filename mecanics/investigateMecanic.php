@@ -19,7 +19,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
-                wa.controler_id AS searcher_controler_id,
+                wa.controller_id AS searcher_controller_id,
                 wa.enquete_val AS searcher_enquete_val,
                 wa.zone_id
             FROM
@@ -31,7 +31,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         SELECT
             s.searcher_id,
             s.searcher_enquete_val,
-            s.searcher_controler_id,
+            s.searcher_controller_id,
             z.id AS zone_id,
             z.name AS zone_name,
             wa.worker_id AS found_id,
@@ -41,8 +41,8 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
             CONCAT(w.firstname, ' ', w.lastname) AS found_name,
             wo.id AS found_worker_origin_id,
             wo.name AS found_worker_origin_name,
-            cw.controler_id AS found_controler_id,
-            CONCAT(c.firstname, ' ', c.lastname) AS found_controler_name,
+            cw.controller_id AS found_controller_id,
+            CONCAT(c.firstname, ' ', c.lastname) AS found_controller_name,
             (
                 SELECT ARRAY_AGG(p.name)
                 FROM worker_powers wp
@@ -90,11 +90,11 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
             s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured')
         JOIN workers w ON wa.worker_id = w.ID
         JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controler_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controler = true
-        JOIN controlers c ON cw.controler_id = c.ID
+        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = true
+        JOIN controllers c ON cw.controller_id = c.ID
         WHERE
             s.searcher_id != wa.worker_id
-            AND s.searcher_controler_id != wa.controler_id
+            AND s.searcher_controller_id != wa.controller_id
     ";
     if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
     try{
@@ -201,10 +201,10 @@ function investigateMecanic($pdo ) {
         if ( $row['found_action'] == 'claim' && $row['found_action_params'] != '{}' ) {
             $found_action_params = json_decode($row['found_action_params'],true);
             if (is_array($found_action_params)) {
-                // USE $found_action_params['claim_controler_id']
-                $controlers = getControlers($pdo, NULL, $found_action_params['claim_controler_id']);
-                $text_action_ps .= ' au nom de '.$controlers[0]['firstname']. " ".$controlers[0]['lastname'];
-                $text_action_inf .= ' au nom de '.$controlers[0]['firstname']. " ".$controlers[0]['lastname'];
+                // USE $found_action_params['claim_controller_id']
+                $controllers = getcontrollers($pdo, NULL, $found_action_params['claim_controller_id']);
+                $text_action_ps .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
+                $text_action_inf .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
             }
         }
         if ( $row['found_action'] == 'attack' && $row['found_action_params'] != '{}' ) {
@@ -323,15 +323,15 @@ function investigateMecanic($pdo ) {
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
             if ($debug) echo " REPORTDIFF 3 Start <br>";
             $textesDiff2 = json_decode(getConfig($pdo,'textesDiff2'), true);
-            $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controler_id'], $transformationTextDiff[2], $discipline_2 );
+            $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controller_id'], $transformationTextDiff[2], $discipline_2 );
         }
 
         // Diff 3
-        // %1$s - found_controler_name
+        // %1$s - found_controller_name
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
             if ($debug) echo " REPORTDIFF 3 Start <br>";
             $textesDiff3 = json_decode(getConfig($pdo,'textesDiff3'), true);
-            $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controler_name']);
+            $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controller_name']);
         }
 
         // Debug report
@@ -345,30 +345,30 @@ function investigateMecanic($pdo ) {
         $reportArray[$row['searcher_id']] .= $report;
 
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
-            echo "<p> Start controlers_known_enemies - <br /> ";
-            // Add to controlers_known_enemies
+            echo "<p> Start controllers_known_enemies - <br /> ";
+            // Add to controllers_known_enemies
             try {
 
-                $cke_existing_record_id = addWorkerToCKE($pdo, $row['searcher_controler_id'], $row['found_id'], $turn_number, $row['zone_id'] ) ;
+                $cke_existing_record_id = addWorkerToCKE($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $row['zone_id'] ) ;
 
                 if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 && $cke_existing_record_id !== NULL ) {
-                    $discovered_controler_name_sql = '';
+                    $discovered_controller_name_sql = '';
                     if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
-                        $discovered_controler_name_sql = ', discovered_controler_name = :discovered_controler_name ';
+                        $discovered_controller_name_sql = ', discovered_controller_name = :discovered_controller_name ';
                     }
                     // Update if record exists
-                    $sqlUpdate = sprintf("UPDATE controlers_known_enemies
-                            SET discovered_controler_id = :discovered_controler_id
+                    $sqlUpdate = sprintf("UPDATE controllers_known_enemies
+                            SET discovered_controller_id = :discovered_controller_id
                             %s
                             WHERE id = :id",
-                            $discovered_controler_name_sql
+                            $discovered_controller_name_sql
                     );
                     if ($debug) echo "sql :".var_export($sqlUpdate, true)." <br>";
                     $stmtUpdate = $pdo->prepare($sqlUpdate);
-                    $stmtUpdate->bindParam(':discovered_controler_id', $row['found_controler_id']);
+                    $stmtUpdate->bindParam(':discovered_controller_id', $row['found_controller_id']);
                     $stmtUpdate->bindParam(':id',$cke_existing_record_id);
                     if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
-                        $stmtUpdate->bindParam(':discovered_controler_name', $row['found_controler_name']);
+                        $stmtUpdate->bindParam(':discovered_controller_name', $row['found_controller_name']);
                     }
                     $stmtUpdate->execute();
                 }

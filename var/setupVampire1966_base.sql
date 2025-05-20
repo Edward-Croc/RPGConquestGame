@@ -47,7 +47,7 @@ INSERT INTO factions (name) VALUES
     ('Garou');
 
 -- players with start worker limits
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname,
     start_workers, recruted_workers, turn_recruted_workers,
     faction_id, fake_faction_id
@@ -74,7 +74,7 @@ INSERT INTO controlers (
 ;
 
 -- IA with no start workers
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname, ia_type,
     faction_id, fake_faction_id
 ) VALUES
@@ -95,7 +95,7 @@ INSERT INTO controlers (
 ;
 
 -- IA with start workers
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname, ia_type,
     start_workers, recruted_workers, turn_recruted_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
@@ -108,7 +108,7 @@ INSERT INTO controlers (
 ;
 
 -- players with no start worker limits
-INSERT INTO controlers (
+INSERT INTO controllers (
     firstname, lastname,
     faction_id, fake_faction_id
 ) VALUES
@@ -140,62 +140,62 @@ INSERT INTO controlers (
     )
 ;
 
-INSERT INTO player_controler (controler_id, player_id)
+INSERT INTO player_controller (controller_id, player_id)
     SELECT ID, (SELECT ID FROM players WHERE username = 'gm')
-    FROM controlers;
+    FROM controllers;
 
-INSERT INTO player_controler (player_id, controler_id) VALUES
+INSERT INTO player_controller (player_id, controller_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'player1'),
-        (SELECT ID FROM controlers WHERE lastname in ('Mazzino', 'Ricciotti'))
+        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti'))
     ), -- player1 controls  Angelo Ricciotti/Antonio Mazzino,
     (
         (SELECT ID FROM players WHERE username = 'player2'),
-        (SELECT ID FROM controlers WHERE lastname = 'Calabreze')
+        (SELECT ID FROM controllers WHERE lastname = 'Calabreze')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player3'),
-        (SELECT ID FROM controlers WHERE lastname in ('Walkil', 'Vizirof'))
+        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player4'),
-        (SELECT ID FROM controlers WHERE lastname = 'Bonapart')
+        (SELECT ID FROM controllers WHERE lastname = 'Bonapart')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player5'),
-        (SELECT ID FROM controlers WHERE lastname = 'Trentini')
+        (SELECT ID FROM controllers WHERE lastname = 'Trentini')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player6'),
-        (SELECT ID FROM controlers WHERE lastname = 'Franco')
+        (SELECT ID FROM controllers WHERE lastname = 'Franco')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player7'),
-        (SELECT ID FROM controlers WHERE lastname = 'da Firenze')
+        (SELECT ID FROM controllers WHERE lastname = 'da Firenze')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player8'),
-        (SELECT ID FROM controlers WHERE lastname = 'de Toscane')
+        (SELECT ID FROM controllers WHERE lastname = 'de Toscane')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player9'),
-        (SELECT ID FROM controlers WHERE lastname in ('Sgorina', 'Der Swartz'))
+        (SELECT ID FROM controllers WHERE lastname in ('Sgorina', 'Der Swartz'))
     ),
     (
         (SELECT ID FROM players WHERE username = 'player10'),
-        (SELECT ID FROM controlers WHERE lastname = 'Ricci')
+        (SELECT ID FROM controllers WHERE lastname = 'Ricci')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player11'),
-        (SELECT ID FROM controlers WHERE lastname = 'Lorenzo')
+        (SELECT ID FROM controllers WHERE lastname = 'Lorenzo')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player12'),
-        (SELECT ID FROM controlers WHERE lastname = 'Ben Hasan')
+        (SELECT ID FROM controllers WHERE lastname = 'Ben Hasan')
     ),
     (
         (SELECT ID FROM players WHERE username = 'player13'),
-        (SELECT ID FROM controlers WHERE lastname = 'Cacciatore')
+        (SELECT ID FROM controllers WHERE lastname = 'Cacciatore')
     )
 ;
 
@@ -255,11 +255,11 @@ INSERT INTO power_types (id, name, description) VALUES
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Goule', 0,0,1, '{"hidden" : "2", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }'),
     ('Vampire nouveau né', 1,1,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }'),
-    ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": {"controler_faction": "Tzimisce"}, "on_transformation": {"worker_is_alive": "1", "controler_faction": "Tzimisce"}}'),
-    ('Gargouille', 0,1,3, '{"hidden" : "0", "on_recrutment": {"controler_faction": "Tremere"}, "on_transformation": {"worker_is_alive": "1", "controler_faction": "Tremere"}}'),
-    ('Fantome',3,-2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "0", "controler_faction": "Giovanni"}}'),
-    ('Possession', 2,-1,2, '{"hidden" : "2", "on_recrutment": "FALSE", "on_transformation": {"OR": {"age": "2", "worker_is_alive": "0"}, "controler_faction": "Démon, Eglise"}}'),
-    ('Garou', 1,2,2, '{"hidden" : "2", "on_recrutment": {"controler_faction": "Garou"}, "on_transformation": "FALSE"}')
+    ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": {"controller_faction": "Tzimisce"}, "on_transformation": {"worker_is_alive": "1", "controller_faction": "Tzimisce"}}'),
+    ('Gargouille', 0,1,3, '{"hidden" : "0", "on_recrutment": {"controller_faction": "Tremere"}, "on_transformation": {"worker_is_alive": "1", "controller_faction": "Tremere"}}'),
+    ('Fantome',3,-2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "0", "controller_faction": "Giovanni"}}'),
+    ('Possession', 2,-1,2, '{"hidden" : "2", "on_recrutment": "FALSE", "on_transformation": {"OR": {"age": "2", "worker_is_alive": "0"}, "controller_faction": "Démon, Eglise"}}'),
+    ('Garou', 1,2,2, '{"hidden" : "2", "on_recrutment": {"controller_faction": "Garou"}, "on_transformation": "FALSE"}')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES

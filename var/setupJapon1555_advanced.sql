@@ -4,18 +4,18 @@ INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     ('Kosagi', 'Kotatsu', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'), (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'));
 
 -- Link Kotatsu to 'Yōkai'
-INSERT INTO controler_worker (controler_id, worker_id) VALUES (
-    (SELECT ID FROM controlers WHERE lastname in ('Shikoku (四国)')),
+INSERT INTO controller_worker (controller_id, worker_id) VALUES (
+    (SELECT ID FROM controllers WHERE lastname in ('Shikoku (四国)')),
     (SELECT ID FROM workers WHERE lastname in ('Kotatsu'))
 );
 
 -- Add actions to the workers :
 INSERT INTO worker_actions (
-    worker_id, controler_id, turn_number, zone_id, action_choice, action_params
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
 )
 SELECT
     w.id,
-    cw.controler_id,
+    cw.controller_id,
     0,
     w.zone_id,
     entry.action_choice,
@@ -25,7 +25,7 @@ FROM (
     SELECT 'Kotatsu' AS lastname, 'passive' AS action_choice, '{}' AS action_params
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
-JOIN controler_worker cw ON cw.worker_id = w.id;
+JOIN controller_worker cw ON cw.worker_id = w.id;
 ;
 
 

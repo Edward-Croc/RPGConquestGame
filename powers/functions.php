@@ -59,7 +59,7 @@ function getPowersByWorkers($pdo, $worker_id_str) {
  *
  * @param PDO $pdo
  */
-// TODO : Add a select limit by controler_id like in the getPowersByType function
+// TODO : Add a select limit by controller_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
     $powerArray = array();
     $power_text = getSQLPowerText();
@@ -84,7 +84,7 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
  *
  * @param PDO $pdo
  */
-function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRUE) {
+function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TRUE) {
     $powerArray = array();
     $power_text = getSQLPowerText();
 
@@ -97,11 +97,11 @@ function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRU
     }
 
     $conditions = '';
-    if ($controler_id != "" || $basePowerNames != "") {
+    if ($controller_id != "" || $basePowerNames != "") {
     $conditions = sprintf("AND ( %s %s %s )",
         $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
-        ($controler_id != "" && $basePowerNames != "") ? "OR" : '',
-        $controler_id != "" ? "controlers.id IN ($controler_id)" : '');
+        ($controller_id != "" && $basePowerNames != "") ? "OR" : '',
+        $controller_id != "" ? "controllers.id IN ($controller_id)" : '');
     }
 
     // Get all powers from a type_list
@@ -114,7 +114,7 @@ function getPowersByType($pdo, $type_list, $controler_id = NULL, $add_base = TRU
             JOIN link_power_type ON link_power_type.power_id = powers.id
             LEFT JOIN faction_powers ON faction_powers.link_power_type_id = link_power_type.id
             LEFT JOIN factions ON factions.id = faction_powers.faction_id
-            LEFT JOIN controlers ON controlers.faction_id = factions.id
+            LEFT JOIN controllers ON controllers.faction_id = factions.id
             WHERE link_power_type.power_type_id IN ( %1$s )
             %2$s
         )',
@@ -144,7 +144,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
 
     $disciplinesOptions = '';
 
-    // Display select list of Controlers
+    // Display select list of controllers
     foreach ( $powerDisciplineArray as $powerDiscipline) {
         $disciplinesOptions .= "<option value='" . $powerDiscipline['link_power_type_id'] . "'>" . $powerDiscipline['power_text'] . " </option>";
     }
@@ -165,7 +165,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
     return $showDisciplineSelect;
 }
 
-function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $worker_id, $turn_number, $state_text ){
+function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $worker_id, $turn_number, $state_text ){
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') $debug = TRUE;
 
@@ -178,18 +178,18 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
             $workersPowersList[] = $workerPower['id'];
         }
     }
-    $controlersArray = array();
-    if (!empty($controler_id))
-        $controlersArray = getControlers($pdo, NULL, $controler_id,);
+    $controllersArray = array();
+    if (!empty($controller_id))
+        $controllersArray = getcontrollers($pdo, NULL, $controller_id,);
 
     if ($debug)
         echo sprintf("<p> powerArray : %s<br/>
             workersArray: %s <br/>
-            controlersArray: %s<p/>
-         ",var_export($powerArray,true),var_export($workersArray,true),var_export($controlersArray,true)
+            controllersArray: %s<p/>
+         ",var_export($powerArray,true),var_export($workersArray,true),var_export($controllersArray,true)
         );
-    // TODO : Implement NOT Effect ?? NOT controler X
-    // TODO : Implement a Controler must have Zone check
+    // TODO : Implement NOT Effect ?? NOT controller X
+    // TODO : Implement a controller must have Zone check
     foreach ( $powerArray AS $key => $power ) {
         if (!empty($worker_id) && !empty($workersPowersArray) && in_array($power['id'],$workersPowersList,true) ){
             if ($debug) echo sprintf("kill power(%s) <br>", $key);
@@ -247,8 +247,8 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controler_id, $wor
                     if ($debug) echo 'test FAILED the turn condition : <br/>' ;
                     $keepElement = FALSE;
                 }
-                if (!empty($powerConditions[$state_text]['controler_faction']) && $powerConditions[$state_text]['controler_faction'] != $controlersArray[0]['faction_name']){
-                    if ($debug) echo 'test FAILD the controler_faction condition : <br/>' ;
+                if (!empty($powerConditions[$state_text]['controller_faction']) && $powerConditions[$state_text]['controller_faction'] != $controllersArray[0]['faction_name']){
+                    if ($debug) echo 'test FAILD the controller_faction condition : <br/>' ;
                     $keepElement = FALSE;
                 }
             }
@@ -270,7 +270,7 @@ function showTransformationSelect($pdo, $powerTransformationArray, $show_text = 
 
     $transformationsOptions = '';
 
-    // Display select list of Controlers
+    // Display select list of controllers
     foreach ( $powerTransformationArray as $powerTransformation) {
         $transformationsOptions .= "<option value='" . $powerTransformation['link_power_type_id'] . "'>" . $powerTransformation['power_text'] . " </option>";
     }

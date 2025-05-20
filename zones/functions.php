@@ -32,8 +32,8 @@ function getZonesArray($pdo, $zone_id = NULL) {
     $zonesArray = array();
 
     try{
-        $sql = "SELECT z.id AS zone_id, c.id AS controler_id, * FROM zones AS z
-            LEFT JOIN controlers AS c ON c.id = z.claimer_controler_id
+        $sql = "SELECT z.id AS zone_id, c.id AS controller_id, * FROM zones AS z
+            LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
             ORDER BY z.id ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
@@ -62,7 +62,7 @@ function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = t
     if (empty($zonesArray)) return '';
 
     $zoneOptions = '';
-    // Display select list of Controlers
+    // Display select list of controllers
     foreach ( $zonesArray as $zone) {
         $zoneOptions .= sprintf(
             '<option value=\'%1$s\'> %2$s (%1$s) </option>',
@@ -116,18 +116,18 @@ function getLocationsArray($pdo) {
  * @param PDO $pdo
  */
 function recalculateBaseDefence($pdo) {
-    // Get all bases with their controler and zone
-    $sql = "SELECT id, controler_id, zone_id FROM locations WHERE is_base = TRUE";
+    // Get all bases with their controller and zone
+    $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = TRUE";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($bases as $base) {
-        $controler_id = $base['controler_id'];
+        $controller_id = $base['controller_id'];
         $zone_id = $base['zone_id'];
         $id = $base['id'];
 
-        $new_diff = calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id, $id);
+        $new_diff = calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $id);
 
         try {
             // Update base with new difficulty
@@ -146,42 +146,48 @@ function recalculateBaseDefence($pdo) {
             return FALSE;
         }
 
-        echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controler_id, $zone_id, $new_diff);
+        echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controller_id, $zone_id, $new_diff);
     }
     return TRUE;
 }
 
-function calculateControlerValue($pdo, $controler_id, $zone_id = null, $location_id = null, $type) {
+function calculatecontrollerValue($pdo, $controller_id, $zone_id = null, $location_id = null, $type) {
+    $debug = $_SESSION['DEBUG'];
     $value = 0;
 
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
     $value = $base;
-    echo sprintf("%s (base) : %d<br>", $type, $value);
+    if ($debug) echo sprintf("%s (base) : %d<br>", $type, $value);
 
     // Powers
     $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
     $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
     if ($powerMultiplier !== 0) {
-        $power_list = getPowersByType($pdo, '3', $controler_id, false);
-        $bonus = 0;
-        foreach ($power_list as $power) {
-            switch (strtolower($type)){ // 'defence', 'attack' or 'enquete'
-                case 'DiscoveryDiff' :
-                    $attribute = 'enquete';
-                    break;
-                case 'Defence' :
-                    $attribute = 'defence';
-                    break;
-                case 'Attack' :
-                    $attribute = 'attack';
-                    break;
-            }
-            $bonus += isset($power[$attribute]) ? $power[$attribute] * $powerMultiplier : 0;
+        switch ($type){ // 'defence', 'attack' or 'enquete'
+            case 'DiscoveryDiff' :
+                $attribute = 'enquete';
+                break;
+            case 'Defence' :
+                $attribute = 'defence';
+                break;
+            case 'Attack' :
+                $attribute = 'attack';
+                break;
+            default : 
+                $attribute =  Null;
+                break;
         }
-        if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
-        $value += $bonus;
-        echo sprintf("%s (+powers) : %d<br>", $type, $value);
+        if (!empty($attribute) ){
+            $power_list = getPowersByType($pdo, '3', $controller_id, false);
+            $bonus = 0;
+            foreach ($power_list as $power) {
+                $bonus += isset($power[$attribute]) ? $power[$attribute] * $powerMultiplier : 0;
+            }
+            if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
+            $value += $bonus;
+            if ($debug) echo sprintf("%s (+powers) : %d<br>", $type, $value);
+        } else echo sprintf("%s : attribute is NULL <br>", $type);
     }
 
     // Workers
@@ -191,21 +197,21 @@ function calculateControlerValue($pdo, $controler_id, $zone_id = null, $location
         $sql = "
             SELECT COUNT(*) AS worker_count
             FROM workers w
-            JOIN controler_worker cw ON cw.worker_id = w.id
-            WHERE cw.controler_id = :controler_id
+            JOIN controller_worker cw ON cw.worker_id = w.id
+            WHERE cw.controller_id = :controller_id
               AND w.zone_id = :zone_id
               AND w.is_active = TRUE
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            ':controler_id' => $controler_id,
+            ':controller_id' => $controller_id,
             ':zone_id' => $zone_id
         ]);
         $worker_count = (int)($stmt->fetch(PDO::FETCH_ASSOC)['worker_count'] ?? 0);
         $bonus = $worker_count * $workerMultiplier;
         if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
         $value += $bonus;
-        echo sprintf("%s (+workers) : %d<br>", $type, $value);
+        if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
     }
 
     // Turns / Age
@@ -219,7 +225,7 @@ function calculateControlerValue($pdo, $controler_id, $zone_id = null, $location
         $sql = "
             SELECT setup_turn
             FROM locations
-            WHERE location_id = :location_id
+            WHERE id = :location_id
             LIMIT 1
         ";
         $stmt = $pdo->prepare($sql);
@@ -233,24 +239,24 @@ function calculateControlerValue($pdo, $controler_id, $zone_id = null, $location
             $bonus = $turn_diff * $turnMultiplier;
             if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
             $value += $bonus;
-            echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
         }
     }
 
-    echo sprintf("%s final value : %d<br>", $type, $value);
+    if ($debug) echo sprintf("%s final value : %d<br>", $type, $value);
     return $value;
 }
 
-function calculateSecretLocationDiscoveryDiff($pdo, $controler_id, $zone_id, $location_id = null) {
-    return calculateControlerValue($pdo, $controler_id, $zone_id, $location_id, 'DiscoveryDiff');
+function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $location_id = null) {
+    return calculatecontrollerValue($pdo, $controller_id, $zone_id, $location_id, 'DiscoveryDiff');
 }
 
-function calculateSecretLocationDefence($pdo, $controler_id, $zone_id, $location_id) {
-    return calculateControlerValue($pdo, $controler_id, $zone_id, $location_id, 'Defence');
+function calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $location_id) {
+    return calculatecontrollerValue($pdo, $controller_id, $zone_id, $location_id, 'Defence');
 }
 
-function calculateControlerAttack($pdo, $controler_id, $zone_id) {
-    return calculateControlerValue($pdo, $controler_id, $zone_id, null, 'Attack');
+function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
+    return calculatecontrollerValue($pdo, $controller_id, $zone_id, null, 'Attack');
 }
 
 
@@ -259,21 +265,21 @@ function calculateControlerAttack($pdo, $controler_id, $zone_id) {
  * Permet d'attaquer les bases destructibles
  *
  * @param PDO $pdo
- * @param int $controler_id
+ * @param int $controller_id
  * @param int $zone_id
  */
-function showControlerKnownSecrets($pdo, $controler_id, $zone_id) {
+function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
     $returnText = '';
     // Bases possédées par ce contrôleur dans la zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description
         FROM locations l
-        WHERE l.controler_id = :controler_id
+        WHERE l.controller_id = :controller_id
         AND l.zone_id = :zone_id
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':controler_id' => $controler_id,
+        ':controller_id' => $controller_id,
         ':zone_id' => $zone_id
     ]);
     $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -293,14 +299,14 @@ function showControlerKnownSecrets($pdo, $controler_id, $zone_id) {
     // Bases ennemies connues dans la zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description
-        FROM controler_known_locations ckl
+        FROM controller_known_locations ckl
         JOIN locations l ON ckl.location_id = l.id
-        WHERE ckl.controler_id = :controler_id
+        WHERE ckl.controller_id = :controller_id
         AND l.zone_id = :zone_id
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':controler_id' => $controler_id,
+        ':controller_id' => $controller_id,
         ':zone_id' => $zone_id
     ]);
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -316,12 +322,12 @@ function showControlerKnownSecrets($pdo, $controler_id, $zone_id) {
 
             if ($base['can_be_destroyed']) {
                 $returnText .=  sprintf('
-                    <form action="/RPGConquestGame/controlers/action.php" method="GET">
-                        <input type="hidden" name="controler_id" value="%d">
+                    <form action="/RPGConquestGame/controllers/action.php" method="GET">
+                        <input type="hidden" name="controller_id" value="%d">
                         <input type="hidden" name="location_id" value="%d">
-                        <input type="submit" name="attack" value="Attaquer personnellement cette base" class="controler-action-btn">
+                        <input type="submit" name="attack" value="Attaquer personnellement cette base" class="controller-action-btn">
                     </form>',
-                    $controler_id,
+                    $controller_id,
                     $base['id']
                 );
             }
