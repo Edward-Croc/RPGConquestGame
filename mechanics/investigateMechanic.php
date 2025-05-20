@@ -202,7 +202,7 @@ function investigateMechanic($pdo ) {
             $found_action_params = json_decode($row['found_action_params'],true);
             if (is_array($found_action_params)) {
                 // USE $found_action_params['claim_controller_id']
-                $controllers = getcontrollers($pdo, NULL, $found_action_params['claim_controller_id']);
+                $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
                 $text_action_ps .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
                 $text_action_inf .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
             }

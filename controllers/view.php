@@ -6,7 +6,7 @@
     $mapAlt = getConfig($gameReady, 'map_alt');
     $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
 
-    $controllers = getcontrollers($gameReady, $_SESSION['user_id']);
+    $controllers = getControllers($gameReady, $_SESSION['user_id']);
     $debug = FALSE;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = TRUE;
      echo '<div class="factions"><h2>Factions</h2>';
@@ -23,9 +23,10 @@
         );
     }
     if ( isset($_SESSION['controller']) ) {
-        $controllers = getcontrollers($gameReady, NULL, $_SESSION['controller']['id'])[0];
+        $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
         echo sprintf ('<h2>Votre Faction </h2>
-            Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)
+            Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)<br>
+            %6$s<br>
             <div ><form action="/RPGConquestGame/controllers/action.php" method="GET">
             <input type="hidden" name="controller_id" value=%3$s>
             <h3>Actions : </h3> <p>',
@@ -33,7 +34,8 @@
             $controllers['lastname'],
             $controllers['id'],
             $controllers['faction_name'],
-            $controllers['fake_faction_name']
+            $controllers['fake_faction_name'],
+            !empty($controllers['story']) ? '<button onclick="window.open(\''.$controllers['story'].'\', \'_blank\')"> This is your story </button>' : ''
         );
         $bases = hasBase($gameReady, $controllers['id']);
         if (empty($bases)) {

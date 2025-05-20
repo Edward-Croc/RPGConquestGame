@@ -53,7 +53,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
         if ( !empty($worker_id) ) {
-            $controllers = getcontrollers($gameReady);
+            $controllers = getControllers($gameReady);
             $showcontrollersSelect = showcontrollerSelect($controllers, 'gift_controller_id');
             $showListClaimTargetsSelect = showcontrollerSelect($controllers, 'claim_controller_id', TRUE);
         }

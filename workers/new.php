@@ -14,7 +14,7 @@ if (isset($_SESSION['controller'])){
 if (isset($_GET['controller_id'])){
     $controller_id = $_GET['controller_id'];
 }
-$controllerValues = getcontrollers($gameReady, NULL, $controller_id);
+$controllerValues = getControllers($gameReady, NULL, $controller_id);
 $recrutment_allowed = TRUE;
 
 $buttonClicked = 'first_come';

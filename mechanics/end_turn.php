@@ -5,10 +5,10 @@ require_once '../base/base_php.php';
 
 require_once '../base/base_html.php';
 
-        if ($mechanics['gamestat'] == 0) {
+        if ($mechanics['gamestate'] == 0) {
             try{
-                // SQL query to update gamestat
-                $sql = "UPDATE mechanics SET gamestat = 1 WHERE ID = '".$mechanics['id']."'";
+                // SQL query to update gamestate
+                $sql = "UPDATE mechanics SET gamestate = 1 WHERE ID = '".$mechanics['id']."'";
                 // Prepare and execute SQL query
                 $stmt = $gameReady->prepare($sql);
                 $stmt->execute();

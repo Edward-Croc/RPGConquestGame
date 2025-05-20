@@ -8,7 +8,7 @@ if (
 ) {
     // GET CONTROLLER_ID and controllers list so page does not fail.
     if ($_SESSION['DEBUG'] == true) echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
-    $controllers = getcontrollers($gameReady, NULL, $_GET['controller_id']);
+    $controllers = getControllers($gameReady, NULL, $_GET['controller_id']);
     if ($_SESSION['DEBUG'] == true) echo "controllers:". var_export($controllers, true).'<br/><br/>';
     $_SESSION['controller'] =  $controllers[0];
     $controller_id = $controllers[0]['id'];
@@ -33,16 +33,16 @@ require_once '../controllers/view.php';
         var controllers = <?php echo json_encode($controllers); ?>;
 
         // Find the selected controller in the array
-        var selectedcontroller = controllers.find(function(controllers) {
+        var selectedController = controllers.find(function(controllers) {
             return controllers.id == controllerId;
         });
 
         // Display controller details
         document.getElementById('controllerDetails').style.display = 'block';
         document.getElementById('controllerDetails').innerHTML = "<h3>controller Details</h3>" +
-            "<p>Name: " + selectedcontroller.firstname + " " + selectedcontroller.lastname +
-            ", ID: " + selectedcontroller.id +
-            ", Faction Name: " + selectedcontroller.faction_name + "</p>";
+            "<p>Name: " + selectedController.firstname + " " + selectedController.lastname +
+            ", ID: " + selectedController.id +
+            ", Faction Name: " + selectedController.faction_name + "</p>";
     });
 </script>
 

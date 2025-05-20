@@ -1,7 +1,7 @@
 <?php
 
 // Function to get controllers and return as an array
-function getcontrollers($pdo, $player_id = NULL, $controller_id = NULL) {
+function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
     $controllersArray = array();
 
     try{
@@ -91,7 +91,7 @@ function  restartTurnRecrutementCount($pdo){
  */
 function canStartFirstCome($pdo, $controller_id) {
 
-    $controllerValues = getcontrollers($pdo, NULL, $controller_id);
+    $controllerValues = getControllers($pdo, NULL, $controller_id);
     if ( $_SESSION['DEBUG'] == true )
     echo '<p>'
         .'; turn_firstcome_workers: '. getConfig($pdo, 'turn_firstcome_workers')
@@ -108,7 +108,7 @@ function canStartFirstCome($pdo, $controller_id) {
  */
 function canStartRecrutement($pdo, $controller_id, $turnNumber){
 
-    $controllerValues = getcontrollers($pdo, NULL, $controller_id);
+    $controllerValues = getControllers($pdo, NULL, $controller_id);
     if ( $_SESSION['DEBUG'] == true )
     echo '<p>turncounter: '. $turnNumber
         .'; turn_recrutable_workers: '. getConfig($pdo, 'turn_recrutable_workers')
@@ -164,7 +164,7 @@ function createBase($pdo, $controller_id, $zone_id) {
     $debug = $_SESSION['DEBUG'];
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
 
-    $controllers = getcontrollers($pdo, NULL, $controller_id);
+    $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
     if ($debug) echo sprintf("controller_name : %s </br>", $controller_name);
 

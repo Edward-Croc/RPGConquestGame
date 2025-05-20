@@ -6,10 +6,10 @@
 CREATE TABLE mechanics (
     ID SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
-    gamestat INTEGER DEFAULT 0
+    gamestate INTEGER DEFAULT 0
 );
 
-INSERT INTO mechanics (turncounter, gamestat)
+INSERT INTO mechanics (turncounter, gamestate)
 VALUES (0, 0);
 
 -- create configuration table

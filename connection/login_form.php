@@ -87,7 +87,7 @@ if (
             }
 
             // Get controllers array
-            $controllers = getcontrollers($gameReady, $_SESSION['user_id']);
+            $controllers = getControllers($gameReady, $_SESSION['user_id']);
             if (count($controllers) == 1) {
                 $_SESSION['controller'] = $controllers[0];
             }

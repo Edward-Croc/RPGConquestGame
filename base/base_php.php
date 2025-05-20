@@ -98,7 +98,7 @@ if (!$gameReady) {
 if ($_SESSION['DEBUG'] == true){
     // print debug values
     echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
-    echo "Turn : ".$mechanics['turncounter']."; gamestat : '".$mechanics['gamestat']. "' <br />";
+    echo "Turn : ".$mechanics['turncounter']."; gamestate : '".$mechanics['gamestate']. "' <br />";
 }
 
 

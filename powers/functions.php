@@ -180,7 +180,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
     }
     $controllersArray = array();
     if (!empty($controller_id))
-        $controllersArray = getcontrollers($pdo, NULL, $controller_id,);
+        $controllersArray = getControllers($pdo, NULL, $controller_id,);
 
     if ($debug)
         echo sprintf("<p> powerArray : %s<br/>
