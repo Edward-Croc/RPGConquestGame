@@ -9,8 +9,10 @@ require_once '../controllers/functions.php';
  *  Extract configuration value from the database by key
  * copy of getConfig function from base_php.php because the function is unavailable here
  *
- * @param $pdo : database connection
- * @param $configName : configuration key
+ * @param PDO $pdo : database connection
+ * @param string $configName : configuration key
+ * 
+ * @return string|null value
  */
 function getConfig($pdo, $configName) {
     try{

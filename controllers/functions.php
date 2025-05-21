@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * get all information for Controllers 
+ *  - optional by player
+ *  - optional for a specific controller
+ * 
+ * @param PDO $pdo : database connection
+ * @param int|null $player_id
+ * @param int|null $controller_id
+ * 
+ * @return array|null 
+ * 
+ */
 // Function to get controllers and return as an array
 function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
     $controllersArray = array();
@@ -45,7 +57,7 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
 /**
  * Show list of controller options for à controller select field.
  */
-function showcontrollerSelect($controllers, $field_name = 'controller_id', $addEmptySpace = FALSE ) {
+function showControllerSelect($controllers, $field_name = 'controller_id', $addEmptySpace = FALSE ) {
 
     if (empty($controllers)) return '';
     $controllerOptions = '';
@@ -60,16 +72,16 @@ function showcontrollerSelect($controllers, $field_name = 'controller_id', $addE
         );
     }
 
-    $showcontrollerSelect = sprintf('
+    $showControllerSelect = sprintf('
         <select id=\'controllerSelect\' name=\'%1$s\'>
             %2$s
         </select>',
         $field_name,
         $controllerOptions
     );
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showcontrollerSelect: ".var_export($showcontrollerSelect, true)."<br /><br />";
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControllerSelect: ".var_export($showControllerSelect, true)."<br /><br />";
 
-    return $showcontrollerSelect;
+    return $showControllerSelect;
 }
 
 /** This function resets the turn_recruited_workers and turn_firstcome_workers to 0 for every controller */

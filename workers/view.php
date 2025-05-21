@@ -54,8 +54,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
         if ( !empty($worker_id) ) {
             $controllers = getControllers($gameReady);
-            $showcontrollersSelect = showcontrollerSelect($controllers, 'gift_controller_id');
-            $showListClaimTargetsSelect = showcontrollerSelect($controllers, 'claim_controller_id', TRUE);
+            $showcontrollersSelect = showControllerSelect($controllers, 'gift_controller_id');
+            $showListClaimTargetsSelect = showControllerSelect($controllers, 'claim_controller_id', TRUE);
         }
 
         if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));

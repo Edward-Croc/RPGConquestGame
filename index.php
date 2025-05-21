@@ -5,6 +5,14 @@ $pageName = 'index';
 
 require_once './BDD/db_connector.php';
 
+/**
+ * get value from Config by name
+ * 
+ * @param PDO $pdo : database connection
+ * @param string $configName
+ * 
+ * @return string|null : value
+ */
 function getConfig($pdo, $configName) {
     try{
         $stmt = $pdo->prepare("SELECT value

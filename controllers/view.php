@@ -19,7 +19,7 @@
             </form>
             <!-- Display controller details section (initially hidden) changed by the select action-->
             <div id="controllerDetails" style="display: none;"> </div>', 
-            showcontrollerSelect($controllers)
+            showControllerSelect($controllers)
         );
     }
     if ( isset($_SESSION['controller']) ) {
