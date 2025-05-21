@@ -9,7 +9,7 @@ UPDATE config SET
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textRecrutementJobHobby', '%4$s, %5$s', 'string to present hobby %4$s and job %5$s on recrutement')
+ ('textRecrutementJobHobby', '%5$s, %4$s', 'string to present hobby %4$s and job %5$s on recrutement')
  ,('textViewWorkerJobHobby','c’était un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
  ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
  ,('textViewWorkerTransformations', 'Iel a été transformé.e en : %s <br />', 'Texts for worker view page transformations')

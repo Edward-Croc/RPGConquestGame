@@ -24,7 +24,7 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Policier'
+        WHERE powers.name = 'Policier·ère'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
         SELECT link_power_type.ID FROM link_power_type
@@ -69,7 +69,7 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Marsala'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Retraité curieux'
+        WHERE powers.name = 'Retraité·e curieux·se'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Marsala'), (
         SELECT link_power_type.ID FROM link_power_type
@@ -84,11 +84,11 @@ INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
     ((SELECT ID FROM workers WHERE lastname = 'Cacciatore'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Propriétaire de Lévrier Italien'
+        WHERE powers.name = 'Propriétaire de lévrier italien'
     )),
     ((SELECT ID FROM workers WHERE lastname = 'Cacciatore'), (
         SELECT link_power_type.ID FROM link_power_type
         JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Policier'
+        WHERE powers.name = 'Policier·ère'
     ))
 ;
