@@ -90,8 +90,9 @@ if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
     $originList = $tmpOrigine;
 }
 
-// TODO : Allow locking certain origins/Hobbys/Metiers by controler, Hobbys/Metiers by origin !
+// TODO : Allow locking certain origins by controler
 $nameArray = randomWorkerName($gameReady, $originList, $nbChoices);
+// TODO : Allow locking certain Hobbys/Metiers by origin or controler !
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
 $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, TRUE);

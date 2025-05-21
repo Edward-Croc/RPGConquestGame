@@ -11,7 +11,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
 
     $workersArray = [];
-    // TODO Change view for DEAD, CAPTURED and Non Primary controller
+    // TODO : Change view for DEAD, CAPTURED and Non Primary controller
     if ( !empty ($worker_id) ) {
         $workersArray = getWorkers($gameReady, [$worker_id]);
     } else {

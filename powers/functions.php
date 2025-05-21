@@ -1,7 +1,11 @@
 <?php
 /**
- *
+ * Get the description for a power_type
+ * 
  * @param PDO $pdo
+ * @param string $name
+ * 
+ * @return string $description | NULL
  */
 function getPowerTypesDescription($pdo, $name){
     try{
@@ -17,14 +21,25 @@ function getPowerTypesDescription($pdo, $name){
     }
 }
 
+/**
+ * Get the format for a power text
+ * 
+ * @param bool $short
+ * 
+ * @return string
+ */
 function getSQLPowerText($short = TRUE) {
     if (!$short) return "CONCAT(p.name, p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
     return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
 /**
- *
+ * Gets array of powers for a worker id
+ * 
  * @param PDO $pdo
+ * @param string $worker_id_str
+ * 
+ * @return array 
  */
 function getPowersByWorkers($pdo, $worker_id_str) {
     $power_text = getSQLPowerText(FALSE);
@@ -56,8 +71,13 @@ function getPowersByWorkers($pdo, $worker_id_str) {
 }
 
 /**
- *
+ *  get a numnber of random elements from the type of power given
+ * 
  * @param PDO $pdo
+ * @param string $type_list
+ * @param int $limit
+ * 
+ * @return array | NULL
  */
 // TODO : Add a select limit by controller_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
@@ -81,8 +101,16 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
 }
 
 /**
- *
+ * get power from a type with options :
+ *  - powers linked to a cotroler by faction
+ *  - base power from config
+ * 
  * @param PDO $pdo
+ * @param int $type_list  // TODO change from ID of link_power_type to a type name ? 
+ * @param int $controller_id
+ * @param bool $add_base
+ * 
+ * @return array | NULL
  */
 function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TRUE) {
     $powerArray = array();
