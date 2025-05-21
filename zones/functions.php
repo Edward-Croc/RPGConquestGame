@@ -25,10 +25,10 @@ function getZoneName($pdo, $zone_id){
  * Function to get ZONEs and return as an array
  *
  * @param PDO $pdo
- * @param int $zone_id | NULL
  *
+ * @return array $zonesArray
  */
-function getZonesArray($pdo, $zone_id = NULL) {
+function getZonesArray($pdo) {
     $zonesArray = array();
 
     try{
@@ -37,15 +37,14 @@ function getZonesArray($pdo, $zone_id = NULL) {
             ORDER BY z.id ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
+        // Fetch the results
+        $zonesArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 
-    // Fetch the results
-    $zones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    return $zones;
+    return $zonesArray;
 }
 
 /**
@@ -56,6 +55,7 @@ function getZonesArray($pdo, $zone_id = NULL) {
  * @param bool $show_text default: false ->
  * @param bool $place_holder default: true -> Do we start with and empty spot
  *
+ * @return string $showZoneSelect
  */
 function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = true){
 
@@ -87,6 +87,9 @@ function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = t
 
 /** Function to get Locations and return as an array
  * @param PDO $pdo
+ * 
+ * @return array|NULL $locationsArray 
+ * 
 */
 function getLocationsArray($pdo) {
     $locationsArray = array();
@@ -114,6 +117,9 @@ function getLocationsArray($pdo) {
 /**
  * Function to recalculateBaseDefence
  * @param PDO $pdo
+ * 
+ * @return bool
+ * 
  */
 function recalculateBaseDefence($pdo) {
     // Get all bases with their controller and zone
@@ -151,7 +157,18 @@ function recalculateBaseDefence($pdo) {
     return TRUE;
 }
 
-function calculatecontrollerValue($pdo, $controller_id, $zone_id = null, $location_id = null, $type) {
+/**
+ * Calculate the value 'DEF, ATK, SEARCH' for the controller, and optionnal zone or location
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param string $type
+ * @param int|NULL $zone_id
+ * @param int|NULL $location_id
+ * 
+ * @return int $value
+ */
+function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, $location_id = null) {
     $debug = $_SESSION['DEBUG'];
     $value = 0;
 
@@ -247,16 +264,45 @@ function calculatecontrollerValue($pdo, $controller_id, $zone_id = null, $locati
     return $value;
 }
 
+/**
+ * Calls the calculateControllerValue function with the 'DiscoveryDiff' type
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $zone_id
+ * @param int|NULL $location_id
+ * 
+ * @return int $value
+ */
 function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $location_id = null) {
-    return calculatecontrollerValue($pdo, $controller_id, $zone_id, $location_id, 'DiscoveryDiff');
+    return calculateControllerValue($pdo, $controller_id, 'DiscoveryDiff', $zone_id, $location_id);
 }
 
+/**
+ * Calls the calculateControllerValue function with the 'Defence' type
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $zone_id
+ * @param int $location_id
+ * 
+ * @return int $value
+ */
 function calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $location_id) {
-    return calculatecontrollerValue($pdo, $controller_id, $zone_id, $location_id, 'Defence');
+    return calculateControllerValue($pdo, $controller_id, 'Defence', $zone_id, $location_id);
 }
 
+/**
+ * Calls the calculateControllerValue function with the 'Attack' type
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $zone_id
+ * 
+ * @return int $value
+ */
 function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
-    return calculatecontrollerValue($pdo, $controller_id, $zone_id, null, 'Attack');
+    return calculateControllerValue($pdo, $controller_id, 'Attack', $zone_id, null);
 }
 
 
@@ -267,6 +313,8 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
+ * 
+ * @return string $text
  */
 function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
     $returnText = '';

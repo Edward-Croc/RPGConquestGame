@@ -133,11 +133,10 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
 /**
  * This function returns an array of all bases a controller has or a NULL
  *
- * params
- *  $controller_id string
+ * @param PDO $pdo : database connection
+ * @param string : $controller_id 
  *
- * returns
- * array() | NULL
+ * @return array|NULL : $bases
  */
 function hasBase($pdo, $controller_id) {
 

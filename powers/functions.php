@@ -5,7 +5,7 @@
  * @param PDO $pdo
  * @param string $name
  * 
- * @return string $description | NULL
+ * @return string|NULL : $description 
  */
 function getPowerTypesDescription($pdo, $name){
     try{
@@ -77,7 +77,7 @@ function getPowersByWorkers($pdo, $worker_id_str) {
  * @param string $type_list
  * @param int $limit
  * 
- * @return array | NULL
+ * @return array|NULL : $powerArray
  */
 // TODO : Add a select limit by controller_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
@@ -110,7 +110,7 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
  * @param int $controller_id
  * @param bool $add_base
  * 
- * @return array | NULL
+ * @return array|NULL : $powerArray
  */
 function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TRUE) {
     $powerArray = array();
