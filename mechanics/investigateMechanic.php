@@ -1,5 +1,13 @@
 <?php
 
+/**
+ *  Remove curly braces and quotes and Split the string by commas into an array
+ * 
+ * @param string $input
+ * 
+ * @return array 
+ * 
+ */
 function cleanAndSplitString($input) {
     // Remove curly braces and quotes
     $cleaned = str_replace(['{', '}', '"'], '', $input);
@@ -7,6 +15,16 @@ function cleanAndSplitString($input) {
     return array_map('trim', explode(',', $cleaned));
 }
 
+/**
+ * gets the comparaison table between the workers on search/investigate and there possible targets
+ * 
+ * @param PDO $pdo : database connection
+ * @param string|null $turn_number
+ * @param string|null $searcher_id
+ * 
+ * @return array 
+ * 
+ */
 function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
@@ -111,7 +129,14 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function investigateMechanic($pdo ) {
+/**
+ * do the necessary checks for the claim Mechanic
+ * 
+ * @param PDO $pdo : database connection
+ * 
+ * @return bool success
+ */
+function investigateMechanic($pdo) {
     echo '<div> <h3> investigateMechanic : </h3> ';
 
     if (empty($turn_number)) {
