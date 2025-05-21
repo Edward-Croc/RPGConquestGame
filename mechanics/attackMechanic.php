@@ -78,9 +78,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                     $networkWorkersList = $stmtNetworkSearch->fetchAll(PDO::FETCH_COLUMN);
                     if ($debug)
                         echo sprintf("networkWorkersList : %s <br/>", var_export($networkWorkersList, true));
-                    foreach($networkWorkersList AS $woker_id){
-                        if (!in_array($woker_id, $attackArray[$attackAction['attacker_id']]) ) {
-                            $attackArray[$attackAction['attacker_id']][] = $woker_id;
+                    foreach($networkWorkersList AS $worker_id){
+                        if (!in_array($worker_id, $attackArray[$attackAction['attacker_id']]) ) {
+                            $attackArray[$attackAction['attacker_id']][] = $worker_id;
                         }
                     }
                 // If the attacker choses a specific target
