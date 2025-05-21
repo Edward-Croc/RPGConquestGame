@@ -1,5 +1,16 @@
 <?php
 
+
+/**
+ * gets the comparaison table between the workers on search/investigate and there possible targets locations
+ * 
+ * @param PDO $pdo : database connection
+ * @param string|null $turn_number
+ * @param string|null $searcher_id
+ * 
+ * @return array 
+ * 
+ */
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     // Define the SQL query
     $sql = "
@@ -50,6 +61,14 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+
+/**
+ * do the necessary checks for the location Search Mechanic
+ * 
+ * @param PDO $pdo : database connection
+ * 
+ * @return bool success
+ */
 function locationSearchMechanic($pdo) {
     echo '<div><h3>locationSearchMechanic :</h3>';
 
