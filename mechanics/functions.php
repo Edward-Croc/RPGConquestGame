@@ -7,6 +7,9 @@ require_once '../mechanics/locationSearchMechanic.php';
 
 /**
  * Build base randomization SQL
+ * 
+ * @return string
+ * 
  */
 function diceSQL() {
     return "FLOOR(
@@ -20,7 +23,10 @@ function diceSQL() {
 
 /**
  * Return value of a dice roll
- *  $pdo
+ * 
+ * @param PDO $pdo : database connection
+ * 
+ * @return int : rollval
  */
 function diceRoll($pdo) {
     $diceSQL = diceSQL();
@@ -40,6 +46,12 @@ function diceRoll($pdo) {
 
 /**
  * Calculates the final values for each worker depending on their chosen action.
+ * 
+ * @param PDO $pdo : database connection
+ * @param string $turn_number
+ * 
+ * @return bool : success
+ * 
  */
 function calculateVals($pdo, $turn_number){
 
@@ -156,6 +168,12 @@ function calculateVals($pdo, $turn_number){
  * Creation of new worker action lines for each worker for the new turn
  * maintaining certain action continuation (investigate and claim)
  * setting dead and captured status
+ * 
+ * @param PDO $pdo : database connection
+ * @param string $turn_number
+ * 
+ * @return bool : success
+ * 
  */
 function createNewTurnLines($pdo, $turn_number){
     $debug = FALSE;
@@ -224,7 +242,14 @@ function createNewTurnLines($pdo, $turn_number){
     return TRUE;
 }
 
-
+/**
+ * 
+ * @param PDO $pdo : database connection
+ * @param string $turn_number
+ * 
+ * @return bool : success
+ * 
+ */
 function claimMechanic($pdo, $turn_number = NULL) {
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;

@@ -88,7 +88,7 @@ function showZoneSelect($pdo, $zonesArray, $showText = False, $place_holder = Tr
 /** Function to get Locations and return as an array
  * @param PDO $pdo
  * 
- * @return array|NULL $locationsArray 
+ * @return array|null $locationsArray 
  * 
 */
 function getLocationsArray($pdo) {
@@ -163,8 +163,8 @@ function recalculateBaseDefence($pdo) {
  * @param PDO $pdo
  * @param int $controller_id
  * @param string $type
- * @param int|NULL $zone_id
- * @param int|NULL $location_id
+ * @param int|null $zone_id
+ * @param int|null $location_id
  * 
  * @return int $value
  */
@@ -192,7 +192,7 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
                 $attribute = 'attack';
                 break;
             default : 
-                $attribute =  Null;
+                $attribute =  NULL;
                 break;
         }
         if (!empty($attribute) ){
@@ -270,7 +270,7 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
- * @param int|NULL $location_id
+ * @param int|null $location_id
  * 
  * @return int $value
  */

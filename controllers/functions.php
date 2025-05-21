@@ -136,7 +136,7 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
  * @param PDO $pdo : database connection
  * @param string : $controller_id 
  *
- * @return array|NULL : $bases
+ * @return array|null : $bases
  */
 function hasBase($pdo, $controller_id) {
 

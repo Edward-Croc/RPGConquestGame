@@ -21,7 +21,7 @@ require_once '../mechanics/functions.php';
  * @param PDO $pdo : database connection
  * @param string $configName : configuration key
  * 
- * @return string|NULL $value 
+ * @return string|null $value 
  */
 function getConfig($pdo, $configName) {
     try{
@@ -42,7 +42,7 @@ function getConfig($pdo, $configName) {
  *
  * @param PDO $pdo : database connection
  *
- * @return array|NULL : $mechanics
+ * @return array|null : $mechanics
  */
 function getMechanics($pdo) {
     try{

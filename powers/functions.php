@@ -77,7 +77,7 @@ function getPowersByWorkers($pdo, $worker_id_str) {
  * @param string $type_list
  * @param int $limit
  * 
- * @return array|NULL : $powerArray
+ * @return array|null : $powerArray
  */
 // TODO : Add a select limit by controller_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
@@ -110,7 +110,7 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
  * @param int $controller_id
  * @param bool $add_base
  * 
- * @return array|NULL : $powerArray
+ * @return array|null : $powerArray
  */
 function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TRUE) {
     $powerArray = array();
@@ -212,7 +212,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = True){
  * @param int $turn_number
  * @param string $state_text
  * 
- * @return array|Null : $powerArray
+ * @return array|null : $powerArray
  *
  */
 function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $worker_id, $turn_number, $state_text ){

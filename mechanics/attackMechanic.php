@@ -2,6 +2,13 @@
 
 /**
  * Search database for all workers in attack mode and return their targets and combat power differences.
+ * 
+ * @param PDO $pdo : database connection
+ * @param string|null $turn_number
+ * @param int|null $attacker_id
+ * 
+ * @return array $final_attacks_aggregate
+ * 
  */
 function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
     $debug = FALSE;
@@ -225,7 +232,11 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 }
 
 /**
-* Main function to calculate attack results.
+ * Main function to calculate attack results.
+ * 
+ * @param PDO $pdo : database connection
+ * 
+ * @return bool : success
 */
 function attackMechanic($pdo){
     echo '<div> <h3>  attackMechanic : </h3> ';

@@ -140,7 +140,7 @@ function gameReady() {
     }
 
     $pdo = getDBConnection();
-    if ($pdo != NUll) {
+    if ($pdo != NULL) {
         try {
             // Check if table exists
             $tableName = 'players';
