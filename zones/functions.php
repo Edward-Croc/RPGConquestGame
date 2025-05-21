@@ -52,12 +52,12 @@ function getZonesArray($pdo) {
  *
  * @param PDO $pdo
  * @param array $zonesArray
- * @param bool $show_text default: false ->
+ * @param bool $showText default: false ->
  * @param bool $place_holder default: true -> Do we start with and empty spot
  *
  * @return string $showZoneSelect
  */
-function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = true){
+function showZoneSelect($pdo, $zonesArray, $showText = False, $place_holder = True){
 
     if (empty($zonesArray)) return '';
 
@@ -76,7 +76,7 @@ function showZoneSelect($pdo, $zonesArray, $show_text = false, $place_holder = t
             %s
         </select>
         ",
-        $show_text ? ucfirst(getConfig($pdo, 'textForZoneType')) : '',
+        $showText ? ucfirst(getConfig($pdo, 'textForZoneType')) : '',
         $place_holder ? "<option value=''>Select Zone</option>": '',
         $zoneOptions
     );

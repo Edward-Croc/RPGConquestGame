@@ -147,13 +147,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
                     $age_discipline_json = getConfig($gameReady, 'age_discipline');
                     if ( $debug_discipline_age ) echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
-                    $age_discipline_array = json_decode($age_discipline_json, true);
+                    $age_discipline_array = json_decode($age_discipline_json, True);
                     if (json_last_error() !== JSON_ERROR_NONE) {
                         echo "JSON decoding error: " . json_last_error_msg() . "<br />";
                     }
-                    if ( $debug_discipline_age ) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array,true));
-                    $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, TRUE);
-                    if ( $debug_discipline_age ) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
+                    if ( $debug_discipline_age ) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array, True));
+                    $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, True);
+                    if ( $debug_discipline_age ) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, True));
                     $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
                     if ( $debug_discipline_age ) echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
                     foreach ($age_discipline_array['age'] as $age) {
@@ -169,7 +169,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         );
                     if ( (INT)$nb_current_disciplines[0]['discipline_count'] < (INT)$nb_disciplines) {
                         $upgrade_HTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner une %2$s " class="worker-upgrade-btn"> %1$s ',
-                            showDisciplineSelect($gameReady, $powerDisciplineArray, false),
+                            showDisciplineSelect($gameReady, $powerDisciplineArray, False),
                             strtolower(getPowerTypesDescription($gameReady, 'Discipline'))
                         );
                     }
@@ -177,20 +177,20 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 // Check Transformation Conditions
                 $debug_transformation_age = $_SESSION['DEBUG_TRANSFORM'];
                 $age_transformation_json = getConfig($gameReady, 'age_transformation');
-                $age_transformation_array = json_decode($age_transformation_json, true);
+                $age_transformation_array = json_decode($age_transformation_json, True);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     echo "JSON decoding error: " . json_last_error_msg() . "<br />";
                 }
-                if ( $debug_transformation_age ) echo sprintf("age_transformation_array :%s  <br>", var_export($age_transformation_array,true));
+                if ( $debug_transformation_age ) echo sprintf("age_transformation_array :%s  <br>", var_export($age_transformation_array, True));
                 if (!empty($age_transformation_array['action']) && $age_transformation_array['action'] == 'check' ) {
                     // get transformations
-                    $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
-                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
+                    $powerTransformationArray = getPowersByType($gameReady,'4', Null, False);
+                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, True));
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation' );
-                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
+                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray, True));
                     if (! empty($powerTransformationArray) )
                         $upgrade_HTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
-                            showTransformationSelect($gameReady, $powerTransformationArray, FALSE),
+                            showTransformationSelect($gameReady, $powerTransformationArray, False),
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );
                 }

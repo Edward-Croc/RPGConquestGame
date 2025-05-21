@@ -167,7 +167,16 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TR
     return $powerArray;
 }
 
-function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
+/**
+ * builds the discipline select field from an array of Disciplines
+ * 
+ * @param PDO $pdo
+ * @param array $powerDisciplineArray
+ * @param bool $showText default: true
+ * 
+ * @return string: $showDisciplineSelect
+ */
+function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = True){
     if (empty($powerDisciplineArray)) return '';
 
     $disciplinesOptions = '';
@@ -183,7 +192,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
         </select>
         <br />
         ",
-        $show_text ? getPowerTypesDescription($pdo, 'Discipline').' :' : '',
+        $showText ? getPowerTypesDescription($pdo, 'Discipline').' :' : '',
         getPowerTypesDescription($pdo, 'Discipline'),
         $disciplinesOptions
     );
@@ -193,6 +202,19 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $show_text = true){
     return $showDisciplineSelect;
 }
 
+/**
+ * 
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $powerArray
+ * @param int $controller_id
+ * @param int $worker_id
+ * @param int $turn_number
+ * @param string $state_text
+ * 
+ * @return array|Null : $powerArray
+ *
+ */
 function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $worker_id, $turn_number, $state_text ){
     $debug = FALSE;
     if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') $debug = TRUE;
@@ -293,7 +315,17 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
     return empty($powerArray) ? NULL : $powerArray ;
 }
 
-function showTransformationSelect($pdo, $powerTransformationArray, $show_text = true){
+/**
+ * Build select field for Transformations in array 
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $powerTransformationArray
+ * @param bool $showText default true
+ * 
+ * @return string : $showTransformationSelect
+ * 
+ */
+function showTransformationSelect($pdo, $powerTransformationArray, $showText = True){
     if (empty($powerTransformationArray)) return '';
 
     $transformationsOptions = '';
@@ -309,7 +341,7 @@ function showTransformationSelect($pdo, $powerTransformationArray, $show_text = 
         </select>
         <br />
         ",
-        $show_text ? getPowerTypesDescription($pdo, 'Transformation').' :' : '',
+        $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '',
         getPowerTypesDescription($pdo, 'Transformation'),
         $transformationsOptions
     );
