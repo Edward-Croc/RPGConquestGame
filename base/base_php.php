@@ -18,8 +18,10 @@ require_once '../mechanics/functions.php';
 /**
  *  Extract configuration value from the database by key
  *
- * @param $pdo : database connection
- * @param $configName : configuration key
+ * @param PDO $pdo : database connection
+ * @param string $configName : configuration key
+ * 
+ * @return string $value | NULL
  */
 function getConfig($pdo, $configName) {
     try{
@@ -38,7 +40,7 @@ function getConfig($pdo, $configName) {
 /**
  *  Extract elements of mechanics from database
  *
- * @param : $pdo
+ * @param PDO $pdo : database connection
  *
  * @return : array | NULL
  */

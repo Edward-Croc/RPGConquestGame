@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Get and Check connection to the database
+ * 
+ * @return PDO $pdo
+ */
 function getDBConnection () {
 
     $path = '';
@@ -60,6 +64,15 @@ function getDBConnection () {
     }
 }
 
+/**
+ * Checks that the database table does exist
+ * 
+ * @param PDO $pdo
+ * @param string $tableName
+ * 
+ * @return bool
+ * 
+ */
 function tableExists($pdo, $tableName) {
     try{
         $stmt = $pdo->prepare("SELECT EXISTS (
@@ -75,6 +88,13 @@ function tableExists($pdo, $tableName) {
     return $stmt->fetchColumn();
 }
 
+/**
+ * Searches and destroys all tables in database
+ * 
+ * @param PDO $pdo
+ * 
+ * @return bool 
+ */
 function destroyAllTables($pdo) {
     try {
         // Get list of tables in the database
@@ -91,9 +111,19 @@ function destroyAllTables($pdo) {
         echo "All tables in database have been destroyed successfully.<br />";
     } catch (PDOException $e) {
         echo __FUNCTION__."(): Error: " . $e->getMessage();
+        return FALSE;
     }
+    return TRUE;
 }
 
+/**
+ * Check that the game is ready:
+ *  - databse is accessible
+ *  - tables are loaded
+ *  - load tables if $_POST['config_name'] is set
+ * 
+ * @return PDO $pdo
+ */
 function gameReady() {
 
     $path = '';
