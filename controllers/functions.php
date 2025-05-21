@@ -157,8 +157,15 @@ function hasBase($pdo, $controller_id) {
 }
 
 /**
+ * Create the base for the controler in zone and return if success
  *
- */
+ * @param PDO $pdo : database connection
+ * @param int : $controller_id 
+ * @param int : $zone_id 
+ * 
+ * @return bool
+ * 
+*/
 function createBase($pdo, $controller_id, $zone_id) {
     $debug = $_SESSION['DEBUG'];
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
@@ -221,11 +228,21 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
-        return false;
+        return False;
     }
-    return true;
+    return True;
 }
 
+/**
+ * Changes the base to the new zone
+ * 
+ * @param PDO $pdo : database connection
+ * @param int : $base_id 
+ * @param int : $zone_id 
+ * 
+ * @return bool
+ * 
+ */
 function moveBase($pdo, $base_id, $zone_id) {
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE locations SET zone_id = :zone_id,setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
@@ -239,7 +256,7 @@ function moveBase($pdo, $base_id, $zone_id) {
         return True;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
-        return false;
+        return False;
     }
 }
 
@@ -248,6 +265,9 @@ function moveBase($pdo, $base_id, $zone_id) {
  * 
  * @param PDO $pdo
  * @param int $controller_id
+ * 
+ * @return string returnText
+ * 
  */
 function showAttackablecontrollerKnownLocations($pdo, $controller_id) {
     $returnText = NULL;
@@ -281,6 +301,16 @@ function showAttackablecontrollerKnownLocations($pdo, $controller_id) {
     return $returnText;
 }
 
+/**
+ * 
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $target_location_id
+ * 
+ * @return array $return
+ * 
+ */
 function attackLocation($pdo, $controller_id, $target_location_id) {
     $return = array('success'=> false, 'message' => '');
     try{
@@ -316,7 +346,14 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
 /**
  *
+ * @param PDO $pdo
+ * @param int $searcher_controller_id
+ * @param int $found_id
+ * @param int $turn_number
+ * @param int $zone_id
  *
+ * @return int $cke_existing_record_id
+ * 
  */
 function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, $zone_id) {
     $debug = FALSE;
