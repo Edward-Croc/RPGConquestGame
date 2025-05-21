@@ -197,7 +197,7 @@ function gameReady() {
                             return NULL;
                         }
                         // Fetch the results
-                        $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
+                        $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
                             // Get all powers with no link_power_type
                             $sql = "SELECT id FROM powers WHERE id NOT IN
@@ -218,7 +218,7 @@ function gameReady() {
                                     "%s(%s,%s)",
                                     $firstIter ? '' : ',',
                                     $power['id'],
-                                    $power_types[0]['id']
+                                    $powerTypes[0]['id']
                                 );
                                 $firstIter = FALSE;
                             }
@@ -251,7 +251,7 @@ function gameReady() {
                             return NULL;
                         }
                         // Fetch the results
-                        $power_types = $stmt->fetchALL(PDO::FETCH_ASSOC);
+                        $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
                             // Get all powers with no link_power_type
                             $sql = "SELECT id FROM powers WHERE id NOT IN
@@ -272,7 +272,7 @@ function gameReady() {
                                     "%s(%s,%s)",
                                     $firstIter ? '' : ',',
                                     $power['id'],
-                                    $power_types[0]['id']
+                                    $powerTypes[0]['id']
                                 );
                                 $firstIter = FALSE;
                             }
