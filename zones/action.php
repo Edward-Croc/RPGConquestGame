@@ -1,7 +1,7 @@
 <?php
 
 require_once '../base/base_php.php';
-$pageName = 'action';
+$pageName = 'zones_action';
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     

@@ -1,7 +1,7 @@
 <?php
 
 require_once '../base/base_php.php';
-$pageName = 'action';
+$pageName = 'controllers_action';
 //$_SESSION['DEBUG'] = true;
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {

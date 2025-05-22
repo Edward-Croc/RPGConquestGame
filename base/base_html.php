@@ -31,18 +31,18 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <!-- Sidebar MENU -->
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
-        <?php if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; ?>
-        <a href="/RPGConquestGame/workers/action.php">Agents</a>
-        <a href="/RPGConquestGame/zones/action.php">Zones</a>
-        <a href="/RPGConquestGame/controllers/action.php">Controllers</a>
-        <a href="/RPGConquestGame/base/system_presentation.php">Game System</a>
-        <?php
-            if ($_SESSION['is_privileged'] == true){
-                echo sprintf ('<a href="/RPGConquestGame/mechanics/end_turn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
-                if ($pageName !== 'admin') {
-                    echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
-                }
+        <?php 
+        if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; 
+        if ($pageName !== 'view_workers') echo '<a href="/RPGConquestGame/workers/action.php">Agents</a>';
+        if ($pageName !== 'zones_action') echo '<a href="/RPGConquestGame/zones/action.php">Zones</a>';
+        if ($pageName !== 'controllers_action') echo '<a href="/RPGConquestGame/controllers/action.php">Controllers</a>';
+        if ($pageName !== 'system_presentation') echo '<a href="/RPGConquestGame/base/system_presentation.php">Game System</a>';
+        if ($_SESSION['is_privileged'] == true){
+            echo sprintf ('<a href="/RPGConquestGame/mechanics/end_turn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
+            if ($pageName !== 'admin') {
+                echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
             }
+        }
         ?>
         <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
     </div>

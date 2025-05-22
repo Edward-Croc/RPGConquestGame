@@ -1,7 +1,7 @@
 <?php
 
 require_once '../base/base_php.php';
-$pageName = 'action';
+$pageName = 'workers_action';
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
