@@ -668,12 +668,14 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
 
 function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
     $enemyWorkerOptions = '';
+    $debug = FALSE;
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
 
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
     }
-    echo "turn_number : $turn_number <br>";
+    if ($debug) echo "turn_number : $turn_number <br>";
 
     $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controller_id);
 
