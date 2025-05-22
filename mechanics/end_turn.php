@@ -17,7 +17,35 @@ require_once '../base/base_html.php';
             }
         }
         $valsResult = calculateVals($gameReady, $mechanics['turncounter']);
-        // TODO ADD calulated vals to worker report
+
+        // Add calculated values to worker report
+        $sql = "SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val
+            FROM workers w
+            JOIN worker_actions wa ON wa.worker_id = w.id AND turn_number = :turn_number
+            WHERE is_alive = True AND is_active = True";
+        $stmt = $gameReady->prepare($sql);
+        $stmt->execute([':turn_number' => $mechanics['turncounter']]);
+        $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $timeValue = ucfirst(getConfig($gameReady, 'timeValue'));
+
+        foreach ($workers as $worker) {
+            // Example: retrieve stats from a helper function or inline logic
+            $investigation = $worker['enquete_val'];
+            $attack = $worker['attack_val'];
+            $defense = $worker['defence_val'];
+
+            // Format the life report string
+            $reportAppendArray = [
+                'life_report' => sprintf(
+                    "Ce %s j'ai %s en investigation et %s/%s en attaque/défense.",
+                $timeValue, $investigation, $attack, $defense
+                )
+            ];
+
+            // Update the report using your existing game context
+            updateWorkerAction($gameReady, $worker['worker_id'], $mechanics['turncounter'], null, $reportAppendArray);
+        }
 
         $bdrResult = recalculateBaseDefence($gameReady);
 
