@@ -25,17 +25,23 @@ function getZoneName($pdo, $zone_id){
  * Function to get ZONEs and return as an array
  *
  * @param PDO $pdo
+ * @param int|null $controller_id
  *
  * @return array $zonesArray
  */
-function getZonesArray($pdo) {
+function getZonesArray($pdo, $controller_id = null) {
     $zonesArray = array();
 
     try{
-        $sql = "SELECT z.id AS zone_id, c.id AS controller_id, * FROM zones AS z
+        $sql = sprintf(
+            "SELECT z.id AS zone_id, c.id AS controller_id, * FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
-            ORDER BY z.id ASC";
+            %s 
+            ORDER BY z.id ASC",
+            (!empty($controller_id))? "WHERE c.id = :controler_id" : ""
+        );
         $stmt = $pdo->prepare($sql);
+        if (!empty($controller_id)) $stmt->bindParam(':controler_id', $controller_id);
         $stmt->execute();
         // Fetch the results
         $zonesArray = $stmt->fetchAll(PDO::FETCH_ASSOC);

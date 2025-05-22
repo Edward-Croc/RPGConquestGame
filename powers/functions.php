@@ -229,8 +229,10 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
         }
     }
     $controllersArray = array();
+    $zonesArray = array();
     if (!empty($controller_id))
         $controllersArray = getControllers($pdo, NULL, $controller_id,);
+        $zonesArray = getZonesArray($pdo, $controller_id);
 
     if ($debug)
         echo sprintf(
@@ -315,6 +317,33 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                 if (!empty($powerConditions[$state_text]['controller_faction']) && $powerConditions[$state_text]['controller_faction'] != $controllersArray[0]['faction_name']){
                     if ($debug) echo 'test FAILED the controller_faction condition : <br/>' ;
                     $keepElement = FALSE;
+                }
+
+                // controller_has_zone
+                if (!empty($powerConditions[$state_text]['controller_has_zone']) ) {
+                    if (empty($zonesArray)) {
+                        $keepElement = false;
+                        //if ($debug) 
+                            echo "FAILED controller_has_zone check<br/>";
+                    } else{
+                        $foundZone = false;
+                        foreach ( $zonesArray as $zone ){
+                           if ( $zone['name'] == $powerConditions[$state_text]['controller_has_zone'])
+                            $foundZone = true;
+                        }
+                        if ( !$foundZone ) $keepElement = false;
+                    }
+                }
+
+                // worker_in_zone
+                if (
+                    !empty($powerConditions[$state_text]['worker_in_zone']) 
+                    && !empty($workersArray)
+                    && ( ! ($workersArray[0]['zone_name'] == $powerConditions[$state_text]['worker_in_zone']) )
+                ) {
+                    $keepElement = false;
+                    //if ($debug) 
+                        echo "FAILED controller_has_zone check<br/>";
                 }
             }
         }
