@@ -323,7 +323,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                 if (!empty($powerConditions[$state_text]['controller_has_zone']) ) {
                     if (empty($zonesArray)) {
                         $keepElement = false;
-                        //if ($debug) 
+                        if ($debug) 
                             echo "FAILED controller_has_zone check<br/>";
                     } else{
                         $foundZone = false;
@@ -342,7 +342,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                     && ( ! ($workersArray[0]['zone_name'] == $powerConditions[$state_text]['worker_in_zone']) )
                 ) {
                     $keepElement = false;
-                    //if ($debug) 
+                    if ($debug) 
                         echo "FAILED controller_has_zone check<br/>";
                 }
             }
