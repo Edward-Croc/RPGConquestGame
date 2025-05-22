@@ -295,8 +295,8 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s - target name
 ('textesAttackFailedAndCountered', '[
-    "<p>Je pars mettre en route le plan d’assassinat de %s. [Le rapport n’a jamais été terminé·e.]</p>",
-    "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé·e.]</p>",
+    "<p>Je pars mettre en route le plan d’assassinat de %s. [Le rapport n’a jamais été terminé.e.]</p>",
+    "<p>Début de la mission : %s. [Le rapport n’a jamais été terminé.e.]</p>",
     "<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur %s.</p>",
     "<p>Le silence radio après le lancement de la mission contre %s est inquiétant…</p>",
     "<p>L’équipe envoyée pour neutraliser %s n’est jamais revenue.</p>"
@@ -306,15 +306,15 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s - Assaulter name 
 ('counterAttackTexts', '[
-    "<p>%1$s m’a attaqué·e, j’ai survécu et ma riposte l’a anéanti·e. J’ai jeté son corps dans l’Arno.</p>",
-    "<p>Après avoir été attaqué·e par %1$s, j’ai non seulement survécu, mais ma riposte nous assure qu’iel ne posera plus problème.</p>",
-    "<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit·e.</p>",
+    "<p>%1$s m’a attaqué.e, j’ai survécu et ma riposte l’a anéanti.e. J’ai jeté son corps dans l’Arno.</p>",
+    "<p>Après avoir été attaqué.e par %1$s, j’ai non seulement survécu, mais ma riposte nous assure qu’iel ne posera plus problème.</p>",
+    "<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit.e.</p>",
     "<p>Iel a tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu par une riposte fatale.</p>",
     "<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à ses ambitions.</p>",
-    "<p>Attaqué·e par %1$s, j’ai résisté et ma riposte l’a anéanti·e sans retour.</p>",
+    "<p>Attaqué.e par %1$s, j’ai résisté et ma riposte l’a anéanti.e sans retour.</p>",
     "<p>Iels ont cherché à me faire tomber, mais ma riposte après l’attaque de %1$s a effacé toute menace.</p>",
     "<p>L’attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>",
-    "<p>Je me suis retrouvé·e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>",
+    "<p>Je me suis retrouvé.e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>",
     "<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>"
 ]', 'Texts for the worker who was atacked an the successfully countered');
 
