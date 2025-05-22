@@ -1,7 +1,7 @@
 <?php
 $pageName = 'accueil';
 
-require_once '../base/base_php.php';
+require_once '../base/basePHP.php';
 
 if (
     !empty($_GET['controller_id'])
@@ -14,7 +14,7 @@ if (
     $controller_id = $controllers[0]['id'];
 }
 
-require_once '../base/baseHtml.php';
+require_once '../base/baseHTML.php';
 
 $intro = getConfig($gameReady, 'PRESENTATION');
 echo sprintf("<div class='intro'> %s </div>", $intro);

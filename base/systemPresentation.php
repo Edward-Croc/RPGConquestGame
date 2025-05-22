@@ -1,9 +1,9 @@
 <?php
 
-require_once '../base/base_php.php';
-$pageName = 'system_presentation';
+require_once '../base/basePHP.php';
+$pageName = 'systemPresentation';
 
-require_once '../base/baseHtml.php';
+require_once '../base/baseHTML.php';
 
 ?> 
 <div class="factions">

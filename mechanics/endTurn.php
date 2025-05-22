@@ -1,9 +1,9 @@
 <?php
 $pageName = 'End Turn';
 
-require_once '../base/base_php.php';
+require_once '../base/basePHP.php';
 
-require_once '../base/baseHtml.php';
+require_once '../base/baseHTML.php';
 
         if ($mechanics['gamestate'] == 0) {
             try{
@@ -50,7 +50,7 @@ require_once '../base/baseHtml.php';
         $bdrResult = recalculateBaseDefence($gameReady);
 
         if ($valsResult && $bdrResult) {
-            // do end_turn actions
+            // do endTurn actions
 
             // TODO : Save End Turn step to restart after bug ?
 

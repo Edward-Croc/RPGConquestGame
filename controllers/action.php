@@ -1,6 +1,6 @@
 <?php
 
-require_once '../base/base_php.php';
+require_once '../base/basePHP.php';
 $pageName = 'controllers_action';
 //$_SESSION['DEBUG'] = true;
 
@@ -37,7 +37,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     
 }
 
-require_once '../base/baseHtml.php';
+require_once '../base/baseHTML.php';
 require_once '../controllers/view.php';
 
 

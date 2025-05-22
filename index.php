@@ -52,7 +52,7 @@ if (!$gameReady) {
 // Check if the user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     // Redirect the user to the login page if not logged in
-    header('Location: connection/login_form.php');
+    header('Location: connection/loginForm.php');
     exit();
 }
     // Redirect the user to the login page if not logged in

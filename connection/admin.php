@@ -1,7 +1,7 @@
 <?php
 $pageName = 'admin';
 
-require_once '../base/base_php.php';
+require_once '../base/basePHP.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if action is to add a new config value
@@ -72,7 +72,7 @@ try{
     echo __FUNCTION__."(): GET config Failed: " . $e->getMessage()."<br />";
 }
 
-require_once '../base/baseHtml.php';
+require_once '../base/baseHTML.php';
 
 ?>
 

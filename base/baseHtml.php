@@ -3,7 +3,7 @@
 // Check if the user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     // Redirect the user to the login page if not logged in
-    header('Location: '.'/RPGConquestGame/connection/login_form.php');
+    header('Location: '.'/RPGConquestGame/connection/loginForm.php');
     exit();
 }
 ?>
@@ -36,9 +36,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         if ($pageName !== 'view_workers') echo '<a href="/RPGConquestGame/workers/viewAllWorkers.php">Agents</a>';
         if ($pageName !== 'zones_action') echo '<a href="/RPGConquestGame/zones/action.php">Zones</a>';
         if ($pageName !== 'controllers_action') echo '<a href="/RPGConquestGame/controllers/action.php">Controllers</a>';
-        if ($pageName !== 'system_presentation') echo '<a href="/RPGConquestGame/base/system_presentation.php">Game System</a>';
+        if ($pageName !== 'systemPresentation') echo '<a href="/RPGConquestGame/base/systemPresentation.php">Game System</a>';
         if ($_SESSION['is_privileged'] == true){
-            echo sprintf ('<a href="/RPGConquestGame/mechanics/end_turn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
+            echo sprintf ('<a href="/RPGConquestGame/mechanics/endTurn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
             if ($pageName !== 'admin') {
                 echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
             }
@@ -50,5 +50,5 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <?php
         echo '<span class="openbtn" onclick="toggleSidebar()"> ☰ </span>';
 
-    require_once '../base/base_script.php';
+    require_once '../base/baseScript.php';
 ?>

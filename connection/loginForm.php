@@ -7,7 +7,7 @@ require_once '../controllers/functions.php';
 
 /**
  *  Extract configuration value from the database by key
- * copy of getConfig function from base_php.php because the function is unavailable here
+ * copy of getConfig function from basePHP.php because the function is unavailable here
  *
  * @param PDO $pdo : database connection
  * @param string $configName : configuration key
@@ -123,7 +123,7 @@ if (
     <h1>RPGConquestGame</h1>
 </div>
 <div class="content flex">
-    <form action="login_form.php" method="post">
+    <form action="loginForm.php" method="post">
         <h3> Please log in : </H3>
     <p>Username: <input type="text" name="username" /></p>
     <p>Password: <input type="password" name="passwd" /></p>
