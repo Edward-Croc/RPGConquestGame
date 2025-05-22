@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId 
+ * @param bool $isActive 
+ * 
+ * @return bool success
+ */
 function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
     if (is_null($isActive)) {
         echo  __FUNCTION__."(): isActive: NULL<br />";
@@ -20,6 +28,15 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
     return TRUE;
 }
 
+/**
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId 
+ * @param bool $isAlive 
+ * 
+ * @return bool success
+ * 
+ */
 function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
     if (is_null($isAlive)) {
         echo  __FUNCTION__."(): isAlive: NULL<br />";
@@ -39,13 +56,24 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
     return TRUE;
 }
 
-function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null, $reportAppendArray = null) {
+/**
+ * Update worker action table for a turn and change the action and/or add to the report
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId 
+ * @param int $turnNumber
+ * @param string|null $actionChoice
+ * @param string|null $reportAppendArray
+ * 
+ * @return bool success
+ */
+function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null) {
     $query = "UPDATE worker_actions SET ";
     $updates = [];
     $params = ['worker_id' => $workerId, 'turn_number' => $turnNumber];
 
-    if (!empty($action_choice)) {
-        $updates[] = "action_choice = '$action_choice'";
+    if (!empty($actionChoice)) {
+        $updates[] = "action_choice = '$actionChoice'";
     }
     if (!empty($reportAppendArray)) {
         // Step 1: Fetch the existing report
@@ -92,7 +120,14 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $action_choice = null,
     return FALSE;
 }
 
-// Function to get controllers and return as an array
+/**
+ * Function to get worker and return as an array
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $worker_ids 
+ * 
+ * @return array|null workersArray
+ */
 function getWorkers($pdo, $worker_ids) {
 
     if ( empty($worker_ids) ) return NULL;
