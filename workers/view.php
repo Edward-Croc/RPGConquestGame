@@ -154,6 +154,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     if ( $debug_discipline_age ) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array, True));
                     $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, True);
                     if ( $debug_discipline_age ) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, True));
+                    $powerDisciplineArray = cleanPowerListFromJsonConditions($gameReady, $powerDisciplineArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_age' );
+                    if ( $debug_discipline_age ) echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, True));
                     $nb_disciplines = (INT)getConfig($gameReady, 'recrutement_disciplines');
                     if ( $debug_discipline_age ) echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
                     foreach ($age_discipline_array['age'] as $age) {

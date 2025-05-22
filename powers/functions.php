@@ -1,11 +1,11 @@
 <?php
 /**
  * Get the description for a power_type
- * 
+ *
  * @param PDO $pdo
  * @param string $name
- * 
- * @return string|NULL : $description 
+ *
+ * @return string|NULL : $description
  */
 function getPowerTypesDescription($pdo, $name){
     try{
@@ -23,9 +23,9 @@ function getPowerTypesDescription($pdo, $name){
 
 /**
  * Get the format for a power text
- * 
+ *
  * @param bool $short
- * 
+ *
  * @return string
  */
 function getSQLPowerText($short = TRUE) {
@@ -35,11 +35,11 @@ function getSQLPowerText($short = TRUE) {
 
 /**
  * Gets array of powers for a worker id
- * 
+ *
  * @param PDO $pdo
  * @param string $worker_id_str
- * 
- * @return array 
+ *
+ * @return array
  */
 function getPowersByWorkers($pdo, $worker_id_str) {
     $power_text = getSQLPowerText(FALSE);
@@ -72,11 +72,11 @@ function getPowersByWorkers($pdo, $worker_id_str) {
 
 /**
  *  get a number of random elements from the type of power given
- * 
+ *
  * @param PDO $pdo
  * @param string $type_list
  * @param int $limit
- * 
+ *
  * @return array|null : $powerArray
  */
 // TODO : Add a select limit by controller_id like in the getPowersByType function
@@ -104,12 +104,12 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
  * get power from a type with options :
  *  - powers linked to a controller by faction
  *  - base power from config
- * 
+ *
  * @param PDO $pdo
- * @param int $type_list  // TODO change from ID of link_power_type to a type name ? 
+ * @param int $type_list  // TODO change from ID of link_power_type to a type name ?
  * @param int $controller_id
  * @param bool $add_base
- * 
+ *
  * @return array|null : $powerArray
  */
 function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TRUE) {
@@ -169,11 +169,11 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = TR
 
 /**
  * builds the discipline select field from an array of Disciplines
- * 
+ *
  * @param PDO $pdo
  * @param array $powerDisciplineArray
  * @param bool $showText default: true
- * 
+ *
  * @return string: $showDisciplineSelect
  */
 function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = True){
@@ -203,15 +203,15 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = True){
 }
 
 /**
- * 
- * 
+ *
+ *
  * @param PDO $pdo : database connection
  * @param array $powerArray
  * @param int $controller_id
  * @param int $worker_id
  * @param int $turn_number
  * @param string $state_text
- * 
+ *
  * @return array|null : $powerArray
  *
  */
@@ -252,20 +252,21 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
             unset($powerArray[$key]);
             continue;
         }
-    
+
         $powerConditions = json_decode($power['other'], true);
         if ($debug) echo sprintf("power(%s) : %s ==> json powerConditions : %s <br>", $key, var_export($power, true), var_export($powerConditions,true));
 
-        $keepElement = FALSE;
+        // Base state is always keep
+        $keepElement = TRUE;
         if (!empty($powerConditions[$state_text]) ){
-            // Raw TRUE as string = always keep
-            if ($powerConditions[$state_text] == 'TRUE'){
-                $keepElement = TRUE;
+
+            // Raw FALSE as string = to drop
+            if ( (gettype($powerConditions[$state_text]) == "string") && (strtolower($powerConditions[$state_text]) == strtolower('FALSE')) ){
+                $keepElement = FALSE;
             }
             // If condition is an array, check details
             else if( is_array($powerConditions[$state_text]) ) {
                 if ($debug) echo sprintf("powerConditions[%s] is array : %s  <br>", $state_text, var_export($powerConditions[$state_text], true));
-                $keepElement = TRUE;
 
                 // OR condition block
                 if (!empty($powerConditions[$state_text]['OR']) ){
@@ -323,7 +324,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                 if (!empty($powerConditions[$state_text]['controller_has_zone']) ) {
                     if (empty($zonesArray)) {
                         $keepElement = false;
-                        if ($debug) 
+                        if ($debug)
                             echo "FAILED controller_has_zone check<br/>";
                     } else{
                         $foundZone = false;
@@ -337,12 +338,12 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
 
                 // worker_in_zone
                 if (
-                    !empty($powerConditions[$state_text]['worker_in_zone']) 
+                    !empty($powerConditions[$state_text]['worker_in_zone'])
                     && !empty($workersArray)
                     && ( ! ($workersArray[0]['zone_name'] == $powerConditions[$state_text]['worker_in_zone']) )
                 ) {
                     $keepElement = false;
-                    if ($debug) 
+                    if ($debug)
                         echo "FAILED controller_has_zone check<br/>";
                 }
             }
@@ -363,14 +364,14 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
 }
 
 /**
- * Build select field for Transformations in array 
- * 
+ * Build select field for Transformations in array
+ *
  * @param PDO $pdo : database connection
  * @param array $powerTransformationArray
  * @param bool $showText default true
- * 
+ *
  * @return string : $showTransformationSelect
- * 
+ *
  */
 function showTransformationSelect($pdo, $powerTransformationArray, $showText = True){
     if (empty($powerTransformationArray)) return '';
