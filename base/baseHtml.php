@@ -33,7 +33,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php 
         if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; 
-        if ($pageName !== 'view_workers') echo '<a href="/RPGConquestGame/workers/action.php">Agents</a>';
+        if ($pageName !== 'view_workers') echo '<a href="/RPGConquestGame/workers/viewAllWorkers.php">Agents</a>';
         if ($pageName !== 'zones_action') echo '<a href="/RPGConquestGame/zones/action.php">Zones</a>';
         if ($pageName !== 'controllers_action') echo '<a href="/RPGConquestGame/controllers/action.php">Controllers</a>';
         if ($pageName !== 'system_presentation') echo '<a href="/RPGConquestGame/base/system_presentation.php">Game System</a>';

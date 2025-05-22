@@ -14,7 +14,7 @@ if (
     $controller_id = $controllers[0]['id'];
 }
 
-require_once '../base/base_html.php';
+require_once '../base/baseHtml.php';
 
 $intro = getConfig($gameReady, 'PRESENTATION');
 echo sprintf("<div class='intro'> %s </div>", $intro);

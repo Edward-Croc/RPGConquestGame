@@ -42,7 +42,7 @@ if (isset($_GET['recrutement'])){
     if ( !((INT)$controllerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = FALSE;
 }
 if ( !$recrutment_allowed ){
-    require_once '../base/base_html.php';
+    require_once '../base/baseHtml.php';
         echo " <div> <h2> $pageTitle </h2> </div>
         <div >
                 Le recrutement n'est pas permis !
@@ -105,7 +105,7 @@ if ($_SESSION['DEBUG'] == true){
     echo "zonesArray: ".var_export($zonesArray, true). "<br /><br />";
 }
 
-require_once '../base/base_html.php';
+require_once '../base/baseHtml.php';
 
 echo "
     <div> <h2> $pageTitle </h2> </div>
