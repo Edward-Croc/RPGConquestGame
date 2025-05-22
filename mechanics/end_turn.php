@@ -27,7 +27,7 @@ require_once '../base/base_html.php';
         $stmt->execute([':turn_number' => $mechanics['turncounter']]);
         $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $timeValue = ucfirst(getConfig($gameReady, 'timeValue'));
+        $timeValue = strtolower(getConfig($gameReady, 'timeValue'));
 
         foreach ($workers as $worker) {
             // Example: retrieve stats from a helper function or inline logic
@@ -38,7 +38,7 @@ require_once '../base/base_html.php';
             // Format the life report string
             $reportAppendArray = [
                 'life_report' => sprintf(
-                    "Ce %s j'ai %s en investigation et %s/%s en attaque/défense.",
+                    "Ce.tte %s j'ai %s en investigation et %s/%s en attaque/défense.",
                 $timeValue, $investigation, $attack, $defense
                 )
             ];
