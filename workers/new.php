@@ -78,20 +78,12 @@ if ($_SESSION['DEBUG'] == true){
 }
 
 $tmpOrigine = getConfig($gameReady, $buttonClicked.'_origin_list');
-if ( empty($tmpOrigine) || $tmpOrigine == 'rand' ){
-    $originsArray = randomWorkerOrigin($gameReady);
-    if ($_SESSION['DEBUG'] == true){
-        echo var_export($originsArray, true);
-        echo"<br />";
-        echo"<br />";
-    }
-    $originList = $originsArray[0]['id'];
-} else {
+if ( !empty($tmpOrigine) && $tmpOrigine != 'rand' ){
     $originList = $tmpOrigine;
 }
 
 // TODO : Allow locking certain origins by controler
-$nameArray = randomWorkerName($gameReady, $originList, $nbChoices);
+$nameArray = randomWorkerName($gameReady, $nbChoices, $originList);
 // TODO : Allow locking certain Hobbys/Metiers by origin or controler !
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);

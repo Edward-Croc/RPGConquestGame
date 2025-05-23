@@ -140,8 +140,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 /* ('age_hobby', 'FALSE', ''),
                 ('age_metier', 'FALSE', ''), */
 
-                // TODO do not show discipline in double.... 
-
                 // Allow Discipline teaching via age_discipline param
                 if ($worker['is_active']) {
                     $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
