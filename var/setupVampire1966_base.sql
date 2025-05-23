@@ -41,7 +41,7 @@ INSERT INTO factions (name) VALUES
     ('Disciple'),
     ('Tzimisce'),
     ('Lasombra'),
-    ('Humain'),
+    ('Humains'),
     ('Eglise'),
     ('Démon'),
     ('Garou');
@@ -89,7 +89,7 @@ INSERT INTO controllers (
     (
         'Frère', 'Lorenzo', 'passive',
         (SELECT ID FROM factions WHERE name = 'Eglise'),
-        (SELECT ID FROM factions WHERE name = 'Humain')
+        (SELECT ID FROM factions WHERE name = 'Humains')
     ),
     ('Sir Dimonio', 'Ricci', 'searching',
         (SELECT ID FROM factions WHERE name = 'Démon'),
@@ -106,7 +106,7 @@ INSERT INTO controllers (
     ('Signore Arno', 'Cacciatore', 'violent',
         1, 2, 1, 1,
         (SELECT ID FROM factions WHERE name = 'Garou'),
-        (SELECT ID FROM factions WHERE name = 'Humain')
+        (SELECT ID FROM factions WHERE name = 'Humains')
     )
 ;
 
