@@ -1,11 +1,11 @@
 <?php
 
 /**
- * 
+ *
  * @param PDO $pdo : database connection
- * @param int $workerId 
- * @param bool $isActive 
- * 
+ * @param int $workerId
+ * @param bool $isActive
+ *
  * @return bool success
  */
 function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
@@ -29,13 +29,13 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
 }
 
 /**
- * 
+ *
  * @param PDO $pdo : database connection
- * @param int $workerId 
- * @param bool $isAlive 
- * 
+ * @param int $workerId
+ * @param bool $isAlive
+ *
  * @return bool success
- * 
+ *
  */
 function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
     if (is_null($isAlive)) {
@@ -58,13 +58,13 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
 
 /**
  * Update worker action table for a turn and change the action and/or add to the report
- * 
+ *
  * @param PDO $pdo : database connection
- * @param int $workerId 
+ * @param int $workerId
  * @param int $turnNumber
  * @param string|null $actionChoice
  * @param string|null $reportAppendArray
- * 
+ *
  * @return bool success
  */
 function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null) {
@@ -122,16 +122,16 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
 
 /**
  * Function to get worker and return as an array
- * 
+ *
  * @param PDO $pdo : database connection
- * @param array $worker_ids 
- * 
+ * @param array $workerIds
+ *
  * @return array|null workersArray
  */
-function getWorkers($pdo, $worker_ids) {
+function getWorkers($pdo, $workerIds) {
 
-    if ( empty($worker_ids) ) return NULL;
-    $worker_id_str = implode(',', $worker_ids);
+    if ( empty($workerIds) ) return NULL;
+    $worker_id_str = implode(',', $workerIds);
 
     $sql = "SELECT
             w.*,
@@ -210,9 +210,16 @@ function getWorkers($pdo, $worker_ids) {
     return $workersArray;
 }
 
-// Function to get controllers and return as an array
+/**
+ * Function to get controllers and return as an array
+ *
+ * @param PDO $pdo : database connection
+ * @param array $controller_id
+ *
+ * @return array|null workersArray
+ *
+ */
 function getWorkersBycontroller($pdo, $controller_id) {
-    $workersArray = array();
 
     $sql = " SELECT * FROM controller_worker AS cw
         WHERE cw.controller_id = :controller_id
@@ -236,36 +243,53 @@ function getWorkersBycontroller($pdo, $controller_id) {
     return getWorkers($pdo, $worker_ids);
 }
 
+/**
+ *
+ *
+ * @param PDO $pdo : database connection
+ * @param string $worker_id_str
+ *
+ * @return array|null workerActions
+ */
 function getActionsByWorkers($pdo, $worker_id_str){
     $sql = "SELECT * FROM worker_actions w
         WHERE worker_id IN ($worker_id_str)
         ORDER BY worker_id ASC, turn_number ASC
     ";
     try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
     } catch (PDOException $e) {
-    echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-    return NULL;
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
     }
     // Fetch the results
-    $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("worker_actions: %s <br /> <br />", var_export($worker_actions,true));
+    $workerActions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($_SESSION['DEBUG'] == true) echo sprintf("workerActions: %s <br /> <br />", var_export($workerActions,true));
 
-    return $worker_actions;
+    return $workerActions;
 }
 
-function randomWorkerOrigin($pdo, $limit = 1, $origin_list = '') {
+/**
+ * Function get a random Origin for Worker
+ *
+ * @param PDO $pdo : database connection
+ * @param string $limit
+ * @param string|null $originList
+ *
+ * @return array|null originsArray
+ */
+function randomWorkerOrigin($pdo, $limit = 1, $originList = null) {
     $originsArray = array();
 
-    $sql_origin_id = '';
-    if ( !empty($origin_list) ){
-        $sql_origin_id .= " WHERE id in ($origin_list)";
+    $sqlOriginId = '';
+    if ( !empty($originList) ){
+        $sqlOriginId .= " WHERE id in ($originList)";
     }
 
     try{
         // Get a random value from worker_origins
-        $sql = "SELECT * FROM worker_origins $sql_origin_id ORDER BY RANDOM() LIMIT $limit";
+        $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RANDOM() LIMIT $limit";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -274,19 +298,29 @@ function randomWorkerOrigin($pdo, $limit = 1, $origin_list = '') {
     }
 
     // Fetch the results
-    $worker_origins = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $workerOrigins = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Store worker_origins in the array
-    foreach ($worker_origins as $worker_origin) {
-        $originsArray[] = $worker_origin;
+    foreach ($workerOrigins as $workerOrigin) {
+        $originsArray[] = $workerOrigin;
     }
     return $originsArray;
 }
 
-function randomWorkerName($pdo, $origin_list, $iterations = 1) {
+/**
+ * Function get random Name for Worker for originList
+ *
+ * @param PDO $pdo : database connection
+ * @param int $iterations
+ * @param string|null $originList
+ *
+ * @return array|null nameArray
+ *
+ */
+function randomWorkerName($pdo, $iterations = 1, $originList = null) {
     $nameArray = array();
 
-    $originsArray = randomWorkerOrigin($pdo,  $iterations, $origin_list);
+    $originsArray = randomWorkerOrigin($pdo,  $iterations, $originList);
 
     for ($iteration = 0; $iteration < $iterations; $iteration++) {
         $origin_id = $originsArray[$iteration]['id'];
@@ -315,25 +349,41 @@ function randomWorkerName($pdo, $origin_list, $iterations = 1) {
     return $nameArray;
 }
 
+/**
+ * Function to create worker and assing the controler
+ *
+ * @param PDO $pdo : database connection
+ * @param array $array : $GET should contain :
+ *     "creation"="true"
+ *     firstname
+ *     lastname
+ *     origin
+ *     power_hobby
+ *     power_metier
+ *     origin_id
+ *     power_hobby_id
+ *     power_metier_id
+ *     zone
+ *     discipline
+ *     transformation
+ *     controller_id
+ *
+ * @return string workerId
+ */
 function createWorker($pdo, $array) {
-    /* Array should contain :
-        "creation"="true"
-        firstname
-        lastname
-        origin
-        power_hobby
-        power_metier
-        origin_id
-        power_hobby_id
-        power_metier_id
-        zone
-        discipline
-        transformation
-        controller_id
-    */
+    // If a necessary element of data is missing
+    if (
+        empty($array['firstname'])
+        || !empty($array['lastname'])
+        || !empty($array['origin_id'])
+        || !empty($array['controller_id'])
+        || !empty($array['zone_id'])
+    )
+        return false;
+
     // Check if worker already exists :
     try{
-        // Insert new workers value into the database
+        // Select worker value from the database
         $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
         INNER JOIN controller_worker AS cw ON cw.worker_id = w.id
         WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
@@ -346,7 +396,9 @@ function createWorker($pdo, $array) {
         echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
     }
     $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // If worker exist return worker ID
     if (!empty($worker)) return $worker[0]['id'];
+
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES (:firstname, :lastname, :origin_id, :zone_id)");
@@ -359,64 +411,102 @@ function createWorker($pdo, $array) {
         echo __FUNCTION__."(): INSERT workers Failed: " . $e->getMessage()."<br />";
     }
     // Get the last inserted ID
-    $worker_id = $pdo->lastInsertId();
+    $workerId = $pdo->lastInsertId();
 
-    addWorkerAction($pdo, $worker_id, $array['controller_id'], $array['zone_id']);
+    addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id']);
 
     try{
         // Insert new controller_worker value into the database
         $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id) VALUES (:controller_id, :worker_id)");
         $stmt->bindParam(':controller_id', $array['controller_id']);
-        $stmt->bindParam(':worker_id', $worker_id );
+        $stmt->bindParam(':worker_id', $workerId );
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
     }
 
+    // Add powers to worker
     $link_power_type_id_array = [];
     if (!empty($array['power_hobby_id'])) $link_power_type_id_array[] = $array['power_hobby_id'];
     if (!empty($array['power_metier_id'])) $link_power_type_id_array[] = $array['power_metier_id'];
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
     if (!empty($array['transformation']) && $array['transformation'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
-        upgradeWorker($pdo, $worker_id, $link_power_type_id);
+        upgradeWorker($pdo, $workerId, $link_power_type_id);
     }
-    return $worker_id;
+    return $workerId;
 }
 
-function upgradeWorker($pdo, $worker_id, $link_power_type_id){
+/**
+ * Function to update Worker with a power
+ *
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param int $link_power_type_id
+ *
+ * @return bool success
+ */
+function upgradeWorker($pdo, $workerId, $link_power_type_id){
+
+    // TODO
+    // Check if the power has an effect on obtention
+    // Select p.JSON FROM power p JOIN  link_power_type lpt ON lpt = p WHERE lpt.link_power_type_id
+    // If JSON not empty
+    // Call JSON function
     try{
         // Insert new worker_powers value into the database
         $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
         $stmt->bindParam(':link_power_type_id', $link_power_type_id);
-        $stmt->bindParam(':worker_id', $worker_id );
+        $stmt->bindParam(':worker_id', $workerId );
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
+        return false;
     }
+    return true;
 }
 
-
-function addWorkerAction($pdo, $worker_id, $controller_id, $zone_id){
+/**
+ * Function add Action to Worker_action table for worker
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param int $controllerId
+ * @param int $zoneId
+ * 
+ * @return int|null lastInsertId
+ */
+function addWorkerAction($pdo, $workerId, $controllerId, $zoneId){
+    // Get turn nubmer
     $mechanics = getMechanics($pdo);
+
     try{
         // Insert new controller_worker value into the database
         $stmt = $pdo->prepare("INSERT
             INTO worker_actions (worker_id, turn_number, zone_id, controller_id)
              VALUES (:worker_id, :turn_number, :zone_id, :controller_id)");
-        $stmt->bindParam(':controller_id', $controller_id,);
-        $stmt->bindParam(':worker_id', $worker_id );
-        $stmt->bindParam(':zone_id', $zone_id );
+        $stmt->bindParam(':controller_id', $controllerId,);
+        $stmt->bindParam(':worker_id', $workerId );
+        $stmt->bindParam(':zone_id', $zoneId );
         $stmt->bindParam(':turn_number', $mechanics['turncounter']);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+        return null;
     }
     // Get the last inserted ID
     return $pdo->lastInsertId();
 }
 
-function countWorkerDisciplines($pdo, $worker_id = NULL) {
+/**
+ * Function to count disciplines of worker
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $workerIds
+ * 
+ * @return array {int worker_id, int discipline_count}
+ */
+function countWorkerDisciplines($pdo, $workerIds = NULL) {
     try {
         $sql = sprintf("SELECT
                 wp.worker_id,
@@ -432,7 +522,7 @@ function countWorkerDisciplines($pdo, $worker_id = NULL) {
                 %s
             GROUP BY
                 wp.worker_id",
-            empty($worker_id) ? "" : sprintf(" AND wp.worker_id IN (%s) ", implode(',',$worker_id))
+            empty($workerIds) ? "" : sprintf(" AND wp.worker_id IN (%s) ", implode(',', $workerIds))
         );
 
         $stmt = $pdo->prepare($sql);
@@ -445,18 +535,28 @@ function countWorkerDisciplines($pdo, $worker_id = NULL) {
     }
 }
 
-function moveWorker($pdo, $worker_id, $zone_id) {
+/**
+ * Funtion to assing worker to new zone
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param int $zoneId
+ * 
+ * @return int|null : 
+ */
+function moveWorker($pdo, $workerId, $zoneId) {
     try{
         // UPDATE workers value
         $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
-        $stmt->bindParam(':id', $worker_id);
-        $stmt->bindParam(':zone_id', $zone_id);
+        $stmt->bindParam(':id', $workerId);
+        $stmt->bindParam(':zone_id', $zoneId);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+        return null;
     }
     // get worker action status for turn
-    $actions = getWorkerActions($pdo, $worker_id);
+    $actions = getWorkerActions($pdo, $workerId);
     $action = $actions[0];
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
 
@@ -466,25 +566,26 @@ function moveWorker($pdo, $worker_id, $zone_id) {
         echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
         $currentReport = array();
     }
-    $zone_name = getZoneName($pdo, $zone_id);
+    $zone_name = getZoneName($pdo, $zoneId);
     if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
     $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. ";
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);
     if (json_last_error() !== JSON_ERROR_NONE)
         echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        return null;
     try{
         // UPDATE worker_actions values
         $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id, report = :report WHERE id = :id ");
-        $stmt->bindParam(':zone_id', $zone_id);
+        $stmt->bindParam(':zone_id', $zoneId);
         $stmt->bindParam(':id', $action['id']);
-        $stmt->bindParam(':report', $updatedReportJson );
+        $stmt->bindParam(':report', $updatedReportJson);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
 
-    return $worker_id;
+    return $workerId;
 }
 
 // get worker action status for turn
