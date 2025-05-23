@@ -78,6 +78,7 @@ if ($_SESSION['DEBUG'] == true){
 }
 
 $tmpOrigine = getConfig($gameReady, $buttonClicked.'_origin_list');
+$originList = null;
 if ( !empty($tmpOrigine) && $tmpOrigine != 'rand' ){
     $originList = $tmpOrigine;
 }
