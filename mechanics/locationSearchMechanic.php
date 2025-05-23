@@ -77,7 +77,6 @@ function locationSearchMechanic($pdo) {
     echo "turn_number : $turn_number <br>";
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
-    $debug = TRUE;
 
     $locationsInvestigation = getLocationSearcherComparisons($pdo, $turn_number);
     if ($debug) echo "<p>locationsInvestigation : " . var_export($locationsInvestigation, true) . "</p>";

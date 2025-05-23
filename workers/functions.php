@@ -371,6 +371,8 @@ function randomWorkerName($pdo, $iterations = 1, $originList = null) {
  * @return string workerId
  */
 function createWorker($pdo, $array) {
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     // If a necessary element of data is missing
     if (
         empty($array['firstname'])
@@ -379,8 +381,7 @@ function createWorker($pdo, $array) {
         || empty($array['controller_id'])
         || empty($array['zone_id'])
     ) {
-        // if ($debug)
-            echo sprintf( "%s() => Unfound necessary element <br>",  __FUNCTION__ );
+        if ($debug) echo sprintf( "%s() => Unfound necessary element <br>",  __FUNCTION__ );
         return false;
     }
 
@@ -435,8 +436,7 @@ function createWorker($pdo, $array) {
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
     if (!empty($array['transformation']) && $array['transformation'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
-        // if ($debug)
-        echo sprintf("%s() => add to worker : %s, link_power_type_id: %s <br>",  __FUNCTION__, $workerId, var_export($link_power_type_id, true));
+        if ($debug) echo sprintf("%s() => add to worker : %s, link_power_type_id: %s <br>",  __FUNCTION__, $workerId, var_export($link_power_type_id, true));
         upgradeWorker($pdo, $workerId, $link_power_type_id, true);
     }
     return $workerId;
@@ -453,6 +453,8 @@ function createWorker($pdo, $array) {
  * @return bool success
  */
 function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = false){
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     try{
         // Insert new worker_powers value into the database
         $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
@@ -476,12 +478,11 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':link_power_type_id' => $link_power_type_id]);
         $power = $stmt->fetch(PDO::FETCH_ASSOC);
-        // if ($debug)
-            echo sprintf("%s() => power other ? %s ",  __FUNCTION__, var_export($power, true));
+        if ($debug) echo sprintf("%s() => power other ? %s ",  __FUNCTION__, var_export($power, true));
 
         if (!empty($power['other'])) {
             $otherJson = json_decode($power['other'], true);
-            echo __FUNCTION__ . "(): otherJson: " . var_export($otherJson, true) . "<br />";
+            if ($debug) echo __FUNCTION__ . "(): otherJson: " . var_export($otherJson, true) . "<br />";
 
             if (json_last_error() === JSON_ERROR_NONE && is_array($otherJson)) {
                 // Apply effect if found
@@ -506,11 +507,12 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
  * @return bool success
  */
 function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = false) {
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     // If it is a recrutment effect
-    if ($isRecrutment && !empty($otherJson['on_recrutment'])){
+    if ($isRecrutment && !empty($otherJson['on_recrutment']) && is_array($otherJson['on_recrutment']) ){
         foreach ($otherJson['on_recrutment'] AS $key => $element ){
-            echo sprintf( "%s():key : %s, element: %s<br />",__FUNCTION__, $key, var_export($element, true));
+            if ($debug) echo sprintf( "%s():key : %s, element: %s<br />",__FUNCTION__, $key, var_export($element, true));
             // If it is an action and we have a type
             if (
                 $key == 'action'
@@ -523,7 +525,7 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                         // Add non primary controller for the worker
                         $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) 
                                 VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, FALSE)";
-                        echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
+                        if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
                     } catch (PDOException $e) {
