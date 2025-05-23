@@ -374,12 +374,15 @@ function createWorker($pdo, $array) {
     // If a necessary element of data is missing
     if (
         empty($array['firstname'])
-        || !empty($array['lastname'])
-        || !empty($array['origin_id'])
-        || !empty($array['controller_id'])
-        || !empty($array['zone_id'])
-    )
+        || empty($array['lastname'])
+        || empty($array['origin_id'])
+        || empty($array['controller_id'])
+        || empty($array['zone_id'])
+    ) {
+        // if ($debug)
+            echo sprintf( "%s() => Unfound necessary element <br>",  __FUNCTION__ );
         return false;
+    }
 
     // Check if worker already exists :
     try{
@@ -432,7 +435,9 @@ function createWorker($pdo, $array) {
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
     if (!empty($array['transformation']) && $array['transformation'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
-        upgradeWorker($pdo, $workerId, $link_power_type_id);
+        // if ($debug)
+        echo sprintf("%s() => add to worker : %s, link_power_type_id: %s <br>",  __FUNCTION__, $workerId, var_export($link_power_type_id, true));
+        upgradeWorker($pdo, $workerId, $link_power_type_id, true);
     }
     return $workerId;
 }
@@ -443,16 +448,11 @@ function createWorker($pdo, $array) {
  * @param PDO $pdo : database connection
  * @param int $workerId
  * @param int $link_power_type_id
+ * @param bool $isRecrutment
  *
  * @return bool success
  */
-function upgradeWorker($pdo, $workerId, $link_power_type_id){
-
-    // TODO
-    // Check if the power has an effect on obtention
-    // Select p.JSON FROM power p JOIN  link_power_type lpt ON lpt = p WHERE lpt.link_power_type_id
-    // If JSON not empty
-    // Call JSON function
+function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = false){
     try{
         // Insert new worker_powers value into the database
         $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
@@ -463,7 +463,86 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id){
         echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
         return false;
     }
+    
+    // Check if the power has an effect on obtention
+    try {
+        $sql = "
+            SELECT p.other 
+            FROM powers p
+            JOIN link_power_type lpt ON lpt.power_id = p.id
+            WHERE lpt.id = :link_power_type_id
+            LIMIT 1
+        ";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':link_power_type_id' => $link_power_type_id]);
+        $power = $stmt->fetch(PDO::FETCH_ASSOC);
+        // if ($debug)
+            echo sprintf("%s() => power other ? %s ",  __FUNCTION__, var_export($power, true));
+
+        if (!empty($power['other'])) {
+            $otherJson = json_decode($power['other'], true);
+            echo __FUNCTION__ . "(): otherJson: " . var_export($otherJson, true) . "<br />";
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($otherJson)) {
+                // Apply effect if found
+                applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment);
+            }
+        }
+    } catch (PDOException $e) {
+        echo __FUNCTION__ . "(): Failed to fetch power effect: " . $e->getMessage() . "<br />";
+        return false;
+    }
+
     return true;
+}
+
+/**
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param array $otherJson
+ * @param bool $isRecrutment
+ * 
+ * @return bool success
+ */
+function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = false) {
+
+    // If it is a recrutment effect
+    if ($isRecrutment && !empty($otherJson['on_recrutment'])){
+        foreach ($otherJson['on_recrutment'] AS $key => $element ){
+            echo sprintf( "%s():key : %s, element: %s<br />",__FUNCTION__, $key, var_export($element, true));
+            // If it is an action and we have a type
+            if (
+                $key == 'action'
+                && !empty($element)
+                && !empty($element['type'])
+            ) {
+                // go_traitor add the listed controler as a non primary controler 
+                if ( $element['type'] == 'go_traitor' && !empty($element['controller_lastname']) ){
+                    try {
+                        // Add non primary controller for the worker
+                        $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) 
+                                VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, FALSE)";
+                        echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
+                        $stmt = $pdo->prepare($sql);
+                        $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                    } catch (PDOException $e) {
+                        echo __FUNCTION__."(): go_traitor => INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+                    }
+                }
+                if ( $element['type'] == 'add_opposition' ){
+                    // $element['controller_lastname']
+                    // TODO
+                    // Create worker with hobby and job in a random zone
+                    // Add $workerId to CKE
+                }
+            }
+        }
+    }
+    // If the effect can be obtained out of recrutment
+    // TODO : ... 
+
+ return true;
 }
 
 /**

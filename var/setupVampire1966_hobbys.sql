@@ -75,6 +75,10 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
 
 
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Chrétien.ne pratiquant.e', 1,1,1,'{"on_recrutment": {"action": {"type":"add_opposition", "controller_lastname": "Lorenzo"} } }')
+    ('Chrétien.ne pratiquant.e', 1,1,1,'{"on_recrutment": {
+        "action": {"type":"add_opposition", "controller_lastname": "Lorenzo"},
+        "action": {"type": "go_traitor", "controller_lastname": "Lorenzo"}
+        } }'
+    )
 ;
 
