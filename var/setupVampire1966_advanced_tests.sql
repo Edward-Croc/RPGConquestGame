@@ -3,7 +3,6 @@
 
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
     -- Base test claim, passive, investigate
-    ('Harvey', 'Matthews', (SELECT ID FROM worker_origins WHERE name = 'Angleterre'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
     ('Andrei', 'Popescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
     ('Indro', 'Lombardi', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
     -- Multi claim, should be violent
@@ -18,9 +17,6 @@ INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
 INSERT INTO controller_worker (controller_id, worker_id) VALUES
     -- Base test claim, passive, investigate
     (
-        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
-        (SELECT ID FROM workers WHERE lastname in ('Matthews'))
-    ), (
         (SELECT ID FROM controllers WHERE lastname in ('Calabreze')),
         (SELECT ID FROM workers WHERE lastname in ('Lombardi'))
     ), (
@@ -51,6 +47,10 @@ INSERT INTO controller_worker (controller_id, worker_id) VALUES
     )
 ;
 
+UPDATE worker_actions
+SET action_choice = 'claim', action_params = '{"claim_controller_id":"2"}'
+WHERE worker_id = (SELECT ID FROM workers WHERE lastname in ('Matthews'));
+
 -- Add actions to the workers :
 INSERT INTO worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params
@@ -64,9 +64,7 @@ SELECT
     entry.action_params::json
 FROM (
     -- Base test claim, passive, investigate
-    SELECT 'Matthews' AS lastname, 'claim' AS action_choice, '{"claim_controller_id":"2"}' AS action_params
-    UNION ALL
-    SELECT 'Popescu', 'passive', '{}'  -- empty JSON object
+    SELECT 'Popescu' AS lastname, 'passive' AS action_choice, '{}' AS action_params  -- empty JSON object
     UNION ALL
     SELECT 'Lombardi', 'investigate', '{}'
     -- Multi claim, should be violent
@@ -95,13 +93,7 @@ SELECT
 FROM 
     workers w
 JOIN (
-    SELECT 'Matthews' AS lastname, 'Alcoolique' AS power_name
-    UNION ALL SELECT 'Matthews', 'Policier'
-    UNION ALL SELECT 'Matthews', 'Célérité'
-    UNION ALL SELECT 'Matthews', 'Puissance'
-    UNION ALL SELECT 'Matthews', 'Vampire nouveau né'
-    UNION ALL SELECT 'Matthews', 'Goule'
-    
+    SELECT 'Matthews' AS lastname, 'Vampire nouveau né' AS power_name
     UNION ALL SELECT 'Popescu', 'Punk à chien'
     UNION ALL SELECT 'Popescu', 'Militaire'
     UNION ALL SELECT 'Popescu', 'Quiétus'

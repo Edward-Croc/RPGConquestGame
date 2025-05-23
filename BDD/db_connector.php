@@ -287,15 +287,6 @@ function gameReady() {
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
                     $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced.sql';
-                    if (
-                        (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
-                        ||(strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
-                        || (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
-                        || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
-                    )
-                        $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced_tests.sql';
-
-                    echo "Loading $sqlFile ...<br />";
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
                         // Read SQL file
@@ -304,6 +295,25 @@ function gameReady() {
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
+
+                    if (
+                        (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+                        ||(strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+                        || (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
+                        || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
+                        || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
+                    ) {
+                        $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced_tests.sql';
+                        echo "Loading $sqlFile ...<br />";
+                        if (file_exists($sqlFile)) {
+                            echo 'Start <br />';
+                            // Read SQL file
+                            $sqlQueries = file_get_contents($sqlFile);
+                            // Execute SQL queries
+                            $pdo->exec($sqlQueries);
+                            echo "SQL file $sqlFile executed successfully.<br />";
+                        } else echo "SQL file $sqlFile UNFOUND.<br />";
+                    }
                 }
 
                 echo 'END <br />';

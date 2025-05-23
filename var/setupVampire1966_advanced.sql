@@ -8,35 +8,32 @@ INSERT INTO controller_worker (controller_id, worker_id) VALUES (
     (SELECT ID FROM workers WHERE lastname in ('Matthews'))
 );
 -- Add base actions
-INSERT INTO worker_actions (worker_id, controller_id, turn_number, zone_id) VALUES (
+INSERT INTO worker_actions (worker_id, controller_id, zone_id) VALUES (
     (SELECT ID FROM workers WHERE lastname = 'Matthews'),
     (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
-    0,
     (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')
 );
--- Add base powers to the worker
-INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
-    ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Alcoolique'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Policier.ère'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Matthews'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
-    ))
-;
+
+-- Add powers to the workers :
+INSERT INTO worker_powers (worker_id, link_power_type_id)
+SELECT 
+    w.id AS worker_id,
+    lpt.id AS link_power_type_id
+FROM 
+    workers w
+JOIN (
+    SELECT 'Matthews' AS lastname, 'Goule' AS power_name
+    UNION ALL SELECT 'Matthews', 'Alcoolique'
+    UNION ALL SELECT 'Matthews', 'Policier.ère'
+    UNION ALL SELECT 'Matthews', 'Célérité'
+) AS wp ON wp.lastname = w.lastname
+JOIN powers p ON p.name = wp.power_name
+JOIN link_power_type lpt ON lpt.power_id = p.id;
+
 
 -- Create the 'Cacciatore' start workers
 -- Michelangelo Marsala, Roma,  Adepte de muscu (-1, 2/1), Retraité curieux (1, 0/0) Célérité , Bosco Bello
 -- Natalia Cacciatore, Firenze, Propriétaire de Lévrier Italien (1, 0/0), Policier (1, 1/-1), Monticelli
-
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES 
     ('Michelangelo', 'Marsala', (SELECT ID FROM worker_origins WHERE name = 'Roma'), (SELECT ID FROM zones WHERE name = 'Bosco Bello')),
     ('Natalia', 'Cacciatore', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Monticelli'))
@@ -59,36 +56,21 @@ INSERT INTO worker_actions (worker_id, controller_id, zone_id) VALUES
         (SELECT ID FROM zones WHERE name = 'Monticelli')
     )
 ;
--- Add base powers to the workers
-INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES
-    ((SELECT ID FROM workers WHERE lastname = 'Marsala'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Garou'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Marsala'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Retraité.e curieux.se'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Marsala'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Adepte de muscu'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Cacciatore'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Garou'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Cacciatore'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Propriétaire de lévrier italien'
-    )),
-    ((SELECT ID FROM workers WHERE lastname = 'Cacciatore'), (
-        SELECT link_power_type.ID FROM link_power_type
-        JOIN powers on  powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Policier.ère'
-    ))
-;
+
+-- Add powers to the workers :
+INSERT INTO worker_powers (worker_id, link_power_type_id)
+SELECT 
+    w.id AS worker_id,
+    lpt.id AS link_power_type_id
+FROM 
+    workers w
+JOIN (
+    SELECT 'Marsala' AS lastname, 'Garou' AS power_name
+    UNION ALL SELECT 'Marsala', 'Retraité.e curieux.se'
+    UNION ALL SELECT 'Marsala', 'Adepte de muscu'
+    UNION ALL SELECT 'Cacciatore', 'Garou'
+    UNION ALL SELECT 'Cacciatore', 'Propriétaire de lévrier italien'
+    UNION ALL SELECT 'Cacciatore', 'Policier.ère'
+) AS wp ON wp.lastname = w.lastname
+JOIN powers p ON p.name = wp.power_name
+JOIN link_power_type lpt ON lpt.power_id = p.id;
