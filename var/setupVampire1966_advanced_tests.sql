@@ -120,7 +120,7 @@ JOIN (
     UNION ALL SELECT 'Honorius', 'Puissance'
     UNION ALL SELECT 'Honorius', 'Vampire nouveau né'
     
-    UNION ALL SELECT 'Martino', 'Ouvrier du bâtiment'
+    UNION ALL SELECT 'Martino', 'Ouvrier.ère du bâtiment'
     UNION ALL SELECT 'Martino', 'Alcoolique'
     UNION ALL SELECT 'Martino', 'Nécromancie'
     UNION ALL SELECT 'Martino', 'Goule'
@@ -132,7 +132,7 @@ JOIN (
     UNION ALL SELECT 'Messala', 'Augure'
     UNION ALL SELECT 'Messala', 'Goule'
     
-    UNION ALL SELECT 'Ionescu', 'Ouvrier du bâtiment'
+    UNION ALL SELECT 'Ionescu', 'Ouvrier.ère du bâtiment'
     UNION ALL SELECT 'Ionescu', 'Alcoolique'
     UNION ALL SELECT 'Ionescu', 'Nécromancie'
     UNION ALL SELECT 'Ionescu', 'Goule'
