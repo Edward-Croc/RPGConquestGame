@@ -115,7 +115,7 @@ JOIN (
     UNION ALL SELECT 'Aliev', 'Vampire nouveau né'
     
     UNION ALL SELECT 'Honorius', 'SDF'
-    UNION ALL SELECT 'Honorius', 'Hooligan'
+    UNION ALL SELECT 'Honorius', 'Hooligan "tifoso.a"'
     UNION ALL SELECT 'Honorius', 'Endurance'
     UNION ALL SELECT 'Honorius', 'Puissance'
     UNION ALL SELECT 'Honorius', 'Vampire nouveau né'
@@ -127,7 +127,7 @@ JOIN (
     UNION ALL SELECT 'Martino', 'Vampire nouveau né'
 
     UNION ALL SELECT 'Messala', 'Militaire réserviste'
-    UNION ALL SELECT 'Messala', 'Pompier'
+    UNION ALL SELECT 'Messala', 'Pompier.ère'
     UNION ALL SELECT 'Messala', 'Célérité'
     UNION ALL SELECT 'Messala', 'Augure'
     UNION ALL SELECT 'Messala', 'Goule'
@@ -139,7 +139,7 @@ JOIN (
     UNION ALL SELECT 'Ionescu', 'Vampire nouveau né'
 
     UNION ALL SELECT 'Marotta', 'Militaire réserviste'
-    UNION ALL SELECT 'Marotta', 'Pompier'
+    UNION ALL SELECT 'Marotta', 'Pompier.ère'
     UNION ALL SELECT 'Marotta', 'Célérité'
     UNION ALL SELECT 'Marotta', 'Augure'
     UNION ALL SELECT 'Marotta', 'Goule'
