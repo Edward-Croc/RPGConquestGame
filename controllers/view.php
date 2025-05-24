@@ -9,9 +9,9 @@
     $controllers = getControllers($gameReady, $_SESSION['user_id']);
     $debug = FALSE;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = TRUE;
-     echo '<div class="factions"><h2>Factions</h2>';
     // Show factions if Multiple controllers are available
     if (count($controllers) > 1) {
+        echo '<div class="factions"><h2>Factions</h2>';
         echo sprintf('
             <form action="/RPGConquestGame/base/accueil.php" method="GET">
                 %s
