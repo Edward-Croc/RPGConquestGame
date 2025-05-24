@@ -139,6 +139,7 @@ function getWorkers($pdo, $workerIds) {
             w.*,
             wo.name AS origin_name,
             z.name AS zone_name,
+            cw.controller_id AS controller_id,
             cw.is_primary_controller,
             (SELECT MAX(wa.turn_number) - MIN(wa.turn_number)
                 FROM worker_actions wa
@@ -163,7 +164,7 @@ function getWorkers($pdo, $workerIds) {
             powers p ON lpt.power_id = p.ID
         WHERE
             w.id IN ($worker_id_str)
-        GROUP BY w.id, wo.name, z.name, cw.is_primary_controller
+        GROUP BY w.id, wo.name, z.name, cw.is_primary_controller, cw.controller_id
         ORDER BY w.id ASC
     ";
     try {
@@ -216,7 +217,7 @@ function getWorkers($pdo, $workerIds) {
  * Function to get controllers and return as an array
  *
  * @param PDO $pdo : database connection
- * @param array $controller_id
+ * @param int $controller_id
  *
  * @return array|null workersArray
  *
@@ -243,6 +244,64 @@ function getWorkersBycontroller($pdo, $controller_id) {
     }
 
     return getWorkers($pdo, $worker_ids);
+}
+
+
+/**
+ * show Worker view Short version
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $worker : must contain following keys 
+ *   - 'id'
+ *   - 'firstname'
+ *   - 'lastname'
+ *   - 'zone_name'
+ *   - 'total_enquete'
+ *   - 'total_attack'
+ *   - 'total_defence'
+ *   - 'actions'
+ *  
+ * @param array $mechanics : must contain key 'turncounter'
+ */
+function showWorkerShort($pdo, $worker, $mechanics) {
+    $currentAction = array();
+    foreach($worker['actions'] as $action) {
+        if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
+        if ( $_SESSION['DEBUG'] == true ) echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
+        if ( (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
+            if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
+            $currentAction = $action;
+        }
+    }
+    if ( $_SESSION['DEBUG'] == true ) echo sprintf('currentAction : %s  <br>', var_export($currentAction,true));
+
+    $return = '';
+
+    $return .= sprintf(
+        '<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
+            <input type="hidden" name="worker_id" value=%1$s>
+            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (%1$s) </b> %5$s au %4$s.
+            <div id="info-%1$s" style="display: none;"> %6$s 
+            </div> 
+        </form> </div>
+        ',
+        $worker['id'],
+        $worker['firstname'],
+        $worker['lastname'],
+        $worker['zone_name'],
+        getConfig($pdo,'txt_ps_'.$currentAction['action_choice']),
+        sprintf(
+            '<i>
+                Capacité d’enquete : %1$s. Capacité d’attaque / défense : %2$s / %3$s <br />
+                <input type="submit" name="voir" value="Voir" class="worker-action-btn">
+            </i>',
+            $worker['total_enquete'],
+            $worker['total_attack'],
+            $worker['total_defence']
+        )
+    );
+
+    return $return;
 }
 
 /**

@@ -11,12 +11,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
-    $zonesArray = getZonesArray($gameReady);
-    if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
-
-    // TODO : Change view for DEAD, CAPTURED and Non Primary controller
-    $workersArray = getWorkersBycontroller($gameReady, $controller_id);
-
     echo "<div class='workers'>";
         $recruitButton = "";
         if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
@@ -32,62 +26,79 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             echo sprintf("
             <h1>Agents</h1>
             <form action='/RPGConquestGame/workers/new.php' method='GET'>
-                <b> Recrutement : </b>
+                <h3> Recrutement : </h3>
                 <input type='hidden' name='controller_id' value='%s'>
                 %s
                 %s
             </form>",
-            htmlspecialchars($controller_id),
+            $controller_id,
             $firstComeButton,
             $recruitButton
         );
 
-    if ( $_SESSION['DEBUG'] == true ) echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
-    if ( !empty($workersArray) ) {
-        $showZoneSelect = showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
-        if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
+        // TODO : Change view for DEAD, CAPTURED and Non Primary controller
+        $workersArray = getWorkersBycontroller($gameReady, $controller_id);
 
-        if ( !empty($worker_id) ) {
-            $controllers = getControllers($gameReady);
-            $showcontrollersSelect = showControllerSelect($controllers, 'gift_controller_id');
-            $showListClaimTargetsSelect = showControllerSelect($controllers, 'claim_controller_id', TRUE);
-        }
+        //if ( $_SESSION['DEBUG'] == true )
+            echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
+        if ( !empty($workersArray) ) {
+            $liveWorkerArray = array();
+            $doubleAgentWorkerArray = array();
+            $prisonersWorkerArray = array();
+            $deadWorkerArray = array();
+            foreach ($workersArray as $worker){
+                if ( $worker['controller_id'] != $controller_id) continue;
+                if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
 
-        if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray : %s <br>', var_export($workersArray,true));
-        $currentAction = array();
-        foreach ($workersArray as $worker){
-            if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
-            foreach($worker['actions'] as $action) {
-                if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
-                if ( $_SESSION['DEBUG'] == true ) echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
-                if ( (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
-                    if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
-                    $currentAction = $action;
-                }
+                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
+
+                // liveWorkerArray : worker alive and active and that we control
+                if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] )
+                    $liveWorkerArray[] = $worker;
+
+                //doubleAgentWorkerArray : worker alive and active that we don't control
+                if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] )
+                    $doubleAgentWorkerArray[] = $worker;
+
+                //prisonersWorkerArray : worker alive and not active that we do control are our prisonners
+                if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] )
+                    $prisonersWorkerArray[] = $worker;
+
+                // deadWorkerArray : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control) 
+                if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller']  ) )
+                    $deadWorkerArray[] = $worker;
             }
-            if ( $_SESSION['DEBUG'] == true ) echo sprintf('currentAction : %s  <br>', var_export($currentAction,true));
+            if ( !empty($liveWorkerArray )) {
+                echo "<div > <h3>Nos Agents :</h3>";
+                foreach ($liveWorkerArray as $worker) {
+                    echo $worker['view'];
+                }
+                echo "</div>";
+            }
 
-            echo sprintf('<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
-                <input type="hidden" name="worker_id" value=%1$s>
-                <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (%1$s) </b> %6$s au %4$s.
-                <div id="info-%1$s" style="%5$s">
-                ',
-                $worker['id'],
-                $worker['firstname'],
-                $worker['lastname'],
-                $worker['zone_name'],
-                empty($worker_id) ? 'display: none;' : 'display: block;',
-                getConfig($gameReady,'txt_ps_'.$currentAction['action_choice'])
-            );
-            echo sprintf('<i> Capacité d’enquete : %1$s. Capacité d’attaque / défense : %2$s / %3$s <br /> %4$s</i> </div>',
-                $worker['total_enquete'],
-                $worker['total_attack'],
-                $worker['total_defence'],
-                empty($worker_id) ? '<input type="submit" name="voir" value="Voir" class="worker-action-btn">' : ''
-            );
-            echo '</form> </div>';
+            if ( !empty($doubleAgentWorkerArray )) {
+                echo "<div > <h3>Nos Agents doubles :</h3>";
+                foreach ($doubleAgentWorkerArray as $worker) {
+                    echo $worker['view'];
+                }
+                echo "</div>";
+            }
+
+            if ( !empty($prisonersWorkerArray )) {
+                echo "<div > <h3>Nos Prisonniers :</h3>";
+                foreach ($prisonersWorkerArray as $worker) {
+                    echo $worker['view'];
+                }
+                echo "</div>";
+            }
+
+            if ( !empty($deadWorkerArray )) {
+                echo "<div > <h3>Nos morts :</h3>";
+                foreach ($deadWorkerArray as $worker) {
+                    echo $worker['view'];
+                }
+                echo "</div>";
+            }
         }
-    }
+    echo "</div>"; // closing class='workers'
 }
-?>
-</div>
