@@ -68,6 +68,8 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
  * @return bool success
  */
 function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null) {
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     $query = "UPDATE worker_actions SET ";
     $updates = [];
     $params = ['worker_id' => $workerId, 'turn_number' => $turnNumber];
@@ -106,7 +108,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
 
     if (count($updates)>0) {
         $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
-        echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
+        if ($debug) echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
 
         try{
             $stmt = $pdo->prepare($query);
@@ -885,8 +887,7 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
 
 function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
     $enemyWorkerOptions = '';
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);

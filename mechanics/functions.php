@@ -109,28 +109,32 @@ function calculateVals($pdo, $turn_number){
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
         if (!empty($config)){
             // add to list of updates
-            $sqlArray[] = sprintf('UPDATE worker_actions SET %1$s
-                WHERE turn_number = %2$s AND action_choice IN (%3$s)', $valSQL, $turn_number, $config );
+            $sqlArray[] = array( 
+                'sql'=> sprintf(
+                    'UPDATE worker_actions SET %1$s WHERE turn_number = %2$s AND action_choice IN (%3$s)',
+                    $valSQL, $turn_number, $config
+                ),
+                'config' => $config
+            );
         }
     }
     echo '</p>';
 
     // Execute SQLs
     foreach ($sqlArray as $sql) {
-        echo "<p>DO SQL : <br> $sql <br>";
+        echo sprintf("<p>DO SQL for %s : <br /> %s <br>",  $sql['config'],  $sql['sql'] );
         try {
             // Prepare and execute SQL query
-            $stmt = $pdo->prepare($sql);
+            $stmt = $pdo->prepare($sql['sql']);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
             return FALSE;
         }
-        echo "DONE <br></p>";
+        echo "DONE <br /></p>";
     }
 
-    echo '<p>';
-    // Calculate zone defense values
+    echo '<p> Calculate zone defense values <br />';
     try {
         $sql = "UPDATE zones
             SET calculated_defence_val = defence_val + subquery.worker_count
@@ -155,11 +159,10 @@ function calculateVals($pdo, $turn_number){
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
         return FALSE;
     }
-
-    echo '</p></div>';
+    echo 'DONE </p></div>';
 
     return TRUE;
 }
@@ -176,8 +179,7 @@ function calculateVals($pdo, $turn_number){
  * 
  */
 function createNewTurnLines($pdo, $turn_number){
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
         INSERT INTO worker_actions (worker_id, turn_number, zone_id, controller_id, action_choice, action_params)
@@ -237,7 +239,7 @@ function createNewTurnLines($pdo, $turn_number){
         }
     }
 
-    echo '<p>DONE</p> </div>';
+    echo '<p>createNewTurnLines : DONE</p> </div>';
 
     return TRUE;
 }
@@ -251,8 +253,7 @@ function createNewTurnLines($pdo, $turn_number){
  * 
  */
 function claimMechanic($pdo, $turn_number = NULL) {
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     echo '<div> <h3>  claimMechanic : </h3> ';
 
@@ -466,7 +467,7 @@ function claimMechanic($pdo, $turn_number = NULL) {
         else { echo "Zone $key Unclaimed. <br />";}
     }
 
-    echo '<p>DONE</p> </div>';
+    echo '<p>claimMechanic : DONE</p> </div>';
 
     return TRUE;
 }

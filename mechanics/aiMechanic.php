@@ -43,7 +43,7 @@ function aiMechanic($pdo ) {
                 // Set workers to investigate
         // If worker creation in limit -> Create worker in start zone
 
-    echo '</div>';
+    echo '<p>aiMechanic : DONE </p> </div>';
 
     return TRUE;
 }

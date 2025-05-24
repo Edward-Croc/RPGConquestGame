@@ -144,6 +144,6 @@ function locationSearchMechanic($pdo) {
         updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['secrets_report' => $report]);
     }
 
-    echo '</div>';
+    echo '<p> locationSearchMechanic : DONE </p> </div>';
     return $report;
 }

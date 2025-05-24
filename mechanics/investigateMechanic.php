@@ -145,8 +145,7 @@ function investigateMechanic($pdo) {
     }
     echo "turn_number : $turn_number <br>";
 
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
 
     $REPORTDIFF0 = getConfig($pdo, 'REPORTDIFF0');
     $REPORTDIFF1 = getConfig($pdo, 'REPORTDIFF1');
@@ -366,11 +365,11 @@ function investigateMechanic($pdo) {
             $report .= "Difference: {$row['enquete_difference']}, ";
         }
         $report .= '</p>';
-        echo var_export( $report, true);
+        echo sprintf("Rapport: %s<br />",var_export( $report, true));
         $reportArray[$row['searcher_id']] .= $report;
 
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
-            echo "<p> Start controllers_known_enemies - <br /> ";
+            if ($debug) echo "<p> Start controllers_known_enemies - <br /> ";
             // Add to controllers_known_enemies
             try {
 
@@ -400,7 +399,7 @@ function investigateMechanic($pdo) {
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): Error: " . $e->getMessage();
             }
-            echo " DONE </p>";
+            if ($debug) echo " DONE </p>";
         }
     }
 
@@ -416,7 +415,7 @@ function investigateMechanic($pdo) {
         }
     }
 
-    echo '</div>';
+    echo '<p>investigateMechanic : DONE </p> </div>';
 
     return TRUE;
 }

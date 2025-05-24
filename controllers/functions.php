@@ -179,8 +179,7 @@ function hasBase($pdo, $controller_id) {
  * 
 */
 function createBase($pdo, $controller_id, $zone_id) {
-    $debug = $_SESSION['DEBUG'];
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
@@ -368,8 +367,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
  * 
  */
 function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, $zone_id) {
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     $cke_existing_record_id = NULL;
 
@@ -383,7 +381,7 @@ function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, 
         ':found_id' => $found_id
     ]);
     $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
-    echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+    if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
 
     if (!empty($existingRecord)) {
         $cke_existing_record_id = $existingRecord['id'];

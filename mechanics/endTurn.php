@@ -74,21 +74,27 @@ require_once '../base/baseHTML.php';
 
             // if no errors occured create new turn lines
             // and advance turn counter
-            if ($attackResult &&  $investigateResult && $claimResult && $IAResult && $locationsearchResult) {
+            if ($IAResult && $attackResult && $investigateResult && $claimResult && $locationsearchResult) {
+
                 $turnLinesResult = createNewTurnLines($gameReady, $turn);
                 $restartRecrutementCount = restartTurnRecrutementCount($gameReady);
+                if ($turnLinesResult && $restartRecrutementCount) {
 
-                // Advance Turn counter
-                try{
-                    // SQL query to select username from the players table
-                    $sql = "UPDATE mechanics set turncounter ='".$turn."' WHERE ID='".$mechanics['id']."'";
-                    // Prepare and execute SQL query
-                    $stmt = $gameReady->prepare($sql);
-                    $stmt->execute();
-                } catch (PDOException $e) {
-                    echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+                    // Advance Turn counter
+                    try{
+                        // SQL query to select username from the players table
+                        $sql = "UPDATE mechanics set turncounter ='".$turn."' WHERE ID='".$mechanics['id']."'";
+                        // Prepare and execute SQL query
+                        $stmt = $gameReady->prepare($sql);
+                        $stmt->execute();
+                    } catch (PDOException $e) {
+                        echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+                    }
+
+                    echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
                 }
+            } else {
+                
             }
-            echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
         }
 

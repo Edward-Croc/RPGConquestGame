@@ -241,8 +241,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 function attackMechanic($pdo){
     echo '<div> <h3>  attackMechanic : </h3> ';
 
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
+    $debug = strtolower(getConfig($pdo, 'DEBUG_ATTACK')) === 'true';
     $ATTACKDIFF0 = getConfig($pdo, 'ATTACKDIFF0');
     $ATTACKDIFF1 = getConfig($pdo, 'ATTACKDIFF1');
     $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
@@ -280,7 +279,7 @@ function attackMechanic($pdo){
             $survived = true;
             $is_alive = NULL;
             if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
-                echo $defender['defender_name']. ' HAS DIED !';
+                echo $defender['defender_name']. ' HAS DIED ! <br />';
                 $survived = false;
                 $defender_status = 'dead';
                 $is_alive = FALSE;
@@ -288,7 +287,7 @@ function attackMechanic($pdo){
                 $defenderReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
                     $is_alive = NULL;
-                    echo $defender['defender_name']. ' Was Captured !';
+                    echo $defender['defender_name']. ' Was Captured ! <br />';
                     $defender_status = 'captured';
                     $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
                     // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
@@ -309,7 +308,7 @@ function attackMechanic($pdo){
                 updateWorkerActiveStatus($pdo, $defender['defender_id']);
                 updateWorkerAliveStatus($pdo, $defender['defender_id'], $is_alive);
             } else {
-                echo $defender['defender_name']. ' Escaped !';
+                echo $defender['defender_name']. ' Escaped !<br />';
                 $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
                 // Check if attaker is in know ennemies
                 try{
@@ -346,7 +345,7 @@ function attackMechanic($pdo){
                 echo sprintf("(survived  : %s <br/>", ($survived ));
             if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                 $attacker_status = 'dead';
-                echo $defender['defender_name']. ' RIPOSTE !';
+                echo $defender['defender_name']. ' RIPOSTE ! <br />';
                 $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
                 $attackerReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
@@ -358,6 +357,6 @@ function attackMechanic($pdo){
         }
     }
 
-    echo '</div>';
+    echo '<p> attackMechanic: DONE ! </p> </div>';
     return TRUE;
 }
