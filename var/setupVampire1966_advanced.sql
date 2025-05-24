@@ -25,7 +25,7 @@ JOIN (
     SELECT 'Matthews' AS lastname, 'Goule' AS power_name
     UNION ALL SELECT 'Matthews', 'Alcoolique'
     UNION ALL SELECT 'Matthews', 'Policier.ère'
-    UNION ALL SELECT 'Matthews', 'Célérité'
+    UNION ALL SELECT 'Matthews', 'Augure'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
