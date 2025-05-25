@@ -246,6 +246,25 @@ function getWorkersBycontroller($pdo, $controller_id) {
     return getWorkers($pdo, $worker_ids);
 }
 
+/**
+ * determin current action for worker 
+ * 
+ * 
+ */
+function setWorkerCurrentAction($workerActions, $turncounter ) {
+    foreach($workerActions as $action) {
+        if ( $_SESSION['DEBUG'] == true )
+            echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
+        if ( $_SESSION['DEBUG'] == true )
+            echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
+        if (isset($action['turn_number']) && (INT)$action['turn_number'] == (INT)$turncounter  ) {
+            if ( $_SESSION['DEBUG'] == true ) echo sprintf('Set currentAction : %s  <br>', var_export($action,true));
+            return $action;
+        }
+    }
+    if ( $_SESSION['DEBUG'] == true ) echo 'No currentAction found ! <br>';
+    return array(); 
+}
 
 /**
  * show Worker view Short version
@@ -260,26 +279,14 @@ function getWorkersBycontroller($pdo, $controller_id) {
  *   - 'total_attack'
  *   - 'total_defence'
  *   - 'actions'
- *  
  * @param array $mechanics : must contain key 'turncounter'
+ * 
+ * @return string 
  */
 function showWorkerShort($pdo, $worker, $mechanics) {
-    $currentAction = array();
-    foreach($worker['actions'] as $action) {
-        if ( $_SESSION['DEBUG'] == true )
-            echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
-        if ( $_SESSION['DEBUG'] == true )
-            echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
-        if (isset($action['turn_number']) && (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
-            if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
-            $currentAction = $action;
-        }
-    }
-    if ( $_SESSION['DEBUG'] == true ) echo sprintf('currentAction : %s  <br>', var_export($currentAction,true));
+    $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
-    $return = '';
-
-    $return .= sprintf(
+    $return = sprintf(
         '<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
             <input type="hidden" name="worker_id" value=%1$s>
             <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (%1$s) </b> %5$s au %4$s.
