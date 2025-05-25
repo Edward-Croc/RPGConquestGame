@@ -11,11 +11,11 @@
 function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
     if (is_null($isActive)) {
         echo  __FUNCTION__."(): isActive: NULL<br />";
-        return FALSE;
+        return false;
     }
 
-    $query = sprintf("UPDATE workers SET is_active = FALSE WHERE id = %s",$workerId);
-    if ($isActive) $query = sprintf("UPDATE workers SET is_active = TRUE WHERE id = %s", $workerId);
+    $query = sprintf("UPDATE workers SET is_active = False WHERE id = %s",$workerId);
+    if ($isActive) $query = sprintf("UPDATE workers SET is_active = True WHERE id = %s", $workerId);
     echo sprintf(" query : %s, ", $query);
 
     try{
@@ -23,9 +23,9 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
         $stmt->execute();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 /**
@@ -40,20 +40,20 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
 function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
     if (is_null($isAlive)) {
         echo  __FUNCTION__."(): isAlive: NULL<br />";
-        return FALSE;
+        return false;
     }
 
-    $query = sprintf("UPDATE workers SET is_alive = FALSE WHERE id = %s", $workerId );
-    if ($isAlive) $query = sprintf("UPDATE workers SET is_alive = TRUE WHERE id = %s", $workerId);
+    $query = sprintf("UPDATE workers SET is_alive = False WHERE id = %s", $workerId );
+    if ($isAlive) $query = sprintf("UPDATE workers SET is_alive = True WHERE id = %s", $workerId);
     echo sprintf(" query : %s, ", $query);
     try{
         $stmt = $pdo->prepare($query);
         $stmt->execute();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 /**
@@ -108,18 +108,18 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
 
     if (count($updates)>0) {
         $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
-        if ($debug) echo sprintf(" query : %s, Params : %s ", $query, var_export($params, TRUE));
+        if ($debug) echo sprintf(" query : %s, Params : %s ", $query, var_export($params, true));
 
         try{
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
         } catch (PDOException $e) {
             echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
-            return FALSE;
+            return false;
         }
         return TRUE;
     }
-    return FALSE;
+    return false;
 }
 
 /**
@@ -594,7 +594,7 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                     try {
                         // Add non primary controller for the worker
                         $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) 
-                                VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, FALSE)";
+                                VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, False)";
                         if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);

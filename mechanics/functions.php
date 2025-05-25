@@ -94,7 +94,7 @@ function calculateVals($pdo, $turn_number){
                     SELECT 1
                     FROM workers w2
                     JOIN zones z2 ON w2.zone_id = z2.id
-                    JOIN controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = TRUE
+                    JOIN controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = True
                     WHERE w2.id = worker_actions.worker_id
                       AND z2.holder_controller_id = cw2.controller_id
                 )
@@ -129,7 +129,7 @@ function calculateVals($pdo, $turn_number){
             $stmt->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
-            return FALSE;
+            return false;
         }
         echo "DONE <br /></p>";
     }
@@ -147,7 +147,7 @@ function calculateVals($pdo, $turn_number){
                 LEFT JOIN
                     workers w ON w.zone_id = z.id
                 LEFT JOIN
-                    controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = TRUE
+                    controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = True
                 WHERE
                     z.holder_controller_id = cw.controller_id
                 GROUP BY
@@ -160,11 +160,11 @@ function calculateVals($pdo, $turn_number){
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
-        return FALSE;
+        return false;
     }
     echo 'DONE </p></div>';
 
-    return TRUE;
+    return true;
 }
 
 /**
@@ -201,7 +201,7 @@ function createNewTurnLines($pdo, $turn_number){
         $stmtInsert->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql INSERT FAILED : ".$e->getMessage()."<br/> sql: $sqlInsert<br/>";
-        return FALSE;
+        return false;
     }
 
     $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
@@ -218,7 +218,7 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetInvestigate->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__." (): sql UPDATE investigate FAILED : ".$e->getMessage()."<br />$sqlSetInvestigate<br/>";
-            return FALSE;
+            return false;
         }
     }
     $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
@@ -235,13 +235,13 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetClaim->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__." (): sql UPDATE claim FAILED : ".$e->getMessage()."<br />$sqlSetClaim<br/>";
-            return FALSE;
+            return false;
         }
     }
 
     echo '<p>createNewTurnLines : DONE</p> </div>';
 
-    return TRUE;
+    return true;
 }
 
 /**
@@ -312,9 +312,9 @@ function claimMechanic($pdo, $turn_number = NULL) {
             echo sprintf("<p> %s(): checking key %s => claimer: %s </br>", __FUNCTION__, $key, var_export($claimer,true));
 
         // claims are generally violent
-        $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = TRUE;
+        $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = true;
         // claim are not generally successful
-        $success = FALSE;
+        $success = false;
 
         if ($debug) {
             echo sprintf(
@@ -343,12 +343,12 @@ function claimMechanic($pdo, $turn_number = NULL) {
             // if discrete_claim or violent_claim is sufficient to claim
             if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
                 // mark as success
-                $success = TRUE;
+                $success = true;
                 // Save claimer info
                 $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
                 // Check if it is exceptionnaly a discret claim
                 if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF )
-                    $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = FALSE;
+                    $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = false;
             }
 
         // if its not the 1st claim found for the zone or the zone was already claimed then
@@ -361,7 +361,7 @@ function claimMechanic($pdo, $turn_number = NULL) {
                 if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
                     if ($debug) echo " -> Success ";
                     // mark as success
-                    $success = TRUE;
+                    $success = true;
                     // Save claimer info
                     $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
                 }
@@ -448,7 +448,7 @@ function claimMechanic($pdo, $turn_number = NULL) {
             $claimer_controller_id = $zoneInfo['claimer']['claimer_controller_id'];
             if ( !empty($claimer_params['claim_controller_id'])) {
                 $claimer_controller_id = $claimer_params['claim_controller_id'];
-                if ($claimer_params['claim_controller_id'] == 'null') $claimer_controller_id = Null;
+                if ($claimer_params['claim_controller_id'] == 'null') $claimer_controller_id = null;
             }
 
             $sql = "UPDATE zones SET claimer_controller_id = :claimer_controller_id , holder_controller_id = :holder_controller_id WHERE id = :id";
@@ -469,6 +469,6 @@ function claimMechanic($pdo, $turn_number = NULL) {
 
     echo '<p>claimMechanic : DONE</p> </div>';
 
-    return TRUE;
+    return true;
 }
 

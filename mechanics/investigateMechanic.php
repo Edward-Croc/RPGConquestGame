@@ -417,5 +417,5 @@ function investigateMechanic($pdo) {
 
     echo '<p>investigateMechanic : DONE </p> </div>';
 
-    return TRUE;
+    return true;
 }

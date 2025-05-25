@@ -111,9 +111,9 @@ function destroyAllTables($pdo) {
         echo "All tables in database have been destroyed successfully.<br />";
     } catch (PDOException $e) {
         echo __FUNCTION__."(): Error: " . $e->getMessage();
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 /**
@@ -212,7 +212,7 @@ function gameReady() {
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             // Get all powers with no link_power_type
                             $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
-                            $firstIter = True;
+                            $firstIter = true;
                             foreach ($powers as $power){
                                 $sql .= sprintf(
                                     "%s(%s,%s)",
@@ -220,7 +220,7 @@ function gameReady() {
                                     $power['id'],
                                     $powerTypes[0]['id']
                                 );
-                                $firstIter = FALSE;
+                                $firstIter = false;
                             }
                             try{
                                 $stmt = $pdo->prepare($sql);
@@ -266,7 +266,7 @@ function gameReady() {
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             // Get all powers with no link_power_type
                             $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
-                            $firstIter = True;
+                            $firstIter = true;
                             foreach ($powers as $power){
                                 $sql .= sprintf(
                                     "%s(%s,%s)",
@@ -274,7 +274,7 @@ function gameReady() {
                                     $power['id'],
                                     $powerTypes[0]['id']
                                 );
-                                $firstIter = FALSE;
+                                $firstIter = false;
                             }
                             try{
                                 $stmt = $pdo->prepare($sql);

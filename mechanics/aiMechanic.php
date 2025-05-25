@@ -9,8 +9,8 @@ function aiMechanic($pdo ) {
     }
     echo "turn_number : $turn_number <br>";
 
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG_IA')) == 'true') $debug = TRUE;
+    $debug = false;
+    if (strtolower(getConfig($pdo, 'DEBUG_IA')) == 'true') $debug = true;
 
     // TODO : Set Controlled by IA actions
     // Upgrade Workers
@@ -45,5 +45,5 @@ function aiMechanic($pdo ) {
 
     echo '<p>aiMechanic : DONE </p> </div>';
 
-    return TRUE;
+    return true;
 }

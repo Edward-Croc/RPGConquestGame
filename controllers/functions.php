@@ -57,7 +57,7 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
 /**
  * Show list of controller options for à controller select field.
  */
-function showControllerSelect($controllers, $field_name = 'controller_id', $addEmptySpace = FALSE ) {
+function showControllerSelect($controllers, $field_name = 'controller_id', $addEmptySpace = false ) {
 
     if (empty($controllers)) return '';
     $controllerOptions = '';
@@ -86,12 +86,12 @@ function showControllerSelect($controllers, $field_name = 'controller_id', $addE
 
 /** This function resets the turn_recruited_workers and turn_firstcome_workers to 0 for every controller */
 function  restartTurnRecrutementCount($pdo){
-    $sql = 'UPDATE controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE TRUE';
+    $sql = 'UPDATE controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE True';
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
-        return TRUE;
+        return true;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -154,7 +154,7 @@ function hasBase($pdo, $controller_id) {
 
     $sql = "SELECT l.*, z.name AS zone_name FROM locations l
         LEFT JOIN zones z ON l.zone_id = z.ID
-        WHERE controller_id = :controller_id and is_base = TRUE
+        WHERE controller_id = :controller_id and is_base = True
     ";
     try{
         // Update config value in the database
@@ -210,7 +210,7 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     try{
     // Check if base already exists for this controller in the zone
-    $checkSql = "SELECT COUNT(*) FROM locations WHERE zone_id = :zone_id AND controller_id = :controller_id AND is_base = TRUE";
+    $checkSql = "SELECT COUNT(*) FROM locations WHERE zone_id = :zone_id AND controller_id = :controller_id AND is_base = True";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute([
         ':zone_id' => $zone_id,
@@ -226,7 +226,7 @@ function createBase($pdo, $controller_id, $zone_id) {
     }
 
     $sql = "INSERT INTO locations (zone_id, name, description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        (:zone_id, :baseName, :description, :controller_id, :discovery_diff, TRUE, TRUE)";
+        (:zone_id, :baseName, :description, :controller_id, :discovery_diff, True, True)";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -239,9 +239,9 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
-        return False;
+        return false;
     }
-    return True;
+    return true;
 }
 
 /**
@@ -264,10 +264,10 @@ function moveBase($pdo, $base_id, $zone_id) {
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $stmt->execute();
-        return True;
+        return true;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
-        return False;
+        return false;
     }
 }
 
@@ -292,7 +292,7 @@ function showAttackablecontrollerKnownLocations($pdo, $controller_id) {
         JOIN controller_known_locations ckl ON ckl.location_id = l.id
         JOIN zones z ON z.id = l.zone_id
         WHERE 
-            l.can_be_destroyed = TRUE
+            l.can_be_destroyed = True
             AND ckl.controller_id = :controller_id
     ";
 

@@ -11,8 +11,8 @@
  * 
  */
 function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
-    $debug = FALSE;
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = TRUE;
+    $debug = false;
+    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = true;
 
     // Check turn number is selected
     if (empty($turn_number)) {
@@ -257,7 +257,7 @@ function attackMechanic($pdo){
     $attacksArray = getAttackerComparisons($pdo, NULL, NULL);
     if ($debug)
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
-    if (empty($attacksArray)) { echo 'All is calm </div>'; return TRUE;}
+    if (empty($attacksArray)) { echo 'All is calm </div>'; return true;}
 
     $workerDisappearanceTexts = json_decode(getConfig($pdo,'workerDisappearanceTexts'), true);
     $attackSuccessTexts = json_decode(getConfig($pdo,'attackSuccessTexts'), true);
@@ -282,7 +282,7 @@ function attackMechanic($pdo){
                 echo $defender['defender_name']. ' HAS DIED ! <br />';
                 $survived = false;
                 $defender_status = 'dead';
-                $is_alive = FALSE;
+                $is_alive = false;
                 $attackerReport['attack_report'] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
                 $defenderReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
@@ -358,5 +358,5 @@ function attackMechanic($pdo){
     }
 
     echo '<p> attackMechanic: DONE ! </p> </div>';
-    return TRUE;
+    return true;
 }

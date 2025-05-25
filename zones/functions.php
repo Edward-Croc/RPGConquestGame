@@ -63,7 +63,7 @@ function getZonesArray($pdo, $controller_id = null) {
  *
  * @return string $showZoneSelect
  */
-function showZoneSelect($pdo, $zonesArray, $showText = False, $place_holder = True){
+function showZoneSelect($pdo, $zonesArray, $showText = false, $place_holder = true){
 
     if (empty($zonesArray)) return '';
 
@@ -129,7 +129,7 @@ function getLocationsArray($pdo) {
  */
 function recalculateBaseDefence($pdo) {
     // Get all bases with their controller and zone
-    $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = TRUE";
+    $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = True";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -155,12 +155,12 @@ function recalculateBaseDefence($pdo) {
             ]);
         } catch (PDOException $e) {
             echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
-            return FALSE;
+            return false;
         }
 
         echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controller_id, $zone_id, $new_diff);
     }
-    return TRUE;
+    return true;
 }
 
 /**
@@ -223,7 +223,7 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
             JOIN controller_worker cw ON cw.worker_id = w.id
             WHERE cw.controller_id = :controller_id
               AND w.zone_id = :zone_id
-              AND w.is_active = TRUE
+              AND w.is_active = True
         ";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([

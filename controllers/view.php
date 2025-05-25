@@ -1,14 +1,14 @@
 <?php
 
     $zonesArray = getZonesArray($gameReady);
-    $showZoneSelect = showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
+    $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
     $mapFile = getConfig($gameReady, 'map_file');
     $mapAlt = getConfig($gameReady, 'map_alt');
     $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
 
     $controllers = getControllers($gameReady, $_SESSION['user_id']);
-    $debug = FALSE;
-    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = TRUE;
+    $debug = false;
+    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = true;
     echo '<div class="factions">';
         // Show factions if Multiple controllers are available
         if (count($controllers) > 1) {

@@ -15,7 +15,7 @@ if (isset($_GET['controller_id'])){
     $controller_id = $_GET['controller_id'];
 }
 $controllerValues = getControllers($gameReady, NULL, $controller_id);
-$recrutment_allowed = TRUE;
+$recrutment_allowed = true;
 
 $buttonClicked = 'first_come';
 $pageTitle = 'Recruter le premier venu';
@@ -37,9 +37,9 @@ if (isset($_GET['recrutement'])){
         ) || (
         ( (INT)$mechanics['turncounter'] > 0 ) && ( (INT)$controllerValues[0]['turn_recruited_workers'] < (INT)getConfig($gameReady, 'turn_recrutable_workers') )
         ) )
-    ) $recrutment_allowed = FALSE;
+    ) $recrutment_allowed = false;
 } else {
-    if ( !((INT)$controllerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = FALSE;
+    if ( !((INT)$controllerValues[0]['turn_firstcome_workers'] < (INT)getConfig($gameReady, 'turn_firstcome_workers')) ) $recrutment_allowed = false;
 }
 if ( !$recrutment_allowed ){
     require_once '../base/baseHTML.php';
@@ -88,7 +88,7 @@ $nameArray = randomWorkerName($gameReady, $nbChoices, $originList);
 // TODO : Allow locking certain Hobbys/Metiers by origin or controler !
 $powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
 $powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
-$powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, TRUE);
+$powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, true);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true){
     echo "nameArray: ".var_export($nameArray, true)."<br /><br />";
@@ -147,7 +147,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("recrutement_transformation_array :%s  <br>", var_export($recrutement_transformation_array,true));
     if (!empty($recrutement_transformation_array['action']) && $recrutement_transformation_array['action'] == 'check' ) {
         // get transformations
-        $powerTransformationArray = getPowersByType($gameReady,'4', NULL, FALSE);
+        $powerTransformationArray = getPowersByType($gameReady,'4', NULL, false);
         if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
         $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, NULL, $mechanics['turncounter'], 'on_recrutment' );
         if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
@@ -155,7 +155,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
             echo showTransformationSelect($gameReady, $powerTransformationArray, TRUE);
     }
 
-    echo showZoneSelect($gameReady, $zonesArray, FALSE, FALSE);
+    echo showZoneSelect($gameReady, $zonesArray, false, false);
 
     echo "<input type='submit' name='chosir' value='Affecter' />
     </p>
