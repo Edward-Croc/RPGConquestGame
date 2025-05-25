@@ -247,9 +247,9 @@ function getWorkersBycontroller($pdo, $controller_id) {
 }
 
 /**
- * determin current action for worker 
- * 
- * 
+ * determin current action for worker
+ *
+ *
  */
 function setWorkerCurrentAction($workerActions, $turncounter ) {
     foreach($workerActions as $action) {
@@ -263,14 +263,14 @@ function setWorkerCurrentAction($workerActions, $turncounter ) {
         }
     }
     if ( $_SESSION['DEBUG'] == true ) echo 'No currentAction found ! <br>';
-    return array(); 
+    return array();
 }
 
 /**
  * show Worker view Short version
- * 
+ *
  * @param PDO $pdo : database connection
- * @param array $worker : must contain following keys 
+ * @param array $worker : must contain following keys
  *   - 'id'
  *   - 'firstname'
  *   - 'lastname'
@@ -280,25 +280,74 @@ function setWorkerCurrentAction($workerActions, $turncounter ) {
  *   - 'total_defence'
  *   - 'actions'
  * @param array $mechanics : must contain key 'turncounter'
- * 
- * @return string 
+ *
+ * @return string
  */
 function showWorkerShort($pdo, $worker, $mechanics) {
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
+
+    $workerStatus = 'unfound';
+    // alive: worker alive and active and that we control
+    if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
+        $workerStatus = 'alive';
+    //doubleAgent : worker alive and active that we don't control
+    } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
+        $workerStatus = 'double_agent';
+    //prisoner : worker alive and not active that we do control are our prisonners
+    } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
+        $workerStatus = 'prisoner';
+    // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
+    } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
+        $workerStatus = 'dead';
+    }
+    $textActionUpdated = getConfig($pdo,'txt_ps_'.$currentAction['action_choice']);
+    // change action text if prisonner or double agent
+    if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
+
+        $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name
+        FROM controllers AS c
+        JOIN controller_worker AS cw ON cw.controller_id = c.id
+        WHERE cw.worker_id = :worker_id
+        AND CW.is_primary_controller = :is_primary_controller
+        LIMIT 1";
+        //  ORDER BY controller_worker.id
+        $stmt = $pdo->prepare($sql);
+
+        // for prisonner get name of original controller
+        if ($workerStatus == 'double_agent') {
+            $stmt->execute([
+                ':worker_id' => $worker['id'],
+                ':is_primary_controller' => 1
+            ]);
+        }
+        // for double agent get name of infiltrated network
+        if ($workerStatus == 'prisoner') {
+            $stmt->execute([
+                ':worker_id' => $worker['id'],
+                ':is_primary_controller' => 0
+            ]);
+        }
+        $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $textActionUpdated = sprintf(
+            getConfig($pdo,'txt_ps_'.$workerStatus),
+            $controller_name[0]
+        );
+    }
 
     $return = sprintf(
         '<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
             <input type="hidden" name="worker_id" value=%1$s>
             <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (%1$s) </b> %5$s au %4$s.
-            <div id="info-%1$s" style="display: none;"> %6$s 
-            </div> 
+            <div id="info-%1$s" style="display: none;"> %6$s
+            </div>
         </form> </div>
         ',
         $worker['id'],
         $worker['firstname'],
         $worker['lastname'],
         $worker['zone_name'],
-        getConfig($pdo,'txt_ps_'.$currentAction['action_choice']),
+        $textActionUpdated,
         sprintf(
             '<i>
                 Capacité d’enquete : %1$s. Capacité d’attaque / défense : %2$s / %3$s <br />
@@ -535,11 +584,11 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
         echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
         return false;
     }
-    
+
     // Check if the power has an effect on obtention
     try {
         $sql = "
-            SELECT p.other 
+            SELECT p.other
             FROM powers p
             JOIN link_power_type lpt ON lpt.power_id = p.id
             WHERE lpt.id = :link_power_type_id
@@ -568,12 +617,12 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
 }
 
 /**
- * 
+ *
  * @param PDO $pdo : database connection
  * @param int $workerId
  * @param array $otherJson
  * @param bool $isRecrutment
- * 
+ *
  * @return bool success
  */
 function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = false) {
@@ -589,11 +638,11 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                 && !empty($element)
                 && !empty($element['type'])
             ) {
-                // go_traitor add the listed controler as a non primary controler 
+                // go_traitor add the listed controler as a non primary controler
                 if ( $element['type'] == 'go_traitor' && !empty($element['controller_lastname']) ){
                     try {
                         // Add non primary controller for the worker
-                        $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) 
+                        $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
                                 VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, False)";
                         if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
                         $stmt = $pdo->prepare($sql);
@@ -612,19 +661,19 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
         }
     }
     // If the effect can be obtained out of recrutment
-    // TODO : ... 
+    // TODO : ...
 
  return true;
 }
 
 /**
  * Function add Action to Worker_action table for worker
- * 
+ *
  * @param PDO $pdo : database connection
  * @param int $workerId
  * @param int $controllerId
  * @param int $zoneId
- * 
+ *
  * @return int|null lastInsertId
  */
 function addWorkerAction($pdo, $workerId, $controllerId, $zoneId){
@@ -651,10 +700,10 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId){
 
 /**
  * Function to count disciplines of worker
- * 
+ *
  * @param PDO $pdo : database connection
  * @param array $workerIds
- * 
+ *
  * @return array {int worker_id, int discipline_count}
  */
 function countWorkerDisciplines($pdo, $workerIds = NULL) {
@@ -688,12 +737,12 @@ function countWorkerDisciplines($pdo, $workerIds = NULL) {
 
 /**
  * Function to assing worker to new zone
- * 
+ *
  * @param PDO $pdo : database connection
  * @param int $workerId
  * @param int $zoneId
- * 
- * @return int|null : 
+ *
+ * @return int|null :
  */
 function moveWorker($pdo, $workerId, $zoneId) {
     try{
