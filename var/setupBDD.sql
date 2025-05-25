@@ -38,7 +38,7 @@ VALUES
     ('first_come_origin_list', 'rand', 'Origins used for worker generation'),
     ('recrutement_nb_choices', '3', 'Number of choices presented for recrutment'),
     ('recrutement_origin_list', '1,2,3,4,5', 'Origins used for worker generation'),
-    ('local_origin_list', '1', 'Spécific list of local origins for investigations textes'),
+    ('local_origin_list', '1', 'Spécific list of local origins for investigations texts'),
     -- ('recrutement_hobby', '1', 'Number of hobbies added on generation'),
     -- ('recrutement_metier', '1', 'Number of jobs added on generation'),
     ('recrutement_disciplines', '1', 'Number of disciplines allowed on recrutment'),
@@ -77,23 +77,25 @@ VALUES
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
     ('ATTACKDIFF1', 4, 'Value for Capture'),
     ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
-    ('RIPOSTDIFF', 2, 'Value for Succesful Ripost'),
+    ('RIPOSTDIFF', 2, 'Value for Successful Ripost'),
     -- Diff vals in claim results
     ('DISCRETECLAIMDIFF', 2, 'Value for discrete claim'),
     ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
     -- action text in report config
-    ('txt_ps_passive', 'surveille', 'Texte for passive action'),
-    ('txt_ps_investigate', 'enquete', 'Texte for investigate action'),
-    ('txt_ps_attack', 'attaque', 'Texte for attack action'),
-    ('txt_ps_claim', 'revendique le quartier', 'Texte for claim action'),
-    ('txt_ps_captured', 'a disparu', 'Texte for captured action'),
-    ('txt_ps_dead', 'a disparu', 'Texte for dead action'),
-    ('txt_inf_passive', 'surveiller', 'Texte for passive action'),
-    ('txt_inf_investigate', 'enqueter', 'Texte for investigate action'),
-    ('txt_inf_attack', 'attaquer', 'Texte for attack action'),
-    ('txt_inf_claim', 'revendiquer le quartier', 'Texte for claim action'),
-    ('txt_inf_captured', 'as été capturer', 'Texte for captured action'),
-    ('txt_inf_dead', 'est mort', 'Texte for dead action'),
+    ('txt_ps_passive', 'surveille', 'Text for passive action'),
+    ('txt_ps_investigate', 'enquete', 'Text for investigate action'),
+    ('txt_ps_attack', 'attaque', 'Text for attack action'),
+    ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
+    ('txt_ps_captured', 'a disparu', 'Text for captured action'),
+    ('txt_ps_dead', 'a disparu', 'Text for dead action'),
+    ('txt_ps_prisoner', 'est un.e agent de %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
+    ('txt_ps_double_agent', 'a infiltré le réseau de %s ', 'Text for being infiltrator'),
+    ('txt_inf_passive', 'surveiller', 'Text for passive action'),
+    ('txt_inf_investigate', 'enqueter', 'Text for investigate action'),
+    ('txt_inf_attack', 'attaquer', 'Text for attack action'),
+    ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
+    ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
+    ('txt_inf_dead', 'est mort', 'Text for dead action'),
     -- Action End turn effects
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
@@ -223,11 +225,14 @@ CREATE TABLE workers (
 );
 
 CREATE TABLE controller_worker (
+    ID SERIAL PRIMARY KEY,
     controller_id INT,
     worker_id INT,
     is_primary_controller BOOLEAN DEFAULT TRUE,
-    PRIMARY KEY (controller_id, worker_id),
-    UNIQUE (worker_id, is_primary_controller), -- Adding unique constraint
+    -- Adding unique constraint
+    UNIQUE (controller_id, worker_id),
+    UNIQUE (worker_id, is_primary_controller),
+    -- Adding FOREIGN KEY
     FOREIGN KEY (controller_id) REFERENCES controllers (ID),
     FOREIGN KEY (worker_id) REFERENCES workers (ID)
 );

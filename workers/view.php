@@ -17,28 +17,62 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         foreach ($workersArray as $worker){
             if ( $worker['controller_id'] != $controller_id) continue;
             $workerStatus = 'unfound';
-            // liveWorkerArray : worker alive and active and that we control
+            // alive: worker alive and active and that we control
             if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
                 $workerStatus = 'alive';
-            //doubleAgentWorkerArray : worker alive and active that we don't control
+            //doubleAgent : worker alive and active that we don't control
             } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
-                $workerStatus = 'doubleAgent';
-            //prisonersWorkerArray : worker alive and not active that we do control are our prisonners
+                $workerStatus = 'double_agent';
+            //prisoner : worker alive and not active that we do control are our prisonners
             } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
-                $workerStatus = 'prisoners';
-            // deadWorkerArray : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control) 
+                $workerStatus = 'prisoner';
+            // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
             } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
                 $workerStatus = 'dead';
             }
-            //if ( $_SESSION['DEBUG'] == true )
+            if ( $_SESSION['DEBUG'] == true )
                 echo $workerStatus;
 
             $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
-            // TODO : change action text if prisonner or double agent 
-            // TODO : show original controller of prisonner or infiltrated controller of double agent 
+            $textActionUpdated = getConfig($gameReady,'txt_ps_'.$currentAction['action_choice']);
+            // change action text if prisonner or double agent
+            if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
+
+                $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name
+                FROM controllers AS c
+                JOIN controller_worker AS cw ON cw.controller_id = c.id
+                WHERE cw.worker_id = :worker_id
+                AND CW.is_primary_controller = :is_primary_controller
+                LIMIT 1";
+                //  ORDER BY controller_worker.id
+                $stmt = $gameReady->prepare($sql);
+
+                // for prisonner get name of original controller
+                if ($workerStatus == 'double_agent') {
+                    $stmt->execute([
+                        ':worker_id' => $worker['id'],
+                        ':is_primary_controller' => 1
+                    ]);
+                }
+                // for double agent get name of infiltrated network
+                if ($workerStatus == 'prisoner') {
+                    $stmt->execute([
+                        ':worker_id' => $worker['id'],
+                        ':is_primary_controller' => 0
+                    ]);
+                }
+                $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                $textActionUpdated = sprintf(
+                    getConfig($gameReady,'txt_ps_'.$workerStatus),
+                    $controller_name[0]
+                );
+            }
+
+            // TODO : show original controller of prisonner or infiltrated controller of double agent
             $viewHTML = sprintf(
-                '<div><h1>Agent %2$s %3$s (%1$s) </h1> 
+                '<div><h1>Agent %2$s %3$s (%1$s) </h1>
                     %5$s au %4$s.<br />
                     <i>
                         Capacité d’enquete : %6$s. Capacité d’attaque / défense : %7$s / %8$s
@@ -49,12 +83,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $worker['firstname'],
                 $worker['lastname'],
                 $worker['zone_name'],
-                ucfirst(getConfig($gameReady,'txt_ps_'.$currentAction['action_choice'])),
+                ucfirst($textActionUpdated),
                 $worker['total_enquete'],
                 $worker['total_attack'],
                 $worker['total_defence']
             );
-        
+
             $viewHTML .= sprintf(
                 '<div class="history"> <h3>Historique : </h3>
                     <p>
@@ -78,13 +112,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
                 $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
                 if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
-        
+
                 $controllers = getControllers($gameReady);
                 $showcontrollersSelect = showControllerSelect($controllers, 'gift_controller_id');
                 $showListClaimTargetsSelect = showControllerSelect($controllers, 'claim_controller_id', TRUE);
-        
+
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
-        
+
                 // TODO on $workerStatus = 'doubleAgent' Warn that worker is controlled by other controller
                 $actionHTML .= sprintf('<div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
@@ -174,7 +208,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );
                 }
-    
+
                 $upgradeHTML .= sprintf('</form> </div >');
                 echo $upgradeHTML;
             }
