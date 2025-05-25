@@ -38,8 +38,8 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textcontrollerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controller view actions')
- ,('textcontrollerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controller view actions')
+ ('textControllerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controller view actions')
+ ,('textControllerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controller view actions')
  ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir établi une forteresse.', 'needed base for recrutment')
 ;
 

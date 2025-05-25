@@ -280,7 +280,7 @@ function moveBase($pdo, $base_id, $zone_id) {
  * @return string returnText
  * 
  */
-function showAttackablecontrollerKnownLocations($pdo, $controller_id) {
+function showAttackableControllerKnownLocations($pdo, $controller_id) {
     $returnText = NULL;
     // Requête SQL pour récupérer les localisations connues et destructibles
     $sql = "

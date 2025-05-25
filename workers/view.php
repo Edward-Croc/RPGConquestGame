@@ -85,7 +85,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
         
-                // TODO on $workerStatus = 'doubleAgent' Warn that worker is controled by other controler
+                // TODO on $workerStatus = 'doubleAgent' Warn that worker is controlled by other controller
                 $actionHTML .= sprintf('<div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
                     <h3>Actions : </h3> <p>

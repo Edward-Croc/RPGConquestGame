@@ -33,8 +33,8 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textcontrollerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controller view actions')
- ,('textcontrollerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controller view actions')
+ ('textControllerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controller view actions')
+ ,('textControllerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controller view actions')
  ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repaire.', 'needed base for recrutment')
 ;
 

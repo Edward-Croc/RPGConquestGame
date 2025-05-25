@@ -7,9 +7,9 @@ require_once '../mechanics/locationSearchMechanic.php';
 
 /**
  * Build base randomization SQL
- * 
+ *
  * @return string
- * 
+ *
  */
 function diceSQL() {
     return "FLOOR(
@@ -23,9 +23,9 @@ function diceSQL() {
 
 /**
  * Return value of a dice roll
- * 
+ *
  * @param PDO $pdo : database connection
- * 
+ *
  * @return int : rollval
  */
 function diceRoll($pdo) {
@@ -46,12 +46,12 @@ function diceRoll($pdo) {
 
 /**
  * Calculates the final values for each worker depending on their chosen action.
- * 
+ *
  * @param PDO $pdo : database connection
  * @param string $turn_number
- * 
+ *
  * @return bool : success
- * 
+ *
  */
 function calculateVals($pdo, $turn_number){
 
@@ -74,11 +74,11 @@ function calculateVals($pdo, $turn_number){
             $valBaseSQL = diceSQL();
         }
 
-        // Nom du bonus zone configuré (ex : ENQUETE_ZONE_BONUS)
+        // Name of configured bonus (ex : ENQUETE_ZONE_BONUS)
         $bonusColumn = strtoupper("{$elements[0]}_zone_bonus");
         $bonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $bonusColumn);
 
-        // Construction de la requête SQL principale avec bonus conditionnel
+        // Build of base SQL request with the conditionnal bonus
         $valSQL = sprintf("%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
@@ -109,7 +109,7 @@ function calculateVals($pdo, $turn_number){
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
         if (!empty($config)){
             // add to list of updates
-            $sqlArray[] = array( 
+            $sqlArray[] = array(
                 'sql'=> sprintf(
                     'UPDATE worker_actions SET %1$s WHERE turn_number = %2$s AND action_choice IN (%3$s)',
                     $valSQL, $turn_number, $config
@@ -171,12 +171,12 @@ function calculateVals($pdo, $turn_number){
  * Creation of new worker action lines for each worker for the new turn
  * maintaining certain action continuation (investigate and claim)
  * setting dead and captured status
- * 
+ *
  * @param PDO $pdo : database connection
  * @param string $turn_number
- * 
+ *
  * @return bool : success
- * 
+ *
  */
 function createNewTurnLines($pdo, $turn_number){
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
@@ -245,12 +245,12 @@ function createNewTurnLines($pdo, $turn_number){
 }
 
 /**
- * 
+ *
  * @param PDO $pdo : database connection
  * @param string $turn_number
- * 
+ *
  * @return bool : success
- * 
+ *
  */
 function claimMechanic($pdo, $turn_number = NULL) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';

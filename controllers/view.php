@@ -43,19 +43,19 @@
             if (empty($bases)) {
                 echo sprintf(
                     '<input type="submit" name="createBase" value="%1$s" class="worker-action-btn"> %2$s <br />',
-                    getConfig($gameReady, 'textcontrollerActionCreateBase'),
+                    getConfig($gameReady, 'textControllerActionCreateBase'),
                     $showZoneSelect
                 );
             } else {
                 if ($debug) echo sprintf('<p> %s </p>', var_export($bases, true));
-                $textcontrollerActionMoveBase = getConfig($gameReady, 'textcontrollerActionMoveBase');
+                $textControllerActionMoveBase = getConfig($gameReady, 'textControllerActionMoveBase');
                 echo '<p>';
                 foreach ($bases as $base ){
                     echo sprintf('
                         <input type="hidden" name="base_id" value=%3$s>
                         Votre %4$s à %5$s ne sera découvert que sur une valeur d’enquête de %6$s ou plus, si découvert, le texte suivant sera présenté à l’enquêteur : <br /> %7$s<br />
                         <input type="submit" name="moveBase" value="%1$s" class="controller-action-btn"> %2$s <br /><br />',
-                        $textcontrollerActionMoveBase,
+                        $textControllerActionMoveBase,
                         $showZoneSelect,
                         $base['id'],
                         $base['name'],
@@ -67,13 +67,13 @@
             }
             echo '</p><p>';
 
-            $showAttackablecontrollerKnownLocations = showAttackablecontrollerKnownLocations($gameReady, $controllers['id']);
-            if($showAttackablecontrollerKnownLocations !== NULL)
+            $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
+            if($showAttackableControllerKnownLocations !== NULL)
                 echo sprintf('<form action="/RPGConquestGame/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value=%1$s>
                         <input type="submit" name="attackLocation" value="Intéragir avec : " class="controller-action-btn"> %2$s',
                         $controllers['id'],
-                        $showAttackablecontrollerKnownLocations
+                        $showAttackableControllerKnownLocations
                 ); 
             else echo 'Aucun lieu connu attaquable.';
 

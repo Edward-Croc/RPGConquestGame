@@ -687,7 +687,7 @@ function countWorkerDisciplines($pdo, $workerIds = NULL) {
 }
 
 /**
- * Funtion to assing worker to new zone
+ * Function to assing worker to new zone
  * 
  * @param PDO $pdo : database connection
  * @param int $workerId
