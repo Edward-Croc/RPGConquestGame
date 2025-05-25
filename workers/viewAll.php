@@ -1,7 +1,10 @@
 <?php
-require_once '../base/basePHP.php';
-$pageName = 'view_workers';
-require_once '../base/baseHTML.php';
+
+if (empty($pageName)) {
+    require_once '../base/basePHP.php';
+    $pageName = 'view_workers';
+    require_once '../base/baseHTML.php';
+}
 
 if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
 
@@ -39,7 +42,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         // TODO : Change view for DEAD, CAPTURED and Non Primary controller
         $workersArray = getWorkersBycontroller($gameReady, $controller_id);
 
-        //if ( $_SESSION['DEBUG'] == true )
+        if ( $_SESSION['DEBUG'] == true )
             echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
         if ( !empty($workersArray) ) {
             $liveWorkerArray = array();

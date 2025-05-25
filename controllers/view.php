@@ -82,9 +82,8 @@
             echo '
             </p>
             </form>';
-    } ?>
-    </div>
+    }
+    echo '</div>';
 
-
-
-
+if (!empty($pageName) && $pageName == 'controllers_action')
+    require_once '../workers/viewAll.php';
