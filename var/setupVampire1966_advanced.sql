@@ -68,9 +68,11 @@ JOIN (
     SELECT 'Marsala' AS lastname, 'Garou' AS power_name
     UNION ALL SELECT 'Marsala', 'Retraité.e curieux.se'
     UNION ALL SELECT 'Marsala', 'Adepte de muscu'
+    UNION ALL SELECT 'Marsala', 'Célérité'
     UNION ALL SELECT 'Cacciatore', 'Garou'
     UNION ALL SELECT 'Cacciatore', 'Propriétaire de lévrier italien'
     UNION ALL SELECT 'Cacciatore', 'Policier.ère'
+    UNION ALL SELECT 'Cacciatore', 'Célérité'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
