@@ -206,7 +206,7 @@ function getWorkers($pdo, $workerIds) {
 
     foreach ($workersArray as $key => $worker) {
         $workersArray[$key]['powers'] = $workerPowersById[$worker['id']] ?? []; // Add powers or empty array if none
-        $workersArray[$key]['actions'] = $workerActionsById[$worker['id']] ?? []; // Add actons or empty array if none
+        $workersArray[$key]['actions'] = $workerActionsById[$worker['id']] ?? []; // Add actions or empty array if none
     }
     if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
 
@@ -266,9 +266,11 @@ function getWorkersBycontroller($pdo, $controller_id) {
 function showWorkerShort($pdo, $worker, $mechanics) {
     $currentAction = array();
     foreach($worker['actions'] as $action) {
-        if ( $_SESSION['DEBUG'] == true ) echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
-        if ( $_SESSION['DEBUG'] == true ) echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
-        if ( (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
+        if ( $_SESSION['DEBUG'] == true )
+            echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
+        if ( $_SESSION['DEBUG'] == true )
+            echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
+        if (isset($action['turn_number']) && (INT)$action['turn_number'] == (INT)$mechanics['turncounter'] ) {
             if ( $_SESSION['DEBUG'] == true ) echo "Set current action <br>";
             $currentAction = $action;
         }
