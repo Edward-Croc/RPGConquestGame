@@ -15,14 +15,14 @@ VALUES
 
 
 INSERT INTO players (username, passwd, is_privileged) VALUES
-    ('player0', 'zero', false),
-    ('player1', 'one', false),
-    ('player2', 'two', false),
-    ('player3', 'three', false),
-    ('player4', 'four', false),
-    ('player5', 'five', false),
-    ('player6', 'six', false),
-    ('player7', 'seven', false)
+    ('player0', 'zero', False),
+    ('player1', 'one', False),
+    ('player2', 'two', False),
+    ('player3', 'three', False),
+    ('player4', 'four', False),
+    ('player5', 'five', False),
+    ('player6', 'six', False),
+    ('player7', 'seven', False)
 ;
 
 INSERT INTO factions (name) VALUES

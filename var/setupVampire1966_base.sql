@@ -13,19 +13,19 @@ UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
 INSERT INTO players (username, passwd, is_privileged) VALUES
-    ('player1', 'one', false),
-    ('player2', 'two', false),
-    ('player3', 'three', false),
-    ('player4', 'four', false),
-    ('player5', 'five', false),
-    ('player6', 'six', false),
-    ('player7', 'seven', false),
-    ('player8', 'eight', false),
-    ('player9', 'nine', false),
-    ('player10', 'ten', false),
-    ('player11', 'eleven', false),
-    ('player12', 'twelve', false),
-    ('player13', '13', false)
+    ('player1', 'one', False),
+    ('player2', 'two', False),
+    ('player3', 'three', False),
+    ('player4', 'four', False),
+    ('player5', 'five', False),
+    ('player6', 'six', False),
+    ('player7', 'seven', False),
+    ('player8', 'eight', False),
+    ('player9', 'nine', False),
+    ('player10', 'ten', False),
+    ('player11', 'eleven', False),
+    ('player12', 'twelve', False),
+    ('player13', '13', False)
 ;
 
 INSERT INTO factions (name) VALUES

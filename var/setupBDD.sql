@@ -23,11 +23,11 @@ CREATE TABLE config (
 INSERT INTO config (name, value, description)
 VALUES
     -- Debugs vals
-    ('DEBUG', 'false', 'Activates the Debugging texts'),
-    ('DEBUG_REPORT', 'false', 'Activates the Debugging texts for the investigation report'),
-    ('DEBUG_ATTACK', 'false', 'Activates the Debugging texts for the attack report mechanics'),
-    ('DEBUG_TRANSFORM', 'false', 'Activates the Debugging texts for the attack report mechanics'),
-    ('ACTIVATE_TESTS', 'true', 'Activates the insertion of tests values'),
+    ('DEBUG', 'FALSE', 'Activates the Debugging texts'),
+    ('DEBUG_REPORT', 'FALSE', 'Activates the Debugging texts for the investigation report'),
+    ('DEBUG_ATTACK', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
+    ('DEBUG_TRANSFORM', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
+    ('ACTIVATE_TESTS', 'TRUE', 'Activates the insertion of tests values'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
@@ -121,7 +121,7 @@ CREATE TABLE players (
 
 INSERT INTO players (username, passwd, is_privileged)
 VALUES
-    ('gm', 'orga', true);
+    ('gm', 'orga', True);
 
 -- faction tables
 CREATE TABLE factions (
