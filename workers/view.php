@@ -16,22 +16,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
         foreach ($workersArray as $worker){
             if ( $worker['controller_id'] != $controller_id) continue;
-            $workerStatus = 'unfound';
-            // alive: worker alive and active and that we control
-            if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
-                $workerStatus = 'alive';
-            //doubleAgent : worker alive and active that we don't control
-            } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
-                $workerStatus = 'double_agent';
-            //prisoner : worker alive and not active that we do control are our prisonners
-            } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
-                $workerStatus = 'prisoner';
-            // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
-            } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
-                $workerStatus = 'dead';
-            }
-            if ( $_SESSION['DEBUG'] == true )
-                echo $workerStatus;
+
+            $workerStatus = getWorkerStatus($worker);
 
             $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
@@ -70,7 +56,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 );
             }
 
-            // TODO : show original controller of prisonner or infiltrated controller of double agent
             $viewHTML = sprintf(
                 '<div><h1>Agent %2$s %3$s (%1$s) </h1>
                     %5$s au %4$s.<br />
@@ -119,10 +104,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
 
-                // TODO on $workerStatus = 'doubleAgent' Warn that worker is controlled by other controller
                 $actionHTML .= sprintf('<div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
                     <h3>Actions : </h3> <p>
+                    %7$s
                     <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
                     <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                     <input type="submit" name="claim" value="Revendiquer le '.getConfig($gameReady, 'textForZoneType').' au nom de " class="worker-action-btn"> %5$s <br />
@@ -135,11 +120,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     (empty($enemyWorkersSelect)) ? '' : sprintf(' OU <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s ', $enemyWorkersSelect),
                     ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
                     $showListClaimTargetsSelect,
-                    $showcontrollersSelect
+                    $showcontrollersSelect,
+                    (!empty($workerStatus) && $workerStatus == 'double_agent') ? '<i>Cet agent étant infiltré.e, lui donner des ordres pourrait révéler son défaut d’allégeance ! </i><br \>' : ''
                 );
                 echo $actionHTML;
             }
             // TODO : on $workerStatus = 'prisonner' show return to owner button
+            // TODO : on $workerStatus = 'double_agent' show return to owner button
 
 
             // worker must be active to get upgrades

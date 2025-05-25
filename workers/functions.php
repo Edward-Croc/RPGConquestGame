@@ -267,6 +267,36 @@ function setWorkerCurrentAction($workerActions, $turncounter ) {
 }
 
 /**
+ * get Worker satus
+ * 
+ * @param array $worker : must contain following keys
+ * - 'is_alive'
+ * - 'is_active'
+ * - 'is_primary_controller'
+ * 
+ * @return string 
+ */
+function getWorkerStatus($worker) {
+    $workerStatus = 'unfound';
+    // alive: worker alive and active and that we control
+    if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
+        $workerStatus = 'alive';
+    //double_agent : worker alive and active that we don't control
+    } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
+        $workerStatus = 'double_agent';
+    //prisoner : worker alive and not active that we do control are our prisonners
+    } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
+        $workerStatus = 'prisoner';
+    // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
+    } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
+        $workerStatus = 'dead';
+    }
+    if ( $_SESSION['DEBUG'] == true )
+        echo $workerStatus;
+    return $workerStatus;
+}
+
+/**
  * show Worker view Short version
  *
  * @param PDO $pdo : database connection
@@ -284,22 +314,11 @@ function setWorkerCurrentAction($workerActions, $turncounter ) {
  * @return string
  */
 function showWorkerShort($pdo, $worker, $mechanics) {
+
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
-    $workerStatus = 'unfound';
-    // alive: worker alive and active and that we control
-    if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
-        $workerStatus = 'alive';
-    //doubleAgent : worker alive and active that we don't control
-    } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
-        $workerStatus = 'double_agent';
-    //prisoner : worker alive and not active that we do control are our prisonners
-    } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
-        $workerStatus = 'prisoner';
-    // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
-    } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
-        $workerStatus = 'dead';
-    }
+    $workerStatus = getWorkerStatus($worker);
+
     $textActionUpdated = getConfig($pdo,'txt_ps_'.$currentAction['action_choice']);
     // change action text if prisonner or double agent
     if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
