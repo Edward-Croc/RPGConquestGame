@@ -54,7 +54,7 @@ INSERT INTO controllers (
 ) VALUES
     (
         'Dame', 'Calabreze',
-        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
+        'https://docs.google.com/document/d/18jehVwD4Rc_DsYsnNlkK1CVQumtGd_kWLBqyY9RxKBY/edit?usp=drive_link',
         0, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Malkavien' ),
         (SELECT ID FROM factions WHERE name = 'Malkavien' )
@@ -62,14 +62,14 @@ INSERT INTO controllers (
     (
         --'Sir Angelo', 'Ricciotti',
         'Sir Antonio', 'Mazzino',
-        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
+        'https://docs.google.com/document/d/12uoZS1sgh239qgQJbXJC6U10X6dLyacn1SmaAC3CZbg/edit?usp=drive_link',
         1,1,1,
         (SELECT ID FROM factions WHERE name = 'Brujah' ),
         (SELECT ID FROM factions WHERE name = 'Brujah' )
     ),
     (
         'Duca Gaston', 'da Firenze',
-        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
+        'https://docs.google.com/document/d/178ANZbiAYiGG_WS_oIgTrhLa_sdTCYPxRgBizo4WThE/edit?usp=drive_link',
         10, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Giovanni' ),
         (SELECT ID FROM factions WHERE name = 'Giovanni' )
@@ -90,8 +90,15 @@ INSERT INTO controllers (
         'Frère', 'Lorenzo', 'passive',
         (SELECT ID FROM factions WHERE name = 'Eglise'),
         (SELECT ID FROM factions WHERE name = 'Humains')
-    ),
+    );
+
+-- IA with no start workers
+INSERT INTO controllers (
+    firstname, lastname, ia_type, url,
+    faction_id, fake_faction_id
+) VALUES
     ('Sir Dimonio', 'Ricci', 'searching',
+        'https://docs.google.com/document/d/1A-vcnW5WVOUa6S50_lV5La-MaQAV_Cc-OQCRgnqIgjk/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Démon'),
         (SELECT ID FROM factions WHERE name = 'Lasombra')
     )
@@ -99,11 +106,12 @@ INSERT INTO controllers (
 
 -- IA with start workers
 INSERT INTO controllers (
-    firstname, lastname, ia_type,
+    firstname, lastname, ia_type, url,
     start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
     ('Signore Arno', 'Cacciatore', 'violent',
+        'https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8',
         1, 2, 1, 1,
         (SELECT ID FROM factions WHERE name = 'Garou'),
         (SELECT ID FROM factions WHERE name = 'Humains')
@@ -112,32 +120,33 @@ INSERT INTO controllers (
 
 -- players with no start worker limits
 INSERT INTO controllers (
-    firstname, lastname,
+    firstname, lastname, url,
     faction_id, fake_faction_id
 ) VALUES
-    ('Dame Elisa', 'Bonapart',
+    ('Dame Elisa', 'Bonapart', 'https://docs.google.com/document/d/1kQ2ruscLDPvETlAGL-id785l_0xmcel2_VnBl44YiLU/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Toréador' ),
         (SELECT ID FROM factions WHERE name = 'Toréador' )
     ),
-    ('Sir Gaetano', 'Trentini',
+    ('Sir Gaetano', 'Trentini', 'https://docs.google.com/document/d/1vmIYbHd5O3LXZSkE8docd1H7pI9KhpkJYLAzJD6cBkE/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Tremere' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
-    ('Duca Amandin', 'Franco',
+    ('Duca Amandin', 'Franco', 'https://docs.google.com/document/d/1QfAoI26FiLsdN_Y_kBSTrv0RTMw0TVAGIJNufkEWnn8/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Ventrue' ),
         (SELECT ID FROM factions WHERE name = 'Ventrue' )
     ),
     (
-        -- 'Dame Ana', 'Walkil',
-        'Dame Albane', 'Vizirof',
+        -- 'Dame Ana', 'Walkil', 'https://docs.google.com/document/d/1mDciGOSvhrlPp9DvncE7R13SEEFz0FNI585G-P3a7rk/edit?usp=drive_link',
+        'Dame Albane', 'Vizirof', 'https://docs.google.com/document/d/1U4L314OJOc7DURplY9v-AW7uKmQnISksz7kztQp_PEk/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Assamites' ),
         (SELECT ID FROM factions WHERE name = 'Tremere' )
     ),
-    ('Sir Adamo', 'de Toscane',
+    ('Sir Adamo', 'de Toscane', 'https://docs.google.com/document/d/1nUIgcB_eX625z5wgARcZlKJ29jua8svUHTBc0hm_ZPs/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Nosfératu' ),
         (SELECT ID FROM factions WHERE name = 'Nosfératu' )
     ),
     ('Sir Wilhem', 'Der Swartz', -- 'Dame Ana', 'Sgorina',
+         'https://docs.google.com/document/d/1EMs8YyV3WDSEAZ_xp_gjqwrQp8Sq76ox7-QePdeovKY/edit?usp=drive_link',
         (SELECT ID FROM factions WHERE name = 'Tzimisce' ),
         (SELECT ID FROM factions WHERE name = 'Gangrel' )
     )

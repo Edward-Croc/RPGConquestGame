@@ -37,28 +37,6 @@ INSERT INTO factions (name) VALUES
     ,('Yōkai')
 ;
 
--- players with start worker limits
-INSERT INTO controllers (
-    firstname, lastname,
-    start_workers, recruited_workers, turn_recruited_workers,
-    faction_id, fake_faction_id,
-    story
-) VALUES
-    (
-        'Régence Motochika (元親)', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
-        1, 0, 0,
-        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
-        'Kunichika Chōsokabe est présumé mort.
-        Le fils Motochika Chōsokabe n’as pas encore l’age pour être Daimyo.
-        Vous vous devez de tenir la barre du clan durant cette période de transition.
-        Malheureusement sans grande assistance vue que vos meilleurs éléments ne sont jamais rentrée de guerre.
-        Heuresement vous avez un accord avec Miyoshi, Fudžisan la petit soeur de leur héritier, désormais devenu Daimyo, épousera Motochika.
-        Les enfants, de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l’ile et le clan Miyoshi en administrera la moitiée.
-        Il suffit de tenir 2 ans que Motochika soit un adulte.
-        '
-    )
-;
 
 -- IA with start workers limits
 INSERT INTO controllers (
@@ -89,6 +67,19 @@ INSERT INTO controllers (
     faction_id, fake_faction_id,
     story
 ) VALUES
+    (
+        'Régence Motochika (元親)', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
+        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
+        'Kunichika Chōsokabe est présumé mort.
+        Le fils Motochika Chōsokabe n’as pas encore l’age pour être Daimyo.
+        Vous vous devez de tenir la barre du clan durant cette période de transition.
+        Malheureusement sans grande assistance vue que vos meilleurs éléments ne sont jamais rentrée de guerre.
+        Heuresement vous avez un accord avec Miyoshi, Fudžisan la petit soeur de leur héritier, désormais devenu Daimyo, épousera Motochika.
+        Les enfants, de Motochika et Fudžisan, du clan Chōsokabe reigneront sur l’ile et le clan Miyoshi en administrera la moitiée.
+        Il suffit de tenir 2 ans que Motochika soit un adulte.
+        '
+    ),
     ('Daïmyo Nagayoshi (長慶)', 'Miyoshi (三好氏)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
