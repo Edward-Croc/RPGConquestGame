@@ -7,6 +7,7 @@ require_once '../base/baseHTML.php';
 
 ?> 
 <div class="factions">
+  <h1>  THIS IS A CHATGPT GENERATED V1, NOT YET REWRITEN !! </h1> 
 <h2>Présentation du système : </h2>
 <p>Bienvenue sur la page de présentation du système de jeu. Ce système repose sur une simulation stratégique en tour par tour mettant en scène des <strong>contrôleurs</strong>, leurs <strong>agents</strong>, des <strong>zones</strong> et des <strong>lieux spécifiques</strong> à découvrir, défendre ou conquérir.</p>
 
