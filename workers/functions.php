@@ -16,7 +16,7 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
 
     $query = sprintf("UPDATE workers SET is_active = False WHERE id = %s",$workerId);
     if ($isActive) $query = sprintf("UPDATE workers SET is_active = True WHERE id = %s", $workerId);
-    echo sprintf(" query : %s, ", $query);
+    if ( $_SESSION['DEBUG'] == true ) echo sprintf(" query : %s, ", $query);
 
     try{
         $stmt = $pdo->prepare($query);
@@ -812,8 +812,15 @@ function moveWorker($pdo, $workerId, $zoneId) {
     return $workerId;
 }
 
-// get worker action status for turn
-function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
+/**
+ * get worker action status for turn
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param int|null $turn_number
+ * 
+ */
+function getWorkerActions($pdo, $workerId, $turn_number = null ){
 
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
@@ -821,7 +828,7 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
     }
 
     $sql = "SELECT * FROM worker_actions
-        WHERE worker_id = $worker_id
+        WHERE worker_id = $workerId
         AND turn_number = $turn_number
         ORDER BY id DESC
     ";
@@ -835,10 +842,10 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
         return NULL;
     }
     // Fetch the results
-    $worker_actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $workerActions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_actions: ".var_export($worker_actions, true)."<br/><br/>";
-    return $worker_actions;
+    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): workerActions: ".var_export($workerActions, true)."<br/><br/>";
+    return $workerActions;
 }
 
 /**
@@ -988,6 +995,9 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':extraVal' => $extraVal['return_controller_id'],
                     ':worker_id' => $workerId
                 ]);
+
+                // Update the worker status table
+                updateWorkerActiveStatus($pdo, $workerId, true);
 
                 // Update the worker_actions table
                 $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal

@@ -22,10 +22,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
             $textActionUpdated = getConfig($gameReady,'txt_ps_'.$currentAction['action_choice']);
-            // change action text if prisonner or double agent
+            // change action text if prisoner or double agent
             if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
 
-                $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name
+                $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name, c.id AS controller_id
                 FROM controllers AS c
                 JOIN controller_worker AS cw ON cw.controller_id = c.id
                 WHERE cw.worker_id = :worker_id
@@ -34,17 +34,17 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 //  ORDER BY controller_worker.id
                 $stmt = $gameReady->prepare($sql);
 
-                // for prisonner get name of original controller
+                // for prisoner get name of original controller
                 if ($workerStatus == 'double_agent') {
                     $stmt->execute([
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 1
                     ]);
-                    $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $other_controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
                     $textActionUpdated .= sprintf(
                         ' et ' . getConfig($gameReady,'txt_ps_'.$workerStatus),
-                        $controller_name[0]
+                        $other_controllers[0]['controller_name']
                     );
                 }
                 // for double agent get name of infiltrated network
@@ -53,11 +53,11 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 0
                     ]);
-                    $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $other_controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
                     $textActionUpdated = sprintf(
                         getConfig($gameReady,'txt_ps_'.$workerStatus),
-                        $controller_name[0]
+                        $other_controllers[0]['controller_name']
                     );
                 }
             }
@@ -149,7 +149,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner'){
                 // TODO GET ID of original controler
-                /*$actionHTML .= sprintf('
+                $actionHTML .= sprintf('
                     <div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
@@ -162,10 +162,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 ',
                     $worker['id'],
                     $controller_id,
-                    '',  //ADD ID of original controler HERE 
+                    $other_controllers[0]['controller_id'],  //ADD ID of original controler HERE 
                     'Relacher le prisonier !'
                 );
-                echo $actionHTML;*/
+                echo $actionHTML;
             }
 
             // worker must be active to get upgrades
