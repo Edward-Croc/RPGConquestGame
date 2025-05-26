@@ -148,7 +148,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             }
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner'){
-                // TODO GET ID of original controler
                 $actionHTML .= sprintf('
                     <div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
@@ -162,7 +161,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 ',
                     $worker['id'],
                     $controller_id,
-                    $other_controllers[0]['controller_id'],  //ADD ID of original controler HERE 
+                    $other_controllers[0]['controller_id'],
                     'Relacher le prisonier !'
                 );
                 echo $actionHTML;

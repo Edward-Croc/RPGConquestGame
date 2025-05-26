@@ -39,7 +39,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $recruitButton
         );
 
-        // TODO : Change view for DEAD, CAPTURED and Non Primary controller
         $workersArray = getWorkersBycontroller($gameReady, $controller_id);
 
         if ( $_SESSION['DEBUG'] == true )
