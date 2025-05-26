@@ -40,6 +40,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 1
                     ]);
+                    $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+                    $textActionUpdated .= sprintf(
+                        ' et ' . getConfig($gameReady,'txt_ps_'.$workerStatus),
+                        $controller_name[0]
+                    );
                 }
                 // for double agent get name of infiltrated network
                 if ($workerStatus == 'prisoner') {
@@ -47,13 +53,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 0
                     ]);
+                    $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+                    $textActionUpdated = sprintf(
+                        getConfig($gameReady,'txt_ps_'.$workerStatus),
+                        $controller_name[0]
+                    );
                 }
-                $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-                $textActionUpdated = sprintf(
-                    getConfig($gameReady,'txt_ps_'.$workerStatus),
-                    $controller_name[0]
-                );
             }
 
             $viewHTML = sprintf(
@@ -93,6 +99,20 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             // worker must be active to be allowed actions
             if ($worker['is_active']) {
+                // on $workerStatus = 'double_agent' show recall button
+                $recallWorkerButton = '';
+                if (!empty($workerStatus) && $workerStatus == 'double_agent'){
+                    $recallWorkerButton .= sprintf(
+                        '<p>
+                        <i>%1$s</i><br \>
+                        <input type="hidden" name="recall_controller_id" value="%3$s">
+                        <input type="submit" name="recallDoubleAgent" value="%2$s" class="worker-action-btn"><br />',
+                        'Cet agent étant infiltré.e, lui donner des ordres pourrait révéler son défaut d’allégeance !',
+                        'Le rappeler a notre service !',
+                        $controller_id
+                    );
+                }
+
                 $zonesArray = getZonesArray($gameReady);
                 if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
                 $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
@@ -106,6 +126,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $actionHTML .= sprintf('<div class="actions">
                     <form action="/RPGConquestGame/workers/action.php" method="GET">
+                    <input type="hidden" name="worker_id" value=%1$s>
                     <h3>Actions : </h3> <p>
                     %7$s
                     <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
@@ -121,13 +142,31 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
                     $showListClaimTargetsSelect,
                     $showcontrollersSelect,
-                    (!empty($workerStatus) && $workerStatus == 'double_agent') ? '<i>Cet agent étant infiltré.e, lui donner des ordres pourrait révéler son défaut d’allégeance ! </i><br \>' : ''
+                    $recallWorkerButton
                 );
                 echo $actionHTML;
             }
-            // TODO : on $workerStatus = 'prisonner' show return to owner button
-            // TODO : on $workerStatus = 'double_agent' show return to owner button
-
+            // on $workerStatus = 'prisoner' show return to owner button
+            if (!empty($workerStatus) && $workerStatus == 'prisoner'){
+                // TODO GET ID of original controler
+                /*$actionHTML .= sprintf('
+                    <div class="actions">
+                    <form action="/RPGConquestGame/workers/action.php" method="GET">
+                    <input type="hidden" name="worker_id" value=%1$s>
+                    <h3>Actions : </h3> <p>
+                        <input type="hidden" name="recall_controller_id" value="%2$s">
+                        <input type="hidden" name="return_controller_id" value="%3$s">
+                        <input type="submit" name="returnPrisoner" value="%4$s" class="worker-action-btn"><br />
+                    </p></div>
+                    </form>
+                ',
+                    $worker['id'],
+                    $controller_id,
+                    '',  //ADD ID of original controler HERE 
+                    'Relacher le prisonier !'
+                );
+                echo $actionHTML;*/
+            }
 
             // worker must be active to get upgrades
             if ($worker['is_active']) {

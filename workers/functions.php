@@ -222,7 +222,7 @@ function getWorkers($pdo, $workerIds) {
  * @return array|null workersArray
  *
  */
-function getWorkersBycontroller($pdo, $controller_id) {
+function getWorkersByController($pdo, $controller_id) {
 
     $sql = " SELECT * FROM controller_worker AS cw
         WHERE cw.controller_id = :controller_id
@@ -247,11 +247,16 @@ function getWorkersBycontroller($pdo, $controller_id) {
 }
 
 /**
- * determin current action for worker
+ * Determin current action for worker
  *
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $controller_id
+ *
+ * @return array|null workersArray
  *
  */
-function setWorkerCurrentAction($workerActions, $turncounter ) {
+function setWorkerCurrentAction($workerActions, $turncounter) {
     foreach($workerActions as $action) {
         if ( $_SESSION['DEBUG'] == true )
             echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
@@ -382,7 +387,7 @@ function showWorkerShort($pdo, $worker, $mechanics) {
 }
 
 /**
- *
+ * getActionsByWorkers
  *
  * @param PDO $pdo : database connection
  * @param string $worker_id_str
@@ -836,13 +841,23 @@ function getWorkerActions($pdo, $worker_id, $turn_number = NULL ){
     return $worker_actions;
 }
 
-function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
+/**
+ * Activates workers depending opn give action
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $workerId
+ * @param string $action
+ * @param int|array|null $extraVal
+ * 
+ * @return int $workerId
+ */
+function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
 
     // get worker action status for turn
-    $worker_actions = getWorkerActions($pdo, $worker_id);
+    $worker_actions = getWorkerActions($pdo, $workerId);
     if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
     $currentAction = $worker_actions[0];
 
@@ -900,15 +915,15 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
             $new_action = 'passive';
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
-            $currentReport['life_report'] .= "J'ai rejoint un nouveau maitre. ";
+            $currentReport['life_report'] .= "<br /> J'ai rejoint un nouveau maitre. ";
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id";
+                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id AND is_primary_controller = True";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
-                    ':worker_id' => $worker_id
+                    ':worker_id' => $workerId
                 ]);
                 // Update the worker_actions table
                 $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
@@ -916,14 +931,81 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
                     ':extraVal' => $extraVal,
-                    ':worker_id' => $worker_id,
+                    ':worker_id' => $workerId,
                     ':turn_number' => $turn_number
                 ]);
             } catch (PDOException $e) {
                 echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
             break;
+        case 'recallDoubleAgent' :
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): recallDoubleAgent <br/><br/>";
+            try {
+                $new_action = 'passive';
+                // Update the controller_worker table
+                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = True";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':worker_id' => $workerId
+                ]);
+                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = True WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':extraVal' => $extraVal,
+                    ':worker_id' => $workerId
+                ]);
+
+                // Update the worker_actions table
+                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
+                    WHERE worker_id = :worker_id AND turn_number = :turn_number";
+                $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
+                $stmtWorkerActions->execute([
+                    ':extraVal' => $extraVal,
+                    ':worker_id' => $workerId,
+                    ':turn_number' => $turn_number
+                ]);
+            } catch (PDOException $e) {
+                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
+            }
+
+            break;
+        case 'returnPrisoner' :
+            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): returnPrisoner <br/><br/>";
+            if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
+            $currentReport['life_report'] .= "<br /> J'ai été relacher. ";
+
+            try {
+                // Update the controller_worker table
+                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = True";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':extraVal' => $extraVal['recall_controller_id'],
+                    ':worker_id' => $workerId
+                ]);
+                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = True WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':extraVal' => $extraVal['return_controller_id'],
+                    ':worker_id' => $workerId
+                ]);
+
+                // Update the worker_actions table
+                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
+                    WHERE worker_id = :worker_id AND turn_number = :turn_number";
+                $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
+                $stmtWorkerActions->execute([
+                    ':extraVal' => $extraVal['return_controller_id'],
+                    ':worker_id' => $workerId,
+                    ':turn_number' => $turn_number
+                ]);
+            } catch (PDOException $e) {
+                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
+            }
+
+            $new_action = 'passive';
+            break;
     }
+
     $sql_worker_actions .= " action_choice = '$new_action' ";
     $sql_worker_actions .= ", action_params = '$jsonOutput'";
     // Encode the updated array back into JSON
@@ -943,9 +1025,21 @@ function activateWorker($pdo, $worker_id, $action, $extraVal = NULL) {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
-    return $worker_id;
+    return $workerId;
 }
 
+/**
+ * Get the know enemy workers for the controller and the zone
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $zone_id
+ * @param int $controller_id
+ * 
+ * @return array (
+ *   -'workers_without_controller'
+ *   -'workers_with_controller'
+ * 
+ */
 function getEnemyWorkers($pdo, $zone_id, $controller_id) {
     // Select from controllers_known_enemies by $zone_id, $controller_id
         // return table of :
@@ -980,7 +1074,7 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
             ':zone_id' => $zone_id,
             ':controller_id' => $controller_id
         ]);
-        $workersWithoutcontroller = $stmtA->fetchAll(PDO::FETCH_ASSOC);
+        $workersWithoutController = $stmtA->fetchAll(PDO::FETCH_ASSOC);
 
         // Query for workers with identical discovered_controller_id (B)
         $sqlB = "
@@ -1007,12 +1101,12 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
             ':zone_id' => $zone_id,
             ':controller_id' => $controller_id
         ]);
-        $workersWithcontroller = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+        $workersWithController = $stmtB->fetchAll(PDO::FETCH_ASSOC);
 
         // Return the combined result
         return [
-            'workers_without_controller' => $workersWithoutcontroller, // A
-            'workers_with_controller' => $workersWithcontroller       // B
+            'workers_without_controller' => $workersWithoutController, // A
+            'workers_with_controller' => $workersWithController       // B
         ];
 
     } catch (PDOException $e) {
@@ -1021,6 +1115,16 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
     }
 }
 
+/**
+ * Build the HTML select for the known enemy workers for the controller in the zone
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $zone_id
+ * @param int $controller_id
+ * @param int|null $turn_number
+ * 
+ * @return string 
+ */
 function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
     $enemyWorkerOptions = '';
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
