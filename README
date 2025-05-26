@@ -1,5 +1,26 @@
 
 RPGConquestGame is a test game project about conquering and maintaining control of a Town, Suburb or Street against AI or other players.
-The game is a worker placement game where your spies and agents try to investigate and control sectors of the map.
-This game is meant to be an accessory to a LARP event where the players can discuss actions and objectives.
+The game is a worker placement game where your spies and agents try to investigate each other and control sectors of the map.
+This game is originally meant to be an accessory to a LARP event where the players can discuss actions and objectives.
+But it may evolve into a stand alone Game of its own.
 
+Project : 
+ - This project was run as a personal training exercise on the use, quality and lack of, for GPT-4o mini. Much of the code and texts will be ChatGPT generated.
+ - All code review should take into account the previous statement, the additional lake of time and non commercial destination of the project. (Be nice.)
+ - You are welcome to participate into the project.
+
+Code : 
+ - The code choice is Flat PHP 8.0, respecting PHP PSR-2 at minimum.
+    - This was done for speed and ease of setup.
+    - An upgrade to a known Framework should be envisaged for à V2.
+ - Database is in postgresql.
+ - Front is simple HTML and Javascript.
+
+Installation : 
+ - Create a folder called RPGConquestGame and pull the sources to it.
+ - Setup a database, add info to the ./var/config.ini file and execute the ./var/setupBDD.sql file
+ - The base game is set up with a user: gm; pwd: orga.
+
+Preparing a game : 
+ - Chose a scenario in the available configurations OR prepare your own configuration
+ - Enjoy !
