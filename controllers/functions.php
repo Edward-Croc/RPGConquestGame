@@ -337,20 +337,43 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     }
     $zone_id = $location[0]['zone_id'];
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
-    $locationDefence = calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $target_location_id);
     $controllerAttack = calculatecontrollerAttack($pdo, $controller_id, $zone_id);
+    $locationDefence = calculateSecretLocationDefence($pdo, $location[0]['controller_id'], $zone_id, $target_location_id);
 
     // Check result
-    if (($controllerAttack - $locationDefence) > $attackLocationDiff){
+    if (($controllerAttack - $locationDefence) >= $attackLocationDiff){
+        $return['success'] = true;
+        // Delete player base
+        try{
+            $sql = "DELETE FROM locations WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $target_location_id]);
+        } catch (PDOException $e) {
+            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            return NULL;
+        }
+        $return['message'] = sprintf(
+            getConfig($pdo, 'textLocationDestroyed'),
+            $location[0]['name']
+        );
         // Do actions depending on JSON for location
+        if (!empty($location[0]['activate_json'])) {
             $activate_json = json_decode($location[0]['activate_json'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
                 $activate_json = array();
             }
-            // Print Call GM Txt
-            // Create New location
-            //
+            //TODO on JSON key:
+            // create_location => Create New location
+            // show_text => add text to the message
+            // add_worker => add worker to controller
+            // change_ia => change the functionning of an IA character
+        }
+    } else {
+        $return['message'] = sprintf(
+            getConfig($pdo, 'textLocationNotDestroyed'),
+            $location[0]['name']
+        );
     }
     return $return;
 }

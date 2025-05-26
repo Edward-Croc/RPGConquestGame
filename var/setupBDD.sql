@@ -111,6 +111,9 @@ VALUES
     ,('baseDefenceDiffAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
     ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
     ,('baseDefenceDiffAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
+    ,('textLocationDestroyed', 'Le lieu %s a été détruit', 'Text for location destroyed')
+    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit', 'Text for location not destroyed')
 ;
 
 -- player tables
