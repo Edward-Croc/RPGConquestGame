@@ -1,26 +1,28 @@
 <?php
+
+
+function getPath ($file) {
+
+    $path = null;
+    $paths = array( __DIR__ ,"..", ".", "/var/www/RPGConquestGame");
+    foreach ( $paths AS $tmpPath ) {
+        if (file_exists ($tmpPath.$file)) {
+            $path = $tmpPath;
+        }
+        if (file_exists ($tmpPath."/..".$file)) {
+            $path = $tmpPath."/..";
+            break;
+        }
+    }
+    return $path ; 
+}
+
 /**
  * Get and Check connection to the database
  * 
  * @return PDO $pdo
  */
-function getDBConnection () {
-
-    $path = '';
-    $path1 = "/var/www/RPGConquestGame";
-    $path2 = "..";
-
-    // Path to the config.ini file
-    $configFile = "/var/config.ini";
-    if (file_exists ($path1.$configFile)) {
-        $path = $path1;
-    }
-    if (file_exists ($path2.$configFile)) {
-        $path = $path2;
-    }
-    if (file_exists ('.'.$configFile)) {
-        $path = '.';
-    }
+function getDBConnection ($path, $configFile) {
 
     // PostgreSQL database credentials
     // Default values
@@ -28,6 +30,7 @@ function getDBConnection () {
     $dbname = 'rpgconquestgame';
     $username = 'postgres';
     $password = 'postgres';
+    $db_type = 'postgres';
 
     // Check if the file exists
     if (file_exists($path.$configFile)) {
@@ -47,20 +50,39 @@ function getDBConnection () {
         if ( isset($config['password']) ) {
             $password = $config['password'];
         }
+        if ( isset($config['db_type']) ) {
+            $db_type = $config['db_type'];
+        }
     }
 
-    // Attempt to connect to PostgreSQL database
-    try {
-        $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
-            echo "Connected successfully to database $dbname.<br />";
-        }
-        return $pdo;
+    if ( $db_type == 'mysql' ) {
+        // Attempt to connect to PostgreSQL database
+        try {
+            $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
+                echo "Connected successfully to database $dbname.<br />";
+            }
+            return $pdo;
 
-    } catch (PDOException $e) {
-        echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
-        return NULL;
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
+            return NULL;
+        }
+    }else{
+        // Attempt to connect to PostgreSQL database
+        try {
+            $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
+                echo "Connected successfully to database $dbname.<br />";
+            }
+            return $pdo;
+
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
+            return NULL;
+        }
     }
 }
 
@@ -126,21 +148,17 @@ function destroyAllTables($pdo) {
  */
 function gameReady() {
 
-    $path = '';
-    $path1 = "/var/www/RPGConquestGame";
-    $path2 = "..";
-
     // Path to the config.ini file
-    $configFile = "/var/config.ini";
-    if (file_exists ($path1.$configFile)) {
-        $path = $path1;
+    $configFiles = array ("/var/local_config.ini", "/var/config.ini");
+    $path = null;
+    foreach ($configFiles AS $configFile) {
+        $path = getPath($configFile);
+        if ($path != null) break;
     }
-    if (file_exists ($path2.$configFile)) {
-        $path = $path2;
-    }
+    if ($_SESSION['DEBUG'] == true) echo "Config Path built : " . $path.$configFile . " </ br>";
 
-    $pdo = getDBConnection();
-    if ($pdo != NULL) {
+    $pdo = getDBConnection($path, $configFile);
+    if ($pdo != null) {
         try {
             // Check if table exists
             $tableName = 'players';
@@ -149,7 +167,10 @@ function gameReady() {
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
-                $sqlFile = $path.'/var/setupBDD.sql';
+                $config = parse_ini_file($path.$configFile);
+                $dbtype = (!empty($config['db_type'])) ? $config['db_type'] : 'postgres';
+
+                $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $dbtype);
                 echo "Loading $sqlFile ... ";
                 //$sqlFile = '../BDD/setupBDD.sql';
                 if (file_exists($sqlFile)) {
@@ -166,7 +187,7 @@ function gameReady() {
                 if ( isset($_POST['config_name']) ) {
                     $fileNames = ['base', 'textes', 'worker_names'];
                     foreach ( $fileNames as $fileName ) {
-                        $sqlFile =  sprintf('%s/var/setup%s_%s.sql',  $path, $_POST['config_name'], $fileName);
+                        $sqlFile =  sprintf('%s/var/%s/setup%s_%s.sql',  $path, $dbtype, $_POST['config_name'], $fileName);
                         echo "Loading $sqlFile ...<br />";
                         if (file_exists($sqlFile)) {
                             echo 'Start <br />';
@@ -178,7 +199,7 @@ function gameReady() {
                         } else echo "SQL file $sqlFile UNFOUND.<br />";
                     }
 
-                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_hobbys.sql';
+                    $sqlFile =  sprintf('%s/var/%s/setup%s_hobbys.sql',$path, $dbtype, $_POST['config_name']);
                     echo "Loading $sqlFile ...<br />";
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
@@ -232,7 +253,7 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
-                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_jobs.sql';
+                    $sqlFile = sprintf('%s/var/%s/setup%s_jobs.sql', $path, $dbtype, $_POST['config_name']);
                     echo "Loading $sqlFile ...<br />";
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
@@ -286,7 +307,7 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
-                    $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced.sql';
+                    $sqlFile = sprintf('%s/var/%s/setup%s_advanced.sql', $path, $dbtype, $_POST['config_name']);
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
                         // Read SQL file
@@ -303,7 +324,7 @@ function gameReady() {
                         || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
                         || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
                     ) {
-                        $sqlFile =  $path.'/var/setup'.$_POST['config_name'].'_advanced_tests.sql';
+                        $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $dbtype, $_POST['config_name']);
                         echo "Loading $sqlFile ...<br />";
                         if (file_exists($sqlFile)) {
                             echo 'Start <br />';
@@ -320,8 +341,11 @@ function gameReady() {
             }
         } catch (PDOException $e) {
             echo __FUNCTION__."(): Check Database failed: " . $e->getMessage()."<br />";
-            return NULL;
+            return null;
         }
+    } else {
+        echo 'Impssible de se connecter a la base de donnée.';
+        if ($path == null) echo 'Aucun fichier de configuration trouvée.';
     }
     return $pdo;
 }
