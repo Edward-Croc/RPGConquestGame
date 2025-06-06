@@ -4,7 +4,7 @@ UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 UPDATE config SET
     value = '<p> En plein Sengoku Jidai(戦国時代), les turbulences sociales, intrigues politiques et conflits militaires divisent le Japon.
        Les guerres fratricides font rage sur l’archipel nippon, et le Shogunat Ashikaga(足利) fragilisé peine à rétablir la paix.
-       Au printemps 1555, les forces du shugo (守護?) de Shikoku(四国), le daimyô Kunichika(国親) Chōsokabe(長宗我部), accompagné de son vassal Fujitaka (藤孝) Hosokawa(細川) et en l’absence notable du clan Miyoshi(三好).
+       Au printemps 1555, les forces du shugo (守護) de Shikoku(四国), le daimyô Kunichika(国親) Chōsokabe(長宗我部), accompagné de son vassal Fujitaka (藤孝) Hosokawa(細川) et en l’absence notable du clan Miyoshi(三好).
        Sont partis défendre Kyoto(京都市), sur l’ile principale de Honshu(本州), contre les forces de du clan Takeda(武田), espérant ainsi s’attirer les faveurs du Shogun Ashikaga.
        Les rares survivants rentrés de la campagne parlent d’une défaite cuisante, d’une rébellion paysanne et du déshonneur du daimyô et de ses vassaux.
        Le contrôle du clan Chōsokabe vacille sur Shikoku et les vassaux même du clan voient la disparition de Kunichika Chōsokabe comme une opportunité sans précédent.

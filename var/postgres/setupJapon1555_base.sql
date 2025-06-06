@@ -49,15 +49,23 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
-    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif', -- https://en.wikipedia.org/wiki/K%C5%ABkai
-        2, 1, 1, 0,
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
-    ),
     ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif',
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
+    )
+;
+INSERT INTO controllers (
+    firstname, lastname, ia_type, url, story,
+    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
+    faction_id, fake_faction_id
+) VALUES
+    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+        'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
+        '',
+        2, 1, 1, 0,
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     )
 ;
 
