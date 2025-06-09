@@ -40,7 +40,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         if ($_SESSION['is_privileged'] == true){
             echo sprintf ('<a href="/RPGConquestGame/mechanics/endTurn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
             if ($pageName !== 'admin') {
-                echo '<a href="/RPGConquestGame/connection/admin.php" class="topbar-btn">Configuration</a>';
+                echo '<a href="/RPGConquestGame/base/admin.php" class="topbar-btn">Configuration</a>';
             }
         }
         ?>
