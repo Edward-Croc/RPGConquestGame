@@ -201,6 +201,15 @@ CREATE TABLE controller_known_locations (
     FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
 );
 
+CREATE TABLE artefacts (
+    id SERIAL PRIMARY KEY,          -- Unique ID of the artefact
+    location_id INTEGER NOT NULL,   -- Foreign key referencing a location
+    name TEXT NOT NULL,             -- Name of the artefact
+    description TEXT NOT NULL,      -- Description of the artefact
+    full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
+    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
+);
+
 -- Prepare the Worker Origins
 CREATE TABLE worker_origins (
     ID SERIAL PRIMARY KEY,

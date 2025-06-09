@@ -8,6 +8,7 @@ function getPath ($file) {
     foreach ( $paths AS $tmpPath ) {
         if (file_exists ($tmpPath.$file)) {
             $path = $tmpPath;
+            break;
         }
         if (file_exists ($tmpPath."/..".$file)) {
             $path = $tmpPath."/..";
