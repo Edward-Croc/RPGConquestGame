@@ -34,9 +34,14 @@ function getZonesArray($pdo, $controller_id = null) {
 
     try{
         $sql = sprintf(
-            "SELECT z.id AS zone_id, c.id AS controller_id, * FROM zones AS z
+            "SELECT
+                z.id AS zone_id,
+                c.id AS controller_id,
+                z.*,
+                c.*
+            FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
-            %s 
+            %s
             ORDER BY z.id ASC",
             (!empty($controller_id))? "WHERE c.id = :controler_id" : ""
         );
@@ -93,9 +98,9 @@ function showZoneSelect($pdo, $zonesArray, $showText = false, $place_holder = tr
 
 /** Function to get Locations and return as an array
  * @param PDO $pdo
- * 
- * @return array|null $locationsArray 
- * 
+ *
+ * @return array|null $locationsArray
+ *
 */
 function getLocationsArray($pdo) {
     $locationsArray = array();
@@ -123,9 +128,9 @@ function getLocationsArray($pdo) {
 /**
  * Function to recalculateBaseDefence
  * @param PDO $pdo
- * 
+ *
  * @return bool
- * 
+ *
  */
 function recalculateBaseDefence($pdo) {
     // Get all bases with their controller and zone
@@ -165,13 +170,13 @@ function recalculateBaseDefence($pdo) {
 
 /**
  * Calculate the value 'DEF, ATK, SEARCH' for the controller, and optionnal zone or location
- * 
+ *
  * @param PDO $pdo
  * @param int $controller_id
  * @param string $type
  * @param int|null $zone_id
  * @param int|null $location_id
- * 
+ *
  * @return int $value
  */
 function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, $location_id = null) {
@@ -197,7 +202,7 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
             case 'Attack' :
                 $attribute = 'attack';
                 break;
-            default : 
+            default :
                 $attribute =  NULL;
                 break;
         }
@@ -272,12 +277,12 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
 
 /**
  * Calls the calculateControllerValue function with the 'DiscoveryDiff' type
- * 
+ *
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
  * @param int|null $location_id
- * 
+ *
  * @return int $value
  */
 function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $location_id = null) {
@@ -286,12 +291,12 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $l
 
 /**
  * Calls the calculateControllerValue function with the 'Defence' type
- * 
+ *
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
  * @param int $location_id
- * 
+ *
  * @return int $value
  */
 function calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $location_id) {
@@ -300,11 +305,11 @@ function calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $locatio
 
 /**
  * Calls the calculateControllerValue function with the 'Attack' type
- * 
+ *
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
- * 
+ *
  * @return int $value
  */
 function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
@@ -319,7 +324,7 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
  * @param PDO $pdo
  * @param int $controller_id
  * @param int $zone_id
- * 
+ *
  * @return string $text
  */
 function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
