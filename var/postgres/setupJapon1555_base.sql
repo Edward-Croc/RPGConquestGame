@@ -277,7 +277,7 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
 
     -- Miyoshi Samouraï
     ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 3,2,
-      ', le développement après l’introduction des mousquets portugais vers 1543' )
+      ', développé après l’introduction des mousquets portugais vers 1543' )
     ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1,
       ', inclut la cavalerie et le tir à l’arc monté' )
     ,('Gagaku (雅楽) – Musique de cour', 2, 0,0,

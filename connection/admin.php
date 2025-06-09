@@ -77,6 +77,9 @@ require_once '../base/baseHTML.php';
 ?>
 
 <div class="content">
+    <div>
+        <?php echo getConfig($gameReady, 'IntrigueOrga'); ?>
+    </div>
     <div class="flex">
         <div  class="mechanics">
             <h1>Mechanics</h1>
