@@ -3,11 +3,6 @@ require_once '../base/basePHP.php';
 
 $pageName = 'new';
 
-if ( ! $_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Redirect the user to the login page if not logged in
-    header('Location: connection/loginForm.php');
-}
-
 if (isset($_SESSION['controller'])){
     $controller_id = $_SESSION['controller']['id'];
 }
