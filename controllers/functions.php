@@ -341,8 +341,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $locationDefence = calculateSecretLocationDefence($pdo, $location[0]['controller_id'], $zone_id, $target_location_id);
 
     // Check result
-    if (($controllerAttack - $locationDefence) >= $attackLocationDiff){
+    if (($controllerAttack - $locationDefence) >= $attackLocationDiff){ 
         $return['success'] = true;
+        $return['message'] = captureLocationsArtefacts($pdo, $target_location_id, $controller_id);
+
         // Delete player base
         try{
             $sql = "DELETE FROM locations WHERE id = :id";
@@ -352,10 +354,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
             echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
             return NULL;
         }
-        $return['message'] = sprintf(
-            getConfig($pdo, 'textLocationDestroyed'),
-            $location[0]['name']
-        );
+
         // Do actions depending on JSON for location
         if (!empty($location[0]['activate_json'])) {
             $activate_json = json_decode($location[0]['activate_json'], true);
@@ -363,11 +362,21 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                 echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
                 $activate_json = array();
             }
+            $textSuccess = getConfig($pdo, 'textLocationDestroyed');
+            if ($activate_json['indestructible'] == true) {
+               $textSuccess = getConfig($pdo, 'textLocationPillaged');
+            }
+            $return['message'] .= sprintf($textSuccess, $location[0]['name']);
             //TODO on JSON key:
             // create_location => Create New location
             // show_text => add text to the message
             // add_worker => add worker to controller
             // change_ia => change the functionning of an IA character
+        } else {
+            $return['message'] .= sprintf(
+                getConfig($pdo, 'textLocationDestroyed'),
+                $location[0]['name']
+            );
         }
     } else {
         $return['message'] = sprintf(
@@ -377,6 +386,39 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     }
     return $return;
 }
+
+/**
+ * Changes all Artefacts in the location to the new controllers base.
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $target_location_id
+ * 
+ * @return string message
+ */
+function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
+    // Step 1: Get base location of the controller
+    $stmt = $pdo->prepare("SELECT id FROM locations WHERE controller_id = ? AND base = TRUE LIMIT 1");
+    $stmt->execute([$controller_id]);
+    $baseLocation = $stmt->fetchColumn();
+
+    if (!$baseLocation) {
+        return "Nous n'avons pas de forteresse pour ramener des prisonniers.";
+    }
+
+    // Step 2: Move artefacts from captured location to base
+    $stmt = $pdo->prepare("UPDATE artefacts SET location_id = ? WHERE location_id = ?");
+    $stmt->execute([$baseLocation, $location_id]);
+
+    // Step 3: Optional — count how many artefacts moved
+    $count = $stmt->rowCount();
+
+    if ($count > 0) {
+        return "Nous avons ramené des prisonniers du raid.";
+    }
+    return NULL;
+}
+
 
 /**
  *

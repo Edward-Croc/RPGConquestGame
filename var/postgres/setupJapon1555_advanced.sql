@@ -28,7 +28,6 @@ JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
 ;
 
-
 -- Add powers to the workers :
 INSERT INTO worker_powers (worker_id, link_power_type_id)
 SELECT
@@ -38,6 +37,7 @@ FROM
     workers w
 JOIN (
     SELECT 'Kotatsu' AS lastname, 'Kōdō (香道) – Voie de l’encens' AS power_name
+    UNION ALL SELECT 'Kotatsu', 'Kadō / Ikebana (華道 / 生け花) – Art floral'
     UNION ALL SELECT 'Kotatsu', 'Biwa Hōshi (琵琶法師) – Conteur aveugle itinérant'
     UNION ALL SELECT 'Kotatsu', 'Tokkuri (徳利) – Bouteille à saké'
     UNION ALL SELECT 'Kotatsu', 'Kagenkō (影言講) – L’art de la parole de l’ombre'

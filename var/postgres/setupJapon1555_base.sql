@@ -13,7 +13,6 @@ VALUES
     ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text')
 ;
 
-
 INSERT INTO players (username, passwd, is_privileged) VALUES
     ('player0', 'zero', False),
     ('player1', 'one', False),
@@ -204,19 +203,27 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     ('Port d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
     , ('Plaine d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
     , ('Port de Matsuyama', '', 0, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
-    , ('Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
+    , ('Mt Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
     , ('Mine de fer de Kubokawa', '', 8, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'))
     , ('Port de Kochi', '', 0, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'))
     , ('Ikeda', '', 0, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
     , ('Oboke', '', 8, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
     , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')) -- TEMPLE VENT
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima')) --PARRESSE
     , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
-    , ('Les geoles impériales', '', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+    , ('Les geoles impériales', 'Ici sont retenus ', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
 INSERT INTO locations (name, description, discovery_diff, zone_id, controller_id) VALUES
     ('Geoles Pirates', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')) --PARRESSE
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国')) -- TEMPLE VENT
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国')) --PARRESSE
+;
+
+INSERT INTO artefacts (name, description, full_description, location_id) VALUES
+    ('Hosokawa (細川) Fujitaka (藤孝) le daimyô prisonnier', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Les geoles impériales'))
+    , ('Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Geoles Pirates'))
+    , ('Motochika (元親) daimyô en devenir', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Les geoles impériales'))
+    , ('Tama (玉), fille de Fujitaka, petite soeur de Tadaoki, 17 ans', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', NULL)
+    , ('Fudžisan(富士山), 26 ans, petit soeur du daimyô.', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', NULL)
 ;
 
 -- Table of Fixed Power Types used by code

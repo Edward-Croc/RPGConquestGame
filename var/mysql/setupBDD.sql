@@ -112,8 +112,9 @@ INSERT INTO config (name, value, description) VALUES
     ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
     ,('baseDefenceDiffAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
-    ,('textLocationDestroyed', 'Le lieu %s a été détruit', 'Text for location destroyed')
-    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit', 'Text for location not destroyed')
+    ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir', 'Text for location destroyed')
+    ,('textLocationDestroyed', 'Le lieu %s a été pillée', 'Text for location destroyed')
+    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses', 'Text for location not destroyed')
 ;
 
 CREATE TABLE players (

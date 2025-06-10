@@ -113,8 +113,9 @@ VALUES
     ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
     ,('baseDefenceDiffAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
-    ,('textLocationDestroyed', 'Le lieu %s a été détruit', 'Text for location destroyed')
-    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit', 'Text for location not destroyed')
+    ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir', 'Text for location destroyed')
+    ,('textLocationPillaged', 'Le lieu %s a été pillée', 'Text for location pillaged')
+    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses', 'Text for location not destroyed')
 ;
 
 -- player tables
@@ -203,7 +204,7 @@ CREATE TABLE controller_known_locations (
 
 CREATE TABLE artefacts (
     id SERIAL PRIMARY KEY,          -- Unique ID of the artefact
-    location_id INTEGER NOT NULL,   -- Foreign key referencing a location
+    location_id INTEGER,            -- Foreign key referencing a location
     name TEXT NOT NULL,             -- Name of the artefact
     description TEXT NOT NULL,      -- Description of the artefact
     full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
