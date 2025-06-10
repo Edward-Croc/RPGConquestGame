@@ -51,7 +51,7 @@ if (
     }
 
     // Redirect the user to a logged-in page
-    header('Location: '.'/RPGConquestGame/base/accueil.php');
+    header(sprintf('Location: /%s/base/accueil.php', $_SESSION['FOLDER']));
     exit();
 }
 
@@ -95,7 +95,7 @@ if (
             }
 
             // Redirect the user to a logged-in page
-            header('Location: '.'/RPGConquestGame/base/accueil.php');
+            header(sprintf('Location: /%s/base/accueil.php', $_SESSION['FOLDER']));
             exit();
         } else {
             $_SESSION['logged_in'] = false;

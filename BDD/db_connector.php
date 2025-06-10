@@ -32,6 +32,7 @@ function getDBConnection ($path, $configFile) {
     $username = 'postgres';
     $password = 'postgres';
     $db_type = 'postgres';
+    $folder = 'RPGConquestGame';
 
     // Check if the file exists
     if (file_exists($path.$configFile)) {
@@ -54,7 +55,11 @@ function getDBConnection ($path, $configFile) {
         if ( isset($config['db_type']) ) {
             $db_type = $config['db_type'];
         }
+        if ( isset($config['folder']) ) {
+            $folder = $config['folder'];
+        }
     }
+    $_SESSION['FOLDER'] = $folder;
 
     if ( $db_type == 'mysql' ) {
         // Attempt to connect to PostgreSQL database

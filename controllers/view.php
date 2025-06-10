@@ -2,9 +2,6 @@
 
     $zonesArray = getZonesArray($gameReady);
     $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
-    $mapFile = getConfig($gameReady, 'map_file');
-    $mapAlt = getConfig($gameReady, 'map_alt');
-    $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
 
     $controllers = getControllers($gameReady, $_SESSION['user_id']);
     $debug = false;
@@ -14,12 +11,13 @@
         if (count($controllers) > 1) {
             echo '<h2>Factions</h2>';
             echo sprintf('
-                <form action="/RPGConquestGame/base/accueil.php" method="GET">
+                <form action="/%s/base/accueil.php" method="GET">
                     %s
                 <input type="submit" name="chosir" value="Choisir" />
                 </form>
                 <!-- Display controller details section (initially hidden) changed by the select action-->
                 <div id="controllerDetails" style="display: none;"> </div>', 
+                $_SESSION['FOLDER'],
                 showControllerSelect($controllers)
             );
         }
@@ -28,7 +26,7 @@
             echo sprintf ('<h2>Votre Faction </h2>
                 Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)<br>
                 %6$s %7$s
-                <div ><form action="/RPGConquestGame/controllers/action.php" method="GET">
+                <div ><form action="/%8$s/controllers/action.php" method="GET">
                 <input type="hidden" name="controller_id" value=%3$s>
                 <h3>Actions : </h3> <p>',
                 $controllers['firstname'],
@@ -37,7 +35,8 @@
                 $controllers['faction_name'],
                 $controllers['fake_faction_name'],
                 !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> This is your url </button><br>' : '',
-                !empty($controllers['story']) ? $controllers['story'] : ''
+                !empty($controllers['story']) ? $controllers['story'] : '',
+                $_SESSION['FOLDER']
             );
             $bases = hasBase($gameReady, $controllers['id']);
             if (empty($bases)) {
@@ -69,11 +68,12 @@
 
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             if($showAttackableControllerKnownLocations !== NULL)
-                echo sprintf('<form action="/RPGConquestGame/controllers/action.php" method="GET">
+                echo sprintf('<form action="/%3$s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value=%1$s>
                         <input type="submit" name="attackLocation" value="Intéragir avec : " class="controller-action-btn"> %2$s',
                         $controllers['id'],
-                        $showAttackableControllerKnownLocations
+                        $showAttackableControllerKnownLocations,
+                        $_SESSION['FOLDER']
                 ); 
             else echo 'Aucun lieu connu attaquable.';
 

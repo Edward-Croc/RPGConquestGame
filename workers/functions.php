@@ -360,7 +360,7 @@ function showWorkerShort($pdo, $worker, $mechanics) {
     }
 
     $return = sprintf(
-        '<div ><form action="/RPGConquestGame/workers/action.php" method="GET">
+        '<div ><form action="/%7$s/workers/action.php" method="GET">
             <input type="hidden" name="worker_id" value=%1$s>
             <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (%1$s) </b> %5$s au %4$s.
             <div id="info-%1$s" style="display: none;"> %6$s
@@ -380,7 +380,8 @@ function showWorkerShort($pdo, $worker, $mechanics) {
             $worker['total_enquete'],
             $worker['total_attack'],
             $worker['total_defence']
-        )
+        ),
+        $_SESSION['FOLDER']
     );
 
     return $return;

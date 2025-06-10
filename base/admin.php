@@ -41,7 +41,7 @@ require_once '../base/baseHTML.php';
         </div>
         <div class="config">
             <h1>Config Management</h1>
-            <form action="/RPGConquestGame/base/admin.php" method="post">
+            <?php echo sprintf('<form action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
                 <h2> FULL Reset :
                     <select id="configSelect" name="config_name">
                         <option  value='Vampire1966'> Firenze Vampire 1966 </option>
@@ -54,9 +54,12 @@ require_once '../base/baseHTML.php';
         </div>
         <div class="config">
                 <h1>Links</h1>
-                <p> <a href="/RPGConquestGame/base/configuration.php">Configuration Management</a> </p>
-                <p> <a href="/RPGConquestGame/artefacts/managment.php">Artefacts Management</a> </p>
-                <p> <a href="/RPGConquestGame/location/managment.php">Attack on player base Management</a> </p>
+                <?php echo sprintf( '
+                <p> <a href="/%1$s/base/configuration.php">Configuration Management</a> </p>
+                <p> <a href="/%1$s/artefacts/managment.php">Artefacts Management</a> </p>
+                <p> <a href="/%1$s/location/managment.php">Attack on player base Management</a> </p>',
+                $_SESSION['FOLDER']
+                ); ?>
         </div>
     </div>
 </div>

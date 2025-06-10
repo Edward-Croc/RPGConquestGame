@@ -49,6 +49,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     if (isset($_GET['gift'])){
         activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
+        header(sprintf('Location: /%s/base/accueil.php', $_SESSION['FOLDER']));
     }
     if (isset($_GET['recallDoubleAgent'])){
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);

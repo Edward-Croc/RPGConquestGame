@@ -103,7 +103,7 @@ echo "
 for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     echo sprintf ('
     <div class="workers">
-    <form action="/RPGConquestGame/workers/action.php" method="GET">
+    <form action="/%10$s/workers/action.php" method="GET">
         <p>
         %1$s  %2$s de %3$s <br />
         '.getConfig($gameReady, 'textRecrutementJobHobby').' <br />
@@ -128,6 +128,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $powerHobbyArray[$iteration]['id'],
     $powerMetierArray[$iteration]['id'],
     $controller_id,
+    $_SESSION['FOLDER']
     );
 
     echo showDisciplineSelect($gameReady, $powerDisciplineArray);

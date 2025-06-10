@@ -1,6 +1,8 @@
 <?php
 session_start(); // Start the session
 
+$folder = $_SESSION['FOLDER'];
+
 // Unset session variables
 session_unset();
 
@@ -8,7 +10,7 @@ session_unset();
 session_destroy();
 
 // Redirect the user to the login page or any other desired page
-header('Location: '.'/RPGConquestGame/index.php');
+header(sprintf('Location: /%s/base/accueil.php', $folder));
 exit();
 
 ?>

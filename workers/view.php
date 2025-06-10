@@ -124,14 +124,14 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
 
-                $actionHTML .= sprintf('<div class="actions">
-                    <form action="/RPGConquestGame/workers/action.php" method="GET">
+                $actionHTML = sprintf('<div class="actions">
+                    <form action="/%9$s/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
                     <h3>Actions : </h3> <p>
                     %7$s
                     <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
                     <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
-                    <input type="submit" name="claim" value="Revendiquer le '.getConfig($gameReady, 'textForZoneType').' au nom de " class="worker-action-btn"> %5$s <br />
+                    <input type="submit" name="claim" value="Revendiquer le %8$s au nom de " class="worker-action-btn"> %5$s <br />
                     <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
                     </p></div>
                     </form>
@@ -142,15 +142,17 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
                     $showListClaimTargetsSelect,
                     $showcontrollersSelect,
-                    $recallWorkerButton
+                    $recallWorkerButton,
+                    getConfig($gameReady, 'textForZoneType'),
+                    $_SESSION['FOLDER']
                 );
                 echo $actionHTML;
             }
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner'){
-                $actionHTML .= sprintf('
+                $actionHTML = sprintf('
                     <div class="actions">
-                    <form action="/RPGConquestGame/workers/action.php" method="GET">
+                    <form action="/%5$s/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
                     <h3>Actions : </h3> <p>
                         <input type="hidden" name="recall_controller_id" value="%2$s">
@@ -162,7 +164,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $worker['id'],
                     $controller_id,
                     $other_controllers[0]['controller_id'],
-                    'Relacher le prisonier !'
+                    'Relacher le prisonier !',
+                    $_SESSION['FOLDER']
                 );
                 echo $actionHTML;
             }
@@ -171,10 +174,11 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             if ($worker['is_active']) {
                 $upgradeHTML = sprintf('<div class="upgrade">
                     <h3> Evolutions : </h3>
-                    <form action="/RPGConquestGame/workers/action.php" method="GET">
+                    <form action="/%2$s/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
                 ',
-                $worker['id']
+                $worker['id'],
+                $_SESSION['FOLDER']
                 );
 
                 // TODO : UPDATE powers on age code ?

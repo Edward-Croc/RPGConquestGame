@@ -1,8 +1,6 @@
 <?php
     $zones = getZonesArray($gameReady);
-    $mapFile = getConfig($gameReady, 'map_file');
-    $mapAlt = getConfig($gameReady, 'map_alt');
-    $imgString = '<img src="/RPGConquestGame/img/'.$mapFile.'" alt="'.$mapAlt.'" style="max-width:100%; height:auto;">';
+    $imgString = sprintf('<img src="/%s/img/%s" alt="%s" style="max-width:100; height:auto;">',  $_SESSION['FOLDER'], getConfig($gameReady, 'map_file'), getConfig($gameReady, 'map_alt'));
 ?>
 
 <div class="zones">

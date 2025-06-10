@@ -3,7 +3,7 @@
 // Check if the user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     // Redirect the user to the login page if not logged in
-    header('Location: '.'/RPGConquestGame/connection/loginForm.php');
+    header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
     exit();
 }
 ?>
@@ -31,20 +31,19 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <!-- Sidebar MENU -->
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
-        <?php 
-        if ($pageName !== 'accueil') echo '<a href="/RPGConquestGame/base/accueil.php">Accueil</a>'; 
-        if ($pageName !== 'view_workers') echo '<a href="/RPGConquestGame/workers/viewAll.php">Agents</a>';
-        if ($pageName !== 'zones_action') echo '<a href="/RPGConquestGame/zones/action.php">Zones</a>';
-        if ($pageName !== 'controllers_action') echo '<a href="/RPGConquestGame/controllers/action.php">Controllers</a>';
-        if ($pageName !== 'systemPresentation') echo '<a href="/RPGConquestGame/base/systemPresentation.php">Game System</a>';
+        <?php
+        if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
+        if ($pageName !== 'view_workers') echo sprintf('<a href="/%s/workers/viewAll.php">Agents</a>', $_SESSION['FOLDER']);
+        if ($pageName !== 'zones_action') echo sprintf('<a href="/%s/zones/action.php">Zones</a>', $_SESSION['FOLDER']);
+        if ($pageName !== 'controllers_action') echo sprintf('<a href="/%s/controllers/action.php">Controllers</a>', $_SESSION['FOLDER']);
+        if ($pageName !== 'systemPresentation') echo sprintf('<a href="/%s/base/systemPresentation.php">Game System</a>', $_SESSION['FOLDER']);
         if ($_SESSION['is_privileged'] == true){
-            echo sprintf ('<a href="/RPGConquestGame/mechanics/endTurn.php" class="topbar-btn">%s</a>', ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
+            echo sprintf ('<a href="/%s/mechanics/endTurn.php" class="topbar-btn">%s</a>', $_SESSION['FOLDER'], ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
             if ($pageName !== 'admin') {
-                echo '<a href="/RPGConquestGame/base/admin.php" class="topbar-btn">Configuration</a>';
+                echo sprintf ('<a href="/%s/base/admin.php" class="topbar-btn">Configuration</a>', $_SESSION['FOLDER']);
             }
-        }
+        } echo sprintf ('<a href="/%s/connection/logout.php" class="logout-btn">Logout</a>', $_SESSION['FOLDER']);
         ?>
-        <a href="/RPGConquestGame/connection/logout.php" class="logout-btn">Logout</a>
     </div>
     <!-- Sidebar Toggle Button -->
     <?php

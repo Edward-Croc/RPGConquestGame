@@ -28,12 +28,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             echo sprintf("
             <h1>Agents</h1>
-            <form action='/RPGConquestGame/workers/new.php' method='GET'>
+            <form action='/%s/workers/new.php' method='GET'>
                 <h3> Recrutement : </h3>
                 <input type='hidden' name='controller_id' value='%s'>
                 %s
                 %s
             </form>",
+            $_SESSION['FOLDER'],
             $controller_id,
             $firstComeButton,
             $recruitButton
