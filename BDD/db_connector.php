@@ -59,6 +59,8 @@ function getDBConnection ($path, $configFile) {
             $folder = $config['folder'];
         }
     }
+    $_SESSION['DBNAME'] = $dbname;
+    $_SESSION['DBTYPE'] = $db_type;
     $_SESSION['FOLDER'] = $folder;
 
     if ( $db_type == 'mysql' ) {
@@ -125,8 +127,12 @@ function tableExists($pdo, $tableName) {
  */
 function destroyAllTables($pdo) {
     try {
+        $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = sprintf("SELECT table_name FROM information_schema.tables WHERE table_schema = '%s' AND table_type = 'BASE TABLE'", $_SESSION['DBNAME']);
+        } 
         // Get list of tables in the database
-        $stmt = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+        $stmt = $pdo->query($sql);
         $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         // Drop each table
@@ -161,22 +167,26 @@ function gameReady() {
         $path = getPath($configFile);
         if ($path != null) break;
     }
-    if ($_SESSION['DEBUG'] == true) echo "Config Path built : " . $path.$configFile . " </ br>";
+    if ($_SESSION['DEBUG'] == true) 
+        echo "Config Path built : " . $path.$configFile . " </ br>";
 
     $pdo = getDBConnection($path, $configFile);
+    if ($_SESSION['DEBUG'] == true) 
+        echo "getDBConnection: </ br>";
     if ($pdo != null) {
         try {
             // Check if table exists
             $tableName = 'players';
             $exists = tableExists($pdo, $tableName);
 
+            if ($_SESSION['DEBUG'] == true) 
+                echo "tableExists players: " . $exists . " </ br>";
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
-
-                $config = parse_ini_file($path.$configFile);
-                $dbtype = (!empty($config['db_type'])) ? $config['db_type'] : 'postgres';
-
-                $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $dbtype);
+                
+                if ($_SESSION['DEBUG'] == true) 
+                    echo 'dbtype : '.$_SESSION['DBTYPE']."; <br>";
+                $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $_SESSION['DBTYPE']);
                 echo "Loading $sqlFile ... ";
                 //$sqlFile = '../BDD/setupBDD.sql';
                 if (file_exists($sqlFile)) {
@@ -189,11 +199,10 @@ function gameReady() {
                 }
                 echo 'END <br />';
 
-
                 if ( isset($_POST['config_name']) ) {
                     $fileNames = ['base', 'textes', 'worker_names'];
                     foreach ( $fileNames as $fileName ) {
-                        $sqlFile =  sprintf('%s/var/%s/setup%s_%s.sql',  $path, $dbtype, $_POST['config_name'], $fileName);
+                        $sqlFile =  sprintf('%s/var/%s/setup%s_%s.sql',  $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
                         echo "Loading $sqlFile ...<br />";
                         if (file_exists($sqlFile)) {
                             echo 'Start <br />';
@@ -205,7 +214,7 @@ function gameReady() {
                         } else echo "SQL file $sqlFile UNFOUND.<br />";
                     }
 
-                    $sqlFile =  sprintf('%s/var/%s/setup%s_hobbys.sql',$path, $dbtype, $_POST['config_name']);
+                    $sqlFile =  sprintf('%s/var/%s/setup%s_hobbys.sql',$path, $_SESSION['DBTYPE'], $_POST['config_name']);
                     echo "Loading $sqlFile ...<br />";
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
@@ -259,7 +268,7 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
-                    $sqlFile = sprintf('%s/var/%s/setup%s_jobs.sql', $path, $dbtype, $_POST['config_name']);
+                    $sqlFile = sprintf('%s/var/%s/setup%s_jobs.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
                     echo "Loading $sqlFile ...<br />";
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
@@ -313,7 +322,7 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
-                    $sqlFile = sprintf('%s/var/%s/setup%s_advanced.sql', $path, $dbtype, $_POST['config_name']);
+                    $sqlFile = sprintf('%s/var/%s/setup%s_advanced.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
                     if (file_exists($sqlFile)) {
                         echo 'Start <br />';
                         // Read SQL file
@@ -330,7 +339,7 @@ function gameReady() {
                         || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
                         || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
                     ) {
-                        $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $dbtype, $_POST['config_name']);
+                        $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
                         echo "Loading $sqlFile ...<br />";
                         if (file_exists($sqlFile)) {
                             echo 'Start <br />';
