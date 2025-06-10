@@ -36,19 +36,19 @@ if (
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php
         if ((!empty($noConnection) && $noConnection == true)) {
-            echo sprintf ('<a href="/%s/connection/login.php" class="topbar-btn">Login</a>', $_SESSION['FOLDER']);
+            echo sprintf ('<a href="/%s/connection/loginForm.php" class="topbar-btn">Login</a>', $_SESSION['FOLDER']);
         } else { 
-        if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
-        if ($pageName !== 'view_workers') echo sprintf('<a href="/%s/workers/viewAll.php">Agents</a>', $_SESSION['FOLDER']);
-        if ($pageName !== 'zones_action') echo sprintf('<a href="/%s/zones/action.php">Zones</a>', $_SESSION['FOLDER']);
-        if ($pageName !== 'controllers_action') echo sprintf('<a href="/%s/controllers/action.php">Controllers</a>', $_SESSION['FOLDER']);
-        if ($pageName !== 'systemPresentation') echo sprintf('<a href="/%s/base/systemPresentation.php">Game System</a>', $_SESSION['FOLDER']);
-        if ($_SESSION['is_privileged'] == true){
-            echo sprintf ('<a href="/%s/mechanics/endTurn.php" class="topbar-btn">%s</a>', $_SESSION['FOLDER'], ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
-            if ($pageName !== 'admin') {
-                echo sprintf ('<a href="/%s/base/admin.php" class="topbar-btn">Configuration</a>', $_SESSION['FOLDER']);
-            }
-        } echo sprintf ('<a href="/%s/connection/logout.php" class="logout-btn">Logout</a>', $_SESSION['FOLDER']);
+            if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
+            if ($pageName !== 'view_workers') echo sprintf('<a href="/%s/workers/viewAll.php">Agents</a>', $_SESSION['FOLDER']);
+            if ($pageName !== 'zones_action') echo sprintf('<a href="/%s/zones/action.php">Zones</a>', $_SESSION['FOLDER']);
+            if ($pageName !== 'controllers_action') echo sprintf('<a href="/%s/controllers/action.php">Controllers</a>', $_SESSION['FOLDER']);
+            if ($pageName !== 'systemPresentation') echo sprintf('<a href="/%s/base/systemPresentation.php">Game System</a>', $_SESSION['FOLDER']);
+            if ($_SESSION['is_privileged'] == true){
+                echo sprintf ('<a href="/%s/mechanics/endTurn.php" class="topbar-btn">%s</a>', $_SESSION['FOLDER'], ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
+                if ($pageName !== 'admin') {
+                    echo sprintf ('<a href="/%s/base/admin.php" class="topbar-btn">Configuration</a>', $_SESSION['FOLDER']);
+                }
+            } echo sprintf ('<a href="/%s/connection/logout.php" class="logout-btn">Logout</a>', $_SESSION['FOLDER']);
         }
         ?>
     </div>
