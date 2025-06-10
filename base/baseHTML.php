@@ -1,7 +1,10 @@
 <?php
 
 // Check if the user is logged in
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+if (
+    (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true)
+    && (empty($noConnection) || $noConnection == false)
+) {
     // Redirect the user to the login page if not logged in
     header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
     exit();
@@ -32,6 +35,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php
+        if ((!empty($noConnection) && $noConnection == true)) {
+            echo sprintf ('<a href="/%s/connection/login.php" class="topbar-btn">Login</a>', $_SESSION['FOLDER']);
+        } else { 
         if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
         if ($pageName !== 'view_workers') echo sprintf('<a href="/%s/workers/viewAll.php">Agents</a>', $_SESSION['FOLDER']);
         if ($pageName !== 'zones_action') echo sprintf('<a href="/%s/zones/action.php">Zones</a>', $_SESSION['FOLDER']);
@@ -43,6 +49,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 echo sprintf ('<a href="/%s/base/admin.php" class="topbar-btn">Configuration</a>', $_SESSION['FOLDER']);
             }
         } echo sprintf ('<a href="/%s/connection/logout.php" class="logout-btn">Logout</a>', $_SESSION['FOLDER']);
+        }
         ?>
     </div>
     <!-- Sidebar Toggle Button -->
