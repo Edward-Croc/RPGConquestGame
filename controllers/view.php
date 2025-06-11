@@ -70,7 +70,7 @@
             if($showAttackableControllerKnownLocations !== NULL)
                 echo sprintf('<form action="/%3$s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value=%1$s>
-                        <input type="submit" name="attackLocation" value="Intéragir avec : " class="controller-action-btn"> %2$s',
+                        <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers : " class="controller-action-btn"> %2$s',
                         $controllers['id'],
                         $showAttackableControllerKnownLocations,
                         $_SESSION['FOLDER']
