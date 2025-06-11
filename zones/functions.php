@@ -351,6 +351,28 @@ function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
                 htmlspecialchars($base['name']),
                 htmlspecialchars($base['description'])
             );
+
+            // Fetch artefacts for this location
+            $stmtArt = $pdo->prepare("
+            SELECT name, description, full_description 
+            FROM artefacts 
+            WHERE location_id = :location_id
+            ");
+            $stmtArt->execute([':location_id' => $base['id']]);
+            $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!empty($artefacts)) {
+                $returnText .= "<ul>";
+                foreach ($artefacts as $art) {
+                    $returnText .= sprintf(
+                        "<li><strong>%s</strong>: %s %s</li>",
+                        htmlspecialchars($art['name']),
+                        htmlspecialchars($art['description']),
+                        htmlspecialchars($art['full_description'])
+                    );
+                }
+                $returnText .= "</ul>";
+            }
         }
         $returnText .=  "</p>";
     }
