@@ -84,6 +84,7 @@ function locationSearchMechanic($pdo) {
     $reportArray = [];
     $LOCATIONNAMEDIFF = getConfig($pdo, 'LOCATIONNAMEDIFF');
     $LOCATIONINFORMATIONDIFF = getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
+    $LOCATIONARTEFACTSDIFF = getConfig($pdo, 'LOCATIONARTEFACTSDIFF');
 
     // Fetch dynamic text templates
     $locationNameText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_NAME'), true);
@@ -126,10 +127,33 @@ function locationSearchMechanic($pdo) {
                         ':lid' => $row['found_id'],
                         ':turn' => $turn_number
                     ]);
+                }
 
                     $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
                     if ($row['found_can_be_destroyed']) {
                         $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
+                }
+
+                if ($row['enquete_difference'] >= $LOCATIONARTEFACTSDIFF) {
+                    // Fetch artefacts for this location
+                    $stmtArt = $pdo->prepare("
+                    SELECT name, description
+                    FROM artefacts 
+                    WHERE location_id = :location_id
+                    ");
+                    $stmtArt->execute([':location_id' => $row['found_id']]);
+                    $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
+
+                    if (!empty($artefacts)) {
+                        $reportElement .= "Ce lieu contient : <ul>";
+                        foreach ($artefacts as $art) {
+                            $reportElement .= sprintf(
+                                "<li><strong>%s</strong>: %s</li>",
+                                htmlspecialchars($art['name']),
+                                htmlspecialchars($art['description'])
+                            );
+                        }
+                        $reportElement .= "</ul>";
                     }
                 }
             }
