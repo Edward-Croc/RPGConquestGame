@@ -129,9 +129,9 @@ function locationSearchMechanic($pdo) {
                     ]);
                 }
 
-                    $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
-                    if ($row['found_can_be_destroyed']) {
-                        $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
+                $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
+                if ($row['found_can_be_destroyed']) {
+                    $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
                 }
 
                 if ($row['enquete_difference'] >= $LOCATIONARTEFACTSDIFF) {
