@@ -264,6 +264,13 @@ function moveBase($pdo, $base_id, $zone_id) {
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $stmt->execute();
+
+        // Delete controller knowledge of the location
+        $deleteSQL = "DELETE FROM controller_known_locations WHERE location_id = :base_id";
+        $deleteStmt = $pdo->prepare($deleteSQL);
+        $deleteStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $deleteStmt->execute();
+
         return true;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
