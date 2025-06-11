@@ -50,7 +50,7 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible de décou
     <li><strong>Etre offert à un autre :</strong>changer de contrôleur</li>
 </ul></p>
 <p>
-  Les résultats d'une enquête (surveillance ou investigation) sur un agent contiendront aléatoirement et par ordre de difficulté d'obtention : <ul>
+  Les <strong>résultats d'une enquête</strong> (surveillance ou investigation) sur un agent contiendront aléatoirement et par ordre de difficulté d'obtention : <ul>
     <li> Le nom, les capacités aléatoires et l'action en cours d'un agent. </li>
     <li> Les capacités et modifications données par son contrôleur. </li>
     <li> Le numéro du réseau dont fait partie l'agent. </li>
@@ -66,20 +66,24 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible de décou
   <li><strong>Sa description</strong> incluant des informations secrètes sur la zone ou les personnages liés si la valeur est encore plus élevée</li>
   <li><strong>Et s’il est destructible</strong>, le rapport le mentionne et l'action de destruction ou de conquête apparaîtra dans la page du contrôleur et la page des zones</li>
 </ul>
-<p> L'attaque d'un lieu est résolue immédiatement par le système, il prend en compte pour l'attaquant : <ul>
-  <il>une valeur fixe secrète </il>
-  <il>le nombre de serviteurs appartenant à l'attaquant dans la zone </il>
-  <il>les capacités du contrôleur attaquant </il>
-  <il>si la zone est conquise par le contrôleur </il>
+<p> L'<strong>attaque d'un lieu</strong>  est résolue immédiatement par le système, il prend en compte pour l'attaquant : <ul>
+    <li>une valeur fixe secrète </li>
+    <li>le nombre de serviteurs appartenant à l'attaquant dans la zone </li>
+    <li>les capacités du contrôleur attaquant </li>
+    <li>si la zone est conquise par le contrôleur </li>
   </ul>
-  qui est comparée à la défense du lieu, une valeur fixe si le lieu n'est lié à aucun contrôleur, ou si le lieu est lié à un contrôleur (place forte, etc) composée de : 
+  qui est comparée à la <strong>défense du lieu</strong> , une valeur fixe si le lieu n'est lié à aucun contrôleur, ou si le lieu est lié à un contrôleur (place forte, etc) composée de : 
   <ul>
-  <il>la défense fixe du lieu </il>
-  <il>les capacités du contrôleur défenseur  </il>
-  <il>le nombre de serviteurs du contrôleur défenseur dans la zone </il>
-  <il>si la zone est conquise par le contrôleur </il>
-  <il> parfois la durée d'installation du lieu </il>
-</ul> </p>
+    <li>la défense fixe du lieu </li>
+    <li>les capacités du contrôleur défenseur  </li>
+    <li>le nombre de serviteurs du contrôleur défenseur dans la zone </li>
+    <li>si la zone est conquise par le contrôleur </li>
+    <li> parfois la durée d'installation du lieu </li>
+</ul>
+</p>
+<p>
+    Lors d'un attaque résussie sur un lieu, si ce lieu contiens des artéfacts récupérables alors ils seront transferé dans la place forte du contrôleur.
+</p>
 
 <h3>4. Mécaniques de jeu (pour les nerds et power gamers)</h3>
 <p>Le système crée des rapports personnalisés selon les valeurs d’enquête, d'attaque et de défense et les actions menées.
@@ -104,8 +108,8 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible de décou
 <h3>2. Debug et suivi</h3>
 <p>Un mode <code>DEBUG_REPORT</code> permet d’afficher l’intégralité des calculs et des comparaisons réalisées à chaque tour pour le suivi du développement ou le test des équilibrages.</p>
 <h3>3. Contact</h3>
-<p> Il est possible de récupérer les sources libres d'accès de ce système sur le GitHub suivant https://github.com/Edward-Croc/RPGConquestGame.
-   Vous pouvez vous rendre sur la page https://github.com/Edward-Croc/RPGConquestGame/issues pour y déclarer les bugs.
+<p> Il est possible de récupérer les sources libres d'accès de ce système sur le GitHub suivant <a href="https://github.com/Edward-Croc/RPGConquestGame" target="_blank">https://github.com/Edward-Croc/RPGConquestGame</a>.
+   Vous pouvez vous rendre sur la page <a href="https://github.com/Edward-Croc/RPGConquestGame/issues" target="_blank">issues</a> pour y déclarer les bugs.
    Et en dernier recours voici <details> <summary>mon email : </summary> <p>lenainblanc[at]wanadoo.fr</p> </details>
 </p>
 </div>
