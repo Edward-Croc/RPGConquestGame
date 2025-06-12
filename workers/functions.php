@@ -770,6 +770,8 @@ function countWorkerDisciplines($pdo, $workerIds = NULL) {
  * @return int|null :
  */
 function moveWorker($pdo, $workerId, $zoneId) {
+    $debug = $_SESSION['DEBUG'];
+    if ($debug) echo __FUNCTION__."(): Step 1 UPDATE workers <br/>";
     try{
         // UPDATE workers value
         $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
@@ -780,10 +782,12 @@ function moveWorker($pdo, $workerId, $zoneId) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
         return null;
     }
+
+    if ($debug) echo __FUNCTION__."(): Step 2 UPDATE worker_actions <br/>";
     // get worker action status for turn
     $actions = getWorkerActions($pdo, $workerId);
     $action = $actions[0];
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
+    if ($debug) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
 
     // Decode the existing JSON into an associative array
     $currentReport = json_decode($action['report'], true);
@@ -792,13 +796,16 @@ function moveWorker($pdo, $workerId, $zoneId) {
         $currentReport = array();
     }
     $zone_name = getZoneName($pdo, $zoneId);
-    if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
+    if (empty($currentReport['life_report'])) $currentReport['life_report'] = '';
     $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. ";
+
+    if ($debug) echo sprintf("%s(): Repport built %s <br/>", __FUNCTION__, $currentReport['life_report']);
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);
-    if (json_last_error() !== JSON_ERROR_NONE)
+    if (json_last_error() !== JSON_ERROR_NONE) {
         echo "JSON decoding error: " . json_last_error_msg() . "<br />";
         return null;
+    }
     try{
         // UPDATE worker_actions values
         $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id, report = :report WHERE id = :id ");
@@ -809,6 +816,8 @@ function moveWorker($pdo, $workerId, $zoneId) {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
+    if ($debug) echo __FUNCTION__."(): DONE <br/>"; 
+    
 
     return $workerId;
 }
