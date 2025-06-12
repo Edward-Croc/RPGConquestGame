@@ -94,7 +94,7 @@ require_once '../base/baseHTML.php';
                     echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
                 }
             } else {
-                
+                echo __FUNCTION__."(): endTurn actions Failed: <br />";
             }
         }
 
