@@ -431,7 +431,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
  */
 function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
     // Step 1: Get base location of the controller
-    $stmt = $pdo->prepare("SELECT id FROM locations WHERE controller_id = ? AND base = TRUE LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id FROM locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
     $stmt->execute([$controller_id]);
     $baseLocation = $stmt->fetchColumn();
 
