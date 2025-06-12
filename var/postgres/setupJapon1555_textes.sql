@@ -327,7 +327,7 @@ VALUES
 
 -- %s = description de la localisation
 ('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
-    " Description : %s.",
+    " Description : %s",
     " Détails révélés : %s"
 ]', 'Phrases pour décrire une localisation après enquête'),
 
