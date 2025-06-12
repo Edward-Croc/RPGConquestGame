@@ -1,6 +1,6 @@
 <?php
     $zones = getZonesArray($gameReady);
-    $imgString = sprintf('<img src="/%s/img/%s" alt="%s" style="max-width:100; height:auto;">',  $_SESSION['FOLDER'], getConfig($gameReady, 'map_file'), getConfig($gameReady, 'map_alt'));
+    $imgString = sprintf('<img src="/%s/img/%s" alt="%s" style="max-width:%s; height:auto;">',  $_SESSION['FOLDER'], getConfig($gameReady, 'map_file'), getConfig($gameReady, 'map_alt'), '100%');
 ?>
 
 <div class="zones">
