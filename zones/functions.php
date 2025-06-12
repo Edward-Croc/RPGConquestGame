@@ -190,7 +190,9 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
 
     // Powers
     $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
+    if ($debug) echo sprintf("powerMultiplier : %d<br>", $powerMultiplier);
     $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
+    if ($debug) echo sprintf("maxPowerBonus : %d<br>", $maxPowerBonus);
     if ($powerMultiplier !== 0) {
         switch ($type){ // 'defence', 'attack' or 'enquete'
             case 'DiscoveryDiff' :
@@ -220,7 +222,9 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
 
     // Workers
     $workerMultiplier = (int)getConfig($pdo, "base{$type}AddWorkers");
+    if ($debug) echo sprintf("workerMultiplier : %d<br>", $workerMultiplier);
     $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
+    if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
     if ($workerMultiplier !== 0) {
         $sql = "
             SELECT COUNT(*) AS worker_count
