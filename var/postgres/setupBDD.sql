@@ -109,10 +109,14 @@ VALUES
     ,('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' )
     ,('maxBonusDiscoveryDiffWorkers', 3, 'Maximum bonus obtainable from worker presence' )
     ,('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' )
-    ,('baseDefenceDiff', 2, 'Base defence value for bases' )
-    ,('baseDefenceDiffAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
-    ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
-    ,('baseDefenceDiffAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('baseAttack', 2, 'Base defence value for bases' )
+    ,('baseAttackAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
+    ,('baseAttackAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
+    ,('baseAttackAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('baseDefence', 2, 'Base defence value for bases' )
+    ,('baseDefenceAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
+    ,('baseDefenceAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
+    ,('baseDefenceAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir', 'Text for location destroyed')
     ,('textLocationPillaged', 'Le lieu %s a été pillée', 'Text for location pillaged')
@@ -192,6 +196,15 @@ CREATE TABLE locations (
     FOREIGN KEY (controller_id) REFERENCES controllers (ID)
 );
 
+CREATE TABLE artefacts (
+    id SERIAL PRIMARY KEY,          -- Unique ID of the artefact
+    location_id INTEGER,            -- Foreign key referencing a location
+    name TEXT NOT NULL,             -- Name of the artefact
+    description TEXT NOT NULL,      -- Description of the artefact
+    full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
+    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
+);
+
 CREATE TABLE controller_known_locations (
     id SERIAL PRIMARY KEY,
     controller_id INT NOT NULL,
@@ -203,13 +216,14 @@ CREATE TABLE controller_known_locations (
     FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
 );
 
-CREATE TABLE artefacts (
-    id SERIAL PRIMARY KEY,          -- Unique ID of the artefact
-    location_id INTEGER,            -- Foreign key referencing a location
-    name TEXT NOT NULL,             -- Name of the artefact
-    description TEXT NOT NULL,      -- Description of the artefact
-    full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
-    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
+CREATE TABLE location_attack_logs (
+    id SERIAL PRIMARY KEY,
+    target_controller_id INT REFERENCES controllers(id), 
+    attacker_id INT REFERENCES controllers(id),
+    turn INT NOT NULL,
+    success BOOLEAN NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Prepare the Worker Origins

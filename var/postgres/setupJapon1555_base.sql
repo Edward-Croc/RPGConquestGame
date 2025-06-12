@@ -1,7 +1,8 @@
 
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
-UPDATE config SET value =  '2' WHERE name = 'recrutement_disciplines';
+UPDATE config SET value =  '1' WHERE name = 'recrutement_disciplines';
+UPDATE config SET value =  '{"age": ["1","2"]}' WHERE name = 'age_discipline';
 
 INSERT INTO config (name, value, description)
 VALUES

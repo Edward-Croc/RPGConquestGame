@@ -405,7 +405,7 @@ function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
                 $returnText .=  sprintf('
                     <form action="/%s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value="%d">
-                        <input type="hidden" name="location_id" value="%d">
+                        <input type="hidden" name="target_location_id" value="%d">
                         <input type="submit" name="attack" value="Mener une équipe d\'attaque sur place" class="controller-action-btn">
                     </form>',
                     $_SESSION['FOLDER'],

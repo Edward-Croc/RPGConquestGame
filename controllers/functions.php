@@ -331,6 +331,7 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
  */
 function attackLocation($pdo, $controller_id, $target_location_id) {
     $return = array('success'=> false, 'message' => '');
+    $notes = '';
     try{
         // Get ZONE ID from target_location_id
         $sql = "SELECT * FROM locations WHERE id = :id";
@@ -343,24 +344,17 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         return NULL;
     }
     $zone_id = $location[0]['zone_id'];
+    if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
+    if ($debug) echo sprintf("%s() attackLocationDiff : %s <br>",__FUNCTION__, var_export($attackLocationDiff, true));
     $controllerAttack = calculatecontrollerAttack($pdo, $controller_id, $zone_id);
+    if ($debug) echo sprintf("%s() controllerAttack : %s <br>",__FUNCTION__, var_export($controllerAttack, true));
     $locationDefence = calculateSecretLocationDefence($pdo, $location[0]['controller_id'], $zone_id, $target_location_id);
+    if ($debug) echo sprintf("%s() locationDefence : %s <br>",__FUNCTION__, var_export($locationDefence, true));
 
     // Check result
     if (($controllerAttack - $locationDefence) >= $attackLocationDiff){ 
         $return['success'] = true;
-        $return['message'] = captureLocationsArtefacts($pdo, $target_location_id, $controller_id);
-
-        // Delete player base
-        try{
-            $sql = "DELETE FROM locations WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':id' => $target_location_id]);
-        } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-            return NULL;
-        }
 
         // Do actions depending on JSON for location
         if (!empty($location[0]['activate_json'])) {
@@ -379,18 +373,50 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
             // show_text => add text to the message
             // add_worker => add worker to controller
             // change_ia => change the functionning of an IA character
+            // check_player_death
         } else {
             $return['message'] .= sprintf(
                 getConfig($pdo, 'textLocationDestroyed'),
                 $location[0]['name']
             );
         }
+
+        $return['message'] .= captureLocationsArtefacts($pdo, $target_location_id, $controller_id);
+        // Delete player base
+        try{
+            $sql = "DELETE FROM controller_known_locations WHERE location_id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $target_location_id]);
+            $sql = "DELETE FROM locations WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $target_location_id]);
+        } catch (PDOException $e) {
+            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+            return NULL;
+        }
+
     } else {
         $return['message'] = sprintf(
             getConfig($pdo, 'textLocationNotDestroyed'),
             $location[0]['name']
         );
     }
+
+    if (!empty($location[0]['controller_id'])){
+        // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
+        $logSql = "
+            INSERT INTO base_attack_logs (target_controller_id, attacker_id, turn, success, notes)
+            VALUES (:target_controller_id, :attacker_id, (SELECT turncounter FROM mechanics LIMIT 1), :success, :notes)
+        ";
+        $logStmt = $pdo->prepare($logSql);
+        $logStmt->execute([
+            ':target_controller_id' => $location[0]['controller_id'],
+            ':attacker_id' => $controller_id, // or NULL if unknown
+            ':success' => $return['success'],  // true or false
+            ':notes' => $notes // e.g., 'Assault with 3 units', or just ''
+        ]);
+    }
+
     return $return;
 }
 
