@@ -211,6 +211,7 @@ CREATE TABLE controller_known_locations (
     location_id INT NOT NULL,
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (controller_id, location_id), -- Unicity constraint on controller/worker combo
     FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
     FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
@@ -223,7 +224,9 @@ CREATE TABLE location_attack_logs (
     turn INT NOT NULL,
     success BOOLEAN NOT NULL,
     notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (target_controller_id) REFERENCES controllers (ID), -- Link to controllers table
+    FOREIGN KEY (attacker_id) REFERENCES controllers (ID) -- Link to controllers table
 );
 
 -- Prepare the Worker Origins
@@ -249,6 +252,7 @@ CREATE TABLE workers (
     zone_id INT NOT NULL,
     is_alive BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID)
 );
@@ -258,6 +262,7 @@ CREATE TABLE controller_worker (
     controller_id INT,
     worker_id INT,
     is_primary_controller BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- Adding unique constraint
     UNIQUE (controller_id, worker_id),
     UNIQUE (worker_id, is_primary_controller),
@@ -295,6 +300,7 @@ CREATE TABLE worker_powers (
     ID SERIAL PRIMARY KEY,
     worker_id INT NOT NULL,
     link_power_type_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, link_power_type_id), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
@@ -321,6 +327,7 @@ CREATE TABLE worker_actions (
     action_choice TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}'::json,
     report JSON DEFAULT '{}'::json, -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, turn_number), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
@@ -336,6 +343,7 @@ CREATE TABLE controllers_known_enemies (
     zone_id INT NOT NULL, -- Zone of discovery
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (controller_id, discovered_worker_id), -- Unicity constraint on controller/worker combo
     FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
     FOREIGN KEY (discovered_worker_id) REFERENCES workers (ID), -- Link to workers table
