@@ -57,7 +57,7 @@ require_once '../base/baseHTML.php';
                 <?php echo sprintf( '
                 <p> <a href="/%1$s/base/configuration.php">Configuration Management</a> </p>
                 <p> <a href="/%1$s/artefacts/managment.php">Artefacts Management</a> </p>
-                <p> <a href="/%1$s/location/managment.php">Attack on player base Management</a> </p>',
+                <p> <a href="/%1$s/zones/managment.php">Attack on player base Management</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
