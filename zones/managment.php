@@ -10,10 +10,8 @@ $sql = "
         bal.success,
         bal.notes,
         bal.created_at,
-        l.name AS base_name,
-        c.name AS attacker_name
+        CONCAT(c.firstname, ' ', c.lastname) AS attacker_name
     FROM location_attack_logs bal
-    LEFT JOIN locations l ON bal.base_id = l.id
     LEFT JOIN controllers c ON bal.attacker_id = c.id
     ORDER BY bal.created_at DESC
 ";
@@ -33,7 +31,6 @@ require_once '../base/baseHTML.php';
         <th>Tour</th>
         <th>Succès</th>
         <th>Notes</th>
-        <th>Date</th>
     </tr>
     <?php foreach ($logs as $log): ?>
     <tr>
@@ -43,7 +40,6 @@ require_once '../base/baseHTML.php';
         <td><?= htmlspecialchars($log['turn']) ?></td>
         <td><?= $log['success'] ? '✔️ Réussie' : '❌ Échec' ?></td>
         <td><?= nl2br(htmlspecialchars($log['notes'])) ?></td>
-        <td><?= htmlspecialchars($log['created_at']) ?></td>
     </tr>
     <?php endforeach; ?>
 </table>
