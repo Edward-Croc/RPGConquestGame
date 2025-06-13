@@ -256,7 +256,7 @@ function createBase($pdo, $controller_id, $zone_id) {
  */
 function moveBase($pdo, $base_id, $zone_id) {
     // update locations set zone_id where controller_id = "%s";
-    $sql = "UPDATE locations SET zone_id = :zone_id,setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
+    $sql = "UPDATE locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -405,7 +405,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     if (!empty($location[0]['controller_id'])){
         // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
         $logSql = "
-            INSERT INTO base_attack_logs (target_controller_id, attacker_id, turn, success, notes)
+            INSERT INTO location_attack_logs (target_controller_id, attacker_id, turn, success, notes)
             VALUES (:target_controller_id, :attacker_id, (SELECT turncounter FROM mechanics LIMIT 1), :success, :notes)
         ";
         $logStmt = $pdo->prepare($logSql);
