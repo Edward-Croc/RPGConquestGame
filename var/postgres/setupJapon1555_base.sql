@@ -197,34 +197,151 @@ INSERT INTO zones (name, description) VALUES
     , ('Cité Impériale de Kyoto', 'Capitale impériale, centre des arts, des lettres et des poisons subtils. Les palais y cachent les plus anciennes lignées, les ruelles les complots les plus jeunes. Kyōto ne brandit pas l’épée, mais ceux qui y règnent peuvent faire plier des provinces entières par un sourire ou un silence.')
 ;
 
+-- Fluff
+INSERT INTO locations (name, description, discovery_diff, zone_id) Values
+    ('Port d’Uwajima', 'Un port ', 6, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
+    , ('Mt Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
+    , ('Port de Kochi', '', 6, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'))
+    , ('Ikeda', '', 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
+    , ('Port de Tokushima', '', 6, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
+    , ('Grande route et relais de poste', 'Relie Tokushima a Kochi par les plaines du nord de l’ile', 6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'))
+    , ('Rumeur de la bataille', '', 6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
+    , ('La passe d’Okayama', '', 6, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'))
+    , ('La Suzaku Mon', 'Grande avenue de la ville et le palais impérial', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+;
+-- Temples des Yokais
+INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
+     -- Feu - Teppō
+    ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+        'Accroché aux flancs escarpés de la côte sud de Kōchi, un petit sanctuaire noircit repose au bord d’une ancienne veine de fer oubliée.
+        Au loin, dans la vallée, les marteaux des forgerons résonnent comme une prière sourde.
+        Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait sursauter les corbeaux.')
+    -- Vent - Tessen
+    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+        'Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, fragile et silencieux.
+        La porte ne ferme plus, et le papier des lanternes s’effiloche. Pourtant, nul grain de poussière ne s’y pose.
+        Lorsque l’on entre, l’air se fait soudain glacé, et un bruissement court dans les chevrons — comme si un éventail invisible fendait l’air avec colère.')
+     -- Paresse - Biwa
+    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+        'Ce temple oublié, dissimulé dans un vallon brumeux de Shödoshima, semble abandonné depuis des décennies.
+         Pourtant, chaque crépuscule, les accords las d’un biwa résonnent sous les poutres vermoulues, portés par une brise douce où flotte un parfum de saké tiède.
+         Pourtant nul prêtre et nul pèlerin en vue.')
+     -- Roche - Chigiriki
+    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+        'Perché sur un piton rocheux des montagnes d’Ehimé, un ancien temple taillé à même la pierre repose, figé comme un souvenir.
+        Nul vent n’y souffle, nul oiseau n’y niche.
+        Parfois, on y entend cliqueter une chaîne sur la pierre nue, comme si une arme traînait seule sur le sol.')
+;
+-- Ressources 
+INSERT INTO locations (name, description, discovery_diff, zone_id) Values
+    ('Valée fertile d’Oboke', '', 7, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
+    , ('Mine de fer de Kubokawa', '', 7, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'))
+    , ('Ecuries de Kagawa', '', 7, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'))
+    , ('Port marchand d’Uwajima', '', 7, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
+;
+
+-- Secrets scénario
+INSERT INTO locations (name, description, discovery_diff, zone_id) Values
+    -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
+    ('Plaine d’Uwajima', '', 8, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
+    -- Ajouter un secret sur l'arrivée de Rennyo déposée par les pirates il y a quelques semaines à peinne
+    , ('Port de Matsuyama', '', 8, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
+    -- Ajouter un secret sur la présence du christianisme
+    , ('Port de Tokushima', '', 8, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
+    -- Ajouter un secret sur l’alliance maritale entre les chosokabe et les hosokawa
+    , ('Ecuries de Kagawa', '', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'))
+    -- Ajouter un secret sur Awaji a propos de la bataille de Kunichika contre les ikko-ikki, permettant de lever la rumeur sur sa couardise
+    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
+    -- Ajouter un secret sur Kyoto a propos de l’inimitié du Shogun contre les Chosokabe suit a sa débandande et fuite honteuse devant l'armée des takedas.
+    , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+;
+
+INSERT INTO locations (name, description, discovery_diff, zone_id, controller_id) VALUES
+    -- Geôles impériales de Kyoto
+    (
+        'Les geôles impériales', 
+        'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
+        L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
+        Peu en ressortent, et ceux qui le font ne parlent plus.',
+        10, 
+        (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    ),
+
+    -- Geôles des pirates (Shōdoshima)
+    (
+        'Les geôles des Kaizokushū', 
+        'Creusées dans la falaise même, ces cavernes humides servent de prison aux captifs des Wako. 
+        Des chaînes rouillées pendent aux murs, et l’eau salée suinte sans cesse, rongeant la volonté des enfermés. 
+        Le silence n’y est troublé que par les pas des geôliers — ou les rires des pirates.',
+        10, 
+        (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    )
+;
 
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
--- Insert the data
-INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-    ('Port d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
-    , ('Plaine d’Uwajima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
-    , ('Port de Matsuyama', '', 0, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
-    , ('Mt Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
-    , ('Mine de fer de Kubokawa', '', 8, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'))
-    , ('Port de Kochi', '', 0, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'))
-    , ('Ikeda', '', 0, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
-    , ('Oboke', '', 8, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
-    , ('Port de Tokushima', '', 0, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
-    , ('La cour impériale', '', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
-    , ('Les geoles impériales', 'Ici sont retenus ', 10, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
-;
 INSERT INTO locations (name, description, discovery_diff, zone_id, controller_id) VALUES
-    ('Geoles Pirates', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')) --PARRESSE
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国')) -- TEMPLE VENT
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国')) --PARRESSE
+    -- Le chemin de l'éveil (Tokushima)
+    ('Dainichi-ji (大日寺) -- Le chemin de l’éveil', 
+    'Niché entre les forêts brumeuses d’Iya, ce temple vibre encore du souffle ancien des premiers pas du pèlerin. 
+    On dit que les pierres du sentier y murmurent des prières oubliées à ceux qui s’y attardent. 
+    Le silence y est si pur qu’on entend le battement de son propre cœur.', 
+    7, 
+    (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'),  
+    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+
+    -- Le chemin de l'ascèse (Kōchi) 
+    ,('Chikurin-ji (竹林寺) -- Le chemin de l’ascèse', 
+    'Perché au sommet d’une colline surplombant la baie, le temple veille parmi les bambous. 
+    Les moines y pratiquent une ascèse rigoureuse, veillant jour et nuit face à l’océan sans fin. 
+    Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières salées.', 
+    7, 
+    (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),  
+    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+
+    -- Le chemin de l'illumination (Ehime) 
+    ,('Ryūkō-ji (竜光寺) -- Le chemin de l’illumination', 
+    'Suspendu à flanc de montagne, Ryūkō-ji contemple la mer intérieure comme un dragon endormi. 
+    On raconte qu’au lever du soleil, les brumes se déchirent et révèlent un éclat doré émanant de l’autel. 
+    Les sages disent que ceux qui y méditent peuvent entrevoir la lumière véritable.', 
+    7, 
+    (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'),  
+    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+
+    -- Le chemin du Nirvana (Kagawa) 
+    ,('Yashima-ji (屋島寺) -- Le chemin du Nirvana', 
+    'Ancien bastion surplombant les flots, Yashima-ji garde la mémoire des batailles et des ermites. 
+    Les brumes de l’aube y voilent statues et stupas, comme pour dissimuler les mystères du Nirvana. 
+    Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux comme une paix.', 
+    7, 
+    (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),  
+    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
 ;
 
+
 INSERT INTO artefacts (name, description, full_description, location_id) VALUES
-    ('Hosokawa (細川) Fujitaka (藤孝) le daimyô prisonnier', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Les geoles impériales'))
-    , ('Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Geoles Pirates'))
-    , ('Motochika (元親) daimyô en devenir', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', (SELECT ID FROM locations WHERE name = 'Les geoles impériales'))
-    , ('Tama (玉), fille de Fujitaka, petite soeur de Tadaoki, 17 ans', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', NULL)
-    , ('Fudžisan(富士山), 26 ans, petit soeur du daimyô.', 'Nous avons trouvée','Si vous décidé de rendre sa liberté ou de supprimé cet homme, aller voir un orga.', NULL)
+    (
+        'Fujitaka (藤孝) Hosokawa (細川) le daimyô prisonnier',
+        'Nous avons découvert que cet homme que tous pensent mort est en réalité enfermé dans une geôle oubliée, gardée par ceux qui craignent son retour.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+    ), (
+        'Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours',
+        'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardée par ceux qui craignent son retour.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+    ), (
+        'Motochika (元親) Chōsokabe(長宗我部) daimyô en devenir',
+        'Fils de Kunichika, encore trop jeune pour gouverner, il est la clef d’un fragile héritage.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+    ), (
+        'Tama (玉) Hosokawa (細川), fille de Fujitaka(藤孝), petite soeur de Tadaoki',
+        'Jeune noble éduquée aux arts de la poésie et de l’étiquette, elle est certainment le pion d’un jeu politique.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+    ), (
+        'Fudžisan(富士山) Miyoshi(三好), petit soeur du daimyô Nagayoshi (長慶).',
+        'Promise à un mariage d’alliance, elle demeure énigmatique, pieuse, et bien plus rusée que son sourire ne le laisse paraître.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+    )
 ;
 
 -- Table of Fixed Power Types used by code
