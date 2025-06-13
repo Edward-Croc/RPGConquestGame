@@ -174,12 +174,12 @@ function recalculateBaseDefence($pdo) {
  * @param PDO $pdo
  * @param int $controller_id
  * @param string $type
- * @param int|null $zone_id
+ * @param int $zone_id
  * @param int|null $location_id
  *
  * @return int $value
  */
-function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, $location_id = null) {
+function calculateControllerValue($pdo, $controller_id, $type, $zone_id, $location_id = null) {
     $debug = $_SESSION['DEBUG'];
     $value = 0;
 
@@ -187,6 +187,22 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id = null, 
     $base = (int)getConfig($pdo, "base{$type}");
     $value = $base;
     if ($debug) echo sprintf("%s (base) : %d<br>", $type, $value);
+
+    // Add +1 if controller owns or claims the zone
+    $zoneStmt = $pdo->prepare("
+        SELECT holder_controller_id, claimer_controller_id 
+        FROM zones 
+        WHERE id = :zone_id
+    ");
+    $zoneStmt->execute([':zone_id' => $zone_id]);
+    $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($zone) {
+        if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
+            $value += 1;
+            if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+        }
+    }
 
     // Powers
     $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
