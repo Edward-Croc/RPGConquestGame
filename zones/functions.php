@@ -37,10 +37,13 @@ function getZonesArray($pdo, $controller_id = null) {
             "SELECT
                 z.id AS zone_id,
                 c.id AS controller_id,
+                h.id AS holder_controller_id,
                 z.*,
-                c.*
+                c.*,
+                h.*
             FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
+            LEFT JOIN controllers AS h ON h.id = z.holder_controller_id
             %s
             ORDER BY z.id ASC",
             (!empty($controller_id))? "WHERE c.id = :controler_id" : ""

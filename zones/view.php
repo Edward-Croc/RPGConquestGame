@@ -14,6 +14,7 @@
             echo sprintf('
                 <h3 onclick="toggleDescription(%2$s)" style="cursor: pointer;"> %1$s (%2$s) %4$s </h3>
                 <div id="description-%2$s" style="display: none;">
+                    %6$s
                     <i>%3$s</i>
                     %5$s
                 </div>
@@ -23,7 +24,8 @@
                 (!empty($zone['controller_id']))
                     ? sprintf('sous la banière de %s %s', $zone['firstname'], $zone['lastname'])
                     : '',
-                !empty($_SESSION['controller']['id']) ? showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id']) : ''
+                !empty($_SESSION['controller']['id']) ? showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id']) : '',
+                (!empty($_SESSION['controller']['id']) && $zone['holder_controller_id'] == $_SESSION['controller']['id'])? '<b>Sous notre controle <br></b>' : ''
             );
         }
     ?>
