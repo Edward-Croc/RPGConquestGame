@@ -47,7 +47,7 @@ require_once '../base/baseHTML.php';
             <th>ID</th>
             <th>Nom de la Zone</th>
             <!-- <th>Description</th>-->
-            <th>Revendiquée par</th>
+            <th>Sous la banère de</th>
             <th>Défendue par</th>
         </tr>
         <?php foreach ($zones as $zone): ?>
