@@ -16,7 +16,9 @@ while ($row = $knownStmt->fetch(PDO::FETCH_ASSOC)) {
 }
 
 require_once '../base/baseHTML.php';
-echo '<h1>Location Discovery Administration</h1>
+echo '
+    <div class="managment">
+    <h1>Location Discovery Administration</h1>
     <div class="content"><div class="flex">';
     $iteration = 0;
     foreach ($locations as $loc):
@@ -45,5 +47,6 @@ echo '<h1>Location Discovery Administration</h1>
     endforeach;
 ?>        
     </div>
+</div>
 </div>
 </body>

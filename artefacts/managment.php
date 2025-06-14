@@ -47,7 +47,7 @@ $locations = $gameReady->query("SELECT id, name FROM locations ORDER BY name")->
 require_once '../base/baseHTML.php';
 
 ?>
-
+<div class='managment'>
     <h1>Artefacts List</h1>
     <table border="1" cellpadding="5">
         <tr>
@@ -117,5 +117,4 @@ require_once '../base/baseHTML.php';
         </label>
         <button type="submit" name="add_artefact">Add Artefact</button>
     </form>
-</body>
-</html>
+</div>
