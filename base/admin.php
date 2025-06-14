@@ -53,11 +53,18 @@ require_once '../base/baseHTML.php';
             </form>
         </div>
         <div class="config">
-                <h1>Links</h1>
+                <h1>Management</h1>
                 <?php echo sprintf( '
-                <p> <a href="/%1$s/base/configuration.php">Configuration Management</a> </p>
-                <p> <a href="/%1$s/artefacts/managment.php">Artefacts Management</a> </p>
-                <p> <a href="/%1$s/zones/managment.php">Attack on player base Management</a> </p>',
+                <p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>
+                <p> <a href="/%1$s/artefacts/managment.php">Artefacts</a> </p>',
+                $_SESSION['FOLDER']
+                ); ?>
+        </div>
+        <div class="config">
+                <h1>List</h1>
+                <?php echo sprintf( '
+                <p> <a href="/%1$s/zones/managment_bases.php">Attack on player base list</a> </p>
+                <p> <a href="/%1$s/zones/managment_locations.php">Discovered location list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
