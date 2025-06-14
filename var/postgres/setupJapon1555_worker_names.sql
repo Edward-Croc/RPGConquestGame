@@ -1,12 +1,12 @@
 
 -- Insert names into worker_origins
 INSERT INTO worker_origins (name) VALUES
-      ('Shikoku - Echime')
+      ('Shikoku - Ehime')
     , ('Shikoku - Kochi')
     , ('Shikoku - Tokushima')
     , ('Shikoku - Kagawa')
     , ('Shikoku - Awaji')
-    , ('Shikoku - Shödoshima')
+    , ('Shikoku - Shōdoshima')
     , ('Honshu - Kyoto')
     , ('Honshu - Osaka')
     , ('Honshu - Okayama')
@@ -19,16 +19,16 @@ INSERT INTO worker_origins (name) VALUES
 -- Insert names into worker_names
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
 -- Shikoku - Ehime
-    ('Haruki', 'Takahashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Yui', 'Nakamura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Ren', 'Sato', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Kaito', 'Yamamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Aiko', 'Fujimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Souta', 'Ishikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Hina', 'Kobayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Daichi', 'Tanaka', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Mei', 'Arai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
-    ('Takumi', 'Inoue', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Echime')),
+    ('Haruki', 'Takahashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Yui', 'Nakamura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Ren', 'Sato', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Kaito', 'Yamamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Aiko', 'Fujimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Souta', 'Ishikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Hina', 'Kobayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Daichi', 'Tanaka', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Mei', 'Arai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+    ('Takumi', 'Inoue', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
 
 -- Shikoku - Kochi
     ('Yuto', 'Matsuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
@@ -75,16 +75,16 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Nanami', 'Iguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji'))
     
     
-    , ('Nao', 'Miyamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Koki', 'Maruyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Ren', 'Takada', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Naoki', 'Sano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Riko', 'Himura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Kanon', 'Matsumoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Rina', 'Nobunaga', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Kaori', 'Uchiha', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Natsuki', 'Nanami', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
-    , ('Soutaro', 'Kawaï', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shödoshima'))
+    , ('Nao', 'Miyamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Koki', 'Maruyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Ren', 'Takada', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Naoki', 'Sano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Riko', 'Himura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Kanon', 'Matsumoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Rina', 'Nobunaga', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Kaori', 'Uchiha', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Natsuki', 'Nanami', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
+    , ('Soutaro', 'Kawaï', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
 ;
 
 -- Honshu - Kyoto

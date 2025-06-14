@@ -18,8 +18,8 @@ Hiuchi (火打 — « pierre à feu »), Kagaribi (篝火 — « feu de signalis
 */
 WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
-        ('Kosagi', 'Kotatsu', 'Shikoku - Shödoshima', 'Ile de Shödoshima'),
-        ('Iwao', 'Jizane', 'Shikoku - Echime', 'Montagnes d’Echime'),
+        ('Kosagi', 'Kotatsu', 'Shikoku - Shōdoshima', 'Ile de Shōdoshima'),
+        ('Iwao', 'Jizane', 'Shikoku - Ehime', 'Montagnes d’Ehime'),
         ('Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'),
         ('Hiuchi', 'Kagaribi', 'Shikoku - Kochi', 'Cap sud de Kochi')
 )
@@ -107,7 +107,7 @@ JOIN link_power_type lpt ON lpt.power_id = p.id;
 -- Create the start workers for Rennyo (蓮如)
 WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
-        ('Ren-jō', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Echime')
+        ('Ren-jō', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Ehime')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
 SELECT
