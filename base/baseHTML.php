@@ -47,8 +47,8 @@ if (
                 'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
                 'view_workers' => ['label' => 'Agents', 'path' => 'workers/viewAll.php'],
                 'zones_action' => ['label' => 'Zones', 'path' => 'zones/action.php'],
-                'controllers_action' => ['label' => 'Controllers', 'path' => 'controllers/action.php'],
-                'systemPresentation' => ['label' => 'Game System', 'path' => 'base/systemPresentation.php']
+                'controllers_action' => ['label' => 'Factions', 'path' => 'controllers/action.php'],
+                'systemPresentation' => ['label' => 'Système', 'path' => 'base/systemPresentation.php']
             ];
 
             foreach ($links as $key => $info) {
