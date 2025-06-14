@@ -198,33 +198,82 @@ INSERT INTO zones (name, description) VALUES
 ;
 
 -- Secrets scénario
-INSERT INTO locations (name, description, discovery_diff, zone_id) Values
+INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
     -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
-    ('Plaine d’Uwajima', '', 8, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
-    -- Ajouter un secret sur l'arrivée de Rennyo déposée par les pirates il y a quelques semaines à peinne
-    , ('Port de Matsuyama', '', 8, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
-    -- Ajouter un secret sur la présence du christianisme
-    , ('Port de Tokushima', '', 8, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
-    -- Ajouter un secret sur l’alliance maritale entre les chosokabe et les hosokawa
-    , ('Ecuries de Kagawa', '', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'))
+    ('Plaine d’Uwajima', 8, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'), (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+        , 'Les vastes plaines d’Uwajima semblent paisibles sous le soleil, entre cultures clairsemées et sentiers oubliés.
+        Mais depuis plusieurs semaines, des groupes d’hommes en haillons, armés de fourches, de bâtons ou de sabres grossiers, y ont été aperçus.
+        Ces paysans ne sont pas d’ici : ils avancent discrètement, se regroupent à la tombée du jour, et prêchent un discours de révolte contre les samouraïs.
+        Ce sont les avant-gardes des Ikko-ikki, infiltrés depuis le continent par voie maritime.
+        Découvrir quel est le chef qui les unis pourrait permettre d’agir avant qu’il ne soit trop tard.'
+    )
+    -- Ajouter un secret sur l'arrivée de Rennyo déposée par les Kaizokushū Wako il y a quelques semaines à peinne
+    , ('Port de Matsuyama', 8, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'), (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+        , 'Le port de Matsuyama est d’ordinaire animé par les pêcheurs locaux et les petits marchands.
+        Mais depuis peu, les anciens disent avoir vu, au crépuscule, un navire étrange accoster sans bannière, escorté par des pirates tatoués.
+        Un moine en est descendu, maigre, vieux, au regard brûlant de ferveur : Rennyo lui-même, leader spirituel des Ikko-ikki.
+        Selon certains, il s’est enfoncé dans les montagnes d’Ehime avec une poignée de fidèles.
+        Ce secret, s’il venait à être révélé, pourrait changer l’équilibre religieux de toute l’île.'
+    )
+    -- Ajouter un secret sur la présence du christianisme et du pretre Luís Fróis Japonologue et Jésuite -- https://fr.wikipedia.org/wiki/Lu%C3%ADs_Fr%C3%B3is 
+    , ('Port de Tokushima', 8, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'), (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)')
+        ,'Dans les ruelles du port de Tokushima, à l’écart des marchés, une maison basse aux volets clos abrite un hôte peu commun : Luís Fróis, prêtre jésuite portugais, érudit des mœurs japonaises.
+        Il y aurait établi un sanctuaire clandestin, enseignant les paroles du Christ à quelques convertis du clan Miyoshi.
+        Ce lieu sert également de relais discret pour faire entrer armes, livres et messagers depuis Nagasaki.
+        Sa présence confirme l’implantation secrète du christianisme à Tokushima, et menace de faire basculer les équilibres religieux et politiques de Shikoku.'
+    )
+    -- Ajouter un secret sur l’alliance maritale entre les Chosokabe Motochika et les Hosokawa Tama
+    , ('Le courrier de Kagawa', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'), NULL
+        , 'Une auberge modeste près de la grande route de Kagawa reçoit parfois, à l’aube, des cavaliers fatigués portant des missives cachetées.
+        L’une d’elles, récemment interceptée, contenait une promesse de mariage scellée entre Motochika Chōsokabe et Tama Hosokawa, fille de Fujitaka.
+        Si elle venait à se concrétiser, cette alliance unirait deux grandes maisons sur Shikoku et changerait les rapports de pouvoir de toute la région.
+        Pour l’instant, l’information est gardée secrète, mais les rumeurs montent.'
+    )
     -- Ajouter un secret sur Awaji a propos de la bataille de Kunichika contre les ikko-ikki, permettant de lever la rumeur sur sa couardise
-    , ('Vieux temple', '', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
-    -- Ajouter un secret sur Kyoto a propos de l’inimitié du Shogun contre les Chosokabe suit a sa débandande et fuite honteuse devant l'armée des takedas.
-    , ('La cour impériale', '', 8, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+    , ('Les deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'), NULL
+        , 'Dans les bois humides d’Awaji, un vieux temple en ruines abrite depuis peu des hommes au regard hanté et aux vêtements déchirés : des déserteurs de la bataille d’Ishizuchi.
+        Ils murmurent une autre version des faits : Kunichika Chōsokabe n’a pas fui par lâcheté, mais son armée as été défaite par la prise en tenaille organisé par les Ikko-ikki alliées aux Takedas.
+        Ses actions ont été étouffé par ses rivaux et par la honte des survivants. Si ce témoignage était rendu public, l’honneur du clan Chōsokabe pourrait être réhabilité.'  
+    )
+    -- Ajouter un secret sur Shödoshima à propos de la fuite des forces de Fujitaka face a l'avant garde Takedas alliées aux Ikko-ikki. Permettant de lever la rumeur sur sa couardise et de confirmé sa capture par un général du Shogun
+    , ('Les deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'), NULL
+        , 'Dans une gorge dissimulée parmi les pins tordus de Shōdoshima, quelques hommes efflanqués vivent en silence, fuyant le regard des pêcheurs et des samouraïs.
+            Ce sont des survivants de la déroute d’Ishizuchi, dont ils racontent une version bien différente de celle propagée à la cour : l’avant-garde des Chōsokabe, commandée par Fujitaka Hosokawa, se serait retrouvée face aux fanatiques Ikko-ikki, qui auraient écrasé ses lignes avant même que l’ordre de retraite ne puisse être donné.
+            Fujitaka, séparé de la force principale, aurait fui précipitamment vers Kyoto, mais aurait été aperçu capturé par un général des forces du shogun Ashikaga. Ces aveux, étouffés sous le fracas des récits officiels, pourraient bien réhabiliter l’honneur du daimyō déchu — ou bouleverser les équilibres fragiles entre les clans.'
+    )
+    -- Ajouter un secret sur Kyoto a propos de l’inimitié du Shogun contre les Chosokabe suit a sa débandade et fuite honteuse devant l'armée des takedas.
+    , ('La cour impériale', 8, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'), NULL
+        , 'Au sein des couloirs feutrés de la cour impériale, on ne parle plus qu’à demi-mot des récents affrontements.
+        Le nom des Chōsokabe y est devenu tabou, soufflé avec mépris : leur armée, jadis fière, aurait fui sans gloire devant l’avant-garde Takeda.
+        Le Shogun Ashikaga, humilié par leur débâcle, aurait juré de ne plus leur accorder confiance ni territoire.
+        Ce ressentiment pourrait être exploité — ou au contraire, désamorcé — selon les preuves et récits qu’on parvient à faire émerger de l’ombre.'
+    )
 ;
 
--- Fluff
-INSERT INTO locations (name, description, discovery_diff, zone_id) Values
-    ('Port d’Uwajima', 'Un port ', 6, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'))
-    , ('Mt Ishizuchi','', 6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime'))
-    , ('Port de Kochi', '', 6, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'))
-    , ('Ikeda', '', 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'))
-    , ('Port de Tokushima', '', 6, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima'))
-    , ('Grande route et relais de poste', 'Relie Tokushima a Kochi par les plaines du nord de l’ile', 6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'))
-    , ('Rumeur de la bataille', '', 6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'))
-    , ('La passe d’Okayama', '', 6, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'))
-    , ('La Suzaku Mon', 'Grande avenue de la ville et le palais impérial', 6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
+INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
+    -- Geôles impériales de Kyoto
+    (
+        'Les geôles impériales', 
+        'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
+        L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
+        Peu en ressortent, et ceux qui le font ne parlent plus.',
+        10, True,
+        (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    ),
+
+    -- Geôles des pirates (Shōdoshima)
+    (
+        'Les geôles des Kaizokushū', 
+        'Creusées dans la falaise même, ces cavernes humides servent de prison aux captifs des Wako. 
+        Des chaînes rouillées pendent aux murs, et l’eau salée suinte sans cesse, rongeant la volonté des enfermés. 
+        Le silence n’y est troublé que par les pas des geôliers — ou les rires des pirates.',
+        10, True,
+        (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    )
 ;
+
 -- Temples des Yokais
 INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
      -- Feu - Teppō
@@ -281,28 +330,43 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
     7, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime'));
 
-INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
-    -- Geôles impériales de Kyoto
-    (
-        'Les geôles impériales', 
-        'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
-        L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
-        Peu en ressortent, et ceux qui le font ne parlent plus.',
-        10, True,
-        (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
-        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
-    ),
+-- Fluff
+INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
+    ('Port d’Uwajima',
+     'Un port animé aux quais denses et bruyants, où s’échangent riz, bois, et rumeurs en provenance de Kyūshū comme de Corée. Les marins disent que la brume y reste plus longtemps qu’ailleurs.',
+     6, (SELECT ID FROM zones WHERE name = 'Cote Ouest d’Echime')),
 
-    -- Geôles des pirates (Shōdoshima)
-    (
-        'Les geôles des Kaizokushū', 
-        'Creusées dans la falaise même, ces cavernes humides servent de prison aux captifs des Wako. 
-        Des chaînes rouillées pendent aux murs, et l’eau salée suinte sans cesse, rongeant la volonté des enfermés. 
-        Le silence n’y est troublé que par les pas des geôliers — ou les rires des pirates.',
-        10, True,
-        (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima'),
-        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
-    )
+    ('Mt Ishizuchi',
+     'Plus haut sommet de l’île, le mont Ishizuchi domine les vallées alentour comme un sabre dressé vers le ciel. On dit qu’un pèlerinage ancien y conduit à une dalle sacrée où les esprits s’expriment lorsque les vents tournent.',
+     6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Echime')),
+
+    ('Port de Kochi',
+     'Protégé par une anse naturelle, ce port militaire et marchand voit passer jonques, bateaux de guerre et pirates repenti. Son arsenal est surveillé nuit et jour par des ashigaru en armure sombre.',
+     6, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi')),
+
+    ('Ikeda',
+     'Petit village de montagne aux maisons de bois noircies par le temps. Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau des gorges profondes qui serpentent en contrebas.',
+     6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')),
+
+    ('Port de Tokushima',
+     'Carrefour maritime entre Honshū et Shikoku, le port de Tokushima bruisse de dialectes et de voiles étrangères. Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voix basse.',
+     6, (SELECT ID FROM zones WHERE name = 'Cote Est de Tokushima')),
+
+    ('Grande route et relais de poste',
+     'Relie Tokushima à Kōchi en serpentant à travers les plaines fertiles du nord. À chaque relais, les montures peuvent être changées, et les messagers impériaux y trouvent toujours une couche et un bol chaud.',
+     6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
+
+    ('Rumeur de la bataille',
+     'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du temple abandonné.',
+     6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')),
+
+    ('La passe d’Okayama',
+     'Étroite et venteuse, cette passe de montagne relie Shōdoshima au reste de l’île. Les voyageurs y croisent parfois des silhouettes encapuchonnées qui évitent les regards et suivent les sentiers oubliés.',
+     6, (SELECT ID FROM zones WHERE name = 'Ile de Shödoshima')),
+
+    ('La Suzaku Mon',
+     'Grande artère pavée de la capitale impériale, menant tout droit au palais. Sous ses tuiles rouges, l’ombre des complots se mêle aux parfums de thé, et les bannières flottent dans un silence cérémoniel.',
+     6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
 
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
@@ -350,11 +414,11 @@ INSERT INTO artefacts (name, description, full_description, location_id) VALUES
     (
         'Fujitaka (藤孝) Hosokawa (細川) le daimyô prisonnier',
         'Nous avons découvert que cet homme que tous pensent mort est en réalité enfermé dans une geôle oubliée, gardée par ceux qui craignent son retour.',
-        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Les geôles impériales')
     ), (
         'Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours',
         'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardée par ceux qui craignent son retour.',
-        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Les geôles des Kaizokushū')
     ), (
         'Motochika (元親) Chōsokabe(長宗我部) daimyô en devenir',
         'Fils de Kunichika, encore trop jeune pour gouverner, il est la clef d’un fragile héritage.',
