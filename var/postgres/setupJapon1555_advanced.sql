@@ -16,23 +16,23 @@ Yōkai du Feu (Teppō, cap sud de Kōchi, forge, poudre)
 ('Hiuchi', 'Kagaribi')
 Hiuchi (火打 — « pierre à feu »), Kagaribi (篝火 — « feu de signalisation / brasier »), ensemble ils forment un duo sonore sec et évocateur.
 */
-
--- First, get origin_id and zone_id once
--- Then add the names
-WITH origin_zone AS (
-    SELECT
-        (SELECT id FROM worker_origins WHERE name = 'Shikoku - Shödoshima') AS origin_id,
-        (SELECT id FROM zones WHERE name = 'Ile de Shödoshima') AS zone_id
+WITH names_data(firstname, lastname, origin_name, zone_name) AS (
+    VALUES
+        ('Kosagi', 'Kotatsu', 'Shikoku - Shödoshima', 'Ile de Shödoshima'),
+        ('Iwao', 'Jizane', 'Shikoku - Echime', 'Montagnes d’Echime'),
+        ('Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'),
+        ('Hiuchi', 'Kagaribi', 'Shikoku - Kochi', 'Cap sud de Kochi')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
-SELECT firstname, lastname, origin_id, zone_id
-FROM origin_zone,
-     (VALUES
-        ('Kosagi', 'Kotatsu'),
-        ('Iwao', 'Jizane'),
-        ('Kazusa', 'Noayame'),
-        ('Hiuchi', 'Kagaribi')
-     ) AS names(firstname, lastname);
+SELECT
+    nd.firstname,
+    nd.lastname,
+    wo.id AS origin_id,
+    z.id AS zone_id
+FROM names_data nd
+JOIN worker_origins wo ON wo.name = nd.origin_name
+JOIN zones z ON z.name = nd.zone_name;
+
 
 -- Now, get controller ID once
 -- Then add the links
@@ -99,6 +99,67 @@ JOIN (
     UNION ALL SELECT 'Kagaribi', 'Kadō / Ikebana (華道 / 生け花) – Art floral'
     UNION ALL SELECT 'Kagaribi', 'Kagenkō (影言講) – L’art de la parole de l’ombre'
     UNION ALL SELECT 'Kagaribi', 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
+) AS wp ON wp.lastname = w.lastname
+JOIN powers p ON p.name = wp.power_name
+JOIN link_power_type lpt ON lpt.power_id = p.id;
+
+
+-- Create the start workers for Rennyo (蓮如)
+WITH names_data(firstname, lastname, origin_name, zone_name) AS (
+    VALUES
+        ('Ren-jō', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Echime')
+)
+INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+SELECT
+    nd.firstname,
+    nd.lastname,
+    wo.id AS origin_id,
+    z.id AS zone_id
+FROM names_data nd
+JOIN worker_origins wo ON wo.name = nd.origin_name
+JOIN zones z ON z.name = nd.zone_name;
+
+-- Now, get controller ID once
+-- Then add the links
+WITH controller AS (
+    SELECT id AS controller_id FROM controllers WHERE lastname = 'Rennyo (蓮如)'
+),
+worker_ids AS (
+    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Rennyo (蓮如)')
+)
+INSERT INTO controller_worker (controller_id, worker_id)
+SELECT controller.controller_id, worker_ids.worker_id
+FROM controller, worker_ids;
+
+-- Add actions to the workers :
+INSERT INTO worker_actions (
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
+)
+SELECT
+    w.id,
+    cw.controller_id,
+    0,
+    w.zone_id,
+    entry.action_choice,
+    entry.action_params::json
+FROM (
+    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
+) AS entry
+JOIN workers w ON w.lastname = entry.lastname
+JOIN controller_worker cw ON cw.worker_id = w.id;
+;
+
+-- Add powers to the workers :
+INSERT INTO worker_powers (worker_id, link_power_type_id)
+SELECT
+    w.id AS worker_id,
+    lpt.id AS link_power_type_id
+FROM
+    workers w
+JOIN (
+    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
+    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Tokkuri (徳利) – Bouteille à saké'
+    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Kōdō (香道) – Voie de l’encens'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
