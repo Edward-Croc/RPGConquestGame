@@ -35,7 +35,10 @@ if (
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php
-        if ((!empty($noConnection) && $noConnection == true)) {
+        if (
+            (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) &&
+            (!empty($noConnection) && $noConnection == true)
+        ) {
             echo sprintf ('<a href="/%s/connection/loginForm.php" class="topbar-btn">Login</a>', $_SESSION['FOLDER']);
         } else { 
             if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
