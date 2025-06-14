@@ -35,23 +35,38 @@ if (
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php
-        if (
-            (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) &&
-            (!empty($noConnection) && $noConnection == true)
-        ) {
-            echo sprintf ('<a href="/%s/connection/loginForm.php" class="topbar-btn">Login</a>', $_SESSION['FOLDER']);
-        } else { 
-            if ($pageName !== 'accueil') echo sprintf('<a href="/%s/base/accueil.php">Accueil</a>', $_SESSION['FOLDER']); 
-            if ($pageName !== 'view_workers') echo sprintf('<a href="/%s/workers/viewAll.php">Agents</a>', $_SESSION['FOLDER']);
-            if ($pageName !== 'zones_action') echo sprintf('<a href="/%s/zones/action.php">Zones</a>', $_SESSION['FOLDER']);
-            if ($pageName !== 'controllers_action') echo sprintf('<a href="/%s/controllers/action.php">Controllers</a>', $_SESSION['FOLDER']);
-            if ($pageName !== 'systemPresentation') echo sprintf('<a href="/%s/base/systemPresentation.php">Game System</a>', $_SESSION['FOLDER']);
-            if ($_SESSION['is_privileged'] == true){
-                echo sprintf ('<a href="/%s/mechanics/endTurn.php" class="topbar-btn">%s</a>', $_SESSION['FOLDER'], ($mechanics['gamestate'] == 0) ? 'Start Game' : 'End Turn' );
-                if ($pageName !== 'admin') {
-                    echo sprintf ('<a href="/%s/base/admin.php" class="topbar-btn">Configuration</a>', $_SESSION['FOLDER']);
-                }
-            } echo sprintf ('<a href="/%s/connection/logout.php" class="logout-btn">Logout</a>', $_SESSION['FOLDER']);
+        $folder = $_SESSION['FOLDER'];
+        $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+        $isPrivileged = $_SESSION['is_privileged'] ?? false;
+
+        if (!$isLoggedIn && !empty($noConnection)) {
+            echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
+        } else {
+            // Define main links
+            $links = [
+                'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
+                'view_workers' => ['label' => 'Agents', 'path' => 'workers/viewAll.php'],
+                'zones_action' => ['label' => 'Zones', 'path' => 'zones/action.php'],
+                'controllers_action' => ['label' => 'Controllers', 'path' => 'controllers/action.php'],
+                'systemPresentation' => ['label' => 'Game System', 'path' => 'base/systemPresentation.php']
+            ];
+
+            foreach ($links as $key => $info) {
+                $selectedClass = ($pageName === $key) ? ' class="select"' : '';
+                echo "<a href='/$folder/{$info['path']}'$selectedClass>{$info['label']}</a>";
+            }
+
+            // Privileged user section
+            if ($isPrivileged) {
+                $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
+                echo "<a href='/$folder/mechanics/endTurn.php' class='sidebar-btn'>$btnText</a>";
+
+                $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
+                echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
+            }
+
+            // Logout button
+            echo "<a href='/$folder/connection/logout.php' class='logout-btn'>Logout</a>";
         }
         ?>
     </div>
