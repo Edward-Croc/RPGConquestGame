@@ -197,6 +197,27 @@ INSERT INTO zones (name, description) VALUES
     , ('Cité Impériale de Kyoto', 'Capitale impériale, centre des arts, des lettres et des poisons subtils. Les palais y cachent les plus anciennes lignées, les ruelles les complots les plus jeunes. Kyōto ne brandit pas l’épée, mais ceux qui y règnent peuvent faire plier des provinces entières par un sourire ou un silence.')
 ;
 
+-- Controle des zones au départ
+UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+    WHERE name = 'Grande Baie de Kochi';
+UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)')
+    WHERE name = 'Cote Est de Tokushima';
+UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+    WHERE name = 'Prefecture de Kagawa';
+UPDATE zones SET
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    WHERE name = 'Ile de Shödoshima';
+UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+    WHERE name = 'Montagnes d’Echime';
+
 -- Secrets scénario
 INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
     -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
