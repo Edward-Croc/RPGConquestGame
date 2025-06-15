@@ -8,7 +8,8 @@ $sql = "
         bal.id,
         bal.turn,
         bal.success,
-        bal.notes,
+        bal.target_result_text,
+        bal.attacker_result_text,
         bal.created_at,
         CONCAT(c.firstname, ' ', c.lastname) AS attacker_name
     FROM location_attack_logs bal
@@ -70,7 +71,8 @@ require_once '../base/baseHTML.php';
             <th>Attaquant</th>
             <th>Tour</th>
             <th>Succès</th>
-            <th>Notes</th>
+            <th>target_result_text</th>
+            <th>attacker_result_text</th>
         </tr>
         <?php foreach ($logs as $log): ?>
         <tr>
@@ -79,7 +81,8 @@ require_once '../base/baseHTML.php';
             <td><?= htmlspecialchars($log['attacker_name'] ?? 'Inconnu') ?></td>
             <td><?= htmlspecialchars($log['turn']) ?></td>
             <td><?= $log['success'] ? '✔️ Réussie' : '❌ Échec' ?></td>
-            <td><?= nl2br(htmlspecialchars($log['notes'])) ?></td>
+            <td><?= nl2br(htmlspecialchars($log['target_result_text'])) ?></td>
+            <td><?= nl2br(htmlspecialchars($log['attacker_result_text'])) ?></td>
         </tr>
         <?php endforeach; ?>
     </table>
