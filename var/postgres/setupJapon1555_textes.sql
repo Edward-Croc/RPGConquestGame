@@ -321,14 +321,25 @@ INSERT INTO config (name, value, description)
 VALUES
 -- %s = nom de la localisation
 ('TEXT_LOCATION_DISCOVERED_NAME', '[
-    "Nous avons identifié une information intéressante : %s.",
-    "Des signes pointent vers la présence de : %s, nous avons enquêté à ce sujet."
+    "Nous avons identifié une information intéressante : un.e %s serait présent.e dans la zone.",
+    "Des signes pointent vers la présence d’un.e %s, nous devons enquêter davantage à ce sujet.",
+    "Il semblerait qu’un.e %s se trouve dans cette région, il faudra s’en assurer.",
+    "Des rumeurs persistantes évoquent la présence d’un.e %s dans les environs.",
+    "Nos informateurs.rices évoquent la découverte potentielle d’un.e %s dans cette zone.",
+    "Certains indices laissent penser qu’un.e %s pourrait se cacher ici.",
+    "Un rapport fragmentaire mentionne un.e %s comme étant caché.e dans ce territoire."
 ]', 'Phrases pour signaler qu’une localisation a été découverte (nom uniquement)'),
 
+-- %s = nom de la localisation
 -- %s = description de la localisation
 ('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
-    " Description : %s",
-    " Détails révélés : %s"
+    "Information intéressante : un.e %s est présent.e dans la zone. %s",
+    "Nous avons confirmé la présence d’un.e %s. Nous avons enquêté davantage et découvert que : %s",
+    "Après enquête, il s’avère qu’un.e %s est bien lié.e à cette localisation. %s",
+    "Notre exploration confirme la présence d’un.e %s. Voici ce que nous avons appris : %s",
+    "Nous avons vérifié les rumeurs : un.e %s est bien ici. %s",
+    "Le mystère est levé : un.e %s se trouve dans cette zone. %s",
+    "Les données concordent : un.e %s est bien associé.e à cet endroit. %s"
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
