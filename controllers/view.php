@@ -28,7 +28,7 @@
                 %6$s %7$s
                 <div ><form action="/%8$s/controllers/action.php" method="GET">
                 <input type="hidden" name="controller_id" value=%3$s>
-                <h3>Actions : </h3> <p>',
+                <h3>Votre Base : </h3> <p>',
                 $controllers['firstname'],
                 $controllers['lastname'],
                 $controllers['id'],
@@ -64,10 +64,31 @@
                     );
                 }
             }
-            echo '</p><p>';
-
+            // Incoming attacks this turn
+            $incomingStmt = $gameReady->prepare("
+            SELECT * FROM location_attack_logs 
+            WHERE target_controller_id = :controller_id 
+            AND turn = :turn
+            ORDER BY id DESC
+            ");
+            $incomingStmt->execute([
+            'controller_id' => $_SESSION['controller']['id'],
+            'turn' => $mechanics['turncounter']
+            ]);
+            $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($incomingAttacks)) {
+                echo "<div class='alert alert-danger'>";
+                echo "<strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
+                foreach ($incomingAttacks as $attack) {
+                    echo sprintf( "<li> %s</li>", htmlspecialchars($attack['target_result_text']));
+                }
+                echo "</ul></div>";
+            }
+            echo '</p>
+            <h3>Les lieux : </h3>
+            <p>';
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
-            if($showAttackableControllerKnownLocations !== NULL)
+            if($showAttackableControllerKnownLocations !== NULL && hasBase($gameReady, $controllers['id'])) {
                 echo sprintf('<form action="/%3$s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value=%1$s>
                         <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers : " class="controller-action-btn"> %2$s',
@@ -75,10 +96,30 @@
                         $showAttackableControllerKnownLocations,
                         $_SESSION['FOLDER']
                 ); 
-            else echo 'Aucun lieu connu attaquable.';
+            } else echo 'Aucun lieu connu attaquable.';
+            echo '</p>';
 
-        if (!empty($attackLocationResult['message']))
-                echo sprintf('%s', $attackLocationResult['message']);
+            // Outgoing attacks this turn
+            $outgoingStmt = $gameReady->prepare("
+            SELECT * FROM location_attack_logs 
+            WHERE attacker_id = :controller_id 
+            AND turn = :turn
+            ORDER BY id DESC
+            ");
+            $outgoingStmt->execute([
+            'controller_id' =>  $_SESSION['controller']['id'],
+            'turn' => $mechanics['turncounter']
+            ]);
+            $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($outgoingAttacks)) {
+                echo "<div class='alert alert-info'>";
+                echo "<strong>Vos attaques ce tour :</strong><ul>";
+                foreach ($outgoingAttacks as $attack) {
+                    echo "<li>". htmlspecialchars($attack['attacker_result_text']) . "</li>";
+                }
+                echo "</ul></div>";
+            }
+
             echo '
             </p>
             </form>';

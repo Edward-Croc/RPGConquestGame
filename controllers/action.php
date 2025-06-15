@@ -32,7 +32,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         moveBase($gameReady, $base_id, $zone_id);
     }
     if (isset($_GET['attackLocation'])){
+        if ( $_SESSION['DEBUG'] == true ) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
+        if ( $_SESSION['DEBUG'] == true ) echo 'end <br>';
     }
     
 }

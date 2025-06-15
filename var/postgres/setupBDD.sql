@@ -223,7 +223,8 @@ CREATE TABLE location_attack_logs (
     attacker_id INT REFERENCES controllers(id),
     turn INT NOT NULL,
     success BOOLEAN NOT NULL,
-    notes TEXT,
+    target_result_text TEXT,
+    attacker_result_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (target_controller_id) REFERENCES controllers (ID), -- Link to controllers table
     FOREIGN KEY (attacker_id) REFERENCES controllers (ID) -- Link to controllers table
