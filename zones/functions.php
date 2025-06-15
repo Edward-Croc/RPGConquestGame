@@ -271,7 +271,6 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id, $locati
     if ($turnMultiplier !== 0 && $location_id !== NUll) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
-        echo "turn_number : $turn_number <br>";
 
         $sql = "
             SELECT setup_turn
