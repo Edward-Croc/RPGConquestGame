@@ -44,7 +44,7 @@ INSERT INTO controllers (
     start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
-    ('妖怪 de', 'Shikoku (四国)', 'violent', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
+    ('妖怪 de', 'Shikoku (四国)', 'passif', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
         2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
@@ -354,35 +354,43 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 -- Fluff
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     ('Port d’Uwajima',
-     'Un port animé aux quais denses et bruyants, où s’échangent riz, bois, et rumeurs en provenance de Kyūshū comme de Corée. Les marins disent que la brume y reste plus longtemps qu’ailleurs.',
+     'Un port animé aux quais denses et bruyants, où s’échangent riz, bois, et rumeurs en provenance de Kyūshū comme de Corée.
+     Les marins disent que la brume y reste plus longtemps qu’ailleurs.',
      6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime')),
 
     ('Mt Ishizuchi',
-     'Plus haut sommet de l’île, le mont Ishizuchi domine les vallées alentour comme un sabre dressé vers le ciel. On dit qu’un pèlerinage ancien y conduit à une dalle sacrée où les esprits s’expriment lorsque les vents tournent.',
+     'Plus haut sommet de l’île, le mont Ishizuchi domine les vallées alentour comme un sabre dressé vers le ciel.
+     On dit qu’un pèlerinage ancien y conduit à une dalle sacrée où les esprits s’expriment lorsque les vents tournent.',
      6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime')),
 
     ('Port de Kochi',
-     'Protégé par une anse naturelle, ce port militaire et marchand voit passer jonques, bateaux de guerre et pirates repenti. Son arsenal est surveillé nuit et jour par des ashigaru en armure sombre.',
+     'Protégé par une anse naturelle, ce port militaire et marchand voit passer jonques, bateaux de guerre et pirates repenti.
+      Son arsenal est surveillé nuit et jour par des ashigaru en armure sombre.',
      6, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi')),
 
     ('Ikeda',
-     'Petit village de montagne aux maisons de bois noircies par le temps. Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau des gorges profondes qui serpentent en contrebas.',
+     'Petit village de montagne aux maisons de bois noircies par le temps.
+     Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau des gorges profondes qui serpentent en contrebas.',
      6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')),
 
     ('Port de Tokushima',
-     'Carrefour maritime entre Honshū et Shikoku, le port de Tokushima bruisse de dialectes et de voiles étrangères. Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voix basse.',
+     'Carrefour maritime entre Honshū et Shikoku, le port de Tokushima bruisse de dialectes et de voiles étrangères.
+     Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voix basse.',
      6, (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima')),
 
     ('Grande route et relais de poste',
-     'Relie Tokushima à Kōchi en serpentant à travers les plaines fertiles du nord. À chaque relais, les montures peuvent être changées, et les messagers impériaux y trouvent toujours une couche et un bol chaud.',
+     'Relie Tokushima à Kōchi en serpentant à travers les plaines fertiles du nord.
+     À chaque relais, les montures peuvent être changées, et les messagers impériaux y trouvent toujours une couche et un bol chaud.',
      6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
 
     ('Rumeur de la bataille',
      'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du temple abandonné.',
      6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')),
 
-    ('La passe d’Okayama',
-     'Étroite et venteuse, cette passe de montagne relie Shōdoshima au reste de l’île. Les voyageurs y croisent parfois des silhouettes encapuchonnées qui évitent les regards et suivent les sentiers oubliés.',
+    ('Le détroit d’Okayama',
+     'Étroit et venteux, ce détroit aux eaux traîtresses sépare Shikoku de Honshū.
+     Difficile de tenter cette traversée sans être épié par les habitants de l’île de Shōdoshima.
+     Certains racontent avoir vu un noble personnage tenter de rentrer en secret avant d’être intercepté par les Kaizokushū.',
      6, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima')),
 
     ('La Suzaku Mon',
