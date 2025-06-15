@@ -1,3 +1,10 @@
+-- TODO Build the Shogun and Yokai character sheets 
+-- TODO Add Controller action JSON activatable => Affect held zone if agent present and change claimer
+    -- Needs parametrable name, 
+    -- Needs result text,
+    -- Make possible for Ikko-ikki, Monks and Chritians
+-- 
+
 
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
