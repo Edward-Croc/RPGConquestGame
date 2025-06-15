@@ -105,7 +105,7 @@ function locationSearchMechanic($pdo) {
         if ($row['searcher_controller_id'] == $row['location_controller']) continue;
 
         if ($row['enquete_difference'] >= $LOCATIONNAMEDIFF) {
-            $reportElement = sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
+            $reportElement = "<p>".sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
 
             if ($row['enquete_difference'] >= $LOCATIONINFORMATIONDIFF) {
                 $checkStmt = $pdo->prepare("SELECT id FROM controller_known_locations WHERE controller_id = :cid AND location_id = :lid");
@@ -129,7 +129,7 @@ function locationSearchMechanic($pdo) {
                     ]);
                 }
 
-                $reportElement .= sprintf($locationDescText[array_rand($locationDescText)], $row['found_description']);
+                $reportElement = "<p>".sprintf($locationDescText[array_rand($locationDescText)], $row['found_name'], $row['found_description']);
                 if ($row['found_can_be_destroyed']) {
                     $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
                 }
@@ -157,8 +157,8 @@ function locationSearchMechanic($pdo) {
                     }
                 }
             }
-
-            $reportArray[$row['searcher_id']] .= $reportElement. '<br />';
+            $reportElement .= '</p>';
+            $reportArray[$row['searcher_id']] .= $reportElement;
         }
 
         if ($debug) echo "<p>Updated reportArray: " . var_export($reportArray[$row['searcher_id']], true) . "</p></div>";
