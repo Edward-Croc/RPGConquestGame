@@ -244,26 +244,26 @@ INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description
         Sa présence confirme l’implantation secrète du christianisme à Tokushima, et menace de faire basculer les équilibres religieux et politiques de Shikoku.'
     )
     -- Ajouter un secret sur l’alliance maritale entre les Chosokabe Motochika et les Hosokawa Tama
-    , ('Le courrier de Kagawa', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'), NULL
+    , ('Post relai du courrier de Kagawa', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'), NULL
         , 'Une auberge modeste près de la grande route de Kagawa reçoit parfois, à l’aube, des cavaliers fatigués portant des missives cachetées.
         L’une d’elles, récemment interceptée, contenait une promesse de mariage scellée entre Motochika Chōsokabe et Tama Hosokawa, fille de Fujitaka.
         Si elle venait à se concrétiser, cette alliance unirait deux grandes maisons sur Shikoku et changerait les rapports de pouvoir de toute la région.
         Pour l’instant, l’information est gardée secrète, mais les rumeurs montent.'
     )
     -- Ajouter un secret sur Awaji a propos de la bataille de Kunichika contre les ikko-ikki, permettant de lever la rumeur sur sa couardise
-    , ('Les deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'), NULL
+    , ('Camp de deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'), NULL
         , 'Dans les bois humides d’Awaji, un vieux temple en ruines abrite depuis peu des hommes au regard hanté et aux vêtements déchirés : des déserteurs de la bataille d’Ishizuchi.
         Ils murmurent une autre version des faits : Kunichika Chōsokabe n’a pas fui par lâcheté, mais son armée as été défaite par la prise en tenaille organisé par les Ikko-ikki alliées aux Takedas.
         Ses actions ont été étouffé par ses rivaux et par la honte des survivants. Si ce témoignage était rendu public, l’honneur du clan Chōsokabe pourrait être réhabilité.'  
     )
     -- Ajouter un secret sur Shōdoshima à propos de la fuite des forces de Fujitaka face a l'avant garde Takedas alliées aux Ikko-ikki. Permettant de lever la rumeur sur sa couardise et de confirmé sa capture par un général du Shogun
-    , ('Les deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'), NULL
+    , ('Camp de deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'), NULL
         , 'Dans une gorge dissimulée parmi les pins tordus de Shōdoshima, quelques hommes efflanqués vivent en silence, fuyant le regard des pêcheurs et des samouraïs.
             Ce sont des survivants de la déroute d’Ishizuchi, dont ils racontent une version bien différente de celle propagée à la cour : l’avant-garde des Chōsokabe, commandée par Fujitaka Hosokawa, se serait retrouvée face aux fanatiques Ikko-ikki, qui auraient écrasé ses lignes avant même que l’ordre de retraite ne puisse être donné.
             Fujitaka, séparé de la force principale, aurait fui précipitamment vers Kyoto, mais aurait été aperçu capturé par un général des forces du shogun Ashikaga. Ces aveux, étouffés sous le fracas des récits officiels, pourraient bien réhabiliter l’honneur du daimyō déchu — ou bouleverser les équilibres fragiles entre les clans.'
     )
     -- Ajouter un secret sur Kyoto a propos de l’inimitié du Shogun contre les Chosokabe suit a sa débandade et fuite honteuse devant l'armée des takedas.
-    , ('La cour impériale', 8, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'), NULL
+    , ('Cour impériale', 8, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'), NULL
         , 'Au sein des couloirs feutrés de la cour impériale, on ne parle plus qu’à demi-mot des récents affrontements.
         Le nom des Chōsokabe y est devenu tabou, soufflé avec mépris : leur armée, jadis fière, aurait fui sans gloire devant l’avant-garde Takeda.
         Le Shogun Ashikaga, humilié par leur débâcle, aurait juré de ne plus leur accorder confiance ni territoire.
@@ -271,27 +271,29 @@ INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description
     )
 ;
 
-INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
+INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id, activate_json) VALUES
     -- Geôles impériales de Kyoto
     (
-        'Les geôles impériales', 
+        'Geôles impériales', 
         'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
         L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
         Peu en ressortent, et ceux qui le font ne parlent plus.',
         10, True,
         (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
-        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
+        '{"indestructible" : "TRUE"}'
     ),
 
     -- Geôles des pirates (Shōdoshima)
     (
-        'Les geôles des Kaizokushū', 
+        'Geôles des Kaizokushū', 
         'Creusées dans la falaise même, ces cavernes humides servent de prison aux captifs des Wako. 
         Des chaînes rouillées pendent aux murs, et l’eau salée suinte sans cesse, rongeant la volonté des enfermés. 
         Le silence n’y est troublé que par les pas des geôliers — ou les rires des pirates.',
         10, True,
         (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
-        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
+        '{"indestructible" : "TRUE"}'
     )
 ;
 
@@ -387,13 +389,13 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
      'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du temple abandonné.',
      6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')),
 
-    ('Le détroit d’Okayama',
+    ('Détroit d’Okayama',
      'Étroit et venteux, ce détroit aux eaux traîtresses sépare Shikoku de Honshū.
      Difficile de tenter cette traversée sans être épié par les habitants de l’île de Shōdoshima.
      Certains racontent avoir vu un noble personnage tenter de rentrer en secret avant d’être intercepté par les Kaizokushū.',
      6, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima')),
 
-    ('La Suzaku Mon',
+    ('Suzaku Mon',
      'Grande artère pavée de la capitale impériale, menant tout droit au palais. Sous ses tuiles rouges, l’ombre des complots se mêle aux parfums de thé, et les bannières flottent dans un silence cérémoniel.',
      6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
@@ -443,11 +445,11 @@ INSERT INTO artefacts (name, description, full_description, location_id) VALUES
     (
         'Fujitaka (藤孝) Hosokawa (細川) le daimyô prisonnier',
         'Nous avons découvert que cet homme que tous pensent mort est en réalité enfermé dans une geôle oubliée, gardée par ceux qui craignent son retour.',
-        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Les geôles impériales')
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles impériales')
     ), (
         'Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours',
         'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardée par ceux qui craignent son retour.',
-        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Les geôles des Kaizokushū')
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles des Kaizokushū')
     ), (
         'Motochika (元親) Chōsokabe(長宗我部) daimyô en devenir',
         'Fils de Kunichika, encore trop jeune pour gouverner, il est la clef d’un fragile héritage.',
