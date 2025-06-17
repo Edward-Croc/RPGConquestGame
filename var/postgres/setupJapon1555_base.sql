@@ -408,6 +408,49 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
      6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
 
+-- Fake News :
+INSERT INTO locations (name, discovery_diff, zone_id, description) VALUES
+    ('Maison close de Marugame', 5,  (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),
+        'À Marugame, dans une maison close réputée pour son saké sucré et ses éventails peints à la main, des courtisanes murmurent entre deux chansons.
+        L’une d’elles prétend avoir lu une lettre scellée, confiée par un émissaire enivré, annonçant un pacte secret entre le clan Miyoshi et la famille Hosokawa : mariage, trahison, et guerre éclair contre les Chōsokabe.'
+    ),
+    ('Crique de Funakoshi', 5, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
+        'Cette crique isolée, souvent balayée par les vents, est connue des contrebandiers comme des pêcheurs.
+        Depuis quelques jours, un bruit court : un important émissaire impérial aurait été intercepté par les pirates Wako et détenu dans une grotte voisine, en attendant rançon ou silence.'
+    ),
+    ('Sanctuaire des Pins Brûlés', 5, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),
+        'Dans un ancien sanctuaire shintō dont les piliers carbonisés résistent au temps, des pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent sertie d’inscriptions latines.
+        Les paysans parlent d’un prêtre chrétien, et de l’Inquisition jésuite elle-même. Mais les recherches menées par les yamabushi locaux n’ont rien révélé de probant.'
+    ),
+    ('Maison de thé "Lune d’Or"', 5, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
+        'Située à l’écart de Suzaku Mon, la "Lune d’Or" attire les lettrés, les poètes… et les oreilles curieuses.
+        On dit qu’un marchand de soie y viendrait chaque soir, parlant peu mais observant tout.
+        Selon une geisha, il serait en réalité un espion du clan Takeda, infiltré pour sonder la loyauté des daimyōs de l’est.
+        Il aurait même été vue avec un membre de la famille Chōsokabe.
+        Pourtant, nul ne peut confirmer son cette histoire, et certains prétendent qu’il n’est en réalité qu’un veuf mélancolique, égaré dans ses souvenirs.
+        Mais à Kyōto, les apparences mentent plus souvent qu’elles ne révèlent.'
+    ),
+    ('Phare abandonné de Minokoshi', 6,
+        (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),
+        'Disséminé au bout d’une presqu’île battue par les vents, le vieux phare de Minokoshi n’est plus qu’un squelette de pierre rongé par le sel.
+        Pourtant, certains pêcheurs affirment y voir passer des silhouettes armées à la tombée de la nuit.
+        La rumeur court qu’un prisonnier de valeur y est gardé en secret par le clan Chōsokabe, un traitre capturé lors des affrontements récents.'
+    ),
+    ('Sanctuaire brisé de Hiwasa', 8,
+    (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),
+        'Surplombant la mer, les ruines du sanctuaire de Hiwasa sont battues par les embruns.
+        On dit que des prêtres étrangers y ont été vus de nuit, en compagnie d’émissaires du clan Chōsokabe.
+        La rumeur parle d’un pacte impie : en échange d’armes à feu venues de Nagasaki, le clan accepterait d’abriter des convertis clandestins.'
+    ),
+    ('Comptoir de Kashiwa', 8,
+    (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
+        'Ce modeste comptoir marchand, adossé à une crique discrète, connaît une activité étrange depuis quelques semaines.
+        Des jonques aux voiles noires y accostent en silence, et les capitaines refusent de dire d’où ils viennent.
+        Certains affirment que les Wako y auraient reçu des fonds d’un clan du nord — peut-être les Hosokawa — pour saboter les entrepôts du port de Tokushima.
+        D’autres y voient simplement un commerce de sel et de fer… mais pourquoi alors tant de discrétion, et autant de lames prêtes à jaillir à la moindre question ?'
+    )
+;
+
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
     -- Le chemin de l'éveil (Tokushima)
