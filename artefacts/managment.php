@@ -42,7 +42,7 @@ $artefacts = $gameReady->query("
     ORDER BY a.id
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$locations = $gameReady->query("SELECT id, name FROM locations ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $gameReady->query("SELECT id, name FROM locations ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 
