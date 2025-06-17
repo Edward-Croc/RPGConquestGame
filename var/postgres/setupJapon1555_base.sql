@@ -48,16 +48,16 @@ INSERT INTO factions (name) VALUES
 -- IA with start workers limits
 INSERT INTO controllers (
     firstname, lastname, ia_type,
-    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
+    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers, secret_controller,
     faction_id, fake_faction_id
 ) VALUES
     ('妖怪 de', 'Shikoku (四国)', 'passif', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
-        2, 1, 1, 0,
+        2, 1, 1, 0, True,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
     ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif',
-        2, 1, 1, 0,
+        2, 1, 1, 0, True,
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
     )

@@ -231,7 +231,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
     $controllersArray = array();
     $zonesArray = array();
     if (!empty($controller_id))
-        $controllersArray = getControllers($pdo, NULL, $controller_id,);
+        $controllersArray = getControllers($pdo, NULL, $controller_id);
         $zonesArray = getZonesArray($pdo, $controller_id);
 
     if ($debug)

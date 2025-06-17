@@ -3,7 +3,7 @@
     $zonesArray = getZonesArray($gameReady);
     $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
 
-    $controllers = getControllers($gameReady, $_SESSION['user_id']);
+    $controllers = getControllers($gameReady, $_SESSION['user_id'], null, false);
     $debug = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = true;
     echo '<div class="factions">';

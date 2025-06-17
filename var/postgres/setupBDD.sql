@@ -155,6 +155,7 @@ CREATE TABLE controllers (
     ia_type text DEFAULT '',
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
+    secret_controller BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (faction_id) REFERENCES factions (ID),
     FOREIGN KEY (fake_faction_id) REFERENCES factions (ID)
 );

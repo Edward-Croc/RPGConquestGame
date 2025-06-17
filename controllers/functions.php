@@ -13,7 +13,7 @@
  * 
  */
 // Function to get controllers and return as an array
-function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
+function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true) {
     $controllersArray = array();
 
     try{
@@ -34,6 +34,9 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL) {
                 $player_id !== NULL ? 'AND' : 'WHERE',
                 $controller_id
             );
+        } else if ($hide_secret_controllers == true){
+            $sql .=  ($player_id !== NULL) ? ' AND' : ' WHERE';
+            $sql .= " c.secret_controller IS NOT True";
         }
         $sql .= ' ORDER BY c.id';
         $stmt = $pdo->prepare($sql);
