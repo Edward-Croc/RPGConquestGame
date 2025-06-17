@@ -374,7 +374,8 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 
     ('Port de Kochi',
      'Protégé par une anse naturelle, ce port militaire et marchand voit passer jonques, bateaux de guerre et pirates repenti.
-      Son arsenal est surveillé nuit et jour par des ashigaru en armure sombre.',
+      Son arsenal est surveillé nuit et jour par des ashigaru en armure sombre.
+      On dit que le clan Chōsokabe y cache des objects illegaux importé d’ailleurs.',
      6, (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi')),
 
     ('Ikeda',
@@ -423,7 +424,8 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     ,('Chikurin-ji (竹林寺) -- Le chemin de l’ascèse', 
     'Perché au sommet d’une colline surplombant la baie, le temple veille parmi les bambous. 
     Les moines y pratiquent une ascèse rigoureuse, veillant jour et nuit face à l’océan sans fin. 
-    Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières salées.', 
+    Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières salées.
+    (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
     (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),  
     (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
@@ -432,7 +434,8 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     ,('Ryūkō-ji (竜光寺) -- Le chemin de l’illumination', 
     'Suspendu à flanc de montagne, Ryūkō-ji contemple la mer intérieure comme un dragon endormi. 
     On raconte qu’au lever du soleil, les brumes se déchirent et révèlent un éclat doré émanant de l’autel. 
-    Les sages disent que ceux qui y méditent peuvent entrevoir la lumière véritable.', 
+    Les sages disent que ceux qui y méditent peuvent entrevoir la lumière véritable.
+    (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'),  
     (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
@@ -441,7 +444,8 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     ,('Yashima-ji (屋島寺) -- Le chemin du Nirvana', 
     'Ancien bastion surplombant les flots, Yashima-ji garde la mémoire des batailles et des ermites. 
     Les brumes de l’aube y voilent statues et stupas, comme pour dissimuler les mystères du Nirvana. 
-    Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux comme une paix.', 
+    Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux comme une paix.
+    (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),  
     (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
