@@ -8,6 +8,8 @@ $sql = "
         bal.id,
         bal.turn,
         bal.success,
+        bal.attack_val,
+        bal.defence_val,
         bal.target_result_text,
         bal.attacker_result_text,
         bal.created_at,
@@ -31,6 +33,7 @@ require_once '../base/baseHTML.php';
             <th>Attaquant</th>
             <th>Tour</th>
             <th>Succès</th>
+            <th>Valeurs</th>
             <th>target_result_text</th>
             <th>attacker_result_text</th>
         </tr>
@@ -41,6 +44,7 @@ require_once '../base/baseHTML.php';
             <td><?= htmlspecialchars($log['attacker_name'] ?? 'Inconnu') ?></td>
             <td><?= htmlspecialchars($log['turn']) ?></td>
             <td><?= $log['success'] ? '✔️ Réussie' : '❌ Échec' ?></td>
+            <td><?= sprintf('%s / %s',  htmlspecialchars($log['attack_val']), htmlspecialchars($log['defence_val']))?></td>
             <td><?= nl2br(htmlspecialchars($log['target_result_text'])) ?></td>
             <td><?= nl2br(htmlspecialchars($log['attacker_result_text'])) ?></td>
         </tr>

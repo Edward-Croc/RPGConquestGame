@@ -427,12 +427,32 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : '';
     // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
     $logSql = "
-        INSERT INTO location_attack_logs (target_controller_id, attacker_id, turn, success, target_result_text, attacker_result_text)
-        VALUES (:target_controller_id, :attacker_id, (SELECT turncounter FROM mechanics LIMIT 1), :success, :target_result_text, :attacker_result_text)
+        INSERT INTO location_attack_logs (
+            target_controller_id,
+            attacker_id,
+            attack_val,
+            defence_val,
+            turn,
+            success,
+            target_result_text,
+            attacker_result_text
+        )
+        VALUES (
+            :target_controller_id,
+            :attacker_id,
+            :attack_val,
+            :defence_val,
+            (SELECT turncounter FROM mechanics LIMIT 1),
+            :success,
+            :target_result_text,
+            :attacker_result_text
+        )
     ";
     $logStmt = $pdo->prepare($logSql);
     $logStmt->bindParam(':target_controller_id', $target_controller_id, PDO::PARAM_INT);
     $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
+    $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
+    $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
     $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
     $logStmt->bindParam(':target_result_text', $target_result_text);
     $logStmt->bindParam(':attacker_result_text', $return['message']);

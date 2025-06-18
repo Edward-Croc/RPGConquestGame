@@ -222,6 +222,8 @@ CREATE TABLE location_attack_logs (
     id SERIAL PRIMARY KEY,
     target_controller_id INT REFERENCES controllers(id), 
     attacker_id INT REFERENCES controllers(id),
+    attack_val INT DEFAULT 0,
+    defence_val INT DEFAULT 0,
     turn INT NOT NULL,
     success BOOLEAN NOT NULL,
     target_result_text TEXT,
