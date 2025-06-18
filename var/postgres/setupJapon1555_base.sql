@@ -1,9 +1,27 @@
--- TODO Build the Shogun and Yokai character sheets 
--- TODO Add Controller action JSON activatable => Affect held zone if agent present and change claimer
-    -- Needs parametrable name, 
-    -- Needs result text,
-    -- Make possible for Ikko-ikki, Monks and Chritians
--- 
+-- TODO : check for code duplication in the new admin pages .... 
+-- TODO : Add Conversion to the captured agent possible actions list,
+    -- lock behind param JSON for certain factions
+    -- When clicked : 
+        -- Copies agent to the active controller 
+        -- Kills original agent
+-- TODO : Add controller action counter, reset on turn, max action configurable
+-- TODO : Add Controler action purge, 
+    -- Zone must be Held/Fortresse must be present ?
+    -- Select list of agents in zone
+    -- Agents are attacked by the controler
+    -- All agents in zone discover what happend  
+-- TODO : Add Controller action JSON activatable => Violent zone conversion
+    -- Zone changes claimer/owner to Violent faction/Active Controller
+    -- If owned Zone 
+    -- If ennemi zone, agent should die
+    -- Parameters : 
+        -- If held 
+        -- If agent present in zone
+        -- Action name, 
+        -- Action result text,
+        -- Make possible for Ikko-ikki, Monks and Chritians
+-- TODO Build the Shogun and Yokai character sheets
+-- TODO Build the Takeda Character sheet.
 
 
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
