@@ -1,10 +1,13 @@
--- TODO : check for code duplication in the new admin pages .... 
+-- TODO Build the Shogun and Yokai character sheets
+-- TODO : Add artefacts and locations to the faction page
 -- TODO : Add Conversion to the captured agent possible actions list,
     -- lock behind param JSON for certain factions
     -- When clicked : 
         -- Copies agent to the active controller 
+        -- Adds a Tranformation with the info and a négativ effect
         -- Kills original agent
 -- TODO : Add controller action counter, reset on turn, max action configurable
+-- TODO : check for code duplication in the new admin pages .... 
 -- TODO : Add Controler action purge, 
     -- Zone must be Held/Fortresse must be present ?
     -- Select list of agents in zone
@@ -20,7 +23,6 @@
         -- Action name, 
         -- Action result text,
         -- Make possible for Ikko-ikki, Monks and Chritians
--- TODO Build the Shogun and Yokai character sheets
 -- TODO Build the Takeda Character sheet.
 
 
@@ -63,40 +65,30 @@ INSERT INTO factions (name) VALUES
 ;
 
 
--- IA with start workers limits
 INSERT INTO controllers (
-    firstname, lastname, ia_type,
-    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers, secret_controller,
+    firstname, lastname, ia_type, secret_controller,
+    url, story, 
     faction_id, fake_faction_id
 ) VALUES
-    ('妖怪 de', 'Shikoku (四国)', 'passif', -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
-        2, 1, 1, 0, True,
+    ('妖怪 de', 'Shikoku (四国)', 'passif', True,-- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
+        'https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI', '', 
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
-    ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif',
-        2, 1, 1, 0, True,
+    ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif', True,
+        'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4/edit?tab=t.0#heading=h.8idxv32d4hct', '', 
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
-    )
-;
-INSERT INTO controllers (
-    firstname, lastname, ia_type, url, story,
-    start_workers, recruited_workers, turn_recruited_workers, turn_firstcome_workers,
-    faction_id, fake_faction_id
-) VALUES
-    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+    ),
+    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif', True,-- https://en.wikipedia.org/wiki/K%C5%ABkai
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
         '',
-        2, 1, 1, 0,
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     )
 ;
-
 UPDATE controllers set url = 'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8' WHERE lastname = 'Kōbō-Daishi (弘法大師)';
 
--- players with no start worker limits
 INSERT INTO controllers (
     firstname, lastname,
     faction_id, fake_faction_id,
