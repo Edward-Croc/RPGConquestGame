@@ -3,7 +3,7 @@ require_once '../base/basePHP.php';
 $pageName = 'admin_locations_discovery';
 
 // Get all locations
-$locations = $gameReady->query("SELECT id, name FROM locations ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $gameReady->query("SELECT id, name, discovery_diff FROM locations ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all controllers
 $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
@@ -25,11 +25,12 @@ echo '
         $content = sprintf('
             %s
             <div style="margin-bottom: 2em; border: 1px solid #ccc; padding: 1em;">
-            <h3>%s</h3>
+            <h3>%s (discovery %s)</h3>
             <p><strong>Discovered by:</strong></p>
             <ul>',
             ($iteration % 6 === 0) ? '</div><div class="flex">' : '',
-            htmlspecialchars($loc['name'])
+            htmlspecialchars($loc['name']),
+            htmlspecialchars($loc['discovery_diff'])
         );
         foreach ($controllers as $ctrl):
             $isKnown = isset($knownMap[$loc['id']]) && in_array($ctrl['id'], $knownMap[$loc['id']]);
