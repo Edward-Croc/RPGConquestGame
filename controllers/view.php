@@ -34,7 +34,7 @@
                 $controllers['id'],
                 $controllers['faction_name'],
                 $controllers['fake_faction_name'],
-                !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> This is your url </button><br>' : '',
+                !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> Document de faction. </button><br>' : '',
                 !empty($controllers['story']) ? $controllers['story'] : '',
                 $_SESSION['FOLDER']
             );

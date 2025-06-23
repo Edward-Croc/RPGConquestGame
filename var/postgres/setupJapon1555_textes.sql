@@ -10,7 +10,7 @@ UPDATE config SET
        Les rares survivants rentrés de la campagne parlent d’une défaite cuisante, d’une rébellion paysanne et du déshonneur du daimyô et de ses vassaux.
        Le contrôle du clan Chōsokabe vacille sur Shikoku et les vassaux même du clan voient la disparition de Kunichika Chōsokabe comme une opportunité sans précédent.
        Celui qui pourra s’octroyer l’allégeance de la majorité des 4 provinces sera maître de l’île de Shikoku.<br>
-        <button onclick="window.open(''https://docs.google.com/document/d/1ibggeKiMASJFWr_BnAgUzgQj0bJpZkB2LPtQWVRKt3s'', ''_blank'')"> Intro complete !</button>        
+        <button onclick="window.open(''https://docs.google.com/document/d/1ibggeKiMASJFWr_BnAgUzgQj0bJpZkB2LPtQWVRKt3s'', ''_blank'')"> Document d’introduction Joueur !</button>        
         </p>'
     WHERE name = 'PRESENTATION';
 
