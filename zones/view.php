@@ -22,7 +22,7 @@
                 $zone['name'], $zone['zone_id'],
                 $descritpion,
                 (!empty($zone['controller_id']))
-                    ? sprintf('sous la banière de %s %s', $zone['firstname'], $zone['lastname'])
+                    ? sprintf('sous la bannière de %s %s', $zone['firstname'], $zone['lastname'])
                     : '',
                 !empty($_SESSION['controller']['id']) ? showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id']) : '',
                 (!empty($_SESSION['controller']['id']) && $zone['holder_controller_id'] == $_SESSION['controller']['id'])? '<b>Sous notre controle <br></b>' : ''
