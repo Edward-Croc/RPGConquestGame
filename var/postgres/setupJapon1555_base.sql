@@ -270,7 +270,7 @@ INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description
         Pour l’instant, l’information est gardée secrète, mais les rumeurs montent.'
     )
     -- Ajouter un secret sur Awaji a propos de la bataille de Kunichika contre les ikko-ikki, permettant de lever la rumeur sur sa couardise
-    , ('Camp de deserteurs', 8, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'), NULL
+    , ('Camp de deserteurs', 9, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'), NULL
         , 'Dans les bois humides d’Awaji, un vieux temple en ruines abrite depuis peu des hommes au regard hanté et aux vêtements déchirés : des déserteurs de la bataille d’Ishizuchi.
         Ils murmurent une autre version des faits : Kunichika Chōsokabe n’a pas fui par lâcheté, mais son armée as été défaite par la prise en tenaille organisé par les Ikko-ikki alliées aux Takedas.
         Ses actions ont été étouffé par ses rivaux et par la honte des survivants. Si ce témoignage était rendu public, l’honneur du clan Chōsokabe pourrait être réhabilité.'  
@@ -297,7 +297,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
         'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
         L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
         Peu en ressortent, et ceux qui le font ne parlent plus.',
-        10, True,
+        8, True,
         (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
         (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
         '{"indestructible" : "TRUE"}'
@@ -309,7 +309,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
         'Creusées dans la falaise même, ces cavernes humides servent de prison aux captifs des Wako. 
         Des chaînes rouillées pendent aux murs, et l’eau salée suinte sans cesse, rongeant la volonté des enfermés. 
         Le silence n’y est troublé que par les pas des geôliers — ou les rires des pirates.',
-        10, True,
+        8, True,
         (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
         '{"indestructible" : "TRUE"}'
@@ -319,25 +319,25 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
 -- Temples des Yokais
 INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
      -- Feu - Teppō
-    ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    ('Vieux temple', 8, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Accroché aux flancs escarpés de la côte sud de Kōchi, un petit sanctuaire noircit repose au bord d’une ancienne veine de fer oubliée.
         Au loin, dans la vallée, les marteaux des forgerons résonnent comme une prière sourde.
         Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait sursauter les corbeaux.
         (Pour explorer davantage ce lieu, allez voir un orga !)')
     -- Vent - Tessen
-    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    , ('Vieux temple', 8, True, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, fragile et silencieux.
         La porte ne ferme plus, et le papier des lanternes s’effiloche. Pourtant, nul grain de poussière ne s’y pose.
         Lorsque l’on entre, l’air se fait soudain glacé, et un bruissement court dans les chevrons — comme si un éventail invisible fendait l’air avec colère.
         (Pour explorer davantage ce lieu, allez voir un orga !)')
      -- Paresse - Biwa
-    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    , ('Vieux temple', 8, True, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Ce temple oublié, dissimulé dans un vallon brumeux de Shōdoshima, semble abandonné depuis des décennies.
          Pourtant, chaque crépuscule, les accords las d’un biwa résonnent sous les poutres vermoulues, portés par une brise douce où flotte un parfum de saké tiède.
          Pourtant nul prêtre et nul pèlerin en vue.
         (Pour explorer davantage ce lieu, allez voir un orga !)')
      -- Roche - Chigiriki
-    , ('Vieux temple', 9, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    , ('Vieux temple', 8, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Perché sur un piton rocheux des montagnes d’Ehimé, un ancien temple taillé à même la pierre repose, figé comme un souvenir.
         Nul vent n’y souffle, nul oiseau n’y niche.
         Parfois, on y entend cliqueter une chaîne sur la pierre nue, comme si une arme traînait seule sur le sol.
@@ -351,26 +351,26 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     'Dans la vallée profonde d’Oboké, où le bruit de la rivière est permanent, poussent à flanc de roche de rares théiers.
     Leurs feuilles, amères et puissantes, sont cueillies à la main par les familles montagnardes, suspendues au-dessus du grondement des eaux.
     Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.'
-    , 7, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')
+    , 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')
     ),
 
     -- Armure en fer de Kochi
     ('Mine de fer de Kubokawa',
     'Dans les profondeurs du cap sud de Kōchi, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
     Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
-    7, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi')),
+    6, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi')),
 
     -- Cheval de Kagawa
     ('Écuries de Kagawa',
     'Les vastes pâturages de Kagawa forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
     Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
-    7, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
+    6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
 
     -- Encens coréen
     ('Port marchand d’Uwajima',
     'Des voiliers venus de la péninsule coréenne accostent à Uwajima, chargés de résines rares dont les parfums servent aux temples autant qu’aux intrigues.
     Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
-    7, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'));
+    6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'));
 
 -- Fluff
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
@@ -442,19 +442,19 @@ INSERT INTO locations (name, discovery_diff, zone_id, description) VALUES
         Pourtant, nul ne peut confirmer son cette histoire, et certains prétendent qu’il n’est en réalité qu’un veuf mélancolique, égaré dans ses souvenirs.
         Mais à Kyōto, les apparences mentent plus souvent qu’elles ne révèlent.'
     ),
-    ('Phare abandonné de Minokoshi', 6,
+    ('Phare abandonné de Minokoshi', 5,
         (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),
         'Disséminé au bout d’une presqu’île battue par les vents, le vieux phare de Minokoshi n’est plus qu’un squelette de pierre rongé par le sel.
         Pourtant, certains pêcheurs affirment y voir passer des silhouettes armées à la tombée de la nuit.
         La rumeur court qu’un prisonnier de valeur y est gardé en secret par le clan Chōsokabe, un traitre capturé lors des affrontements récents.'
     ),
-    ('Sanctuaire brisé de Hiwasa', 8,
+    ('Sanctuaire brisé de Hiwasa', 5,
     (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),
         'Surplombant la mer, les ruines du sanctuaire de Hiwasa sont battues par les embruns.
         On dit que des prêtres étrangers y ont été vus de nuit, en compagnie d’émissaires du clan Chōsokabe.
         La rumeur parle d’un pacte impie : en échange d’armes à feu venues de Nagasaki, le clan accepterait d’abriter des convertis clandestins.'
     ),
-    ('Comptoir de Kashiwa', 8,
+    ('Comptoir de Kashiwa', 5,
     (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
         'Ce modeste comptoir marchand, adossé à une crique discrète, connaît une activité étrange depuis quelques semaines.
         Des jonques aux voiles noires y accostent en silence, et les capitaines refusent de dire d’où ils viennent.
