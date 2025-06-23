@@ -1,6 +1,10 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-
--- TODO Build the Shogun and Yokai character sheets
+-- TODO : Add Hide action to servants allowing them to have detection defence +6, ATK defence +4, and do nothing. 
+-- TODO : Show the 'investigate' / 'passive' buttons side by side
+-- TODO : Move the 'Attack' mechanic to a new line.
+-- TODO : Change the move, attack, give from button containing text to text select and validate button! 
+-- TODO : Add carater sheets to the faction to have 3 players per faction ( Daimyo, Stragegos and Emissary)
+-- TODO : Create the Shogun and Yokai character sheets
 -- TODO : Add artefacts and locations to the faction page
 -- TODO : Add Conversion to the captured agent possible actions list,
     -- lock behind param JSON for certain factions
@@ -8,13 +12,14 @@
         -- Copies agent to the active controller 
         -- Adds a Tranformation with the info and a négativ effect
         -- Kills original agent
+-- TODO  : Add conversion of the captured agent faction power to the pirates
 -- TODO : Add controller action counter, reset on turn, max action configurable
 -- TODO : check for code duplication in the new admin pages .... 
 -- TODO : Add Controler action purge, 
     -- Zone must be Held/Fortresse must be present ?
     -- Select list of agents in zone
     -- Agents are attacked by the controler
-    -- All agents in zone discover what happend  
+    -- All agents in zone discover what happend
 -- TODO : Add Controller action JSON activatable => Violent zone conversion
     -- Zone changes claimer/owner to Violent faction/Active Controller
     -- If owned Zone 
@@ -24,7 +29,7 @@
         -- If agent present in zone
         -- Action name, 
         -- Action result text,
-        -- Make possible for Ikko-ikki, Monks and Chritians
+        -- Make possible for Ikko-ikki, (Monks and Chritians)
 -- TODO Build the Takeda Character sheet.
 
 
@@ -220,7 +225,7 @@ INSERT INTO zones (name, description) VALUES
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
-    WHERE name = 'Grande Baie de Kochi';
+    WHERE name IN( 'Grande Baie de Kochi', 'Cap sud de Kochi' ) ;
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)')
@@ -230,12 +235,17 @@ UPDATE zones SET
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
     WHERE name = 'Prefecture de Kagawa';
 UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     WHERE name = 'Ile de Shōdoshima';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     WHERE name = 'Montagnes d’Ehime';
+UPDATE zones SET
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    WHERE name = 'Cité Impériale de Kyoto';
 
 -- Secrets scénario
 INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
@@ -588,7 +598,7 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
       ', plus ancienne que le haïku, utilisée dans les échanges lettrés et parfois politiques' )
 
     -- Miyoshi Samouraï
-    ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 3,2,
+    ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 2,2,
       ', développé après l’introduction des mousquets portugais vers 1543' )
     ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1,
       ', inclut la cavalerie et le tir à l’arc monté' )
