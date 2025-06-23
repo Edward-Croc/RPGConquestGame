@@ -1,3 +1,5 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
+
 -- Create the Yōkai start workers
 /*
 Yōkai de la Paresse (Biwa, vallon, saké)

@@ -1,3 +1,4 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 -- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku

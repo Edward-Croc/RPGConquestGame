@@ -1,3 +1,4 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 INSERT INTO config (name, value, description)
 VALUES

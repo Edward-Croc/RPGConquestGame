@@ -1,3 +1,4 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
 UPDATE config SET

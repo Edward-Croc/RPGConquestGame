@@ -1,3 +1,5 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
+
 -- TODO Build the Shogun and Yokai character sheets
 -- TODO : Add artefacts and locations to the faction page
 -- TODO : Add Conversion to the captured agent possible actions list,

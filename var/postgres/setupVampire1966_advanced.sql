@@ -1,3 +1,4 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 -- Create the 'Mazzino/Ricciotti' start worker
 INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES

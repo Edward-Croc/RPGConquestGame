@@ -1,3 +1,4 @@
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 -- UPDATE config SET value = 0 WHERE name in ( 'REPORTDIFF0', 'REPORTDIFF1', 'REPORTDIFF2', 'REPORTDIFF3');
 /*
