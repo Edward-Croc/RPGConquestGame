@@ -64,10 +64,10 @@ VALUES
     ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- Diff vals for investigation results 
-    ('REPORTDIFF0', 0, 'Value for Level 0 information'),
+    ('REPORTDIFF0', -1, 'Value for Level 0 information'),
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
     ('REPORTDIFF2', 2, 'Value for Level 2 information'),
-    ('REPORTDIFF3', 3, 'Value for Level 3 information'),
+    ('REPORTDIFF3', 4, 'Value for Level 3 information'),
     ('LOCATIONNAMEDIFF', 0, 'Value for Location Name'),
     ('LOCATIONINFORMATIONDIFF', 1, 'Value for Location Information'),
     ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
