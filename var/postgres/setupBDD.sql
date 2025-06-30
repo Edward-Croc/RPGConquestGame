@@ -128,6 +128,7 @@ CREATE TABLE players (
     ID SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     passwd VARCHAR(64) NOT NULL,
+    url text,
     is_privileged BOOLEAN DEFAULT FALSE -- does player have god mode
 );
 

@@ -3,6 +3,25 @@
     $zonesArray = getZonesArray($gameReady);
     $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
 
+    $controllersArray = array();
+    $playerURL = null;
+
+    if (isset( $_SESSION['user_id'])) {
+        try{
+            $sqlPlayers = sprintf("SELECT p.*
+                FROM players p
+                WHERE p.id = %s
+            ", $_SESSION['user_id']);
+            $stmtPlayers = $gameReady->prepare($sqlPlayers);
+            $stmtPlayers->execute();
+        } catch (PDOException $e) {
+            echo sprintf("%s(): %s failed:  %s <br />",  __FUNCTION__, $e->getMessage(), $_SESSION['user_id']);
+        }
+        // Fetch the results
+        $players = $stmtPlayers->fetchAll(PDO::FETCH_ASSOC);
+        $playerURL = $players[0]['url'];
+    }
+
     $controllers = getControllers($gameReady, $_SESSION['user_id'], null, false);
     $debug = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = true;
@@ -25,8 +44,8 @@
             $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
             echo sprintf ('<h2>Votre Faction </h2>
                 Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)<br>
-                %6$s %7$s
-                <div ><form action="/%8$s/controllers/action.php" method="GET">
+                %6$s %7$s %8$s
+                <div ><form action="/%9$s/controllers/action.php" method="GET">
                 <input type="hidden" name="controller_id" value=%3$s>
                 <h3>Votre Base : </h3> <p>',
                 $controllers['firstname'],
@@ -35,6 +54,7 @@
                 $controllers['faction_name'],
                 $controllers['fake_faction_name'],
                 !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> Document de faction. </button><br>' : '',
+                !empty($playerURL) ? '<button onclick="window.open(\''.$playerURL.'\', \'_blank\')"> Document du joueur. </button><br>' : '',
                 !empty($controllers['story']) ? $controllers['story'] : '',
                 $_SESSION['FOLDER']
             );

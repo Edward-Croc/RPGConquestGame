@@ -1,5 +1,8 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
--- TODO : Add Hide action to servants allowing them to have detection defence +6, ATK defence +4, and do nothing. 
+
+-- TODO : add kill servant button to all agent
+-- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
+-- TODO : Add Hide action to agents allowing them to have detection defence +6, ATK defence +4, and do nothing. 
 -- TODO : Show the 'investigate' / 'passive' buttons side by side
 -- TODO : Move the 'Attack' mechanic to a new line.
 -- TODO : Change the move, attack, give from button containing text to text select and validate button! 
@@ -48,15 +51,25 @@ VALUES
     ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text')
 ;
 
-INSERT INTO players (username, passwd, is_privileged) VALUES
-    ('player0', 'zero', False),
-    ('player1', 'one', False),
-    ('player2', 'two', False),
-    ('player3', 'three', False),
-    ('player4', 'four', False),
-    ('player5', 'five', False),
-    ('player6', 'six', False),
-    ('player7', 'seven', False)
+INSERT INTO players (username, passwd, is_privileged, url) VALUES
+    ('player0', 'yokai', False, ''),
+    ('yoshiteru', 'ashikaga', False, ''),
+    ('yoshiaki', 'ashikaga', False, ''),
+    ('motochika', 'chosone', False, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
+    ('kanetsugu', 'chosone', False, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
+    ('shoho', 'chosone', False, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
+    ('nagayoshi', 'miytwo', False, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
+    ('fudzisan', 'miytwo', False, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
+    ('sogo', 'miytwo', False, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
+    ('rennyo', 'renthree', False, ''),
+    ('ren-jo', 'renthree', False, ''),
+    ('renko', 'renthree', False, ''),
+    ('tadaoki', 'hosfour', False, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
+    ('tama', 'hosfour', False, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
+    ('joha', 'hosfour', False, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
+    ('murai', 'wakfive', False, ''),
+    ('kukai', 'kobsix', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
+    ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU')
 ;
 
 INSERT INTO factions (name) VALUES
@@ -87,14 +100,13 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
     ),
-    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', 'passif', True,-- https://en.wikipedia.org/wiki/K%C5%ABkai
+    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', NULL, True,-- https://en.wikipedia.org/wiki/K%C5%ABkai
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
         '',
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     )
 ;
-UPDATE controllers set url = 'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8' WHERE lastname = 'Kōbō-Daishi (弘法大師)';
 
 INSERT INTO controllers (
     firstname, lastname,
@@ -121,7 +133,7 @@ INSERT INTO controllers (
         'Daïmyo Nagayoshi (長慶)', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
-        'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc',
+        'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
         ' Depuis 5 ans vous êtes le Daimyō du clan Miyoshi(三好), comme votre père Motonaga avant vous et son père avant lui.
           Mais vous, vous avez secrètement abandonné le bouddhisme pour embrasser la foi chrétienne, inspiré par les missionnaires venus avec les vaisseaux noirs portugais.
           En échange de votre protection et de votre conversion, ils vous ont offert un cadeau inestimable : le secret des fusils à mèche occidentaux.
@@ -179,32 +191,68 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
         (SELECT ID FROM controllers WHERE lastname in ('Shikoku (四国)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player1'),
+        (SELECT ID FROM players WHERE username = 'yoshiteru'),
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'motochika'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player2'),
+        (SELECT ID FROM players WHERE username = 'shoho'),
+        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'kanetsugu'),
+        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'nagayoshi'),
         (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player3'),
+        (SELECT ID FROM players WHERE username = 'fudzisan'),
+        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'sogo'),
+        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'rennyo'),
         (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player4'),
+        (SELECT ID FROM players WHERE username = 'ren-jo'),
+        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'renko'),
+        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'tadaoki'),
         (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player5'),
+        (SELECT ID FROM players WHERE username = 'tama'),
+        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'joha'),
+        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'murai'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player6'),
+        (SELECT ID FROM players WHERE username = 'kukai'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'player7'),
-        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+        (SELECT ID FROM players WHERE username = 'satomura'),
+        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     )
 ;
 
