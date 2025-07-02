@@ -25,14 +25,20 @@
     $controllers = getControllers($gameReady, $_SESSION['user_id'], null, false);
     $debug = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = true;
-    echo '<div class="factions">';
+    echo '<div class="section factions">';
         // Show factions if Multiple controllers are available
         if (count($controllers) > 1) {
-            echo '<h2>Factions</h2>';
+            echo '<h2 class="title is-4">Factions</h2>';
             echo sprintf('
-                <form action="/%s/base/accueil.php" method="GET">
-                    %s
-                <input type="submit" name="chosir" value="Choisir" />
+                <form action="/%s/base/accueil.php" method="GET" class="box mb-5">
+                    <div class="field">
+                        %s
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input type="submit" name="chosir" value="Choisir" class="button is-link">
+                        </div>
+                    </div>
                 </form>
                 <!-- Display controller details section (initially hidden) changed by the select action-->
                 <div id="controllerDetails" style="display: none;"> </div>', 
@@ -42,27 +48,37 @@
         }
         if ( isset($_SESSION['controller']) ) {
             $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
-            echo sprintf ('<h2>Votre Faction </h2>
-                Vous êtes %1$s %2$s (réseau %3$s) de la faction %4$s (%5$s)<br>
-                %6$s %7$s %8$s
-                <div ><form action="/%9$s/controllers/action.php" method="GET">
-                <input type="hidden" name="controller_id" value=%3$s>
-                <h3>Votre Base : </h3> <p>',
-                $controllers['firstname'],
-                $controllers['lastname'],
-                $controllers['id'],
-                $controllers['faction_name'],
-                $controllers['fake_faction_name'],
-                !empty($controllers['url']) ? '<button onclick="window.open(\''.$controllers['url'].'\', \'_blank\')"> Document de faction. </button><br>' : '',
-                !empty($playerURL) ? '<button onclick="window.open(\''.$playerURL.'\', \'_blank\')"> Document du joueur. </button><br>' : '',
-                !empty($controllers['story']) ? $controllers['story'] : '',
+            echo sprintf ('<h2 class="title is-4">Votre Faction</h2>
+                <div class="box mb-4">
+                <p>
+                Vous êtes <strong>%1$s %2$s</strong> (réseau <strong>%3$s</strong>) de la faction : <strong>%4$s</strong> (<span class="has-text-grey">%5$s</span>)
+                </p>
+                %8$s
+                %6$s %7$s
+                <form action="/%9$s/controllers/action.php" method="GET" class="mt-4">
+                <input type="hidden" name="controller_id" value="%3$s">
+                <h3 class="title is-5 mt-4">Votre Base :</h3>
+                <p>',
+                htmlspecialchars($controllers['firstname']),
+                htmlspecialchars($controllers['lastname']),
+                htmlspecialchars($controllers['id']),
+                htmlspecialchars($controllers['faction_name']),
+                htmlspecialchars($controllers['fake_faction_name']),
+                !empty($controllers['url']) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$controllers['url'].'\', \'_blank\')">Document de faction</button>' : '',
+                !empty($playerURL) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$playerURL.'\', \'_blank\')">Document du joueur</button>' : '',
+                !empty($controllers['story']) ? '<div class="notification is-light mb-2"><span class="is-size-7">'.nl2br(htmlspecialchars($controllers['story'])).'</span></div>' : '',
                 $_SESSION['FOLDER']
             );
             $bases = hasBase($gameReady, $controllers['id']);
             if (empty($bases)) {
                 echo sprintf(
-                    '<input type="submit" name="createBase" value="%1$s" class="worker-action-btn"> %2$s <br />',
-                    getConfig($gameReady, 'textControllerActionCreateBase'),
+                    '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                        <div class="control">
+                            <input type="submit" name="createBase" value="%1$s" class="button is-link worker-action-btn">
+                        </div>
+                        %2$s
+                    </div><br />',
+                    htmlspecialchars(getConfig($gameReady, 'textControllerActionCreateBase')),
                     $showZoneSelect
                 );
             } else {
@@ -71,16 +87,27 @@
                 echo '<p>';
                 foreach ($bases as $base ){
                     echo sprintf('
-                        <input type="hidden" name="base_id" value=%3$s>
-                        Votre %4$s à %5$s ne sera découvert que sur une valeur d’enquête de %6$s ou plus, si découvert, le texte suivant sera présenté à l’enquêteur : <br /> %7$s<br />
-                        <input type="submit" name="moveBase" value="%1$s" class="controller-action-btn"> %2$s <br /><br />',
-                        $textControllerActionMoveBase,
+                        <input type="hidden" name="base_id" value="%3$s">
+                        <div class="notification is-light mb-2">
+                            <strong>Votre %4$s à %5$s</strong><br>
+                            <span class="is-size-7">Ne sera découvert que sur une valeur d’enquête de <strong>%6$s</strong> ou plus.<br>
+                            Si découvert, le texte suivant sera présenté à l’enquêteur :</span>
+                            <blockquote class="mt-2 mb-2">%7$s</blockquote>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                            <div class="control">
+                                <input type="submit" name="moveBase" value="%1$s" class="button is-warning controller-action-btn">
+                            </div>
+                            %2$s
+                        </div>
+                        <br>',
+                        htmlspecialchars($textControllerActionMoveBase),
                         $showZoneSelect,
-                        $base['id'],
-                        $base['name'],
-                        $base['zone_name'],
-                        $base['discovery_diff'],
-                        $base['description']
+                        htmlspecialchars($base['id']),
+                        htmlspecialchars($base['name']),
+                        htmlspecialchars($base['zone_name']),
+                        htmlspecialchars($base['discovery_diff']),
+                        nl2br(htmlspecialchars($base['description']))
                     );
                 }
             }
@@ -97,7 +124,7 @@
             ]);
             $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($incomingAttacks)) {
-                echo "<div class='alert alert-danger'>";
+                echo "<div class='notification is-danger'>";
                 echo "<strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
                 foreach ($incomingAttacks as $attack) {
                     echo sprintf( "<li> %s</li>", htmlspecialchars($attack['target_result_text']));
@@ -105,18 +132,24 @@
                 echo "</ul></div>";
             }
             echo '</p>
-            <h3>Les lieux : </h3>
+            <h3 class="title is-5 mt-4">Les lieux :</h3>
             <p>';
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             if($showAttackableControllerKnownLocations !== NULL && hasBase($gameReady, $controllers['id'])) {
-                echo sprintf('<form action="/%3$s/controllers/action.php" method="GET">
-                        <input type="hidden" name="controller_id" value=%1$s>
-                        <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers : " class="controller-action-btn"> %2$s',
-                        $controllers['id'],
-                        $showAttackableControllerKnownLocations,
-                        $_SESSION['FOLDER']
+                echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
+                        <input type="hidden" name="controller_id" value="%1$s">
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers :" class="button is-danger controller-action-btn">
+                            </div>
+                            <div class="control">%2$s</div>
+                        </div>
+                    </form>',
+                    htmlspecialchars($controllers['id']),
+                    $showAttackableControllerKnownLocations,
+                    $_SESSION['FOLDER']
                 ); 
-            } else echo 'Aucun lieu connu attaquable.';
+            } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
             echo '</p>';
 
             // Outgoing attacks this turn
@@ -132,7 +165,7 @@
             ]);
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($outgoingAttacks)) {
-                echo "<div class='alert alert-info'>";
+                echo "<div class='notification is-info'>";
                 echo "<strong>Vos attaques ce tour :</strong><ul>";
                 foreach ($outgoingAttacks as $attack) {
                     echo "<li>". htmlspecialchars($attack['attacker_result_text']) . "</li>";
@@ -142,9 +175,13 @@
 
             echo '
             </p>
-            </form>';
+            </form>
+            </div>';
     }
     echo '</div>';
 
+
+
+    require_once '../workers/viewAll.php';if (!empty($pageName) && $pageName == 'controllers_action')
 if (!empty($pageName) && $pageName == 'controllers_action')
     require_once '../workers/viewAll.php';
