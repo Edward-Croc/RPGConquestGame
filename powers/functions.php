@@ -126,7 +126,7 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = tr
 
     $conditions = '';
     if ($controller_id != "" || $basePowerNames != "") {
-    $conditions = sprintf("AND ( %s %s %s )",
+        $conditions = sprintf("AND ( %s %s %s)",
         $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
         ($controller_id != "" && $basePowerNames != "") ? "OR" : '',
         $controller_id != "" ? "controllers.id IN ($controller_id)" : '');
@@ -180,20 +180,25 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = true){
     if (empty($powerDisciplineArray)) return '';
 
     $disciplinesOptions = '';
-
-    // Display select list of controllers
-    foreach ( $powerDisciplineArray as $powerDiscipline) {
-        $disciplinesOptions .= "<option value='" . $powerDiscipline['link_power_type_id'] . "'>" . $powerDiscipline['power_text'] . " </option>";
+    foreach ($powerDisciplineArray as $powerDiscipline) {
+        $disciplinesOptions .= "<option value='" . htmlspecialchars($powerDiscipline['link_power_type_id']) . "'>" . htmlspecialchars($powerDiscipline['power_text']) . "</option>";
     }
-    $showDisciplineSelect = sprintf(" %s
-        <select id='disciplineSelect' name='discipline'>
-            <option value=\'\'>Select %s</option>
+
+    $label = $showText ? getPowerTypesDescription($pdo, 'Discipline').' :' : '';
+    
+    $showDisciplineSelect = sprintf('
             %s
-        </select>
-        <br />
-        ",
-        $showText ? getPowerTypesDescription($pdo, 'Discipline').' :' : '',
-        getPowerTypesDescription($pdo, 'Discipline'),
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="disciplineSelect" name="discipline">
+                        <option value="">Sélectionner %s</option>
+                        %s
+                    </select>
+                </div>
+            </div>
+        ',
+        $label ? 'Enseigner un.e '.$label : '',
+        htmlspecialchars(getPowerTypesDescription($pdo, 'Discipline')),
         $disciplinesOptions
     );
 
@@ -377,20 +382,27 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
     if (empty($powerTransformationArray)) return '';
 
     $transformationsOptions = '';
-
-    // Display select list of controllers
-    foreach ( $powerTransformationArray as $powerTransformation) {
-        $transformationsOptions .= "<option value='" . $powerTransformation['link_power_type_id'] . "'>" . $powerTransformation['power_text'] . " </option>";
+    foreach ($powerTransformationArray as $powerTransformation) {
+        $transformationsOptions .= "<option value='" . htmlspecialchars($powerTransformation['link_power_type_id']) . "'>" . htmlspecialchars($powerTransformation['power_text']) . "</option>";
     }
-    $showTransformationSelect = sprintf("%s
-        <select id='transformationSelect' name='transformation'>
-            <option value=\'\'>Select %s</option>
+
+    $label = $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '';
+
+    $showTransformationSelect = sprintf('
+        <div class="field">
             %s
-        </select>
-        <br />
-        ",
-        $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '',
-        getPowerTypesDescription($pdo, 'Transformation'),
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="transformationSelect" name="transformation">
+                        <option value="">Sélectionner %s</option>
+                        %s
+                    </select>
+                </div>
+            </div>
+        </div>
+        ',
+        $label ? '<label class="label" for="transformationSelect">'.$label.'</label>' : '',
+        htmlspecialchars(getPowerTypesDescription($pdo, 'Transformation')),
         $transformationsOptions
     );
 

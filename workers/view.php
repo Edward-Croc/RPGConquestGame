@@ -8,7 +8,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
     $workersArray = getWorkers($gameReady, [$worker_id]);
 
-    echo "<div class='workers'>";
+    echo "<div class='workers section'>";
 
     if ( $_SESSION['DEBUG'] == true )
         echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
@@ -62,28 +62,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 }
             }
 
-            $viewHTML = sprintf(
-                '<div><h1>Agent %2$s %3$s (%1$s) </h1>
-                    %5$s au %4$s.<br />
-                    <i>
-                        Capacité d’enquete : %6$s. Capacité d’attaque / défense : %7$s / %8$s
-                    </i>
-                </form> </div>
-                ',
-                $worker['id'],
-                $worker['firstname'],
-                $worker['lastname'],
-                $worker['zone_name'],
-                ucfirst($textActionUpdated),
-                $worker['total_enquete'],
-                $worker['total_attack'],
-                $worker['total_defence']
-            );
-
-            $viewHTML .= sprintf(
-                '<div class="history"> <h3>Historique : </h3>
+            // build view history HTML
+            $viewHistoryHTML = sprintf(
+                '<div class="box history">
+                    <h3 class="title is-5">Historique :</h3>
                     <p>
-                        Originaire de %1$s, '.getConfig($gameReady, 'textViewWorkerJobHobby').' <br />
+                        Originaire de <strong>%1$s</strong>, '.getConfig($gameReady, 'textViewWorkerJobHobby').' <br />
                         %4$s %5$s
                     </p>
                 </div>',
@@ -95,18 +79,20 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 empty($worker['powers']['Transformation']['texte']) ? '' :
                     sprintf(getConfig($gameReady, 'textViewWorkerTransformations'), $worker['powers']['Transformation']['texte']),
             );
-            echo $viewHTML;
 
+            // build view actions HTML
+            $actionHTML = '';
             // worker must be active to be allowed actions
             if ($worker['is_active']) {
                 // on $workerStatus = 'double_agent' show recall button
                 $recallWorkerButton = '';
                 if (!empty($workerStatus) && $workerStatus == 'double_agent'){
                     $recallWorkerButton .= sprintf(
-                        '<p>
-                        <i>%1$s</i><br \>
-                        <input type="hidden" name="recall_controller_id" value="%3$s">
-                        <input type="submit" name="recallDoubleAgent" value="%2$s" class="worker-action-btn"><br />',
+                        '<div class="control">
+                            <i>%1$s</i><br \>
+                            <input type="hidden" name="recall_controller_id" value="%3$s">
+                            <input type="submit" name="recallDoubleAgent" value="%2$s" class="worker-action-btn">
+                        </div>',
                         'Cet agent étant infiltré.e, lui donner des ordres pourrait révéler son défaut d’allégeance !',
                         'Le rappeler a notre service !',
                         $controller_id
@@ -122,47 +108,91 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $showcontrollersSelect = showControllerSelect($controllers, 'gift_controller_id');
                 $showListClaimTargetsSelect = showControllerSelect($controllers, 'claim_controller_id', TRUE);
 
+                // build attack select HTML
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
+                $attackActionHTML = '';
+                if (!empty($enemyWorkersSelect)) {
+                    $attackActionHTML = sprintf('
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Attaquer :
+                            </div>
+                            <div class="control">
+                                %s
+                            </div>
+                            <div class="control">
+                                <input type="submit" name="attack" value="Attaquer" class="button is-danger is-light"><br />
+                            </div>
+                        </div>',
+                        $enemyWorkersSelect
+                    );
+                }
 
-                $actionHTML = sprintf('<div class="actions">
+                $actionHTML .= sprintf('<div class="box actions">
                     <form action="/%9$s/workers/action.php" method="GET">
                         <input type="hidden" name="worker_id" value=%1$s>
-                        <h3>Actions : </h3> 
-                        <p>
-                            <strong>Action de fin de tour :</strong> %12$s au %13$s<br />
-                            <input type="submit" name="passive" value="%4$s" class="worker-action-btn"> 
-                            <input type="submit" name="investigate" value="%10$s"" class="worker-action-btn"> 
-                            <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"><br />
-                            Revendiquer le %8$s au nom de %5$s <input type="submit" name="claim" value="Revendiquer" class="worker-action-btn"><br />
-                            %3$s
-                        </p><p>
-                            <strong>Actions immédiates :</strong><br />
-                            %7$s
-                            Déménager vers : %2$s <input type="submit" name="move" value="Déménager" class="worker-action-btn"><br />
-                            Donner mon serviteur à %6$s <input type="submit" name="gift" value="Donner" class="worker-action-btn"><br />
-                            </p>
+                        <h3 class="title is-5">Actions :</h3> 
+                        <div class="field">
+                            <label class="label">Action de fin de tour : %12$s au %13$s</label>
+                            <div class="control">
+                                <input type="submit" name="investigate" value="%10$s" class="button is-info">
+                                <input type="submit" name="passive" value="%4$s" class="button is-warning"> 
+                                <input type="submit" name="hide" value="%11$s" class="button is-danger"><br />
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Revendiquer le %8$s au nom de
+                            </div>
+                            <div class="control">
+                                %5$s
+                            </div>
+                            <div class="control">
+                                <input type="submit" name="claim" value="Revendiquer" class="button is-success">
+                            </div>
+                        </div>
+                        %3$s
+                        <label class="label"><strong>Actions immédiates :</strong></label>
+                        %7$s
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Déménager vers :
+                            </div>
+                            %2$s
+                            <div class="control">
+                                <input type="submit" name="move" value="Déménager" class="button is-warning">
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Donner mon serviteur à 
+                            </div>
+                            %6$s
+                            <div class="control">
+                                <input type="submit" name="gift" value="Donner" class="button is-danger">
+                            </div>
+                        </div>
                     </form>
-                    </div>
-                    ',
-                    $worker['id'],
-                    $showZoneSelect,
-                    (empty($enemyWorkersSelect)) ? '' : sprintf('Attaquer : %s <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"><br />', $enemyWorkersSelect),
-                    ucfirst(getConfig($gameReady, 'txt_inf_passive')),
-                    $showListClaimTargetsSelect,
-                    $showcontrollersSelect,
-                    $recallWorkerButton,
-                    getConfig($gameReady, 'textForZoneType'),
-                    $_SESSION['FOLDER'],
-                    ucfirst(getConfig($gameReady, 'txt_inf_investigate')),
-                    ucfirst(getConfig($gameReady, 'txt_inf_hide')),
-                    ucfirst($textActionUpdated),
-                    $worker['zone_name']
+                </div>',
+                $worker['id'],
+                $showZoneSelect,
+                $attackActionHTML,
+                ucfirst(getConfig($gameReady, 'txt_inf_passive')),
+                $showListClaimTargetsSelect,
+                $showcontrollersSelect,
+                $recallWorkerButton,
+                getConfig($gameReady, 'textForZoneType'),
+                $_SESSION['FOLDER'],
+                ucfirst(getConfig($gameReady, 'txt_inf_investigate')),
+                ucfirst(getConfig($gameReady, 'txt_inf_hide')),
+                ucfirst($textActionUpdated),
+                $worker['zone_name']
                 );
-                echo $actionHTML;
             }
+
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner'){
-                $actionHTML = sprintf('
+                $actionHTML .= sprintf('
                     <div class="actions">
                     <form action="/%5$s/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
@@ -179,15 +209,16 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     'Relacher le prisonier !',
                     $_SESSION['FOLDER']
                 );
-                echo $actionHTML;
             }
 
+            // build upgrade HTML
+            $upgradeHTML = '';
             // worker must be active to get upgrades
             if ($worker['is_active']) {
-                $upgradeHTML = sprintf('<div class="upgrade">
-                    <h3> Evolutions : </h3>
+                $upgradeHTML = sprintf('<div class="box upgrade">
+                    <h3 class="title is-5">Evolutions :</h3>
                     <form action="/%2$s/workers/action.php" method="GET">
-                    <input type="hidden" name="worker_id" value=%1$s>
+                        <input type="hidden" name="worker_id" value=%1$s>
                 ',
                 $worker['id'],
                 $_SESSION['FOLDER']
@@ -218,15 +249,23 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     }
                 }
                 $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
+                if (!isset($nb_current_disciplines[0]['discipline_count']))
+                    $nb_current_disciplines[0]['discipline_count'] = 0;
                 if ( $debug_discipline_age )
                     echo sprintf(
                         "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>",
                         $nb_current_disciplines[0]['discipline_count'], var_export($nb_current_disciplines, true), $nb_disciplines
                     );
                 if ( (INT)$nb_current_disciplines[0]['discipline_count'] < (INT)$nb_disciplines) {
-                    $upgradeHTML .= sprintf('<input type="submit" name="teach_discipline" value="Enseigner une %2$s " class="worker-upgrade-btn"> %1$s ',
-                        showDisciplineSelect($gameReady, $powerDisciplineArray, false),
-                        strtolower(getPowerTypesDescription($gameReady, 'Discipline'))
+                    $upgradeHTML .= sprintf('
+                        <div class="field is-grouped is-grouped-multiline">
+                            %1$s
+                            <div class="control">
+                                <input type="submit" name="teach_discipline" value="Enseigner" class="button is-link worker-upgrade-btn">
+                            </div>
+                        </div>
+                        ',
+                        showDisciplineSelect($gameReady, $powerDisciplineArray, true)
                     );
                 }
                 // Check Transformation Conditions
@@ -244,23 +283,64 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray, true));
                     if (! empty($powerTransformationArray) )
-                        $upgradeHTML .= sprintf('<input type="submit" name="transform" value="Ajouter %2$s " class="worker-upgrade-btn"> %1$s ',
+                        $upgradeHTML .= sprintf('
+                            <div class="field  is-grouped-multiline">
+                                <div class="control">
+                                    %1$s
+                                </div>
+                                <div class="control">
+                                    <input type="submit" name="transform" value="Ajouter %2$s" class="button is-link worker-upgrade-btn">
+                                </div>
+                            </div>
+                            ',
                             showTransformationSelect($gameReady, $powerTransformationArray, false),
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );
                 }
-
-                $upgradeHTML .= sprintf('</form> </div >');
-                echo $upgradeHTML;
+                $upgradeHTML .= sprintf('</form></div>');
             }
 
-            echo sprintf('<div class="report"> <h3> Rapport : </h3>');
+            $viewHTML = sprintf(
+                '<div class="card">
+                    <header class="card-header">
+                        <p class="card-header-title">
+                            Agent %2$s %3$s (#%1$s)
+                        </p>
+                    </header>
+                    <div class="card-content">
+                        <div class="box info">
+                            <strong>%5$s</strong> au <strong>%4$s</strong>.<br />
+                            <i>
+                                Capacité d’enquete : <strong>%6$s</strong>. 
+                                Capacité d’attaque / défense : <strong>%7$s</strong> / <strong>%8$s</strong>
+                            </i>
+                        </div>
+                        %9$s
+                        %10$s
+                        %11$s
+                    </div>
+                </div>',
+                $worker['id'],
+                $worker['firstname'],
+                $worker['lastname'],
+                $worker['zone_name'],
+                ucfirst($textActionUpdated),
+                $worker['total_enquete'],
+                $worker['total_attack'],
+                $worker['total_defence'],
+                $viewHistoryHTML,
+                $actionHTML,
+                $upgradeHTML
+            );
+            echo $viewHTML;
+
+            echo sprintf('<div class="box report"> <h3 class="title is-5">Rapport :</h3>');
 
             $timeText = getConfig($gameReady, 'timeValue');
             $timeTextThis = getConfig($gameReady, 'timeDenominatorThis');
             foreach ( $worker['actions'] as $turn_number => $action ){
                 echo sprintf(
-                    '<div class="report week"> <h4> %s </h4>',
+                    '<div class="box report week"> <h4 class="subtitle is-5"> %s </h4>',
                     (isset($action['turn_number']) && (INT)$turn_number == (INT)$mechanics['turncounter'] ) ? ucfirst(sprintf("%s %s", $timeTextThis, $timeText )) : ucfirst(sprintf("%s %s", $timeText, $turn_number ))
                 );
                 if ($_SESSION['DEBUG_REPORT'])
@@ -269,15 +349,15 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     // Decode the existing JSON into an associative array
                     $currentReport = json_decode($action['report'], true);
                     if (!empty($currentReport['life_report']))
-                        echo '<h4> Changements : </h4> '.$currentReport['life_report'];
+                        echo '<p><h4 class="subtitle is-6"> Changements : </h4> '.$currentReport['life_report'].'</p>';
                     if (!empty($currentReport['attack_report']))
-                        echo '<h4> Attaques : </h4> '.$currentReport['attack_report'];
+                        echo '<p><h4 class="subtitle is-6"> Attaques : </h4> '.$currentReport['attack_report'].'</p>';
                     if (!empty($currentReport['investigate_report']))
-                        echo '<h4> Mes investigations : </h4> '.$currentReport['investigate_report'];
+                        echo '<p><h4 class="subtitle is-6"> Mes investigations : </h4> '.$currentReport['investigate_report'].'</p>';
                     if (!empty($currentReport['secrets_report']))
-                        echo '<h4> Mes recherches : </h4> '.$currentReport['secrets_report'];
+                        echo '<p><h4 class="subtitle is-6"> Mes recherches : </h4> '.$currentReport['secrets_report'].'</p>';
                     if (!empty($currentReport['claim_report']))
-                        echo '<h4> Controle: </h4> '.$currentReport['claim_report'];
+                        echo '<p><h4 class="subtitle is-6"> Controle: </h4> '.$currentReport['claim_report'].'</p>';
                 }
                 echo "</div>";
             }

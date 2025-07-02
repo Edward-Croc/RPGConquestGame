@@ -76,25 +76,33 @@ function showZoneSelect($pdo, $zonesArray, $showText = false, $place_holder = tr
     if (empty($zonesArray)) return '';
 
     $zoneOptions = '';
-    // Display select list of controllers
-    foreach ( $zonesArray as $zone) {
+    foreach ($zonesArray as $zone) {
         $zoneOptions .= sprintf(
-            '<option value=\'%1$s\'> %2$s (%1$s) </option>',
-            $zone['zone_id'], $zone['name']
+            '<option value="%1$s">%2$s (%1$s)</option>',
+            htmlspecialchars($zone['zone_id']),
+            htmlspecialchars($zone['name'])
         );
     }
 
-    $showZoneSelect = sprintf(" %s
-        <select id='zoneSelect' name='zone_id'>
+    $label = $showText ? ucfirst(htmlspecialchars(getConfig($pdo, 'textForZoneType'))) : '';
+
+    $showZoneSelect = sprintf('
             %s
-            %s
-        </select>
-        ",
-        $showText ? ucfirst(getConfig($pdo, 'textForZoneType')) : '',
-        $place_holder ? "<option value=''>Select Zone</option>": '',
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="zoneSelect" name="zone_id">
+                        %s
+                        %s
+                    </select>
+                </div>
+            </div>
+        ',
+        $label ? '<label class="label" for="zoneSelect">'.$label.'</label>' : '',
+        $place_holder ? '<option value="">Sélectionner une zone</option>' : '',
         $zoneOptions
     );
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
+
+    if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
     return $showZoneSelect;
 }

@@ -105,7 +105,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     <div class="workers">
     <form action="/%10$s/workers/action.php" method="GET">
         <p>
-        %1$s  %2$s de %3$s <br />
+        <strong>%1$s %2$s</strong> de %3$s <br />
         '.getConfig($gameReady, 'textRecrutementJobHobby').' <br />
         <!-- Hidden inputs -->
         <input type="hidden" name="creation" value="true">
@@ -153,7 +153,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
 
     echo showZoneSelect($gameReady, $zonesArray, false, false);
 
-    echo "<input type='submit' name='chosir' value='Affecter' />
+    echo "<input type='submit' name='chosir' value='Affecter' class='button is-link mt-3' />
     </p>
     </form>
     </div>";

@@ -14,25 +14,27 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
-    echo "<div class='workers'>";
+    echo "<div class='section workers'>";
         $recruitButton = "";
         if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
-            $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur'>";
+            $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur' class='button is-link'>";
         } elseif (empty(hasBase($gameReady, $controller_id))) {
-            $recruitButton = getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase');
+            $recruitButton = "<span class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</span>";
         }
 
         $firstComeButton = "";
         if (canStartFirstCome($gameReady, $controller_id))
-            $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu'>";
+            $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu' class='button is-info'>";
 
-            echo sprintf("
-            <h1>Agents</h1>
-            <form action='/%s/workers/new.php' method='GET'>
-                <h3> Recrutement : </h3>
+        echo sprintf("
+            <h1 class='title is-2'>Agents</h1>
+            <form action='/%s/workers/new.php' method='GET' class='box mb-5'>
+                <h3 class='title is-4'>Recrutement :</h3>
                 <input type='hidden' name='controller_id' value='%s'>
-                %s
-                %s
+                <div class='field is-grouped is-grouped-multiline'>
+                    <div class='control'>%s</div>
+                    <div class='control'>%s</div>
+                </div>
             </form>",
             $_SESSION['FOLDER'],
             $controller_id,
@@ -72,7 +74,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $deadWorkerArray[] = $worker;
             }
             if ( !empty($liveWorkerArray )) {
-                echo "<div > <h3>Nos Agents :</h3>";
+                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
                 foreach ($liveWorkerArray as $worker) {
                     echo $worker['view'];
                 }
@@ -80,7 +82,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             }
 
             if ( !empty($doubleAgentWorkerArray )) {
-                echo "<div > <h3>Nos Agents doubles :</h3>";
+                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents doubles :</h3>";
                 foreach ($doubleAgentWorkerArray as $worker) {
                     echo $worker['view'];
                 }
@@ -88,7 +90,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             }
 
             if ( !empty($prisonersWorkerArray )) {
-                echo "<div > <h3>Nos Prisonniers :</h3>";
+                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Prisonniers :</h3>";
                 foreach ($prisonersWorkerArray as $worker) {
                     echo $worker['view'];
                 }
@@ -96,7 +98,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             }
 
             if ( !empty($deadWorkerArray )) {
-                echo "<div > <h3>Nos morts :</h3>";
+                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos morts :</h3>";
                 foreach ($deadWorkerArray as $worker) {
                     echo $worker['view'];
                 }

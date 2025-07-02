@@ -65,24 +65,28 @@ function showControllerSelect($controllers, $field_name = 'controller_id', $addE
     if (empty($controllers)) return '';
     $controllerOptions = '';
     if ($addEmptySpace) $controllerOptions .= "<option value='null'> Personne </option>";
-    // Display select list of controllers
     foreach ( $controllers as $controller) {
         $controllerOptions .= sprintf (
-            "<option value='%s'> %s %s </option>",
+            "<option value='%s'>%s %s</option>",
             $controller['id'],
-            $controller['firstname'],
-            $controller['lastname']
+            htmlspecialchars($controller['firstname']),
+            htmlspecialchars($controller['lastname'])
         );
     }
 
+    // Bulma form field
     $showControllerSelect = sprintf('
-        <select id=\'controllerSelect\' name=\'%1$s\'>
-            %2$s
-        </select>',
-        $field_name,
+        <div class="control">
+            <div class="select is-fullwidth">
+                <select id="controllerSelect" name="%1$s">
+                    %2$s
+                </select>
+            </div>
+        </div>',
+        htmlspecialchars($field_name),
         $controllerOptions
     );
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControllerSelect: ".var_export($showControllerSelect, true)."<br /><br />";
+    if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControllerSelect: ".var_export($showControllerSelect, true)."<br /><br />";
 
     return $showControllerSelect;
 }
@@ -355,7 +359,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id' => $controller_id]);
     $controller = $stmt->fetch(PDO::FETCH_ASSOC);
-    $target_result_text .= sprintf('C'est clairement %s qui en est responsable.', $controller["fullname"]);
+    $target_result_text .= sprintf('C\'est clairement %s qui en est responsable.', $controller["fullname"]);
 */
     $zone_id = $location[0]['zone_id'];
     if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
