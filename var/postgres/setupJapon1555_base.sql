@@ -1,12 +1,7 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
--- TODO : add kill servant button to all agent
+-- TODO : add kill agents button to all agents ??
 -- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
--- TODO : Add Hide action to agents allowing them to have detection defence +6, ATK defence +4, and do nothing. 
--- TODO : Show the 'investigate' / 'passive' buttons side by side
--- TODO : Move the 'Attack' mechanic to a new line.
--- TODO : Change the move, attack, give from button containing text to text select and validate button! 
--- TODO : Add carater sheets to the faction to have 3 players per faction ( Daimyo, Stragegos and Emissary)
 -- TODO : Create the Shogun and Yokai character sheets
 -- TODO : Add artefacts and locations to the faction page
 -- TODO : Add Conversion to the captured agent possible actions list,

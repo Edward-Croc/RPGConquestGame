@@ -132,21 +132,21 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             <strong>Action de fin de tour :</strong> %12$s au %13$s<br />
                             <input type="submit" name="passive" value="%4$s" class="worker-action-btn"> 
                             <input type="submit" name="investigate" value="%10$s"" class="worker-action-btn"> 
-                            <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"> <br />
-                            <input type="submit" name="claim" value="Revendiquer le %8$s au nom de " class="worker-action-btn"> %5$s <br />
+                            <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"><br />
+                            Revendiquer le %8$s au nom de %5$s <input type="submit" name="claim" value="Revendiquer" class="worker-action-btn"><br />
                             %3$s
                         </p><p>
                             <strong>Actions immédiates :</strong><br />
                             %7$s
-                            <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
-                            <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
+                            Déménager vers : %2$s <input type="submit" name="move" value="Déménager" class="worker-action-btn"><br />
+                            Donner mon serviteur à %6$s <input type="submit" name="gift" value="Donner" class="worker-action-btn"><br />
                             </p>
                     </form>
                     </div>
                     ',
                     $worker['id'],
                     $showZoneSelect,
-                    (empty($enemyWorkersSelect)) ? '' : sprintf('<input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s <br />', $enemyWorkersSelect),
+                    (empty($enemyWorkersSelect)) ? '' : sprintf('Attaquer : %s <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"><br />', $enemyWorkersSelect),
                     ucfirst(getConfig($gameReady, 'txt_inf_passive')),
                     $showListClaimTargetsSelect,
                     $showcontrollersSelect,
