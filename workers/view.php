@@ -126,18 +126,23 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $actionHTML = sprintf('<div class="actions">
                     <form action="/%9$s/workers/action.php" method="GET">
-                    <input type="hidden" name="worker_id" value=%1$s>
-                    <h3>Actions : </h3> <p>
-                    %7$s
-                    <input type="submit" name="passive" value="%4$s" class="worker-action-btn"> 
-                    <input type="submit" name="investigate" value="%10$s"" class="worker-action-btn"> 
-                    <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"> <br />
-                    %3$s
-                    <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
-                    <input type="submit" name="claim" value="Revendiquer le %8$s au nom de " class="worker-action-btn"> %5$s <br />
-                    <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
-                    </p></div>
+                        <input type="hidden" name="worker_id" value=%1$s>
+                        <h3>Actions : </h3> 
+                        <p>
+                            <strong>Action de fin de tour :</strong> %12$s au %13$s<br />
+                            <input type="submit" name="passive" value="%4$s" class="worker-action-btn"> 
+                            <input type="submit" name="investigate" value="%10$s"" class="worker-action-btn"> 
+                            <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"> <br />
+                            <input type="submit" name="claim" value="Revendiquer le %8$s au nom de " class="worker-action-btn"> %5$s <br />
+                            %3$s
+                        </p><p>
+                            <strong>Actions immédiates :</strong><br />
+                            %7$s
+                            <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
+                            <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
+                            </p>
                     </form>
+                    </div>
                     ',
                     $worker['id'],
                     $showZoneSelect,
@@ -149,7 +154,9 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     getConfig($gameReady, 'textForZoneType'),
                     $_SESSION['FOLDER'],
                     ucfirst(getConfig($gameReady, 'txt_inf_investigate')),
-                    ucfirst(getConfig($gameReady, 'txt_inf_hide'))
+                    ucfirst(getConfig($gameReady, 'txt_inf_hide')),
+                    ucfirst($textActionUpdated),
+                    $worker['zone_name']
                 );
                 echo $actionHTML;
             }
