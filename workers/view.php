@@ -117,9 +117,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             <div class="control">
                                 Attaquer :
                             </div>
-                            <div class="control">
-                                %s
-                            </div>
+                            %s
                             <div class="control">
                                 <input type="submit" name="attack" value="Attaquer" class="button is-danger is-light"><br />
                             </div>
@@ -144,9 +142,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             <div class="control">
                                 Revendiquer le %8$s au nom de
                             </div>
-                            <div class="control">
-                                %5$s
-                            </div>
+                            %5$s
                             <div class="control">
                                 <input type="submit" name="claim" value="Revendiquer" class="button is-success">
                             </div>
