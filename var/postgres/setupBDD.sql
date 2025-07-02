@@ -56,12 +56,14 @@ VALUES
     ('ENQUETE_ZONE_BONUS', 0, 'Bonus à la valeur enquete si le worker est dans une zone contrôlée'),
     ('ATTACK_ZONE_BONUS', 0, 'Bonus à la valeur attaque si le worker est dans une zone contrôlée'),
     ('DEFENCE_ZONE_BONUS', 1, 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
+    ('HIDE_ENQUETE_FLAT_BONUS', 4, 'Bonus to the investigate value if the worker is using hide'),
+    ('HIDE_DEFENCE_FLAT_BONUS', 1, 'Bonus to the investigate value if the worker is using hide'),
     -- passive, investigate, attack, claim, captured, dead
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate''', 'Liste of passive attack actions'),
+    ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
     ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- Diff vals for investigation results 
     ('REPORTDIFF0', -1, 'Value for Level 0 information'),
@@ -86,6 +88,7 @@ VALUES
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
     ('txt_ps_investigate', 'enquete', 'Text for investigate action'),
+    ('txt_ps_hide', 'se cache', 'Text for hide action'),
     ('txt_ps_attack', 'attaque', 'Text for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
     ('txt_ps_captured', 'a disparu', 'Text for captured action'),
@@ -94,6 +97,7 @@ VALUES
     ('txt_ps_double_agent', 'a infiltré le réseau de %s ', 'Text for being infiltrator'),
     ('txt_inf_passive', 'surveiller', 'Text for passive action'),
     ('txt_inf_investigate', 'enqueter', 'Text for investigate action'),
+    ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
     ('txt_inf_captured', 'as été capturer', 'Text for captured action'),

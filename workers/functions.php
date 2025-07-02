@@ -885,6 +885,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
         $currentReport = array();
     }
     $sql_worker_actions = "UPDATE worker_actions SET ";
+    if ($_SESSION['DEBUG'] == true) echo sprintf("%s(): activate : %s <br/>", __FUNCTION__, $action);
     $new_action = $action;
     $jsonOutput = '{}';
     switch($action) {
@@ -912,14 +913,6 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             }
             // Create JSON table
             $jsonOutput = json_encode($chosenAttackOptions);
-            break;
-        case 'activate' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): activate <br/><br/>";
-            // if worker is other than passive set passive
-            $new_action = 'passive';
-            if ( $worker_actions[0]['action_choice'] == 'passive' ) { // if worker is passive set investigating
-                $new_action = 'investigate';
-            }
             break;
         case 'claim' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): claim <br/><br/>";

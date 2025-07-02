@@ -67,6 +67,8 @@ function calculateVals($pdo, $turn_number){
 
     // foreach type of action
     foreach ($array as $elements) {
+        $config = getConfig($pdo, $elements[1]);
+        echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
 
         // chose SQL for value generation
         $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
@@ -75,9 +77,37 @@ function calculateVals($pdo, $turn_number){
         }
 
         // Name of configured bonus (ex : ENQUETE_ZONE_BONUS)
-        $bonusColumn = strtoupper("{$elements[0]}_zone_bonus");
-        $bonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $bonusColumn);
+        $zoneBonusColumn = strtoupper("{$elements[0]}_zone_bonus");
+        $zoneBonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $zoneBonusColumn);
 
+        // Flat bonus to a specific action from config
+        $flatBonusSQL = "";
+        // Remove single quotes
+        $strActions = str_replace("'", "", $config);
+        // Now split
+        $actions = explode(",", $strActions);
+        foreach ( $actions AS $action ) {
+            // get flat bonus from config
+            $bonusColumn = strtoupper(sprintf("%s_%s_flat_bonus", $action, $elements[0]));
+            $flatBonusConfig = getConfig($pdo, $bonusColumn);
+            echo sprintf("Get Config for %s : %s <br /> ", $bonusColumn, $flatBonusConfig);
+            if (!empty($flatBonusConfig)) {
+                $flatBonusSQL .= sprintf("
+                    + CASE
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM worker_actions wa
+                            WHERE wa.id = worker_actions.id
+                            AND wa.action_choice = '%s'
+                        )
+                        THEN %s
+                        ELSE 0
+                    END",
+                    $action,
+                    $flatBonusConfig
+                );
+            }
+        }
         // Build of base SQL request with the conditionnal bonus
         $valSQL = sprintf("%s_val = (
             COALESCE((
@@ -101,12 +131,17 @@ function calculateVals($pdo, $turn_number){
                 THEN %s
                 ELSE 0
             END
+            %s
+
         )",
-        $elements[0], $elements[0], $valBaseSQL, $bonusSQL );
+        $elements[0],
+        $elements[0],
+        $valBaseSQL,
+        $zoneBonusSQL,
+        $flatBonusSQL
+    );
 
         // get list of actions to calibrate
-        $config = getConfig($pdo, $elements[1]);
-        echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
         if (!empty($config)){
             // add to list of updates
             $sqlArray[] = array(

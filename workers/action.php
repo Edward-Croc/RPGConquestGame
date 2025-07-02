@@ -41,8 +41,14 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['attack'])){
         activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
     }
-    if (isset($_GET['activate'])){
-        activateWorker($gameReady, $worker_id, 'activate');
+    if (isset($_GET['hide'])){
+        activateWorker($gameReady, $worker_id, 'hide');
+    }
+    if (isset($_GET['passive'])){
+        activateWorker($gameReady, $worker_id, 'passive');
+    }
+    if (isset($_GET['investigate'])){
+        activateWorker($gameReady, $worker_id, 'investigate');
     }
     if (isset($_GET['claim'])){
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);

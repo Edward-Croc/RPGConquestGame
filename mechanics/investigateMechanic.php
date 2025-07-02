@@ -162,12 +162,14 @@ function investigateMechanic($pdo) {
     $reportArray = [];
 
     $txtArray = [];
+    $txtArray['hide']['ps'] = getConfig($pdo, 'txt_ps_hide');
     $txtArray['passive']['ps'] = getConfig($pdo, 'txt_ps_passive');
     $txtArray['investigate']['ps'] = getConfig($pdo, 'txt_ps_investigate');
     $txtArray['attack']['ps'] = getConfig($pdo, 'txt_ps_attack');
     $txtArray['claim']['ps'] = getConfig($pdo, 'txt_ps_claim');
     $txtArray['captured']['ps'] = getConfig($pdo, 'txt_ps_captured');
     $txtArray['dead']['ps'] = getConfig($pdo, 'txt_ps_dead');
+    $txtArray['hide']['inf'] = getConfig($pdo, 'txt_inf_hide');
     $txtArray['passive']['inf'] = getConfig($pdo, 'txt_inf_passive');
     $txtArray['investigate']['inf'] = getConfig($pdo, 'txt_inf_investigate');
     $txtArray['attack']['inf'] = getConfig($pdo, 'txt_inf_attack');

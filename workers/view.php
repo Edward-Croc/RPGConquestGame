@@ -129,7 +129,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     <input type="hidden" name="worker_id" value=%1$s>
                     <h3>Actions : </h3> <p>
                     %7$s
-                    <input type="submit" name="activate" value="%4$s" class="worker-action-btn"> %3$s <br />
+                    <input type="submit" name="passive" value="%4$s" class="worker-action-btn"> 
+                    <input type="submit" name="investigate" value="%10$s"" class="worker-action-btn"> 
+                    <input type="submit" name="hide" value="%11$s"" class="worker-action-btn"> <br />
+                    %3$s
                     <input type="submit" name="move" value="Déménager vers :" class="worker-action-btn"> %2$s <br />
                     <input type="submit" name="claim" value="Revendiquer le %8$s au nom de " class="worker-action-btn"> %5$s <br />
                     <input type="submit" name="gift" value="Donner mon serviteur a " class="worker-action-btn"> %6$s <br />
@@ -138,13 +141,15 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     ',
                     $worker['id'],
                     $showZoneSelect,
-                    (empty($enemyWorkersSelect)) ? '' : sprintf(' OU <input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s ', $enemyWorkersSelect),
-                    ($currentAction['action_choice'] == 'passive') ? "Enquêter" : "Surveiller",
+                    (empty($enemyWorkersSelect)) ? '' : sprintf('<input type="submit" name="attack" value="Attaquer" class="worker-action-btn"> %s <br />', $enemyWorkersSelect),
+                    ucfirst(getConfig($gameReady, 'txt_inf_passive')),
                     $showListClaimTargetsSelect,
                     $showcontrollersSelect,
                     $recallWorkerButton,
                     getConfig($gameReady, 'textForZoneType'),
-                    $_SESSION['FOLDER']
+                    $_SESSION['FOLDER'],
+                    ucfirst(getConfig($gameReady, 'txt_inf_investigate')),
+                    ucfirst(getConfig($gameReady, 'txt_inf_hide'))
                 );
                 echo $actionHTML;
             }

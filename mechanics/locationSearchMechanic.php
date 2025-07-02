@@ -14,7 +14,7 @@
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     // Define the SQL query
     $sql = "
-                WITH searchers AS (
+        WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
                 wa.controller_id AS searcher_controller_id,
