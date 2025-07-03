@@ -139,11 +139,11 @@
                 if($showAttackableControllerKnownLocations !== NULL) {
                     echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
                             <input type="hidden" name="controller_id" value="%1$s">
-                            <div class="field is-grouped">
+                            <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                                 <div class="control">
                                     <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers :" class="button is-danger controller-action-btn">
                                 </div>
-                                <div class="control">%2$s</div>
+                                %2$s
                             </div>
                         </form>',
                         htmlspecialchars($controllers['id']),

@@ -295,35 +295,31 @@ function moveBase($pdo, $base_id, $zone_id) {
  * 
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
-    $returnText = NULL;
-    // Requête SQL pour récupérer les localisations connues et destructibles
-    $sql = "
-        SELECT 
-            l.id AS location_id,
-            l.name AS location_name,
-            z.name AS zone_name
-        FROM locations l
-        JOIN controller_known_locations ckl ON ckl.location_id = l.id
-        JOIN zones z ON z.id = l.zone_id
-        WHERE 
-            l.can_be_destroyed = True
-            AND ckl.controller_id = :controller_id
-    ";
+    $locations = listControllerKnownLocations($pdo, $controller_id, true);
+    if (empty($locations)) return '';
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':controller_id' => $controller_id]);
-    $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Affichage des options HTML
-    if (!empty($locations)) {
-        $returnText .= '<select name="target_location_id">';
-        foreach ($locations as $loc) {
-            $label = sprintf("%s (%s) - %s", $loc['location_name'], $loc['location_id'],  $loc['zone_name']);
-            $returnText .= sprintf('<option value="%d">%s</option>', $loc['location_id'], htmlspecialchars($label));
+    $options = '';
+    foreach ($locations as $zone) {
+        foreach ($zone['locations'] as $loc) {
+            $options .= sprintf(
+                '<option value="%d">%s (%s)</option>',
+                (int)$loc['id'],
+                htmlspecialchars($loc['name']),
+                htmlspecialchars($zone['name'])
+            );
         }
-        $returnText .= '</select>';
     }
-    return $returnText;
+
+    return sprintf('
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="attackLocationSelect" name="target_location_id">
+                        <option value="">Sélectionner un lieu</option>
+                        %s
+                    </select>
+                </div>
+            </div>
+    ', $options);
 }
 
 /**

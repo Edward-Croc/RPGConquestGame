@@ -453,10 +453,14 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *
  * @param PDO $gameReady
  * @param int $controllerId
+ * @param bool $limitByDestroyed
+ * 
+ * If $limitByDestroyed is true, it will only return locations that can be destroyed.
+ * If false, it will return all locations.
  * @return array|null array of controllers know locations
  */
-function listControllerKnownLocations(PDO $gameReady, int $controllerId): array|null {
-    $sql = "
+function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false): array|null {
+    $sql = sprintf("
         SELECT
             z.id AS zone_id,
             z.name AS zone_name,
@@ -469,8 +473,9 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId): array|
         JOIN locations l ON ckl.location_id = l.id
         JOIN zones z ON l.zone_id = z.id
         WHERE ckl.controller_id = :controller_id
+        %s
         ORDER BY z.id, l.id;
-    ";
+    ", $limitByDestroyed ? "AND l.can_be_destroyed = True" : "");
     $stmt = $gameReady->prepare($sql);
     $stmt->execute(['controller_id' => $controllerId]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
