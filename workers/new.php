@@ -131,9 +131,8 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     $_SESSION['FOLDER']
     );
 
-    echo showDisciplineSelect($gameReady, $powerDisciplineArray);
-
     // Check Transformation Conditions
+    $powerTransformationArray = array();
     $recrutement_transformation_json = getConfig($gameReady, 'recrutement_transformation');
     $recrutement_transformation_array = json_decode($recrutement_transformation_json, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
@@ -147,16 +146,27 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
         $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, NULL, $mechanics['turncounter'], 'on_recrutment' );
         if ( $_SESSION['DEBUG_TRANSFORM']) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray,true));
-        if (! empty($powerTransformationArray) )
-            echo showTransformationSelect($gameReady, $powerTransformationArray, TRUE);
     }
 
-    echo showZoneSelect($gameReady, $zonesArray, false, false);
-
-    echo "<input type='submit' name='chosir' value='Affecter' class='button is-link mt-3' />
-    </p>
-    </form>
-    </div>";
+    $html = sprintf('
+        <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+            %s
+        </div>
+        %s
+        <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+            %s 
+            <div class="control">
+                <input type="submit" name="chosir" value="Affecter" class="button is-link" />
+            </div>
+        </div>
+    </p></form></div>',
+    showDisciplineSelect($gameReady, $powerDisciplineArray),
+    (! empty($powerTransformationArray) ) ? sprintf(
+            '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%s</div>',
+            showTransformationSelect($gameReady, $powerTransformationArray, TRUE)
+        ) : '',
+    showZoneSelect($gameReady, $zonesArray, false, false));
+    echo $html;
 
 }
 echo "</div>
