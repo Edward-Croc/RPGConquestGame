@@ -342,4 +342,4 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     ('Pallazzo Medeci Ricardi', 'TESTDecription', 4,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola'))
 ;
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
-   
+   ('Attack target', 'TESTDecription Attackable', 4, true, (SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola'), 1)
