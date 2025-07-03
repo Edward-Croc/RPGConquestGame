@@ -280,16 +280,14 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray, true));
                     if (! empty($powerTransformationArray) )
                         $upgradeHTML .= sprintf('
-                            <div class="field  is-grouped-multiline">
+                            <div class="field is-grouped is-grouped-multiline">
+                                %1$s
                                 <div class="control">
-                                    %1$s
-                                </div>
-                                <div class="control">
-                                    <input type="submit" name="transform" value="Ajouter %2$s" class="button is-link worker-upgrade-btn">
+                                    <input type="submit" name="transform" value="Ajouter" class="button is-link worker-upgrade-btn">
                                 </div>
                             </div>
                             ',
-                            showTransformationSelect($gameReady, $powerTransformationArray, false),
+                            showTransformationSelect($gameReady, $powerTransformationArray),
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );
                 }

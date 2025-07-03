@@ -389,7 +389,6 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
     $label = $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '';
 
     $showTransformationSelect = sprintf('
-        <div class="field">
             %s
             <div class="control">
                 <div class="select is-fullwidth">
@@ -399,9 +398,8 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
                     </select>
                 </div>
             </div>
-        </div>
         ',
-        $label ? '<label class="label" for="transformationSelect">'.$label.'</label>' : '',
+        $label ? 'Ajouter un.e '.$label.'' : '',
         htmlspecialchars(getPowerTypesDescription($pdo, 'Transformation')),
         $transformationsOptions
     );
