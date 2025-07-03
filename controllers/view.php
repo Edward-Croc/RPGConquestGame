@@ -132,24 +132,26 @@
                 echo "</ul></div>";
             }
             echo '</p>
-            <h3 class="title is-5 mt-4">Les lieux :</h3>
+            <h3 class="title is-5 mt-5">Les lieux découverts:</h3>
             <p>';
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
-            if($showAttackableControllerKnownLocations !== NULL && hasBase($gameReady, $controllers['id'])) {
-                echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
-                        <input type="hidden" name="controller_id" value="%1$s">
-                        <div class="field is-grouped">
-                            <div class="control">
-                                <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers :" class="button is-danger controller-action-btn">
+            if( hasBase($gameReady, $controllers['id'])) {
+                if($showAttackableControllerKnownLocations !== NULL) {
+                    echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
+                            <input type="hidden" name="controller_id" value="%1$s">
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers :" class="button is-danger controller-action-btn">
+                                </div>
+                                <div class="control">%2$s</div>
                             </div>
-                            <div class="control">%2$s</div>
-                        </div>
-                    </form>',
-                    htmlspecialchars($controllers['id']),
-                    $showAttackableControllerKnownLocations,
-                    $_SESSION['FOLDER']
-                ); 
-            } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
+                        </form>',
+                        htmlspecialchars($controllers['id']),
+                        $showAttackableControllerKnownLocations,
+                        $_SESSION['FOLDER']
+                    ); 
+                } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
+            } else echo '<span class="has-text-grey">Les attaques de lieux sont impossible sans une base d\'opération.</span>';
             echo '</p>';
 
             // Outgoing attacks this turn
@@ -165,7 +167,7 @@
             ]);
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($outgoingAttacks)) {
-                echo "<div class='notification is-info'>";
+                echo "<div class='notification is-warning'>";
                 echo "<strong>Vos attaques ce tour :</strong><ul>";
                 foreach ($outgoingAttacks as $attack) {
                     echo "<li>". htmlspecialchars($attack['attacker_result_text']) . "</li>";
@@ -173,15 +175,71 @@
                 echo "</ul></div>";
             }
 
+            $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id']);
+
+            if (!$controllerKnownLocations) {
+                echo '<p class="notification is-warning">Aucun emplacement connu.</p>';
+            } else {
+                // Build Bulma HTML
+                foreach ($controllerKnownLocations as $zone) {
+                    $zoneId = htmlspecialchars($zone['name']);
+                    $htmlKnownLocations .= sprintf(
+                        '<div class="box">
+                            <details>
+                                <summary class="has-text-weight-semibold">Lieux connus de %s</summary>
+                            <ul>',
+                        htmlspecialchars($zone['name'])
+                    );
+                    foreach ($zone['locations'] as $loc) {
+                        $htmlKnownLocations .= sprintf(
+                            '<li> <details>
+                                <summary class="has-text-weight-semibold">%s</summary>
+                             %s </details></li>',
+                            htmlspecialchars($loc['name']),
+                            htmlspecialchars($loc['description'])
+                        );
+                    }
+                    $htmlKnownLocations .= '</ul></details></div>';
+                }
+                echo $htmlKnownLocations ;
+            }
+
+            echo '<h3 class="title is-5 mt-5">Vos lieux secrets:</h3>';
+
+            $controllerLinkedLocations = listControllerLinkedLocations($gameReady, $controllers['id']);
+
+            if (!$controllerLinkedLocations) {
+                echo '<p class="notification is-warning">Aucun lieux.</p>';
+            } else {
+                // Build Bulma HTML
+                foreach ($controllerLinkedLocations as $zone) {
+                    $zoneId = htmlspecialchars($zone['name']);
+                    $htmlLinkedLocations .= sprintf(
+                        '<div class="box">
+                            <details>
+                                <summary class="has-text-weight-semibold">Lieux de %s</summary>
+                            <ul>',
+                        htmlspecialchars($zone['name'])
+                    );
+                    foreach ($zone['locations'] as $loc) {
+                        $htmlLinkedLocations .= sprintf(
+                            '<li> <details>
+                                <summary class="has-text-weight-semibold">%s</summary>
+                             %s </details></li>',
+                            htmlspecialchars($loc['name']),
+                            htmlspecialchars($loc['description'])
+                        );
+                    }
+                    $htmlLinkedLocations .= '</ul></details></div>';
+                }
+                echo $htmlLinkedLocations ;
+            }
+
             echo '
-            </p>
             </form>
             </div>';
     }
     echo '</div>';
 
-
-
-    require_once '../workers/viewAll.php';if (!empty($pageName) && $pageName == 'controllers_action')
 if (!empty($pageName) && $pageName == 'controllers_action')
     require_once '../workers/viewAll.php';

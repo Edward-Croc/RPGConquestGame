@@ -3,7 +3,8 @@
 -- TODO : add kill agents button to all agents ??
 -- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
 -- TODO : Create the Shogun and Yokai character sheets
--- TODO : Add artefacts and locations to the faction page
+-- TODO Build the Takeda Character sheet.
+-- TODO : Add artefacts to the faction page
 -- TODO : Add Conversion to the captured agent possible actions list,
     -- lock behind param JSON for certain factions
     -- When clicked : 
@@ -28,7 +29,6 @@
         -- Action name, 
         -- Action result text,
         -- Make possible for Ikko-ikki, (Monks and Chritians)
--- TODO Build the Takeda Character sheet.
 
 
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';

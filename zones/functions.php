@@ -346,7 +346,6 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
     return calculateControllerValue($pdo, $controller_id, 'Attack', $zone_id, null);
 }
 
-
 /**
 * Displays the known or owned bases in a zone by a controller
 * Allows attacking destructible bases
@@ -357,7 +356,7 @@ function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
  *
  * @return string $text
  */
-function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
+function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id): string {
     $returnText = '';
     // Bases owned by this controller in the zone
     $sql = "
@@ -447,4 +446,108 @@ function showcontrollerKnownSecrets($pdo, $controller_id, $zone_id) {
         $returnText .=  '</p>';
     }
     return $returnText;
+}
+
+/**
+ * Get all known locations for a controller, grouped by zone.
+ *
+ * @param PDO $gameReady
+ * @param int $controllerId
+ * @return array|null array of controllers know locations
+ */
+function listControllerKnownLocations(PDO $gameReady, int $controllerId): array|null {
+    $sql = "
+        SELECT
+            z.id AS zone_id,
+            z.name AS zone_name,
+            z.description AS zone_description,
+            l.id AS location_id,
+            l.name AS location_name,
+            l.description AS location_description,
+            l.can_be_destroyed AS location_can_be_destroyed 
+        FROM controller_known_locations ckl
+        JOIN locations l ON ckl.location_id = l.id
+        JOIN zones z ON l.zone_id = z.id
+        WHERE ckl.controller_id = :controller_id
+        ORDER BY z.id, l.id;
+    ";
+    $stmt = $gameReady->prepare($sql);
+    $stmt->execute(['controller_id' => $controllerId]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$rows) {
+        return null;
+    }
+
+    // Group by zones
+    $grouped = [];
+    foreach ($rows as $row) {
+        $zoneId = $row['zone_id'];
+        if (!isset($grouped[$zoneId])) {
+            $grouped[$zoneId] = [
+                'name' => $row['zone_name'],
+                'description' => $row['zone_description'],
+                'locations' => []
+            ];
+        }
+        $grouped[$zoneId]['locations'][] = [
+            'id' => $row['location_id'],
+            'name' => $row['location_name'],
+            'description' => $row['location_description'],
+            'can_be_destroyed' => $row['location_can_be_destroyed']
+        ];
+    }
+    return $grouped;
+}
+
+
+/**
+ * Get all known locations for a controller, grouped by zone.
+ *
+ * @param PDO $gameReady
+ * @param int $controllerId
+ * @return array|null array of controllers know locations
+ */
+function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array|null {
+    $sql = "
+        SELECT
+            z.id AS zone_id,
+            z.name AS zone_name,
+            z.description AS zone_description,
+            l.id AS location_id,
+            l.name AS location_name,
+            l.description AS location_description,
+            l.can_be_destroyed AS location_can_be_destroyed 
+        FROM locations l
+        JOIN zones z ON l.zone_id = z.id
+        WHERE l.controller_id = :controller_id
+        ORDER BY z.id, l.id;
+    ";
+    $stmt = $gameReady->prepare($sql);
+    $stmt->execute(['controller_id' => $controllerId]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$rows) {
+        return null;
+    }
+
+    // Group by zones
+    $grouped = [];
+    foreach ($rows as $row) {
+        $zoneId = $row['zone_id'];
+        if (!isset($grouped[$zoneId])) {
+            $grouped[$zoneId] = [
+                'name' => $row['zone_name'],
+                'description' => $row['zone_description'],
+                'locations' => []
+            ];
+        }
+        $grouped[$zoneId]['locations'][] = [
+            'id' => $row['location_id'],
+            'name' => $row['location_name'],
+            'description' => $row['location_description'],
+            'can_be_destroyed' => $row['location_can_be_destroyed']
+        ];
+    }
+    return $grouped;
 }
