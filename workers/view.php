@@ -119,7 +119,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             </div>
                             %s
                             <div class="control">
-                                <input type="submit" name="attack" value="Attaquer" class="button is-danger is-light"><br />
+                                <input type="submit" name="attack" value="Attaquer" class="button is-danger"><br />
                             </div>
                         </div>',
                         $enemyWorkersSelect
