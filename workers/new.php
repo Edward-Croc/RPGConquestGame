@@ -156,7 +156,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
             %s 
             <div class="control">
-                <input type="submit" name="chosir" value="Affecter" class="button is-link" />
+                <input type="submit" name="chosir" value="Recruter et Affecter" class="button is-link" />
             </div>
         </div>
     </p></form></div>',
