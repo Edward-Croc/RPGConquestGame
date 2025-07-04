@@ -348,7 +348,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         return NULL;
     }
 
-    $target_result_text .= sprintf("Notre %s a été attaqué, par des agents du réseau %s.",$location[0]['name'], $controller_id );
+    $target_result_text .= sprintf("Notre %s a été attaqué.e, par des agents du réseau %s.",$location[0]['name'], $controller_id );
     /*
     // Get Controler Fullname from BDD
     $sql = "SELECT CONCAT(firstname, ' ', lastname) AS fullname FROM controllers WHERE id = :id";
@@ -356,7 +356,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $stmt->execute([':id' => $controller_id]);
     $controller = $stmt->fetch(PDO::FETCH_ASSOC);
     $target_result_text .= sprintf('C\'est clairement %s qui en est responsable.', $controller["fullname"]);
-*/
+    */
     $zone_id = $location[0]['zone_id'];
     if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
