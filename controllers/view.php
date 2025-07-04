@@ -183,6 +183,7 @@
             if (!$controllerKnownLocations) {
                 echo '<p class="notification is-warning">Aucun emplacement connu.</p>';
             } else {
+                $htmlKnownLocations = "";
                 // Build Bulma HTML
                 foreach ($controllerKnownLocations as $zone) {
                     $zoneId = htmlspecialchars($zone['name']);
@@ -214,6 +215,7 @@
             if (!$controllerLinkedLocations) {
                 echo '<p class="notification is-warning">Aucun lieux.</p>';
             } else {
+                $htmlLinkedLocations = "";
                 // Build Bulma HTML
                 foreach ($controllerLinkedLocations as $zone) {
                     $zoneId = htmlspecialchars($zone['name']);
