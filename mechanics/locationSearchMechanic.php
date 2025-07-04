@@ -145,7 +145,7 @@ function locationSearchMechanic($pdo) {
                     $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
 
                     if (!empty($artefacts)) {
-                        $reportElement .= "Ce lieu contient : <ul>";
+                        $reportElement .= "<br />Ce lieu contient : <ul>";
                         foreach ($artefacts as $art) {
                             $reportElement .= sprintf(
                                 "<li><strong>%s</strong>: %s</li>",

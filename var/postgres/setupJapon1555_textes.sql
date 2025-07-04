@@ -29,17 +29,21 @@ VALUES
  -- %1$s controller name
  -- %2$s FakeFaction name
  -- %3$s Time values
- ,('texteDescriptionBase', '
-        Nous avons trouvé la forteresse de %1$s des %2$s. Les serviteurs de confiance leur manquent encore pour avoir des défenses solides.
-        En attaquant ce lieu nous pourrions lui porter un coup fatal.
-        L’attaque causerait certainement quelques questions à la cour du Shogun, mais un joueur affaibli sur l’échiquier politique est toujours bénéfique.
-        Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent chaque %3$s.
-    ','Texts for description of base')
+ ,(
+    'texteDescriptionBase' 
+    ,'Nous avons trouvé la forteresse de %1$s des %2$s. Les serviteurs de confiance leur manquent encore pour avoir des défenses solides.
+    En attaquant ce lieu nous pourrions lui porter un coup fatal.
+    L’attaque causerait certainement quelques questions à la cour du Shogun, mais un joueur affaibli sur l’échiquier politique est toujours bénéfique.
+    Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent chaque %3$s.'
+    ,'Texts for description of base')
  -- %1$s Fake Faction name
  -- %2$s True Faction name
- ,('texteHiddenFactionBase', '
-       Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux %1$s, mais en réalité son propriétaire est des %2$s.
-    ','Texts for secret faction description of base')
+ ,(
+    'texteHiddenFactionBase'
+    , '
+        Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux %1$s, mais en réalité son propriétaire est des %2$s.'
+    ,'Texts for secret faction description of base'
+)
 ;
 
 INSERT INTO config (name, value, description)
@@ -147,9 +151,9 @@ VALUES
 -- %3$s - (disciplines si plus d'une)
 (
     'textesDiff2', '[
-        "%2$sEn plus, sa famille a des liens avec la faction %1$s. %3$s",
+        "%2$s En plus, sa famille a des liens avec la faction %1$s. %3$s",
         "Iel fait partie de la faction %1$s. %3$s %2$s ",
-        "%2$sEn creusant, iel est rattaché.e à la faction %1$s. %3$s ",
+        "%2$sEn creusant, iel est rattaché.e à la faction %1$s. %3$s",
         "%3$s Iel reçoit un soutien financier de la faction %1$s. %2$s",
         "%2$sIel travaille avec la faction %1$s. %3$s"
     ]', 'Texts for search results level 2'),
