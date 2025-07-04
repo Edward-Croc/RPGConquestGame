@@ -211,20 +211,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $upgradeHTML = '';
             // worker must be active to get upgrades
             if ($worker['is_active']) {
-                $upgradeHTML = sprintf('<div class="box upgrade">
-                    <h3 class="title is-5">Evolutions :</h3>
-                    <form action="/%2$s/workers/action.php" method="GET">
-                        <input type="hidden" name="worker_id" value=%1$s>
-                ',
-                $worker['id'],
-                $_SESSION['FOLDER']
-                );
-
                 // TODO : UPDATE powers on age code ?
                 /* ('age_hobby', 'false', ''),
                 ('age_metier', 'false', ''), */
 
                 // Allow Discipline teaching via age_discipline param
+                $upgradeDisciplineHTML = "";
                 $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
                 $age_discipline_json = getConfig($gameReady, 'age_discipline');
                 if ( $debug_discipline_age ) echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
@@ -253,7 +245,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         $nb_current_disciplines[0]['discipline_count'], var_export($nb_current_disciplines, true), $nb_disciplines
                     );
                 if ( (INT)$nb_current_disciplines[0]['discipline_count'] < (INT)$nb_disciplines) {
-                    $upgradeHTML .= sprintf('
+                    $upgradeDisciplineHTML .= sprintf('
                         <div class="field is-grouped is-grouped-multiline">
                             %1$s
                             <div class="control">
@@ -265,6 +257,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     );
                 }
                 // Check Transformation Conditions
+                $upgradeTransformationHTML = "";
                 $debug_transformation_age = $_SESSION['DEBUG_TRANSFORM'];
                 $age_transformation_json = getConfig($gameReady, 'age_transformation');
                 $age_transformation_array = json_decode($age_transformation_json, true);
@@ -279,7 +272,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation' );
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray, true));
                     if (! empty($powerTransformationArray) )
-                        $upgradeHTML .= sprintf('
+                        $upgradeTransformationHTML .= sprintf('
                             <div class="field is-grouped is-grouped-multiline">
                                 %1$s
                                 <div class="control">
@@ -291,7 +284,21 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
                         );
                 }
-                $upgradeHTML .= sprintf('</form></div>');
+                $upgradeHTML = sprintf('<div class="box upgrade">
+                    <h3 class="title is-5">Evolutions :</h3>
+                    <form action="/%2$s/workers/action.php" method="GET">
+                        <input type="hidden" name="worker_id" value=%1$s>
+                        %3$s
+                        %4$s
+                        %5$s
+                    </form></div>
+                ',
+                $worker['id'],
+                $_SESSION['FOLDER'],
+                (empty($upgradeDisciplineHTML) && empty($upgradeTransformationHTML)) ? "Aucune évolution disponible actuellement." : "",
+                $upgradeDisciplineHTML,
+                $upgradeTransformationHTML
+                );
             }
 
             $viewHTML = sprintf(
@@ -352,6 +359,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         echo '<p><h4 class="subtitle is-6"> Mes recherches : </h4> '.$currentReport['secrets_report'].'</p>';
                     if (!empty($currentReport['claim_report']))
                         echo '<p><h4 class="subtitle is-6"> Controle: </h4> '.$currentReport['claim_report'].'</p>';
+                } else{
+                    echo "Rien à signaler pour l'instant !";
                 }
                 echo "</div>";
             }
