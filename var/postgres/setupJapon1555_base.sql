@@ -1,19 +1,20 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
--- TODO : add kill agents button to all agents ??
--- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
--- TODO : Create the Shogun and Yokai character sheets
--- TODO Build the Takeda Character sheet.
 -- TODO : Add artefacts to the faction page
+-- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
+        -- Todo : Zones page to bulma
+        -- Todo : elements in worker worker reports should be encapsulated in 'strong'
+-- TODO : Create the Shogun and Yokai character sheets
+-- TODO Build the Takeda Character sheet and controler ? 
 -- TODO : Add Conversion to the captured agent possible actions list,
     -- lock behind param JSON for certain factions
     -- When clicked : 
         -- Copies agent to the active controller 
-        -- Adds a Tranformation with the info and a négativ effect
+        -- Adds a Tranformation with the info and a négativ effect ?
         -- Kills original agent
--- TODO  : Add conversion of the captured agent faction power to the pirates
+-- TODO : Add conversion of the captured agent faction power to the pirates
 -- TODO : Add controller action counter, reset on turn, max action configurable
--- TODO : check for code duplication in the new admin pages .... 
+-- TODO : check for code duplication in the new admin pages ....
 -- TODO : Add Controler action purge, 
     -- Zone must be Held/Fortresse must be present ?
     -- Select list of agents in zone
@@ -30,6 +31,7 @@
         -- Action result text,
         -- Make possible for Ikko-ikki, (Monks and Chritians)
 
+-- TODO : add kill agents button to all agents ??
 
 UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
