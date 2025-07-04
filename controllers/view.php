@@ -90,9 +90,12 @@
                         <input type="hidden" name="base_id" value="%3$s">
                         <div class="notification is-light mb-2">
                             <strong>Votre %4$s à %5$s</strong><br>
-                            <span class="is-size-7">Ne sera découvert que sur une valeur d’enquête de <strong>%6$s</strong> ou plus.<br>
-                            Si découvert, le texte suivant sera présenté à l’enquêteur :</span>
-                            <blockquote class="mt-2 mb-2">%7$s</blockquote>
+                            <details>
+                                <summary class="has-text-weight-semibold ">
+                                    Ne sera découvert que sur une valeur d’enquête de <strong>%6$s</strong> ou plus. Si découvert, le texte suivant sera présenté à l’enquêteur :
+                                </summary>
+                                <blockquote>%7$s</blockquote>
+                           </details>
                         </div>
                         <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                             <div class="control">
