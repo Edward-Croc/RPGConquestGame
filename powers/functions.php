@@ -29,7 +29,7 @@ function getPowerTypesDescription($pdo, $name){
  * @return string
  */
 function getSQLPowerText($short = true) {
-    if (!$short) return "CONCAT(p.name, p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+    if (!$short) return "CONCAT('<strong>', p.name, '</strong>', p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
     return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
@@ -82,7 +82,7 @@ function getPowersByWorkers($pdo, $worker_id_str) {
 // TODO : Add a select limit by controller_id like in the getPowersByType function
 function randomPowersByType($pdo, $type_list, $limit = 1) {
     $powerArray = array();
-    $power_text = getSQLPowerText();
+    $power_text = getSQLPowerText(false);
     try{
         // Get x random values from powers for a power_type
         $sql = "SELECT *, $power_text FROM powers AS p
