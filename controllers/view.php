@@ -91,7 +91,7 @@
                         <div class="notification is-light mb-2">
                             <strong>Votre %4$s à %5$s</strong><br>
                             <details>
-                                <summary class="has-text-weight-semibold ">
+                                <summary>
                                     Ne sera découvert que sur une valeur d’enquête de <strong>%6$s</strong> ou plus. Si découvert, le texte suivant sera présenté à l’enquêteur :
                                 </summary>
                                 <blockquote>%7$s</blockquote>
