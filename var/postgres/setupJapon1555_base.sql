@@ -649,8 +649,8 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
       ', peu courante chez les samouraïs de terrain, mais appréciée dans les cercles aristocratiques ou les familles cultivées' )
 
     -- Samouraï Hosokawa
-    ,('Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement', 0, 2,1,
-      '' )
+    ,('Iaijutsu (居合術) – Art du sabre', 0, 2,1,
+      ' de dégainer et frapper en un mouvement' )
     ,('Bugaku (舞楽) – Danse de cour', 1, 1,1,
       ', parfois pratiquée dans le cadre de cérémonies religieuses ou impériales' )
     ,('Chadō (茶道) – Voie du thé', 2, -1,1,
@@ -701,7 +701,7 @@ INSERT INTO link_power_type (power_type_id, power_id) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bajutsu (馬術) – Art de l’équitation militaire')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Gagaku (雅楽) – Musique de cour')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement')),
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Iaijutsu (居合術) – Art du sabre')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bugaku (舞楽) – Danse de cour')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Chadō (茶道) – Voie du thé')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues')),
@@ -765,7 +765,7 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement'
+        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
     ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
@@ -780,7 +780,7 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement'
+        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
     ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id

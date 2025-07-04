@@ -254,7 +254,7 @@ JOIN (
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Kuro-hatamoto (黒旗本) – Garde d’élite'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Katana (刀) – L’arme emblématique du samouraï'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Shodō (書道) – Calligraphie'
-    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Iaijutsu (居合術) – Art de dégainer et frapper en un mouvement'
+    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Iaijutsu (居合術) – Art du sabre'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Bajutsu (馬術) – Art de l’équitation militaire'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Cheval Kagawa'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Ninja-kahō (忍者家法) – Membre d’une lignée de ninjas'
