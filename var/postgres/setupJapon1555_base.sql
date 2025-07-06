@@ -2,14 +2,6 @@
 
 -- TODO : elements in worker worker reports should be encapsulated in 'strong'
 
--- TODO : Add Conversion to the captured agent possible actions list,
-    -- lock behind param JSON for certain factions
-    -- When clicked : 
-        -- Copies agent to the active controller 
-        -- Adds a Tranformation with the info and a négativ effect ?
-        -- Kills original agent
--- TODO : Add conversion of the captured agent faction power to the pirates
-
 -- TODO : Add Controler action purge, 
     -- Zone must be Held/Fortresse must be present ?
     -- Select list of agents in zone
