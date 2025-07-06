@@ -547,11 +547,22 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
                 'locations' => []
             ];
         }
+
+        // Fetch artefacts for this location
+        $artefactStmt = $gameReady->prepare("
+            SELECT name, description, full_description 
+            FROM artefacts 
+            WHERE location_id = :location_id
+        ");
+        $artefactStmt->execute(['location_id' => $row['location_id']]);
+        $artefacts = $artefactStmt->fetchAll(PDO::FETCH_ASSOC);
+
         $grouped[$zoneId]['locations'][] = [
             'id' => $row['location_id'],
             'name' => $row['location_name'],
             'description' => $row['location_description'],
-            'can_be_destroyed' => $row['location_can_be_destroyed']
+            'can_be_destroyed' => $row['location_can_be_destroyed'],
+            'artefacts' => $artefacts // array of ['name' => ..., 'full_description' => ...]
         ];
     }
     return $grouped;

@@ -227,12 +227,30 @@
                         htmlspecialchars($zone['name'])
                     );
                     foreach ($zone['locations'] as $loc) {
+
+                        $artefactsHTML = '';
+                        foreach ($loc['artefacts'] as $artefact) {
+                            $artefactsHTML .= sprintf(
+                                '<details>
+                                        <summary class="">%s</summary>
+                                        %s %s
+                                    </details>
+                                ',
+                                htmlspecialchars($artefact['name']),
+                                htmlspecialchars($artefact['description']),
+                                htmlspecialchars($artefact['full_description'])
+                            );
+                        }
+
                         $htmlLinkedLocations .= sprintf(
                             '<li> <details>
                                 <summary class="has-text-weight-semibold">%s</summary>
-                             %s </details></li>',
+                                %s
+                                %s 
+                            </details></li>',
                             htmlspecialchars($loc['name']),
-                            htmlspecialchars($loc['description'])
+                            htmlspecialchars($loc['description']),
+                            $artefactsHTML
                         );
                     }
                     $htmlLinkedLocations .= '</ul></details></div>';
