@@ -1,9 +1,7 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
 -- TODO : Add artefacts to the faction page
--- TODO : move all buttons to CSS Quality or BOOSTRAP/BULMA upgrade
-        -- Todo : Zones page to bulma
-        -- Todo : elements in worker worker reports should be encapsulated in 'strong'
+-- TODO : elements in worker worker reports should be encapsulated in 'strong'
 -- TODO : Create the Shogun and Yokai character sheets
 -- TODO Build the Takeda Character sheet and controler ? 
 -- TODO : Add Conversion to the captured agent possible actions list,
