@@ -36,21 +36,23 @@ VALUES
 
 INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', False, ''),
-    ('yoshiteru', 'ashikaga', False, ''),
-    ('yoshiaki', 'ashikaga', False, ''),
+    ('yoshiteru', 'ashikaga', False, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
+    ('yoshiaki', 'ashikaga', False, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
     ('motochika', 'chosone', False, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
     ('kanetsugu', 'chosone', False, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
     ('shoho', 'chosone', False, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
     ('nagayoshi', 'miytwo', False, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
     ('fudzisan', 'miytwo', False, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
     ('sogo', 'miytwo', False, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
-    ('rennyo', 'renthree', False, ''),
+    ('rennyo', 'renthree', False, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
     ('ren-jo', 'renthree', False, ''),
     ('renko', 'renthree', False, ''),
     ('tadaoki', 'hosfour', False, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
     ('tama', 'hosfour', False, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
     ('joha', 'hosfour', False, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
-    ('murai', 'wakfive', False, ''),
+    ('murai', 'wakfive', False, 'https://docs.google.com/document/d/1phCVmNoAXUGi5ukGLwIQihu76DOMjLwaPdC_q5xBsV4'),
+    ('tsuruhime', 'wakfive', False, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
+    ('wang', 'wakfive', False, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
     ('kukai', 'kobsix', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
     ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU')
 ;
@@ -66,7 +68,6 @@ INSERT INTO factions (name) VALUES
     ,('Chrétiens') -- https://histoiredujapon.com/2021/04/05/etrangers-japon-ancien/#index_id1
     ,('Yōkai')
 ;
-
 
 INSERT INTO controllers (
     firstname, lastname, ia_type, secret_controller,
@@ -178,6 +179,10 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
         (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
     ),
     (
+        (SELECT ID FROM players WHERE username = 'yoshiaki'),
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    ),
+    (
         (SELECT ID FROM players WHERE username = 'motochika'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
@@ -227,6 +232,14 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'murai'),
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'tsuruhime'),
+        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'wang'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     ),
     (
@@ -777,6 +790,10 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
 -- Ikkō-ikki
