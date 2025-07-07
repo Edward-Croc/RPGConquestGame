@@ -28,10 +28,8 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Yūjo (遊女) – Courtisane cultivée', ', parfois invitée lors de réceptions de haut rang', 1, 0, 0),
     ('Jōhō-gashi (情報頭) – Collecteur d’informations', ', actif sur les routes ou dans les marchés', 1, 0, 0),
     ('Mimiiri (耳入) – Informateur discret', ', placé parmi les serviteurs ou les marchands', 1, 0, 0),
-    ('Kannushi (神主) – Prêtre shintō', ', gardien des sanctuaires et officiant les rites sacrés', 1, 0, 0),
     ('Onmyōji (陰陽師) – Devin et exorciste', ', spécialiste des arts occultes et des influences célestes', 1, 0, 0),
     ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō', 1, 0, 0),
-    ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 0),
     ('Miko (巫女) – Servante shintō', ', pratiquant la danse rituelle et les oracles', 1, 0, 0),
     ('Nōgakushi (能楽師) – Acteur de théâtre Nō', ', maître de la performance codifiée mêlant chant, danse et spiritualité', 1, 0, 0),
     ('Tsūshi (通使) – Diplomate ou émissaire', ', habile orateur chargé de négociations sensibles', 1, 0, 0),
@@ -68,8 +66,14 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Ishitsukai (医使) – Médecin de cour', ', parfois moine ou alchimiste, pratiquant acupuncture et médecine spirituelle', 1, 1,-1)
 ;
 
-INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Prêtre chrétien', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
-    ('Marin Portugais', 1,1,1,'{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }')
+INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
+    ('Prêtre chrétien(司祭)', 'missionnaire et guide spirituel', 1,1,1,
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
+    ('Marin européen (南蛮水夫)', 'employé sur les vaisseaux noirs portugais ou français', 1,1,1,
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
+    ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Rennyo (蓮如)"} } }'),
+    ('Kannushi (神主) – Prêtre shintō', ', gardien des sanctuaires et officiant les rites sacrés', 1, 0, 1,
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Kōbō-Daishi (弘法大師)"} } }')
 ;
 
