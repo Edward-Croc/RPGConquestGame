@@ -29,7 +29,7 @@ function getPowerTypesDescription($pdo, $name){
  * @return string
  */
 function getSQLPowerText($short = true) {
-    if (!$short) return "CONCAT('<strong>', p.name, '</strong>', p.description, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+    if (!$short) return "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', p.description) AS power_text";
     return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
