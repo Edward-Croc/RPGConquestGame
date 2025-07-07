@@ -398,7 +398,7 @@ function showWorkerShort($pdo, $worker, $mechanics) {
 function getActionsByWorkers($pdo, $worker_id_str){
     $sql = "SELECT * FROM worker_actions w
         WHERE worker_id IN ($worker_id_str)
-        ORDER BY worker_id ASC, turn_number ASC
+        ORDER BY worker_id ASC, turn_number DESC
     ";
     try {
         $stmt = $pdo->prepare($sql);
@@ -1209,7 +1209,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
         // check if the worker_id is in the list of captured agents for the controller_id
         // roll the random conversion probability :
 
-        // agent dies
+        // agent dies : ?
             // set 
 
         // if become double agent :

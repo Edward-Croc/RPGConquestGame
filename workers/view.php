@@ -341,8 +341,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $timeTextThis = getConfig($gameReady, 'timeDenominatorThis');
             foreach ( $worker['actions'] as $turn_number => $action ){
                 echo sprintf(
-                    '<div class="box report week"> <h4 class="subtitle is-5"> %s </h4>',
-                    (isset($action['turn_number']) && (INT)$turn_number == (INT)$mechanics['turncounter'] ) ? ucfirst(sprintf("%s %s", $timeTextThis, $timeText )) : ucfirst(sprintf("%s %s", $timeText, $turn_number ))
+                    '<div class="box report week"> <h4 class="subtitle is-5">%s : %s</h4>',
+                    ucfirst(sprintf("%s %s", $timeText, $turn_number )),
+                    (isset($action['turn_number']) && (INT)$turn_number == (INT)$mechanics['turncounter'] ) ? 
+                        'en cours' : ''
                 );
                 if ($_SESSION['DEBUG_REPORT'])
                     echo "<p> action: ".var_export($action, true)."</p>";
