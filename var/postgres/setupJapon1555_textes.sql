@@ -20,29 +20,23 @@ UPDATE config SET
 
 INSERT INTO config (name, value, description)
 VALUES
- ('textRecrutementJobHobby', 'Est un.e %5$s avec un.e %4$s', 'string to present hobby %4$s and job %5$s on recrutement')
- ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s ', 'string to present hobby %2$s and job %3$s view of worker')
- ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s <br />', 'Texts for worker view page disciplines')
- ,('textViewWorkerTransformations', 'Iel a été équipé de : %s <br />', 'Texts for worker view page transformations')
--- %1$s Fake Faction name
- ,('texteNameBase', 'Forteresse des %s', 'Text for Name of base')
- -- %1$s controller name
- -- %2$s FakeFaction name
- -- %3$s Time values
+ ('textRecrutementJobHobby', 'Est un.e %5$s avec un.e %4$s.', 'string to present hobby %4$s and job %5$s on recrutement')
+ ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s.', 'string to present hobby %2$s and job %3$s view of worker')
+ ,('textViewWorkerDisciplines', 'Ses disciplines développées sont : %s. <br />', 'Texts for worker view page disciplines')
+ ,('textViewWorkerTransformations', 'Iel a été équipé de : %s. <br />', 'Texts for worker view page transformations')
+ ,('texteNameBase', 'Forteresse des %s', 'Text for Name of base %1$s Fake Faction name ')
  ,(
     'texteDescriptionBase' 
     ,'Nous avons trouvé la forteresse de %1$s des %2$s. Les serviteurs de confiance leur manquent encore pour avoir des défenses solides.
     En attaquant ce lieu nous pourrions lui porter un coup fatal.
     L’attaque causerait certainement quelques questions à la cour du Shogun, mais un joueur affaibli sur l’échiquier politique est toujours bénéfique.
     Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent chaque %3$s.'
-    ,'Texts for description of base')
- -- %1$s Fake Faction name
- -- %2$s True Faction name
+    ,'Texts for description of base,  -- %1$s controller name -- %2$s FakeFaction name -- %3$s Time values')
  ,(
     'texteHiddenFactionBase'
     , '
         Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux %1$s, mais en réalité son propriétaire est des %2$s.'
-    ,'Texts for secret faction description of base'
+    ,'Texts for secret faction description of base,  -- %1$s Fake Faction name,  -- %2$s True Faction name'
 )
 ;
 
