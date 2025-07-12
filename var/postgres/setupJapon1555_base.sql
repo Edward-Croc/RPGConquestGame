@@ -54,7 +54,8 @@ INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('tsuruhime', 'wakfive', False, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
     ('wang', 'wakfive', False, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
     ('kukai', 'kobsix', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
-    ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU')
+    ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
+    ('yuben', 'kobsix', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
 ;
 
 INSERT INTO factions (name) VALUES
@@ -80,7 +81,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
     ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif', True,
-        'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4/edit?tab=t.0#heading=h.8idxv32d4hct', '', 
+        'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4', '', 
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
     ),
@@ -248,6 +249,10 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'satomura'),
+        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+    )
+    (
+        (SELECT ID FROM players WHERE username = 'yuben'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     )
 ;
