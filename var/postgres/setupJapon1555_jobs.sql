@@ -29,7 +29,7 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Jōhō-gashi (情報頭) – Collecteur d’informations', ', actif sur les routes ou dans les marchés', 1, 0, 0),
     ('Mimiiri (耳入) – Informateur discret', ', placé parmi les serviteurs ou les marchands', 1, 0, 0),
     ('Onmyōji (陰陽師) – Devin et exorciste', ', spécialiste des arts occultes et des influences célestes', 1, 0, 0),
-    ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō', 1, 0, 0),
+    ('Kannushi (神主) – Prêtre shintō', ', gardien des sanctuaires et officiant les rites sacrés', 1, 0, 0),
     ('Miko (巫女) – Servante shintō', ', pratiquant la danse rituelle et les oracles', 1, 0, 0),
     ('Nōgakushi (能楽師) – Acteur de théâtre Nō', ', maître de la performance codifiée mêlant chant, danse et spiritualité', 1, 0, 0),
     ('Tsūshi (通使) – Diplomate ou émissaire', ', habile orateur chargé de négociations sensibles', 1, 0, 0),
@@ -53,7 +53,7 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Onna-bugeisha (女武芸者) – Femme samouraï', ', entraînée au combat, parfois en charge de la garde rapprochée', -1, 2,1),
     ('Monogashira (物頭) – Officier en chef', ', d’un détachement armé, chargé de la sécurité ou de missions spéciales', -1, 2,1),
     ('Sōhei (僧兵) – Moine-soldat', ', à la fois religieux et combattant pour le temple ou le seigneur', -1, 2,1),
-    
+
     -- ('', 1,1,-1), => Glass cannons
     ('Naishi (内侍) – Dame de compagnie', ', au service de l’épouse ou des filles du daimyō', 1, 1,-1),
     ('Shinobi (忍び) – Espion et agent furtif', ', maître de l’infiltration, du sabotage ou de l’assassinat', 1, 1,-1),
@@ -73,7 +73,7 @@ INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Rennyo (蓮如)"} } }'),
-    ('Kannushi (神主) – Prêtre shintō', ', gardien des sanctuaires et officiant les rites sacrés', 1, 0, 1,
+    ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō' 1, 0, 1,
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Kōbō-Daishi (弘法大師)"} } }')
 ;
 
