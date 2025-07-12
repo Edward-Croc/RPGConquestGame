@@ -352,7 +352,7 @@ INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id, activate_json) VALUES
     -- Geôles impériales de Kyoto
     (
-        'Geôles impériales', 
+        'Geôles impériales',
         'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
         L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
         Peu en ressortent, et ceux qui le font ne parlent plus.',
