@@ -404,26 +404,29 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     ('Vallée fertile d’Oboké', 
     'Dans la vallée profonde d’Oboké, où le bruit de la rivière est permanent, poussent à flanc de roche de rares théiers.
     Leurs feuilles, amères et puissantes, sont cueillies à la main par les familles montagnardes, suspendues au-dessus du grondement des eaux.
-    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.'
+    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
+    '
     , 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')
     ),
 
     -- Armure en fer de Kochi
     ('Mine de fer de Kubokawa',
     'Dans les profondeurs du cap sud de Kōchi, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
-    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
+    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire
+    .',
     6, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi')),
 
     -- Cheval de Kagawa
     ('Écuries de Kagawa',
     'Les vastes pâturages de Kagawa forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
-    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
+    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
+    ',
     6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
 
     -- Encens coréen
     ('Port marchand d’Uwajima',
     'Des voiliers venus de la péninsule coréenne accostent à Uwajima, chargés de résines rares dont les parfums servent aux temples autant qu’aux intrigues.
-    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare.',
+    Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.',
     6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'));
 
 -- Fluff
@@ -597,14 +600,14 @@ INSERT INTO power_types (id, name, description) VALUES
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Cheval Kagawa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Prefecture de Kagawa", "worker_in_zone": "Prefecture de Kagawa" } }')
     , ('Armure en fer de Kochi', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Kochi", "worker_in_zone": "Cap sud de Kochi"  } }')
-    , ('Thé d’Oboké et d’Iya', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallées d’Iya et d’Oboké de Tokushima", "worker_in_zone": "Vallées d’Iya et d’Oboké de Tokushima" } }')
+    , ('Thé d’Oboké', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallées d’Iya et d’Oboké de Tokushima", "worker_in_zone": "Vallées d’Iya et d’Oboké de Tokushima" } }')
     , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Ehime", "worker_in_zone": "Côte Ouest d’Ehime"} }')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Kagawa'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Kochi'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké et d’Iya'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Encens Coréen'))
 ;
 
