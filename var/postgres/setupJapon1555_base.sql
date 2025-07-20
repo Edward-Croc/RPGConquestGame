@@ -63,6 +63,7 @@ INSERT INTO factions (name) VALUES
     ,('Samouraï Miyoshi')
     ,('Samouraï Hosokawa')
     ,('Samouraï Ashikaga')
+    ,('Samouraï Kôno')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
@@ -72,24 +73,26 @@ INSERT INTO factions (name) VALUES
 
 INSERT INTO controllers (
     firstname, lastname, ia_type, secret_controller,
-    url, story, 
+    url, story, can_build_base,
     faction_id, fake_faction_id
 ) VALUES
-    ('妖怪 de', 'Shikoku (四国)', 'passif', True,-- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
-        'https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI', '', 
+    ('妖怪 de', 'Shikoku (四国)', 'passif', True, -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
+        'https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI', '',
+        False,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
-    ('Yoshiteru (義輝)', 'Ashikaga (足利)', 'passif', True,
+    ('Shogun', 'Ashikaga (足利)', 'passif', True,
         'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4', '', 
+        True,
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
-    ),
-    ('Kūkai (空海)', 'Kōbō-Daishi (弘法大師)', NULL, True,-- https://en.wikipedia.org/wiki/K%C5%ABkai
-        'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
-        '',
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
+    ), 
+    ('Clan', 'Kôno (河野)', NULL, True, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
+        'https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI', '',
+        False,
+        (SELECT ID FROM factions WHERE name = 'Samouraï Kôno'),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Kôno')
     )
 ;
 
@@ -100,67 +103,66 @@ INSERT INTO controllers (
     story
 ) VALUES
     (
-        'La Régence', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
+        'Clan', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
         'https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I',
-        'Le parfum du sang flotte encore sur les rizières.
-          L’arrivée de l’été aurait dû annoncer la victoire, mais il n’apporte que les échos d’une défaite humiliante.
-          Kunichika (国親) Chōsokabe(長宗我部) est présumé mort, tombé sur les terres de Honshu(本州) aux côtés de ses vassaux, dans une guerre qu’il aurait dû gagner.
-          À présent, c’est vous qui devez gouverner. Le jeune héritier, Motochika (元親), n’a que treize ans. Trop jeune pour régner, trop précieux pour tomber.
-          Les regards se tournent vers vous, régent.e du clan, gardien.ne d’un pouvoir vacillant.
+        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Kunichika (国親) Chōsokabe (長宗我部) est présumé mort, tombé sur les terres de Honshu (本州) aux côtés de ses vassaux, dans une guerre qu’il aurait dû gagner.
+          Le jeune héritier, Motochika (元親), n’a que treize ans. Trop jeune pour régner, trop précieux pour tomber. Les regards se tournent vers votre clan au pouvoir vacillant.
           Vos ennemis vous observent. Vos alliés hésitent. Mais l’avenir n’est pas encore écrit.
-          Dans deux ans, Motochika atteindra l’âge de la majorité, et si vous parvenez à le protéger jusque-là, l’accord scellé avec le clan Hosokawa(細川) pourrait garantir une ère de stabilité.
-          Saurez-vous protéger l’héritier de votre clan ou vous couvrirez vous de honte?
+          Dans deux ans, Motochika atteindra l’âge de la majorité, et son accession au titres de Daimyo et de Shugo pourrait garantir une ère de stabilité.
         '
     ),
-    (
-        'Daïmyo Nagayoshi (長慶)', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
-        (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
-        'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
-        ' Depuis 5 ans vous êtes le Daimyō du clan Miyoshi(三好), comme votre père Motonaga avant vous et son père avant lui.
-          Mais vous, vous avez secrètement abandonné le bouddhisme pour embrasser la foi chrétienne, inspiré par les missionnaires venus avec les vaisseaux noirs portugais.
-          En échange de votre protection et de votre conversion, ils vous ont offert un cadeau inestimable : le secret des fusils à mèche occidentaux.
-          En cette fin de printemps, le parfum du sang flotte encore sur les rizières. Le Japon est à feu et à sang.
-          Deux daimyō sont morts à la guerre et les croyances vacillent.
-          Peut-être est-ce là l’heure bénie pour purger Shikoku(四国) des anciennes superstitions... faire de l’île la première terre chrétienne du Japon et du clan Miyoshi un clan majeur.
-        '
-    ),
-    ('Shinshō-in (信証院)', 'Rennyo (蓮如)', -- https://fr.wikipedia.org/wiki/Rennyo
-        (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
-        'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
-        ' Vous êtes Rennyo (蓮如) le Shinshō-in, huitième abbé du mouvement Jōdo Shinshū(浄土真宗) — la véritable école de la Terre pure.
-          Votre foi ne prêche pas seulement la voie du salut : elle appelle à la révolution. Les Ikkō-ikki, bras armé de cette croyance, rassemblent les paysans révoltés, les petits seigneurs opprimés, les moines guerriers et les prêtres shintō brisés par le joug des samouraïs et du Shogun.
-          C’est vos manigances tordues qui ont mené à la mort des Daimyô de Shikoku(四国), il ne vous reste qu’à terminer le travail de conquête de l’île.
-        '
-    ),
-    ('Daïmyo Tadaoki (忠興)', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
+    ('Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
-        ' Le parfum du sang flotte encore sur les rizières.
-          L’arrivée de l’été aurait dû annoncer la victoire, mais il n’apporte que les échos d’une défaite humiliante.
-          Votre père, Fujitaka(藤孝) Hosokawa, a disparu durant la désastreuse campagne de Kyoto. Tous le croient mort.
-          Vous, non. Vous avez toujours senti son esprit battre, disparu, en fuite, ou peut-être captif… Mais vivant.
-          En attendant, le pouvoir du clan est désormais entre vos mains. Vous êtes jeune, ambitieux, et les chaînes de l’obéissance vous pèsent.
-          Votre sœur, Tama (玉), est promise au jeune Motochika(元親) Chōsokabe(長宗我部), héritier encore trop jeune pour gouverner.
-          Une alliance utile, risquée si elle venait à être dévoilée trop tôt. Une chaîne de plus que votre père vous a laissé.
-          Deux ans. Voilà ce qu’il vous reste pour jouer vos cartes. Servir, trahir ou renaître. Le choix vous appartient.
+        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Votre Daimyo, Fujitaka (藤孝) Hosokawa, a disparu durant la désastreuse campagne de Kyoto.
+          Le pouvoir du clan est désormais entre les mains de Tadaoki (忠興), le fils de Fujitaka, jeune et ambitieux, le nouveau Daimyo cherche un coup d’éclat pour se faire un nom.
+          Tama (玉), la fille de Fujitaka et soeur de Tadaoki, est promise au jeune Motochika (元親) Chōsokabe (長宗我部), héritier encore trop jeune pour gouverner. Une alliance utile, mais risquée si elle venait à être dévoilée trop tôt.
+          Deux ans. Voilà ce qu’il reste à votre clan pour jouer ses cartes. Servir, trahir ou renaître.
           '
     ),
-    ('Murai', 'Wako (和光)', --
+    (
+        'Clan', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
+        (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
+        'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
+        ' Depuis la mort du Daimyo Motonaga il y a 5 ans et l’arrivée au pouvoir de Nagayoshi(長慶) votre clan a secrètement abandonné le bouddhisme pour embrasser la foi chrétienne, inspiré par les missionnaires venus avec les vaisseaux noirs portugais. 
+          En échange de votre protection et de votre conversion, ils vous ont offert un cadeau inestimable : le secret des fusils à mèche occidentaux. 
+          En cette fin de printemps, le parfum du sang flotte encore sur les rizières. Le Japon est à feu et à sang. 
+          Deux daimyō sont morts à la guerre et les croyances vacillent. 
+          Peut-être est-ce là l’heure bénie pour purger Shikoku(四国) des anciennes superstitions... faire de l’île la première terre chrétienne du Japon et du clan Miyoshi un clan majeur. 
+        '
+    ),
+    ('Bouddhistes', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
+        (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
+        'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
+        ' La foi ne prêche pas seulement la voie du salut : elle appelle à la révolution.
+          Les Ikkō-ikki, bras armé de cette croyance, rassemblent les paysans révoltés, les petits seigneurs opprimés, les moines guerriers et les prêtres shintō brisés par le joug des samouraïs et du Shogun.
+          C’est vos manigances tordues qui ont mené à la mort des Daimyô de Shikoku(四国), il ne vous reste qu’à terminer le travail de conquête de l’île.
+        '
+    ),
+    ('Bouddhistes', 'Secte Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
+        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
+        'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
+        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire de vos moines partis combattre au nom de la paix, mais elle n’apporte que les échos d’une défaite humiliante. Deux Daimyōs ont péri durant la désastreuse campagne de Kyoto, et nul n’a pu offrir à leurs âmes les funérailles qu’elles méritaient. Leurs enfants, encore jeunes et tourmentés, vont avoir besoin de la sagesse de vos bonzes et de la compassion de vos prières.
+         Déjà, des rumeurs remontent des vallées et des villages : famines, raids de pirates, religions nouvelles et troubles hérétiques, bruits inquiétants dans les forêts et sur les plages, comme si les Yōkais eux-mêmes se réjouissaient du chaos à venir.
+         La paix fragile de ces dernières années est brisée par les ambitions des hommes avides et la faim qui rôde après tant de batailles. Dans l’encens qui s’élève de vos autels, vous espérez trouver la force de contenir le malheur.
+         Il ne vous reste qu’à prier. Et à veiller.
+        '
+    ),
+    ('Kaizokushū (海賊衆)', 'Wako (和光)', --
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
-        ' Vous êtes Murai (村井), capitaine des Wako (和光), et maître incontesté d’un archipel sans lois.
-          Vous ne croyez ni aux daimyōs, ni aux dieux, ni aux rêves de paix. Ce que vous servez, c’est le vent, l’or, et l’opportunité.
-	      Depuis la guerre d’Ōnin (応仁の乱, Ōnin no ran?) et l’affaiblissement du Shogunat, les vôtres pillent, commercent, et manipulent les seigneurs des côtes de la mer intérieure de Seto, de la baie de Tokushima et même jusqu’en Corée.
+        ' Vous êtes les maîtres incontestés d’un archipel sans lois. Vous ne croyez ni aux daimyōs, ni aux dieux, ni aux rêves de paix. Ce que vous servez, c’est le vent, l’or, et l’opportunité.
+          Depuis la guerre d’Ōnin (応仁の乱, Ōnin no ran), l’affaiblissement du Shogunat, les vôtres pillent, commercent, et manipulent les seigneurs des côtes de la mer intérieure de Seto, de la baie de Tokushima et même jusqu’en Corée.
           Le chaos actuel est une bénédiction.
-          À la faveur d’une embuscade habile, vos hommes ont capturé Kunichika Chōsokabe, le daimyō de Shikoku. Blessé, brisé, il vit toujours.
-          Et dans votre forteresse cachée de Shōdoshima, il vaut plus que n’importe quel trésor.
-	      Vous pourriez le vendre à ses ennemis. Le rançonner à son clan. L’utiliser comme monnaie d’échange pour garantir votre place dans le futur de l’île. Ou simplement le laisser moisir jusqu’à ce qu’il ne reste rien de son nom.
+          À la faveur d’une embuscade habile, vos hommes ont capturé Kunichika (国親)Chōsokabe(長宗我部), le daimyō de Shikoku(四国). Blessé, brisé, il vit toujours. Et dans votre forteresse cachée de Shōdoshima((小豆島), il vaut plus que n’importe quel trésor.
+          Vous pourriez le vendre à ses ennemis. Le rançonner à son clan. L’utiliser comme monnaie d’échange pour garantir votre place dans le futur de l’île. Ou simplement le laisser moisir jusqu’à ce qu’il ne reste rien de son nom.
           Une chose est sûre : Si l’île s’unifie, votre liberté prendra fin. Mais tant que la guerre fait rage, les Wako régneront sur les brumes.
         '
     )
@@ -209,15 +211,15 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'rennyo'),
-        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'ren-jo'),
-        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'renko'),
-        (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'tadaoki'),
@@ -245,15 +247,23 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'kukai'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'satomura'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'yubien'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'tsuruhime'),
+        (SELECT ID FROM controllers WHERE lastname = 'Kôno (河野)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'yubien'),
+        (SELECT ID FROM controllers WHERE lastname = 'Kôno (河野)')
     )
 ;
 
@@ -288,8 +298,8 @@ UPDATE zones SET
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     WHERE name = 'Ile de Shōdoshima';
 UPDATE zones SET
-    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'),
-    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
     WHERE name = 'Montagnes d’Ehime';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
@@ -299,7 +309,7 @@ UPDATE zones SET
 -- Secrets scénario
 INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
     -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
-    ('Plaine d’Uwajima', 8, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'), (SELECT ID FROM controllers WHERE lastname = 'Rennyo (蓮如)')
+    ('Plaine d’Uwajima', 8, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'), (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
         , 'Les vastes plaines d’Uwajima semblent paisibles sous le soleil, entre cultures clairsemées et sentiers oubliés.
         Mais depuis plusieurs semaines, des groupes d’hommes en haillons, armés de fourches, de bâtons ou de sabres grossiers, y ont été aperçus.
         Ces paysans ne sont pas d’ici : ils avancent discrètement, se regroupent à la tombée du jour, et prêchent un discours de révolte contre les samouraïs.
@@ -535,7 +545,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
     (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
     -- Le chemin de l'ascèse (Kōchi) 
     ,('Chikurin-ji (竹林寺) -- Le chemin de l’ascèse', 
@@ -545,7 +555,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
     (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
     -- Le chemin de l'illumination (Ehime) 
     ,('Ryūkō-ji (竜光寺) -- Le chemin de l’illumination', 
@@ -555,7 +565,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
     -- Le chemin du Nirvana (Kagawa) 
     ,('Yashima-ji (屋島寺) -- Le chemin du Nirvana', 
@@ -565,7 +575,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 ;
 
 
@@ -845,6 +855,21 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Shigin (詩吟) – Chant poétique'
     )),
     ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
+    ));
+
+-- Samouraï Kôno
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));

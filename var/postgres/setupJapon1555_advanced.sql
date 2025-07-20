@@ -106,10 +106,10 @@ JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
 
 
--- Create the start workers for Rennyo (蓮如)
+-- Create the start workers for Jōdo-shinshū (浄土真宗)
 WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
-        ('Ren-jō', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Ehime')
+        ('Ren-jō', 'fils de Jōdo-shinshū (浄土真宗)', 'Honshu - Kyoto', 'Montagnes d’Ehime')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
 SELECT
@@ -124,10 +124,10 @@ JOIN zones z ON z.name = nd.zone_name;
 -- Now, get controller ID once
 -- Then add the links
 WITH controller AS (
-    SELECT id AS controller_id FROM controllers WHERE lastname = 'Rennyo (蓮如)'
+    SELECT id AS controller_id FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'
 ),
 worker_ids AS (
-    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Rennyo (蓮如)')
+    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Jōdo-shinshū (浄土真宗)')
 )
 INSERT INTO controller_worker (controller_id, worker_id)
 SELECT controller.controller_id, worker_ids.worker_id
@@ -145,7 +145,7 @@ SELECT
     entry.action_choice,
     entry.action_params::json
 FROM (
-    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
+    SELECT 'fils de Jōdo-shinshū (浄土真宗)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
@@ -159,9 +159,9 @@ SELECT
 FROM
     workers w
 JOIN (
-    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
-    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Tokkuri (徳利) – Bouteille à saké'
-    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Kōdō (香道) – Voie de l’encens'
+    SELECT 'fils de Jōdo-shinshū (浄土真宗)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
+    UNION ALL SELECT 'fils de Jōdo-shinshū (浄土真宗)', 'Tokkuri (徳利) – Bouteille à saké'
+    UNION ALL SELECT 'fils de Jōdo-shinshū (浄土真宗)', 'Kōdō (香道) – Voie de l’encens'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;

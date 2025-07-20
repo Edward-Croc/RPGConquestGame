@@ -72,8 +72,8 @@ INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
     ('Marin européen (南蛮水夫)', 'employé sur les vaisseaux noirs portugais ou français', 1,1,1,
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Rennyo (蓮如)"} } }'),
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Jōdo-shinshū (浄土真宗)"} } }'),
     ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō', 1, 0, 1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Kōbō-Daishi (弘法大師)"} } }')
+        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Secte Tendai (天台宗)"} } }')
 ;
 
