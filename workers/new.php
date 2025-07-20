@@ -48,7 +48,7 @@ if ( !$recrutment_allowed ){
 
 // increment recrutment values
 $sqlUpdateRecrutementCounter = sprintf(
-    'UPDATE controllers SET %1$s = %1$s +1 WHERE id = :controller_id',
+    'UPDATE controllers SET %1$s = %1$s +1, recruited_workers = recruited_workers +1 WHERE id = :controller_id',
     $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruited_workers'
 );
 $stmtUpdateRecrutementCounter = $gameReady->prepare($sqlUpdateRecrutementCounter);
