@@ -42,6 +42,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "Can Build Base status toggled.";
     }
 
+    // Toggle secret_controller
+    if (isset($_POST['toggle_secret_controller_id'])) {
+        $cid = intval($_POST['toggle_secret_controller_id']);
+        $current = $gameReady->prepare("SELECT secret_controller FROM controllers WHERE id = :id");
+        $current->execute(['id' => $cid]);
+        $val = $current->fetchColumn();
+        $newVal = ($val) ? 0 : 1;
+        $upd = $gameReady->prepare("UPDATE controllers SET secret_controller = :newVal WHERE id = :id");
+        $upd->execute(['newVal' => $newVal, 'id' => $cid]);
+        $message = "Secret Controller status toggled.";
+    }
+
     // Reset turn_recruited_workers
     if (isset($_POST['reset_turn_recruited_workers_id'])) {
         $cid = intval($_POST['reset_turn_recruited_workers_id']);
@@ -91,6 +103,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
     <table border="1">
         <tr>
             <th>Controller</th>
+            <th>Is seceret</th>
             <th>Can Build Base</th>
             <th>Total Recruited Workers</th>
             <th>Turn Recruited Workers</th>
@@ -105,6 +118,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
                 c.id,
                 c.lastname,
                 c.can_build_base,
+                c.secret_controller,
                 c.recruited_workers,
                 c.turn_recruited_workers,
                 c.turn_firstcome_workers
@@ -126,6 +140,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
 
             echo "<tr>";
             echo "<td>" . htmlspecialchars($controller['lastname']) . "</td>";
+            echo "<td>" . (isset($controller['secret_controller']) && $controller['secret_controller'] ? 'Yes' : 'No') . "</td>";
             echo "<td>" . (isset($controller['can_build_base']) && $controller['can_build_base'] ? 'Yes' : 'No') . "</td>";
             echo "<td>" . htmlspecialchars($controller['recruited_workers']) . "</td>";
             echo "<td>" . htmlspecialchars($controller['turn_recruited_workers']) . "</td>";
@@ -136,6 +151,10 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="toggle_base_controller_id" value="' . intval($controller['id']) . '"/>
                     <button type="submit" name="toggle_base">Change Can Build Base status</button>
+                </form>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="toggle_secret_controller_id" value="' . intval($controller['id']) . '"/>
+                    <button type="submit" name="toggle_secret_controller">Change Is Secret Controller</button>
                 </form>
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="reset_turn_recruited_workers_id" value="' . intval($controller['id']) . '"/>
