@@ -153,6 +153,7 @@ CREATE TABLE controllers (
     lastname text NOT NULL,
     url text,
     story text,
+    can_build_base BOOLEAN DEFAULT TRUE, -- can build a base
     start_workers INT DEFAULT 1,
     recruited_workers INT DEFAULT 0,
     turn_recruited_workers INT DEFAULT 0,

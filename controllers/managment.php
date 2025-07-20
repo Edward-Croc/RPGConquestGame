@@ -60,24 +60,51 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
         <button type="submit" name="remove">Remove Player from Controller</button>
     </form>
     <hr>
-    <h2>Current Player-Controller Assignments</h2>
+    <h2>Controller Details</h2>
     <table border="1">
         <tr>
-            <th>Player</th>
             <th>Controller</th>
+            <th>Can Build Base</th>
+            <th>Total Recruited Workers</th>
+            <th>Turn Recruited Workers</th>
+            <th>Turn Recruited Firstcome Workers</th>
+            <th>Players</th>
         </tr>
         <?php
-        $assignments = $gameReady->query(
-            "SELECT p.username, c.lastname
-             FROM player_controller pc
-             JOIN players p ON pc.player_id = p.id
-             JOIN controllers c ON pc.controller_id = c.id
-             ORDER BY c.lastname, p.username"
-        )->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($assignments as $row):
+        // Fetch all controllers with their properties and player list
+        $controllers = $gameReady->query("
+            SELECT 
+                c.id,
+                c.lastname,
+                c.can_build_base,
+                c.recruited_workers,
+                c.turn_recruited_workers,
+                c.turn_firstcome_workers
+            FROM controllers c
+            ORDER BY c.lastname
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($controllers as $controller) {
+            // Fetch players for this controller
+            $players = $gameReady->prepare("
+                SELECT p.username 
+                FROM player_controller pc
+                JOIN players p ON pc.player_id = p.id
+                WHERE pc.controller_id = :controller_id
+                ORDER BY p.username
+            ");
+            $players->execute(['controller_id' => $controller['id']]);
+            $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
+
+            echo "<tr>";
+            echo "<td>" . htmlspecialchars($controller['lastname']) . "</td>";
+            echo "<td>" . (isset($controller['can_build_base']) && $controller['can_build_base'] ? 'Yes' : 'No') . "</td>";
+            echo "<td>" . htmlspecialchars($controller['recruited_workers']) . "</td>";
+            echo "<td>" . htmlspecialchars($controller['turn_recruited_workers']) . "</td>";
+            echo "<td>" . htmlspecialchars($controller['turn_firstcome_workers']) . "</td>";
+            echo "<td>" . htmlspecialchars(implode(', ', $playerList)) . "</td>";
+            echo "</tr>";
+        }
         ?>
-        <tr>
-            <td><?php echo htmlspecialchars($row['username']); ?></td>
-            <td><?php echo htmlspecialchars($row['lastname']); ?></td>
-        </tr>
-        <?php endforeach; ?>
+    </table>
+</div>

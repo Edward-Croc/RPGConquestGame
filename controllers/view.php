@@ -70,7 +70,7 @@
                 $_SESSION['FOLDER']
             );
             $bases = hasBase($gameReady, $controllers['id']);
-            if (empty($bases)) {
+            if (empty($bases) && $controllers['can_build_base']) {
                 echo sprintf(
                     '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                         <div class="control">
