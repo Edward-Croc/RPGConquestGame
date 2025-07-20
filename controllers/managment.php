@@ -29,6 +29,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->execute(['player_id' => $player_id, 'controller_id' => $controller_id]);
         $message = "Player removed from controller.";
     }
+
+    // Toggle can_build_base
+    if (isset($_POST['toggle_base_controller_id'])) {
+        $cid = intval($_POST['toggle_base_controller_id']);
+        $current = $gameReady->prepare("SELECT can_build_base FROM controllers WHERE id = :id");
+        $current->execute(['id' => $cid]);
+        $val = $current->fetchColumn();
+        $newVal = ($val) ? 0 : 1;
+        $upd = $gameReady->prepare("UPDATE controllers SET can_build_base = :newVal WHERE id = :id");
+        $upd->execute(['newVal' => $newVal, 'id' => $cid]);
+        $message = "Can Build Base status toggled.";
+    }
+
+    // Reset turn_recruited_workers
+    if (isset($_POST['reset_turn_recruited_workers_id'])) {
+        $cid = intval($_POST['reset_turn_recruited_workers_id']);
+        $upd = $gameReady->prepare("UPDATE controllers SET turn_recruited_workers = 0 WHERE id = :id");
+        $upd->execute(['id' => $cid]);
+        $message = "Turn recruited workers reset.";
+    }
+    // Reset turn_firstcome_workers
+    if (isset($_POST['reset_turn_firstcome_workers_id'])) {
+        $cid = intval($_POST['reset_turn_firstcome_workers_id']);
+        $upd = $gameReady->prepare("UPDATE controllers SET turn_firstcome_workers = 0 WHERE id = :id");
+        $upd->execute(['id' => $cid]);
+        $message = "Turn recruited firstcome workers reset.";
+    }
 }
 
 // Fetch all players and controllers
@@ -69,6 +96,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
             <th>Turn Recruited Workers</th>
             <th>Turn Recruited Firstcome Workers</th>
             <th>Players</th>
+            <th>Action</th>
         </tr>
         <?php
         // Fetch all controllers with their properties and player list
@@ -103,6 +131,21 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
             echo "<td>" . htmlspecialchars($controller['turn_recruited_workers']) . "</td>";
             echo "<td>" . htmlspecialchars($controller['turn_firstcome_workers']) . "</td>";
             echo "<td>" . htmlspecialchars(implode(', ', $playerList)) . "</td>";
+            // Add forms for actions
+            echo '<td>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="toggle_base_controller_id" value="' . intval($controller['id']) . '"/>
+                    <button type="submit" name="toggle_base">Change Can Build Base status</button>
+                </form>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="reset_turn_recruited_workers_id" value="' . intval($controller['id']) . '"/>
+                    <button type="submit" name="reset_turn_recruited_workers">Reset Turn Workers</button>
+                </form>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="reset_turn_firstcome_workers_id" value="' . intval($controller['id']) . '"/>
+                    <button type="submit" name="reset_turn_firstcome_workers">Reset Firstcome Workers</button>
+                </form>
+            </td>';
             echo "</tr>";
         }
         ?>
