@@ -73,7 +73,7 @@ INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Rennyo (蓮如)"} } }'),
-    ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō' 1, 0, 1,
+    ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō', 1, 0, 1,
         '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Kōbō-Daishi (弘法大師)"} } }')
 ;
 

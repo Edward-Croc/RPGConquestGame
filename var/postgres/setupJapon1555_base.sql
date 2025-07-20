@@ -55,7 +55,7 @@ INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('wang', 'wakfive', False, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
     ('kukai', 'kobsix', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
     ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
-    ('yuben', 'kobsix', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
+    ('yubien', 'kobsix', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
 ;
 
 INSERT INTO factions (name) VALUES
@@ -250,9 +250,9 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'satomura'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
-    )
+    ),
     (
-        (SELECT ID FROM players WHERE username = 'yuben'),
+        (SELECT ID FROM players WHERE username = 'yubien'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōbō-Daishi (弘法大師)')
     )
 ;
