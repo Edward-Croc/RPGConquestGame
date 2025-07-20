@@ -542,6 +542,7 @@ function createWorker($pdo, $array) {
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
+        return false;
     }
     $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // If worker exist return worker ID
@@ -557,6 +558,7 @@ function createWorker($pdo, $array) {
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT workers Failed: " . $e->getMessage()."<br />";
+        return false;
     }
     // Get the last inserted ID
     $workerId = $pdo->lastInsertId();
@@ -583,6 +585,18 @@ function createWorker($pdo, $array) {
         if ($debug) echo sprintf("%s() => add to worker : %s, link_power_type_id: %s <br>",  __FUNCTION__, $workerId, var_export($link_power_type_id, true));
         upgradeWorker($pdo, $workerId, $link_power_type_id, true);
     }
+
+    try{
+        // increment recrutment values
+        $sqlUpdateRecrutementCounter = 'UPDATE controllers SET recruited_workers = recruited_workers +1 WHERE id = :controller_id';
+        $stmtUpdateRecrutementCounter = $pdo->prepare($sqlUpdateRecrutementCounter);
+        $stmtUpdateRecrutementCounter->execute([
+            ':controller_id' => $array['controller_id']
+        ]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE controllers SET recruited_workers  Failed: " . $e->getMessage()."<br />";
+    }
+
     return $workerId;
 }
 
