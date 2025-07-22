@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $update_msg = "<p style='color: green;'>Zone #$zoneId mise à jour avec succès.</p>";
 }
 
-$controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname) AS name FROM controllers ORDER BY lastname");
+$controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname) AS name FROM controllers ORDER BY id ASC");
 $allControllers = $controllerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $zoneSql = "
@@ -43,7 +43,7 @@ require_once '../base/baseHTML.php';
             <th>ID</th>
             <th>Nom de la Zone</th>
             <!-- <th>Description</th>-->
-            <th>Sous la banère de</th>
+            <th>Sous la banière de</th>
             <th>Défendue par</th>
         </tr>
         <?php foreach ($zones as $zone): ?>
