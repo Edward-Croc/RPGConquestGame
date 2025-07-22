@@ -63,7 +63,7 @@ INSERT INTO factions (name) VALUES
     ,('Samouraï Miyoshi')
     ,('Samouraï Hosokawa')
     ,('Samouraï Ashikaga')
-    ,('Samouraï Kôno')
+    ,('Samouraï Kōno')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
@@ -89,11 +89,11 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
     ), 
-    ('Clan', 'Kôno (河野)', NULL, True, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
+    ('Clan', 'Kōno (河野)', NULL, True, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
         'https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI', '',
         False,
-        (SELECT ID FROM factions WHERE name = 'Samouraï Kôno'),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Kôno')
+        (SELECT ID FROM factions WHERE name = 'Samouraï Kōno'),
+        (SELECT ID FROM factions WHERE name = 'Samouraï Kōno')
     )
 ;
 
@@ -114,7 +114,8 @@ INSERT INTO controllers (
           Dans deux ans, Motochika atteindra l’âge de la majorité, et son accession au titres de Daimyo et de Shugo pourrait garantir une ère de stabilité.
         '
     ),
-    ('Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
+    (
+        'Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
@@ -136,7 +137,8 @@ INSERT INTO controllers (
           Peut-être est-ce là l’heure bénie pour purger Shikoku(四国) des anciennes superstitions... faire de l’île la première terre chrétienne du Japon et du clan Miyoshi un clan majeur. 
         '
     ),
-    ('Bouddhistes', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
+    (
+        'Bouddhistes', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
         (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
         'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
@@ -145,7 +147,8 @@ INSERT INTO controllers (
           C’est vos manigances tordues qui ont mené à la mort des Daimyô de Shikoku(四国), il ne vous reste qu’à terminer le travail de conquête de l’île.
         '
     ),
-    ('Bouddhistes', 'Secte Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+    (
+        'Bouddhistes', 'Secte Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
@@ -155,7 +158,8 @@ INSERT INTO controllers (
          Il ne vous reste qu’à prier. Et à veiller.
         '
     ),
-    ('Kaizokushū (海賊衆)', 'Wako (和光)', --
+    (
+        'Kaizokushū (海賊衆)', 'Wako (和光)', --
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
@@ -260,11 +264,11 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'tsuruhime'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kôno (河野)')
+        (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'yubien'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kôno (河野)')
+        (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
     )
 ;
 
@@ -387,7 +391,7 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
         '{"indestructible" : "TRUE"}'
     ),
-    
+
     -- Retraite secrete des Chosokabe (cape sud de Kochi)
     (
         'Retraite secrète des Chōsokabe', 
@@ -397,6 +401,21 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
         '{"indestructible" : "TRUE"}'
+    ),
+
+    -- Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto
+    (
+        'Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto', 
+        'Ce sanctuaire, situé sur l’île d’Ōmishima dans la mer intérieure de Seto, au nord de Saijō, fait partie des vingt temples mineurs du pèlerinage de Shikoku.
+Sanctuaire ancestral du clan Kōno (河野), descendants d’Iyo-shinnō, fils de l’empereur Kanmu (781–806), qui fonda la province d’Iyo sur l’île de Shikoku.
+Le sanctuaire est dédié aux dieux qui protègent les marins et les soldats. Pour cette raison, de nombreux daimyōs viennent y faire des offrandes dans l’espoir de succès, ou en remerciement de leurs victoires.
+Les derniers membres du clan Kōno (河野) s’y retrouvent parfois pour parler, à voix basse et triste, de leur héritage disparu et de leurs terres confisquées.
+(Pour explorer davantage ce lieu, allez voir un orga !)
+        ',
+        7, False,
+        (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'),
+        (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)'),
+        '{}'
     )
 ;
 
@@ -903,17 +922,17 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
--- Samouraï Kôno
+-- Samouraï Kōno
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kôno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
