@@ -1,5 +1,12 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
+-- -> Dans les rapport il est nécessaire d’arriver à déterminer qui est le véritable contrôleur d’une zone, pas juste la bannière sous laquelle elle est !! 
+-- 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
+-- 		- Inférieur	ne sais pas
+-- 		- 0-1		découvre le réseau
+-- 		- 2-3		découvre le réseau et la faction
+-- 		- 4+		découvre le réseau la faction et le contrôleur 
+
 -- TODO : elements in worker worker reports should be encapsulated in 'strong'
 
 -- TODO : Add Controler action purge, 
@@ -383,6 +390,17 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
         '{"indestructible" : "TRUE"}'
+    ),
+    
+    -- Retraite secrete des Chosokabe (cape sud de Kochi)
+    (
+        'Retraite secrète des Chōsokabe', 
+        'Caché sur les flancs escarpés du cap sud de Kōchi, un pavillon de chasse sert de lieu de villégiature à une étrange concentration de serviteurs Chōsokabe.
+On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre de la famille puisse s’y cacher.',
+        8, True,
+        (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),
+        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
+        '{"indestructible" : "TRUE"}'
     )
 ;
 
@@ -611,6 +629,10 @@ INSERT INTO artefacts (name, description, full_description, location_id) VALUES
         'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardée par ceux qui craignent son retour.',
         'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles des Kaizokushū')
     ), (
+        'Chikayasu (親泰) Chōsokabe(長宗我部), le fils caché',
+        '3eme Fils de Kunichika, la charge de l’héritage lui as été épargnée jusqu’ici, mais il ferait un otage politique important.',
+        'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Retraite secrète des Chōsokabe')
+    ),(
         'Motochika (元親) Chōsokabe(長宗我部) daimyô en devenir',
         'Fils de Kunichika, encore trop jeune pour gouverner, il est la clef d’un fragile héritage.',
         'Nous sommes libres de décidé de sa destinée (aller voir un orga)!', NULL
