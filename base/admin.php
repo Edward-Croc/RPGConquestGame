@@ -19,7 +19,7 @@ require_once '../base/baseHTML.php';
 ?>
 
 <div class="content">
-    <div class="flex">
+    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="mechanics">
             <h1>Mechanics</h1>
             <?php echo getConfig($gameReady, 'IntrigueOrga'); ?>
@@ -61,6 +61,8 @@ require_once '../base/baseHTML.php';
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
+    </div>
+    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="config">
                 <h1>List</h1>
                 <?php echo sprintf( '
@@ -70,6 +72,12 @@ require_once '../base/baseHTML.php';
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
+    </div>
+    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+        <?php
+            // Allow for admin creation of a perfect agent
+            require_once '../workers/newPerfectWorker.php';
+        ?>
     </div>
 </div>
 </body>
