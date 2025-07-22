@@ -1,6 +1,6 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
--- -> Dans les rapport il est nécessaire d’arriver à déterminer qui est le véritable contrôleur d’une zone, pas juste la bannière sous laquelle elle est !! 
+-- TODO -> Dans les rapport il est nécessaire d’arriver à déterminer qui est le véritable contrôleur d’une zone, pas juste la bannière sous laquelle elle est !! 
 -- 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
 -- 		- Inférieur	ne sais pas
 -- 		- 0-1		découvre le réseau
@@ -78,6 +78,7 @@ INSERT INTO factions (name) VALUES
     ,('Yōkai')
 ;
 
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 INSERT INTO controllers (
     firstname, lastname, ia_type, secret_controller,
     url, story, can_build_base,
@@ -313,6 +314,7 @@ UPDATE zones SET
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
     WHERE name = 'Cité Impériale de Kyoto';
 
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Secrets scénario
 INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
     -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
@@ -367,6 +369,7 @@ Ce ressentiment pourrait être exploité — ou au contraire, désamorcé — se
     )
 ;
 
+-- Lieux secrets
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id, activate_json) VALUES
     -- Geôles impériales de Kyoto
     (
@@ -404,6 +407,7 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
     )
 ;
 
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Temples des Yokais
 INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
      -- Feu - Teppō
@@ -512,6 +516,7 @@ Certains racontent avoir vu un noble personnage tenter de rentrer en secret avan
      6, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'))
 ;
 
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Fake News :
 INSERT INTO locations (name, discovery_diff, zone_id, description) VALUES
     ('Maison close de Marugame', 5,  (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),
@@ -557,15 +562,15 @@ Le prêtre chrétien en a été chassé par les moines bouddhistes de la secte T
 Mais aucune arme à feu n’a été aperçue, et les moines affirment que les rumeurs de pacte avec les chrétiens sont infondées.'
     ),
     ('Comptoir d`Hiwasa', 5,
-    -- Chercher un endroit ou ajouter un démenti
+    --  démenti par la rumeur du vaisseau noir au comptoir d'Hiwasa
     (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
         'Ce modeste comptoir marchand, adossé à une crique discrète, connaît une activité étrange depuis quelques semaines.
 Des jonques aux voiles noires y accostent en silence, et leurs capitaines refusent de dire d’où ils viennent.
 Certains affirment que les Wako auraient reçu des fonds d’un clan du Nord — peut-être les Hosokawa — pour saboter les entrepôts du port de Tokushima.
 D’autres n’y voient qu’un simple commerce de sel et de fer… Mais alors, pourquoi tant de discrétion ? Et pourquoi autant de lames prêtes à jaillir à la moindre question ?'
     ),
-    ('Un vaisseau noir au Comptoir d`Hiwasa', 7,
-    -- Chercher un endroit ou ajouter un démenti
+    ('Un vaisseau noir au Comptoir d`Hiwasa', 8,
+    -- démenti de la rumeur du comptoir d'Hiwasa
     (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
         'Ce modeste comptoir marchand, adossé à une crique discrète, a été le théâtre de la plus étrange des scènes.
 Les rapports précédents faisant état de jonques aux voiles noires, de capitaines Kaizokushū œuvrant à saboter les entrepôts du port de Tokushima, sont entièrement faux.
@@ -575,6 +580,7 @@ Le comptoir est sous le contrôle de moines chrétiens, et les rumeurs ne sont q
     )
 ;
 
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
     -- Le chemin de l'éveil (Tokushima)
@@ -618,7 +624,7 @@ Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux 
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 ;
 
-
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 INSERT INTO artefacts (name, description, full_description, location_id) VALUES
     (
         'Fujitaka (藤孝) Hosokawa (細川) le daimyô prisonnier',
@@ -673,7 +679,7 @@ INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
 UPDATE config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''
 WHERE name = 'basePowerNames';
 
---https://fr.wikipedia.org/wiki/Ashigaru
+-- insert Powers
 INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
@@ -778,9 +784,10 @@ INSERT INTO link_power_type (power_type_id, power_id) VALUES
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kōdō (香道) – Voie de l’encens')),
     ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagenkō (影言講) – L’art de la parole de l’ombre')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'));
+    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'))
+;
 
-
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Add base powers to the factions :
 -- Samouraï Chōsokabe
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
