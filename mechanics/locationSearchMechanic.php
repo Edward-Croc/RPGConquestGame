@@ -32,6 +32,10 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             s.searcher_controller_id,
             z.id AS zone_id,
             z.name AS zone_name,
+            CONCAT(zcc.firstname, ' ', zcc.lastname) AS zone_claimer_controller_name,
+            zhc.id AS zone_holder_controller_id,
+            CONCAT(zhc.firstname, ' ', zhc.lastname) AS zone_holder_controller_name,
+            (s.searcher_enquete_val - z.calculated_defence_val) AS zone_discovery_diff,
             l.id AS found_id,
             l.discovery_diff AS found_discovery_diff,
             l.name AS found_name,
@@ -42,6 +46,8 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             (s.searcher_enquete_val - l.discovery_diff) AS enquete_difference
         FROM searchers s
         JOIN zones z ON z.id = s.zone_id
+        LEFT JOIN controllers zcc ON z.claimer_controller_id = zcc.id
+        LEFT JOIN controllers zhc ON z.holder_controller_id = zhc.id
         JOIN locations l ON s.zone_id = l.zone_id
         LEFT JOIN controllers lc ON l.controller_id = lc.id
     ";
@@ -95,20 +101,43 @@ function locationSearchMechanic($pdo) {
         if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
 
         if (empty($reportArray[$row['searcher_id']])) {
-            // TODO : do the necessary checks for the zone Investigate Mechanic
-            // In the reports it is necessary to investigate who is the true controller of a zone, not just the banner under which it is !!
-            // $row['searcher_enquete_val'] 
-            // 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
-            // 		- Inférieur	ne sais pas
-            // 		- 0-1		découvre le réseau
-            // 		- 2-3		découvre le réseau et la faction
-            // 		- 4+		découvre le réseau la faction et le contrôleur 
-            // Append to following text
 
+            // Do the necessary checks for the zone Investigate Mechanic
+            // In the reports it is necessary to investigate who is the controller that is the holder of a zone,
+            // not just the banner under which it is !!
+            $holderTexte = '';
+            if (!empty($row['zone_holder_controller_id'])) {
+                // 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
+                // 		- Inférieur	ne sais pas
+                // 		- 0-2		découvre le réseau
+                // 		- 3+		découvre le réseau, le contrôleur 
+                if ( (int)$row['zone_discovery_diff']
+                
+                > 0 ) {
+                    $holderTexte = sprintf(
+                        " Ce %s est défendu par le réseau <strong> %s </strong>",
+                        getConfig($pdo, 'textForZoneType'),
+                        $row['zone_holder_controller_id']
+                    );
+                    if ( (int)$row['zone_discovery_diff'] > 2) {
+                        $holderTexte .= sprintf(
+                            ", les hommes de <strong>%s</strong>",
+                            $row['zone_holder_controller_name']
+                        );
+                    }
+                    $holderTexte .= ".";
+                }
+            }
+
+            // At begining of the report Show zone name and information
             $reportArray[$row['searcher_id']] = sprintf(
-                "<p>Dans le %s %s :</p>",
+                "<p>Dans le %s %s. </br> %s %s </p>",
                 getConfig($pdo, 'textForZoneType'),
-                $row['zone_name']
+                $row['zone_name'],
+                // If a claimer exists, use it,
+                $row['zone_claimer_controller_name'] ? sprintf("Ce %s est sous la bannière de <strong> %s </strong>. ", getConfig($pdo, 'textForZoneType'), $row['zone_claimer_controller_name']) : "",
+                // If a holder exists, use it,
+                $holderTexte
             );
         }
 
