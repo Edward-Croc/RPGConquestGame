@@ -1,12 +1,5 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
--- TODO -> Dans les rapport il est nécessaire d’arriver à déterminer qui est le véritable contrôleur d’une zone, pas juste la bannière sous laquelle elle est !! 
--- 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
--- 		- Inférieur	ne sais pas
--- 		- 0-1		découvre le réseau
--- 		- 2-3		découvre le réseau et la faction
--- 		- 4+		découvre le réseau la faction et le contrôleur 
-
 -- TODO : elements in worker worker reports should be encapsulated in 'strong'
 
 -- TODO : Add Controler action purge, 

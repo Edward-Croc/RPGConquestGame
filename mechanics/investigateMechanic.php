@@ -158,6 +158,7 @@ function investigateMechanic($pdo) {
         echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
     }
 
+    // Get investigations worker vs workers
     $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
     $reportArray = [];
 

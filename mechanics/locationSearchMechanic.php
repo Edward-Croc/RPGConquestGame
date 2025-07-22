@@ -95,6 +95,16 @@ function locationSearchMechanic($pdo) {
         if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
 
         if (empty($reportArray[$row['searcher_id']])) {
+            // TODO : do the necessary checks for the zone Investigate Mechanic
+            // In the reports it is necessary to investigate who is the true controller of a zone, not just the banner under which it is !!
+            // $row['searcher_enquete_val'] 
+            // 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
+            // 		- Inférieur	ne sais pas
+            // 		- 0-1		découvre le réseau
+            // 		- 2-3		découvre le réseau et la faction
+            // 		- 4+		découvre le réseau la faction et le contrôleur 
+            // Append to following text
+
             $reportArray[$row['searcher_id']] = sprintf(
                 "<p>Dans le %s %s :</p>",
                 getConfig($pdo, 'textForZoneType'),
