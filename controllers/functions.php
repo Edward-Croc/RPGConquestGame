@@ -296,7 +296,7 @@ function moveBase($pdo, $base_id, $zone_id) {
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
     $locations = listControllerKnownLocations($pdo, $controller_id, true);
-    if (empty($locations)) return '';
+    if (empty($locations)) return NULL;
 
     $options = '';
     foreach ($locations as $zone) {
