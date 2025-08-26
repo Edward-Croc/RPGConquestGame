@@ -382,7 +382,7 @@ Nous n’avons pas pu consulter la totalité des registres, il nous faudrait y r
 Ce temple sert de sanctuaire à des moines, qui sont les archivistes de la secte Tendai.
 Nous avons pu consulter les registres, dont celui sur les entrées au temple des moines de Shikoku.
 Nous avons découvert que le véritable nom de Kūkai (空海) Kōbō-Daishi (弘法大師) — Kūkai le Grand Instructeur, était Makoto Sakana (眞魚) — Mao le « Poisson de vérité ».
-Il est le fils de Katsushika Chōsokabe (長宗我部), le conquérant de Shikoku, ce qui en fait le grand-oncle de Motochika (元親) Chōsokabe et le frère de Kanetsugu (兼続) Chōsokabe.',
+Il est le troisième fils de Katsushika Chōsokabe (長宗我部), le conquérant de Shikoku, ce qui en fait le grand-oncle de Motochika (元親) Chōsokabe et le frère de Kanetsugu (兼続) Chōsokabe.',
         7, False,
         (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
         NULL
@@ -439,7 +439,7 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     -- Geôles impériales de Kyoto
     (
         'Geôles impériales',
-        'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris étouffés des oubliés du Shogun. 
+        'Sous les fondations de la Cité impériale, ces geôles étouffantes résonnent des cris affaiblis des oubliés du Shogun. 
 L’air y est moite, chargé de remords et d’encre séchée — là où les sentences furent calligraphiées avant d’être exécutées.
 Peu en ressortent, et ceux qui le font ne parlent plus.',
         8, True,
@@ -578,7 +578,7 @@ Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voi
      6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
 
     ('Rumeurs de la bataille',
-     'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines du Kansai sur Honshu, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du temple abandonné.',
+     'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines du Kansai sur Honshu, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du phare abandonné d’Esaki.',
      6, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji')),
 
     ('Détroit d’Okayama',
@@ -608,13 +608,21 @@ Depuis quelques jours, un bruit court : un important émissaire impérial aurait
 Les paysans parlent d’un prêtre chrétien, et de l’Inquisition jésuite elle-même. Mais les recherches menées par les yamabushi locaux n’ont rien révélé de probant.'
     ),
     ('Maison de thé "Lune d’Or"', 5, (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
-     -- Un dementi est présent sur l'info 'Grande route et relais de poste'
+     -- Un dementi est présent sur l'info 'Camp des éclaireur Takeda'
         'Située à l’écart de la Suzaku Mon, la "Lune d’Or" attire les lettrés, les poètes… et les oreilles curieuses.
 On dit qu’un marchand de soie y viendrait chaque soir, parlant peu mais observant tout.
 Selon une geisha, il serait en réalité un espion du clan Takeda (武田), infiltré pour sonder la loyauté des daimyōs de l’Est.
 Il aurait même été vu avec un membre de la famille Chōsokabe (長宗我部).
 Pourtant, nul ne peut confirmer cette histoire, et certains prétendent qu’il n’est en réalité qu’un veuf mélancolique, égaré dans ses souvenirs.
 Mais à Kyōto, les apparences mentent plus souvent qu’elles ne révèlent.'
+    ),
+    ('Camp des éclaireur Takeda', 5, (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
+     -- Un dementi est présent sur l'info 'Grande route et relais de poste'
+        'On trouve, caché dans un bosquet, entre deux collines, un camp qui fait clairement partie des forces Takeda (武田).
+Ils ont l’air d’avoir été battus lors de l’affrontement du printemps 1555 et fait de multiples prisonniers dans les forces Chōsokabe (長宗我部).
+Il est clair que les rumeurs d’alliances entre les Chōsokabe et les Takeda sont sans fondement, mais cette simple constatation ne sera pas suffisante pour convaincre leur détracteurs.
+La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le Shogun.
+(Si vous voulez entrer en contact avec les Takeda, allez voir un orga !)'
     ),
     ('Phare abandonné d`Esaki', 5,
     -- Un démenti est existant sur le 'vieux temple d'Esaki', il est possible de le trouver dans les rumeurs
