@@ -1,10 +1,10 @@
 
 -- Insert names into worker_origins
 INSERT INTO worker_origins (name) VALUES
-      ('Shikoku - Ehime')
-    , ('Shikoku - Kochi')
-    , ('Shikoku - Tokushima')
-    , ('Shikoku - Kagawa')
+      ('Shikoku - Iyo')
+    , ('Shikoku - Tosa')
+    , ('Shikoku - Awa')
+    , ('Shikoku - Sanuki')
     , ('Shikoku - Awaji')
     , ('Shikoku - Shōdoshima')
     , ('Honshu - Kyoto')
@@ -18,50 +18,50 @@ INSERT INTO worker_origins (name) VALUES
 
 -- Insert names into worker_names
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
--- Shikoku - Ehime
-    ('Haruki', 'Takahashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Yui', 'Nakamura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Ren', 'Sato', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Kaito', 'Yamamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Aiko', 'Fujimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Souta', 'Ishikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Hina', 'Kobayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Daichi', 'Tanaka', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Mei', 'Arai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
-    ('Takumi', 'Inoue', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Ehime')),
+-- Shikoku - Iyo
+    ('Haruki', 'Takahashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Yui', 'Nakamura', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Ren', 'Sato', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Kaito', 'Yamamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Aiko', 'Fujimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Souta', 'Ishikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Hina', 'Kobayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Daichi', 'Tanaka', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Mei', 'Arai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
+    ('Takumi', 'Inoue', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Iyo')),
 
--- Shikoku - Kochi
-    ('Yuto', 'Matsuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Sakura', 'Hoshino', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Kenta', 'Murakami', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Riko', 'Shimizu', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Tsubasa', 'Ueda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Miyu', 'Sakamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Hinata', 'Endo', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Riku', 'Fukuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Yuna', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
-    ('Sho', 'Nakagawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kochi')),
+-- Shikoku - Tosa
+    ('Yuto', 'Matsuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Sakura', 'Hoshino', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Kenta', 'Murakami', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Riko', 'Shimizu', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Tsubasa', 'Ueda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Miyu', 'Sakamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Hinata', 'Endo', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Riku', 'Fukuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Yuna', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Sho', 'NaSanuki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
 
--- Shikoku - Tokushima
-    ('Ayaka', 'Terasaki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Tomo', 'Sugimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Rio', 'Kaneko', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Shun', 'Okada', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Airi', 'Noguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Mao', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Sena', 'Kawaguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
-    ('Yuma', 'Tachibana', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tokushima')),
+-- Shikoku - Awa
+    ('Ayaka', 'Terasaki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Tomo', 'Sugimoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Rio', 'Kaneko', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Shun', 'Okada', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Airi', 'Noguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Mao', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Sena', 'Kawaguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Yuma', 'Tachibana', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
 
--- Shikoku - Kagawa
-    ('Rina', 'Yoshikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Takashi', 'Kuroda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Saki', 'Amano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Itsuki', 'Hayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Mai', 'Onishi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Ryota', 'Mizuno', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Shiori', 'Ichikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Hinako', 'Sakai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
-    ('Yuto', 'Kiriyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Kagawa')),
+-- Shikoku - Sanuki
+    ('Rina', 'Yoshikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Takashi', 'Kuroda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Saki', 'Amano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Itsuki', 'Hayashi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Mai', 'Onishi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Ryota', 'Mizuno', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Shiori', 'Ichikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Hinako', 'Sakai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Yuto', 'Kiriyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
 
 -- Shikoku - Awaji
     ('Keita', 'Nagano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),

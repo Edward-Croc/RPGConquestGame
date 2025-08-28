@@ -21,9 +21,9 @@ Hiuchi (火打 — « pierre à feu »), Kagaribi (篝火 — « feu de signalis
 WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
         ('Kosagi', 'Kotatsu', 'Shikoku - Shōdoshima', 'Ile de Shōdoshima'),
-        ('Iwao', 'Jizane', 'Shikoku - Ehime', 'Montagnes d’Ehime'),
+        ('Iwao', 'Jizane', 'Shikoku - Iyo', 'Montagnes d’Iyo'),
         ('Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'),
-        ('Hiuchi', 'Kagaribi', 'Shikoku - Kochi', 'Cap sud de Kochi')
+        ('Hiuchi', 'Kagaribi', 'Shikoku - Tosa', 'Cap sud de Tosa')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
 SELECT
@@ -109,7 +109,7 @@ JOIN link_power_type lpt ON lpt.power_id = p.id;
 -- Create the start workers for Jōdo-shinshū (浄土真宗)
 WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
-        ('Ren-jō', 'fils de Jōdo-shinshū (浄土真宗)', 'Honshu - Kyoto', 'Montagnes d’Ehime')
+        ('Shonyo', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Iyo')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
 SELECT
@@ -127,7 +127,7 @@ WITH controller AS (
     SELECT id AS controller_id FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'
 ),
 worker_ids AS (
-    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Jōdo-shinshū (浄土真宗)')
+    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Rennyo (蓮如)')
 )
 INSERT INTO controller_worker (controller_id, worker_id)
 SELECT controller.controller_id, worker_ids.worker_id
@@ -145,7 +145,7 @@ SELECT
     entry.action_choice,
     entry.action_params::json
 FROM (
-    SELECT 'fils de Jōdo-shinshū (浄土真宗)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
+    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
@@ -159,9 +159,9 @@ SELECT
 FROM
     workers w
 JOIN (
-    SELECT 'fils de Jōdo-shinshū (浄土真宗)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
-    UNION ALL SELECT 'fils de Jōdo-shinshū (浄土真宗)', 'Tokkuri (徳利) – Bouteille à saké'
-    UNION ALL SELECT 'fils de Jōdo-shinshū (浄土真宗)', 'Kōdō (香道) – Voie de l’encens'
+    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
+    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Tokkuri (徳利) – Bouteille à saké'
+    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Kōdō (香道) – Voie de l’encens'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
@@ -256,7 +256,7 @@ JOIN (
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Shodō (書道) – Calligraphie'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Iaijutsu (居合術) – Art du sabre'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Bajutsu (馬術) – Art de l’équitation militaire'
-    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Cheval Kagawa'
+    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Cheval Sanuki'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Ninja-kahō (忍者家法) – Membre d’une lignée de ninjas'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Shamisen (三味線) – Instrument à cordes'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Kyūjutsu (弓術) – Art du tir à l’arc'
@@ -266,7 +266,7 @@ JOIN (
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Thé d’Oboké et d’Iya'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Tsūshi (通使) – Diplomate ou émissaire'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Go-ban (碁盤) – Plateau de Go'
-    UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Kochi'
+    UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Tosa'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Heihō (兵法) – Stratégie militaire'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Bugaku (舞楽) – Danse de cour'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Shodō (書道) – Calligraphie'

@@ -273,13 +273,13 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
 ;
 
 INSERT INTO zones (name, description) VALUES
-      ('Côte Ouest d’Ehime', 'La porte vers l’île de Kyūshū, cette bande littorale est animée par les flux incessants de navires marchands, pêcheurs et patrouilleurs. Les criques cachent parfois des comptoirs discrets ou des avant-postes de contrebandiers. Les brumes marines y sont fréquentes, rendant les approches aussi incertaines que les intentions de ses habitants.')
-    , ('Montagnes d’Ehime', 'Entourant le redouté mont Ishizuchi, plus haut sommet de Shikoku, ces montagnes sacrées sont le domaine des ascètes, des yamabushi et des esprits anciens. Les chemins escarpés sont peuplés de temples isolés, de cascades énigmatiques, et d’histoires transmises à demi-mot. Nul ne traverse ces hauteurs sans y laisser un peu de son âme.')
-    , ('Cap sud de Kochi', 'Battue par les vents de l’océan Pacifique, cette pointe rocheuse est riche en minerai de fer, extrait dans la sueur et le sel. Le paysage austère dissuade les faibles, mais attire les clans ambitieux. Les tempêtes y sont violentes, et même les dragons du ciel semblent redouter ses falaises noires.')
+      ('Côte Ouest d’Iyo', 'La porte vers l’île de Kyūshū, cette bande littorale est animée par les flux incessants de navires marchands, pêcheurs et patrouilleurs. Les criques cachent parfois des comptoirs discrets ou des avant-postes de contrebandiers. Les brumes marines y sont fréquentes, rendant les approches aussi incertaines que les intentions de ses habitants.')
+    , ('Montagnes d’Iyo', 'Entourant le redouté mont Ishizuchi, plus haut sommet de Shikoku, ces montagnes sacrées sont le domaine des ascètes, des yamabushi et des esprits anciens. Les chemins escarpés sont peuplés de temples isolés, de cascades énigmatiques, et d’histoires transmises à demi-mot. Nul ne traverse ces hauteurs sans y laisser un peu de son âme.')
+    , ('Cap sud de Tosa', 'Battue par les vents de l’océan Pacifique, cette pointe rocheuse est riche en minerai de fer, extrait dans la sueur et le sel. Le paysage austère dissuade les faibles, mais attire les clans ambitieux. Les tempêtes y sont violentes, et même les dragons du ciel semblent redouter ses falaises noires.')
     , ('Grande Baie de Kochi', 'Centre de pouvoir du clan Chōsokabe, cette baie est à la fois un havre de paix et un verrou stratégique. Bordée de rizières fertiles et de ports animés, elle est défendue par des flottes aguerries et des forteresses discrètes. On dit que ses eaux reflètent les ambitions de ceux qui la contrôlent.')
-    , ('Vallées d’Iya et d’Oboké de Tokushima', 'Ces vallées profondes, creusées par les torrents et le temps, abritent des plantations de thé précieuses et des villages suspendus au flanc des falaises. Peu accessibles, elles sont le refuge de ceux qui fuient la guerre, la loi ou le destin. Le thé qui y pousse a le goût amer des secrets oubliés.')
-    , ('Côte Est de Tokushima', 'Sur cette façade tournée vers le large, le clan Miyoshi établit son pouvoir entre les ports et les postes fortifiés. Bien que prospère, la région est sous tension : les vassaux y sont fiers, les ambitions grandes, et les flottes ennemies jamais loin. La mer y apporte autant de trésors que de périls.')
-    , ('Prefecture de Kagawa', 'Plaine fertile dominée par les haras impériaux et les sanctuaires oubliés, Kagawa est renommée pour ses chevaux rapides et robustes. Les émissaires s’y rendent pour négocier montures de guerre, messagers ou montures sacrées. C’est aussi une terre de festivals éclatants et de compétitions féroces.')
+    , ('Vallées d’Iya et d’Oboké d’Awa', 'Ces vallées profondes, creusées par les torrents et le temps, abritent des plantations de thé précieuses et des villages suspendus au flanc des falaises. Peu accessibles, elles sont le refuge de ceux qui fuient la guerre, la loi ou le destin. Le thé qui y pousse a le goût amer des secrets oubliés.')
+    , ('Côte Est d’Awa', 'Sur cette façade tournée vers le large, le clan Miyoshi établit son pouvoir entre les ports et les postes fortifiés. Bien que prospère, la région est sous tension : les vassaux y sont fiers, les ambitions grandes, et les flottes ennemies jamais loin. La mer y apporte autant de trésors que de périls.')
+    , ('Province de Sanuki', 'Plaine fertile dominée par les haras impériaux et les sanctuaires oubliés, Sanuki est renommée pour ses chevaux rapides et robustes. Les émissaires s’y rendent pour négocier montures de guerre, messagers ou montures sacrées. C’est aussi une terre de festivals éclatants et de compétitions féroces.')
     , ('Ile d’Awaji', 'Pont vivant entre Shikoku et Honshū, Awaji est stratégiquement vitale et toujours convoitée. Les vents y sont brutaux, les détroits traîtres, et les seigneurs prudents. Ses collines cachent des fortins, ses criques des repaires, et ses chemins sont surveillés par des yeux invisibles.')
     , ('Ile de Shōdoshima', 'Ile montagneuse et sauvage, jadis sanctuaire, aujourd’hui repaire des pirates Wako. Ses ports semblent paisibles, mais ses criques abritent des embarcations rapides prêtes à fondre sur les convois marchands. Les autorités ferment souvent les yeux, car même le vice paie tribut.')
     , ('Plaines du Kansai', 'Étendue fertile au cœur du Japon, les Plaines du Kansai sont bordées par les cités animées d’Osaka, les sanctuaires anciens de Nara, et les ports marchands de Kobe. Sous la surface prospère de ses rizières, le sang versé à Kyōto imprègne encore la terre, témoignant des intrigues et batailles passées. Ici, le commerce rivalise avec les complots, et les vents chargés de cendres et de parfums annoncent toujours un nouvel orage de pouvoir.')
@@ -290,15 +290,15 @@ INSERT INTO zones (name, description) VALUES
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
-    WHERE name IN( 'Grande Baie de Kochi', 'Cap sud de Kochi' ) ;
+    WHERE name IN( 'Grande Baie de Kochi', 'Cap sud de Tosa' ) ;
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)')
-    WHERE name = 'Côte Est de Tokushima';
+    WHERE name = 'Côte Est d’Awa';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
-    WHERE name = 'Prefecture de Kagawa';
+    WHERE name = 'Province de Sanuki';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
@@ -306,7 +306,7 @@ UPDATE zones SET
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
-    WHERE name = 'Montagnes d’Ehime';
+    WHERE name = 'Montagnes d’Iyo';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
@@ -316,7 +316,7 @@ UPDATE zones SET
 -- Secrets scénario
 INSERT INTO locations (name, discovery_diff, zone_id, controller_id, description) Values
     -- Ajouter un secret sur l'arrivée des rebels Ikko-ikki sur l'ile par petits groupes
-    ('Plaine d’Uwajima', 8, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'), (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
+    ('Plaine d’Uwajima', 8, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'), (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
         , 'Les vastes plaines d’Uwajima semblent paisibles sous le soleil, entre cultures clairsemées et sentiers oubliés.
 Mais depuis plusieurs semaines, des groupes d’hommes en haillons, armés de fourches, de bâtons ou de sabres grossiers, y ont été aperçus.
 Ces paysans ne sont pas d’ici : ils avancent discrètement, se regroupent à la tombée du jour, et prêchent un discours de révolte contre les samouraïs.
@@ -324,16 +324,16 @@ Ce sont les avant-gardes des Ikko-ikki, infiltrés depuis le continent par voie 
 Découvrir quel est le chef qui les unit pourrait permettre d’agir avant qu’il ne soit trop tard.'
     )
     -- Ajouter un secret sur l'arrivée de Rennyo déposée par les Kaizokushū Wako il y a quelques semaines à peinne
-    , ('Port de Saijō', 8, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'), (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+    , ('Port de Saijō', 8, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'), (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
         , 'Le port de Saijō est d’ordinaire animé par les pêcheurs locaux et les petits marchands.
 Mais depuis peu, les anciens disent avoir vu, au crépuscule, un navire étrange accoster sans bannière, escorté par des pirates tatoués.
 Un moine en est descendu, maigre, vieux, au regard brûlant de ferveur : Rennyo lui-même, leader spirituel des Ikko-ikki.
-Selon certains, il se serait enfoncé dans les montagnes d’Ehime avec une poignée de fidèles.
+Selon certains, il se serait enfoncé dans les Montagnes d’Iyo avec une poignée de fidèles.
 Ce secret, s’il venait à être révélé, pourrait changer l’équilibre religieux de toute l’île.'
     )
     -- Ajouter un secret sur l’alliance maritale entre les Chosokabe Motochika et les Hosokawa Tama
-    , ('Relais de poste d’Ikeda', 8, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'), NULL
-        , 'Une auberge modeste, près de la grande route de Kagawa, reçoit parfois à l’aube des cavaliers fatigués, porteurs de missives cachetées.
+    , ('Relais de poste d’Ikeda', 8, (SELECT ID FROM zones WHERE name = 'Province de Sanuki'), NULL
+        , 'Une auberge modeste, près de la grande route de Sanuki, reçoit parfois à l’aube des cavaliers fatigués, porteurs de missives cachetées.
 L’une d’elles, récemment interceptée, contenait une promesse de mariage scellée entre Motochika Chōsokabe et Tama Hosokawa, fille de Fujitaka.
 Si elle venait à se concrétiser, cette alliance unirait deux grandes maisons sur Shikoku et bouleverserait les rapports de pouvoir dans toute la région.
 Pour l’instant, l’information est gardée secrète, mais les rumeurs montent.
@@ -382,7 +382,7 @@ Nous n’avons pas pu consulter la totalité des registres, il nous faudrait y r
 Ce temple sert de sanctuaire à des moines, qui sont les archivistes de la secte Tendai.
 Nous avons pu consulter les registres, dont celui sur les entrées au temple des moines de Shikoku.
 Nous avons découvert que le véritable nom de Kūkai (空海) Kōbō-Daishi (弘法大師) — Kūkai le Grand Instructeur, était Makoto Sakana (眞魚) — Mao le « Poisson de vérité ».
-Il est le troisième fils de Katsushika Chōsokabe (長宗我部), le conquérant de Shikoku, ce qui en fait le grand-oncle de Motochika (元親) Chōsokabe et le frère de Kanetsugu (兼続) Chōsokabe.',
+Il est le troisième fils de Katsushika(葛飾) Chōsokabe (長宗我部), le conquérant de Shikoku, ce qui en fait le grand-oncle de Motochika (元親) Chōsokabe et le frère de Kanetsugu (兼続) Chōsokabe.',
         7, False,
         (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
         NULL
@@ -417,7 +417,7 @@ Son fils adoptifs Ren-jō (連城) n’est autre que Harumoto (晴元) Hosokawa 
 Il est l’une des résidences de Kūkai (空海) Kōbō-Daishi (弘法大師) — Kūkai le Grand Instructeur, fondateur de la secte bouddhiste Shingon, et de Yūbien (宥辡 ‘Yū biàn‘) Shinnen (真念) – apaisement sincère, moine érudit qui a compilé le guide le plus complet du pèlerinage.
 Nous avons découvert dans les archives du temple qu’avant de prendre le nom de Yūbien, le jeune homme venu se faire moine se nommait Michinao (通直) Kōno (河野).',
         7,  False,
-        (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),  
+        (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'),  
         (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
     ),
     -- Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto
@@ -429,7 +429,7 @@ Le sanctuaire est dédié aux dieux qui protègent les marins et les soldats. Po
 Les derniers membres du clan Kōno (河野) s’y retrouvent parfois pour parler, à voix basse et triste, de leur héritage disparu et de leurs terres confisquées.
 (Pour explorer davantage ce lieu, allez voir un orga !)',
         7, False,
-        (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'),
+        (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
     )
 ;
@@ -460,13 +460,13 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         '{"indestructible" : "TRUE"}'
     ),
 
-    -- Retraite secrete des Chosokabe (cape sud de Kochi)
+    -- Retraite secrete des Chosokabe (cape sud de Tosa)
     (
         'Retraite secrète des Chōsokabe', 
         'Caché sur les flancs escarpés du cap sud de Kōchi, un pavillon de chasse sert de lieu de villégiature à une étrange concentration de serviteurs Chōsokabe.
 On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre de la famille puisse s’y cacher.',
         8, True,
-        (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),
+        (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
         '{"indestructible" : "TRUE"}'
     )
@@ -478,7 +478,7 @@ Il y aurait établi un sanctuaire clandestin, enseignant les paroles du Christ �
 Ce lieu sert également de relais discret pour faire entrer armes, livres et messagers depuis Nagasaki.
 Sa présence confirme l’implantation secrète du christianisme à Tokushima et menace de faire basculer les équilibres religieux et politiques de Shikoku.'
         , 8, True,
-        (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
+        (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa'),
         (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
         '{"indestructible" : "TRUE"}'
     )
@@ -488,7 +488,7 @@ Sa présence confirme l’implantation secrète du christianisme à Tokushima et
 -- Temples des Yokais
 INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
      -- Feu - Teppō
-    ('Vieux temple des colines de Kubokawa', 8, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    ('Vieux temple des colines de Kubokawa', 8, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Accroché aux flancs escarpés de la côte sud de Kōchi, un petit sanctuaire noircit repose au bord d’une ancienne veine de fer oubliée.
 Au loin, dans la vallée, les marteaux des forgerons résonnent comme une prière sourde.
 Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait sursauter les corbeaux.
@@ -507,7 +507,7 @@ Pourtant, chaque crépuscule, les accords las d’un biwa résonnent sous les po
 Pourtant nul prêtre et nul pèlerin en vue.
 (Pour explorer davantage ce lieu, allez voir un orga !)')
      -- Roche - Chigiriki
-    , ('Vieux temple du Mont Ishizuchi', 8, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
+    , ('Vieux temple du Mont Ishizuchi', 8, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Perché sur un piton rocheux des montagnes d’Ehimé, un ancien temple taillé à même la pierre repose, figé comme un souvenir.
 Nul vent n’y souffle, nul oiseau n’y niche.
 Parfois, on y entend cliqueter une chaîne sur la pierre nue, comme si une arme traînait seule sur le sol.
@@ -522,39 +522,39 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 Leurs feuilles, amères et puissantes, sont cueillies à la main par les familles montagnardes, suspendues au-dessus du grondement des eaux.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
     '
-    , 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')
+    , 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa')
     ),
 
-    -- Armure en fer de Kochi
+    -- Armure en fer de Tosa
     ('Mine de fer de Kubokawa',
-    'Dans les profondeurs du cap sud de Kōchi, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
+    'Dans les profondeurs du cap sud de Tosa, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.',
-    6, (SELECT ID FROM zones WHERE name = 'Cap sud de Kochi')),
+    6, (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa')),
 
-    -- Cheval de Kagawa
+    -- Cheval de Sanuki
     ('Écuries de Takamastu',
-    'Les vastes pâturages de Kagawa forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
+    'Les vastes pâturages de Sanuki forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
     ',
-    6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
+    6, (SELECT ID FROM zones WHERE name = 'Province de Sanuki')),
 
     -- Encens coréen
     ('Port marchand de Matsuyama',
     'Des voiliers venus de la péninsule coréenne accostent à Matsuyama, chargés de résines rares dont les parfums servent aux temples autant qu’aux intrigues.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.',
-    6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'));
+    6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'));
 
 -- Fluff
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     ('Port d’Uwajima',
      'Un port animé aux quais denses et bruyants, où s’échangent riz, bois, et rumeurs en provenance de Kyūshū comme de Corée.
 Les marins disent que la brume y reste plus longtemps qu’ailleurs.',
-     6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime')),
+     6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo')),
 
     ('Mt Ishizuchi',
      'Plus haut sommet de l’île, le mont Ishizuchi domine les vallées alentour comme un sabre dressé vers le ciel.
 On dit qu’un pèlerinage ancien y conduit à une dalle sacrée où les esprits s’expriment lorsque les vents tournent.',
-     6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime')),
+     6, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo')),
 
     ('Port de Kochi',
      'Protégé par une anse naturelle, ce port militaire et marchand voit passer jonques, bateaux de guerre et pirates repenti.
@@ -565,17 +565,17 @@ On dit que le clan Chōsokabe y cache des objets illégaux importés d’ailleur
     ('Village d’Oboke',
      'Petit village de montagne aux maisons de bois noircies par le temps.
 Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau des gorges profondes qui serpentent en contrebas.',
-     6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima')),
+     6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa')),
 
     ('Port de Naruto',
      'Carrefour maritime entre Honshū et Shikoku, le port de Naruto bruisse de dialectes et de voiles étrangères.
 Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voix basse.',
-     6, (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima')),
+     6, (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa')),
 
     ('Grande route et relais de poste',
      'Relie Tokushima à Kōchi en serpentant à travers les plaines fertiles du nord.
 À chaque relais, les montures peuvent être changées, et les messagers impériaux y trouvent toujours une couche et un bol chaud.',
-     6, (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa')),
+     6, (SELECT ID FROM zones WHERE name = 'Province de Sanuki')),
 
     ('Rumeurs de la bataille',
      'Les pêcheurs d’Awaji parlent encore d’un combat féroce dans les collines du Kansai sur Honshu, entre troupes en fuite et rebelles aux visages peints. Certains affirment avoir vu le ciel s’embraser au-dessus du phare abandonné d’Esaki.',
@@ -595,7 +595,7 @@ Certains racontent avoir vu un noble personnage tenter de rentrer en secret avan
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Fake News :
 INSERT INTO locations (name, discovery_diff, zone_id, description) VALUES
-    ('Maison close de Marugame', 5,  (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),
+    ('Maison close de Marugame', 5,  (SELECT ID FROM zones WHERE name = 'Province de Sanuki'),
         'À Marugame, dans une maison close réputée pour son saké sucré et ses éventails peints à la main, des courtisanes murmurent entre deux chansons.
 L’une d’elles prétend avoir lu une lettre scellée, confiée par un émissaire enivré, annonçant un pacte secret entre le clan Miyoshi et la famille Hosokawa : mariage, trahison, et guerre éclair contre les Chōsokabe.'
     ),
@@ -603,7 +603,7 @@ L’une d’elles prétend avoir lu une lettre scellée, confiée par un émissa
         'Cette crique isolée, souvent balayée par les vents, est connue des contrebandiers comme des pêcheurs.
 Depuis quelques jours, un bruit court : un important émissaire impérial aurait été intercepté par les pirates Wako et détenu dans une grotte voisine, en attendant rançon ou silence.'
     ),
-    ('Temple Daihō-ji (大宝寺)', 5, (SELECT ID FROM zones WHERE name = 'Montagnes d’Ehime'),
+    ('Temple Daihō-ji (大宝寺)', 5, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'),
         'Dans un ancien sanctuaire shintō, aux abords du Daihō-ji (大宝寺) 44eme temple du pèlerinage de Shikoku, dont les piliers carbonisés résistent au temps, des pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent sertie d’inscriptions latines.
 Les paysans parlent d’un prêtre chrétien, et de l’Inquisition jésuite elle-même. Mais les recherches menées par les yamabushi locaux n’ont rien révélé de probant.'
     ),
@@ -647,7 +647,7 @@ Mais aucune arme à feu n’a été aperçue, et les moines affirment que les ru
     ),
     ('Comptoir d`Hiwasa', 5,
     --  démenti par la rumeur du vaisseau noir au comptoir d'Hiwasa
-    (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
+    (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa'),
         'Ce modeste comptoir marchand, adossé à une crique discrète, connaît une activité étrange depuis quelques semaines.
 Des jonques aux voiles noires y accostent en silence, et leurs capitaines refusent de dire d’où ils viennent.
 Certains affirment que les Wako auraient reçu des fonds d’un clan du Nord — peut-être les Hosokawa — pour saboter les entrepôts du port de Tokushima.
@@ -655,7 +655,7 @@ D’autres n’y voient qu’un simple commerce de sel et de fer… Mais alors, 
     ),
     ('Un vaisseau noir au Comptoir d`Hiwasa', 8,
     -- démenti de la rumeur du comptoir d'Hiwasa
-    (SELECT ID FROM zones WHERE name = 'Côte Est de Tokushima'),
+    (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa'),
         'Ce modeste comptoir marchand, adossé à une crique discrète, a été le théâtre de la plus étrange des scènes.
 Les rapports précédents faisant état de jonques aux voiles noires, de capitaines Kaizokushū œuvrant à saboter les entrepôts du port de Tokushima, sont entièrement faux.
 En réalité, nous avons découvert qu’un vaisseau noir, immense, aux voiles carrées, a été aperçu au large, et les marins affirment qu’il s’agit d’un navire de guerre portugais.
@@ -667,17 +667,17 @@ Le comptoir est sous le contrôle de moines chrétiens, et les rumeurs ne sont q
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- https://fr.wikipedia.org/wiki/P%C3%A8lerinage_de_Shikoku
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
-    -- Le chemin de l'éveil (Tokushima)
+    -- Le chemin de l'éveil (AWA)
     ('Dainichi-ji (大日寺) -- Le chemin de l’éveil', 
     'Niché entre les forêts brumeuses d’Iya, ce temple vibre encore du souffle ancien des premiers pas du pèlerin. 
 On dit que les pierres du sentier y murmurent des prières oubliées à ceux qui s’y attardent. 
 Le silence y est si pur qu’on entend le battement de son propre cœur.
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
-    (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké de Tokushima'),  
+    (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa'),  
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
-    -- Le chemin de l'ascèse (Kōchi) 
+    -- Le chemin de l'ascèse (TOSA) 
     ,('Chikurin-ji (竹林寺) -- Le chemin de l’ascèse', 
     'Perché au sommet d’une colline surplombant la baie, le temple veille parmi les bambous. 
 Les moines y pratiquent une ascèse rigoureuse, veillant jour et nuit face à l’océan sans fin. 
@@ -687,24 +687,24 @@ Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières
     (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),  
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
-    -- Le chemin de l'illumination (Ehime) 
+    -- Le chemin de l'illumination (Iyo) 
     ,('Ryūkō-ji (竜光寺) -- Le chemin de l’illumination', 
     'Suspendu à flanc de montagne, le Ryūkō-ji contemple la mer intérieure comme un dragon endormi. 
 On raconte qu’au lever du soleil, les brumes se déchirent et révèlent un éclat doré émanant de l’autel. 
 Les sages disent que ceux qui y méditent peuvent entrevoir la lumière véritable.
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
-    (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Ehime'),  
+    (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'),  
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
-    -- Le chemin du Nirvana (Kagawa) 
+    -- Le chemin du Nirvana (Sanuki) 
     ,('Yashima-ji (屋島寺) -- Le chemin du Nirvana', 
     'Ancien bastion surplombant les flots, Yashima-ji garde la mémoire des batailles et des ermites. 
 Les brumes de l’aube y voilent statues et stupas, comme pour dissimuler les mystères du Nirvana. 
 Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux comme une paix.
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
-    (SELECT ID FROM zones WHERE name = 'Prefecture de Kagawa'),  
+    (SELECT ID FROM zones WHERE name = 'Province de Sanuki'),  
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 ;
 
@@ -735,15 +735,15 @@ INSERT INTO power_types (id, name, description) VALUES
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
-    ('Cheval Kagawa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Prefecture de Kagawa", "worker_in_zone": "Prefecture de Kagawa" } }')
-    , ('Armure en fer de Kochi', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Kochi", "worker_in_zone": "Cap sud de Kochi"  } }')
-    , ('Thé d’Oboké', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallées d’Iya et d’Oboké de Tokushima", "worker_in_zone": "Vallées d’Iya et d’Oboké de Tokushima" } }')
-    , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Ehime", "worker_in_zone": "Côte Ouest d’Ehime"} }')
+    ('Cheval Sanuki', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki", "worker_in_zone": "Province de Sanuki" } }')
+    , ('Armure en fer de Tosa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa", "worker_in_zone": "Cap sud de Tosa"  } }')
+    , ('Thé d’Oboké', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallées d’Iya et d’Oboké d’Awa", "worker_in_zone": "Vallées d’Iya et d’Oboké d’Awa" } }')
+    , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo", "worker_in_zone": "Côte Ouest d’Iyo"} }')
 ;
 
 INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Kagawa'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Kochi'))
+    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Sanuki'))
+    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Tosa'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké'))
     , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Encens Coréen'))
 ;
