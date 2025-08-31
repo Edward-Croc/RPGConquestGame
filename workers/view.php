@@ -66,20 +66,45 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             if ( in_array($currentAction['action_choice'], array('attack', 'claim')) ) {
                 if ( $_SESSION['DEBUG'] == true )
                     $workerActionInfo .= ' Action spéciale en cours : <strong>'.$currentAction['action_choice'].'</strong> '. $currentAction['action_params'];
+
+                $params = json_decode($currentAction['action_params'], true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                }
                 if ($currentAction['action_choice'] == 'claim') {
-                    $claim_params = json_decode($currentAction['action_params'], true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                    }
-                    if (!empty($claim_params['claim_controller_id']) && ($claim_params['claim_controller_id'] != "null") ) {
-                        $controllers = getControllers($gameReady, null, $claim_params['claim_controller_id']);
+                    if (!empty($params['claim_controller_id']) && ($params['claim_controller_id'] != "null") ) {
+                        $controllers = getControllers($gameReady, null, $params['claim_controller_id']);
                         $workerActionInfo .= sprintf(
                             ' au nom de <strong>%1$s</strong>',
                             $controllers[0]['lastname'],
                         );
                     }
                 }
-
+                if ($currentAction['action_choice'] == 'attack') {
+                    $attackedWorkerIds = array();
+                    foreach ($params as $key => $value) {
+                        if ( $_SESSION['DEBUG'] == true )
+                            echo sprintf(" Paramètre %s => %s ; ", $key, var_export($value, true) );
+                        if (!empty($value['attackScope']) && ($value['attackScope'] == "worker") ) {
+                            $attackedWorkerIds[] = $value['attackID'];
+                        }
+                    }
+                    // $attackedWorkerIds has elements
+                    if (!empty($attackedWorkerIds)) {
+                        $workersArray = getWorkers($gameReady, $attackedWorkerIds);
+                        $workerActionInfo .= ' contre ';
+                        foreach( $workersArray AS $k => $w ) {
+                            $workerActionInfo .= sprintf(
+                                '%1$s %2$s (#%3$s)%4$s',
+                                $w['firstname'],
+                                $w['lastname'],
+                                $w['id'],
+                                ($k < (count($workersArray)-1)) ? ', ' : ''
+                            );
+                        }
+                    }
+                }
+    
             }
             if ( $_SESSION['DEBUG'] == true )
                 echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
@@ -138,7 +163,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         '<div class="control">
                             <i>%1$s</i><br \>
                             <input type="hidden" name="recall_controller_id" value="%3$s">
-                            <input type="submit" name="recallDoubleAgent" value="%2$s" class="worker-action-btn">
+                            <input type="submit" name="recallDoubleAgent" value="%2$s" class="button is-info">
                         </div>',
                         'Cet agent étant infiltré.e, lui donner des ordres pourrait révéler son défaut d’allégeance !',
                         'Le rappeler a notre service !',

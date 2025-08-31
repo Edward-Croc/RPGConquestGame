@@ -40,8 +40,10 @@ function getZonesArray($pdo, $controller_id = null, $zone_id = null) {
                 c.id AS controller_id,
                 h.id AS holder_controller_id,
                 z.*,
-                c.lastname as controller_name,
-                h.lastname as holder_name
+                c.lastname as claimer_lastname,
+                c.firstname as claimer_firstname,
+                h.lastname as holder_lastname,
+                h.firstname as holder_firstname
             FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
             LEFT JOIN controllers AS h ON h.id = z.holder_controller_id
