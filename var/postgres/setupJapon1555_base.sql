@@ -26,15 +26,16 @@ UPDATE config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline
 UPDATE config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
 UPDATE config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
 
-INSERT INTO config (name, value, description)
-VALUES
-    -- MAP INFO
-    ('map_file', 'shikoku.png', 'Map file to use'),
-    ('map_alt', 'Carte de Shikoku', 'Map alt'),
-    ('textForZoneType', 'territoire', 'Text for the type of zone'),
-    ('timeValue', 'Trimestre', 'Text for time span'),
-    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text')
-;
+-- MAP INFO
+UPDATE config SET value =  'Carte_Shikoku_1555_petit.jpg' WHERE name = 'map_file';
+UPDATE config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
+
+-- Text time info
+UPDATE config SET value =  'territoire' WHERE name = 'textForZoneType';
+UPDATE config SET value =  'Trimestre' WHERE name = 'timeValue';
+UPDATE config SET value =  'ce' WHERE name = 'timeDenominatorThis';
+UPDATE config SET value =  'le' WHERE name = 'timeDenominatorThe';
+UPDATE config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
 INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', False, ''),

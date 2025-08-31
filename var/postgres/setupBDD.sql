@@ -127,6 +127,22 @@ VALUES
     ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses', 'Text for location not destroyed')
 ;
 
+INSERT INTO config (name, value, description)
+VALUES
+    -- MAP INFO
+    ('map_file', 'shikoku.png', 'Map file to use'),
+    ('map_alt', 'Carte', 'Map alt')
+;
+--  Text info
+INSERT INTO config (name, value, description)
+VALUES
+    ('textForZoneType', 'zone', 'Text for the type of zone'),
+    ('timeValue', 'Tour', 'Text for time span'),
+    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text'),
+    ('timeDenominatorThe', 'le', 'Denominator ’the’ for time text'),
+    ('timeDenominatorOf', 'du', 'Denominator ’of’ for time text')
+;
+
 -- player tables
 CREATE TABLE players (
     ID SERIAL PRIMARY KEY,

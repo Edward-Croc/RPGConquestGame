@@ -1,11 +1,15 @@
 <?php
     $zones = getZonesArray($gameReady);
-    $imgString = sprintf(
+    $map_file = getConfig($gameReady, 'map_file');
+
+    $imgString = '';
+    if (! empty($map_file )) $imgString = sprintf(
         '<img src="/%s/img/%s" alt="%s" style="max-width:100%%; height:auto;">',
         $_SESSION['FOLDER'],
-        htmlspecialchars(getConfig($gameReady, 'map_file')),
+        htmlspecialchars($map_file),
         htmlspecialchars(getConfig($gameReady, 'map_alt'))
     );
+
 ?>
 
 <div class="section zones">

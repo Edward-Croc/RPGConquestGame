@@ -1,15 +1,17 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
-INSERT INTO config (name, value, description)
-VALUES
-    -- MAP INFO
-    ('map_file', 'carte_quartiers_florence.jpg', 'Map file to use'),
-    ('map_alt', 'Carte des Quartiers de Florence', 'Map alt'),
-    ('timeValue', 'Semaine', 'Text for time span'),
-    ('textForZoneType', 'quartier', 'Text for the type of zone'),
-    ('timeDenominatorThis', 'cette', 'Denominator ’this’ for time text')
-    ;
+-- MAP INFO
+UPDATE config SET value =  'carte_quartiers_florence.jpg' WHERE name = 'map_file';
+UPDATE config SET value =  'Carte des Quartiers de Florence' WHERE name = 'map_alt';
 
+-- Text time info
+UPDATE config SET value =  'quartier' WHERE name = 'textForZoneType';
+UPDATE config SET value =  'Semaine' WHERE name = 'timeValue';
+UPDATE config SET value =  'cette' WHERE name = 'timeDenominatorThis';
+UPDATE config SET value =  'la' WHERE name = 'timeDenominatorThe';
+UPDATE config SET value =  'de la' WHERE name = 'timeDenominatorOf';
+
+--- Base Power Names
 UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
