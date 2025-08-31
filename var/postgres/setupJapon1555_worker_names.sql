@@ -12,7 +12,7 @@ INSERT INTO worker_origins (name) VALUES
     , ('Honshu - Okayama')
     , ('Honshu - Hiroshima')
     , ('Kyushu - Öita')
-    , ('France')
+    --, ('France')
     , ('Portugal')
 ;
 
@@ -159,6 +159,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Bianca', 'Abriana', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Paolo', 'Pisano', (SELECT ID FROM worker_origins WHERE name = 'Portugal'));
 
+/*
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Jean', 'Martin', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Marie', 'Bernard', (SELECT ID FROM worker_origins WHERE name = 'France')),
@@ -170,7 +171,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Thomas', 'Durand', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Sophie', 'Leroy', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Claire', 'Moreau', (SELECT ID FROM worker_origins WHERE name = 'France'));
-
+*/
 
 -- Honshu - Kyoto
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
