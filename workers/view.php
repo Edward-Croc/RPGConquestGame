@@ -105,8 +105,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
                 $controllers = getControllers($gameReady);
-                $showcontrollersSelect = showControllerSelect($controllers, 'gift_controller_id');
-                $showListClaimTargetsSelect = showControllerSelect($controllers, 'claim_controller_id', TRUE);
+                $showcontrollersSelect = showControllerSelect($controllers, $controller_id, 'gift_controller_id');
+                $showListClaimTargetsSelect = showControllerSelect($controllers, $controller_id, 'claim_controller_id', TRUE);
 
                 // build attack select HTML
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);

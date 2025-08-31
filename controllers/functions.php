@@ -59,16 +59,24 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
 
 /**
  * Show list of controller options for à controller select field.
+ * 
+ * @param array $controllers : array of controllers ('id', 'firstname', 'lastname')
+ * @param int|null $selectedID : ID of the selected controller (optional)
+ * @param string $field_name : name of the select field (default: 'controller_id')
+ * @param bool $addEmptySpace : add an empty option at the top of the list (default: false)
+ * 
+ * @return string : HTML select field
  */
-function showControllerSelect($controllers, $field_name = 'controller_id', $addEmptySpace = false ) {
+function showControllerSelect($controllers, $selectedID = null ,$field_name = 'controller_id', $addEmptySpace = false ) {
 
     if (empty($controllers)) return '';
     $controllerOptions = '';
-    if ($addEmptySpace) $controllerOptions .= "<option value='null'> Personne </option>";
-    foreach ( $controllers as $controller) {
+    if ($addEmptySpace) $controllerOptions .= "<option value='null'> Personne (Sans bannière) </option>";
+    foreach ($controllers as $controller) {
         $controllerOptions .= sprintf (
-            "<option value='%s'>%s %s</option>",
+            "<option value='%s' %s >%s %s</option>",
             $controller['id'],
+            ($selectedID !== null && $controller['id'] == $selectedID) ? 'selected' : '',
             htmlspecialchars($controller['firstname']),
             htmlspecialchars($controller['lastname'])
         );
