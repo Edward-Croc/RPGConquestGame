@@ -30,8 +30,8 @@
             $controllerBanner = (!empty($zone['controller_id']))
                 ? sprintf(
                     '<span class="tag is-warning ml-2">Sous la bannière de %s %s</span>',
-                    htmlspecialchars($zone['firstname']),
-                    htmlspecialchars($zone['lastname'])
+                    htmlspecialchars($zone['claimer_lastname']),
+                    htmlspecialchars($zone['claimer_firstname'])
                 )
                 : '';
             $knownSecrets = !empty($_SESSION['controller']['id'])

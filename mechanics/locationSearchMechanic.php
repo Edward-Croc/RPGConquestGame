@@ -135,7 +135,7 @@ function locationSearchMechanic($pdo) {
                 getConfig($pdo, 'textForZoneType'),
                 $row['zone_name'],
                 // If a claimer exists, use it,
-                $row['zone_claimer_controller_name'] ? sprintf("Ce %s est sous la bannière de <strong> %s </strong>. ", getConfig($pdo, 'textForZoneType'), $row['zone_claimer_controller_name']) : "",
+                !empty($row['zone_claimer_controller_name']) ? sprintf("Ce %s est sous la bannière de <strong> %s </strong>. ", getConfig($pdo, 'textForZoneType'), $row['zone_claimer_controller_name']) : "",
                 // If a holder exists, use it,
                 $holderTexte
             );
