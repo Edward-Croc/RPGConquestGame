@@ -28,6 +28,7 @@ require_once '../base/baseHTML.php';
         $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $timeValue = strtolower(getConfig($gameReady, 'timeValue'));
+        $timeDenominatorThis = strtolower(getConfig($gameReady, 'timeDenominatorThis'));
 
         foreach ($workers as $worker) {
             // Example: retrieve stats from a helper function or inline logic
@@ -38,8 +39,8 @@ require_once '../base/baseHTML.php';
             // Format the life report string
             $reportAppendArray = [
                 'life_report' => sprintf(
-                    "Ce.tte %s j'ai %s en investigation et %s/%s en attaque/défense.",
-                $timeValue, $investigation, $attack, $defense
+                    "<strong>%s %s</strong> j'ai <strong>%s</strong> en investigation et <strong>%s/%s</strong> en attaque/défense.",
+                $timeDenominatorThis, $investigation, $attack, $defense
                 )
             ];
 
