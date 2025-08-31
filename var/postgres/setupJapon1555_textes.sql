@@ -105,8 +105,8 @@ VALUES
             "C’était étrange, alors j’ai enquêté et trouvé qu’iel a en réalité des capacités de %6$s, ce qui en fait un.e %2$s un peu trop spécial.e%8$s."
         ],
         [
-            "On a suivi %1$s parce qu’on l’a repéré.e en train de %5$s, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’il possédait aussi un.e %3$s.",
-            "%9$sCela dit, le vrai problème, c’est qu’il semble maîtriser %6$s, au moins partiellement%8$s."
+            "On a suivi %1$s parce qu’on l’a repéré.e en train de %5$s, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’iel possédait aussi un.e %3$s.",
+            "%9$sCela dit, le vrai problème, c’est qu’iel semble maîtriser %6$s, au moins partiellement%8$s."
         ]
     ]',
     'Texts for search results level 1 (structured dialogue in pairs)'
