@@ -126,12 +126,19 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     );
                 }
 
+                // build worker action presentation texte :
+                $workerActionText = sprintf( ' <strong> %1$s </strong> dans le %3$s <strong>%2$s</strong>',
+                    ucfirst($textActionUpdated), // %1$s
+                    $worker['zone_name'], // %2$s
+                    getConfig($gameReady, 'textForZoneType') // %3$s
+             );
+
                 $actionHTML .= sprintf('<div class="box actions">
                     <form action="/%9$s/workers/action.php" method="GET">
                         <input type="hidden" name="worker_id" value=%1$s>
                         <h3 class="title is-5">Actions :</h3> 
                         <div class="field">
-                            <label class="label">Action de fin de tour : %12$s au %13$s</label>
+                            <label class="label">Action de mise en place pour la fin de %13$s : %12$s</label>
                             <div class="control">
                                 <input type="submit" name="investigate" value="%10$s" class="button is-info">
                                 <input type="submit" name="passive" value="%4$s" class="button is-warning"> 
@@ -170,19 +177,19 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         </div>
                     </form>
                 </div>',
-                $worker['id'],
-                $showZoneSelect,
-                $attackActionHTML,
-                ucfirst(getConfig($gameReady, 'txt_inf_passive')),
-                $showListClaimTargetsSelect,
-                $showcontrollersSelect,
-                $recallWorkerButton,
-                getConfig($gameReady, 'textForZoneType'),
-                $_SESSION['FOLDER'],
-                ucfirst(getConfig($gameReady, 'txt_inf_investigate')),
-                ucfirst(getConfig($gameReady, 'txt_inf_hide')),
-                ucfirst($textActionUpdated),
-                $worker['zone_name']
+                $worker['id'], // %1$s
+                $showZoneSelect, // %2$s
+                $attackActionHTML, // %3$s
+                ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %4$s
+                $showListClaimTargetsSelect, // %5$s
+                $showcontrollersSelect, // %6$s
+                $recallWorkerButton, // %7$s 
+                getConfig($gameReady, 'textForZoneType'), // %8$s
+                $_SESSION['FOLDER'], // %9$s
+                ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %10$s
+                ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %11$s
+                $workerActionText, // %12$s
+                ucfirst(getConfig($gameReady, 'timeValue')) // %13$s
                 );
             }
 
@@ -310,9 +317,9 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     </header>
                     <div class="card-content">
                         <div class="box info">
-                            <strong>%5$s</strong> au <strong>%4$s</strong>.<br />
+                            %4$s <br />
                             <i>
-                                Capacité d’enquete : <strong>%6$s</strong>. 
+                                Capacité d’enquête : <strong>%6$s</strong>. 
                                 Capacité d’attaque / défense : <strong>%7$s</strong> / <strong>%8$s</strong>
                             </i>
                         </div>
@@ -321,17 +328,17 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         %11$s
                     </div>
                 </div>',
-                $worker['id'],
-                $worker['firstname'],
-                $worker['lastname'],
-                $worker['zone_name'],
-                ucfirst($textActionUpdated),
-                $worker['total_enquete'],
-                $worker['total_attack'],
-                $worker['total_defence'],
-                $viewHistoryHTML,
-                $actionHTML,
-                $upgradeHTML
+                $worker['id'], // %1$s
+                $worker['firstname'], // %2$s
+                $worker['lastname'], // %3$s
+                $workerActionText, // %4$s
+                ucfirst($textActionUpdated), // %5$s --- IGNORE ---
+                $worker['total_enquete'], // %6$s
+                $worker['total_attack'], // %7$s
+                $worker['total_defence'], // %8$s
+                $viewHistoryHTML, // %9$s
+                $actionHTML, // %10$s
+                $upgradeHTML // %11$s
             );
             echo $viewHTML;
 

@@ -362,26 +362,26 @@ function showWorkerShort($pdo, $worker, $mechanics) {
     $return = sprintf(
         '<div ><form action="/%7$s/workers/action.php" method="GET">
             <input type="hidden" name="worker_id" value=%1$s>
-            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (#%1$s) </b> %5$s au %4$s.
+            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s (#%1$s) </b> %5$s %4$s.
             <div id="info-%1$s" style="display: none;"> %6$s
             </div>
         </form> </div>
         ',
-        $worker['id'],
-        $worker['firstname'],
-        $worker['lastname'],
-        $worker['zone_name'],
-        $textActionUpdated,
+        $worker['id'], // %1$s
+        $worker['firstname'], // %2$s
+        $worker['lastname'], // %3$s
+        $worker['zone_name'], // %4$s
+        $textActionUpdated, // %5$s
         sprintf(
             '<i>
-                Capacité d’enquete : <strong>%1$s</strong>. Capacité d’attaque / défense : <strong>%2$s</strong> / <strong>%3$s</strong> <br />
+                Capacité d’enquête : <strong>%1$s</strong>. Capacité d’attaque / défense : <strong>%2$s</strong> / <strong>%3$s</strong> <br />
                 <input type="submit" name="voir" value="Voir" class="button is-info">
             </i>',
-            $worker['total_enquete'],
-            $worker['total_attack'],
-            $worker['total_defence']
-        ),
-        $_SESSION['FOLDER']
+            $worker['total_enquete'], // %1$s
+            $worker['total_attack'], // %2$s
+            $worker['total_defence'] // %3$s
+        ), // %6$s
+        $_SESSION['FOLDER'] // %7$s
     );
 
     return $return;
