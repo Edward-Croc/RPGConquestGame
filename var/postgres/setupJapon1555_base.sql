@@ -1,16 +1,28 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
+-- Add automatic BDD export before end turn start !
+-- Add BDD import functionality in admin panel
+
+-- TODO : Order agent reports : 
+ -- First zone control (other location if nécéssary)
+ -- Then fortresses
+ -- Then other agents 
+ -- Then other locations
+
 -- TODO : elements in worker worker reports should be encapsulated in 'strong'
 
--- TODO : Add Controler action purge, 
-    -- Zone must be Held/Fortresse must be present ?
-    -- Select list of agents in zone
-    -- Agents are attacked by the controler
-    -- All agents in zone discover what happend
+-- TODO : Add Controler action 'purge' - immediate action, 
+    -- Fortresse must be present in zone
+    -- All ennemi Agents (that where once known) in zone are attacked by the controler (3 + 1-6 dice + all disciplines + 1 if held zone + x is local servants  )
+    -- On success the ennemi agent dies, ON fail he is bannished to controllers forteress zone and knows what happend
+    -- All un targeted ennemi agents in zone are bannished to controllers forteress zone and knows what happend
+
+-- TODO : ADD Controler number of actions in turn (2 ? 3 ?)
+    -- Each attack / purge uses / move or build fortress uses 1 action
 
 -- TODO : Add Controller action JSON activatable => Violent zone conversion
     -- Zone changes claimer/owner to Violent faction/Active Controller
-    -- If owned Zone 
+    -- If owned Zone
     -- If ennemi zone, agent should die
     -- Parameters : 
         -- If held 
