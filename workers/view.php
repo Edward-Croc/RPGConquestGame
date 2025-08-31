@@ -62,6 +62,30 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 }
             }
 
+            // build worker action presentation texte :
+            $workerActionText = sprintf( ' <strong> %1$s </strong> dans le %3$s <strong>%2$s</strong>',
+                ucfirst($textActionUpdated), // %1$s
+                $worker['zone_name'], // %2$s
+                getConfig($gameReady, 'textForZoneType') // %3$s
+            );
+
+            // get zone value by  $worker['zone_id'] and use to get controller name
+            $zonesArray = getZonesArray($gameReady, null, $worker['zone_id']);
+            if ( !empty($zonesArray[0]['claimer_controller_id']) ) {
+                if ($zonesArray[0]['claimer_controller_id'] == $controller_id) {
+                    $workerActionText .= ' qui est sous notre bannière';
+                } else {
+                    $workerActionText .= sprintf(' qui est sous la bannière des %s', $zonesArray[0]['controller_name'] );
+                }
+            }
+            $workerActionText .= '.';
+            if (!empty($zonesArray[0]['holder_controller_id']) && $zonesArray[0]['holder_controller_id'] == $controller_id) 
+                $workerActionText .= sprintf(
+                    ' %s %s est déjà sous notre contrôle !',
+                    ucfirst(getConfig($gameReady, 'timeDenominatorThis')),
+                    getConfig($gameReady, 'textForZoneType')
+                );
+
             // build view history HTML
             $viewHistoryHTML = sprintf(
                 '<div class="box history">
@@ -125,13 +149,6 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         $enemyWorkersSelect
                     );
                 }
-
-                // build worker action presentation texte :
-                $workerActionText = sprintf( ' <strong> %1$s </strong> dans le %3$s <strong>%2$s</strong>',
-                    ucfirst($textActionUpdated), // %1$s
-                    $worker['zone_name'], // %2$s
-                    getConfig($gameReady, 'textForZoneType') // %3$s
-             );
 
                 $actionHTML .= sprintf('<div class="box actions">
                     <form action="/%9$s/workers/action.php" method="GET">

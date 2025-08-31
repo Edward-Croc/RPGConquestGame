@@ -26,10 +26,11 @@ function getZoneName($pdo, $zone_id){
  *
  * @param PDO $pdo
  * @param int|null $controller_id
+ * @param int|null $zone_id
  *
  * @return array $zonesArray
  */
-function getZonesArray($pdo, $controller_id = null) {
+function getZonesArray($pdo, $controller_id = null, $zone_id = null) {
     $zonesArray = array();
 
     try{
@@ -39,17 +40,22 @@ function getZonesArray($pdo, $controller_id = null) {
                 c.id AS controller_id,
                 h.id AS holder_controller_id,
                 z.*,
-                c.*,
-                h.*
+                c.lastname as controller_name,
+                h.lastname as holder_name
             FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
             LEFT JOIN controllers AS h ON h.id = z.holder_controller_id
-            %s
+            %s %s %s %s
             ORDER BY z.id ASC",
-            (!empty($controller_id))? "WHERE c.id = :controler_id" : ""
+            (!empty($controller_id) || !empty($zone_id))? "WHERE" : "",
+            (!empty($controller_id))? "c.id = :controler_id" : "",
+            (!empty($controller_id) && !empty($zone_id))? " AND " : "",
+            (!empty($zone_id))? " z.id = :zone_id" : ""
         );
         $stmt = $pdo->prepare($sql);
         if (!empty($controller_id)) $stmt->bindParam(':controler_id', $controller_id);
+        if (!empty($zone_id)) $stmt->bindParam(':zone_id', $zone_id);
+        // Execute the statement
         $stmt->execute();
         // Fetch the results
         $zonesArray = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -151,7 +151,7 @@ INSERT INTO controllers (
         '
     ),
     (
-        'Bouddhistes', 'Secte Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+        'Bouddhistes', 'Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
@@ -255,15 +255,15 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     ),
     (
         (SELECT ID FROM players WHERE username = 'kukai'),
-        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'satomura'),
-        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'yubien'),
-        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
         (SELECT ID FROM players WHERE username = 'tsuruhime'),
@@ -310,8 +310,8 @@ UPDATE zones SET
     holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
     WHERE name = 'Ile de Shōdoshima';
 UPDATE zones SET
-    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'),
-    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+    claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'),
+    holder_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
     WHERE name = 'Montagnes d’Iyo';
 UPDATE zones SET
     claimer_controller_id = (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
@@ -424,7 +424,7 @@ Il est l’une des résidences de Kūkai (空海) Kōbō-Daishi (弘法大師) �
 Nous avons découvert dans les archives du temple qu’avant de prendre le nom de Yūbien, le jeune homme venu se faire moine se nommait Michinao (通直) Kōno (河野).',
         7,  False,
         (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'),  
-        (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)')
+        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     -- Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto
     (
@@ -681,7 +681,7 @@ Le silence y est si pur qu’on entend le battement de son propre cœur.
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
     (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'))
 
     -- Le chemin de l'ascèse (TOSA) 
     ,('Chikurin-ji (竹林寺) -- Le chemin de l’ascèse', 
@@ -691,7 +691,7 @@ Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
     (SELECT ID FROM zones WHERE name = 'Grande Baie de Kochi'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'))
 
     -- Le chemin de l'illumination (Iyo) 
     ,('Ryūkō-ji (竜光寺) -- Le chemin de l’illumination', 
@@ -701,7 +701,7 @@ Les sages disent que ceux qui y méditent peuvent entrevoir la lumière véritab
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'))
 
     -- Le chemin du Nirvana (Sanuki) 
     ,('Yashima-ji (屋島寺) -- Le chemin du Nirvana', 
@@ -711,7 +711,7 @@ Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux 
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7,  True,
     (SELECT ID FROM zones WHERE name = 'Province de Sanuki'),  
-    (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
+    (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'))
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.

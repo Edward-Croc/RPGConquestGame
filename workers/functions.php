@@ -199,9 +199,9 @@ function getWorkers($pdo, $workerIds) {
     // Index $worker_actions by worker_id for faster lookup
     $workerActionsById = [];
     foreach ($worker_actions as $action) {
-        if (empty($workerActionsById[$worker_id][$action['turn_number']])) $workerActionsById[$worker_id][$action['turn_number']] = [];
-        $worker_id = $action['worker_id'];
-        $workerActionsById[$worker_id][$action['turn_number']] =  $action;
+        $action_worker_id = $action['worker_id'];
+        if (empty($workerActionsById[$action_worker_id][$action['turn_number']])) $workerActionsById[$worker_id][$action['turn_number']] = [];
+        $workerActionsById[$action_worker_id][$action['turn_number']] =  $action;
     }
 
     foreach ($workersArray as $key => $worker) {
