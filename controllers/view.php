@@ -1,7 +1,6 @@
 <?php
 
     $zonesArray = getZonesArray($gameReady);
-    $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false);
 
     $controllersArray = array();
     $playerURL = null;
@@ -82,7 +81,7 @@
                         %2$s
                     </div><br />',
                     htmlspecialchars(getConfig($gameReady, 'textControllerActionCreateBase')),
-                    $showZoneSelect
+                    showZoneSelect($gameReady, $zonesArray)
                 );
             } else {
                 if ($debug) echo sprintf('<p> %s </p>', var_export($bases, true));
@@ -108,7 +107,7 @@
                         </div>
                         <br>',
                         htmlspecialchars($textControllerActionMoveBase),
-                        $showZoneSelect,
+                        showZoneSelect($gameReady, $zonesArray, $base['zone_id']),
                         htmlspecialchars($base['id']),
                         htmlspecialchars($base['name']),
                         htmlspecialchars($base['zone_name']),

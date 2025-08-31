@@ -101,7 +101,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $zonesArray = getZonesArray($gameReady);
                 if ($_SESSION['DEBUG'] == true) echo "zonesArray: ".var_export($zonesArray, true)."<br /><br />";
-                $showZoneSelect = showZoneSelect($gameReady, $zonesArray, false, false, true);
+                $showZoneSelect = showZoneSelect($gameReady, $zonesArray, $worker['zone_id'], false, false, true);
                 if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
                 $controllers = getControllers($gameReady);

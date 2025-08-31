@@ -167,7 +167,7 @@
         $showHobbySelect,
         showDisciplineSelect($gameReady, $powerDisciplineArray, false),
         showTransformationSelect($gameReady, $powerTransformationArray, false),
-        showZoneSelect($gameReady, $zonesArray, false, false),
+        showZoneSelect($gameReady, $zonesArray),
         $showOriginSelect,
         $showFirstnameSelect,
         $showLastnameSelect,

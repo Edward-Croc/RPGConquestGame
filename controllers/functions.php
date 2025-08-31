@@ -167,7 +167,7 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
  */
 function hasBase($pdo, $controller_id) {
 
-    $sql = "SELECT l.*, z.name AS zone_name FROM locations l
+    $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM locations l
         LEFT JOIN zones z ON l.zone_id = z.ID
         WHERE controller_id = :controller_id and is_base = True
     ";

@@ -66,13 +66,14 @@ function getZonesArray($pdo, $controller_id = null) {
  *
  * @param PDO $pdo
  * @param array $zonesArray
+ * @param int|null $selectedID : ID of the selected zone (optional)
  * @param bool $showText default: false ->
- * @param bool $place_holder default: true -> Do we start with and empty spot
+ * @param bool $place_holder default: false -> Do we start with and empty spot
  * @param bool $hideZones default: false -> Do we hide the zones in the list
  *
  * @return string $showZoneSelect
  */
-function showZoneSelect($pdo, $zonesArray, $showText = false, $place_holder = true, $hideZones = false) {
+function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false, $place_holder = false, $hideZones = false) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
 
@@ -84,9 +85,10 @@ function showZoneSelect($pdo, $zonesArray, $showText = false, $place_holder = tr
             && ($zone['hide_turn_zero'] && $turn_number == 0)
         ) continue;
         $zoneOptions .= sprintf(
-            '<option value="%1$s">%2$s (%1$s)</option>',
+            '<option value="%1$s" %3$s >%2$s (%1$s)</option>',
             htmlspecialchars($zone['zone_id']),
-            htmlspecialchars($zone['name'])
+            htmlspecialchars($zone['name']),
+            ($selectedID !== null && $zone['zone_id'] == $selectedID) ? 'selected' : '',
         );
     }
 
