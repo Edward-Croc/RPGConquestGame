@@ -301,7 +301,6 @@ function attackMechanic($pdo){
                     // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
                     $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
                     $stmt->execute([
-                        'controller_id' => $defender['defender_controller_id'],
                         'worker_id' => $defender['defender_id'],
                         'is_primary' => 0
                     ]);
