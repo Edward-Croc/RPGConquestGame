@@ -87,7 +87,7 @@ VALUES
     ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
-    ('txt_ps_investigate', 'enquete', 'Text for investigate action'),
+    ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
     ('txt_ps_hide', 'se cache', 'Text for hide action'),
     ('txt_ps_attack', 'attaque', 'Text for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
@@ -96,7 +96,7 @@ VALUES
     ('txt_ps_prisoner', 'est un.e agent de %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
     ('txt_ps_double_agent', 'a infiltré le réseau de %s ', 'Text for being infiltrator'),
     ('txt_inf_passive', 'surveiller', 'Text for passive action'),
-    ('txt_inf_investigate', 'enqueter', 'Text for investigate action'),
+    ('txt_inf_investigate', 'enquêter', 'Text for investigate action'),
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
