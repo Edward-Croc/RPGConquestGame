@@ -43,7 +43,10 @@
                 <!-- Display controller details section (initially hidden) changed by the select action-->
                 <div id="controllerDetails" style="display: none;"> </div>', 
                 $_SESSION['FOLDER'],
-                showControllerSelect($controllers, $_SESSION['controller']['id'])
+                showControllerSelect(
+                    $controllers, 
+                    (!empty ($_SESSION['controller']['id'])) ? $_SESSION['controller']['id'] : null
+                )
             );
         }
         if ( isset($_SESSION['controller']) ) {
