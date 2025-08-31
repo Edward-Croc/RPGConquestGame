@@ -284,8 +284,11 @@ INSERT INTO zones (name, description) VALUES
     , ('Province de Sanuki', 'Plaine fertile dominée par les haras impériaux et les sanctuaires oubliés, Sanuki est renommée pour ses chevaux rapides et robustes. Les émissaires s’y rendent pour négocier montures de guerre, messagers ou montures sacrées. C’est aussi une terre de festivals éclatants et de compétitions féroces.')
     , ('Ile d’Awaji', 'Pont vivant entre Shikoku et Honshū, Awaji est stratégiquement vitale et toujours convoitée. Les vents y sont brutaux, les détroits traîtres, et les seigneurs prudents. Ses collines cachent des fortins, ses criques des repaires, et ses chemins sont surveillés par des yeux invisibles.')
     , ('Ile de Shōdoshima', 'Ile montagneuse et sauvage, jadis sanctuaire, aujourd’hui repaire des pirates Wako. Ses ports semblent paisibles, mais ses criques abritent des embarcations rapides prêtes à fondre sur les convois marchands. Les autorités ferment souvent les yeux, car même le vice paie tribut.')
-    , ('Plaines du Kansai', 'Étendue fertile au cœur du Japon, les Plaines du Kansai sont bordées par les cités animées d’Osaka, les sanctuaires anciens de Nara, et les ports marchands de Kobe. Sous la surface prospère de ses rizières, le sang versé à Kyōto imprègne encore la terre, témoignant des intrigues et batailles passées. Ici, le commerce rivalise avec les complots, et les vents chargés de cendres et de parfums annoncent toujours un nouvel orage de pouvoir.')
-    , ('Cité Impériale de Kyoto', 'Capitale impériale, centre des arts, des lettres et des poisons subtils. Les palais y cachent les plus anciennes lignées, les ruelles les complots les plus jeunes. Kyōto ne brandit pas l’épée, mais ceux qui y règnent peuvent faire plier des provinces entières par un sourire ou un silence.')
+;
+
+INSERT INTO zones (hide_turn_zero, name, description) VALUES
+    (TRUE, 'Plaines du Kansai', 'Étendue fertile au cœur du Japon, les Plaines du Kansai sont bordées par les cités animées d’Osaka, les sanctuaires anciens de Nara, et les ports marchands de Kobe. Sous la surface prospère de ses rizières, le sang versé à Kyōto imprègne encore la terre, témoignant des intrigues et batailles passées. Ici, le commerce rivalise avec les complots, et les vents chargés de cendres et de parfums annoncent toujours un nouvel orage de pouvoir.')
+    , (TRUE, 'Cité Impériale de Kyoto', 'Capitale impériale, centre des arts, des lettres et des poisons subtils. Les palais y cachent les plus anciennes lignées, les ruelles les complots les plus jeunes. Kyōto ne brandit pas l’épée, mais ceux qui y règnent peuvent faire plier des provinces entières par un sourire ou un silence.')
 ;
 
 -- Controle des zones au départ

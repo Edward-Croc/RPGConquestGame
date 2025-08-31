@@ -184,6 +184,7 @@ CREATE TABLE zones (
     calculated_defence_val INT DEFAULT 6, -- Updated defence value when actively protected
     claimer_controller_id INT, -- ID of controller officialy claiming the zone
     holder_controller_id INT,   -- ID of controller defending the zone
+    hide_turn_zero BOOLEAN DEFAULT FALSE, -- JSON storing the hide turns checks
     FOREIGN KEY (claimer_controller_id) REFERENCES controllers (ID),
     FOREIGN KEY (holder_controller_id) REFERENCES controllers (ID)
 );

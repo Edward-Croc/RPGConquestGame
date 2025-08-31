@@ -165,7 +165,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
             '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%s</div>',
             showTransformationSelect($gameReady, $powerTransformationArray, TRUE)
         ) : '',
-    showZoneSelect($gameReady, $zonesArray, false, false));
+    showZoneSelect($gameReady, $zonesArray, false, false, true));
     echo $html;
 
 }
