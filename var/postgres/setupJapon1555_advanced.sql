@@ -190,7 +190,7 @@ WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
         ('Asakura(朝倉)', 'Mitsunao-dono(光直-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto'),
         ('', 'Ibara-dono(茨の紅-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto'),
-        ('Renryū-dono(蓮竜-殿)', 'Renryū-dono(蓮竜-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto'),
+        ('Takeda(武田)', 'Renryū-dono(蓮竜-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto'),
         ('', 'Sōen-dono(僧円-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto')
 )
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
