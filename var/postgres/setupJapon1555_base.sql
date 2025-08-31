@@ -23,6 +23,8 @@ UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list'
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
 UPDATE config SET value =  '1' WHERE name = 'recrutement_disciplines';
 UPDATE config SET value =  '{"age": ["1","2"]}' WHERE name = 'age_discipline';
+UPDATE config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
+UPDATE config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
 
 INSERT INTO config (name, value, description)
 VALUES
@@ -59,11 +61,11 @@ INSERT INTO players (username, passwd, is_privileged, url) VALUES
 ;
 
 INSERT INTO factions (name) VALUES
-    ('Samouraï Chōsokabe')
-    ,('Samouraï Miyoshi')
-    ,('Samouraï Hosokawa')
-    ,('Samouraï Ashikaga')
-    ,('Samouraï Kōno')
+    ('Samouraïs Chōsokabe')
+    ,('Samouraïs Miyoshi')
+    ,('Samouraïs Hosokawa')
+    ,('Samouraïs Ashikaga')
+    ,('Samouraïs Kōno')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
@@ -86,14 +88,14 @@ INSERT INTO controllers (
     ('Shogun', 'Ashikaga (足利)', 'passif', True,
         'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4', '', 
         True,
-        (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga')
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga')
     ), 
     ('Clan', 'Kōno (河野)', NULL, True, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
         'https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI', '',
         False,
-        (SELECT ID FROM factions WHERE name = 'Samouraï Kōno'),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Kōno')
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno')
     )
 ;
 
@@ -105,8 +107,8 @@ INSERT INTO controllers (
 ) VALUES
     (
         'Clan', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
-        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
         'https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I',
         ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Kunichika (国親) Chōsokabe (長宗我部) est présumé mort, tombé sur les terres de Honshu (本州) aux côtés de ses vassaux, dans une guerre qu’il aurait dû gagner.
           Le jeune héritier, Motochika (元親), n’a que treize ans. Trop jeune pour régner, trop précieux pour tomber. Les regards se tournent vers votre clan au pouvoir vacillant.
@@ -116,8 +118,8 @@ INSERT INTO controllers (
     ),
     (
         'Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
-        (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
         ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Votre Daimyo, Fujitaka (藤孝) Hosokawa, a disparu durant la désastreuse campagne de Kyoto.
           Le pouvoir du clan est désormais entre les mains de Tadaoki (忠興), le fils de Fujitaka, jeune et ambitieux, le nouveau Daimyo cherche un coup d’éclat pour se faire un nom.
@@ -128,7 +130,7 @@ INSERT INTO controllers (
     (
         'Clan', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi' ),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi' ),
         'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
         ' Depuis la mort du Daimyo Motonaga il y a 5 ans et l’arrivée au pouvoir de Nagayoshi(長慶) votre clan a secrètement abandonné le bouddhisme pour embrasser la foi chrétienne, inspiré par les missionnaires venus avec les vaisseaux noirs portugais. 
           En échange de votre protection et de votre conversion, ils vous ont offert un cadeau inestimable : le secret des fusils à mèche occidentaux. 
@@ -277,7 +279,7 @@ INSERT INTO zones (name, description) VALUES
     , ('Montagnes d’Iyo', 'Entourant le redouté mont Ishizuchi, plus haut sommet de Shikoku, ces montagnes sacrées sont le domaine des ascètes, des yamabushi et des esprits anciens. Les chemins escarpés sont peuplés de temples isolés, de cascades énigmatiques, et d’histoires transmises à demi-mot. Nul ne traverse ces hauteurs sans y laisser un peu de son âme.')
     , ('Cap sud de Tosa', 'Battue par les vents de l’océan Pacifique, cette pointe rocheuse est riche en minerai de fer, extrait dans la sueur et le sel. Le paysage austère dissuade les faibles, mais attire les clans ambitieux. Les tempêtes y sont violentes, et même les dragons du ciel semblent redouter ses falaises noires.')
     , ('Grande Baie de Kochi', 'Centre de pouvoir du clan Chōsokabe, cette baie est à la fois un havre de paix et un verrou stratégique. Bordée de rizières fertiles et de ports animés, elle est défendue par des flottes aguerries et des forteresses discrètes. On dit que ses eaux reflètent les ambitions de ceux qui la contrôlent.')
-    , ('Vallées d’Iya et d’Oboké d’Awa', 'Ces vallées profondes, creusées par les torrents et le temps, abritent des plantations de thé précieuses et des villages suspendus au flanc des falaises. Peu accessibles, elles sont le refuge de ceux qui fuient la guerre, la loi ou le destin. Le thé qui y pousse a le goût amer des secrets oubliés.')
+    , ('Vallée d’Iya et d’Oboké d’Awa', 'Ces vallées profondes, creusées par les torrents et le temps, abritent des plantations de thé précieuses et des villages suspendus au flanc des falaises. Peu accessibles, elles sont le refuge de ceux qui fuient la guerre, la loi ou le destin. Le thé qui y pousse a le goût amer des secrets oubliés.')
     , ('Côte Est d’Awa', 'Sur cette façade tournée vers le large, le clan Miyoshi établit son pouvoir entre les ports et les postes fortifiés. Bien que prospère, la région est sous tension : les vassaux y sont fiers, les ambitions grandes, et les flottes ennemies jamais loin. La mer y apporte autant de trésors que de périls.')
     , ('Province de Sanuki', 'Plaine fertile dominée par les haras impériaux et les sanctuaires oubliés, Sanuki est renommée pour ses chevaux rapides et robustes. Les émissaires s’y rendent pour négocier montures de guerre, messagers ou montures sacrées. C’est aussi une terre de festivals éclatants et de compétitions féroces.')
     , ('Ile d’Awaji', 'Pont vivant entre Shikoku et Honshū, Awaji est stratégiquement vitale et toujours convoitée. Les vents y sont brutaux, les détroits traîtres, et les seigneurs prudents. Ses collines cachent des fortins, ses criques des repaires, et ses chemins sont surveillés par des yeux invisibles.')
@@ -522,7 +524,7 @@ INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
 Leurs feuilles, amères et puissantes, sont cueillies à la main par les familles montagnardes, suspendues au-dessus du grondement des eaux.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
     '
-    , 6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa')
+    , 6, (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa')
     ),
 
     -- Armure en fer de Tosa
@@ -565,7 +567,7 @@ On dit que le clan Chōsokabe y cache des objets illégaux importés d’ailleur
     ('Village d’Oboke',
      'Petit village de montagne aux maisons de bois noircies par le temps.
 Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau des gorges profondes qui serpentent en contrebas.',
-     6, (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa')),
+     6, (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa')),
 
     ('Port de Naruto',
      'Carrefour maritime entre Honshū et Shikoku, le port de Naruto bruisse de dialectes et de voiles étrangères.
@@ -674,7 +676,7 @@ On dit que les pierres du sentier y murmurent des prières oubliées à ceux qui
 Le silence y est si pur qu’on entend le battement de son propre cœur.
 (Pour explorer davantage ce lieu, allez voir un orga !)', 
     7, True,
-    (SELECT ID FROM zones WHERE name = 'Vallées d’Iya et d’Oboké d’Awa'),  
+    (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa'),  
     (SELECT ID FROM controllers WHERE lastname = 'Secte Tendai (天台宗)'))
 
     -- Le chemin de l'ascèse (TOSA) 
@@ -737,7 +739,7 @@ INSERT INTO power_types (id, name, description) VALUES
 INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
     ('Cheval Sanuki', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki", "worker_in_zone": "Province de Sanuki" } }')
     , ('Armure en fer de Tosa', 0, 1,1, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa", "worker_in_zone": "Cap sud de Tosa"  } }')
-    , ('Thé d’Oboké', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallées d’Iya et d’Oboké d’Awa", "worker_in_zone": "Vallées d’Iya et d’Oboké d’Awa" } }')
+    , ('Thé d’Oboké', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallée d’Iya et d’Oboké d’Awa", "worker_in_zone": "Vallée d’Iya et d’Oboké d’Awa" } }')
     , ('Encens Coréen', 1, 0,0, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo", "worker_in_zone": "Côte Ouest d’Iyo"} }')
 ;
 
@@ -773,7 +775,7 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
     ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 1, 0,1,
       ', pratiqué pour l’harmonie intérieure' )
 
-    -- Samouraï Chōsokabe
+    -- Samouraïs Chōsokabe
     ,('Kenjutsu (剣術) – Art du sabre', 0, 2,1,
       ', la pratique du katana en combat' )
     ,('Heihō (兵法) – Stratégie militaire', 1, 1,1,
@@ -781,7 +783,7 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
     ,('Waka (和歌) – Poésie classique', 2, 0,0,
       ', plus ancienne que le haïku, utilisée dans les échanges lettrés et parfois politiques' )
 
-    -- Miyoshi Samouraï
+    -- Miyoshi Samouraïs
     ,('Hōjutsu (砲術) – Art des armes à feu (teppō)', -1, 2,2,
       ', développé après l’introduction des mousquets portugais vers 1543' )
     ,('Bajutsu (馬術) – Art de l’équitation militaire', 1, 1,1,
@@ -789,7 +791,7 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
     ,('Gagaku (雅楽) – Musique de cour', 2, 0,0,
       ', peu courante chez les samouraïs de terrain, mais appréciée dans les cercles aristocratiques ou les familles cultivées' )
 
-    -- Samouraï Hosokawa
+    -- Samouraïs Hosokawa
     ,('Iaijutsu (居合術) – Art du sabre', 0, 2,1,
       ' de dégainer et frapper en un mouvement' )
     ,('Bugaku (舞楽) – Danse de cour', 1, 1,1,
@@ -861,32 +863,32 @@ INSERT INTO link_power_type (power_type_id, power_id) VALUES
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Add base powers to the factions :
--- Samouraï Chōsokabe
+-- Samouraïs Chōsokabe
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Kenjutsu (剣術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Chōsokabe'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Waka (和歌) – Poésie classique'
     ));
 
--- Samouraï Miyoshi /Chrétiens 
+-- Samouraïs Miyoshi /Chrétiens 
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Miyoshi'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     )),
@@ -903,36 +905,36 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
--- Samouraï Hosokawa
+-- Samouraïs Hosokawa
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Hosokawa'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     ));
 
--- Samouraï Ashikaga
+-- Samouraïs Ashikaga
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Ashikaga'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     ));
@@ -982,17 +984,17 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
--- Samouraï Kōno
+-- Samouraïs Kōno
 INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraï Kōno'), (
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
