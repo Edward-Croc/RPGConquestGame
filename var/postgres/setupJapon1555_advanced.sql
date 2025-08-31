@@ -161,7 +161,7 @@ FROM
 JOIN (
     SELECT 'fils de Rennyo (蓮如)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
     UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Tokkuri (徳利) – Bouteille à saké'
-    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Kōdō (香道) – Voie de l’encens'
+    UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
