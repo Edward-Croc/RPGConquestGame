@@ -215,18 +215,21 @@ VALUES
 
 INSERT INTO config (name, value, description)
 VALUES
--- %s - week number
+-- %1$s - timeDenominatorThe lowercase
+-- %2$s - timeDenominatorOf lowercase
+-- %3$s - timeValue
+-- %4$s - week number
 ('workerDisappearanceTexts', '[
-    "<p>Cet agent a disparu sans laisser de traces à partir de la semaine %s.</p>",
-    "<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>",
-    "<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où iel se trouve.</p>",
-    "<p>À partir de la semaine %s, cet agent semble s’être volatilisé.e dans la nature.</p>",
-    "<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>",
-    "<p>La dernière trace de cet agent remonte à la semaine %s, depuis iel est porté.e disparu.e.</p>",
-    "<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>",
-    "<p>L’agent s’est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>",
-    "<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>",
-    "<p>La semaine %s signe le début du silence complet de cet agent.</p>"
+    "<p>Cet agent a disparu sans laisser de traces à partir %2$s %3$s %4$s.</p>",
+    "<p>Depuis %1$s %3$s %4$s, plus aucun signal ni message de cet agent.</p>",
+    "<p>La connexion avec l’agent s’est perdue %1$s %3$s %4$s, et nous ignorons où iel se trouve.</p>",
+    "<p>À partir %2$s %3$s %4$s, cet agent semble s’être volatilisé.e dans la nature.</p>",
+    "<p>Nous avons perdu toute communication avec cet agent depuis %1$s %3$s %4$s.</p>",
+    "<p>La dernière trace de cet agent remonte à %1$s %3$s %4$s, depuis iel est porté.e disparu.e.</p>",
+    "<p>L’agent s’est évanoui dans la nature après %1$s %3$s %4$s. Aucune nouvelle depuis.</p>",
+    "<p>Depuis %1$s %3$s %4$s, cet agent est un fantôme, insaisissable et introuvable.</p>",
+    "<p>%1$s %3$s %4$s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>",
+    "<p>%1$s %3$s %4$s signe le début du silence complet de cet agent.</p>"
 ]', 'Templates used for worker disappearance text with a week number placeholder');
 
 INSERT INTO config (name, value, description)

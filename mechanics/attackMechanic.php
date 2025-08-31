@@ -283,8 +283,16 @@ function attackMechanic($pdo){
                 $survived = false;
                 $defender_status = 'dead';
                 $is_alive = false;
+
                 $attackerReport['attack_report'] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
-                $defenderReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
+                // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
+                $defenderReport['life_report'] = sprintf(
+                    $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
+                    getConfig($pdo,' timeDenominatorThe'),
+                    getConfig($pdo,' timeDenominatorOf'),
+                    getConfig($pdo,'timeValue'),
+                    $defender['turn_number']
+                );
                 if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
                     $is_alive = NULL;
                     echo $defender['defender_name']. ' Was Captured ! <br />';
@@ -347,8 +355,15 @@ function attackMechanic($pdo){
                 $attacker_status = 'dead';
                 echo $defender['defender_name']. ' RIPOSTE ! <br />';
                 $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
-                $attackerReport['life_report'] = sprintf($workerDisappearanceTexts[array_rand($workerDisappearanceTexts)], $defender['turn_number'] );
-                $defenderReport['life_report'] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
+                // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
+                $defenderReport['life_report'] = sprintf(
+                    $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
+                    getConfig($pdo,' timeDenominatorThe'),
+                    getConfig($pdo,' timeDenominatorOf'),
+                    getConfig($pdo,'timeValue'),
+                    $defender['turn_number']
+                );
+                $defenderReport['life_report'] .= sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
                 updateWorkerActiveStatus($pdo, $defender['attacker_id']);
                 updateWorkerAliveStatus($pdo, $defender['attacker_id']);
             }
