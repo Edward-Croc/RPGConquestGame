@@ -62,11 +62,34 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 }
             }
 
+            $workerActionInfo = '';
+            if ( in_array($currentAction['action_choice'], array('attack', 'claim')) ) {
+                if ( $_SESSION['DEBUG'] == true )
+                    $workerActionInfo .= ' Action spéciale en cours : <strong>'.$currentAction['action_choice'].'</strong> '. $currentAction['action_params'];
+                if ($currentAction['action_choice'] == 'claim') {
+                    $claim_params = json_decode($currentAction['action_params'], true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
+                    if (!empty($claim_params['claim_controller_id']) && ($claim_params['claim_controller_id'] != "null") ) {
+                        $controllers = getControllers($gameReady, null, $claim_params['claim_controller_id']);
+                        $workerActionInfo .= sprintf(
+                            ' au nom de <strong>%1$s</strong>',
+                            $controllers[0]['lastname'],
+                        );
+                    }
+                }
+
+            }
+            if ( $_SESSION['DEBUG'] == true )
+                echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
+
             // build worker action presentation texte :
-            $workerActionText = sprintf( ' <strong> %1$s </strong> dans le %3$s <strong>%2$s</strong>',
+            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <strong>%2$s</strong>',
                 ucfirst($textActionUpdated), // %1$s
                 $worker['zone_name'], // %2$s
-                getConfig($gameReady, 'textForZoneType') // %3$s
+                getConfig($gameReady, 'textForZoneType'), // %3$s
+                $workerActionInfo // %4$s
             );
 
             // get zone value by  $worker['zone_id'] and use to get controller name
