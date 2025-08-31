@@ -40,7 +40,7 @@ require_once '../base/baseHTML.php';
             $reportAppendArray = [
                 'life_report' => sprintf(
                     "<strong>%s %s</strong> j'ai <strong>%s</strong> en investigation et <strong>%s/%s</strong> en attaque/défense.",
-                $timeDenominatorThis, $timeValue, $investigation, $attack, $defense
+                ucfirst($timeDenominatorThis), $timeValue, $investigation, $attack, $defense
                 )
             ];
 
