@@ -11,8 +11,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         destroyAllTables($gameReady);
         $gameReady = gameReady();
     }
-}
 
+    if ( isset($_POST['exportBDD']) ) {
+        // Export BDD to file.sql
+        exportBDD($gameReady);
+    }
+}
 
 require_once '../base/baseHTML.php';
 
@@ -71,6 +75,18 @@ require_once '../base/baseHTML.php';
                 <p> <a href="/%1$s/zones/managment_locations.php">Discovered location list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
+        </div>
+        <div class="config">
+                <h1>BDD managment : </h1>
+                <?php
+                    // Add button to extract BDD to file.sql or .sql
+                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
+                        <input type="hidden" name="exportBDD" />
+                        <input type="submit" name="submit" value="Export BDD to file.sql" />
+                    </form> </p>',
+                    $_SESSION['FOLDER']
+                    );
+                ?>
         </div>
     </div>
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">

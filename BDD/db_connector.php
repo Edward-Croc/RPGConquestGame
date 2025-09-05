@@ -15,12 +15,12 @@ function getPath ($file) {
             break;
         }
     }
-    return $path ; 
+    return $path ;
 }
 
 /**
  * Get and Check connection to the database
- * 
+ *
  * @return PDO $pdo
  */
 function getDBConnection ($path, $configFile) {
@@ -96,12 +96,12 @@ function getDBConnection ($path, $configFile) {
 
 /**
  * Checks that the database table does exist
- * 
+ *
  * @param PDO $pdo
  * @param string $tableName
- * 
+ *
  * @return bool
- * 
+ *
  */
 function tableExists($pdo, $tableName) {
     try{
@@ -120,17 +120,17 @@ function tableExists($pdo, $tableName) {
 
 /**
  * Searches and destroys all tables in database
- * 
+ *
  * @param PDO $pdo
- * 
- * @return bool 
+ *
+ * @return bool
  */
 function destroyAllTables($pdo) {
     try {
         $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $sql = sprintf("SELECT table_name FROM information_schema.tables WHERE table_schema = '%s' AND table_type = 'BASE TABLE'", $_SESSION['DBNAME']);
-        } 
+        }
         // Get list of tables in the database
         $stmt = $pdo->query($sql);
         $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -155,7 +155,7 @@ function destroyAllTables($pdo) {
  *  - databse is accessible
  *  - tables are loaded
  *  - load tables if $_POST['config_name'] is set
- * 
+ *
  * @return PDO $pdo
  */
 function gameReady() {
@@ -167,11 +167,13 @@ function gameReady() {
         $path = getPath($configFile);
         if ($path != null) break;
     }
-    if ($_SESSION['DEBUG'] == true) 
+    $_SESSION['PATH'] = $path;
+    $_SESSION['configFile'] = $configFile;
+    if ($_SESSION['DEBUG'] == true)
         echo "Config Path built : " . $path.$configFile . " </ br>";
 
     $pdo = getDBConnection($path, $configFile);
-    if ($_SESSION['DEBUG'] == true) 
+    if ($_SESSION['DEBUG'] == true)
         echo "getDBConnection: </ br>";
     if ($pdo != null) {
         try {
@@ -179,12 +181,12 @@ function gameReady() {
             $tableName = 'players';
             $exists = tableExists($pdo, $tableName);
 
-            if ($_SESSION['DEBUG'] == true) 
+            if ($_SESSION['DEBUG'] == true)
                 echo "tableExists players: " . $exists . " </ br>";
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
-                
-                if ($_SESSION['DEBUG'] == true) 
+
+                if ($_SESSION['DEBUG'] == true)
                     echo 'dbtype : '.$_SESSION['DBTYPE']."; <br>";
                 $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $_SESSION['DBTYPE']);
                 echo "Loading $sqlFile ... ";
@@ -365,3 +367,80 @@ function gameReady() {
     return $pdo;
 }
 
+function exportBDD() {
+
+    // Default values
+    $host = 'localhost';
+    $dbname = 'rpgconquestgame';
+    $username = 'postgres';
+    $password = 'postgres';
+    $db_type = 'postgres';
+    $folder = 'RPGConquestGame';
+
+    // Check if the file exists
+    if (file_exists($_SESSION['PATH'].$_SESSION['configFile'])) {
+        // Parse the INI file
+        $config = parse_ini_file($_SESSION['PATH'].$_SESSION['configFile']);
+
+        // Check if the required keys exist
+        if ( isset($config['host']) ){
+            $host = $config['host'];
+        }
+        if ( isset($config['dbname']) ){
+            $dbname = $config['dbname'];
+        }
+        if ( isset($config['username']) ){
+            $username = $config['username'];
+        }
+        if ( isset($config['password']) ) {
+            $password = $config['password'];
+        }
+        if ( isset($config['db_type']) ) {
+            $db_type = $config['db_type'];
+        }
+    }
+    
+        
+    // Output file
+    $exportFile = sprintf('%s_export_%s.sql', $dbname, date('Ymd_His'));
+    $exportPath = sys_get_temp_dir() . '/' . $exportFile;
+
+
+    // export BDD to file via command line
+    if ($db_type == 'mysql'){
+        $command = sprintf('mysqldump -h %s -u %s -p%s %s > %s',
+            escapeshellarg($host),
+            escapeshellarg($username),
+            escapeshellarg($password),
+            escapeshellarg($dbname),
+            escapeshellarg($exportPath)
+        );
+    } else {
+        $command = sprintf('PGPASSWORD=%s pg_dump -h %s -U %s -F p %s > %s',
+            escapeshellarg($password),
+            escapeshellarg($host),
+            escapeshellarg($username),
+            escapeshellarg($dbname),
+            escapeshellarg($exportPath)
+        );
+    }
+
+    // Run export
+    $output = shell_exec($command);
+    
+    // Check if file was created
+    if (file_exists($exportPath)) {
+        // Send file for download
+        header('Content-Type: application/sql');
+        header('Content-Disposition: attachment; filename="' . basename($exportFile) . '"');
+        header('Content-Length: ' . filesize($exportPath));
+        readfile($exportPath);
+        // Optionally delete the file after download
+        unlink($exportPath);
+        exit;
+    } else {
+        echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
+        if ($output) echo "<pre>$output</pre>";
+    }
+    
+}
