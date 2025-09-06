@@ -16,6 +16,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Export BDD to file.sql
         exportBDD($gameReady);
     }
+
+    if ( isset($_POST['importBDD']) ) {
+        echo "======= ".var_export($_FILES["bddFile"]["name"], true)." =======<br>";
+        // Import BDD from file.sql
+        importBDD($gameReady, $_FILES["bddFile"]);
+    }
 }
 
 require_once '../base/baseHTML.php';
@@ -83,6 +89,14 @@ require_once '../base/baseHTML.php';
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
                         <input type="hidden" name="exportBDD" />
                         <input type="submit" name="submit" value="Export BDD to file.sql" />
+                    </form> </p>',
+                    $_SESSION['FOLDER']
+                    );
+                    // Import BDD from file.sql
+                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="importBDD" />
+                        <input type="file" name="bddFile" id="bddFile" />
+                        <input type="submit" name="submit" value="Import BDD from file.sql" />
                     </form> </p>',
                     $_SESSION['FOLDER']
                     );

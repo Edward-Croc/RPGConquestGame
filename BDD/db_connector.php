@@ -444,3 +444,84 @@ function exportBDD() {
     }
     
 }
+
+/**
+ * Import BDD from file.sql
+ * @param PDO $pdo
+ * @param string $file
+ * @return bool
+ */
+function importBDD($pdo, $file){
+    echo '========='.var_export($file, true).'========<br>';
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $tmpFilePath = $file['tmp_name'];
+        $fileType = mime_content_type($tmpFilePath);
+        $allowedTypes = ['application/sql', 'text/plain'];
+
+        if (in_array($fileType, $allowedTypes)) {
+            // Default values
+            $host = 'localhost';
+            $dbname = 'rpgconquestgame';
+            $username = 'postgres';
+            $password = 'postgres';
+            $db_type = 'postgres';
+
+            // Check if the file exists
+            if (file_exists($_SESSION['PATH'].$_SESSION['configFile'])) {
+                // Parse the INI file
+                $config = parse_ini_file($_SESSION['PATH'].$_SESSION['configFile']);
+
+                // Check if the required keys exist
+                if ( isset($config['host']) ){
+                    $host = $config['host'];
+                }
+                if ( isset($config['dbname']) ){
+                    $dbname = $config['dbname'];
+                }
+                if ( isset($config['username']) ){
+                    $username = $config['username'];
+                }
+                if ( isset($config['password']) ) {
+                    $password = $config['password'];
+                }
+                if ( isset($config['db_type']) ) {
+                    $db_type = $config['db_type'];
+                }
+            }
+
+            // import BDD from file via command line
+            if ($db_type == 'mysql'){
+                $command = sprintf('mysql -h %s -u %s -p%s %s < %s',
+                    escapeshellarg($host),
+                    escapeshellarg($username),
+                    escapeshellarg($password),
+                    escapeshellarg($dbname),
+                    escapeshellarg($tmpFilePath)
+                );
+            } else {
+                $command = sprintf('PGPASSWORD=%s psql -h %s -U %s -d %s -f %s',
+                    escapeshellarg($password),
+                    escapeshellarg($host),
+                    escapeshellarg($username),
+                    escapeshellarg($dbname),
+                    escapeshellarg($tmpFilePath)
+                );
+            }
+
+            // Empty BDD 
+            destroyAllTables($pdo);
+            // Run import
+            $output = shell_exec($command);
+            if ($output) echo "<pre>$output</pre>";
+            // Success message
+            echo "<div class='notification is-success'>Import completed successfully.</div>";
+            return true;
+        } else {
+            echo "<div class='notification is-danger'>Invalid file type. Please upload a valid .sql file.</div>";
+        }
+    } else {
+        echo "<div class='notification is-danger'>File upload error. Please try again.</div>";
+    }
+
+    return false;
+}
