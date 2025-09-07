@@ -13,8 +13,8 @@
  */
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     // Define the SQL query
-    $sql = "
-        WITH searchers AS (
+    $sql = sprintf(
+        "WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
                 wa.controller_id AS searcher_controller_id,
@@ -50,10 +50,10 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         LEFT JOIN controllers zhc ON z.holder_controller_id = zhc.id
         JOIN locations l ON s.zone_id = l.zone_id
         LEFT JOIN controllers lc ON l.controller_id = lc.id
-    ";
-
-    if (!empty($searcher_id)) $sql .= " WHERE s.searcher_id = :searcher_id";
-
+        %s
+        ORDER BY l.discovery_diff DESC, l.id DESC;",
+        (!empty($searcher_id)) ? " WHERE s.searcher_id = :searcher_id" : ''
+    );
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':turn_number', $turn_number);
@@ -131,7 +131,7 @@ function locationSearchMechanic($pdo) {
 
             // At begining of the report Show zone name and information
             $reportArray[$row['searcher_id']] = sprintf(
-                "<p>Dans le %s %s. </br> %s %s </p>",
+                "<p>Dans le %s <strong>%s</strong>. </br> %s %s </p>",
                 getConfig($pdo, 'textForZoneType'),
                 $row['zone_name'],
                 // If a claimer exists, use it,
