@@ -368,7 +368,7 @@ function investigateMechanic($pdo) {
             $report .= "Difference: {$row['enquete_difference']}, ";
         }
         $report .= '</p>';
-        echo sprintf("Rapport: %s<br />",var_export( $report, true));
+        if ($debug) echo sprintf("Rapport: %s<br />",var_export( $report, true));
         $reportArray[$row['searcher_id']] .= $report;
 
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
