@@ -734,7 +734,7 @@ INSERT INTO artefacts (name, description, full_description, location_id) VALUES
         'Nous sommes libres de décider de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles impériales')
     ), (
         'Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours',
-        'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardée par ceux qui craignent son retour.',
+        'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardé par ceux qui craignent son retour.',
         'Nous sommes libres de décider de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles des Kaizokushū')
     ), (
         'Chikayasu (親泰) Chōsokabe(長宗我部), le fils caché',
