@@ -40,7 +40,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Hinata', 'Endo', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
     ('Riku', 'Fukuda', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
     ('Yuna', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
-    ('Sho', 'NaSanuki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
+    ('Sho', 'Sanuki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Tosa')),
 
 -- Shikoku - Awa
     ('Ayaka', 'Terasaki', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
