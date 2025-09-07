@@ -811,7 +811,7 @@ function moveWorker($pdo, $workerId, $zoneId) {
     }
     $zone_name = getZoneName($pdo, $zoneId);
     if (empty($currentReport['life_report'])) $currentReport['life_report'] = '';
-    $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. ";
+    $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. <br/>";
 
     if ($debug) echo sprintf("%s(): Repport built %s <br/>", __FUNCTION__, $currentReport['life_report']);
     // Encode the updated array back into JSON
