@@ -203,7 +203,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         <input type="hidden" name="worker_id" value=%1$s>
                         <h3 class="title is-5">Actions :</h3> 
                         <div class="field">
-                            <label class="label">Action de mise en place pour la fin de %13$s : %12$s</label>
+                            <label> <strong> Action de mise en place pour la fin de %13$s :</strong> %12$s</label>
                             <div class="control">
                                 <input type="submit" name="investigate" value="%10$s" class="button is-info">
                                 <input type="submit" name="passive" value="%4$s" class="button is-warning"> 
