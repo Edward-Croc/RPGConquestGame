@@ -81,7 +81,7 @@
                         %2$s
                     </div><br />',
                     htmlspecialchars(getConfig($gameReady, 'textControllerActionCreateBase')),
-                    showZoneSelect($gameReady, $zonesArray)
+                    showZoneSelect($gameReady, $zonesArray, null, false, false, true)
                 );
             } else {
                 if ($debug) echo sprintf('<p> %s </p>', var_export($bases, true));
