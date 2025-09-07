@@ -90,23 +90,23 @@ VALUES
     '[
         [
             "J’ai vu un.e %2$s du nom de <strong>%1$s</strong> qui <strong>%4$s</strong> dans ma zone d’action. %9$s",
-            "J’ai remarqué qu’iel avait un.e %3$s mais je suis sûr qu’iel possède aussi l’art de %6$s%8$s."
+            "J’ai remarqué qu’iel avait un.e %3$s mais je suis sûr qu’iel possède aussi l’art de %6$s%8$s. "
         ],
         [
             "Nous avons repéré un.e %2$s du nom de <strong>%1$s</strong> qui <strong>%4$s</strong> dans notre région. %9$s",
-            "En poussant nos recherches il s’avère qu’iel maitrise %6$s%8$s. Iel a aussi été vu.e avec un.e %3$s, mais cette information n’est pas si pertinente."
+            "En poussant nos recherches il s’avère qu’iel maitrise %6$s%8$s. Iel a aussi été vu.e avec un.e %3$s, mais cette information n’est pas si pertinente. "
         ],
         [
-            "J’ai trouvé <strong>%1$s</strong>, qui n’est clairement pas un agent à nous, c’est un.e %2$s avec un.e %3$s.",
+            "J’ai trouvé <strong>%1$s</strong>, qui n’est clairement pas un agent à nous, c’est un.e %2$s avec un.e %3$s. ",
             "%9$sIel démontre une légère maitrise de la discipline %6$s%8$s."
         ],
         [
             "Je me suis rendu compte que <strong>%1$s</strong>, que j’ai repéré avec un.e %3$s, <strong>%4$s</strong> dans le coin. %9$s",
-            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a en réalité des capacités de %6$s, ce qui en fait un.e %2$s un peu trop spécial.e%8$s."
+            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a en réalité des capacités de %6$s, ce qui en fait un.e %2$s un peu trop spécial.e%8$s. "
         ],
         [
             "On a suivi <strong>%1$s</strong> parce qu’on l’a repéré.e en train de <strong>%5$s</strong>, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’iel possédait aussi un.e %3$s.",
-            "%9$sCela dit, le vrai problème, c’est qu’iel semble maîtriser %6$s, au moins partiellement%8$s."
+            "%9$sCela dit, le vrai problème, c’est qu’iel semble maîtriser %6$s, au moins partiellement%8$s. "
         ]
     ]',
     'Texts for search results level 1 (structured dialogue in pairs)'
@@ -130,11 +130,11 @@ VALUES
         ],
         [
             "J’ai trouvé <strong>%1$s</strong>, avec un.e %7$s, qui n’est clairement pas un.e de nos loyaux suivants, c’est un.e %2$s qui a également été vu.e avec un.e %3$s. %9$s",
-            "Iel démontre une légère maitrise de l’art %6$s."
+            "Iel démontre une légère maitrise de l’art %6$s. "
         ],
         [
             "Je me suis rendu compte que quelqu’un possédant un.e %7$s <strong>%4$s</strong> dans le coin. On l’a entendu.e se faire appeler <strong>%1$s</strong>. %9$s",
-            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a des capacités de <strong>%4$s</strong>, ce qui en fait un %2$s un peu trop spécial."
+            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a des capacités de <strong>%4$s</strong>, ce qui en fait un %2$s un peu trop spécial. "
         ]
     ]',
     'Variation text blocks for Diff01 transformation reports'
