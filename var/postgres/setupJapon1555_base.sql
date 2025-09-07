@@ -1,16 +1,5 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
--- Add automatic BDD export before end turn start !
--- Add BDD import functionality in admin panel
-
--- TODO : Order agent reports : 
- -- First zone control (other location if nécéssary)
- -- Then fortresses
- -- Then other agents 
- -- Then other locations
-
--- TODO : elements in worker worker reports should be encapsulated in 'strong'
-
 -- TODO : Add Controler action 'purge' - immediate action, 
     -- Fortresse must be present in zone
     -- All ennemi Agents (that where once known) in zone are attacked by the controler (3 + 1-6 dice + all disciplines + 1 if held zone + x is local servants  )
