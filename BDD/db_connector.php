@@ -19,57 +19,56 @@ function getPath ($file) {
 }
 
 /**
+ * Loads DB config from file or defaults
+ * @param string $path
+ * @param string $configFile
+ * @return array
+ */
+function loadDBConfig($path, $configFile) {
+    // Default values
+    $config = [
+        'host' => 'localhost',
+        'dbname' => 'rpgconquestgame',
+        'username' => 'postgres',
+        'password' => 'postgres',
+        'db_type' => 'postgres',
+        'folder' => 'RPGConquestGame'
+    ];
+
+    // Check if the file exists
+    if (file_exists($path . $configFile)) {
+        $fileConfig = parse_ini_file($path . $configFile);
+        foreach ($config as $key => $value) {
+            if (isset($fileConfig[$key])) {
+                $config[$key] = $fileConfig[$key];
+            }
+        }
+    }
+    return $config;
+}
+
+/**
  * Get and Check connection to the database
  *
  * @return PDO $pdo
  */
 function getDBConnection ($path, $configFile) {
 
-    // PostgreSQL database credentials
-    // Default values
-    $host = 'localhost';
-    $dbname = 'rpgconquestgame';
-    $username = 'postgres';
-    $password = 'postgres';
-    $db_type = 'postgres';
-    $folder = 'RPGConquestGame';
+    $config = loadDBConfig($path, $configFile);
+    $_SESSION['DBNAME'] = $config['dbname'];
+    $_SESSION['DBTYPE'] = $config['db_type'] ;
+    $_SESSION['FOLDER'] = $config['folder'];
 
-    // Check if the file exists
-    if (file_exists($path.$configFile)) {
-        // Parse the INI file
-        $config = parse_ini_file($path.$configFile);
-
-        // Check if the required keys exist
-        if ( isset($config['host']) ){
-            $host = $config['host'];
-        }
-        if ( isset($config['dbname']) ){
-            $dbname = $config['dbname'];
-        }
-        if ( isset($config['username']) ){
-            $username = $config['username'];
-        }
-        if ( isset($config['password']) ) {
-            $password = $config['password'];
-        }
-        if ( isset($config['db_type']) ) {
-            $db_type = $config['db_type'];
-        }
-        if ( isset($config['folder']) ) {
-            $folder = $config['folder'];
-        }
-    }
-    $_SESSION['DBNAME'] = $dbname;
-    $_SESSION['DBTYPE'] = $db_type;
-    $_SESSION['FOLDER'] = $folder;
-
-    if ( $db_type == 'mysql' ) {
+    if ( $config['db_type'] == 'mysql' ) {
         // Attempt to connect to PostgreSQL database
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+            $pdo = new PDO(
+                sprintf("mysql:host=%s;dbname=%s", $config['host'], $config['dbname']),
+                $config['username'],  $config['password']
+            );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
-                echo "Connected successfully to database $dbname.<br />";
+                echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
 
@@ -80,10 +79,13 @@ function getDBConnection ($path, $configFile) {
     }else{
         // Attempt to connect to PostgreSQL database
         try {
-            $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password);
+            $pdo = new PDO(
+                sprintf("pgsql:host=%s;dbname=%s", $config['host'], $config['dbname']),
+                $config['username'],  $config['password']
+            );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
-                echo "Connected successfully to database $dbname.<br />";
+                echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
 
@@ -369,65 +371,34 @@ function gameReady() {
 
 function exportBDD() {
 
-    // Default values
-    $host = 'localhost';
-    $dbname = 'rpgconquestgame';
-    $username = 'postgres';
-    $password = 'postgres';
-    $db_type = 'postgres';
-    $folder = 'RPGConquestGame';
+    $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
-    // Check if the file exists
-    if (file_exists($_SESSION['PATH'].$_SESSION['configFile'])) {
-        // Parse the INI file
-        $config = parse_ini_file($_SESSION['PATH'].$_SESSION['configFile']);
-
-        // Check if the required keys exist
-        if ( isset($config['host']) ){
-            $host = $config['host'];
-        }
-        if ( isset($config['dbname']) ){
-            $dbname = $config['dbname'];
-        }
-        if ( isset($config['username']) ){
-            $username = $config['username'];
-        }
-        if ( isset($config['password']) ) {
-            $password = $config['password'];
-        }
-        if ( isset($config['db_type']) ) {
-            $db_type = $config['db_type'];
-        }
-    }
-    
-        
     // Output file
-    $exportFile = sprintf('%s_export_%s.sql', $dbname, date('Ymd_His'));
+    $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));
     $exportPath = sys_get_temp_dir() . '/' . $exportFile;
 
-
     // export BDD to file via command line
-    if ($db_type == 'mysql'){
+    if ( $config['db_type'] == 'mysql'){
         $command = sprintf('mysqldump -h %s -u %s -p%s %s > %s',
-            escapeshellarg($host),
-            escapeshellarg($username),
-            escapeshellarg($password),
-            escapeshellarg($dbname),
+            escapeshellarg($config['host']),
+            escapeshellarg($config['username']),
+            escapeshellarg($config['password']),
+            escapeshellarg($config['dbname']),
             escapeshellarg($exportPath)
         );
     } else {
         $command = sprintf('PGPASSWORD=%s pg_dump -h %s -U %s -F p %s > %s',
-            escapeshellarg($password),
-            escapeshellarg($host),
-            escapeshellarg($username),
-            escapeshellarg($dbname),
+            escapeshellarg($config['password']),
+            escapeshellarg($config['host']),
+            escapeshellarg($config['username']),
+            escapeshellarg($config['dbname']),
             escapeshellarg($exportPath)
         );
     }
 
     // Run export
     $output = shell_exec($command);
-    
+
     // Check if file was created
     if (file_exists($exportPath)) {
         // Send file for download
@@ -442,7 +413,7 @@ function exportBDD() {
         echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
         if ($output) echo "<pre>$output</pre>";
     }
-    
+
 }
 
 /**
@@ -452,63 +423,35 @@ function exportBDD() {
  * @return bool
  */
 function importBDD($pdo, $file){
-    echo '========='.var_export($file, true).'========<br>';
+
     if ($file['error'] === UPLOAD_ERR_OK) {
         $tmpFilePath = $file['tmp_name'];
         $fileType = mime_content_type($tmpFilePath);
         $allowedTypes = ['application/sql', 'text/plain'];
 
-        if (in_array($fileType, $allowedTypes)) {
-            // Default values
-            $host = 'localhost';
-            $dbname = 'rpgconquestgame';
-            $username = 'postgres';
-            $password = 'postgres';
-            $db_type = 'postgres';
-
-            // Check if the file exists
-            if (file_exists($_SESSION['PATH'].$_SESSION['configFile'])) {
-                // Parse the INI file
-                $config = parse_ini_file($_SESSION['PATH'].$_SESSION['configFile']);
-
-                // Check if the required keys exist
-                if ( isset($config['host']) ){
-                    $host = $config['host'];
-                }
-                if ( isset($config['dbname']) ){
-                    $dbname = $config['dbname'];
-                }
-                if ( isset($config['username']) ){
-                    $username = $config['username'];
-                }
-                if ( isset($config['password']) ) {
-                    $password = $config['password'];
-                }
-                if ( isset($config['db_type']) ) {
-                    $db_type = $config['db_type'];
-                }
-            }
+        if (in_array($fileType, $allowedTypes)) {  
+            $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
             // import BDD from file via command line
-            if ($db_type == 'mysql'){
+            if ($config['db_type'] == 'mysql'){
                 $command = sprintf('mysql -h %s -u %s -p%s %s < %s',
-                    escapeshellarg($host),
-                    escapeshellarg($username),
-                    escapeshellarg($password),
-                    escapeshellarg($dbname),
+                    escapeshellarg($config['host']),
+                    escapeshellarg($config['username']),
+                    escapeshellarg($config['password']),
+                    escapeshellarg($config['dbname']),
                     escapeshellarg($tmpFilePath)
                 );
             } else {
                 $command = sprintf('PGPASSWORD=%s psql -h %s -U %s -d %s -f %s',
-                    escapeshellarg($password),
-                    escapeshellarg($host),
-                    escapeshellarg($username),
-                    escapeshellarg($dbname),
+                    escapeshellarg($config['password']),
+                    escapeshellarg($config['host']),
+                    escapeshellarg($config['username']),
+                    escapeshellarg($config['dbname']),
                     escapeshellarg($tmpFilePath)
                 );
             }
 
-            // Empty BDD 
+            // Empty BDD
             destroyAllTables($pdo);
             // Run import
             $output = shell_exec($command);
