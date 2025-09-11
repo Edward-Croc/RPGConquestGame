@@ -152,9 +152,12 @@
                             <input type="hidden" name="controller_id" value="%1$s">
                             <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                                 <div class="control">
-                                    <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque vers :" class="button is-danger controller-action-btn">
+                                    Mener une équipe d\'attaque vers :
                                 </div>
                                 %2$s
+                                <div class="control">
+                                    <input type="submit" name="attackLocation" value="Attacker" class="button is-danger controller-action-btn">
+                                </div>
                             </div>
                         </form>',
                         htmlspecialchars($controllers['id']),

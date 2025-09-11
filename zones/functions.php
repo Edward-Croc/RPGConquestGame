@@ -451,7 +451,11 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                     <form action="/%s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value="%d">
                         <input type="hidden" name="target_location_id" value="%d">
-                        <input type="submit" name="attackLocation" value="Mener une équipe d\'attaque sur place" class="controller-action-btn">
+                        <input
+                            type="submit" name="attackLocation" 
+                            value="Mener une équipe d\'attaque sur place"
+                            class="button is-danger controller-action-btn"
+                        >
                     </form>',
                     $_SESSION['FOLDER'],
                     $controller_id,
