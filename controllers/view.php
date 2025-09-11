@@ -76,9 +76,12 @@
                 echo sprintf(
                     '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                         <div class="control">
-                            <input type="submit" name="createBase" value="%1$s" class="button is-link worker-action-btn">
+                            %1$s
                         </div>
                         %2$s
+                        <div class="control">
+                            <input type="submit" name="createBase" value="Créer" class="button is-link worker-action-btn">
+                        </div>
                     </div><br />',
                     htmlspecialchars(getConfig($gameReady, 'textControllerActionCreateBase')),
                     showZoneSelect($gameReady, $zonesArray, null, false, false, true)
@@ -101,9 +104,12 @@
                         </div>
                         <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                             <div class="control">
-                                <input type="submit" name="moveBase" value="%1$s" class="button is-warning controller-action-btn">
+                                %1$s
                             </div>
                             %2$s
+                            <div class="control">
+                                <input type="submit" name="moveBase" value="Démenager" class="button is-warning controller-action-btn">
+                            </div>
                         </div>
                         <br>',
                         htmlspecialchars($textControllerActionMoveBase),
