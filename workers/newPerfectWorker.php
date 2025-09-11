@@ -47,7 +47,7 @@
             . ")</option>";
     }
     $showOriginSelect = sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="origin_id" name="origin_id">
                         <option value="">Sélectionner %s</option>
@@ -60,7 +60,7 @@
         $originOptions
     );
     $showFirstnameSelect = sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="firstname" name="firstname">
                         <option value="">Sélectionner %s</option>
@@ -73,7 +73,7 @@
         $firstnameOptions
     );
     $showLastnameSelect = sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="lastname" name="lastname">
                         <option value="">Sélectionner %s</option>
@@ -93,7 +93,7 @@
         $hobbyOptions .= "<option value='" . htmlspecialchars($powerHobby['link_power_type_id']) . "'>" . htmlspecialchars($powerHobby['power_text']) . "</option>";
     }
     $showHobbySelect = sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="power_hobby_id" name="power_hobby_id">
                         <option value="">Sélectionner %s</option>
@@ -112,7 +112,7 @@
         $jobOptions .= "<option value='" . htmlspecialchars($powerJob['link_power_type_id']) . "'>" . htmlspecialchars($powerJob['power_text']) . "</option>";
     }
     $showJobSelect = sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="power_metier_id" name="power_metier_id">
                         <option value="">Sélectionner %s</option>

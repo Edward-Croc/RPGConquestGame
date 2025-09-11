@@ -188,7 +188,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = true){
     
     $showDisciplineSelect = sprintf('
             %s
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="disciplineSelect" name="discipline">
                         <option value="">Sélectionner %s</option>
@@ -390,7 +390,7 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
 
     $showTransformationSelect = sprintf('
             %s
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="transformationSelect" name="transformation">
                         <option value="">Sélectionner %s</option>

@@ -1204,9 +1204,13 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
         }
     }
     $enemyWorkersSelect = sprintf("
-        <select id='enemyWorkersSelect' name='enemy_worker_id[]' multiple>
-            %s
-        </select>
+        <div class='control for-select'>
+            <div class='select is-multiple'>
+                <select id='enemyWorkersSelect' name='enemy_worker_id[]' multiple>
+                    %s
+                </select>
+            </div>
+        </div>
         ",
         $enemyWorkerOptions
     );

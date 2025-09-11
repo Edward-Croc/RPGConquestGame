@@ -104,7 +104,7 @@ function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false
 
     $showZoneSelect = sprintf('
             %s
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="zoneSelect" name="zone_id">
                         %s

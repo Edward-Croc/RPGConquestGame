@@ -84,7 +84,7 @@ function showControllerSelect($controllers, $selectedID = null ,$field_name = 'c
 
     // Bulma form field
     $showControllerSelect = sprintf('
-        <div class="control">
+        <div class="control for-select">
             <div class="select is-fullwidth">
                 <select id="controllerSelect" name="%1$s">
                     %2$s
@@ -319,7 +319,7 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
     }
 
     return sprintf('
-            <div class="control">
+            <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="attackLocationSelect" name="target_location_id">
                         <option value="">Sélectionner un lieu</option>

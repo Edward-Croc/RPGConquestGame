@@ -124,6 +124,11 @@ body {
 /* Phone setup */
 
 @media (max-width: 768px) {
-
+    .for-select {
+        max-width: 100%;
+    } 
+    .content.flex {
+        flex-direction: column;
+    }
 
 }
