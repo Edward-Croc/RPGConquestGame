@@ -22,8 +22,11 @@ echo sprintf("<div class='intro'> %s </div>", $intro);
 require_once '../controllers/view.php';
 ?>
 <div class="content flex">
-    <?php require_once '../workers/viewAll.php'; ?>
-    <?php require_once '../zones/view.php'; ?>
+    <div>
+        <?php require_once '../zones/view.php'; ?>
+    </div> <div>
+        <?php require_once '../workers/viewAll.php'; ?>
+    </div>
 </div>
 
 <script>
