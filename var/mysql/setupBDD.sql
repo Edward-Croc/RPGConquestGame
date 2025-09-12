@@ -11,16 +11,16 @@ CREATE TABLE mechanics (
 INSERT INTO mechanics (turncounter, gamestate)
 VALUES (0, 0);
 
+-- create configuration table
 CREATE TABLE config (
     ID INT AUTO_INCREMENT PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    value TEXT DEFAULT '',
-    description TEXT
+    name TEXT UNIQUE NOT NULL, --name used key
+    value TEXT DEFAULT '', --value to be read
+    description TEXT -- explain configuration usage
 );
 
-   
--- (Les `INSERT INTO config` sont inchangés, sauf TRUE/FALSE)
-INSERT INTO config (name, value, description) VALUES
+INSERT INTO config (name, value, description)
+VALUES
     -- Debugs vals
     ('DEBUG', 'FALSE', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'FALSE', 'Activates the Debugging texts for the investigation report'),
@@ -55,20 +55,23 @@ INSERT INTO config (name, value, description) VALUES
     ('ENQUETE_ZONE_BONUS', 0, 'Bonus à la valeur enquete si le worker est dans une zone contrôlée'),
     ('ATTACK_ZONE_BONUS', 0, 'Bonus à la valeur attaque si le worker est dans une zone contrôlée'),
     ('DEFENCE_ZONE_BONUS', 1, 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
+    ('HIDE_ENQUETE_FLAT_BONUS', 4, 'Bonus to the investigate value if the worker is using hide'),
+    ('HIDE_DEFENCE_FLAT_BONUS', 1, 'Bonus to the investigate value if the worker is using hide'),
     -- passive, investigate, attack, claim, captured, dead
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured''', 'Liste of passive investigation actions'),
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate''', 'Liste of passive attack actions'),
+    ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
     ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured''', 'Liste of passive defence actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide''', 'Liste of passive defence actions'),
     ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- Diff vals for investigation results 
-    ('REPORTDIFF0', 0, 'Value for Level 0 information'),
+    ('REPORTDIFF0', -1, 'Value for Level 0 information'),
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
     ('REPORTDIFF2', 2, 'Value for Level 2 information'),
-    ('REPORTDIFF3', 3, 'Value for Level 3 information'),
+    ('REPORTDIFF3', 4, 'Value for Level 3 information'),
     ('LOCATIONNAMEDIFF', 0, 'Value for Location Name'),
     ('LOCATIONINFORMATIONDIFF', 1, 'Value for Location Information'),
+    ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
     -- Attack choices
     ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
     ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
@@ -83,7 +86,8 @@ INSERT INTO config (name, value, description) VALUES
     ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
-    ('txt_ps_investigate', 'enquete', 'Text for investigate action'),
+    ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
+    ('txt_ps_hide', 'se cache', 'Text for hide action'),
     ('txt_ps_attack', 'attaque', 'Text for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
     ('txt_ps_captured', 'a disparu', 'Text for captured action'),
@@ -91,7 +95,8 @@ INSERT INTO config (name, value, description) VALUES
     ('txt_ps_prisoner', 'est un.e agent de %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
     ('txt_ps_double_agent', 'a infiltré le réseau de %s ', 'Text for being infiltrator'),
     ('txt_inf_passive', 'surveiller', 'Text for passive action'),
-    ('txt_inf_investigate', 'enqueter', 'Text for investigate action'),
+    ('txt_inf_investigate', 'enquêter', 'Text for investigate action'),
+    ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
     ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
@@ -100,44 +105,70 @@ INSERT INTO config (name, value, description) VALUES
     ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
     -- Base information
-    ,('baseDiscoveryDiff', 4, 'Base discovery value for bases' )
+    ,('baseDiscoveryDiff', 3, 'Base discovery value for bases' )
     ,('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddWorkers', 1, 'Base discovery value worker presence ponderation 0 for no' )
     ,('baseDiscoveryDiffAddTurns', 1, 'Base discovery value base age presence ponderation 0 for no' )
     ,('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' )
-    ,('maxBonusDiscoveryDiffWorkers', 3, 'Maximum bonus obtainable from worker presence' )
-    ,('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' )
-    ,('baseDefenceDiff', 2, 'Base defence value for bases' )
-    ,('baseDefenceDiffAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
-    ,('baseDefenceDiffAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
-    ,('baseDefenceDiffAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('maxBonusDiscoveryDiffWorkers', 4, 'Maximum bonus obtainable from worker presence' )
+    ,('maxBonusDiscoveryDiffTurns', 2, 'Maximum bonus obtainable from age of base' )
+    ,('baseAttack', 0, 'Base defence value for bases' )
+    ,('baseAttackAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
+    ,('baseAttackAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
+    ,('baseDefence', 0, 'Base defence value for bases' )
+    ,('baseDefenceAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
+    ,('baseDefenceAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
+    ,('baseDefenceAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('maxBonusDefenceTurns', 3, 'Maximum bonus obtainable from age of base' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir', 'Text for location destroyed')
-    ,('textLocationDestroyed', 'Le lieu %s a été pillée', 'Text for location destroyed')
-    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses', 'Text for location not destroyed')
+    ,('textLocationPillaged', 'Le lieu %s a été pillée.', 'Text for location pillaged')
+    ,('textLocationNotDestroyed', 'Le lieu %s n'a pas été détruit, nos excuses', 'Text for location not destroyed')
 ;
 
+INSERT INTO config (name, value, description)
+VALUES
+    -- MAP INFO
+    ('map_file', 'shikoku.png', 'Map file to use'),
+    ('map_alt', 'Carte', 'Map alt')
+;
+--  Text info
+INSERT INTO config (name, value, description)
+VALUES
+    ('textForZoneType', 'zone', 'Text for the type of zone'),
+    ('timeValue', 'Tour', 'Text for time span'),
+    ('timeDenominatorThis', 'ce', 'Denominator 'this' for time text'),
+    ('timeDenominatorThe', 'le', 'Denominator 'the' for time text'),
+    ('timeDenominatorOf', 'du', 'Denominator 'of' for time text')
+;
+
+-- player tables
 CREATE TABLE players (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     passwd VARCHAR(64) NOT NULL,
-    is_privileged TINYINT(1) DEFAULT 0
+    url TEXT,
+    is_privileged TINYINT(1) DEFAULT 0 -- does player have god mode
 );
 
 INSERT INTO players (username, passwd, is_privileged)
-VALUES ('gm', 'orga', 1);
+VALUES
+    ('gm', 'orga', 1);
 
+-- faction tables
 CREATE TABLE factions (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL
 );
 
+-- controller / character tables
 CREATE TABLE controllers (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
     url TEXT,
     story TEXT,
+    can_build_base TINYINT(1) DEFAULT 1, -- can build a base
     start_workers INT DEFAULT 1,
     recruited_workers INT DEFAULT 0,
     turn_recruited_workers INT DEFAULT 0,
@@ -145,28 +176,32 @@ CREATE TABLE controllers (
     ia_type TEXT DEFAULT '',
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
-    FOREIGN KEY (faction_id) REFERENCES factions(ID),
-    FOREIGN KEY (fake_faction_id) REFERENCES factions(ID)
+    secret_controller TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (faction_id) REFERENCES factions (ID),
+    FOREIGN KEY (fake_faction_id) REFERENCES factions (ID)
 );
 
+-- player to controller link
 CREATE TABLE player_controller (
     controller_id INT NOT NULL,
     player_id INT NOT NULL,
     PRIMARY KEY (controller_id, player_id),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (player_id) REFERENCES players(ID)
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID),
+    FOREIGN KEY (player_id) REFERENCES players (ID)
 );
 
+-- Create the zones and locations
 CREATE TABLE zones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    defence_val INT DEFAULT 6,
-    calculated_defence_val INT DEFAULT 6,
-    claimer_controller_id INT,
-    holder_controller_id INT,
-    FOREIGN KEY (claimer_controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (holder_controller_id) REFERENCES controllers(ID)
+    defence_val INT DEFAULT 6, -- Base defence to claim the zone
+    calculated_defence_val INT DEFAULT 6, -- Updated defence value when actively protected
+    claimer_controller_id INT, -- ID of controller officialy claiming the zone
+    holder_controller_id INT,   -- ID of controller defending the zone
+    hide_turn_zero TINYINT(1) DEFAULT 0, -- JSON storing the hide turns checks
+    FOREIGN KEY (claimer_controller_id) REFERENCES controllers (ID),
+    FOREIGN KEY (holder_controller_id) REFERENCES controllers (ID)
 );
 
 CREATE TABLE locations (
@@ -174,47 +209,65 @@ CREATE TABLE locations (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     zone_id INT,
-    setup_turn INT DEFAULT 0,
+    setup_turn INT DEFAULT 0, -- Turn in which the location was created
     discovery_diff INT DEFAULT 0,
-    controller_id INT DEFAULT NULL,
+    controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed TINYINT(1) DEFAULT 0,
-    is_base TINYINT(1) DEFAULT 0,
+    is_base TINYINT(1) DEFAULT 0, -- Is a controllers Base
     activate_json JSON DEFAULT '{}',
-    FOREIGN KEY (zone_id) REFERENCES zones(ID),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID)
+    FOREIGN KEY (zone_id) REFERENCES zones (ID),
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID)
+);
+
+CREATE TABLE artefacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,          -- Unique ID of the artefact
+    location_id INT,            -- Foreign key referencing a location
+    name TEXT NOT NULL,             -- Name of the artefact
+    description TEXT NOT NULL,      -- Description of the artefact
+    full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
+    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
 );
 
 CREATE TABLE controller_known_locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     controller_id INT NOT NULL,
     location_id INT NOT NULL,
-    first_discovery_turn INT NOT NULL,
-    last_discovery_turn INT NOT NULL,
-    UNIQUE (controller_id, location_id),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (location_id) REFERENCES locations(ID)
+    first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (controller_id, location_id), -- Unicity constraint on controller/worker combo
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
+    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
 );
 
-CREATE TABLE artefacts (
-    id INT AUTO_INCREMENT PRIMARY KEY,          -- Unique ID of the artefact
-    location_id INT NOT NULL,                   -- Foreign key referencing a location
-    name TEXT NOT NULL,                         -- Name of the artefact
-    description TEXT NOT NULL,                  -- Description of the artefact
-    full_description TEXT NOT NULL,             -- Full description if the player controls the location
-    FOREIGN KEY (location_id) REFERENCES locations(id)
+CREATE TABLE location_attack_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    target_controller_id INT, 
+    attacker_id INT,
+    attack_val INT DEFAULT 0,
+    defence_val INT DEFAULT 0,
+    turn INT NOT NULL,
+    success TINYINT(1) NOT NULL,
+    target_result_text TEXT,
+    attacker_result_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (target_controller_id) REFERENCES controllers (ID), -- Link to controllers table
+    FOREIGN KEY (attacker_id) REFERENCES controllers (ID) -- Link to controllers table
 );
 
+-- Prepare the Worker Origins
 CREATE TABLE worker_origins (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL
 );
 
+-- Table storing the worker random names by origin
 CREATE TABLE worker_names (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
     origin_id INT NOT NULL,
-    FOREIGN KEY (origin_id) REFERENCES worker_origins(ID)
+    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID)
 );
 
 CREATE TABLE workers (
@@ -225,8 +278,9 @@ CREATE TABLE workers (
     zone_id INT NOT NULL,
     is_alive TINYINT(1) DEFAULT 1,
     is_active TINYINT(1) DEFAULT 1,
-    FOREIGN KEY (origin_id) REFERENCES worker_origins(ID),
-    FOREIGN KEY (zone_id) REFERENCES zones(ID)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID),
+    FOREIGN KEY (zone_id) REFERENCES zones (ID)
 );
 
 CREATE TABLE controller_worker (
@@ -234,10 +288,13 @@ CREATE TABLE controller_worker (
     controller_id INT,
     worker_id INT,
     is_primary_controller TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Adding unique constraint
     UNIQUE (controller_id, worker_id),
     UNIQUE (worker_id, is_primary_controller),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (worker_id) REFERENCES workers(ID)
+    -- Adding FOREIGN KEY
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID),
+    FOREIGN KEY (worker_id) REFERENCES workers (ID)
 );
 
 CREATE TABLE power_types (
@@ -261,26 +318,27 @@ CREATE TABLE link_power_type (
     power_type_id INT NOT NULL,
     power_id INT NOT NULL,
     UNIQUE (power_type_id, power_id),
-    FOREIGN KEY (power_type_id) REFERENCES power_types(ID),
-    FOREIGN KEY (power_id) REFERENCES powers(ID)
+    FOREIGN KEY (power_type_id) REFERENCES power_types (ID),
+    FOREIGN KEY (power_id) REFERENCES powers (ID)
 );
 
 CREATE TABLE worker_powers (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     worker_id INT NOT NULL,
     link_power_type_id INT NOT NULL,
-    UNIQUE (worker_id, link_power_type_id),
-    FOREIGN KEY (worker_id) REFERENCES workers(ID),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type(ID)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (worker_id, link_power_type_id), -- Adding unique constraint
+    FOREIGN KEY (worker_id) REFERENCES workers (ID),
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
 );
 
 CREATE TABLE faction_powers (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     faction_id INT NOT NULL,
     link_power_type_id INT NOT NULL,
-    UNIQUE (faction_id, link_power_type_id),
-    FOREIGN KEY (faction_id) REFERENCES factions(ID),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type(ID)
+    UNIQUE (faction_id, link_power_type_id), -- Adding unique constraint
+    FOREIGN KEY (faction_id) REFERENCES factions (ID),
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
 );
 
 CREATE TABLE worker_actions (
@@ -294,25 +352,27 @@ CREATE TABLE worker_actions (
     defence_val INT DEFAULT 0,
     action_choice TEXT DEFAULT 'passive',
     action_params JSON DEFAULT '{}',
-    report JSON DEFAULT '{}',
-    UNIQUE (worker_id, turn_number),
-    FOREIGN KEY (worker_id) REFERENCES workers(ID),
-    FOREIGN KEY (zone_id) REFERENCES zones(ID),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID)
+    report JSON DEFAULT '{}', -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (worker_id, turn_number), -- Adding unique constraint
+    FOREIGN KEY (worker_id) REFERENCES workers (ID),
+    FOREIGN KEY (zone_id) REFERENCES zones (ID),
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID)
 );
 
 CREATE TABLE controllers_known_enemies (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    controller_id INT NOT NULL,
-    discovered_worker_id INT NOT NULL,
-    discovered_controller_id INT,
-    discovered_controller_name TEXT,
-    zone_id INT NOT NULL,
-    first_discovery_turn INT NOT NULL,
-    last_discovery_turn INT NOT NULL,
-    UNIQUE (controller_id, discovered_worker_id),
-    FOREIGN KEY (controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (discovered_worker_id) REFERENCES workers(ID),
-    FOREIGN KEY (discovered_controller_id) REFERENCES controllers(ID),
-    FOREIGN KEY (zone_id) REFERENCES zones(ID)
+    controller_id INT NOT NULL, -- controller A
+    discovered_worker_id INT NOT NULL, -- ID of the discovered worker
+    discovered_controller_id INT, -- Optional ID of their controller
+    discovered_controller_name TEXT, -- Optional name of their controller
+    zone_id INT NOT NULL, -- Zone of discovery
+    first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (controller_id, discovered_worker_id), -- Unicity constraint on controller/worker combo
+    FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
+    FOREIGN KEY (discovered_worker_id) REFERENCES workers (ID), -- Link to workers table
+    FOREIGN KEY (discovered_controller_id) REFERENCES controllers (ID), -- Link to controllers table
+    FOREIGN KEY (zone_id) REFERENCES zones (ID) -- Link to zones table
 );
