@@ -129,13 +129,40 @@ function tableExists($pdo, $tableName) {
  */
 function destroyAllTables($pdo) {
     try {
-        $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = sprintf("SELECT table_name FROM information_schema.tables WHERE table_schema = '%s' AND table_type = 'BASE TABLE'", $_SESSION['DBNAME']);
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
+            // Get list of tables in the database
+            $stmt = $pdo->query($sql);
+            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
         }
-        // Get list of tables in the database
-        $stmt = $pdo->query($sql);
-        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $tables = array(
+                'location_attack_logs',
+                'controllers_known_enemies',
+                'controller_known_locations', 
+                'controller_worker',
+                'worker_actions',
+                'worker_powers',
+                'workers',
+                'worker_names',
+                'worker_origins',
+                'faction_powers',
+                'link_power_type',
+                'power_types',
+                'powers',
+                'player_controller',
+                'artefacts',
+                'locations',
+                'zones',
+                'controllers', 
+                'factions',
+                'players',
+                'mechanics',
+                'config'
+            );
+        }
+
+        echo "tables: " . var_export($tables, true) . "<br />";
 
         // Drop each table
         foreach ($tables as $table) {
