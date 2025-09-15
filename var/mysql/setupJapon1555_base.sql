@@ -49,7 +49,7 @@ INSERT INTO factions (name) VALUES
     ,('Samouraïs Ashikaga')
     ,('Samouraïs Kōno')
     ,('Moines Bouddhistes')
-    ,('Ikkō-ikki') --https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
+    ,('Ikkō-ikki') -- https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
     ,('Chrétiens') -- https://histoiredujapon.com/2021/04/05/etrangers-japon-ancien/#index_id1
     ,('Yōkai')
@@ -73,7 +73,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga')
     ), 
-    ('Clan', 'Kōno (河野)', NULL, 1, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
+    ('Clan', 'Kōno (河野)', NULL, 1, -- https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
         'https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI', '',
         0,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'),
@@ -88,7 +88,7 @@ INSERT INTO controllers (
     story
 ) VALUES
     (
-        'Clan', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
+        'Clan', 'Chōsokabe (長宗我部)', -- https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
         (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
         'https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I',
@@ -110,7 +110,7 @@ INSERT INTO controllers (
           '
     ),
     (
-        'Clan', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
+        'Clan', 'Miyoshi (三好)',  -- https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi' ),
         'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
@@ -143,7 +143,7 @@ INSERT INTO controllers (
         '
     ),
     (
-        'Kaizokushū (海賊衆)', 'Wako (和光)', --
+        'Kaizokushū (海賊衆)', 'Wako (和光)',
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
@@ -354,10 +354,10 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
     -- Temple de Nara archive de Shōzan, qui est secretement Yoshiaki le frère du Shogun
     (
         'Temple de Nara-ji',
-        'Dans les collines boisées entourant l'ancienne capitale de Nara, un vieux temple isolé abrite au milieu des statues de bouddha, des multiples ouvrages bouddhiste et Shinto et surtout des registres des moines tendai.
-L'un de ces ouvrages relate les entrées au temple. Dont l'entrée de moine Shōzan, qui est en réalité Yoshiaki(義昭), frère cadet du Shogun Ashikaga, celui-ci a choisi la vie monastique pour échapper aux intrigues de la cour.
+        'Dans les collines boisées entourant l’ancienne capitale de Nara, un vieux temple isolé abrite au milieu des statues de bouddha, des multiples ouvrages bouddhiste et Shinto et surtout des registres des moines tendai.
+L’un de ces ouvrages relate les entrées au temple. Dont l’entrée de moine Shōzan, qui est en réalité Yoshiaki(義昭), frère cadet du Shogun Ashikaga, celui-ci a choisi la vie monastique pour échapper aux intrigues de la cour.
 Nous pourrions tenter de le convaincre de revenir à la vie politique, en lui promettant un soutien militaire et financier et faire un Shogun fantoche.
-Nous n'avons pas pu consulter la totalité des registres, il nous faudrait y retourner, pour en apprendre plus sur les entrées au temple des moines de Shikoku.',
+Nous n’avons pas pu consulter la totalité des registres, il nous faudrait y retourner, pour en apprendre plus sur les entrées au temple des moines de Shikoku.',
         6, 0,
         (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
         (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
@@ -365,7 +365,7 @@ Nous n'avons pas pu consulter la totalité des registres, il nous faudrait y ret
     -- Temple de Nara archives de Kukai, qui était en réalité un Chosokabe
     (
         'Temple de Nara-ji - archives secrètes',
-        'Dans les collines boisées entourant l'ancienne capitale de Nara, nous avons pu accéder aux archives secrètes du vieux temple isolé, abrité au milieu des statues de Bouddha.
+        'Dans les collines boisées entourant l’ancienne capitale de Nara, nous avons pu accéder aux archives secrètes du vieux temple isolé, abrité au milieu des statues de Bouddha.
 Ce temple sert de sanctuaire à des moines, qui sont les archivistes de la secte Tendai.
 Nous avons pu consulter les registres, dont celui sur les entrées au temple des moines de Shikoku.
 Nous avons découvert que le véritable nom de Kūkai (空海) Kōbō-Daishi (弘法大師) — Kūkai le Grand Instructeur, était Makoto Sakana (眞魚) — Mao le « Poisson de vérité ».

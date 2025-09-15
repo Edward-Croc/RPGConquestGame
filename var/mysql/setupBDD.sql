@@ -2,6 +2,7 @@
 -- CREATE DATABASE RPGConquestGame;
 -- USE RPGConquestGame;
 
+DROP TABLE IF EXISTS mechanics;
 CREATE TABLE mechanics (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     turncounter INT DEFAULT 0,
@@ -12,10 +13,11 @@ INSERT INTO mechanics (turncounter, gamestate)
 VALUES (0, 0);
 
 -- create configuration table
+DROP TABLE IF EXISTS config;
 CREATE TABLE config (
     ID INT AUTO_INCREMENT PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL, --name used key
-    value TEXT DEFAULT '', --value to be read
+    name VARCHAR(255) UNIQUE NOT NULL,-- name used key
+    value TEXT DEFAULT '', -- value to be read
     description TEXT -- explain configuration usage
 );
 
@@ -123,7 +125,7 @@ VALUES
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir', 'Text for location destroyed')
     ,('textLocationPillaged', 'Le lieu %s a été pillée.', 'Text for location pillaged')
-    ,('textLocationNotDestroyed', 'Le lieu %s n'a pas été détruit, nos excuses', 'Text for location not destroyed')
+    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses', 'Text for location not destroyed')
 ;
 
 INSERT INTO config (name, value, description)
@@ -137,9 +139,9 @@ INSERT INTO config (name, value, description)
 VALUES
     ('textForZoneType', 'zone', 'Text for the type of zone'),
     ('timeValue', 'Tour', 'Text for time span'),
-    ('timeDenominatorThis', 'ce', 'Denominator 'this' for time text'),
-    ('timeDenominatorThe', 'le', 'Denominator 'the' for time text'),
-    ('timeDenominatorOf', 'du', 'Denominator 'of' for time text')
+    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text'),
+    ('timeDenominatorThe', 'le', 'Denominator ’the’ for time text'),
+    ('timeDenominatorOf', 'du', 'Denominator ’of’ for time text')
 ;
 
 -- player tables
@@ -214,7 +216,7 @@ CREATE TABLE locations (
     controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed TINYINT(1) DEFAULT 0,
     is_base TINYINT(1) DEFAULT 0, -- Is a controllers Base
-    activate_json JSON DEFAULT '{}',
+    activate_json JSON,
     FOREIGN KEY (zone_id) REFERENCES zones (ID),
     FOREIGN KEY (controller_id) REFERENCES controllers (ID)
 );
@@ -310,7 +312,7 @@ CREATE TABLE powers (
     enquete INT DEFAULT 0,
     attack INT DEFAULT 0,
     defence INT DEFAULT 0,
-    other JSON DEFAULT '{}'
+    other JSON
 );
 
 CREATE TABLE link_power_type (
@@ -350,9 +352,9 @@ CREATE TABLE worker_actions (
     enquete_val INT DEFAULT 0,
     attack_val INT DEFAULT 0,
     defence_val INT DEFAULT 0,
-    action_choice TEXT DEFAULT 'passive',
-    action_params JSON DEFAULT '{}',
-    report JSON DEFAULT '{}', -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
+    action_choice VARCHAR(255) DEFAULT 'passive',
+    action_params JSON,
+    report JSON, -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, turn_number), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES workers (ID),
