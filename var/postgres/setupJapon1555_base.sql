@@ -28,7 +28,7 @@ UPDATE config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
 UPDATE config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
 
 -- MAP INFO
-UPDATE config SET value =  'Carte_Shikoku_1555_petit.jpg' WHERE name = 'map_file';
+UPDATE config SET value =  'Carte_Shikoku_1555.jpg' WHERE name = 'map_file';
 UPDATE config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
 
 -- Text time info
