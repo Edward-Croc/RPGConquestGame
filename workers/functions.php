@@ -88,10 +88,10 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         // Step 2: Decode the JSON report
         $report = array();
         if (!empty($row['report'])) {
-        $report = json_decode($row['report'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
-        }
+            $report = json_decode($row['report'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
+            }
         }
         // Step 3: Append the new element to the specified key
         $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
@@ -436,7 +436,12 @@ function randomWorkerOrigin($pdo, $limit = 1, $originList = null) {
 
     try{
         // Get a random value from worker_origins
-        $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RANDOM() LIMIT $limit";
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RANDOM() LIMIT $limit";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RAND() LIMIT $limit";
+        }
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -475,11 +480,20 @@ function randomWorkerName($pdo, $iterations = 1, $originList = null) {
     for ($iteration = 0; $iteration < $iterations; $iteration++) {
         $origin_id = $originsArray[$iteration]['id'];
         // Get 2 random values from worker_names for and origin ID
-        $sql = "SELECT * FROM worker_names
-            JOIN worker_origins ON worker_origins.id = worker_names.origin_id
-            WHERE origin_id = $origin_id
-            ORDER BY RANDOM()
-            LIMIT 2";
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "SELECT * FROM worker_names
+                JOIN worker_origins ON worker_origins.id = worker_names.origin_id
+                WHERE origin_id = $origin_id
+                ORDER BY RANDOM()
+                LIMIT 2";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "SELECT * FROM worker_names
+                JOIN worker_origins ON worker_origins.id = worker_names.origin_id
+                WHERE origin_id = $origin_id
+                ORDER BY RAND()
+                LIMIT 2";
+        }
         try{
             $stmt = $pdo->prepare($sql);
             $stmt->execute();
