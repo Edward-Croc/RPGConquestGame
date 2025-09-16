@@ -19,6 +19,11 @@ Yōkai du Feu (Teppō, cap sud de Kōchi, forge, poudre)
 Hiuchi (火打 — « pierre à feu »), Kagaribi (篝火 — « feu de signalisation / brasier »), ensemble ils forment un duo sonore sec et évocateur.
 */
 INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+SELECT
+    nd.firstname,
+    nd.lastname,
+    wo.id AS origin_id,
+    z.id AS zone_id
 FROM (
     SELECT 'Kosagi' AS firstname, 'Kotatsu' AS lastname, 'Shikoku - Shōdoshima' AS origin_name, 'Ile de Shōdoshima' AS zone_name
     UNION ALL SELECT 'Iwao', 'Jizane', 'Shikoku - Iyo', 'Montagnes d’Iyo'
