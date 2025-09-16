@@ -224,7 +224,7 @@ function investigateMechanic($pdo) {
         $text_action_ps = $txtArray[$row['found_action']]['ps'];
         $text_action_inf = $txtArray[$row['found_action']]['inf'];
         // get action info from params
-        echo "row['found_action'] : ".$row['found_action']."; row['found_action_params']:".$row['found_action_params']."; <br>";
+        if ($debug) echo "row['found_action'] : ".$row['found_action']."; row['found_action_params']:".$row['found_action_params']."; <br>";
         if ( $row['found_action'] == 'claim' && $row['found_action_params'] != '{}' ) {
             $found_action_params = json_decode($row['found_action_params'],true);
             if (is_array($found_action_params)) {
