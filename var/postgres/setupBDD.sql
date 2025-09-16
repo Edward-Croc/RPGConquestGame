@@ -4,7 +4,7 @@
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE mechanics (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
     gamestate INTEGER DEFAULT 0
 );
@@ -14,7 +14,7 @@ VALUES (0, 0);
 
 -- create configuration table
 CREATE TABLE config (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name text UNIQUE NOT NULL, --name used key
     value text DEFAULT '', --value to be read
     description text -- explain configuration usage
@@ -145,7 +145,7 @@ VALUES
 
 -- player tables
 CREATE TABLE players (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     passwd VARCHAR(64) NOT NULL,
     url text,
@@ -158,13 +158,13 @@ VALUES
 
 -- faction tables
 CREATE TABLE factions (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name text NOT NULL
 );
 
 -- controller / character tables
 CREATE TABLE controllers (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     firstname text NOT NULL,
     lastname text NOT NULL,
     url text,
@@ -178,8 +178,8 @@ CREATE TABLE controllers (
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (faction_id) REFERENCES factions (ID),
-    FOREIGN KEY (fake_faction_id) REFERENCES factions (ID)
+    FOREIGN KEY (faction_id) REFERENCES factions (id),
+    FOREIGN KEY (fake_faction_id) REFERENCES factions (id)
 );
 
 -- player to controller link
@@ -187,8 +187,8 @@ CREATE TABLE player_controller (
     controller_id INT NOT NULL,
     player_id INT NOT NULL,
     PRIMARY KEY (controller_id, player_id),
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID),
-    FOREIGN KEY (player_id) REFERENCES players (ID)
+    FOREIGN KEY (controller_id) REFERENCES controllers (id),
+    FOREIGN KEY (player_id) REFERENCES players (id)
 );
 
 -- Create the zones and locations
@@ -198,11 +198,11 @@ CREATE TABLE zones (
     description text NOT NULL,
     defence_val INT DEFAULT 6, -- Base defence to claim the zone
     calculated_defence_val INT DEFAULT 6, -- Updated defence value when actively protected
-    claimer_controller_id INT, -- ID of controller officialy claiming the zone
-    holder_controller_id INT,   -- ID of controller defending the zone
+    claimer_controller_id INT, -- id of controller officialy claiming the zone
+    holder_controller_id INT,   -- id of controller defending the zone
     hide_turn_zero BOOLEAN DEFAULT FALSE, -- JSON storing the hide turns checks
-    FOREIGN KEY (claimer_controller_id) REFERENCES controllers (ID),
-    FOREIGN KEY (holder_controller_id) REFERENCES controllers (ID)
+    FOREIGN KEY (claimer_controller_id) REFERENCES controllers (id),
+    FOREIGN KEY (holder_controller_id) REFERENCES controllers (id)
 );
 
 CREATE TABLE locations (
@@ -216,17 +216,17 @@ CREATE TABLE locations (
     can_be_destroyed BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE, -- Is a controllers Base
     activate_json JSON DEFAULT '{}'::json,
-    FOREIGN KEY (zone_id) REFERENCES zones (ID),
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID)
+    FOREIGN KEY (zone_id) REFERENCES zones (id),
+    FOREIGN KEY (controller_id) REFERENCES controllers (id)
 );
 
 CREATE TABLE artefacts (
-    id SERIAL PRIMARY KEY,          -- Unique ID of the artefact
+    id SERIAL PRIMARY KEY,          -- Unique id of the artefact
     location_id INTEGER,            -- Foreign key referencing a location
     name TEXT NOT NULL,             -- Name of the artefact
     description TEXT NOT NULL,      -- Description of the artefact
     full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
-    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
+    FOREIGN KEY (location_id) REFERENCES locations (id) -- Link to locations table
 );
 
 CREATE TABLE controller_known_locations (
@@ -237,8 +237,8 @@ CREATE TABLE controller_known_locations (
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (controller_id, location_id), -- Unicity constraint on controller/worker combo
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
-    FOREIGN KEY (location_id) REFERENCES locations (ID) -- Link to locations table
+    FOREIGN KEY (controller_id) REFERENCES controllers (id), -- Link to controllers table
+    FOREIGN KEY (location_id) REFERENCES locations (id) -- Link to locations table
 );
 
 CREATE TABLE location_attack_logs (
@@ -252,27 +252,27 @@ CREATE TABLE location_attack_logs (
     target_result_text TEXT,
     attacker_result_text TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (target_controller_id) REFERENCES controllers (ID), -- Link to controllers table
-    FOREIGN KEY (attacker_id) REFERENCES controllers (ID) -- Link to controllers table
+    FOREIGN KEY (target_controller_id) REFERENCES controllers (id), -- Link to controllers table
+    FOREIGN KEY (attacker_id) REFERENCES controllers (id) -- Link to controllers table
 );
 
 -- Prepare the Worker Origins
 CREATE TABLE worker_origins (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name text NOT NULL
 );
 
 -- Table storing the worker random names by origin
 CREATE TABLE worker_names (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     firstname text NOT NULL,
     lastname text NOT NULL,
     origin_id INT NOT NULL,
-    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID)
+    FOREIGN KEY (origin_id) REFERENCES worker_origins (id)
 );
 
 CREATE TABLE workers (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     firstname text NOT NULL,
     lastname text NOT NULL,
     origin_id INT NOT NULL,
@@ -280,12 +280,12 @@ CREATE TABLE workers (
     is_alive BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (origin_id) REFERENCES worker_origins (ID),
-    FOREIGN KEY (zone_id) REFERENCES zones (ID)
+    FOREIGN KEY (origin_id) REFERENCES worker_origins (id),
+    FOREIGN KEY (zone_id) REFERENCES zones (id)
 );
 
 CREATE TABLE controller_worker (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     controller_id INT,
     worker_id INT,
     is_primary_controller BOOLEAN DEFAULT TRUE,
@@ -294,18 +294,18 @@ CREATE TABLE controller_worker (
     UNIQUE (controller_id, worker_id),
     UNIQUE (worker_id, is_primary_controller),
     -- Adding FOREIGN KEY
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID),
-    FOREIGN KEY (worker_id) REFERENCES workers (ID)
+    FOREIGN KEY (controller_id) REFERENCES controllers (id),
+    FOREIGN KEY (worker_id) REFERENCES workers (id)
 );
 
 CREATE TABLE power_types (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name text NOT NULL,
     description text
 );
 
 CREATE TABLE powers (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name text NOT NULL,
     description text,
     enquete INT DEFAULT 0,
@@ -315,35 +315,35 @@ CREATE TABLE powers (
 );
 
 CREATE TABLE link_power_type (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     power_type_id INT NOT NULL,
     power_id INT NOT NULL,
     UNIQUE (power_type_id, power_id),
-    FOREIGN KEY (power_type_id) REFERENCES power_types (ID),
-    FOREIGN KEY (power_id) REFERENCES powers (ID)
+    FOREIGN KEY (power_type_id) REFERENCES power_types (id),
+    FOREIGN KEY (power_id) REFERENCES powers (id)
 );
 
 CREATE TABLE worker_powers (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     worker_id INT NOT NULL,
     link_power_type_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, link_power_type_id), -- Adding unique constraint
-    FOREIGN KEY (worker_id) REFERENCES workers (ID),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
+    FOREIGN KEY (worker_id) REFERENCES workers (id),
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
 );
 
 CREATE TABLE faction_powers (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     faction_id INT NOT NULL,
     link_power_type_id INT NOT NULL,
     UNIQUE (faction_id, link_power_type_id), -- Adding unique constraint
-    FOREIGN KEY (faction_id) REFERENCES factions (ID),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (ID)
+    FOREIGN KEY (faction_id) REFERENCES factions (id),
+    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
 );
 
 CREATE TABLE worker_actions (
-    ID SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     worker_id INT NOT NULL,
     turn_number INT NOT NULL DEFAULT 0,
     zone_id INT NOT NULL,
@@ -356,24 +356,24 @@ CREATE TABLE worker_actions (
     report JSON DEFAULT '{}'::json, -- Expected keys 'life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, turn_number), -- Adding unique constraint
-    FOREIGN KEY (worker_id) REFERENCES workers (ID),
-    FOREIGN KEY (zone_id) REFERENCES zones (ID),
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID)
+    FOREIGN KEY (worker_id) REFERENCES workers (id),
+    FOREIGN KEY (zone_id) REFERENCES zones (id),
+    FOREIGN KEY (controller_id) REFERENCES controllers (id)
 );
 
 CREATE TABLE controllers_known_enemies (
     id SERIAL PRIMARY KEY,
     controller_id INT NOT NULL, -- controller A
-    discovered_worker_id INT NOT NULL, -- ID of the discovered worker
-    discovered_controller_id INT, -- Optional ID of their controller
+    discovered_worker_id INT NOT NULL, -- id of the discovered worker
+    discovered_controller_id INT, -- Optional id of their controller
     discovered_controller_name TEXT, -- Optional name of their controller
     zone_id INT NOT NULL, -- Zone of discovery
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (controller_id, discovered_worker_id), -- Unicity constraint on controller/worker combo
-    FOREIGN KEY (controller_id) REFERENCES controllers (ID), -- Link to controllers table
-    FOREIGN KEY (discovered_worker_id) REFERENCES workers (ID), -- Link to workers table
-    FOREIGN KEY (discovered_controller_id) REFERENCES controllers (ID), -- Link to controllers table
-    FOREIGN KEY (zone_id) REFERENCES zones (ID) -- Link to zones table
+    FOREIGN KEY (controller_id) REFERENCES controllers (id), -- Link to controllers table
+    FOREIGN KEY (discovered_worker_id) REFERENCES workers (id), -- Link to workers table
+    FOREIGN KEY (discovered_controller_id) REFERENCES controllers (id), -- Link to controllers table
+    FOREIGN KEY (zone_id) REFERENCES zones (id) -- Link to zones table
 );
