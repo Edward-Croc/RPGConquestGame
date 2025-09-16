@@ -451,6 +451,9 @@ function randomWorkerOrigin($pdo, $limit = 1, $originList = null) {
     foreach ($workerOrigins as $workerOrigin) {
         $originsArray[] = $workerOrigin;
     }
+    if ($_SESSION['DEBUG'] == true) 
+        echo sprintf("originsArray: %s <br /> <br />", var_export($originsArray,true));
+
     return $originsArray;
 }
 
@@ -942,7 +945,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
             $new_action = 'passive';
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
-            $currentReport['life_report'] .= "<br /> J'ai rejoint un nouveau maitre. ";
+            $currentReport['life_report'] .= "J'ai rejoint un nouveau maitre.<br /> ";
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
                 // Update the controller_worker table
