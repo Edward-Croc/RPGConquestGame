@@ -113,7 +113,7 @@
                         </div>
                         <br>',
                         htmlspecialchars($textControllerActionMoveBase),
-                        showZoneSelect($gameReady, $zonesArray, $base['zone_id']),
+                        showZoneSelect($gameReady, $zonesArray, $base['zone_id'], false, false, true),
                         htmlspecialchars($base['id']),
                         htmlspecialchars($base['name']),
                         htmlspecialchars($base['zone_name']),
