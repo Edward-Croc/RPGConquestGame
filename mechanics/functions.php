@@ -12,13 +12,24 @@ require_once '../mechanics/locationSearchMechanic.php';
  *
  */
 function diceSQL() {
-    return "FLOOR(
-        RANDOM() * (
-            CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS INT)
-            - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
-            +  1
-        ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
-    )";
+    if ($_SESSION['DBTYPE'] == 'postgres'){
+        return "FLOOR(
+            RANDOM() * (
+                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS INT)
+                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
+                +  1
+            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
+        )";
+    }
+    if ($_SESSION['DBTYPE'] == 'mysql'){
+            return "FLOOR(
+                RAND() * (
+                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS SIGNED)
+                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS SIGNED)
+                +  1
+            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS SIGNED)
+        )";
+    }
 }
 
 /**
@@ -71,14 +82,24 @@ function calculateVals($pdo, $turn_number){
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
 
         // chose SQL for value generation
-        $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $valBaseSQL = "(SELECT CAST(value AS SIGNED) FROM config WHERE name = 'PASSIVEVAL')";
+        }
         if ($elements[2]) {
             $valBaseSQL = diceSQL();
         }
 
         // Name of configured bonus (ex : ENQUETE_ZONE_BONUS)
         $zoneBonusColumn = strtoupper("{$elements[0]}_zone_bonus");
-        $zoneBonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $zoneBonusColumn);
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $zoneBonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $zoneBonusColumn);
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $zoneBonusSQL = sprintf("(SELECT CAST(value AS SIGNED) FROM config WHERE name = '%s')", $zoneBonusColumn);
+        }
 
         // Flat bonus to a specific action from config
         $flatBonusSQL = "";
@@ -94,12 +115,7 @@ function calculateVals($pdo, $turn_number){
             if (!empty($flatBonusConfig)) {
                 $flatBonusSQL .= sprintf("
                     + CASE
-                        WHEN EXISTS (
-                            SELECT 1
-                            FROM worker_actions wa
-                            WHERE wa.id = worker_actions.id
-                            AND wa.action_choice = '%s'
-                        )
+                        WHEN wa1.action_choice = '%s'
                         THEN %s
                         ELSE 0
                     END",
@@ -116,7 +132,7 @@ function calculateVals($pdo, $turn_number){
                 LEFT JOIN worker_powers wp ON w.id = wp.worker_id
                 LEFT JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
                 LEFT JOIN powers p ON lpt.power_id = p.ID
-                WHERE worker_actions.worker_id = w.id
+                WHERE wa1.worker_id = w.id
             ), 0)
             + %s
             + CASE
@@ -125,7 +141,7 @@ function calculateVals($pdo, $turn_number){
                     FROM workers w2
                     JOIN zones z2 ON w2.zone_id = z2.id
                     JOIN controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = True
-                    WHERE w2.id = worker_actions.worker_id
+                    WHERE w2.id = wa1.worker_id
                       AND z2.holder_controller_id = cw2.controller_id
                 )
                 THEN %s
@@ -146,7 +162,7 @@ function calculateVals($pdo, $turn_number){
             // add to list of updates
             $sqlArray[] = array(
                 'sql'=> sprintf(
-                    'UPDATE worker_actions SET %1$s WHERE turn_number = %2$s AND action_choice IN (%3$s)',
+                    'UPDATE worker_actions wa1 SET %1$s WHERE turn_number = %2$s AND action_choice IN (%3$s)',
                     $valSQL, $turn_number, $config
                 ),
                 'config' => $config
@@ -171,25 +187,41 @@ function calculateVals($pdo, $turn_number){
 
     echo '<p> Calculate zone defense values <br />';
     try {
-        $sql = "UPDATE zones
-            SET calculated_defence_val = defence_val + subquery.worker_count
-            FROM (
-                SELECT
-                    z.id AS zone_id,
-                    COALESCE(COUNT(w.id)+1, 0) AS worker_count
-                FROM
-                    zones z
-                LEFT JOIN
-                    workers w ON w.zone_id = z.id
-                LEFT JOIN
-                    controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = True
-                WHERE
-                    z.holder_controller_id = cw.controller_id
-                GROUP BY
-                    z.id
-            ) AS subquery
-            WHERE zones.id = subquery.zone_id
-        ";
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "UPDATE zones
+                SET calculated_defence_val = defence_val + subquery.worker_count
+                FROM (
+                    SELECT
+                        z.id AS zone_id,
+                        COALESCE(COUNT(w.id)+1, 0) AS worker_count
+                    FROM
+                        zones z
+                    LEFT JOIN
+                        workers w ON w.zone_id = z.id
+                    LEFT JOIN
+                        controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = True
+                    WHERE
+                        z.holder_controller_id = cw.controller_id
+                    GROUP BY
+                        z.id
+                ) AS subquery
+                WHERE zones.id = subquery.zone_id
+            ";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "UPDATE zones z
+                JOIN (
+                    SELECT z.id AS zone_id, 
+                        COALESCE(COUNT(w.id)+1, 0) AS worker_count 
+                    FROM zones z 
+                    LEFT JOIN workers w ON w.zone_id = z.id 
+                    LEFT JOIN controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = 1 
+                    WHERE z.holder_controller_id = cw.controller_id 
+                    GROUP BY z.id
+                ) AS subquery ON z.id = subquery.zone_id
+                SET z.calculated_defence_val = z.defence_val + subquery.worker_count
+            ";
+        }
         // Prepare and execute SQL query
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
