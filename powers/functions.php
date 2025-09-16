@@ -85,9 +85,16 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
     $power_text = getSQLPowerText(false);
     try{
         // Get x random values from powers for a power_type
-        $sql = "SELECT *, $power_text FROM powers AS p
-        INNER JOIN link_power_type ON link_power_type.power_id = p.id
-        WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "SELECT *, $power_text FROM powers AS p
+                INNER JOIN link_power_type ON link_power_type.power_id = p.id
+                WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "SELECT *, $power_text FROM powers AS p
+            INNER JOIN link_power_type ON link_power_type.power_id = p.id
+            WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RAND() LIMIT $limit";
+        }
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
