@@ -86,9 +86,12 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
             throw new Exception("No record found for worker_id $workerId and turn_number $turnNumber.");
         }
         // Step 2: Decode the JSON report
+        $report = array();
+        if (!empty($row['report'])) {
         $report = json_decode($row['report'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
+        }
         }
         // Step 3: Append the new element to the specified key
         $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
