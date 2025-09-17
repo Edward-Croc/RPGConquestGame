@@ -27,7 +27,7 @@ SELECT
 FROM (
     SELECT 'Kosagi' AS firstname, 'Kotatsu' AS lastname, 'Shikoku - Shōdoshima' AS origin_name, 'Ile de Shōdoshima' AS zone_name
     UNION ALL SELECT 'Iwao', 'Jizane', 'Shikoku - Iyo', 'Montagnes d’Iyo'
-    UNION ALL SELECT 'Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile dAwaji'
+    UNION ALL SELECT 'Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'
     UNION ALL SELECT 'Hiuchi', 'Kagaribi', 'Shikoku - Tosa', 'Cap sud de Tosa'
 ) AS nd
 JOIN worker_origins wo ON wo.name = nd.origin_name
