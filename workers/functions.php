@@ -968,7 +968,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id AND is_primary_controller = True";
+                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
@@ -992,12 +992,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             try {
                 $new_action = 'passive';
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = True";
+                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':worker_id' => $workerId
                 ]);
-                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = True WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . " WHERE worker_id = :worker_id AND controller_id = :extraVal";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
@@ -1025,13 +1025,13 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
             try {
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = True";
+                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal['recall_controller_id'],
                     ':worker_id' => $workerId
                 ]);
-                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = True WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . " WHERE worker_id = :worker_id AND controller_id = :extraVal";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal['return_controller_id'],
