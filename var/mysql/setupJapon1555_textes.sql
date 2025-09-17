@@ -191,26 +191,26 @@ VALUES
 
 -- Observers of a **successful** violent claim
 ('textesClaimSuccessViewArray', '[
-    "J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>. La zone a changé de mains.",
-    "<strong>%2$s</strong> appartient désormais au maitre de <strong>%1$s</strong>. Iel a balayé toute résistance.",
-    "L’opération de <strong>%1$s</strong> sur <strong>%2$s</strong> a été une réussite totale, malgré les dégats.",
-    "<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force. Iel n’a laissé aucune chance aux défenseurs."
+    "J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>. La zone a changé de mains.<br/>",
+    "<strong>%2$s</strong> appartient désormais au maitre de <strong>%1$s</strong>. Iel a balayé toute résistance.<br/>",
+    "L’opération de <strong>%1$s</strong> sur <strong>%2$s</strong> a été une réussite totale, malgré les dégats.<br/>",
+    "<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force. Iel n’a laissé aucune chance aux défenseurs.<br/>"
 ]', 'Texts the workers observing the successful violent claiming of a zone'),
 
 -- Report to the **claiming worker** on failure
 ('textesClaimFailArray', '[
-    "Notre tentative de prise de contrôle de <strong>%2$s</strong> a échoué. La défense était trop solide.",
-    "Nous avons échoué à nous imposer en force sur <strong>%2$s</strong>. Il faudra retenter plus tard.",
-    "L’assaut sur <strong>%2$s</strong> a été un échec. Les forces en place ont tenu bon.",
-    "La mission de domination de <strong>%2$s</strong> n’a pas abouti. Trop de résistance à notre autorité sur place."
+    "Notre tentative de prise de contrôle de <strong>%2$s</strong> a échoué. La défense était trop solide.<br/>",
+    "Nous avons échoué à nous imposer en force sur <strong>%2$s</strong>. Il faudra retenter plus tard.<br/>",
+    "L’assaut sur <strong>%2$s</strong> a été un échec. Les forces en place ont tenu bon.<br/>",
+    "La mission de domination de <strong>%2$s</strong> n’a pas abouti. Trop de résistance à notre autorité sur place.<br/>"
 ]', 'Texts for the fail report of the claiming worker'),
 
 -- Report to the **claiming worker** on success
 ('textesClaimSuccessArray', '[
-    "Nous avons pris le contrôle du territoire <strong>%2$s</strong> avec succès. Félicitations vous en êtes désormais le maitre.",
-    "Notre offensive sur la zone <strong>%2$s</strong> a porté ses fruits. Elle est maintenant à vous.",
-    "Nous avons su imposer votre autorité sur <strong>%2$s</strong>. La région vous obéit désormais.",
-    "<strong>%2$s</strong> est tombé.e sous votre coupe."
+    "Nous avons pris le contrôle du territoire <strong>%2$s</strong> avec succès. Félicitations vous en êtes désormais le maitre.<br/>",
+    "Notre offensive sur la zone <strong>%2$s</strong> a porté ses fruits. Elle est maintenant à vous.<br/>",
+    "Nous avons su imposer votre autorité sur <strong>%2$s</strong>. La région vous obéit désormais.<br/>",
+    "<strong>%2$s</strong> est tombé.e sous votre coupe.<br/>"
 ]', 'Texts for the success report of the claiming worker');
 
 INSERT INTO config (name, value, description)

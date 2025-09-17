@@ -194,30 +194,30 @@ VALUES
 -- %2$s - zone name
 -- %2$s - new controller name
 ('textesClaimSuccessViewArray', '[
-    "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.",
-    "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.",
-    "L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.",
-    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance aux défenseurs."
+    "J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.<br/>",
+    "%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.<br/>",
+    "L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.<br/>",
+    "%1$s a pris %2$s par la force. Iel n’a laissé aucune chance aux défenseurs.<br/>"
 ]', 'Texts the workers observing the successful violent claiming of a zone'),
 
 -- Report to the **claiming worker** on failure
 -- %1$s - worker name
 -- %2$s - zone name
 ('textesClaimFailArray', '[
-    "Notre tentative de prise de contrôle de %2$s a échoué. La défense était trop solide.",
-    "Nous avons échoué à nous imposer en force sur %2$s. Il faudra retenter plus tard.",
-    "Notre assaut sur %2$s a été un échec. Les forces en place ont tenu bon.",
-    "La mission de domination de %2$s n’a pas abouti. Trop de résistance à notre autorité sur place."
+    "Notre tentative de prise de contrôle de %2$s a échoué. La défense était trop solide.<br/>",
+    "Nous avons échoué à nous imposer en force sur %2$s. Il faudra retenter plus tard.<br/>",
+    "Notre assaut sur %2$s a été un échec. Les forces en place ont tenu bon.<br/>",
+    "La mission de domination de %2$s n’a pas abouti. Trop de résistance à notre autorité sur place.<br/>"
 ]', 'Texts for the fail report of the claiming worker'),
 
 -- Report to the **claiming worker** on success
 -- %1$s - worker name
 -- %2$s - zone name
 ('textesClaimSuccessArray', '[
-    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations, vous en êtes désormais le maitre.",
-    "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.",
-    "Nous avons su imposer votre autorité sur %2$s. Le quartier vous obéit désormais.",
-    "%2$s est tombé.e sous votre coupe."
+    "Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations, vous en êtes désormais le maitre.<br/>",
+    "Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.<br/>",
+    "Nous avons su imposer votre autorité sur %2$s. Le quartier vous obéit désormais.<br/>",
+    "%2$s est tombé.e sous votre coupe.<br/>"
 ]', 'Texts for the success report of the claiming worker');
 
 INSERT INTO config (name, value, description)
