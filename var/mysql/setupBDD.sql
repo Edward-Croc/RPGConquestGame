@@ -104,8 +104,8 @@ VALUES
     ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
     -- Action End turn effects
-    ('continuing_investigate_action', 0, 'Does the investigate action stay active' ),
-    ('continuing_claimed_action', 0, 'Does the claim action stay active' )
+    ('continuing_investigate_action', 1, 'Does the investigate action stay active' ),
+    ('continuing_claimed_action', 1, 'Does the claim action stay active' )
     -- Base information
     ,('baseDiscoveryDiff', 3, 'Base discovery value for bases' )
     ,('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' )
