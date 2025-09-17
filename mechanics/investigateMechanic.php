@@ -32,90 +32,172 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         echo "turn_number : $turn_number <br>";
     }
 
-    // Define the SQL query
-    $sql = sprintf("
-        WITH searchers AS (
+    // Define the SQL query based on database type
+    if ($_SESSION['DBTYPE'] == 'postgres') {
+        $sql = "
+            WITH searchers AS (
+                SELECT
+                    wa.worker_id AS searcher_id,
+                    wa.controller_id AS searcher_controller_id,
+                    wa.enquete_val AS searcher_enquete_val,
+                    wa.zone_id
+                FROM
+                    worker_actions wa
+                WHERE
+                    wa.action_choice IN ('passive', 'investigate')
+                    AND turn_number = :turn_number
+            )
             SELECT
-                wa.worker_id AS searcher_id,
-                wa.controller_id AS searcher_controller_id,
-                wa.enquete_val AS searcher_enquete_val,
-                wa.zone_id
-            FROM
-                worker_actions wa
+                s.searcher_id,
+                s.searcher_enquete_val,
+                s.searcher_controller_id,
+                z.id AS zone_id,
+                z.name AS zone_name,
+                wa.worker_id AS found_id,
+                wa.enquete_val AS found_enquete_val,
+                wa.action_choice AS found_action,
+                wa.action_params AS found_action_params,
+                CONCAT(w.firstname, ' ', w.lastname) AS found_name,
+                wo.id AS found_worker_origin_id,
+                wo.name AS found_worker_origin_name,
+                cw.controller_id AS found_controller_id,
+                CONCAT(c.firstname, ' ', c.lastname) AS found_controller_name,
+                (
+                    SELECT ARRAY_AGG(p.name)
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Metier'
+                ) AS found_metier,
+                (
+                    SELECT ARRAY_AGG(p.name)
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Hobby'
+                ) AS found_hobby,
+                (
+                    SELECT ARRAY_AGG(p.name)
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Discipline'
+                ) AS found_discipline,
+                (
+                    SELECT ARRAY_AGG(p.name)
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
+                ) AS found_transformation,
+                (
+                    SELECT ARRAY_AGG((p.other->>'hidden')::INT)
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
+                ) AS hidden_transformation,
+                (s.searcher_enquete_val - wa.enquete_val) AS enquete_difference
+            FROM searchers s
+            JOIN zones z ON z.id = s.zone_id
+            JOIN worker_actions wa ON
+                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured')
+            JOIN workers w ON wa.worker_id = w.ID
+            JOIN worker_origins wo ON wo.id = w.origin_id
+            JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = true
+            JOIN controllers c ON cw.controller_id = c.ID
             WHERE
-                wa.action_choice IN ('passive', 'investigate')
-                AND turn_number = :turn_number
-        )
-        SELECT
-            s.searcher_id,
-            s.searcher_enquete_val,
-            s.searcher_controller_id,
-            z.id AS zone_id,
-            z.name AS zone_name,
-            wa.worker_id AS found_id,
-            wa.enquete_val AS found_enquete_val,
-            wa.action_choice AS found_action,
-            wa.action_params AS found_action_params,
-            CONCAT(w.firstname, ' ', w.lastname) AS found_name,
-            wo.id AS found_worker_origin_id,
-            wo.name AS found_worker_origin_name,
-            cw.controller_id AS found_controller_id,
-            CONCAT(c.firstname, ' ', c.lastname) AS found_controller_name,
-            (
-                SELECT ARRAY_AGG(p.name)
-                FROM worker_powers wp
-                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                JOIN powers p ON lpt.power_id = p.ID
-                JOIN power_types pt ON lpt.power_type_id = pt.ID
-                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Metier'
-            ) AS found_metier,
-            (
-                SELECT ARRAY_AGG(p.name)
-                FROM worker_powers wp
-                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                JOIN powers p ON lpt.power_id = p.ID
-                JOIN power_types pt ON lpt.power_type_id = pt.ID
-                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Hobby'
-            ) AS found_hobby,
-            (
-                SELECT ARRAY_AGG(p.name)
-                FROM worker_powers wp
-                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                JOIN powers p ON lpt.power_id = p.ID
-                JOIN power_types pt ON lpt.power_type_id = pt.ID
-                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Discipline'
-            ) AS found_discipline,
-            (
-                SELECT ARRAY_AGG(p.name)
-                FROM worker_powers wp
-                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                JOIN powers p ON lpt.power_id = p.ID
-                JOIN power_types pt ON lpt.power_type_id = pt.ID
-                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
-            ) AS found_transformation,
-            (
-                SELECT ARRAY_AGG((p.other->>'hidden')::%s)
-                FROM worker_powers wp
-                JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                JOIN powers p ON lpt.power_id = p.ID
-                JOIN power_types pt ON lpt.power_type_id = pt.ID
-                WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
-            ) AS hidden_transformation,
-            (s.searcher_enquete_val - wa.enquete_val) AS enquete_difference
-        FROM searchers s
-        JOIN zones z ON z.id = s.zone_id
-        JOIN worker_actions wa ON
-            s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured')
-        JOIN workers w ON wa.worker_id = w.ID
-        JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = true
-        JOIN controllers c ON cw.controller_id = c.ID
-        WHERE
-            s.searcher_id != wa.worker_id
-            AND s.searcher_controller_id != wa.controller_id
-    ", 
-        ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : (($_SESSION['DBTYPE'] == 'mysql') ? 'SIGNED' : 'INT')
-    );
+                s.searcher_id != wa.worker_id
+                AND s.searcher_controller_id != wa.controller_id
+        ";
+    } else {
+        // MySQL version
+        $sql = "
+            SELECT
+                s.searcher_id,
+                s.searcher_enquete_val,
+                s.searcher_controller_id,
+                z.id AS zone_id,
+                z.name AS zone_name,
+                wa.worker_id AS found_id,
+                wa.enquete_val AS found_enquete_val,
+                wa.action_choice AS found_action,
+                wa.action_params AS found_action_params,
+                CONCAT(w.firstname, ' ', w.lastname) AS found_name,
+                wo.id AS found_worker_origin_id,
+                wo.name AS found_worker_origin_name,
+                cw.controller_id AS found_controller_id,
+                CONCAT(c.firstname, ' ', c.lastname) AS found_controller_name,
+                (
+                    SELECT GROUP_CONCAT(p.name SEPARATOR ',')
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Metier'
+                ) AS found_metier,
+                (
+                    SELECT GROUP_CONCAT(p.name SEPARATOR ',')
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Hobby'
+                ) AS found_hobby,
+                (
+                    SELECT GROUP_CONCAT(p.name SEPARATOR ',')
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Discipline'
+                ) AS found_discipline,
+                (
+                    SELECT GROUP_CONCAT(p.name SEPARATOR ',')
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
+                ) AS found_transformation,
+                (
+                    SELECT GROUP_CONCAT(CAST(JSON_UNQUOTE(JSON_EXTRACT(p.other, '$.hidden')) AS SIGNED) SEPARATOR ',')
+                    FROM worker_powers wp
+                    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                    JOIN powers p ON lpt.power_id = p.ID
+                    JOIN power_types pt ON lpt.power_type_id = pt.ID
+                    WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
+                ) AS hidden_transformation,
+                (s.searcher_enquete_val - wa.enquete_val) AS enquete_difference
+            FROM (
+                SELECT
+                    wa.worker_id AS searcher_id,
+                    wa.controller_id AS searcher_controller_id,
+                    wa.enquete_val AS searcher_enquete_val,
+                    wa.zone_id
+                FROM
+                    worker_actions wa
+                WHERE
+                    wa.action_choice IN ('passive', 'investigate')
+                    AND turn_number = :turn_number
+            ) s
+            JOIN zones z ON z.id = s.zone_id
+            JOIN worker_actions wa ON
+                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured')
+            JOIN workers w ON wa.worker_id = w.ID
+            JOIN worker_origins wo ON wo.id = w.origin_id
+            JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = 1
+            JOIN controllers c ON cw.controller_id = c.ID
+            WHERE
+                s.searcher_id != wa.worker_id
+                AND s.searcher_controller_id != wa.controller_id
+        ";
+    }
     if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
     try{
         // Prepare and execute the statement
