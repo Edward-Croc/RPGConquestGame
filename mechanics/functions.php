@@ -258,8 +258,9 @@ function createNewTurnLines($pdo, $turn_number){
             wa.action_choice,
             wa.action_params
         FROM workers w
-        JOIN controller_worker AS cw ON cw.worker_id = w.id AND is_primary_controller = true
+        JOIN controller_worker AS cw ON cw.worker_id = w.id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "
         JOIN worker_actions AS wa ON wa.worker_id = w.id AND turn_number = :turn_number_n_1
+        WHERE wa.worker_id NOT IN ( SELECT worker_id FROM worker_actions wa2 WHERE wa2.turn_number = :turn_number )
     ";
     try {
         $stmtInsert = $pdo->prepare($sqlInsert);
@@ -274,9 +275,12 @@ function createNewTurnLines($pdo, $turn_number){
     $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
     if (!$config_continuing_investigate_action){
         $sqlSetInvestigate = "
-            UPDATE worker_actions SET action_choice = 'passive' WHERE turn_number = :turn_number AND worker_id IN (
-                SELECT worker_id FROM worker_actions wa WHERE action_choice = 'investigate' AND turn_number = :turn_number_n_1
-            )
+            UPDATE worker_actions wa1
+            JOIN worker_actions wa2 ON wa1.worker_id = wa2.worker_id
+            SET wa1.action_choice = 'passive'
+            WHERE wa1.turn_number = :turn_number
+            AND wa2.action_choice = 'investigate'
+            AND wa2.turn_number = :turn_number_n_1
         ";
         try {
             $stmtSetInvestigate = $pdo->prepare($sqlSetInvestigate);
@@ -291,9 +295,12 @@ function createNewTurnLines($pdo, $turn_number){
     $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
         if (!$config_continuing_claimed_action){
         $sqlSetClaim = "
-            UPDATE worker_actions SET action_choice = 'passive' WHERE turn_number = :turn_number AND worker_id IN (
-                SELECT worker_id FROM worker_actions wa WHERE action_choice = 'claim' AND turn_number = :turn_number_n_1
-            )
+            UPDATE worker_actions wa1
+            JOIN worker_actions wa2 ON wa1.worker_id = wa2.worker_id
+            SET wa1.action_choice = 'passive'
+            WHERE wa1.turn_number = :turn_number
+            AND wa2.action_choice = 'claim'
+            AND wa2.turn_number = :turn_number_n_1
         ";
         try {
             $stmtSetClaim = $pdo->prepare($sqlSetClaim);
