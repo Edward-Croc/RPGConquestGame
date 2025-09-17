@@ -134,10 +134,13 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     // Check Transformation Conditions
     $powerTransformationArray = array();
     $recrutement_transformation_json = getConfig($gameReady, 'recrutement_transformation');
-    $recrutement_transformation_array = json_decode($recrutement_transformation_json, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
-        $recrutement_transformation_array = array();
+    $recrutement_transformation_array = array();
+    if (!empty($recrutement_transformation_json)) {
+        $recrutement_transformation_array = json_decode($recrutement_transformation_json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
+            $recrutement_transformation_array = array();
+        }
     }
     if ($_SESSION['DEBUG_TRANSFORM']) echo sprintf("recrutement_transformation_array :%s  <br>", var_export($recrutement_transformation_array,true));
     if (!empty($recrutement_transformation_array['action']) && $recrutement_transformation_array['action'] == 'check' ) {

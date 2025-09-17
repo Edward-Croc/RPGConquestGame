@@ -67,9 +67,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ( $_SESSION['DEBUG'] == true )
                     $workerActionInfo .= ' Action spéciale en cours : <strong>'.$currentAction['action_choice'].'</strong> '. $currentAction['action_params'];
 
-                $params = json_decode($currentAction['action_params'], true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                $params = array();
+                if (!empty($currentAction['action_params'])) {
+                    $params = json_decode($currentAction['action_params'], true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
                 }
                 if ($currentAction['action_choice'] == 'claim') {
                     if (!empty($params['claim_controller_id']) && ($params['claim_controller_id'] != "null") ) {
@@ -292,9 +295,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
                 $age_discipline_json = getConfig($gameReady, 'age_discipline');
                 if ( $debug_discipline_age ) echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
-                $age_discipline_array = json_decode($age_discipline_json, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+
+                $age_discipline_array = array();
+                if (!empty($age_discipline_json)) {
+                    $age_discipline_array = json_decode($age_discipline_json, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
                 }
                 if ( $debug_discipline_age ) echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array, true));
                 $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, true);
@@ -332,9 +339,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $upgradeTransformationHTML = "";
                 $debug_transformation_age = $_SESSION['DEBUG_TRANSFORM'];
                 $age_transformation_json = getConfig($gameReady, 'age_transformation');
-                $age_transformation_array = json_decode($age_transformation_json, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                $age_transformation_array = array();
+                if (!empty($age_transformation_json)) {
+                    $age_transformation_array = json_decode($age_transformation_json, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
                 }
                 if ( $debug_transformation_age ) echo sprintf("age_transformation_array :%s  <br>", var_export($age_transformation_array, true));
                 if (!empty($age_transformation_array['action']) && $age_transformation_array['action'] == 'check' ) {

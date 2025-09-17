@@ -824,10 +824,13 @@ function moveWorker($pdo, $workerId, $zoneId) {
     if ($debug) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
 
     // Decode the existing JSON into an associative array
-    $currentReport = json_decode($action['report'], true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
-        $currentReport = array();
+    $currentReport = array();
+    if (!empty($action['report'])) {
+        $currentReport = json_decode($action['report'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            $currentReport = array();
+        }
     }
     $zone_name = getZoneName($pdo, $zoneId);
     if (empty($currentReport['life_report'])) $currentReport['life_report'] = '';
@@ -837,7 +840,7 @@ function moveWorker($pdo, $workerId, $zoneId) {
     // Encode the updated array back into JSON
     $updatedReportJson = json_encode($currentReport);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+        echo "JSON encoding error: " . json_last_error_msg() . "<br />";
         return null;
     }
     try{
@@ -913,10 +916,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
     $currentAction = $worker_actions[0];
 
     // Decode the existing JSON into an associative array
-    $currentReport = json_decode($currentAction['report'], true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
-        $currentReport = array();
+    $currentReport = array();
+    if (!empty($currentAction['report'])) {
+        $currentReport = json_decode($currentAction['report'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
+        }
     }
     $sql_worker_actions = "UPDATE worker_actions SET ";
     if ($_SESSION['DEBUG'] == true) echo sprintf("%s(): activate : %s <br/>", __FUNCTION__, $action);
@@ -1059,7 +1064,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
     $updatedReportJson = json_encode($currentReport);
     if (json_last_error() === JSON_ERROR_NONE) {
         $sql_worker_actions .= ", report = :report ";
-    } else { echo "JSON decoding error: " . json_last_error_msg() . "<br />"; }
+    } else { echo "JSON encoding error: " . json_last_error_msg() . "<br />"; }
     try{
         $sql_worker_actions .= " WHERE id = :id AND turn_number = :turn_number ";
         if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
