@@ -33,7 +33,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     }
 
     // Define the SQL query
-    $sql = "
+    $sql = sprintf("
         WITH searchers AS (
             SELECT
                 wa.worker_id AS searcher_id,
@@ -94,7 +94,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
                 WHERE wp.worker_id = wa.worker_id AND pt.name = 'Transformation'
             ) AS found_transformation,
             (
-                SELECT ARRAY_AGG((p.other->>'hidden')::INT)
+                SELECT ARRAY_AGG((p.other->>'hidden')::%s)
                 FROM worker_powers wp
                 JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
                 JOIN powers p ON lpt.power_id = p.ID
@@ -113,7 +113,9 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         WHERE
             s.searcher_id != wa.worker_id
             AND s.searcher_controller_id != wa.controller_id
-    ";
+    ", 
+        ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : (($_SESSION['DBTYPE'] == 'mysql') ? 'SIGNED' : 'INT')
+    );
     if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
     try{
         // Prepare and execute the statement
