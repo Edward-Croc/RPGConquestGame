@@ -12,24 +12,18 @@ require_once '../mechanics/locationSearchMechanic.php';
  *
  */
 function diceSQL() {
-    if ($_SESSION['DBTYPE'] == 'postgres'){
-        return "FLOOR(
-            RANDOM() * (
-                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS INT)
-                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
+    return sprintf(<<<'SQL'
+        FLOOR(
+            %1$s * (
+                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS %2$s)
+                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS %2$s)
                 +  1
-            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS INT)
-        )";
-    }
-    if ($_SESSION['DBTYPE'] == 'mysql'){
-            return "FLOOR(
-                RAND() * (
-                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS SIGNED)
-                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS SIGNED)
-                +  1
-            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS SIGNED)
-        )";
-    }
+            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS %2$s)
+        )
+    SQL,
+        ($_SESSION['DBTYPE'] == 'postgres') ? 'RANDOM()' : 'RAND()',
+        ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED'
+    );
 }
 
 /**
@@ -82,24 +76,25 @@ function calculateVals($pdo, $turn_number){
         echo sprintf("Get Config for %s : $config <br /> ", $elements[1]);
 
         // chose SQL for value generation
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $valBaseSQL = "(SELECT CAST(value AS INT) FROM config WHERE name = 'PASSIVEVAL')";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $valBaseSQL = "(SELECT CAST(value AS SIGNED) FROM config WHERE name = 'PASSIVEVAL')";
-        }
+        $valBaseSQL = sprintf(
+            <<<'SQL'
+                (SELECT CAST(value AS %s) FROM config WHERE name = 'PASSIVEVAL')
+            SQL,
+            ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED'
+        );
         if ($elements[2]) {
             $valBaseSQL = diceSQL();
         }
 
         // Name of configured bonus (ex : ENQUETE_ZONE_BONUS)
         $zoneBonusColumn = strtoupper("{$elements[0]}_zone_bonus");
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $zoneBonusSQL = sprintf("(SELECT CAST(value AS INT) FROM config WHERE name = '%s')", $zoneBonusColumn);
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $zoneBonusSQL = sprintf("(SELECT CAST(value AS SIGNED) FROM config WHERE name = '%s')", $zoneBonusColumn);
-        }
+        $zoneBonusSQL = sprintf(
+            <<<'SQL'
+                (SELECT CAST(value AS %s) FROM config WHERE name = '%s')
+            SQL,
+            ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED',
+            $zoneBonusColumn
+        );
 
         // Flat bonus to a specific action from config
         $flatBonusSQL = "";
