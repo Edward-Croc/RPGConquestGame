@@ -31,20 +31,22 @@
         // only get each origin once
         if ( !in_array($workerOriginName['origin_id'], $originOptionsCheck) ) {
             $originOptionsCheck[] = $workerOriginName['origin_id'];
-            $originOptions .= 
-                "<option value='" . htmlspecialchars($workerOriginName['origin_id']) . "'>" 
-                . htmlspecialchars($workerOriginName['name'])
-                . "</option>";
+            $originOptions .= sprintf(
+                '<option value="%1$s">%2$s</option>',
+                $workerOriginName['origin_id'],
+                $workerOriginName['name']
+            );
         }
-        
-        $firstnameOptions .= 
-            "<option value='" . htmlspecialchars($workerOriginName['firstname']) . "'>" 
-                . htmlspecialchars($workerOriginName['firstname']) ." (". htmlspecialchars($workerOriginName['name'])
-                . ")</option>";
-        $lastnameOptions .= 
-            "<option value='" . htmlspecialchars($workerOriginName['lastname']) . "'>" 
-            . htmlspecialchars($workerOriginName['lastname']) ." (". htmlspecialchars($workerOriginName['name']) 
-            . ")</option>";
+        $firstnameOptions .= sprintf(
+            '<option value="%1$s">%1$s (%2$s)</option>',
+            $workerOriginName['firstname'],
+            $workerOriginName['name']
+        );
+        $lastnameOptions .= sprintf(
+            '<option value="%1$s">%1$s (%2$s)</option>',
+            $workerOriginName['lastname'],
+            $workerOriginName['name']
+        );
     }
     $showOriginSelect = sprintf('
             <div class="control for-select">

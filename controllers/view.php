@@ -61,14 +61,14 @@
                 <input type="hidden" name="controller_id" value="%3$s">
                 <h3 class="title is-5 mt-4">Votre Base :</h3>
                 <p>',
-                htmlspecialchars($controllers['firstname']),
-                htmlspecialchars($controllers['lastname']),
-                htmlspecialchars($controllers['id']),
-                htmlspecialchars($controllers['faction_name']),
-                htmlspecialchars($controllers['fake_faction_name']),
+                $controllers['firstname'],
+                $controllers['lastname'],
+                $controllers['id'],
+                $controllers['faction_name'],
+                $controllers['fake_faction_name'],
                 !empty($controllers['url']) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$controllers['url'].'\', \'_blank\')">Document de faction</button>' : '',
                 !empty($playerURL) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$playerURL.'\', \'_blank\')">Document du joueur</button>' : '',
-                !empty($controllers['story']) ? '<div class="notification is-light mb-2"><span class="is-size-7">'.nl2br(htmlspecialchars($controllers['story'])).'</span></div>' : '',
+                !empty($controllers['story']) ? '<div class="notification is-light mb-2"><span class="is-size-7">'.nl2br($controllers['story']).'</span></div>' : '',
                 $_SESSION['FOLDER']
             );
             $bases = hasBase($gameReady, $controllers['id']);
@@ -83,7 +83,7 @@
                             <input type="submit" name="createBase" value="Créer" class="button is-link worker-action-btn">
                         </div>
                     </div><br />',
-                    htmlspecialchars(getConfig($gameReady, 'textControllerActionCreateBase')),
+                    getConfig($gameReady, 'textControllerActionCreateBase'),
                     showZoneSelect($gameReady, $zonesArray, null, false, false, true)
                 );
             } else {
@@ -112,13 +112,13 @@
                             </div>
                         </div>
                         <br>',
-                        htmlspecialchars($textControllerActionMoveBase),
+                        $textControllerActionMoveBase,
                         showZoneSelect($gameReady, $zonesArray, $base['zone_id'], false, false, true),
-                        htmlspecialchars($base['id']),
-                        htmlspecialchars($base['name']),
-                        htmlspecialchars($base['zone_name']),
-                        htmlspecialchars($base['discovery_diff']),
-                        nl2br(htmlspecialchars($base['description']))
+                        $base['id'],
+                        $base['name'],
+                        $base['zone_name'],
+                        $base['discovery_diff'],
+                        nl2br($base['description'])
                     );
                 }
             }
@@ -138,7 +138,7 @@
                 echo "<div class='notification is-danger'>";
                 echo "<strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
                 foreach ($incomingAttacks as $attack) {
-                    echo sprintf( "<li> %s</li>", htmlspecialchars($attack['target_result_text']));
+                    echo sprintf( "<li> %s</li>", $attack['target_result_text']);
                 }
                 echo "</ul></div>";
             }
@@ -160,10 +160,10 @@
                                 </div>
                             </div>
                         </form>',
-                        htmlspecialchars($controllers['id']),
+                        $controllers['id'],
                         $showAttackableControllerKnownLocations,
                         $_SESSION['FOLDER']
-                    ); 
+                    );
                 } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
             } else echo '<span class="has-text-grey">Les attaques de lieux sont impossible sans une base d\'opération.</span>';
             echo '</p>';
@@ -184,7 +184,7 @@
                 echo "<div class='notification is-warning'>";
                 echo "<strong>Vos attaques ce tour :</strong><ul>";
                 foreach ($outgoingAttacks as $attack) {
-                    echo "<li>". htmlspecialchars($attack['attacker_result_text']) . "</li>";
+                    echo "<li>". $attack['attacker_result_text'] . "</li>";
                 }
                 echo "</ul></div>";
             }
@@ -197,21 +197,20 @@
                 $htmlKnownLocations = "";
                 // Build Bulma HTML
                 foreach ($controllerKnownLocations as $zone) {
-                    $zoneId = htmlspecialchars($zone['name']);
                     $htmlKnownLocations .= sprintf(
                         '<div class="box">
                             <details>
                                 <summary class="has-text-weight-semibold">Lieux connus de %s</summary>
                             <ul>',
-                        htmlspecialchars($zone['name'])
+                        $zone['name']
                     );
                     foreach ($zone['locations'] as $loc) {
                         $htmlKnownLocations .= sprintf(
                             '<li> <details>
                                 <summary class="has-text-weight-semibold">%s</summary>
                              %s </details></li>',
-                            htmlspecialchars($loc['name']),
-                            htmlspecialchars($loc['description'])
+                            $loc['name'],
+                            $loc['description']
                         );
                     }
                     $htmlKnownLocations .= '</ul></details></div>';
@@ -229,16 +228,14 @@
                 $htmlLinkedLocations = "";
                 // Build Bulma HTML
                 foreach ($controllerLinkedLocations as $zone) {
-                    $zoneId = htmlspecialchars($zone['name']);
                     $htmlLinkedLocations .= sprintf(
                         '<div class="box">
                             <details>
                                 <summary class="has-text-weight-semibold">Lieux de %s</summary>
                             <ul>',
-                        htmlspecialchars($zone['name'])
+                        $zone['name']
                     );
                     foreach ($zone['locations'] as $loc) {
-
                         $artefactsHTML = '';
                         foreach ($loc['artefacts'] as $artefact) {
                             $artefactsHTML .= sprintf(
@@ -247,9 +244,9 @@
                                         %s %s
                                     </details>
                                 ',
-                                htmlspecialchars($artefact['name']),
-                                htmlspecialchars($artefact['description']),
-                                htmlspecialchars($artefact['full_description'])
+                                $artefact['name'],
+                                $artefact['description'],
+                                $artefact['full_description']
                             );
                         }
 
@@ -259,8 +256,8 @@
                                 %s
                                 %s 
                             </details></li>',
-                            htmlspecialchars($loc['name']),
-                            htmlspecialchars($loc['description']),
+                            $loc['name'],
+                            $loc['description'],
                             $artefactsHTML
                         );
                     }

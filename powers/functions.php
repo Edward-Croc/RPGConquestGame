@@ -390,7 +390,7 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
 
     $transformationsOptions = '';
     foreach ($powerTransformationArray as $powerTransformation) {
-        $transformationsOptions .= "<option value='" . htmlspecialchars($powerTransformation['link_power_type_id']) . "'>" . htmlspecialchars($powerTransformation['power_text']) . "</option>";
+        $transformationsOptions .= "<option value='" . $powerTransformation['link_power_type_id'] . "'>" . $powerTransformation['power_text'] . "</option>";
     }
 
     $label = $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '';
@@ -407,7 +407,7 @@ function showTransformationSelect($pdo, $powerTransformationArray, $showText = t
             </div>
         ',
         $label ? 'Ajouter un.e '.$label.'' : '',
-        htmlspecialchars(getPowerTypesDescription($pdo, 'Transformation')),
+        getPowerTypesDescription($pdo, 'Transformation'),
         $transformationsOptions
     );
 

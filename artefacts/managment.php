@@ -57,46 +57,56 @@ require_once '../base/baseHTML.php';
             <th>Change Location</th>
             <th>Delete</th>
         </tr>
-        <?php foreach ($artefacts as $art): ?>
-            <tr>
-                <td><?= htmlspecialchars($art['id']) ?></td>
-                <td><?= htmlspecialchars($art['name']) ?></td>
-                <td><?= htmlspecialchars($art['location_name']) ?></td>
-                <td>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="artefact_id" value="<?= $art['id'] ?>">
-                        <select name="new_location_id">
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= $loc['id'] ?>" <?= $loc['id'] == $art['location_id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($loc['name']) ?>
-                                </option>
-                            <?php endforeach; ?>
+        <?php foreach ($artefacts as $art):
+            $locationOptions = '';
+            foreach ($locations as $loc):
+                $locationOptions .= sprintf(
+                    '<option value="%1$s" %2$s>%3$s</option>',
+                    $loc['id'],
+                    $loc['id'] == $art['location_id'] ? 'selected' : '',
+                    $loc['name']
+                );
+            endforeach;
+            echo sprintf('<tr>
+                <td>%1$s</td>
+                <td>%2$s</td>
+                <td>%3$s</td>
+                <td><form method="POST" style="display:inline;">
+                        <input type="hidden" name="artefact_id" value="%1$s">
+                        <select name="new_location_id">%5$s
                         </select>
                         <button type="submit" name="update_location">Update</button>
                     </form>
                 </td>
-                <td>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="delete_id" value="<?= $art['id'] ?>">
+                <td><form method="POST" style="display:inline;">
+                        <input type="hidden" name="delete_id" value="%1$s">
                         <button type="submit">Delete</button>
                     </form>
                 </td>
-            </tr>
-            <tr>
+            </tr><tr>
                 <td colspan="5">
                     <form method="POST" style="margin-top:5px;">
-                        <input type="hidden" name="artefact_id" value="<?= $art['id'] ?>">
+                        <input type="hidden" name="artefact_id" value="%1$s">
                         <label>Description:
-                            <input type="text" name="description" value="<?= htmlspecialchars($art['description'] ?? '') ?>" size="40">
+                            <input type="text" name="description" value="%6$s" size="40">
                         </label>
                         <label>Full Description:
-                            <input type="text" name="full_description" value="<?= htmlspecialchars($art['full_description'] ?? '') ?>" size="60">
+                            <input type="text" name="full_description" value="%7$s" size="60">
                         </label>
                         <button type="submit" name="update_description">Update Descriptions</button>
                     </form>
                 </td>
-            </tr>
-        <?php endforeach; ?>
+            </tr>',
+                $art['id'],
+                $art['name'],
+                $art['location_name'],
+                $art['location_id'],
+                $locationOptions,
+                $art['description'],
+                $art['full_description']
+            );
+        endforeach;
+        ?>
     </table>
 
     <h2>Add New Artefact</h2>
@@ -111,7 +121,7 @@ require_once '../base/baseHTML.php';
         <label>Location:
             <select name="location_id" required>
                 <?php foreach ($locations as $loc): ?>
-                    <option value="<?= $loc['id'] ?>"><?= htmlspecialchars($loc['name']) ?></option>
+                    <option value="<?= $loc['id'] ?>"><?= $loc['name'] ?></option>
                 <?php endforeach; ?>
             </select>
         </label>

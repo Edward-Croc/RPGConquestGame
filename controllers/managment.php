@@ -78,21 +78,21 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
 <div class="content">
     <h1>Controller Management</h1>
     <?php if ($message): ?>
-        <p style="color:green;"><?php echo htmlspecialchars($message); ?></p>
+        <p style="color:green;"><?php echo $message; ?></p>
     <?php endif; ?>
     <form method="post">
         <label for="player_id">Player:</label>
         <select name="player_id" id="player_id" required>
             <option value="">-- Select Player --</option>
             <?php foreach ($players as $player): ?>
-                <option value="<?php echo $player['id']; ?>"><?php echo htmlspecialchars($player['username']); ?></option>
+                <option value="<?php echo $player['id']; ?>"><?php echo $player['username']; ?></option>
             <?php endforeach; ?>
         </select>
         <label for="controller_id">Controller:</label>
         <select name="controller_id" id="controller_id" required>
             <option value="">-- Select Controller --</option>
             <?php foreach ($controllers as $controller): ?>
-                <option value="<?php echo $controller['id']; ?>"><?php echo htmlspecialchars($controller['lastname']); ?></option>
+                <option value="<?php echo $controller['id']; ?>"><?php echo $controller['lastname']; ?></option>
             <?php endforeach; ?>
         </select>
         <button type="submit" name="add">Add Player to Controller</button>
@@ -138,34 +138,42 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
             $players->execute(['controller_id' => $controller['id']]);
             $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
 
-            echo "<tr>";
-            echo "<td>" . htmlspecialchars($controller['lastname']) . "</td>";
-            echo "<td>" . (isset($controller['secret_controller']) && $controller['secret_controller'] ? 'Yes' : 'No') . "</td>";
-            echo "<td>" . (isset($controller['can_build_base']) && $controller['can_build_base'] ? 'Yes' : 'No') . "</td>";
-            echo "<td>" . htmlspecialchars($controller['recruited_workers']) . "</td>";
-            echo "<td>" . htmlspecialchars($controller['turn_recruited_workers']) . "</td>";
-            echo "<td>" . htmlspecialchars($controller['turn_firstcome_workers']) . "</td>";
-            echo "<td>" . htmlspecialchars(implode(', ', $playerList)) . "</td>";
-            // Add forms for actions
-            echo '<td>
+            echo sprintf('<tr>
+                <td>%2$s</td>
+                <td>%3$s</td>
+                <td>%4$s</td>
+                <td>%5$s</td>
+                <td>%6$s</td>
+                <td>%7$s</td>
+                <td>%8$s</td>
+                <td>
                 <form method="post" style="display:inline;">
-                    <input type="hidden" name="toggle_base_controller_id" value="' . intval($controller['id']) . '"/>
+                    <input type="hidden" name="toggle_base_controller_id" value="%1$s"/>
                     <button type="submit" name="toggle_base">Change Can Build Base status</button>
                 </form>
                 <form method="post" style="display:inline;">
-                    <input type="hidden" name="toggle_secret_controller_id" value="' . intval($controller['id']) . '"/>
+                    <input type="hidden" name="toggle_secret_controller_id" value="%1$s"/>
                     <button type="submit" name="toggle_secret_controller">Change Is Secret Controller</button>
                 </form>
                 <form method="post" style="display:inline;">
-                    <input type="hidden" name="reset_turn_recruited_workers_id" value="' . intval($controller['id']) . '"/>
+                    <input type="hidden" name="reset_turn_recruited_workers_id" value="%1$s"/>
                     <button type="submit" name="reset_turn_recruited_workers">Reset Turn Workers</button>
                 </form>
                 <form method="post" style="display:inline;">
-                    <input type="hidden" name="reset_turn_firstcome_workers_id" value="' . intval($controller['id']) . '"/>
+                    <input type="hidden" name="reset_turn_firstcome_workers_id" value="%1$s"/>
                     <button type="submit" name="reset_turn_firstcome_workers">Reset Firstcome Workers</button>
                 </form>
-            </td>';
-            echo "</tr>";
+                </td>
+                </tr>',
+                intval($controller['id']),
+                $controller['lastname'],
+                (isset($controller['secret_controller']) && $controller['secret_controller'] ? '✔️ Yes' : '❌ No'),
+                (isset($controller['can_build_base']) && $controller['can_build_base'] ? '✔️ Yes' : '❌ No'),
+                $controller['recruited_workers'],
+                $controller['turn_recruited_workers'],
+                $controller['turn_firstcome_workers'],
+                implode(', ', $playerList)
+            );
         }
         ?>
     </table>

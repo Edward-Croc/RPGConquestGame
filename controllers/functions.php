@@ -77,8 +77,8 @@ function showControllerSelect($controllers, $selectedID = null ,$field_name = 'c
             "<option value='%s' %s >%s %s</option>",
             $controller['id'],
             ($selectedID !== null && $controller['id'] == $selectedID) ? 'selected' : '',
-            htmlspecialchars($controller['firstname']),
-            htmlspecialchars($controller['lastname'])
+            $controller['firstname'],
+            $controller['lastname']
         );
     }
 
@@ -91,7 +91,7 @@ function showControllerSelect($controllers, $selectedID = null ,$field_name = 'c
                 </select>
             </div>
         </div>',
-        htmlspecialchars($field_name),
+        $field_name,
         $controllerOptions
     );
     if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControllerSelect: ".var_export($showControllerSelect, true)."<br /><br />";
@@ -312,8 +312,8 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
             $options .= sprintf(
                 '<option value="%d">%s (%s)</option>',
                 (int)$loc['id'],
-                htmlspecialchars($loc['name']),
-                htmlspecialchars($zone['name'])
+                $loc['name'],
+                $zone['name']
             );
         }
     }
