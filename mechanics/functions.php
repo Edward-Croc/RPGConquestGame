@@ -371,7 +371,7 @@ function claimMechanic($pdo, $turn_number = NULL) {
     }
     // Fetch and return the results
     $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    //if ($debug)
+    if ($debug)
     echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
 
     $arrayZoneInfo = array();

@@ -28,7 +28,7 @@ VALUES
     ('DEBUG_REPORT', 'FALSE', 'Activates the Debugging texts for the investigation report'),
     ('DEBUG_ATTACK', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
     ('DEBUG_TRANSFORM', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
-    ('ACTIVATE_TESTS', 'TRUE', 'Activates the insertion of tests values'),
+    ('ACTIVATE_TESTS', 'FALSE', 'Activates the insertion of tests values'),
     ('TITLE', 'RPGConquest', 'Name of game'),
     ('PRESENTATION', 'RPGConquest', 'Name of game'),
     ('IntrigueOrga', 'IntrigueOrga', 'Organisation info'),

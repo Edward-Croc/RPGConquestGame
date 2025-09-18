@@ -6,10 +6,11 @@ require_once '../base/basePHP.php';
 if (
     !empty($_GET['controller_id'])
 ) {
+    $debug = strtolower($_SESSION['DEBUG']) === 'true';
     // GET CONTROLLER_ID and controllers list so page does not fail.
-    if ($_SESSION['DEBUG'] == true) echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
+    if ($debug) echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
     $controllers = getControllers($gameReady, NULL, $_GET['controller_id']);
-    if ($_SESSION['DEBUG'] == true) echo "controllers:". var_export($controllers, true).'<br/><br/>';
+    if ($debug) echo "controllers:". var_export($controllers, true).'<br/><br/>';
     $_SESSION['controller'] =  $controllers[0];
     $controller_id = $controllers[0]['id'];
 }

@@ -53,6 +53,7 @@ function loadDBConfig($path, $configFile) {
  * @return PDO $pdo
  */
 function getDBConnection ($path, $configFile) {
+    $debug = strtolower($_SESSION['DEBUG']) === 'true';
 
     $config = loadDBConfig($path, $configFile);
     $_SESSION['DBNAME'] = $config['dbname'];
@@ -67,7 +68,7 @@ function getDBConnection ($path, $configFile) {
                 $config['username'],  $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
+            if ($debug){
                 echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
@@ -84,7 +85,7 @@ function getDBConnection ($path, $configFile) {
                 $config['username'],  $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            if (isset($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true){
+            if ($debug){
                 echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
@@ -188,6 +189,7 @@ function destroyAllTables($pdo) {
  * @return PDO $pdo
  */
 function gameReady() {
+    $debug = false;
 
     // Path to the config.ini file
     $configFiles = array ("/var/local_config.ini", "/var/config.ini");
@@ -198,11 +200,13 @@ function gameReady() {
     }
     $_SESSION['PATH'] = $path;
     $_SESSION['configFile'] = $configFile;
-    if ($_SESSION['DEBUG'] == true)
+    if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) {
         echo "Config Path built : " . $path.$configFile . " </ br>";
+        $debug = true;
+    }
 
     $pdo = getDBConnection($path, $configFile);
-    if ($_SESSION['DEBUG'] == true)
+    if ($debug)
         echo "getDBConnection: </ br>";
     if ($pdo != null) {
         try {
@@ -210,12 +214,12 @@ function gameReady() {
             $tableName = 'players';
             $exists = tableExists($pdo, $tableName);
 
-            if ($_SESSION['DEBUG'] == true)
+            if ($debug)
                 echo "tableExists players: " . $exists . " </ br>";
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
-                if ($_SESSION['DEBUG'] == true)
+                if ($debug)
                     echo 'dbtype : '.$_SESSION['DBTYPE']."; <br>";
                 $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $_SESSION['DBTYPE']);
                 echo "Loading $sqlFile ... ";

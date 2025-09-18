@@ -1,5 +1,9 @@
 <?php
-session_start(); // Start the
+if ( !isset($_SESSION['DEBUG']) ){
+    session_start(); // Start the session
+    $_SESSION['DEBUG'] = false;
+    $_SESSION['DEBUG_REPORT'] = false;
+}
 
 $pageName = 'index';
 
@@ -34,11 +38,9 @@ if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
 }else{
-    $_SESSION['DEBUG'] = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
-    $_SESSION['DEBUG_REPORT'] = false;
     if (strtolower(getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
         $_SESSION['DEBUG_REPORT'] = true;
     }

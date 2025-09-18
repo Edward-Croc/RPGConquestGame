@@ -1,5 +1,9 @@
 <?php
-session_start(); // Start the session
+if ( !isset($_SESSION['DEBUG']) ){
+    session_start(); // Start the session
+    $_SESSION['DEBUG'] = false;
+    $_SESSION['DEBUG_REPORT'] = false;
+}
 
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
