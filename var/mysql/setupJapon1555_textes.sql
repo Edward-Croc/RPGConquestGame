@@ -35,7 +35,7 @@ VALUES
  ,(
     'texteHiddenFactionBase'
     , '
-        Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux %1$s, mais en réalité son propriétaire est des %2$s.'
+        Il nous apparait en fouillant le lieu que ce quelqu’un s’est donné beaucoup de mal pour que cette forteresse donne l’impression d’être liée aux <strong>%1$s</strong>, mais en réalité son propriétaire est des <strong>%2$s</strong>.'
     ,'Texts for secret faction description of base,  -- %1$s Fake Faction name,  -- %2$s True Faction name'
 )
 ;
