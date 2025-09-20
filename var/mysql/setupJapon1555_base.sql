@@ -78,8 +78,7 @@ INSERT INTO controllers (
         0,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno')
-    )
-;
+    );
 
 INSERT INTO controllers (
     firstname, lastname,
@@ -154,6 +153,21 @@ INSERT INTO controllers (
           Vous pourriez le vendre à ses ennemis. Le rançonner à son clan. L’utiliser comme monnaie d’échange pour garantir votre place dans le futur de l’île. Ou simplement le laisser moisir jusqu’à ce qu’il ne reste rien de son nom.
           Une chose est sûre : Si l’île s’unifie, votre liberté prendra fin. Mais tant que la guerre fait rage, les Wako régneront sur les brumes.
         '
+    )
+;
+
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
+INSERT INTO controllers (
+    firstname, lastname, ia_type, secret_controller,
+    url, story, can_build_base,
+    turn_recruited_workers, turn_firstcome_workers,
+    faction_id, fake_faction_id
+) VALUES
+    ('Clan', 'Sogō (十河)', NULL, 1, 
+        NULL, '',
+        0, 1, 1,
+        (SELECT ID FROM factions WHERE name = 'Chrétiens'),
+        (SELECT ID FROM factions WHERE name = 'Chrétiens')
     )
 ;
 
@@ -699,16 +713,24 @@ Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux 
 INSERT INTO artefacts (name, description, full_description, location_id) VALUES
     (
         'Fujitaka (藤孝) Hosokawa (細川) le daimyô prisonnier',
-        'Nous avons découvert que cet homme que tous pensent mort est en réalité enfermé dans une geôle oubliée, gardée par ceux qui craignent son retour.',
+        'Nous avons découvert que cet homme que tous pensent mort est en réalité enfermé dans une geôle oubliée, gardée par ceux qui craignent son retour ou cherchent à exploiter sa valeur politique.',
         'Nous sommes libres de décider de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles impériales')
     ), (
-        'Kunichika(国親) Chōsokabe(長宗我部) blessé, brisé, il vit toujours',
-        'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu ici, gardé par ceux qui craignent son retour.',
+        'Kunichika (国親) Chōsokabe (長宗我部) blessé, brisé, il vit toujours',
+        'L’ancien seigneur de Shikoku n’est pas tombé à la guerre — il est retenu en otage, par ceux qui craignent son retour ou cherchent à exploiter sa valeur politique.',
         'Nous sommes libres de décider de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Geôles des Kaizokushū')
     ), (
-        'Chikayasu (親泰) Chōsokabe(長宗我部), le fils caché',
-        '3eme Fils de Kunichika, la charge de l’héritage lui as été épargnée jusqu’ici, mais il ferait un otage politique important.',
+        'Chikayasu (親泰) Chōsokabe (長宗我部), le fils caché',
+        '3eme Fils de Kunichika (国親) et Shōhō (初歩), la charge de l’héritage lui as été épargnée jusqu’ici, mais il est un otage politique important.',
         'Nous sommes libres de décider de sa destinée (aller voir un orga)!', (SELECT ID FROM locations WHERE name = 'Retraite secrète des Chōsokabe')
+    ), (
+        'Shigemasa (重存) Sogō (十河), l’héritier du clan Sogo',
+        'Fils de Kazumasa (一存) et de Kujo (九条) Sogo (十河), l’héritier du clan Sogo et détenteur du sang des Miyoshi est désormais un otage politique important.',
+        'Nous sommes libres de décider de sa destinée (aller voir un orga)!', NULL
+    ), (
+        'Yoshioki (義興) Miyoshi (三好), l’enfant maudit',
+        'Fils de Nagayoshi (長慶) Miyoshi (三好), l’héritier du clan Miyoshi est un enfant malade maintenu en vie par les potions et les prières. Il n’en reste pas moins un otage politique important aux yeux de son père.',
+        'Nous sommes libres de décider de sa destinée (aller voir un orga)!', NULL
     )
 ;
 
