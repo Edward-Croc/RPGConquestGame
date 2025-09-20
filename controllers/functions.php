@@ -137,22 +137,23 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
 
     $controllerValues = getControllers($pdo, NULL, $controller_id);
     if ( $_SESSION['DEBUG'] == true )
-    echo '<p>turncounter: '. $turnNumber
+    echo '<p>hasBase: '. var_export(hasBase($pdo, $controller_id), true)
+        .';turncounter: '. $turnNumber
         .'; turn_recrutable_workers: '. getConfig($pdo, 'turn_recrutable_workers')
         .'; start_workers :'. $controllerValues[0]['start_workers']
         .'; turn_recruited_workers :'. $controllerValues[0]['turn_recruited_workers']
     .'</p>';
 
-    if (
-        hasBase($pdo, $controller_id)
+    if (    
+        count(hasBase($pdo, $controller_id)) > 0
         &&
-        (
+        ((
             ( $turnNumber == 0 )
             && ( (INT)$controllerValues[0]['turn_recruited_workers'] < (INT)$controllerValues[0]['start_workers'] )
         ) || (
             ( (INT)$turnNumber > 0 )
             && ( $controllerValues[0]['turn_recruited_workers'] < (INT)getConfig($pdo, 'turn_recrutable_workers') )
-        )
+        ))
     ) return true;
     return false;
 }
