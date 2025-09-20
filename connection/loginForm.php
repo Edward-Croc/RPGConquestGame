@@ -63,23 +63,14 @@ if (
     isset($_POST['username'])
     && isset($_POST['passwd'])
 ) {
-    $_SESSION['username'] = $_POST['username'];
-    $passwd = $_POST['passwd'];
-    if ($_SESSION['DEBUG'] == true){
-        echo "Test  for : <br />";
-        echo(" _POST[username] : ". $_POST['username']."; username: " . $_SESSION['username'] . "<br />");
-        echo("passwd: " . $passwd . "<br />");
-    }
+    $_SESSION['username'] = strtolower(trim($_POST['username']));
+    $passwd = strtolower(trim($_POST['passwd']));
+
     try {
         // SQL query to select username from the players table
-        $sql = "SELECT id, is_privileged FROM players WHERE username = '".$_SESSION['username']."' AND passwd ='$passwd'";
-        if ($_SESSION['DEBUG'] == true){
-            echo "search SQL: $sql <br\>";
-        }
-
         // Prepare and execute SQL query
-        $stmt = $gameReady->prepare($sql);
-        $stmt->execute();
+        $stmt = $gameReady->prepare("SELECT id, is_privileged FROM players WHERE username = :username AND passwd = :passwd");
+        $stmt->execute([':username' => $_SESSION['username'], ':passwd' => $passwd]);
         // Fetch the result
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
