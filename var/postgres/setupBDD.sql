@@ -6,7 +6,8 @@
 CREATE TABLE mechanics (
     id SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
-    gamestate INTEGER DEFAULT 0
+    gamestate INTEGER DEFAULT 0,
+    end_step TEXT DEFAULT ''
 );
 
 INSERT INTO mechanics (turncounter, gamestate)

@@ -6,7 +6,8 @@ DROP TABLE IF EXISTS mechanics;
 CREATE TABLE mechanics (
     id INT AUTO_INCREMENT PRIMARY KEY,
     turncounter INT DEFAULT 0,
-    gamestate INT DEFAULT 0
+    gamestate INT DEFAULT 0,
+    end_step TEXT DEFAULT ''
 );
 
 INSERT INTO mechanics (turncounter, gamestate)
