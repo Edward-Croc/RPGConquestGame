@@ -6,6 +6,32 @@ require_once '../mechanics/aiMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
 
 /**
+ * Start or Pause the game state
+ */
+function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
+
+    // SQL query to update gamestate
+    $sql = '';
+    if ($start && $mechanics['gamestate'] == 0) {
+        $sql = "UPDATE mechanics SET gamestate = 1 WHERE id = :id ";
+    }
+    if (!$start && $mechanics['gamestate'] == 1) {
+        $sql = "UPDATE mechanics SET gamestate = 0 WHERE id = :id ";
+    }
+    if (!empty($sql)) {
+        try{
+            // Prepare and execute SQL query
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $mechanics['id']]);
+        } catch (PDOException $e) {
+            echo __FUNCTION__."():UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Build base randomization SQL
  *
  * @return string

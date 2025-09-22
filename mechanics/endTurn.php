@@ -5,17 +5,12 @@ require_once '../base/basePHP.php';
 
 require_once '../base/baseHTML.php';
 
-        if ($mechanics['gamestate'] == 0) {
-            try{
-                // SQL query to update gamestate
-                $sql = "UPDATE mechanics SET gamestate = 1 WHERE ID = '".$mechanics['id']."'";
-                // Prepare and execute SQL query
-                $stmt = $gameReady->prepare($sql);
-                $stmt->execute();
-            } catch (PDOException $e) {
-                echo __FUNCTION__."():UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+$started = toggleMechanicsGamestate($gameReady, $mechanics, true);
+if (!$started) {
+    echo __FUNCTION__."(): Failed to start the game.";
+    exit();
             }
-        }
+
         $valsResult = calculateVals($gameReady, $mechanics['turncounter']);
 
         // Add calculated values to worker report
@@ -84,10 +79,10 @@ require_once '../base/baseHTML.php';
                     // Advance Turn counter
                     try{
                         // SQL query to select username from the players table
-                        $sql = "UPDATE mechanics set turncounter ='".$turn."' WHERE ID='".$mechanics['id']."'";
+                $sql = "UPDATE mechanics set turncounter = :turncounter, end_step = '' WHERE id = :id";
                         // Prepare and execute SQL query
                         $stmt = $gameReady->prepare($sql);
-                        $stmt->execute();
+                $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id'] ]);
                     } catch (PDOException $e) {
                         echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
                     }
