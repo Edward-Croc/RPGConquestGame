@@ -390,7 +390,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                 $activate_json = array();
             }
             $textSuccess = getConfig($pdo, 'textLocationDestroyed');
-            if ($activate_json['indestructible'] == "TRUE") {
+            if (!empty($activate_json['indestructible']) && $activate_json['indestructible'] == "TRUE") {
                $destroy = false;
                $textSuccess = getConfig($pdo, 'textLocationPillaged');
             }
