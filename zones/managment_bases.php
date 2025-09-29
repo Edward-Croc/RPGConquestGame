@@ -6,6 +6,7 @@ $pageName = 'admin_location_attacks';
 $sql = "
     SELECT 
         bal.id,
+        bal.location_name,
         bal.turn,
         bal.success,
         bal.attack_val,
@@ -39,14 +40,14 @@ require_once '../base/baseHTML.php';
         </tr>
         <?php foreach ($logs as $log): ?>
         <tr>
-            <td><?= htmlspecialchars($log['id']) ?></td>
-            <td><?= htmlspecialchars($log['base_name']) ?></td>
-            <td><?= htmlspecialchars($log['attacker_name'] ?? 'Inconnu') ?></td>
-            <td><?= htmlspecialchars($log['turn']) ?></td>
+            <td><?= $log['id'] ?></td>
+            <td><?= $log['location_name'] ?></td>
+            <td><?= $log['attacker_name'] ?? 'Inconnu' ?></td>
+            <td><?= $log['turn'] ?></td>
             <td><?= $log['success'] ? '✔️ Réussie' : '❌ Échec' ?></td>
-            <td><?= sprintf('%s / %s',  htmlspecialchars($log['attack_val']), htmlspecialchars($log['defence_val']))?></td>
-            <td><?= nl2br(htmlspecialchars($log['target_result_text'])) ?></td>
-            <td><?= nl2br(htmlspecialchars($log['attacker_result_text'])) ?></td>
+            <td><?= sprintf('%s / %s',  ($log['attack_val']), $log['defence_val'])?></td>
+            <td><?= nl2br($log['target_result_text']) ?></td>
+            <td><?= nl2br($log['attacker_result_text']) ?></td>
         </tr>
         <?php endforeach; ?>
     </table>

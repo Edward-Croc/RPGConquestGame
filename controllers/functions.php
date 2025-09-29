@@ -410,8 +410,9 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
         $captureResult = captureLocationsArtefacts($pdo, $target_location_id, $controller_id);
         $return['message'] .= $captureResult['message'];
+        // IF location is destroyed and captureResult is success
         if ($destroy && $captureResult['success']) {
-            // Delete player base
+            // Delete elements from players and location tables
             try{
                 $sql = "DELETE FROM controller_known_locations WHERE location_id = :id";
                 $stmt = $pdo->prepare($sql);
@@ -438,6 +439,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $logSql = "
         INSERT INTO location_attack_logs (
             target_controller_id,
+            location_name,
             attacker_id,
             attack_val,
             defence_val,
@@ -448,6 +450,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         )
         VALUES (
             :target_controller_id,
+            :location_name,
             :attacker_id,
             :attack_val,
             :defence_val,
@@ -460,6 +463,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $logStmt = $pdo->prepare($logSql);
     $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
+    $logStmt->bindParam(':location_name', $location[0]['name']);
     $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
     $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
     $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
