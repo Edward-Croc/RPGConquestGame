@@ -393,8 +393,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         foreach ($owned_bases as $base) {
             $returnText .=  sprintf(
                 "<b>%s</b><br><em>%s</em><br />",
-                htmlspecialchars($base['name']),
-                htmlspecialchars($base['description'])
+                $base['name'],
+                $base['description']
             );
 
             // Fetch artefacts for this location
