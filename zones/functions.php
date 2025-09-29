@@ -587,3 +587,81 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
     }
     return $grouped;
 }
+
+/**
+ * Update the location
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $location : location data
+ * @param array $activate_json : activate json data
+ */
+function updateLocation($pdo, $location, $activate_json) {
+    // Extract the update_location data
+    $update_location_data = $activate_json['update_location'];
+    // Start the new activate_json
+    $new_activate_location = $activate_json;
+    unset($new_activate_location['update_location']);
+
+    // If the old data must be saved to json, add it to the new activate_json
+    if ($update_location_data['save_to_json'] == "TRUE") {
+        // Prepare the old location data
+        $update_location = array(
+            'name' => $location['name'],
+            'description' => $location['description'],
+            'discovery_diff' => $location['discovery_diff'],
+            'can_be_destroyed' => $location['can_be_destroyed'],
+            'can_be_repaired' => $location['can_be_repaired'],
+            'controller_id' => $location['controller_id'],
+            'is_base' => $location['is_base'],
+            'save_to_json' => $update_location_data['save_to_json']
+        );
+        // Add the old location data to the new activate_json
+        $new_activate_location['update_location'] = $update_location;   
+    }
+    // Encode the new activate_json
+    $encoded_activate_json = json_encode($new_activate_location);
+    
+    // Update the location
+    // Build a single UPDATE query for all relevant fields present in update_location_data
+    $fields_to_update = [
+        'name' => PDO::PARAM_STR,
+        'description' => PDO::PARAM_STR,
+        'discovery_diff' => PDO::PARAM_INT,
+        'can_be_destroyed' => PDO::PARAM_INT,
+        'can_be_repaired' => PDO::PARAM_INT,
+        'controller_id' => PDO::PARAM_INT,
+        'is_base' => PDO::PARAM_INT
+    ];
+    // Build the set clauses
+    $set_clauses = [];
+    $params = [':id' => $location['id']];
+    // Add the fields to the set clauses
+    foreach ($fields_to_update as $field => $param_type) {
+        if (isset($update_location_data[$field]) && $update_location_data[$field] !== '') {
+            $set_clauses[] = "$field = :$field";
+            $params[":$field"] = $update_location_data[$field];
+        }
+    }
+    // Add the activate_json to the set clauses
+    $set_clauses[] = "activate_json = :activate_json";
+    // Update the location
+    try{
+        if (!empty($set_clauses)) {
+            $sql = "UPDATE locations SET " . implode(', ', $set_clauses) . " WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            // Bind parameters with correct types
+            foreach ($fields_to_update as $field => $param_type) {
+                if (array_key_exists(":$field", $params)) {
+                    $stmt->bindValue(":$field", $params[":$field"], $param_type);
+                }
+            }
+            $stmt->bindValue(':activate_json', $encoded_activate_json, PDO::PARAM_STR);
+            $stmt->bindParam(':id', $params[':id'], PDO::PARAM_INT);
+            $stmt->execute();
+            return true;
+        }
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): UPDATE locations Failed: " . $e->getMessage()."<br />";
+    }
+    return false;
+}

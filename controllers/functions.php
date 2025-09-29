@@ -358,6 +358,9 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     }
 
     $target_result_text .= sprintf("Notre %s a été attaqué.e, par des agents du réseau %s.",$location[0]['name'], $controller_id );
+    
+    // TODO : add attack participation to life_report of workers of the controller in the locations zone ?
+    
     /*
     // Get Controler Fullname from BDD
     $sql = "SELECT CONCAT(firstname, ' ', lastname) AS fullname FROM controllers WHERE id = :id";
@@ -394,13 +397,18 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                $destroy = false;
                $textSuccess = getConfig($pdo, 'textLocationPillaged');
             }
+            // update_location => Update existing location from name, description, discovery_diff, can_be_destroyed, can_be_repaired, controller_id, is_base,save_to_json
+            if (!empty($activate_json['update_location'])) {
+                $destroy = false;
+                // Update the location
+                updateLocation($pdo, $location[0], $activate_json);
+            }
             $return['message'] .= sprintf($textSuccess, $location[0]['name']);
-            //TODO on JSON key:
-            // create_location => Create New location
+            // TODO on JSON key:
+            // create_location => Create New location from name, description, discovery_diff, can_be_destroyed, controller_id, save_to_json
             // show_text => add text to the message
             // add_worker => add worker to controller
             // change_ia => change the functionning of an IA character
-            // check_player_death
         } else {
             $return['message'] .= sprintf(
                 getConfig($pdo, 'textLocationDestroyed'),
