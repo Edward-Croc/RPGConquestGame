@@ -480,7 +480,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
  * @return string message
  */
 function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
-    $return = array('success' => false, 'message' => '');
+    $return = array('success' => true, 'message' => '');
 
     // Step 1: Get base location of the controller
     $stmt = $pdo->prepare("SELECT id FROM locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
@@ -489,6 +489,7 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
 
     if (!$baseLocation) {
         $return['message'] = " Nous n'avons pas de forteresse pour ramener des prisonniers.";
+        $return['success'] = false;
         return $return;
     }
 
