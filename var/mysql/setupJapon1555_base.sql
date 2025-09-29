@@ -458,7 +458,10 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         8, 1,
         (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
-        '{"indestructible" : "TRUE"}'
+        '{"update_location": {"name": "Geôles en ruines", "discovery_diff": 5, "save_to_json": "TRUE",
+        "can_be_destroyed": 0, "can_be_repaired": 1,
+        "description": "Creusées dans la falaise même, ces cavernes humides servaient de refuge aux pirates Wako, mais tout ce qui avait une valeur a été pillé."
+        }}'
     ),
 
     -- Retraite secrete des Chosokabe (cape sud de Tosa)
@@ -469,7 +472,11 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         8, 1,
         (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
-        '{"indestructible" : "TRUE"}'
+        '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 5, "save_to_json": "TRUE",
+        "can_be_destroyed": 0, "can_be_repaired": 1,
+        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe.
+        Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire."
+        }}'
     )
     -- Ajouter un secret sur la présence du christianisme et du pretre Luís Fróis Japonologue et Jésuite -- https://fr.wikipedia.org/wiki/Lu%C3%ADs_Fr%C3%B3is 
     , (
@@ -481,7 +488,10 @@ Sa présence confirme l’implantation secrète du christianisme à Tokushima et
         , 8, 1,
         (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa'),
         (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
-        '{"indestructible" : "TRUE"}'
+        '{"update_location": {"name": "Ruines d’un Sanctuaire chrétienclandestin", "discovery_diff": 7, "save_to_json": "TRUE",
+        "can_be_destroyed": 0, "can_be_repaired": 1,
+        "description": ""
+        }}'
     )
 ;
 
