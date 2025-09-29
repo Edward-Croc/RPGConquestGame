@@ -9,14 +9,14 @@ require_once '../base/baseHTML.php';
 <div class="factions">
 <h2>Présentation du système : </h2>
 <p>Bienvenue sur la page de présentation du système de jeu RPG Game Conquest.<br>
-Ce système repose sur une simulation stratégique en tour par tour mettant en scène des <strong>contrôleurs</strong>,
+Ce système repose sur une simulation stratégique en tour par tour mettant en scène des <strong>contrôleurs/factions</strong>,
  leurs <strong>agents</strong>, des <strong>zones</strong> et des <strong>lieux spécifiques</strong> à découvrir, défendre ou conquérir.<br>
 Ce système est créé pour assiter le fonctionnement des mécaniques de jeu d'une <strong>soirée enquête</strong>.
 Il n'est pas prévu pour fonctionner sans une phase de négociations entre joueurs à chaque tour.
 </p>
 
-<h3>1. Contrôleurs et Agents</h3>
-<p>Chaque contrôleur/joueur gère son réseau d'agents, qu’il peut envoyer sur le terrain pour accomplir différentes actions : enquête, attaque, conquête, etc.<br>
+<h3>1. Contrôleurs/Factions et Agents</h3>
+<p>Chaque contrôleur/faction gère son réseau d'agents, qu’il peut envoyer sur le terrain pour accomplir différentes actions : enquête, attaque, conquête, etc.<br>
 Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autres joueurs de découvrir lors des enquêtes.
   <ul>
   <li>Un contrôleur peut chaque tour <strong>recruter</strong> un ou plusieurs agents, selon les circonstances.<ul>
@@ -34,13 +34,15 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autre
 <ul>
   <li><strong>Surveiller :</strong> L’agent ne prend pas de risques, mais reste à l'affut des autres agents dans la zone.</li>
   <li><strong>Investiguer :</strong> L’agent tente de découvrir les autres agents et les lieux secrets dans sa zone, au risque d'échouer.</li>
-  <li><strong>Attaquer :</strong> Attaque les agents choisis par le contrôleur parmi la liste fournie. Il y a 4 résultats possibles à une attaque : <ul>
-      <li> <i>Défaite totale :</i> l'attaquant disparait, éliminé par une contre-attaque.</li>
-      <li> <i>Echec :</i> l'attaquant échoue.</li>
+  <li><strong>Attaquer :</strong> Attaque les agents choisis par le contrôleur parmi la liste fournie. Il y a 4 résultats possibles à une attaque : 
+    <ul>
+      <li> <i>Défaite totale :</i> l'attaquant disparait, éliminé par une contre et la cible apprend son nom.</li>
+      <li> <i>Echec :</i> l'attaquant échoue et la cible apprend son nom.</li>
       <li> <i>Réussite :</i> l'attaquant élimine sa cible.</li>
-      <li> <i>Capture :</i> l'attaquant capture sa cible vivante pour qu'elle soit interrogée par son contrôleur.</li>
-  </ul>
+      <li> <i>Capture :</i> l'attaquant capture sa cible vivante le contrôleur obtient l'accès aux rapports de la cible.</li>
+    </ul>
   </li>
+  <li><strong>Se cacher :</strong> L’agent tente de se dissimuler des autres agents dans sa zone.</li>
   <li><strong>Revendiquer :</strong> Cherche à prendre le contrôle de la zone, et la consacre au contrôleur choisi.
   Renforce la défense d’une zone déjà contrôlée. Cette action <strong>révélera</strong> l'agent qui l'effectue.</li>
 </ul>
@@ -50,7 +52,7 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autre
     <li><strong>Etre offert à un autre :</strong> changer de contrôleur</li>
 </ul></p>
 <p>
-  Les <strong>résultats d'une enquête</strong> (surveillance ou investigation) sur un agent contiendront aléatoirement et par ordre de difficulté d'obtention : <ul>
+  Les <strong>résultats d'une enquête</strong> (surveillance ou investigation) sur un agent contiendront par ordre de difficulté d'obtention : <ul>
     <li> Le nom, les capacités aléatoires et l'action en cours d'un agent. </li>
     <li> Les capacités et modifications données par son contrôleur. </li>
     <li> Le numéro du réseau dont fait partie l'agent. </li>
@@ -58,7 +60,7 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autre
   </ul>
 </p>
 <h3>3. Zones, Lieux et Artefacts</h3>
-<p>La carte du monde est divisée en zones, qui peuvent être contrôlées par un joueur.
+<p>La carte du monde est divisée en <strong>zones</strong>, qui peuvent être contrôlées par un <strong>contrôleur/faction</strong>.
   Ces zones peuvent contenir un ou plusieurs lieux secrets et les places fortes des contrôleurs, qui ont chacun une difficulté de découverte différente.
   Lorsqu’un agent enquête dans une zone ennemie, il peut découvrir :</p>
 <ul>
