@@ -433,7 +433,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         );
     }
 
-    $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : '';
+    $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : null;
     // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
     $logSql = "
         INSERT INTO location_attack_logs (
@@ -458,7 +458,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         )
     ";
     $logStmt = $pdo->prepare($logSql);
-    $logStmt->bindParam(':target_controller_id', $target_controller_id, PDO::PARAM_INT);
+    $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
     $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
     $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
     $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
