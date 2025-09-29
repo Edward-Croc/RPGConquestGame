@@ -216,6 +216,7 @@ CREATE TABLE locations (
     discovery_diff INT DEFAULT 0,
     controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed TINYINT(1) DEFAULT 0,
+    can_be_repaired TINYINT(1) DEFAULT 0,
     is_base TINYINT(1) DEFAULT 0, -- Is a controllers Base
     activate_json JSON,
     FOREIGN KEY (zone_id) REFERENCES zones (id),
@@ -245,6 +246,7 @@ CREATE TABLE controller_known_locations (
 
 CREATE TABLE location_attack_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    location_name TEXT,
     target_controller_id INT, 
     attacker_id INT,
     attack_val INT DEFAULT 0,

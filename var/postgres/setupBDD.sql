@@ -215,6 +215,7 @@ CREATE TABLE locations (
     discovery_diff INT DEFAULT 0,
     controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed BOOLEAN DEFAULT FALSE,
+    can_be_repaired BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE, -- Is a controllers Base
     activate_json JSON DEFAULT '{}'::json,
     FOREIGN KEY (zone_id) REFERENCES zones (id),
@@ -244,6 +245,7 @@ CREATE TABLE controller_known_locations (
 
 CREATE TABLE location_attack_logs (
     id SERIAL PRIMARY KEY,
+    location_name TEXT,
     target_controller_id INT REFERENCES controllers(id), 
     attacker_id INT REFERENCES controllers(id),
     attack_val INT DEFAULT 0,
