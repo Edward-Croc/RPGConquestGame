@@ -29,7 +29,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 FROM controllers AS c
                 JOIN controller_worker AS cw ON cw.controller_id = c.id
                 WHERE cw.worker_id = :worker_id
-                AND CW.is_primary_controller = :is_primary_controller
+                AND cw.is_primary_controller = :is_primary_controller
                 LIMIT 1";
                 //  ORDER BY controller_worker.id
                 $stmt = $gameReady->prepare($sql);
