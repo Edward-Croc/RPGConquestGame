@@ -112,68 +112,42 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
         'https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I',
-        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Kunichika (国親) Chōsokabe (長宗我部) est présumé mort, tombé sur les terres de Honshu (本州) aux côtés de ses vassaux, dans une guerre qu’il aurait dû gagner.
-          Le jeune héritier, Motochika (元親), n’a que treize ans. Trop jeune pour régner, trop précieux pour tomber. Les regards se tournent vers votre clan au pouvoir vacillant.
-          Vos ennemis vous observent. Vos alliés hésitent. Mais l’avenir n’est pas encore écrit.
-          Dans deux ans, Motochika atteindra l’âge de la majorité, et son accession au titres de Daimyo et de Shugo pourrait garantir une ère de stabilité.
-        '
+        ''
     ),
     (
         'Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
         (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
-        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire, mais elle n’apporte que les échos d’une défaite humiliante. Votre Daimyo, Fujitaka (藤孝) Hosokawa, a disparu durant la désastreuse campagne de Kyoto.
-          Le pouvoir du clan est désormais entre les mains de Tadaoki (忠興), le fils de Fujitaka, jeune et ambitieux, le nouveau Daimyo cherche un coup d’éclat pour se faire un nom.
-          Tama (玉), la fille de Fujitaka et soeur de Tadaoki, est promise au jeune Motochika (元親) Chōsokabe (長宗我部), héritier encore trop jeune pour gouverner. Une alliance utile, mais risquée si elle venait à être dévoilée trop tôt.
-          Deux ans. Voilà ce qu’il reste à votre clan pour jouer ses cartes. Servir, trahir ou renaître.
-          '
+        ''
     ),
     (
         'Clan', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
         (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi' ),
         'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
-        ' Depuis la mort du Daimyo Motonaga il y a 5 ans et l’arrivée au pouvoir de Nagayoshi(長慶) votre clan a secrètement abandonné le bouddhisme pour embrasser la foi chrétienne, inspiré par les missionnaires venus avec les vaisseaux noirs portugais. 
-          En échange de votre protection et de votre conversion, ils vous ont offert un cadeau inestimable : le secret des fusils à mèche occidentaux. 
-          En cette fin de printemps, le parfum du sang flotte encore sur les rizières. Le Japon est à feu et à sang. 
-          Deux daimyō sont morts à la guerre et les croyances vacillent. 
-          Peut-être est-ce là l’heure bénie pour purger Shikoku(四国) des anciennes superstitions... faire de l’île la première terre chrétienne du Japon et du clan Miyoshi un clan majeur. 
-        '
+        ''
     ),
     (
         'Bouddhistes', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
         (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
         'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
-        ' La foi ne prêche pas seulement la voie du salut : elle appelle à la révolution.
-          Les Ikkō-ikki, bras armé de cette croyance, rassemblent les paysans révoltés, les petits seigneurs opprimés, les moines guerriers et les prêtres shintō brisés par le joug des samouraïs et du Shogun.
-          C’est vos manigances tordues qui ont mené à la mort des Daimyô de Shikoku(四国), il ne vous reste qu’à terminer le travail de conquête de l’île.
-        '
+        ''
     ),
     (
         'Bouddhistes', 'Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
-        ' Le parfum du sang flotte encore sur les rizières. L’arrivée de l’été aurait dû annoncer la victoire de vos moines partis combattre au nom de la paix, mais elle n’apporte que les échos d’une défaite humiliante. Deux Daimyōs ont péri durant la désastreuse campagne de Kyoto, et nul n’a pu offrir à leurs âmes les funérailles qu’elles méritaient. Leurs enfants, encore jeunes et tourmentés, vont avoir besoin de la sagesse de vos bonzes et de la compassion de vos prières.
-         Déjà, des rumeurs remontent des vallées et des villages : famines, raids de pirates, religions nouvelles et troubles hérétiques, bruits inquiétants dans les forêts et sur les plages, comme si les Yōkais eux-mêmes se réjouissaient du chaos à venir.
-         La paix fragile de ces dernières années est brisée par les ambitions des hommes avides et la faim qui rôde après tant de batailles. Dans l’encens qui s’élève de vos autels, vous espérez trouver la force de contenir le malheur.
-         Il ne vous reste qu’à prier. Et à veiller.
-        '
+        ''
     ),
     (
         'Kaizokushū (海賊衆)', 'Wako (和光)', --
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
-        ' Vous êtes les maîtres incontestés d’un archipel sans lois. Vous ne croyez ni aux daimyōs, ni aux dieux, ni aux rêves de paix. Ce que vous servez, c’est le vent, l’or, et l’opportunité.
-          Depuis la guerre d’Ōnin (応仁の乱, Ōnin no ran), l’affaiblissement du Shogunat, les vôtres pillent, commercent, et manipulent les seigneurs des côtes de la mer intérieure de Seto, de la baie de Tokushima et même jusqu’en Corée.
-          Le chaos actuel est une bénédiction.
-          À la faveur d’une embuscade habile, vos hommes ont capturé Kunichika (国親)Chōsokabe(長宗我部), le daimyō de Shikoku(四国). Blessé, brisé, il vit toujours. Et dans votre forteresse cachée de Shōdoshima((小豆島), il vaut plus que n’importe quel trésor.
-          Vous pourriez le vendre à ses ennemis. Le rançonner à son clan. L’utiliser comme monnaie d’échange pour garantir votre place dans le futur de l’île. Ou simplement le laisser moisir jusqu’à ce qu’il ne reste rien de son nom.
-          Une chose est sûre : Si l’île s’unifie, votre liberté prendra fin. Mais tant que la guerre fait rage, les Wako régneront sur les brumes.
-        '
+        ''
     )
 ;
 
