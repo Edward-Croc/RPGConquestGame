@@ -350,3 +350,49 @@ VALUES
     " Il est possible d’organiser une mission pour faire disparaître ce problème."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
 ;
+
+-- Text for worker participating in controller attack reports
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s : nom du lieu attaqué 
+-- %2$s: identifiant du réseau attaquant
+('TEXT_LOCATION_ATTACK_SUCCESS', '[
+    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont franchi les portes avec succès."
+]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: identifiant du réseau attaquant
+, ('TEXT_LOCATION_ATTACK_FAIL', '[
+    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s.  Heureusement, ils ne semblent pas avoir atteint leur objectif."
+]', 'Phrases pour signaler au defenseur qu’une localisation pas été attaquer sans succée')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: texte donnant le réseau défenseur si existant
+, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS', '[
+    "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a été un succès.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas de succès')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: texte donnant le réseau défenseur si existant
+, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL', '[
+    "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a échoué.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas d’échec')
+
+-- %1$s: nom du lieu attaqué
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: numéro du réseau attaquant
+, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS', '[
+    "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, la défense a été un succès.<br/>",
+    "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons réussi à nous défendre.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à la défense en cas de succès')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: numéro du réseau attaquant
+, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL', '[
+    "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons échoué.<br/>",
+    "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons été battus.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec')
+;

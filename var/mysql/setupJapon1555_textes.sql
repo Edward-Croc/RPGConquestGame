@@ -350,3 +350,66 @@ VALUES
     " Il est possible d’organiser une mission pour faire disparaître ce problème."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
 ;
+
+-- Text for worker participating in controller attack reports
+INSERT INTO config (name, value, description)
+VALUES
+-- %1$s : nom du lieu attaqué 
+-- %2$s: identifiant du réseau attaquant
+('TEXT_LOCATION_ATTACK_SUCCESS', '[
+    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont malheureusement franchi les portes."
+]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: identifiant du réseau attaquant
+, ('TEXT_LOCATION_ATTACK_FAIL', '[
+    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Heureusement, ils n’ont pas atteint leur objectif."
+]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer sans succée')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: texte donnant le réseau défenseur si existant
+, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS', '[
+    "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a été un succès.<br/>",
+    "J’étais à %2$s lorsque nous avons attaqué %1$s%3$s et ce fut un succès.<br/>",
+    "Je peux témoigner que nous avons attaqué avec succès %1$s dans la région %2$s%3$s.<br/>",
+    "L’appel à détruire %1$s%3$s a été lancé, j’étais alors à %2$s et j’ai pu participer à ce succès.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas de succès de l’attaque')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: texte donnant le réseau défenseur si existant
+, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL', '[
+    "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a échoué.<br/>",
+    "J’étais à %2$s lorsque nous avons attaqué %1$s%3$s sans succès.<br/>",
+    "Je peux témoigner que nous avons échoué dans notre attaque sur %1$s dans la région %2$s%3$s.<br/>",
+    "J’ai bien reçu l’ordre de prendre d’assaut %1$s%3$s, mais malgré ma présence dans la région %2$s nous avons échoué.<br/>",
+    "Lors de notre attaque sur %1$s%3$s, j’étais à %2$s et nous avons été battus.<br/>",
+    "Nous sommes partis au combat dans la région %2$s pour détruire %1$s%3$s, mais ce fut un échec cuisant.<br/>",
+    "Je me suis couvert de honte lors de l’assaut sur %1$s%3$s, la région %2$s sera pour moi synonyme de défaite jusqu’à ce que je regagne mon honneur.<br/>"
+    ]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas d’échec de l’attaque')
+
+-- %1$s: nom du lieu attaqué
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: numéro du réseau attaquant
+, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS', '[
+    "J’ai participé à la défense de %1$s dans %2$s contre les agents du réseau %3$s, la défense a été un succès.<br/>",
+    "Nous avons réussi à défendre %1$s dans la région %2$s contre les assaillants du réseau %3$s.<br/>",
+    "J’étais là à %2$s lorsque nous avons dû défendre %1$s qui était attaqué par le réseau %3$s, nous les avons repoussés.<br/>",
+    "J’étais à %2$s lorsque nous avons défendu %1$s contre les attaquants du réseau %3$s et ce fut un succès.<br/>",
+    "Je peux témoigner que nous avons réussi à nous défendre contre les agents du réseau %3$s sur %1$s dans la région %2$s.<br/>",
+    "%1$s a été attaqué par des hommes de %3$s, heureusement j’étais dans la région %2$s et nous les avons repoussés.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à la défense en cas de succès de la défense')
+
+-- %1$s: nom du lieu attaqué 
+-- %2$s: nom de la zone contenant le lieu attaqué
+-- %3$s: numéro du réseau attaquant
+, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL', '[
+    "J’ai participé à la défense de %1$s dans %2$s contre les agents du réseau %3$s, nous avons échoué.<br/>",
+    "Nous avons échoué à défendre %1$s dans la région %2$s contre les assaillants du réseau %3$s.<br/>",
+    "J’étais à %2$s lorsque nous avons dû défendre %1$s qui était attaqué par le réseau %3$s, nous avons été battus.<br/>",
+    "J’étais à %2$s lorsque nous avons défendu %1$s contre les attaquants du réseau %3$s et ce fut un échec.<br/>",
+    "Je peux témoigner que nous avons échoué à défendre %1$s contre les agents du réseau %3$s dans la région %2$s.<br/>",
+    "%1$s a été attaqué par des hommes de %3$s, malgré ma présence dans la région %2$s nous n’avons pas pu repousser cette attaque.<br/>"
+]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec de la défense')
+;
