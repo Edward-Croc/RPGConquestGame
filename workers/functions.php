@@ -964,7 +964,20 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
             $new_action = 'passive';
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
-            $currentReport['life_report'] .= "J'ai rejoint un nouveau maitre.<br /> ";
+            // get new controller name
+            $newControllerName = getControllerName($pdo, $extraVal);
+            $currentReport['life_report'] .= "J'ai rejoint $newControllerName comme nouveau maitre.<br /> ";
+            // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
+            try {
+                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':extraVal' => $extraVal,
+                    ':worker_id' => $workerId
+                ]);
+            } catch (PDOException $e) {
+               // echo __FUNCTION__." (): Failed to delete entry from controller_worker table: " . $e->getMessage() . "<br />";
+            }
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
                 // Update the controller_worker table

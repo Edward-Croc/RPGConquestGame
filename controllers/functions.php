@@ -58,6 +58,27 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
 }
 
 /**
+ * Get the name of a controller
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * 
+ * @return string
+ */
+function getControllerName($pdo, $controller_id) {
+    try{ 
+        $sql = "SELECT firstname, lastname FROM controllers WHERE id = :controller_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':controller_id' => $controller_id]);
+        $controller = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $controller['firstname']. ' '. $controller['lastname'];
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT controllers Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+}
+
+/**
  * Show list of controller options for à controller select field.
  * 
  * @param array $controllers : array of controllers ('id', 'firstname', 'lastname')
@@ -361,6 +382,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     
     // TODO : add attack participation to life_report of workers of the controller in the locations zone ?
     
+
     /*
     // Get Controler Fullname from BDD
     $sql = "SELECT CONCAT(firstname, ' ', lastname) AS fullname FROM controllers WHERE id = :id";
