@@ -80,7 +80,7 @@ VALUES
     -- Diff vals for attack results
     ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
-    ('ATTACKDIFF1', 4, 'Value for Capture'),
+    ('ATTACKDIFF1', 3, 'Value for Capture'),
     ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
     ('RIPOSTDIFF', 2, 'Value for Successful Ripost'),
     -- Diff vals in claim results
