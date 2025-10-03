@@ -67,11 +67,11 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
  */
 function getControllerName($pdo, $controller_id) {
     try{ 
-        $sql = "SELECT firstname, lastname FROM controllers WHERE id = :controller_id";
+        $sql = "SELECT  CONCAT(c.firstname, ' ', c.lastname) AS controller_name FROM controllers c WHERE c.id = :controller_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':controller_id' => $controller_id]);
         $controller = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $controller['firstname']. ' '. $controller['lastname'];
+        return $controller['controller_name'];
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT controllers Failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -380,8 +380,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
     $target_result_text .= sprintf("Notre %s a été attaqué.e, par des agents du réseau %s.",$location[0]['name'], $controller_id );
     
-    // TODO : add attack participation to life_report of workers of the controller in the locations zone ?
+    // TODO : add attack/defence participation to life_report of workers of the controllers in the locations zone ?
+    // Get all worker ids for the 2 controllers $controller_id and $location[0]['controller_id']
     
+    updateWorkerAction($pdo, $controller_id, $location[0]['zone_id'], 'attack');
 
     /*
     // Get Controler Fullname from BDD
