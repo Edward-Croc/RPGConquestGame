@@ -63,7 +63,7 @@ INSERT INTO controllers (
 ) VALUES
     ('妖怪 de', 'Shikoku (四国)', 'passif', 1, -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
         'https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI', '',
-        0,
+        1,
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
