@@ -526,7 +526,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     // Prepare textes
     $defenseText = '';
     if ($location[0]['controller_id']){
-        $defenseText = sprintf(' qui était défendu par le réseau %s', $location[0]['controller_id']);
+        $defenseText = sprintf(' défendu par le réseau %s', $location[0]['controller_id']);
     }
     if ($return['success']) {
         $locationAttackAgentReportJson = getConfig($pdo,'TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS');
