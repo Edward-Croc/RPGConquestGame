@@ -34,7 +34,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 //  ORDER BY controller_worker.id
                 $stmt = $gameReady->prepare($sql);
 
-                // for prisoner get name of original controller
+                // for double agent get name of infiltrated network
                 if ($workerStatus == 'double_agent') {
                     $stmt->execute([
                         ':worker_id' => $worker['id'],
@@ -47,7 +47,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         $other_controllers[0]['controller_name']
                     );
                 }
-                // for double agent get name of infiltrated network
+                // for prisoner get name of original controller
                 if ($workerStatus == 'prisoner') {
                     $stmt->execute([
                         ':worker_id' => $worker['id'],

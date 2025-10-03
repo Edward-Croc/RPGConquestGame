@@ -72,13 +72,12 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
  * do the necessary checks for the location Search Mechanic
  * 
  * @param PDO $pdo : database connection
+ * @param array $mechanics : mechanics array
  * 
  * @return bool success
  */
-function locationSearchMechanic($pdo) {
+function locationSearchMechanic($pdo, $mechanics) {
     echo '<div><h3>locationSearchMechanic :</h3>';
-
-    $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
     echo "turn_number : $turn_number <br>";
 

@@ -220,13 +220,10 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
  * 
  * @return bool success
  */
-function investigateMechanic($pdo) {
+function investigateMechanic($pdo, $mechanics) {
+    $turn_number = $mechanics['turncounter'];
     echo '<div> <h3> investigateMechanic : </h3> ';
 
-    if (empty($turn_number)) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
-    }
     echo "turn_number : $turn_number <br>";
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';

@@ -83,7 +83,8 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
-            throw new Exception("No record found for worker_id $workerId and turn_number $turnNumber.");
+            echo  __FUNCTION__."(): No record found for worker_id $workerId and turn_number $turnNumber.<br />";
+            return false;
         }
         // Step 2: Decode the JSON report
         $report = array();
@@ -105,7 +106,8 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         $updates[] = "report = :report";
         $params['report'] = json_encode($report);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception("Failed to encode JSON: " . json_last_error_msg());
+            echo  __FUNCTION__."(): Failed to encode JSON: " . json_last_error_msg()."<br />";
+            return false;
         }
     }
 
@@ -120,7 +122,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
             echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
             return false;
         }
-        return TRUE;
+        return true;
     }
     return false;
 }
@@ -1256,6 +1258,12 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
 
     return $enemyWorkersSelect;
 }
+
+
+// function createTraceWorker($pdo, )
+
+
+
 
 // TODO : Add Conversion to the captured agent possible actions list,
     // lock behind config JSON for certain factions, conversion probablility values 

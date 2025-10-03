@@ -1,12 +1,9 @@
 <?php
 
-function aiMechanic($pdo ) {
+function aiMechanic($pdo, $mechanics) {
+    $turn_number = $mechanics['turncounter'];
     echo '<div> <h3> aiMechanic : </h3> ';
 
-    if (empty($turn_number)) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
-    }
     echo "turn_number : $turn_number <br>";
 
     $debug = false;

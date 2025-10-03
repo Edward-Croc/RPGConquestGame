@@ -235,10 +235,11 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
  * Main function to calculate attack results.
  * 
  * @param PDO $pdo : database connection
+ * @param array $mechanics : mechanics array
  * 
  * @return bool : success
 */
-function attackMechanic($pdo){
+function attackMechanic($pdo, $mechanics){
     echo '<div> <h3>  attackMechanic : </h3> ';
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_ATTACK')) === 'true';
@@ -254,7 +255,7 @@ function attackMechanic($pdo){
         echo "RIPOSTACTIVE : $RIPOSTACTIVE <br/>";
     }
 
-    $attacksArray = getAttackerComparisons($pdo, NULL, NULL);
+    $attacksArray = getAttackerComparisons($pdo, $mechanics['turncounter'], NULL);
     if ($debug)
         echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
     if (empty($attacksArray)) { echo 'All is calm </div>'; return true;}

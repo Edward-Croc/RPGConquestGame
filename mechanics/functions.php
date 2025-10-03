@@ -7,6 +7,12 @@ require_once '../mechanics/locationSearchMechanic.php';
 
 /**
  * Start or Pause the game state
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $mechanics : mechanics array
+ * @param bool $start : true to start, false to pause
+ *
+ * @return bool : success
  */
 function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
 
@@ -32,9 +38,24 @@ function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
 }
 
 /**
+ * Change the end turn state
+ *
+ * @param PDO $pdo : database connection
+ * @param string $state : state to change to
+ * @param array $mechanics : mechanics array
+ *
+ * @return bool : success
+ */
+function changeEndTurnState($pdo, $state, $mechanics) {
+    $sql = "UPDATE mechanics set end_step = :end_step WHERE id = :id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':end_step' => $state, ':id' => $mechanics['id']]);
+}
+
+/**
  * Build base randomization SQL
  *
- * @return string
+ * @return string : SQL string
  *
  */
 function diceSQL() {
@@ -57,7 +78,7 @@ function diceSQL() {
  *
  * @param PDO $pdo : database connection
  *
- * @return int : rollval
+ * @return int : rollvalue
  */
 function diceRoll($pdo) {
     $diceSQL = diceSQL();
@@ -79,12 +100,13 @@ function diceRoll($pdo) {
  * Calculates the final values for each worker depending on their chosen action.
  *
  * @param PDO $pdo : database connection
- * @param string $turn_number
+ * @param array $mechanics : mechanics array
  *
  * @return bool : success
  *
  */
-function calculateVals($pdo, $turn_number){
+function calculateVals($pdo, $mechanics){
+    $turn_number =  $mechanics['turncounter'];
 
     $sqlArray = [];
     $array = [];
@@ -252,6 +274,7 @@ function calculateVals($pdo, $turn_number){
     }
     echo 'DONE </p></div>';
 
+    changeEndTurnState($pdo, 'calculateVals', $mechanics);
     return true;
 }
 
@@ -341,22 +364,19 @@ function createNewTurnLines($pdo, $turn_number){
 
 /**
  *
+ * 
  * @param PDO $pdo : database connection
- * @param string $turn_number
+ * @param array $mechanics : mechanics array
  *
  * @return bool : success
  *
  */
-function claimMechanic($pdo, $turn_number = NULL) {
+function claimMechanic($pdo, $mechanics) {
+    $turn_number = $mechanics['turncounter'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     echo '<div> <h3>  claimMechanic : </h3> ';
-
-    if (empty($turn_number)) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
-        echo "turn_number : $turn_number <br>";
-    }
+    echo "turn_number : $turn_number <br>";
 
     // Define the SQL query
     $sql = "SELECT

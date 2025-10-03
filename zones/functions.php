@@ -160,6 +160,8 @@ function getLocationsArray($pdo) {
  *
  */
 function recalculateBaseDefence($pdo) {
+    echo "Recalculating base defence<br />";
+
     // Get all bases with their controller and zone
     $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = True";
     $stmt = $pdo->prepare($sql);
