@@ -365,10 +365,18 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
 function attackLocation($pdo, $controller_id, $target_location_id) {
     $debug = $_SESSION['DEBUG'];
     $return = array('success' => false, 'message' => '');
-    $target_result_text = '';
+
+    //  Get Turn Number
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
+
+    $targetResultText = '';
     try{
-        // Get ZONE ID from target_location_id
-        $sql = "SELECT * FROM locations WHERE id = :id";
+        // Get location informatipon from target_location_id
+        $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM locations l
+            JOIN zones z ON l.zone_id = z.id
+            WHERE l.id = :id
+            LIMIT 1";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $target_location_id]);
         $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -378,21 +386,6 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         return NULL;
     }
 
-    $target_result_text .= sprintf("Notre %s a été attaqué.e, par des agents du réseau %s.",$location[0]['name'], $controller_id );
-    
-    // TODO : add attack/defence participation to life_report of workers of the controllers in the locations zone ?
-    // Get all worker ids for the 2 controllers $controller_id and $location[0]['controller_id']
-    
-    updateWorkerAction($pdo, $controller_id, $location[0]['zone_id'], 'attack');
-
-    /*
-    // Get Controler Fullname from BDD
-    $sql = "SELECT CONCAT(firstname, ' ', lastname) AS fullname FROM controllers WHERE id = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':id' => $controller_id]);
-    $controller = $stmt->fetch(PDO::FETCH_ASSOC);
-    $target_result_text .= sprintf('C\'est clairement %s qui en est responsable.', $controller["fullname"]);
-    */
     $zone_id = $location[0]['zone_id'];
     if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
@@ -407,7 +400,16 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         $return['success'] = true;
         $destroy = true;
 
-        $target_result_text .= ' Ils ont franchi les portes avec succès.';
+        // Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.
+        $locationAttackSuccessTextsArray = json_decode(getConfig($pdo,'TEXT_LOCATION_ATTACK_SUCCESS'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            $locationAttackSuccessTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.");
+        }
+        $targetResultText .= sprintf(
+            $locationAttackSuccessTextsArray[array_rand($locationAttackSuccessTextsArray)],
+            $location[0]['name'], $controller_id
+        );
 
         // Do actions depending on JSON for location
         if (!empty($location[0]['activate_json'])) {
@@ -456,52 +458,131 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                 echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
                 return NULL;
             }
-            $target_result_text .= ' Le lieu a été rendu inutilisable.';
+            $targetResultText .= ' Tout as été détruit.';
         }
     } else {
-        $target_result_text .= " Heureusement, ils ne semblent pas avoir atteint leur objectif.";
+        // Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.
+        $locationAttackFailTextsArray = json_decode(getConfig($pdo,'TEXT_LOCATION_ATTACK_FAIL'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            $locationAttackFailTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.");
+        }
+        $targetResultText .= sprintf(
+            $locationAttackFailTextsArray[array_rand($locationAttackFailTextsArray)],
+            $location[0]['name'], $controller_id
+        );
         $return['message'] = sprintf(
             getConfig($pdo, 'textLocationNotDestroyed'),
             $location[0]['name']
         );
     }
 
-    $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : null;
-    // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
-    $logSql = "
-        INSERT INTO location_attack_logs (
-            target_controller_id,
-            location_name,
-            attacker_id,
-            attack_val,
-            defence_val,
-            turn,
-            success,
-            target_result_text,
-            attacker_result_text
-        )
-        VALUES (
-            :target_controller_id,
-            :location_name,
-            :attacker_id,
-            :attack_val,
-            :defence_val,
-            (SELECT turncounter FROM mechanics LIMIT 1),
-            :success,
-            :target_result_text,
-            :attacker_result_text
-        )
-    ";
-    $logStmt = $pdo->prepare($logSql);
-    $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-    $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
-    $logStmt->bindParam(':location_name', $location[0]['name']);
-    $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
-    $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
-    $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
-    $logStmt->bindParam(':target_result_text', $target_result_text);
-    $logStmt->bindParam(':attacker_result_text', $return['message']);
-    $logStmt->execute();
+    try {
+        $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : null;
+        // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
+        $logSql = "
+            INSERT INTO location_attack_logs (
+                target_controller_id,
+                location_name,
+                attacker_id,
+                attack_val,
+                defence_val,
+                turn,
+                success,
+                target_result_text,
+                attacker_result_text
+            )
+            VALUES (
+                :target_controller_id,
+                :location_name,
+                :attacker_id,
+                :attack_val,
+                :defence_val,
+                :turn_number,
+                :success,
+                :target_result_text,
+                :attacker_result_text
+            )
+        ";
+        $logStmt = $pdo->prepare($logSql);
+        $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
+        $logStmt->bindParam(':location_name', $location[0]['name']);
+        $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
+        $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
+        $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
+        $logStmt->bindParam(':target_result_text', $targetResultText);
+        $logStmt->bindParam(':attacker_result_text', $return['message']);
+        $logStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $logStmt->execute();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT location_attack_logs Failed: " . $e->getMessage()."<br />";
+        return array('success' => false, 'message' => 'Error : Resultat Save Failed');
+    }
+
+    // Add attack/defence participation to life_report of workers of the controllers in the locations zone
+    // Get all workerIds for the controllers $controller_id and $location[0]['controller_id']
+
+    // Prepare textes
+    $defenseText = '';
+    if ($location[0]['controller_id']){
+        $defenseText = sprintf(' qui était défendu par le réseau %s', $location[0]['controller_id']);
+    }
+    if ($return['success']) {
+        $locationAttackAgentReportJson = getConfig($pdo,'TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS');
+    } else {
+        $locationAttackAgentReportJson = getConfig($pdo,'TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL');
+    }
+    $locationAttackAgentReportArray = json_decode($locationAttackAgentReportJson, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+        $locationAttackAgentReportArray = array("Attaque du lieu %s dans %s %s.<br/>");
+    }
+
+    // Get worker ids
+    $sqlWorkerForZoneAndController = "SELECT w.id
+        FROM workers w
+        JOIN controller_worker cw ON cw.worker_id = w.id
+        WHERE cw.controller_id = :controller_id
+            AND w.zone_id = :zone_id
+            AND w.is_active = True
+            AND cw.is_primary_controller = True";
+    $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
+    $stmt->execute([':controller_id' => $controller_id, ':zone_id' => $zone_id]);
+    $workerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);  
+    foreach ($workerIds as $workerId) {
+        $report = sprintf(
+            $locationAttackAgentReportArray[array_rand($locationAttackAgentReportArray)],
+            $location[0]['name'], $location[0]['zone_name'], $defenseText
+        );
+        updateWorkerAction($pdo, $workerId, $turn_number, NULL, ['life_report' => $report]);
+     }
+     if ($location[0]['controller_id']) {
+        // Prepare textes
+        if ( !$return['success']) {
+            $locationDefenceAgentReportJson = getConfig($pdo,'TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS');
+        } else {
+            $locationDefenceAgentReportJson = getConfig($pdo,'TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL');
+        }
+        $locationDefenceAgentReportArray = json_decode($locationDefenceAgentReportJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            $locationDefenceAgentReportArray = array('Défense du lieu %s dans %s contre les agent du réseau %s.<br/>');
+        }
+
+        // Get worker ids
+        $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
+        $stmt->execute([':controller_id' => $location[0]['controller_id'], ':zone_id' => $zone_id]);
+        $workerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($workerIds as $workerId) {
+            $report = sprintf(
+            $locationDefenceAgentReportArray[array_rand($locationDefenceAgentReportArray)],
+                $location[0]['name'], $location[0]['zone_name'], $controller_id
+            );
+            updateWorkerAction($pdo, $workerId, $turn_number, NULL, ['life_report' => $report]);
+        }
+     }
+
 
     return $return;
 }
