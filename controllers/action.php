@@ -34,7 +34,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['attackLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
-        if ($debug) echo 'end <br>';
+        if ($debug) echo sprintf('end <br/>', $attackLocationResult['success'], $attackLocationResult['message']);
     }
     
 }
