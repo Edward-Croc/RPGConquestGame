@@ -721,8 +721,7 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
             }
         }
     }
-    // If the effect can be obtained out of recrutment
-    // TODO : ...
+    // TODO : If the effect can be obtained out of recrutment
 
  return true;
 }
