@@ -420,7 +420,7 @@ Peu en ressortent, et ceux qui le font ne parlent plus.',
         8, 1,
         (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
         (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
-        '{"indestructible" : "TRUE"}'
+        '{"indestructible":"TRUE"}'
     ),
 
     -- Geôles des pirates (Shōdoshima)
@@ -432,7 +432,7 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         8, 1,
         (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
         (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'),
-        '{"update_location": {"name": "Geôles en ruines", "discovery_diff": 5, "save_to_json": "TRUE",
+        '{"update_location": {"name": "Prison en ruines", "discovery_diff": 5, "save_to_json": "TRUE",
         "can_be_destroyed": 0, "can_be_repaired": 1,
         "description": "Creusées dans la falaise même, ces cavernes humides servaient de refuge aux pirates Wako, mais tout ce qui avait une valeur a été pillé."
         }}'
@@ -448,8 +448,7 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
         '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 5, "save_to_json": "TRUE",
         "can_be_destroyed": 0, "can_be_repaired": 1,
-        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe.
-        Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire."
+        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe. Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire."
         }}'
     )
     -- Ajouter un secret sur la présence du christianisme et du pretre Luís Fróis Japonologue et Jésuite -- https://fr.wikipedia.org/wiki/Lu%C3%ADs_Fr%C3%B3is 
