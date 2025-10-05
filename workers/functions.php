@@ -588,7 +588,7 @@ function createWorker($pdo, $array) {
     // Add the basic worker action line
     $newControllerName = getControllerName($pdo, $array['controller_id']);
     $zone_name = getZoneName($pdo, $array['zone_id']);
-    $life_report = sprintf("J'ai été recruté par %s<strong>%s</strong> et envoyé en mission dans le %s <strong>%s</strong>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name );
+    $life_report = sprintf("J'ai été recruté par %s<strong>%s</strong> et envoyé en mission dans le %s <strong>%s</strong>.<br/>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name );
     $reportArray = array('life_report' => $life_report);
     addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id'], $reportArray);
 
@@ -991,7 +991,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
             // get new controller name
             $newControllerName = getControllerName($pdo, $extraVal);
-            $currentReport['life_report'] .= "J'ai rejoint $newControllerName comme nouveau maitre.<br /> ";
+            $currentReport['life_report'] .= sprintf("J'ai <strong>rejoint %s%s</strong> comme nouveau maitre.<br />", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName);
             // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
             try {
                 $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
@@ -1029,15 +1029,28 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): recallDoubleAgent <br/><br/>";
             try {
                 $new_action = 'passive';
+                if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
+                $currentReport['life_report'] .= sprintf(
+                        "J'ai été <strong>rappelé</strong> auprès de mon véritable maitre <strong>%s%s</strong>.<br />",
+                        getConfig($pdo, 'controllerNameDenominatorThe'),
+                        getControllerName($pdo, $extraVal)
+                );
+
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
-                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
-                $stmtcontrollerWorker->execute([
-                    ':worker_id' => $workerId
+                $sqlDropControllerWorker = sprintf(
+                    "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = %s AND NOT controller_id = :extraVal",
+                    $_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1'
+                );
+                $stmtDropControllerWorker = $pdo->prepare($sqlDropControllerWorker);
+                $stmtDropControllerWorker->execute([
+                    ':worker_id' => $workerId,
+                    ':extraVal' => $extraVal
                 ]);
-                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . " WHERE worker_id = :worker_id AND controller_id = :extraVal";
-                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
-                $stmtcontrollerWorker->execute([
+                $sqlUpdatecontrollerWorker = sprintf("UPDATE controller_worker SET is_primary_controller = %s WHERE worker_id = :worker_id AND controller_id = :extraVal",
+                    ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
+                );
+                $stmtUpdateControllerWorker = $pdo->prepare($sqlUpdatecontrollerWorker);
+                $stmtUpdateControllerWorker->execute([
                     ':extraVal' => $extraVal,
                     ':worker_id' => $workerId
                 ]);
@@ -1059,11 +1072,17 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
         case 'returnPrisoner' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): returnPrisoner <br/><br/>";
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
-            $currentReport['life_report'] .= "<br /> J'ai été relacher. ";
+            $currentReport['life_report'] .= sprintf(
+                "J'ai été <strong>relacher</strong> par le <strong>réseau %s</strong>.<br />",
+                $extraVal['recall_controller_id']
+            );
 
             try {
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
+                $sqlcontrollerWorker = sprintf(
+                    "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
+                    ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
+                );
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal['recall_controller_id'],
