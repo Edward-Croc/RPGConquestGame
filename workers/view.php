@@ -125,7 +125,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ($zonesArray[0]['claimer_controller_id'] == $controller_id) {
                     $workerActionText .= ' qui est sous notre bannière';
                 } else {
-                    $workerActionText .= sprintf(' qui est sous la bannière des %s', $zonesArray[0]['claimer_lastname'] );
+                    $workerActionText .= sprintf(' qui est sous la bannière %s %s', getConfig($gameReady, "controllerLastNameDenominatorOf"), $zonesArray[0]['claimer_lastname'] );
                 }
             }
             $workerActionText .= '.';

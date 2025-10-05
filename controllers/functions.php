@@ -236,7 +236,8 @@ function createBase($pdo, $controller_id, $zone_id) {
         getConfig($pdo, 'texteDescriptionBase'),
         $controller_name,
         $controllers[0]['fake_faction_name'],
-        strtolower($timeValue)
+        strtolower($timeValue),
+        getConfig($pdo, 'controllerNameDenominatorOf')
     );
     if ($controllers[0]['faction_id'] != $controllers[0]['fake_faction_id'])
         $description .= sprintf(
