@@ -585,7 +585,12 @@ function createWorker($pdo, $array) {
     // Get the last inserted ID
     $workerId = $pdo->lastInsertId();
 
-    addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id']);
+    // Add the basic worker action line
+    $newControllerName = getControllerName($pdo, $array['controller_id']);
+    $zone_name = getZoneName($pdo, $array['zone_id']);
+    $life_report = sprintf("J'ai été recruté par %s<strong>%s</strong> et envoyé en mission dans le %s <strong>%s</strong>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name );
+    $reportArray = array('life_report' => $life_report);
+    addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id'], $reportArray);
 
     try{
         // Insert new controller_worker value into the database
@@ -736,19 +741,38 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
  *
  * @return int|null lastInsertId
  */
-function addWorkerAction($pdo, $workerId, $controllerId, $zoneId){
+function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray = null){
     // Get turn nubmer
     $mechanics = getMechanics($pdo);
 
+    $hasReport = false;
+
+    $sql = "INSERT
+            INTO worker_actions (worker_id, turn_number, zone_id, controller_id)
+            VALUES (:worker_id, :turn_number, :zone_id, :controller_id)";
+    if (!empty($reportArray)) {
+        // Encode the report
+        $reportJson = json_encode($reportArray);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo "JSON encoding error: " . json_last_error_msg() . "<br />";
+        }else{
+            $sql = "INSERT
+                INTO worker_actions (worker_id, turn_number, zone_id, controller_id, report)
+                VALUES (:worker_id, :turn_number, :zone_id, :controller_id, :report)";
+            $hasReport = true;
+        }
+    }
+
+    if (!empty($_SESSION['debug'])) echo __METHOD__."() : insertsqL $sql <br/>";
+
     try{
         // Insert new controller_worker value into the database
-        $stmt = $pdo->prepare("INSERT
-            INTO worker_actions (worker_id, turn_number, zone_id, controller_id)
-             VALUES (:worker_id, :turn_number, :zone_id, :controller_id)");
+        $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':controller_id', $controllerId,);
         $stmt->bindParam(':worker_id', $workerId );
         $stmt->bindParam(':zone_id', $zoneId );
         $stmt->bindParam(':turn_number', $mechanics['turncounter']);
+        if (!empty($hasReport)) $stmt->bindParam(':report', $reportJson);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
