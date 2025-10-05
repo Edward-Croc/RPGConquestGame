@@ -12,6 +12,9 @@ UPDATE config SET value =  'Carte_Shikoku_1555.jpg' WHERE name = 'map_file';
 UPDATE config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
 
 -- Text time info
+UPDATE config SET value =  'le ' WHERE name = 'controllerNameDenominatorThe';
+UPDATE config SET value =  'du' WHERE name = 'controllerNameDenominatorOf';
+UPDATE config SET value =  'des' WHERE name = 'controllerLastNameDenominatorOf';
 UPDATE config SET value =  'territoire' WHERE name = 'textForZoneType';
 UPDATE config SET value =  'Trimestre' WHERE name = 'timeValue';
 UPDATE config SET value =  'ce' WHERE name = 'timeDenominatorThis';
@@ -108,21 +111,21 @@ INSERT INTO controllers (
         ''
     ),
     (
-        'Bouddhistes', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
+        'Temple', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
         (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
         'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
         ''
     ),
     (
-        'Bouddhistes', 'Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
+        'Temple', 'Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
         ''
     ),
     (
-        'Kaizokushū (海賊衆)', 'Wako (和光)',
+        'Groupe', 'Wako (和光)',
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
