@@ -138,6 +138,9 @@ VALUES
 --  Text info
 INSERT INTO config (name, value, description)
 VALUES
+    ('controllerNameDenominatorThe', '', 'Denominator for the controler name'),
+    ('controllerNameDenominatorOf', 'de', 'Denominator ’of’ for the controler full name'),
+    ('controllerLastNameDenominatorOf', 'de', 'Denominator ’of’ for the controler last name'),
     ('textForZoneType', 'zone', 'Text for the type of zone'),
     ('timeValue', 'Tour', 'Text for time span'),
     ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text'),
