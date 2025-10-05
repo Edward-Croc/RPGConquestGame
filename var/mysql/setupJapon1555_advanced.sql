@@ -3,16 +3,16 @@
 -- Create the Yōkai start workers
 /*
 Yōkai de la Paresse (Biwa, vallon, saké)
-('Kosagi', 'Kotatsu')
-Kosagi (« petite héronne ») évoque la tranquillité trompeuse, Kotatsu renvoie à la chaleur paresseuse d’un foyer endormi.
+('Kazusa', 'Kotatsu')
+Kazusa (風佐 — « celui qui suit le vent »), Kotatsu renvoie à la chaleur paresseuse d’un foyer endormi.
 
 Yōkai de la Roche (Chigiriki, montagne, chaînes)
 ('Iwao', 'Jizane')
 Iwao (岩男 — « homme-rocher ») souligne la solidité minérale, Jizane est un nom inventé à consonance ancienne, proche de « jizō » et « zane » (chaîne/bruit de métal).
 
 Yōkai du Vent (Tessen, pavillon d’Awaji, froid)
-('Kazusa', 'Noayame')
-Kazusa (風佐 — « celui qui suit le vent »), Noayame combine no (champs) et ayame (iris — souvent liés aux esprits et au printemps), donnant un nom éthéré et flottant.
+('Kosagi', 'Noayame')
+Kosagi (小鷺 — « petite héronne »), Noayame combine no (champs) et ayame (iris — souvent liés aux esprits et au printemps), donnant un nom éthéré et flottant.
 
 Yōkai du Feu (Teppō, cap sud de Kōchi, forge, poudre)
 ('Hiuchi', 'Kagaribi')
@@ -25,10 +25,10 @@ SELECT
     wo.id AS origin_id,
     z.id AS zone_id
 FROM (
-    SELECT 'Kosagi' AS firstname, 'Kotatsu' AS lastname, 'Shikoku - Shōdoshima' AS origin_name, 'Ile de Shōdoshima' AS zone_name
-    UNION ALL SELECT 'Iwao', 'Jizane', 'Shikoku - Iyo', 'Montagnes d’Iyo'
-    UNION ALL SELECT 'Kazusa', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'
-    UNION ALL SELECT 'Hiuchi', 'Kagaribi', 'Shikoku - Tosa', 'Cap sud de Tosa'
+    SELECT 'Kazusa (風佐)' AS firstname, 'Kotatsu' AS lastname, 'Shikoku - Shōdoshima' AS origin_name, 'Ile de Shōdoshima' AS zone_name
+    UNION ALL SELECT 'Iwao (岩男)', 'Jizane', 'Shikoku - Iyo', 'Montagnes d’Iyo'
+    UNION ALL SELECT 'Kosagi (小鷺)', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'
+    UNION ALL SELECT 'Hiuchi (火打)', 'Kagaribi', 'Shikoku - Tosa', 'Cap sud de Tosa'
 ) AS nd
 JOIN worker_origins wo ON wo.name = nd.origin_name
 JOIN zones z ON z.name = nd.zone_name;
@@ -44,7 +44,7 @@ AND w.lastname IN ('Kotatsu', 'Jizane', 'Noayame', 'Kagaribi');
 
 -- Add actions to the workers :
 INSERT INTO worker_actions (
-    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
     w.id,
@@ -52,12 +52,17 @@ SELECT
     0,
     w.zone_id,
     entry.action_choice,
-    entry.action_params
+    entry.action_params,
+    entry.report
 FROM (
-    SELECT 'Kotatsu' AS lastname, 'passive' AS action_choice, '{}' AS action_params
-    UNION ALL SELECT 'Jizane', 'passive', '{}'
-    UNION ALL SELECT  'Noayame', 'passive', '{}'
-    UNION ALL SELECT  'Kagaribi', 'passive', '{}'
+    SELECT 'Kotatsu' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
+        '{"life_report":"Depuis des siècles moi Kazusa (風佐 — « celui qui suit le vent ») des Yōkai (妖怪) hante les vallons de Shōdoshima."}' AS report
+    UNION ALL SELECT 'Jizane', 'passive', '{}',
+        '{"life_report":"Depuis des siecles moi Iwao (岩男 — « homme-rocher ») des Yōkai (妖怪) arpente les flancs des montagnes d’Iyo."}'
+    UNION ALL SELECT  'Noayame', 'passive', '{}',
+        '{"life_report":"Depuis des siecles moi Kosagi (小鷺 — « petite héronne ») des Yōkai (妖怪) hante les falaises d’Awaji."}'
+    UNION ALL SELECT  'Kagaribi', 'passive', '{}',
+        '{"life_report":"Depuis des siecles moi Hiuchi (火打 — « pierre à feu ») des Yōkai (妖怪) je terrorise le cap sud de Tosa."}'
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
@@ -107,7 +112,7 @@ SELECT
     wo.id AS origin_id,
     z.id AS zone_id
 FROM (
-    SELECT 'Shonyo' AS firstname, 'fils de Rennyo (蓮如)' AS lastname, 'Honshu - Kyoto' AS origin_name, 'Montagnes d’Iyo' AS zone_name
+    SELECT 'Renjun (蓮淳)' AS firstname, 'fils de Rennyo (蓮如)' AS lastname, 'Honshu - Kyoto' AS origin_name, 'Montagnes d’Iyo' AS zone_name
 ) AS nd
 JOIN worker_origins wo ON wo.name = nd.origin_name
 JOIN zones z ON z.name = nd.zone_name;
@@ -122,7 +127,7 @@ AND w.lastname IN ('fils de Rennyo (蓮如)');
 
 -- Add actions to the workers :
 INSERT INTO worker_actions (
-    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
     w.id,
@@ -130,9 +135,11 @@ SELECT
     0,
     w.zone_id,
     entry.action_choice,
-    entry.action_params
+    entry.action_params,
+    entry.report
 FROM (
-    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
+    SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
+        '{"life_report":"Je suis Renjun (蓮淳), un des fils de Rennyo (蓮如) et l’oncle d’Ennyo (円如), venu du nord de Kyoto pour soutenir ma famille et subvertir la religion Tendai dans les Montagnes d’Iyo."}' AS report
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
@@ -198,7 +205,7 @@ AND w.lastname IN ('Mitsunao-dono(光直-殿)', 'Ibara-dono(茨の紅-殿)', 'Re
 
 -- Add actions to the workers :
 INSERT INTO worker_actions (
-    worker_id, controller_id, turn_number, zone_id, action_choice, action_params
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
     w.id,
@@ -206,12 +213,17 @@ SELECT
     0,
     w.zone_id,
     entry.action_choice,
-    entry.action_params
+    entry.action_params,
+    entry.report
 FROM (
-    SELECT 'Mitsunao-dono(光直-殿)' AS lastname, 'passive' AS action_choice, '{}' AS action_params
-    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'passive', '{}'
-    UNION ALL SELECT  'Renryū-dono(蓮竜-殿)', 'passive', '{}'
-    UNION ALL SELECT  'Sōen-dono(僧円-殿)', 'passive', '{}'
+    SELECT 'Mitsunao-dono(光直-殿)' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
+        '{"life_report":"Je Mitsunao-dono(光直-殿) du clan Asakura(朝倉), conseiller personnel du Shogun au palais impérial de Kyoto."}' AS report
+    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'passive', '{}',
+        '{"life_report":"Je suis Ibara-dono(茨の紅-殿), la première courtisane de Kyoto, mon nom est connu du Shogun lui-même."}' AS report
+    UNION ALL SELECT  'Renryū-dono(蓮竜-殿)', 'passive', '{}',
+        '{"life_report":"Je suis Renryū-dono(蓮竜-殿), un cousin du clan Takeda (武田), révolté contre les actions de Takeda Shingen (信玄), je suis venu de l’est pour protéger le Shogun."}' AS report
+    UNION ALL SELECT  'Sōen-dono(僧円-殿)', 'passive', '{}',
+        '{"life_report":"Je suis Sōen-dono(僧円-殿), maitre moine Tendai au service du Shogun au palais impérial de Kyoto."}' AS report
 ) AS entry
 JOIN workers w ON w.lastname = entry.lastname
 JOIN controller_worker cw ON cw.worker_id = w.id;
