@@ -98,10 +98,9 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         $workerActionInfo .= ' contre ';
                         foreach( $workersArray AS $k => $w ) {
                             $workerActionInfo .= sprintf(
-                                '%1$s %2$s (#%3$s)%4$s',
+                                '%1$s %2$s %3$s',
                                 $w['firstname'],
                                 $w['lastname'],
-                                $w['id'],
                                 ($k < (count($workersArray)-1)) ? ', ' : ''
                             );
                         }
@@ -387,7 +386,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 '<div class="card">
                     <header class="card-header">
                         <p class="card-header-title">
-                            Agent %2$s %3$s (#%1$s)
+                            Agent %2$s %3$s
                         </p>
                     </header>
                     <div class="card-content">

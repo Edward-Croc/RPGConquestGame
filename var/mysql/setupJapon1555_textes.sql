@@ -77,7 +77,7 @@ VALUES
 INSERT INTO config (name, value, description)
 VALUES
 -- textesDiff01Array     
--- (nom(id)) - %1$s
+-- (nom) - %1$s
 -- (role) - %2$s
 -- (objet) - %3$s
 -- (action_ps) - <strong>%4$s</strong>
@@ -112,7 +112,7 @@ VALUES
     'Texts for search results level 1 (structured dialogue in pairs)'
 ),
 -- textesDiff01TransformationDiff0Array
--- (nom(id)) - %1$s
+-- (nom) - %1$s
 -- (metier) - %7$s/%2$s
 -- (hobby) - %3$s
 -- (action_ps) - %4$s

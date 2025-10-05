@@ -77,7 +77,7 @@ VALUES
 INSERT INTO config (name, value, description)
 VALUES
 -- textesDiff01Array     
--- (nom(id)) - %1$s
+-- (nom) - %1$s
 -- (role) - %2$s
 -- (objet) - %3$s
 -- (action_ps) - <strong>%4$s</strong>
