@@ -122,6 +122,7 @@ VALUES
     ,('baseDefenceAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
     ,('baseDefenceAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
     ,('baseDefenceAddTurns', 1, 'Base defence value base age presence ponderation 0 for no' )
+    ,('noControllerDefenceBonus', 3, 'Base defence value for no controller' )
     ,('maxBonusDefenceTurns', 3, 'Maximum bonus obtainable from age of base' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir.', 'Text for location destroyed')

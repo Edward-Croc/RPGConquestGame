@@ -208,7 +208,7 @@ function recalculateBaseDefence($pdo) {
  *
  * @return int $value
  */
-function calculateControllerValue($pdo, $controller_id, $type, $zone_id, $location_id = null) {
+function calculateControllerValue($pdo, $controller_id = null, $type, $zone_id, $location_id = null) {
     $debug = $_SESSION['DEBUG'];
     $value = 0;
 
@@ -233,62 +233,67 @@ function calculateControllerValue($pdo, $controller_id, $type, $zone_id, $locati
         }
     }
 
-    // Powers
-    $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
-    if ($debug) echo sprintf("powerMultiplier : %d<br>", $powerMultiplier);
-    $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
-    if ($debug) echo sprintf("maxPowerBonus : %d<br>", $maxPowerBonus);
-    if ($powerMultiplier !== 0) {
-        switch ($type){ // 'defence', 'attack' or 'enquete'
-            case 'DiscoveryDiff' :
-                $attribute = 'enquete';
-                break;
-            case 'Defence' :
-                $attribute = 'defence';
-                break;
-            case 'Attack' :
-                $attribute = 'attack';
-                break;
-            default :
-                $attribute =  NULL;
-                break;
-        }
-        if (!empty($attribute) ){
-            $power_list = getPowersByType($pdo, '3', $controller_id, false);
-            $bonus = 0;
-            foreach ($power_list as $power) {
-                $bonus += isset($power[$attribute]) ? $power[$attribute] * $powerMultiplier : 0;
+    if ($controller_id !== null) {
+        // Powers
+        $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
+        if ($debug) echo sprintf("powerMultiplier : %d<br>", $powerMultiplier);
+        $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
+        if ($debug) echo sprintf("maxPowerBonus : %d<br>", $maxPowerBonus);
+        if ($powerMultiplier !== 0) {
+            switch ($type){ // 'defence', 'attack' or 'enquete'
+                case 'DiscoveryDiff' :
+                    $attribute = 'enquete';
+                    break;
+                case 'Defence' :
+                    $attribute = 'defence';
+                    break;
+                case 'Attack' :
+                    $attribute = 'attack';
+                    break;
+                default :
+                    $attribute =  NULL;
+                    break;
             }
-            if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
-            $value += $bonus;
-            if ($debug) echo sprintf("%s (+powers) : %d<br>", $type, $value);
-        } else echo sprintf("%s : attribute is NULL <br>", $type);
-    }
+            if (!empty($attribute) ){
+                $power_list = getPowersByType($pdo, '3', $controller_id, false);
+                $bonus = 0;
+                foreach ($power_list as $power) {
+                    $bonus += isset($power[$attribute]) ? $power[$attribute] * $powerMultiplier : 0;
+                }
+                if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
+                $value += $bonus;
+                if ($debug) echo sprintf("%s (+powers) : %d<br>", $type, $value);
+            } else echo sprintf("%s : attribute is NULL <br>", $type);
+        }
 
-    // Workers
-    $workerMultiplier = (int)getConfig($pdo, "base{$type}AddWorkers");
-    if ($debug) echo sprintf("workerMultiplier : %d<br>", $workerMultiplier);
-    $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
-    if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
-    if ($workerMultiplier !== 0) {
-        $sql = "
-            SELECT COUNT(*) AS worker_count
-            FROM workers w
-            JOIN controller_worker cw ON cw.worker_id = w.id
-            WHERE cw.controller_id = :controller_id
-              AND w.zone_id = :zone_id
-              AND w.is_active = True
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':controller_id' => $controller_id,
-            ':zone_id' => $zone_id
-        ]);
-        $worker_count = (int)($stmt->fetch(PDO::FETCH_ASSOC)['worker_count'] ?? 0);
-        $bonus = $worker_count * $workerMultiplier;
-        if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
-        $value += $bonus;
-        if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
+        // Workers
+        $workerMultiplier = (int)getConfig($pdo, "base{$type}AddWorkers");
+        if ($debug) echo sprintf("workerMultiplier : %d<br>", $workerMultiplier);
+        $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
+        if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
+        if ($workerMultiplier !== 0) {
+            $sql = "
+                SELECT COUNT(*) AS worker_count
+                FROM workers w
+                JOIN controller_worker cw ON cw.worker_id = w.id
+                WHERE cw.controller_id = :controller_id
+                AND w.zone_id = :zone_id
+                AND w.is_active = True
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':controller_id' => $controller_id,
+                ':zone_id' => $zone_id
+            ]);
+            $worker_count = (int)($stmt->fetch(PDO::FETCH_ASSOC)['worker_count'] ?? 0);
+            $bonus = $worker_count * $workerMultiplier;
+            if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
+            $value += $bonus;
+            if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
+        }
+    } else {
+        if ($debug) echo sprintf("%s : controller_id is NULL <br>", $type);
+        $value += getConfig($pdo, "noController{$type}Bonus");
     }
 
     // Turns / Age
@@ -347,7 +352,7 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $l
  *
  * @return int $value
  */
-function calculateSecretLocationDefence($pdo, $controller_id, $zone_id, $location_id) {
+function calculateSecretLocationDefence($pdo, $controller_id = null, $zone_id, $location_id) {
     return calculateControllerValue($pdo, $controller_id, 'Defence', $zone_id, $location_id);
 }
 
