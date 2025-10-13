@@ -208,7 +208,7 @@ function recalculateBaseDefence($pdo) {
  *
  * @return int $value
  */
-function calculateControllerValue($pdo, $controller_id = null, $type, $zone_id, $location_id = null) {
+function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
     $debug = $_SESSION['DEBUG'];
     $value = 0;
 
@@ -338,8 +338,8 @@ function calculateControllerValue($pdo, $controller_id = null, $type, $zone_id, 
  *
  * @return int $value
  */
-function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $location_id = null) {
-    return calculateControllerValue($pdo, $controller_id, 'DiscoveryDiff', $zone_id, $location_id);
+function calculateSecretLocationDiscoveryDiff($pdo, $zone_id, $location_id, $controller_id = null ) {
+    return calculateControllerValue($pdo, 'DiscoveryDiff', $zone_id, $controller_id, $location_id);
 }
 
 /**
@@ -352,8 +352,8 @@ function calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $l
  *
  * @return int $value
  */
-function calculateSecretLocationDefence($pdo, $controller_id = null, $zone_id, $location_id) {
-    return calculateControllerValue($pdo, $controller_id, 'Defence', $zone_id, $location_id);
+function calculateSecretLocationDefence($pdo, $zone_id, $location_id, $controller_id = null) {
+    return calculateControllerValue($pdo, 'Defence', $zone_id, $controller_id, $location_id);
 }
 
 /**
@@ -365,8 +365,8 @@ function calculateSecretLocationDefence($pdo, $controller_id = null, $zone_id, $
  *
  * @return int $value
  */
-function calculatecontrollerAttack($pdo, $controller_id, $zone_id) {
-    return calculateControllerValue($pdo, $controller_id, 'Attack', $zone_id, null);
+function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
+    return calculateControllerValue($pdo, 'Attack', $zone_id, $controller_id);
 }
 
 /**
