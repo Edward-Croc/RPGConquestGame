@@ -96,6 +96,9 @@ function locationSearchMechanic($pdo, $mechanics) {
     $locationDescText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true);
     $locationDestroyableText =  json_decode(getConfig($pdo,'TEXT_LOCATION_CAN_BE_DESTROYED'), true);
 
+    $textForZoneType = getConfig($pdo, 'textForZoneType');
+    $controllerNameDenominatorOf = getConfig($pdo, 'controllerNameDenominatorOf');
+
     foreach ($locationsInvestigation as $row) {
         if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
 
@@ -115,7 +118,7 @@ function locationSearchMechanic($pdo, $mechanics) {
                 > 0 ) {
                     $holderTexte = sprintf(
                         " Ce %s est défendu par le réseau <strong> %s </strong>",
-                        getConfig($pdo, 'textForZoneType'),
+                        $textForZoneType,
                         $row['zone_holder_controller_id']
                     );
                     if ( (int)$row['zone_discovery_diff'] > 2) {
@@ -131,10 +134,10 @@ function locationSearchMechanic($pdo, $mechanics) {
             // At begining of the report Show zone name and information
             $reportArray[$row['searcher_id']] = sprintf(
                 "<p>Dans le %s <strong>%s</strong>. </br> %s %s </p>",
-                getConfig($pdo, 'textForZoneType'),
+                $textForZoneType,
                 $row['zone_name'],
                 // If a claimer exists, use it,
-                !empty($row['zone_claimer_controller_name']) ? sprintf("Ce %s est sous la bannière de <strong> %s </strong>. ", getConfig($pdo, 'textForZoneType'), $row['zone_claimer_controller_name']) : "",
+                !empty($row['zone_claimer_controller_name']) ? sprintf("Ce %s est sous la bannière %s <strong> %s </strong>. ", $textForZoneType, $controllerNameDenominatorOf, $row['zone_claimer_controller_name']) : "",
                 // If a holder exists, use it,
                 $holderTexte
             );

@@ -23,15 +23,17 @@
         </div>
         <?php
         // Display list of Zones
+
+        $controllerLastNameDenominatorOf = getConfig($gameReady, 'controllerLastNameDenominatorOf');
         foreach ($zones as $zone) {
             $description = htmlspecialchars($zone['description']);
             $zoneName = htmlspecialchars($zone['name']);
             $zoneId = htmlspecialchars($zone['zone_id']);
             $controllerBanner = (!empty($zone['controller_id']))
                 ? sprintf(
-                    '<span class="tag is-warning ml-2">Sous la bannière de %s %s</span>',
-                    htmlspecialchars($zone['claimer_lastname']),
-                    htmlspecialchars($zone['claimer_firstname'])
+                    '<span class="tag is-warning ml-2">Sous la bannière %s %s</span>',
+                    $controllerLastNameDenominatorOf,
+                    htmlspecialchars($zone['claimer_lastname'])
                 )
                 : '';
             $knownSecrets = !empty($_SESSION['controller']['id'])
