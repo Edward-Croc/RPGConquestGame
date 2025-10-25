@@ -173,7 +173,7 @@ function recalculateBaseDefence($pdo) {
         $zone_id = $base['zone_id'];
         $id = $base['id'];
 
-        $new_diff = calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id, $id);
+        $new_diff = calculateSecretLocationDiscoveryDiff($pdo, $zone_id, $id, $controller_id);
 
         try {
             // Update base with new difficulty
@@ -209,8 +209,12 @@ function recalculateBaseDefence($pdo) {
  * @return int $value
  */
 function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
-    $debug = $_SESSION['DEBUG'];
+    # $debug = $_SESSION['DEBUG'];
+    # $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $debug = true;
     $value = 0;
+
+    if ($debug) echo sprintf("calculateControllerValue : %s, %s, %s, %s<br>", $type, $zone_id, $controller_id, $location_id);
 
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
@@ -329,16 +333,16 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
 }
 
 /**
- * Calls the calculateControllerValue function with the 'DiscoveryDiff' type
+ * Calls the calculateSecretLocationDiscoveryDiff function with the 'DiscoveryDiff' type
  *
  * @param PDO $pdo
- * @param int $controller_id
  * @param int $zone_id
  * @param int|null $location_id
+ * @param int|null $controller_id
  *
  * @return int $value
  */
-function calculateSecretLocationDiscoveryDiff($pdo, $zone_id, $location_id, $controller_id = null ) {
+function calculateSecretLocationDiscoveryDiff($pdo, $zone_id, $location_id = null, $controller_id = null ) {
     return calculateControllerValue($pdo, 'DiscoveryDiff', $zone_id, $controller_id, $location_id);
 }
 

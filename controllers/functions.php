@@ -222,7 +222,7 @@ function createBase($pdo, $controller_id, $zone_id) {
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
     if ($debug) echo sprintf("controller_name : %s </br>", $controller_name);
 
-    $discovery_diff = calculateSecretLocationDiscoveryDiff($pdo, $controller_id, $zone_id);
+    $discovery_diff = calculateSecretLocationDiscoveryDiff($pdo, $zone_id, null, $controller_id );
 
     $timeValue = getConfig($pdo, 'timeValue');
     if ($debug) echo sprintf("timeValue : %s </br>", var_export($timeValue, true));
