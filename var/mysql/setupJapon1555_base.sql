@@ -149,7 +149,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Chrétiens')
     ),
     ('Clan', 'Takeda (武田)', 'passif', 1, 
-        NULL, 'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e',
+        'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e', '',
         0, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda')
