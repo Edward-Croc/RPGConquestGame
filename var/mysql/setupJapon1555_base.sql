@@ -23,6 +23,7 @@ UPDATE config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
 INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', 0, ''),
+    ('shingen', 'takeda', 0, ''),
     ('yoshiteru', 'ashikaga', 0, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
     ('yoshiaki', 'ashikaga', 0, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
     ('motochika', 'chosone', 0, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
@@ -51,6 +52,7 @@ INSERT INTO factions (name) VALUES
     ,('Samouraïs Hosokawa')
     ,('Samouraïs Ashikaga')
     ,('Samouraïs Kōno')
+    ,('Samouraïs Takeda')
     ,('Moines Bouddhistes')
     ,('Ikkō-ikki') -- https://fr.wikipedia.org/wiki/Ikk%C5%8D-ikki
     ,('Kaizokushū') -- (海賊衆)
@@ -145,6 +147,12 @@ INSERT INTO controllers (
         0, 1, 1,
         (SELECT ID FROM factions WHERE name = 'Chrétiens'),
         (SELECT ID FROM factions WHERE name = 'Chrétiens')
+    ),
+    ('Clan', 'Takeda (武田)', 'passif', 1, 
+        NULL, 'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e',
+        0, 0, 0,
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'),
+        (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda')
     )
 ;
 
@@ -244,6 +252,10 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
     (
         (SELECT ID FROM players WHERE username = 'yubien'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
+    ),
+    (
+        (SELECT ID FROM players WHERE username = 'shingen'),
+        (SELECT ID FROM controllers WHERE lastname = 'Takeda (武田)')
     )
 ;
 
@@ -1007,3 +1019,19 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
         WHERE powers.name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
     ));
 
+-- Takeda
+INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
+    )),
+    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+    ));
+
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
