@@ -210,8 +210,8 @@ function recalculateBaseDefence($pdo) {
  */
 function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
     # $debug = $_SESSION['DEBUG'];
-    # $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
-    $debug = true;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+   ## $debug = true;
     $value = 0;
 
     if ($debug) echo sprintf("calculateControllerValue : %s, %s, %s, %s<br>", $type, $zone_id, $controller_id, $location_id);
@@ -239,8 +239,8 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
 
     if ($controller_id !== null) {
         // Powers
-        $powerMultiplier = (int)getConfig($pdo, "base{$type}AddPowers");
-        if ($debug) echo sprintf("powerMultiplier : %d<br>", $powerMultiplier);
+        $powerMultiplier = floatval(getConfig($pdo, "base{$type}AddPowers"));
+        if ($debug) echo sprintf("powerMultiplier : %f<br>", $powerMultiplier);
         $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
         if ($debug) echo sprintf("maxPowerBonus : %d<br>", $maxPowerBonus);
         if ($powerMultiplier !== 0) {
@@ -262,7 +262,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 $power_list = getPowersByType($pdo, '3', $controller_id, false);
                 $bonus = 0;
                 foreach ($power_list as $power) {
-                    $bonus += isset($power[$attribute]) ? $power[$attribute] * $powerMultiplier : 0;
+                    $bonus += isset($power[$attribute]) ? ceil($power[$attribute] * $powerMultiplier) : 0;
                 }
                 if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
                 $value += $bonus;
@@ -271,8 +271,8 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         }
 
         // Workers
-        $workerMultiplier = (int)getConfig($pdo, "base{$type}AddWorkers");
-        if ($debug) echo sprintf("workerMultiplier : %d<br>", $workerMultiplier);
+        $workerMultiplier = floatval(getConfig($pdo, "base{$type}AddWorkers"));
+        if ($debug) echo sprintf("workerMultiplier : %f<br>", $workerMultiplier);
         $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
         if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
         if ($workerMultiplier !== 0) {
@@ -290,7 +290,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 ':zone_id' => $zone_id
             ]);
             $worker_count = (int)($stmt->fetch(PDO::FETCH_ASSOC)['worker_count'] ?? 0);
-            $bonus = $worker_count * $workerMultiplier;
+            $bonus = ceil($worker_count * $workerMultiplier);
             if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
             $value += $bonus;
             if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
@@ -301,8 +301,10 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     }
 
     // Turns / Age
-    $turnMultiplier = (int)getConfig($pdo, "base{$type}AddTurns");
+    $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
+    if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
     $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
+    if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
     if ($turnMultiplier !== 0 && $location_id !== NUll) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
@@ -321,7 +323,8 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         if ($base) {
             $setup_turn = (int)$base['setup_turn'];
             $turn_diff = max(0, $turn_number - $setup_turn);
-            $bonus = $turn_diff * $turnMultiplier;
+            // round up to integer
+            $bonus = ceil($turn_diff * $turnMultiplier);
             if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
             $value += $bonus;
             if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
