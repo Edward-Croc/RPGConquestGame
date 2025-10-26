@@ -310,9 +310,14 @@ function investigateMechanic($pdo, $mechanics) {
             $found_action_params = json_decode($row['found_action_params'],true);
             if (is_array($found_action_params)) {
                 // USE $found_action_params['claim_controller_id']
-                $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
-                $text_action_ps .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
-                $text_action_inf .= ' au nom de '.$controllers[0]['firstname']. " ".$controllers[0]['lastname'];
+                if ($found_action_params['claim_controller_id'] == 'null') {
+                    $text_action_ps .= ' au nom de personne';
+                    $text_action_inf .= ' au nom de personne';
+                } else {
+                    $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
+                    $text_action_ps .= sprintf( ' au nom %s %s %s', getConfig($pdo,'controllerNameDenominatorThe'), $controllers[0]['firstname'], $controllers[0]['lastname']);
+                    $text_action_inf .= sprintf( ' au nom %s %s %s', getConfig($pdo,'controllerNameDenominatorThe'), $controllers[0]['firstname'], $controllers[0]['lastname']);
+                }
             }
         }
         if ( $row['found_action'] == 'attack' && $row['found_action_params'] != '{}' ) {
