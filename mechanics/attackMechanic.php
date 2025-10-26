@@ -33,7 +33,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 worker_actions wa
             WHERE
                 wa.action_choice IN ('attack')
-                AND turn_number = :turn_number";
+                AND turn_number = :turn_number
+        ORDER BY wa.enquete_val DESC";
 
         // Add Limit to only 1 caracter
         if ( !EMPTY($attacker_id) ) $sql .= " AND s.attacker_id = :attacker_id";
