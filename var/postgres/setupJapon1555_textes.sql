@@ -134,7 +134,7 @@ VALUES
         ],
         [
             "Je me suis rendu compte que quelqu’un possédant un.e %7$s <strong>%4$s</strong> dans le coin. On l’a entendu.e se faire appeler <strong>%1$s</strong>. %9$s",
-            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a des capacités de <strong>%4$s</strong>, ce qui en fait un %2$s un peu trop spécial. "
+            "C’était étrange, alors j’ai enquêté et trouvé qu’iel a des capacités de %6$s, ce qui en fait un %2$s un peu trop spécial. "
         ]
     ]',
     'Variation text blocks for Diff01 transformation reports'
@@ -274,7 +274,10 @@ VALUES
     "<p>Notre assaut n’a pas suffi : <strong>%1$s</strong> a survécu et continue d’agir.</p>",
     "<p>La cible <strong>%1$s</strong> s’est montrée plus résistant.e que prévu. Iel a échappé à notre emprise.</p>",
     "<p>Nous avons échoué à neutraliser <strong>%1$s</strong>. Iel demeure vivant.e et peut encore riposter.</p>"
-]', 'Texts for failed attacks in inclusive language');
+]', 'Texts for failed attacks in inclusive language'),
+('unfoundAttackTextes', '[
+    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a du l’atteindre avant nous.</p>"
+]', 'Texts for unfound attacks in inclusive language');
 
 INSERT INTO config (name, value, description)
 VALUES

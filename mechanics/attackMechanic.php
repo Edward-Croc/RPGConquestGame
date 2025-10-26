@@ -121,6 +121,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         wa.worker_id AS defender_id,
         wa.attack_val AS defender_attack_val,
         wa.defence_val AS defender_defence_val,
+        wa.enquete_val AS defender_enquete_val,
         CONCAT(w.firstname, ' ', w.lastname) AS defender_name,
         wo.id AS defender_origin_id,
         wo.name AS defender_origin_name,
@@ -157,7 +158,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         (d.defender_attack_val - a.attacker_defence_val) AS riposte_difference
         FROM attacker a
         CROSS JOIN defenders d
-        LEFT JOIN controllers_known_enemies cke ON cke.controller_id = d.defender_controller_id AND cke.discovered_worker_id = a.attacker_id
+        LEFT JOIN controllers_known_enemies cke ON 
+            cke.controller_id = d.defender_controller_id AND cke.discovered_worker_id = a.attacker_id
+        ORDER BY d.defender_enquete_val DESC
     ";
 
     if ( (bool)getConfig($pdo, 'LIMIT_ATTACK_BY_ZONE') )
@@ -266,14 +269,26 @@ function attackMechanic($pdo, $mechanics){
     $attackSuccessTexts = json_decode(getConfig($pdo,'attackSuccessTexts'), true);
     $captureSuccessTexts = json_decode(getConfig($pdo,'captureSuccessTexts'), true);
     $failedAttackTextes = json_decode(getConfig($pdo,'failedAttackTextes'), true);
+    $unfoundAttackTextes = json_decode(getConfig($pdo,'unfoundAttackTextes'), true);
     $escapeTextes = json_decode(getConfig($pdo,'escapeTextes'), true);
     $textesAttackFailedAndCountered = json_decode(getConfig($pdo,'textesAttackFailedAndCountered'), true);
     $counterAttackTexts = json_decode(getConfig($pdo,'counterAttackTexts'), true);
+
 
     foreach ($attacksArray as $attacker_id => $defenders) {
         // Build report :
         if ($debug)
             echo sprintf("attacker_id: %s =>row %s <br/>", $attacker_id, var_export($defenders, true));
+        if (!is_array($defenders[0])) continue;
+
+        echo sprintf("attacker_name: %s <br/>", $defenders[0]['attacker_name']);
+
+        // get updated attacker  status from worker_actions for turn_number
+        $attackerInfo = getWorkers($pdo, [$attacker_id]);
+        if ($attackerInfo[0]['is_alive'] == false || $attackerInfo[0]['is_active'] == false) {
+            continue;
+        }
+        // For each defender, check if attack is successful and update defender status
         foreach ($defenders as $defender) {
             $attackerReport= array();
             $defenderReport= array();
@@ -281,96 +296,112 @@ function attackMechanic($pdo, $mechanics){
             $attacker_status = NULL;
             $survived = true;
             $is_alive = NULL;
-            if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
-                echo $defender['defender_name']. ' HAS DIED ! <br />';
-                $survived = false;
-                $defender_status = 'dead';
-                $is_alive = false;
 
-                $attackerReport['attack_report'] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
-                // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
-                $defenderReport['life_report'] = sprintf(
-                    $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
-                    getConfig($pdo,' timeDenominatorThe'),
-                    getConfig($pdo,' timeDenominatorOf'),
-                    getConfig($pdo,'timeValue'),
-                    $defender['turn_number']
-                );
-                if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
-                    $is_alive = NULL;
-                    echo $defender['defender_name']. ' Was Captured ! <br />';
-                    $defender_status = 'captured';
-                    $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
-                    // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
-                    $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
-                    $stmt->execute([
-                        'worker_id' => $defender['defender_id'],
-                        'is_primary' => 0
-                    ]);
-                    // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
-                    $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
-                    $stmt->execute([
-                        'controller_id' => $defender['attacker_controller_id'],
-                        'worker_id' => $defender['defender_id'],
-                        'is_primary' => 1
-                    ]);
-                }
-                updateWorkerActiveStatus($pdo, $defender['defender_id']);
-                updateWorkerAliveStatus($pdo, $defender['defender_id'], $is_alive);
+            // get updated defender status from worker_actions for turn_number
+            $defenderArray = getWorkers($pdo, [$defender['defender_id']]);
+            // if defender already is dead or prisoner, skip attack and add to report
+            if ($defenderArray[0]['is_alive'] == false || $defenderArray[0]['is_active'] == false) {
+                $attackerReport['attack_report'] = sprintf($unfoundAttackTextes[array_rand($unfoundAttackTextes)], $defender['defender_name']);
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport );
             } else {
-                echo $defender['defender_name']. ' Escaped !<br />';
-                $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
-                // Check if attaker is in know ennemies
-                try{
-                    $knownEnemycontroller = '';
-                    $sql_known_ennemies = sprintf(
-                        "SELECT * FROM controllers_known_enemies WHERE controller_id = %s AND discovered_worker_id = %s AND zone_id = %s",
-                        $defender['defender_controller_id'], $defender['attacker_id'],  $defender['zone_id'] );
-                    $stmtA = $pdo->prepare($sql_known_ennemies);
-                    $stmtA->execute();
-                    $knownEnemy = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
-                    if (!empty($knownEnemy)) {
-                        // Yes and is controller known ? Add to report
-                        if (!empty($knownEnemy[0]['discovered_controller_id'])) {
-                            $knownEnemycontroller .= sprintf(' du résseau %s', $knownEnemy[0]['discovered_controller_id']);
-                        }
-                        if (!empty($knownEnemy[0]['discovered_controller_name'])) {
-                            $knownEnemycontroller .= sprintf(' des agents de %s', $knownEnemy[0]['discovered_controller_name']);
-                        }
-                    } else {
-                        // No Add to know ennemies
-                        $sqlInsert = sprintf(
-                            "INSERT INTO controllers_known_enemies (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
-                            $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
-                        $stmtInsert = $pdo->prepare($sqlInsert);
-                        $stmtInsert->execute();
+                // if defender is alive, check if attack is successful and update defender status
+                if ($defender['attack_difference'] >= (INT)$ATTACKDIFF0 ){
+                    echo $defender['defender_name']. ' HAS DIED ! <br />';
+                    $survived = false;
+                    $defender_status = 'dead';
+                    $is_alive = false;
+
+                    $attackerReport['attack_report'] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
+                    // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
+                    $defenderReport['life_report'] = sprintf(
+                        $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
+                        getConfig($pdo,'timeDenominatorThe'),
+                        getConfig($pdo,'timeDenominatorOf'),
+                        getConfig($pdo,'timeValue'),
+                        $defender['turn_number']
+                    );
+                    if ($defender['attack_difference'] >= (INT)$ATTACKDIFF1 ){
+                        $is_alive = NULL;
+                        echo $defender['defender_name']. ' Was Captured ! <br />';
+                        $defender_status = 'captured';
+                        $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
+                        // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
+                        $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
+                        $stmt->execute([
+                            'controller_id' => $defender['defender_controller_id'],
+                            'worker_id' => $defender['defender_id'],
+                            'is_primary' => 0
+                        ]);
+                        // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
+                        $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
+                        $stmt->execute([
+                            'controller_id' => $defender['attacker_controller_id'],
+                            'worker_id' => $defender['defender_id'],
+                            'is_primary' => 1
+                        ]);
                     }
-                } catch (PDOException $e) {
-                    echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
-                    return [];
+                    updateWorkerActiveStatus($pdo, $defender['defender_id']);
+                    updateWorkerAliveStatus($pdo, $defender['defender_id'], $is_alive);
+                } else {
+                    echo $defender['defender_name']. ' Escaped !<br />';
+                    $attackerReport['attack_report'] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
+                    // Check if attaker is in know ennemies
+                    try{
+                        $knownEnemycontroller = '';
+                        $sql_known_ennemies = "
+                            SELECT * FROM controllers_known_enemies
+                                WHERE controller_id = :controller_id
+                                AND discovered_worker_id = :discovered_worker_id
+                                AND zone_id = :zone_id";
+                        $stmtA = $pdo->prepare($sql_known_ennemies);
+                        $stmtA->bindParam(':controller_id', $defender['defender_controller_id']);
+                        $stmtA->bindParam(':discovered_worker_id', $defender['attacker_id']);
+                        $stmtA->bindParam(':zone_id', $defender['zone_id']);
+                        $stmtA->execute();
+                        $knownEnemy = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
+                        if (!empty($knownEnemy)) {
+                            // Yes and is controller known ? Add to report
+                            if (!empty($knownEnemy[0]['discovered_controller_id'])) {
+                                $knownEnemycontroller .= sprintf(' du résseau %s', $knownEnemy[0]['discovered_controller_id']);
+                            }
+                            if (!empty($knownEnemy[0]['discovered_controller_name'])) {
+                                $knownEnemycontroller .= sprintf(' des agents de %s', $knownEnemy[0]['discovered_controller_name']);
+                            }
+                        } else {
+                            // No Add to know ennemies
+                            $sqlInsert = sprintf(
+                                "INSERT INTO controllers_known_enemies (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
+                                $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
+                            $stmtInsert = $pdo->prepare($sqlInsert);
+                            $stmtInsert->execute();
+                        }
+                    } catch (PDOException $e) {
+                        echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
+                        return [];
+                    }
+                    $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
                 }
-                $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
+                if ($debug)
+                    echo sprintf("(survived  : %s <br/>", ($survived ));
+                if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
+                    $attacker_status = 'dead';
+                    echo $defender['defender_name']. ' RIPOSTE ! <br />';
+                    $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
+                    // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
+                    $defenderReport['life_report'] = sprintf(
+                        $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
+                        getConfig($pdo,' timeDenominatorThe'),
+                        getConfig($pdo,' timeDenominatorOf'),
+                        getConfig($pdo,'timeValue'),
+                        $defender['turn_number']
+                    );
+                    $defenderReport['life_report'] .= sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
+                    updateWorkerActiveStatus($pdo, $defender['attacker_id']);
+                    updateWorkerAliveStatus($pdo, $defender['attacker_id']);
+                }
+                updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport );
+                updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status , $defenderReport );
             }
-            if ($debug)
-                echo sprintf("(survived  : %s <br/>", ($survived ));
-            if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
-                $attacker_status = 'dead';
-                echo $defender['defender_name']. ' RIPOSTE ! <br />';
-                $attackerReport['attack_report'] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
-                // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
-                $defenderReport['life_report'] = sprintf(
-                    $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
-                    getConfig($pdo,' timeDenominatorThe'),
-                    getConfig($pdo,' timeDenominatorOf'),
-                    getConfig($pdo,'timeValue'),
-                    $defender['turn_number']
-                );
-                $defenderReport['life_report'] .= sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
-                updateWorkerActiveStatus($pdo, $defender['attacker_id']);
-                updateWorkerAliveStatus($pdo, $defender['attacker_id']);
-            }
-            updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport );
-            updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status , $defenderReport );
         }
     }
 

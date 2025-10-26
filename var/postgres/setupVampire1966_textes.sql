@@ -278,7 +278,10 @@ VALUES
     "<p>Notre assaut n’a pas suffi : %1$s a survécu et continue d’agir.</p>",
     "<p>La cible %1$s s’est montrée plus résistante que prévu. Iel a échappé à notre emprise.</p>",
     "<p>Nous avons échoué à neutraliser %1$s. Iel demeure vivant.e et peut encore riposter.</p>"
-]', 'Texts for failed attacks in inclusive language');
+]', 'Texts for failed attacks in inclusive language'),
+('unfoundAttackTextes', '[
+    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a du l’atteindre avant nous.</p>"
+]', 'Texts for unfound attacks in inclusive language');
 
 INSERT INTO config (name, value, description)
 VALUES
