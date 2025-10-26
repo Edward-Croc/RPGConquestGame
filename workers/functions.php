@@ -39,13 +39,13 @@ function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
  */
 function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
     if (is_null($isAlive)) {
-        echo  __FUNCTION__."(): isAlive: NULL<br />";
+        if ( $_SESSION['DEBUG'] == true ) echo  __FUNCTION__."(): isAlive: NULL<br />";
         return false;
     }
 
     $query = sprintf("UPDATE workers SET is_alive = False WHERE id = %s", $workerId );
     if ($isAlive) $query = sprintf("UPDATE workers SET is_alive = True WHERE id = %s", $workerId);
-    echo sprintf(" query : %s, ", $query);
+    if ( $_SESSION['DEBUG'] == true ) echo sprintf(" query : %s, ", $query);
     try{
         $stmt = $pdo->prepare($query);
         $stmt->execute();
