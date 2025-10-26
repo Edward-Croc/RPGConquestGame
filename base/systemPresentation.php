@@ -32,19 +32,22 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autre
 <h3>2. Actions possibles d'Agents</h3>
 <p> Chaque tour un agent peut faire <strong>une action parmi</strong> les suivantes :
 <ul>
-  <li><strong>Surveiller :</strong> L’agent ne prend pas de risques, mais reste à l'affut des autres agents dans la zone.</li>
+  <li><strong>Surveiller :</strong> L’agent ne prend pas de risques, mais reste à l'affut des autres agents et des informations secrètes dans la zone.</li>
   <li><strong>Investiguer :</strong> L’agent tente de découvrir les autres agents et les lieux secrets dans sa zone, au risque d'échouer.</li>
-  <li><strong>Attaquer :</strong> Attaque les agents choisis par le contrôleur parmi la liste fournie. Il y a 4 résultats possibles à une attaque : 
+  <li><strong>Attaquer :</strong> Attaque les agents choisis par le contrôleur parmi la liste fournie.
+    Si plusieurs cibles sont séléctionnées, elles seront attaquées dans l'ordre de leur valeur enquête, la plus haute en premier.
+    Il y a 5 résultats possibles à une attaque : 
     <ul>
-      <li> <i>Défaite totale :</i> l'attaquant disparait, éliminé par une contre et la cible apprend son nom.</li>
+      <li> <i>Introuvable :</i> la cible est déjà morte.</li>
+      <li> <i>Défaite totale :</i> l'attaquant disparait, éliminé par une contre attaque et la cible apprend son nom.</li>
       <li> <i>Echec :</i> l'attaquant échoue et la cible apprend son nom.</li>
       <li> <i>Réussite :</i> l'attaquant élimine sa cible.</li>
       <li> <i>Capture :</i> l'attaquant capture sa cible vivante le contrôleur obtient l'accès aux rapports de la cible.</li>
     </ul>
   </li>
-  <li><strong>Se cacher :</strong> L’agent tente de se dissimuler des autres agents dans sa zone.</li>
+  <li><strong>Se cacher :</strong> L’agent tente de se dissimuler des autres agents dans sa zone et renforce ses défenses personnelles.</li>
   <li><strong>Revendiquer :</strong> Cherche à prendre le contrôle de la zone, et la consacre au contrôleur choisi.
-  Renforce la défense d’une zone déjà contrôlée. Cette action <strong>révélera</strong> l'agent qui l'effectue.</li>
+  Ou renforce la défense d’une zone déjà contrôlée, si l'agent en a la puissance. Cette action <strong>révélera</strong> l'agent qui l'effectue.</li>
 </ul>
 </p>
 <p> Chaque tour un agent peut <strong>librement</strong> et sans malus : <ul>
