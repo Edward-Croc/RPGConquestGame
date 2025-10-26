@@ -299,7 +299,7 @@ VALUES
     "<p>Je pars mettre en route le plan d’assassinat de <strong>%s</strong>. [Le rouleau s’arrête ici.]</p>",
     "<p>Début de la mission : <strong>%s</strong>. [Le rapport n’a jamais été terminé.]</p>",
     "<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur <strong>%s</strong>.</p>",
-    "<p>Le silence total après le lancement de la mission contre <strong>%s</strong>%s est inquiétant…</p>",
+    "<p>Le silence total après le lancement de la mission contre <strong>%s</strong> est inquiétant…</p>",
     "<p>Le groupe envoyé pour neutraliser <strong>%s</strong> n’est jamais revenu.</p>"
 ]', 'Texts for missions that fail and result in counter-attack or disappearance');
 
