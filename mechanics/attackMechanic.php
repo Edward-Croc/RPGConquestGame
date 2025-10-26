@@ -224,6 +224,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         } catch (PDOException $e) {
             echo __FUNCTION__."():Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
         }
+        if ($stmtValCompare->rowCount() == 0) continue;
         $final_attacks_aggregate[$compared_attacker_id] = $stmtValCompare->fetchAll(PDO::FETCH_ASSOC);
         if ($debug)
             echo sprintf("final_attacks_aggregate : %s <br/>", var_export($final_attacks_aggregate[$compared_attacker_id], true));
