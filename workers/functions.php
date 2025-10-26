@@ -870,11 +870,12 @@ function moveWorker($pdo, $workerId, $zoneId) {
     }
     try{
         // UPDATE worker_actions values
+        $action_params = json_encode([]);
         $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id, action_choice = 'passive', action_params = :action_params, report = :report WHERE id = :id ");
         $stmt->bindParam(':zone_id', $zoneId);
         $stmt->bindParam(':id', $action['id']);
         $stmt->bindParam(':report', $updatedReportJson);
-        $stmt->bindParam(':action_params', json_encode([]));
+        $stmt->bindParam(':action_params', $action_params);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
