@@ -286,9 +286,21 @@ CREATE TABLE workers (
     zone_id INT NOT NULL,
     is_alive BOOLEAN DEFAULT TRUE,
     is_active BOOLEAN DEFAULT TRUE,
+    is_trace BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (id),
     FOREIGN KEY (zone_id) REFERENCES zones (id)
+);
+
+CREATE TABLE workers_trace_links (
+    id SERIAL PRIMARY KEY,
+    primary_worker_id INT NOT NULL,
+    trace_worker_id INT NOT NULL,
+    controller_id INT NOT NULL,
+    FOREIGN KEY (primary_worker_id) REFERENCES workers (id),
+    FOREIGN KEY (trace_worker_id) REFERENCES workers (id),
+    FOREIGN KEY (controller_id) REFERENCES controllers (id),
+    UNIQUE (trace_worker_id)
 );
 
 CREATE TABLE controller_worker (

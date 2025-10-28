@@ -10,16 +10,15 @@
  */
 function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
     if (is_null($isActive)) {
-        echo  __FUNCTION__."(): isActive: NULL<br />";
+        if ( $_SESSION['DEBUG'] == true ) echo  __FUNCTION__."(): isActive: NULL<br />";
         return false;
     }
 
-    $query = sprintf("UPDATE workers SET is_active = False WHERE id = %s",$workerId);
-    if ($isActive) $query = sprintf("UPDATE workers SET is_active = True WHERE id = %s", $workerId);
-    if ( $_SESSION['DEBUG'] == true ) echo sprintf(" query : %s, ", $query);
-
+    $query = "UPDATE workers SET is_active = :is_active WHERE id = :worker_id";
     try{
         $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':is_active', $isActive, PDO::PARAM_BOOL);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
@@ -43,11 +42,11 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
         return false;
     }
 
-    $query = sprintf("UPDATE workers SET is_alive = False WHERE id = %s", $workerId );
-    if ($isAlive) $query = sprintf("UPDATE workers SET is_alive = True WHERE id = %s", $workerId);
-    if ( $_SESSION['DEBUG'] == true ) echo sprintf(" query : %s, ", $query);
+    $query = "UPDATE workers SET is_alive = :is_alive WHERE id = :worker_id";
     try{
         $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':is_alive', $isAlive, PDO::PARAM_BOOL);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
@@ -881,7 +880,6 @@ function moveWorker($pdo, $workerId, $zoneId) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
     }
     if ($debug) echo __FUNCTION__."(): DONE <br/>"; 
-    
 
     return $workerId;
 }
@@ -989,11 +987,23 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             break;
         case 'gift' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
-            $new_action = 'passive';
-            if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
+
             // get new controller name
             $newControllerName = getControllerName($pdo, $extraVal);
-            $currentReport['life_report'] .= sprintf("J'ai <strong>rejoint %s%s</strong> comme nouveau maitre.<br />", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName);
+            // Build report
+            $report_element = sprintf("J'ai <strong>rejoint %s%s</strong> comme nouveau maitre.<br />", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName);
+            // update action and report
+            updateWorkerAction($pdo, $workerId,  $turn_number, 'passive', ['life_report' => $report_element]);
+
+            // Create Trace
+            if (createTraceWorker($pdo, $workerId, $currentAction['controller_id']) === false) {
+                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+            }
+            // Check for existing trace
+            if (destroyTraceWorker($pdo, $workerId, $extraVal) === false) {
+                echo __FUNCTION__." (): Failed to destroy trace worker ! <br />";
+            }
+
             // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
             try {
                 $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
@@ -1015,7 +1025,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':worker_id' => $workerId
                 ]);
                 // Update the worker_actions table
-                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
+                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal , action_params = '$jsonOutput'
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
@@ -1026,9 +1036,15 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             } catch (PDOException $e) {
                 echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
+            return $workerId;
             break;
         case 'recallDoubleAgent' :
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): recallDoubleAgent <br/><br/>";
+
+            if (!createTraceWorker($pdo, $workerId, $currentAction['controller_id'])) {
+                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+            }
+
             try {
                 $new_action = 'passive';
                 if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
@@ -1303,10 +1319,214 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
     return $enemyWorkersSelect;
 }
 
+/**
+ * Create a copy of the worker and worker_actions tables to the active controller as primary controller
+ *  the new worker should be alive and active and the new worker_actions should be empty
+ *  if the active controller has a previous copy of the woker it must be destroyed first
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $worker_id
+ * @param int $controller_id
+ * 
+ * @return $new_worker_id
+ *
+ */ 
+function createTraceWorker($pdo, $worker_id, $controller_id) {
+    $debug = false;
+    if ($_SESSION['DEBUG'] == true) $debug = true;
+    if ($debug) echo __FUNCTION__."(): createTraceWorker <br/><br/>";
+    try {
+        // Begin transaction
+        $pdo->beginTransaction();
 
-// function createTraceWorker($pdo, )
+        // Step 1 : Copy the worker table except id, active = false, alive = false and trace = true
+        $query = "
+            INSERT INTO workers (firstname, lastname, origin_id, zone_id, is_active, is_alive, is_trace) 
+            SELECT firstname, lastname, origin_id, zone_id, :is_active, :is_alive, :is_trace 
+            FROM workers WHERE id = :worker_id
+        ";
+        if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
+        $stmt = $pdo->prepare($query);
+        $stmt->bindValue(':is_active', false, PDO::PARAM_BOOL);
+        $stmt->bindValue(':is_alive', false, PDO::PARAM_BOOL);
+        $stmt->bindValue(':is_trace', true, PDO::PARAM_BOOL);
+        $stmt->bindValue(':worker_id', $worker_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $new_worker_id = $pdo->lastInsertId();
+        if ($debug) echo sprintf("%s(): Step 1 : new_worker_id = %s <br/><br/>",  __FUNCTION__, $new_worker_id);
+
+        // Step 2 : Copy the worker_actions table except id, worker_id = new worker_id and action_choice = 'trace'
+        $query = "
+            INSERT INTO worker_actions (worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, action_choice, action_params, report)
+            SELECT :new_worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, 'trace', action_params, report 
+            FROM worker_actions WHERE worker_id = :worker_id
+        ";
+        if ($debug) echo sprintf("%s(): Step 2 : %s <br/><br/>",  __FUNCTION__, $query);
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':new_worker_id', $new_worker_id);
+        $stmt->bindParam(':worker_id', $worker_id);
+        $stmt->execute();
+
+        // Step 3 : Copy the worker_powers
+        $query = "
+            INSERT INTO worker_powers (worker_id, link_power_type_id)
+            SELECT :new_worker_id, link_power_type_id
+            FROM worker_powers WHERE worker_id = :worker_id
+        ";
+        if ($debug) echo sprintf("%s(): Step 3 : %s <br/><br/>",  __FUNCTION__, $query);
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':new_worker_id', $new_worker_id);
+        $stmt->bindParam(':worker_id', $worker_id);
+        $stmt->execute();
+
+        // Step 4 : Copy the add new worker to the controller_worker table as primary controller
+        $query = "
+            INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
+            SELECT :controller_id, :new_worker_id, true
+        ";
+        if ($debug) echo sprintf("%s(): Step 4 : %s <br/><br/>",  __FUNCTION__, $query);
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':controller_id', $controller_id);
+        $stmt->bindParam(':new_worker_id', $new_worker_id);
+        $stmt->execute();
+
+        // Step 5: Add a new entry to the workers_trace_links table with the old worker_id as primary_worker_id and the new worker_id as trace_worker_id and the controller_id
+        $query = "
+            INSERT INTO workers_trace_links (primary_worker_id, trace_worker_id, controller_id)
+            SELECT  :worker_id, :new_worker_id, :controller_id
+        ";
+        if ($debug) echo sprintf("%s(): Step 5 : %s <br/><br/>",  __FUNCTION__, $query);
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':worker_id', $worker_id);
+        $stmt->bindParam(':new_worker_id', $new_worker_id);
+        $stmt->bindParam(':controller_id', $controller_id);
+        $stmt->execute();
+
+        // Step 6 : Commit the transaction and return the new worker_id
+        $pdo->commit();
+    } catch (Exception $e) {
+        // Rollback transaction on error/exception
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        echo __FUNCTION__." (): Error creating trace worker: " . $e->getMessage();
+        echo  __FUNCTION__."(): Transaction failed: " . $e->getMessage()."<br />";
+        return false;
+    }
+    return $new_worker_id;
+}
 
 
+/**
+ * Destroy the trace of the worker, the worker_actions tables, the links to the controller as primary controller
+ *  the worker links to his powers
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $worker_id
+ * @param int $controller_id
+ * 
+ * @return $success
+ *
+ */ 
+function destroyTraceWorker($pdo, $worker_id, $controller_id) {
+
+    $debug = false;
+    if ($_SESSION['DEBUG'] == true) $debug = true;
+    $debug = true;
+    if ($debug) echo __FUNCTION__."(): destroyTraceWorker <br/><br/>";
+
+    // Step 1 : find the trace_worker_id in the workers_trace_links table
+    $query = "
+        SELECT trace_worker_id FROM workers_trace_links WHERE primary_worker_id = :worker_id AND controller_id = :controller_id
+    ";
+    if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':worker_id', $worker_id);
+    $stmt->bindParam(':controller_id', $controller_id);
+    $stmt->execute();
+    $traceWorkers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($debug) echo sprintf("%s(): Step 1 : traceWorkers: %s <br/><br/>",  __FUNCTION__, var_export($traceWorkers, true));
+    if (empty($traceWorkers)) {
+        echo __FUNCTION__." (): No trace worker found for the primary worker_id: " . $worker_id . " and controller_id: " . $controller_id;
+    }
+    if  ($traceWorkers !== false && !empty($traceWorkers)) {
+        foreach ($traceWorkers as $traceWorker) {
+            try {
+                $trace_worker_id = $traceWorker['trace_worker_id'];
+                if ($debug) echo sprintf("%s(): Step 2 : trace_worker_id: %s <br/><br/>",  __FUNCTION__, $trace_worker_id);
+                // Begin transaction
+                $pdo->beginTransaction();
+
+                // Step 2 : Delete the trace worker from the controller_worker table as primary controller
+                $query = "
+                    DELETE FROM controller_worker WHERE worker_id = :trace_worker_id AND controller_id = :controller_id AND is_primary_controller = true
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':controller_id', $controller_id);
+                $stmt->execute();
+
+                // Step 3 : Delete the worker_powers for the trace worker
+                $query = "
+                    DELETE FROM worker_powers WHERE worker_id = :trace_worker_id
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->execute();
+
+                // Step 4 : Delete the worker_actions for the trace worker where action_choice = 'trace'
+                $query = "
+                    DELETE FROM worker_actions WHERE worker_id = :trace_worker_id AND action_choice = 'trace'
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->execute();
+
+                // Step 5 : Delete the controllers_known_enemies for the trace worker (this should not exist
+                // done by caution
+                $query = "
+                    DELETE FROM controllers_known_enemies WHERE discovered_worker_id = :trace_worker_id
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->execute();
+
+                // Step 6 : Delete the entry from the workers_trace_links table
+                $query = "
+                    DELETE FROM workers_trace_links
+                        WHERE primary_worker_id = :worker_id
+                        AND trace_worker_id = :trace_worker_id
+                        AND controller_id = :controller_id
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':worker_id', $worker_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':controller_id', $controller_id);
+                $stmt->execute();
+
+                // Step 5 : Delete the trace worker from the workers
+                $query = "
+                    DELETE FROM workers WHERE id = :trace_worker_id
+                ";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->execute();
+
+                // Step 7 : Commit the transaction and return the success
+                $pdo->commit();
+            } catch (Exception $e) {
+                // Rollback transaction on error/exception
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                echo __FUNCTION__." (): Error destroying trace worker: " . $e->getMessage();
+                echo  __FUNCTION__."(): Transaction failed: " . $e->getMessage()."<br />";
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 
 // TODO : Add Conversion to the captured agent possible actions list,
