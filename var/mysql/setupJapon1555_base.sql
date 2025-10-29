@@ -461,9 +461,13 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         8, 1,
         (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
-        '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 5, "save_to_json": "TRUE",
+        '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 7,
         "can_be_destroyed": 0, "can_be_repaired": 1,
-        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe. Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire."
+        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe. Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire.",
+        "future_location": {"name": "Retraite secrète des Chōsokabe", "discovery_diff": 8,
+        "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
+        "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe a été reconstruit avec soin et élégance. Les murs de bois tiédissent au soleil, les provisions et les armes sont à nouveau rangées avec ordre. La retraite offre un refuge paisible, mêlant confort discret et préparation guerrière, fidèle à l’esprit vigilant du clan."
+        }
         }}'
     )
     -- Ajouter un secret sur la présence du christianisme et du pretre Luís Fróis Japonologue et Jésuite -- https://fr.wikipedia.org/wiki/Lu%C3%ADs_Fr%C3%B3is 

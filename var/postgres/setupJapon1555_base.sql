@@ -487,9 +487,13 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         8, True,
         (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'),
-        '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 5, "save_to_json": "TRUE",
+        '{"update_location": {"name": "Ruines d’un pavillon de chasse", "discovery_diff": 7,
         "can_be_destroyed": 0, "can_be_repaired": 1,
-        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe. Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire."
+        "description": "Caché sur les flancs escarpés du cap sud de Kōchi, se tien les ruines d’un pavillon de chasse. Une fouille sommaire montre quelque objects apparentant aux Chōsokabe. Ce lieu semble avoir été le théatre de combats récents, il n’y a plus personne pour en raconter l’histoire.",
+        "future_location": {"name": "Retraite secrète des Chōsokabe", "discovery_diff": 8,
+        "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
+        "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe a été reconstruit avec soin et élégance. Les murs de bois tiédissent au soleil, les provisions et les armes sont à nouveau rangées avec ordre. La retraite offre un refuge paisible, mêlant confort discret et préparation guerrière, fidèle à l’esprit vigilant du clan."
+        }
         }}'
     )
     -- Ajouter un secret sur la présence du christianisme et du pretre Luís Fróis Japonologue et Jésuite -- https://fr.wikipedia.org/wiki/Lu%C3%ADs_Fr%C3%B3is 
@@ -499,44 +503,48 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
 Il y aurait établi un sanctuaire clandestin, enseignant les paroles du Christ à quelques convertis du clan Miyoshi.
 Ce lieu sert également de relais discret pour faire entrer armes, livres et messagers depuis Nagasaki.
 Sa présence confirme l’implantation secrète du christianisme à Tokushima et menace de faire basculer les équilibres religieux et politiques de Shikoku.'
-        , 8, True,
+        , 8, False,
         (SELECT ID FROM zones WHERE name = 'Côte Est d’Awa'),
         (SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'),
-        '{"update_location": {"name": "Ruines d’un Sanctuaire chrétienclandestin", "discovery_diff": 7, "save_to_json": "TRUE",
-        "can_be_destroyed": 0, "can_be_repaired": 1,
-        "description": ""
-        }}'
+        '{}'
     )
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Temples des Yokais
-INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description) VALUES
+INSERT INTO locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description, activate_json) VALUES
      -- Feu - Teppō
     ('Vieux temple des colines de Kubokawa', 8, True, (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Accroché aux flancs escarpés de la côte sud de Kōchi, un petit sanctuaire noircit repose au bord d’une ancienne veine de fer oubliée.
 Au loin, dans la vallée, les marteaux des forgerons résonnent comme une prière sourde.
 Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait sursauter les corbeaux.
-(Pour explorer davantage ce lieu, allez voir un orga !)')
+(Pour explorer davantage ce lieu, allez voir un orga !)',
+    '{}'
+    )
     -- Vent - Tessen
     , ('Vieux temple de la falaise d’Esaki', 8, True, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
-        -- Réécriture de la description démentire la présence du prisonier Chōsokabe
         'Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, fragile et silencieux.
 La porte ne ferme plus, et le papier des lanternes s’effiloche. Pourtant, nul grain de poussière ne s’y pose.
 Lorsque l’on entre, l’air se fait soudain glacé, et un bruissement court dans les chevrons — comme si un éventail invisible fendait l’air avec colère.
-(Pour explorer davantage ce lieu, allez voir un orga !)')
+(Pour explorer davantage ce lieu, allez voir un orga !)',
+    '{}'
+    )
      -- Paresse - Biwa
     , ('Vieux temple du vallon de Tengu-Iwa', 8, True, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Ce temple oublié, dissimulé dans un vallon brumeux de Shōdoshima, semble abandonné depuis des décennies.
 Pourtant, chaque crépuscule, les accords las d’un biwa résonnent sous les poutres vermoulues, portés par une brise douce où flotte un parfum de saké tiède.
 Pourtant nul prêtre et nul pèlerin en vue.
-(Pour explorer davantage ce lieu, allez voir un orga !)')
+(Pour explorer davantage ce lieu, allez voir un orga !)',
+    '{}'
+    )
      -- Roche - Chigiriki
     , ('Vieux temple du Mont Ishizuchi', 8, True, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
         'Perché sur un piton rocheux des montagnes d’Ehimé, un ancien temple taillé à même la pierre repose, figé comme un souvenir.
 Nul vent n’y souffle, nul oiseau n’y niche.
 Parfois, on y entend cliqueter une chaîne sur la pierre nue, comme si une arme traînait seule sur le sol.
-(Pour explorer davantage ce lieu, allez voir un orga !)')
+(Pour explorer davantage ce lieu, allez voir un orga !)',
+    '{}'
+    )
 ;
 
 -- Ressources
