@@ -612,6 +612,7 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
 function updateLocation($pdo, $location, $activate_json) {
     // Extract the update_location data
     $update_location_data = $activate_json['update_location'];
+
     // Start the new activate_json
     $new_activate_location = $activate_json;
     unset($new_activate_location['update_location']);
@@ -631,6 +632,10 @@ function updateLocation($pdo, $location, $activate_json) {
         );
         // Add the old location data to the new activate_json
         $new_activate_location['update_location'] = $update_location;   
+    }
+    // If a activate_json is present, add it to the new activate_json
+    elseif (!empty($update_location_data['future_location'])) {
+        $new_activate_location['update_location'] = $update_location_data['future_location'];
     }
     // Encode the new activate_json
     $encoded_activate_json = json_encode($new_activate_location);
