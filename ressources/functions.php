@@ -1,0 +1,176 @@
+<?php
+
+/**
+ * Update the ressources for a controller
+ *
+ * @param PDO $pdo
+ * @param array $mechanics
+ *
+ * @return bool
+ */
+function updateRessources($pdo, $mechanics) {
+    /** Foreach controller :
+     *  - If corresponding line controller_ressources exists,
+     *    - If ressource_config.is_stored is TRUE, add amount to amount_stored
+     *    - If ressource_config.is_rollable is FALSE, set amount to 0
+     *    - Add end_turn_gain to amount
+    */
+    // Get all controllers from controllers table
+    $sql = "SELECT * FROM controllers";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // For each controller :
+    foreach ($controllers as $controller) {
+        //  - Get the corresponding lines controller_ressources
+        $controllerRessources = getRessources($pdo, $controller['id']);
+        // For each ressource :
+        foreach ($controllerRessources as $controllerRessource) {
+            //    - If ressource_config.is_stored is TRUE, add amount to amount_stored
+            if ($controllerRessource['is_stored'] === TRUE) {
+                $controllerRessource['amount_stored'] += $controllerRessource['amount'];
+            }
+            //    - If ressource_config.is_rollable is FALSE, set amount to 0
+            if ($controllerRessource['is_rollable'] === FALSE) {
+                $controllerRessource['amount'] = 0;
+            }
+            //    - Add end_turn_gain to amount
+            $controllerRessource['amount'] += $controllerRessource['end_turn_gain'];
+            // Update the ressources_controller table
+            $sql = "UPDATE controller_ressources SET amount = :amount, amount_stored = :amount_stored WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':amount' => $controllerRessource['amount'], ':amount_stored' => $controllerRessource['amount_stored'], ':id' => $controllerRessource['rc_id']]);
+            if (!$stmt->rowCount()) {
+                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Get the ressources for a controller
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array
+ * 
+ */
+function getRessources($pdo, $controller_id) {
+    $sql = "SELECT rc.id as rc_id, r.id as ressource_id, *
+        FROM controller_ressources rc
+        JOIN ressources_config r ON rc.ressource_id = r.id
+        WHERE controller_id = :controller_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':controller_id' => $controller_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Does the controller have enought ressources to build a base ?
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function hasEnoughRessourcesToBuildBase($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['base_building_cost'] > 0) {
+            if ($controllerRessource['amount'] < $controllerRessource['base_building_cost']) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Spend the ressources to build a base
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function spendRessourcesToBuildBase($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['base_building_cost'] > 0) {
+            $controllerRessource['amount'] -= $controllerRessource['base_building_cost'];
+        }
+        $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
+        if (!$stmt->rowCount()) {
+            echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
+        }
+    }
+    return true;
+}
+
+/**
+ * Does the controller have enought ressources to move a base ?
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['base_moving_cost'] > 0) {
+            if ($controllerRessource['amount'] < $controllerRessource['base_moving_cost']) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Spend the ressources to move a base
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function spendRessourcesToMoveBase($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['base_moving_cost'] > 0) {
+            $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
+        }
+        $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
+        if (!$stmt->rowCount()) {
+            echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
+        }
+    }
+    return true;
+}
+
+/**
+ * Does the controller have enought ressources to repair a location ?
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function hasEnoughRessourcesToRepairLocation($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['location_repaire_cost'] > 0) {
+            if ($controllerRessource['amount'] < $controllerRessource['location_repaire_cost']) {
+                return false;
+            }
+        }
+    }
+    return true;
+}

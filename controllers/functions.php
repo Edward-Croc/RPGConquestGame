@@ -218,6 +218,8 @@ function hasBase($pdo, $controller_id) {
 function createBase($pdo, $controller_id, $zone_id) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
+    spendRessourcesToBuildBase($pdo, $controller_id);
+
     $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
     if ($debug) echo sprintf("controller_name : %s </br>", $controller_name);
@@ -292,7 +294,10 @@ function createBase($pdo, $controller_id, $zone_id) {
  * @return bool
  * 
  */
-function moveBase($pdo, $base_id, $zone_id) {
+function moveBase($pdo, $base_id, $zone_id, $controller_id) {
+
+    spendRessourcesToMoveBase($pdo, $controller_id);
+
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
     try{

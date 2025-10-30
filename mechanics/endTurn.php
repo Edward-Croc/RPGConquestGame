@@ -16,7 +16,19 @@ echo sprintf(" Starting END of Turn %s with end_step : %s<br />",
     $mechanics['end_step']
 );
 
-if (in_array($mechanics['end_step'], [null, '', 'calculateVals'])) {
+if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+    if (in_array($mechanics['end_step'], [null, ''])) {
+        $ressourcesResult = updateRessources($gameReady, $mechanics);
+        if ( !$ressourcesResult){
+            echo __FUNCTION__."(): Failed to update ressources: updateRessources <br />";
+            return false;
+        }
+        changeEndTurnState($gameReady, 'updateRessources', $mechanics);
+        $mechanics['end_step'] = 'updateRessources';
+    }
+}
+
+if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessources'])) {
     $valsResult = true;
     $valsResult = calculateVals($gameReady, $mechanics);
     if ($valsResult) {

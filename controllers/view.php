@@ -50,7 +50,7 @@
         }
         if ( isset($_SESSION['controller']) ) {
             $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
-            echo sprintf ('<h2 class="title is-4">Votre Faction</h2>
+            $htmlFaction = sprintf ('<h2 class="title is-4">Votre Faction</h2>
                 <div class="box mb-4">
                 <p>
                 Vous êtes <strong>%1$s %2$s</strong> (réseau <strong>%3$s</strong>) de la faction : <strong>%4$s</strong> (<span class="has-text-grey">%5$s</span>)
@@ -59,7 +59,6 @@
                 %6$s %7$s
                 <form action="/%9$s/controllers/action.php" method="GET" class="mt-4">
                 <input type="hidden" name="controller_id" value="%3$s">
-                <h3 class="title is-5 mt-4">Votre Base :</h3>
                 <p>',
                 $controllers['firstname'],
                 $controllers['lastname'],
@@ -71,27 +70,66 @@
                 !empty($controllers['story']) ? '<div class="notification is-light mb-2"><span class="is-size-7">'.nl2br($controllers['story']).'</span></div>' : '',
                 $_SESSION['FOLDER']
             );
+            echo $htmlFaction;
+            if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+                $ressources = getRessources($gameReady, $controllers['id']);
+                // if ($debug) 
+                    echo sprintf('<p> ressources: %s </p>', var_export($ressources, true));
+                if (!empty($ressources)) {
+                    $htmlRessources = '<h3 class="title is-5 mt-4">Vos Ressources :</h3>';
+                    foreach ($ressources as $ressource) {
+                        $htmlRessources .= '<p>';
+                        $htmlRessources .= sprintf($ressource['presentation'], $ressource['amount'], $ressource['ressource_name']);
+                        if ($ressource['amount_stored'] > 0) {
+                            $htmlRessources .= "</br>".sprintf($ressource['stored_text'], $ressource['amount_stored'], $ressource['ressource_name']);
+                        }
+                        $htmlRessources .= '</p>';
+                        $htmlRessources .= '<br>';
+                    }
+                    echo $htmlRessources;
+                }
+            }
+
             $bases = hasBase($gameReady, $controllers['id']);
+            $htmlBase = '<h3 class="title is-5 mt-4">Votre Base :</h3>';
             if (empty($bases) && $controllers['can_build_base']) {
-                echo sprintf(
-                    '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
-                        <div class="control">
-                            %1$s
-                        </div>
-                        %2$s
-                        <div class="control">
-                            <input type="submit" name="createBase" value="Créer" class="button is-link worker-action-btn">
-                        </div>
-                    </div><br />',
-                    getConfig($gameReady, 'textControllerActionCreateBase'),
-                    showZoneSelect($gameReady, $zonesArray, null, false, false, true)
-                );
+                if (!hasEnoughRessourcesToBuildBase($gameReady, $controllers['id'])) {
+                    $htmlBase .= '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base.</div>';
+                } else {
+                    $htmlBase .= sprintf(
+                        '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                            <div class="control">
+                                %1$s
+                            </div>
+                            %2$s
+                            <div class="control">
+                                <input type="submit" name="createBase" value="Créer" class="button is-link worker-action-btn">
+                            </div>
+                        </div><br />',
+                        getConfig($gameReady, 'textControllerActionCreateBase'),
+                        showZoneSelect($gameReady, $zonesArray, null, false, false, true)
+                    );
+                }
             } else {
                 if ($debug) echo sprintf('<p> %s </p>', var_export($bases, true));
                 $textControllerActionMoveBase = getConfig($gameReady, 'textControllerActionMoveBase');
-                echo '<p>';
+                $baseMoveHTML = '
+                    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                    <div class="control">
+                        %1$s
+                    </div>
+                    %2$s
+                    <div class="control">
+                        <input type="submit" name="moveBase" value="Démenager" class="button is-warning controller-action-btn">
+                    </div>
+                </div>';
+
+                if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id']))
+                    $baseMoveHTML = '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base.</div>';
+
+                $htmlBase .= '<p>';
                 foreach ($bases as $base ){
-                    echo sprintf('
+                    $htmlBase .= sprintf('
                         <input type="hidden" name="base_id" value="%3$s">
                         <div class="notification is-light mb-2">
                             <strong>Votre %4$s à %5$s</strong><br>
@@ -100,18 +138,10 @@
                                     Ne sera découvert que sur une valeur d’enquête de <strong>%6$s</strong> ou plus. Si découvert, le texte suivant sera présenté à l’enquêteur :
                                 </summary>
                                 <blockquote>%7$s</blockquote>
-                           </details>
+                        </details>
                         </div>
-                        <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
-                            <div class="control">
-                                %1$s
-                            </div>
-                            %2$s
-                            <div class="control">
-                                <input type="submit" name="moveBase" value="Démenager" class="button is-warning controller-action-btn">
-                            </div>
-                        </div>
-                        <br>',
+                        '.$baseMoveHTML.'
+                        ',
                         $textControllerActionMoveBase,
                         showZoneSelect($gameReady, $zonesArray, $base['zone_id'], false, false, true),
                         $base['id'],
@@ -135,15 +165,15 @@
             ]);
             $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($incomingAttacks)) {
-                echo "<div class='notification is-danger'>";
-                echo "<strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
+                echo "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
                 foreach ($incomingAttacks as $attack) {
                     echo sprintf( "<li> %s</li>", $attack['target_result_text']);
                 }
                 echo "</ul></div>";
             }
-            echo '</p>
-            <h3 class="title is-5 mt-5">Les lieux découverts:</h3>
+            $htmlBase .= '</p>';
+            echo $htmlBase;
+            echo '<h3 class="title is-5 mt-5">Les lieux découverts:</h3>
             <p>';
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             if( hasBase($gameReady, $controllers['id'])) {

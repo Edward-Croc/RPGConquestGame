@@ -1069,3 +1069,52 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     ));
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
+INSERT INTO ressources_config (
+    ressource_name, 
+    presentation,
+    stored_text,
+    is_rollable,
+    is_stored,
+    base_building_cost,
+    base_moving_cost,
+    location_repaire_cost
+) VALUES (
+    'Koku', 
+        -- %$1s : amount, %$2s : ressource_name
+    'La production excédentaire de votre clan qui sera investie dans son développement si elle n’est pas dépensée est égale à <strong>%s %s</strong>.',
+    -- %$1s : amount_stored, %$2s : ressource_name
+    '<strong>%s %s</strong> ont été investi dans le développement du clan depuis le printemps 1555.',
+    FALSE,
+    TRUE,
+    1000,
+    1000,
+    1000
+);
+
+INSERT INTO controller_ressources (
+    controller_id, ressource_id,
+    amount, amount_stored, end_turn_gain
+) VALUES 
+    ((SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 1000, 0, 1000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Sogō (十河)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 0, 0, 0),
+    ((SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 0, 0, 0),
+    ((SELECT ID FROM controllers WHERE lastname = 'Takeda (武田)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 2000, 0, 2000),
+    ((SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+        , 2000, 0, 2000)
+;
+
+

@@ -11,6 +11,9 @@ UPDATE config SET value =  'cette' WHERE name = 'timeDenominatorThis';
 UPDATE config SET value =  'la' WHERE name = 'timeDenominatorThe';
 UPDATE config SET value =  'de la' WHERE name = 'timeDenominatorOf';
 
+
+UPDATE config SET value =  'FALSE' WHERE name = 'ressource_management';
+
 --- Base Power Names
 UPDATE config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';

@@ -29,7 +29,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         createBase($gameReady, $controller_id, $zone_id);
     }
     if (isset($_GET['moveBase'])){
-        moveBase($gameReady, $base_id, $zone_id);
+        moveBase($gameReady, $base_id, $zone_id, $controller_id);
     }
     if (isset($_GET['attackLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
