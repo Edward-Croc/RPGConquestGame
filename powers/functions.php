@@ -29,7 +29,7 @@ function getPowerTypesDescription($pdo, $name){
  * @return string
  */
 function getSQLPowerText($short = true) {
-    if (!$short) return "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', p.description) AS power_text";
+    if (!$short) return "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', IFNULL(p.description,'')) AS power_text";
     return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
 }
 
@@ -65,7 +65,8 @@ function getPowersByWorkers($pdo, $worker_id_str) {
     }
     // Fetch the results
     $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workers_powers %s <br /> <br />", var_export($workers_powers,true));
+    if ($_SESSION['DEBUG'] == true)
+        echo sprintf("workers_powers %s <br /> <br />", var_export($workers_powers,true));
 
     return $workers_powers;
 }
