@@ -85,7 +85,6 @@ JOIN (
     SELECT 'Kotatsu' AS lastname, 'Biwa Hōshi (琵琶法師) – Conteur aveugle itinérant' AS power_name
     UNION ALL SELECT 'Kotatsu', 'Tokkuri (徳利) – Bouteille à saké'
     UNION ALL SELECT 'Kotatsu', 'Kōdō (香道) – Voie de l’encens'
-    UNION ALL SELECT 'Kotatsu', 'Kadō / Ikebana (華道 / 生け花) – Art floral'
     UNION ALL SELECT 'Kotatsu', 'Kagenkō (影言講) – L’art de la parole de l’ombre'
     UNION ALL SELECT 'Kotatsu', 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
     UNION ALL SELECT 'Jizane', 'Kannushi (神主) – Prêtre shintō'
@@ -106,6 +105,7 @@ JOIN (
     UNION ALL SELECT 'Kagaribi', 'Kadō / Ikebana (華道 / 生け花) – Art floral'
     UNION ALL SELECT 'Kagaribi', 'Kagenkō (影言講) – L’art de la parole de l’ombre'
     UNION ALL SELECT 'Kagaribi', 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
+    UNION ALL SELECT 'Kagaribi', 'Encens Coréen'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
@@ -257,7 +257,7 @@ SELECT
 FROM
     workers w
 JOIN (
-    SELECT 'Sōen-dono(僧円-殿)' AS lastname, 'Biwa Hōshi (琵琶法師) – Conteur aveugle itinérant' AS power_name
+    SELECT 'Sōen-dono(僧円-殿)' AS lastname, 'Kannushi (神主) – Prêtre shintō' AS power_name
     UNION ALL SELECT 'Sōen-dono(僧円-殿)', 'Chadōgu (茶道具) – Ustensiles du thé'
     UNION ALL SELECT 'Sōen-dono(僧円-殿)', 'Kadō / Ikebana (華道 / 生け花) – Art floral'
     UNION ALL SELECT 'Sōen-dono(僧円-殿)', 'Chadō (茶道) – Voie du thé'
@@ -265,7 +265,7 @@ JOIN (
     UNION ALL SELECT 'Sōen-dono(僧円-殿)', 'Encens Coréen'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Kuro-hatamoto (黒旗本) – Garde d’élite'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Katana (刀) – L’arme emblématique du samouraï'
-    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Shodō (書道) – Calligraphie'
+    UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Chadō (茶道) – Voie du thé'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Iaijutsu (居合術) – Art du sabre'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Bajutsu (馬術) – Art de l’équitation militaire'
     UNION ALL SELECT 'Renryū-dono(蓮竜-殿)', 'Cheval Sanuki'
@@ -275,13 +275,13 @@ JOIN (
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Shodō (書道) – Calligraphie'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Bugaku (舞楽) – Danse de cour'
     UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Chadō (茶道) – Voie du thé'
-    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Thé d’Oboké et d’Iya'
+    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'Thé d’Oboké'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Tsūshi (通使) – Diplomate ou émissaire'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Go-ban (碁盤) – Plateau de Go'
-    UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Tosa'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Heihō (兵法) – Stratégie militaire'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Bugaku (舞楽) – Danse de cour'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Shodō (書道) – Calligraphie'
+    UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Tosa'
 ) AS wp ON wp.lastname = w.lastname
 JOIN powers p ON p.name = wp.power_name
 JOIN link_power_type lpt ON lpt.power_id = p.id;
