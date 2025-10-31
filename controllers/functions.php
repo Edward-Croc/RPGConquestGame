@@ -464,7 +464,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                 echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
                 return NULL;
             }
-            $targetResultText .= ' Tout as été détruit.';
+            $targetResultText .= ' Tout a été détruit.';
         }
     } else {
         // Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.
