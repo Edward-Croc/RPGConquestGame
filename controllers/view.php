@@ -95,9 +95,8 @@
             if (empty($bases) && $controllers['can_build_base']) {
                 if (!hasEnoughRessourcesToBuildBase($gameReady, $controllers['id'])) {
                     $htmlBase .= sprintf(
-                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base %s %s.</div>',
-                        $ressource['ressource_name'],
-                        $ressource['amount']
+                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base %s.</div>',
+                        buildBaseCostHTML($gameReady, $controllers['id'])
                     );
                 } else {
                     $htmlBase .= sprintf(
@@ -130,10 +129,11 @@
                 </div>';
 
                 if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id']))
-                    $baseMoveHTML = sprintf('<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base.</div>',
-                    $ressource['ressource_name'],
-                    $ressource['amount']
-                );
+                    $baseMoveHTML = sprintf(
+                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base %s.</div>', 
+                        moveBaseCostHTML($gameReady, $controllers['id'])
+                    );
+
 
                 $htmlBase .= '<p>';
                 foreach ($bases as $base ){
