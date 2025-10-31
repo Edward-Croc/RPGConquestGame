@@ -397,3 +397,29 @@ CREATE TABLE controllers_known_enemies (
     FOREIGN KEY (discovered_controller_id) REFERENCES controllers (id), -- Link to controllers table
     FOREIGN KEY (zone_id) REFERENCES zones (id) -- Link to zones table
 );
+
+CREATE TABLE ressources_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ressource_name text NOT NULL,
+    presentation text NOT NULL,
+    stored_text text NOT NULL,
+    is_rollable BOOLEAN DEFAULT FALSE,
+    is_stored BOOLEAN DEFAULT FALSE,
+    base_building_cost INT NOT NULL DEFAULT 0,
+    base_moving_cost INT NOT NULL DEFAULT 0,
+    location_repaire_cost INT NOT NULL DEFAULT 0,
+    servant_first_come_cost INT NOT NULL DEFAULT 0,
+    servant_recruitment_cost INT NOT NULL DEFAULT 0,
+    extra_first_come_cost INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE controller_ressources (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    controller_id INT NOT NULL,
+    ressource_id INT NOT NULL,
+    amount INT NOT NULL DEFAULT 0,
+    amount_stored INT NOT NULL DEFAULT 0,
+    end_turn_gain INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (controller_id) REFERENCES controllers (id),
+    FOREIGN KEY (ressource_id) REFERENCES ressources_config (id)
+);
