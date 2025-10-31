@@ -126,9 +126,9 @@ VALUES
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir.', 'Text for location destroyed')
     ,('textLocationPillaged', 'Le lieu %s a été pillée, mais nous n’avons pas pu le détruire.', 'Text for location pillaged')
-    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses.', 'Text for location not destroyed'),
+    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses.', 'Text for location not destroyed')
     -- Ressource management
-    ('ressource_management', 'TRUE', 'Ressource management configuration')
+    ,('ressource_management', 'TRUE', 'Ressource management configuration')
 ;
 
 INSERT INTO config (name, value, description)
