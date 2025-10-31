@@ -7,7 +7,7 @@ CREATE TABLE mechanics (
     id INT AUTO_INCREMENT PRIMARY KEY,
     turncounter INT DEFAULT 0,
     gamestate INT DEFAULT 0,
-    end_step TEXT DEFAULT ''
+    end_step TEXT
 );
 
 INSERT INTO mechanics (turncounter, gamestate)
@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS config;
 CREATE TABLE config (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,-- name used key
-    value TEXT DEFAULT '', -- value to be read
+    value TEXT, -- value to be read
     description TEXT -- explain configuration usage
 );
 
@@ -182,7 +182,7 @@ CREATE TABLE controllers (
     recruited_workers INT DEFAULT 0,
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
-    ia_type TEXT DEFAULT '',
+    ia_type TEXT,
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller TINYINT(1) DEFAULT 0,
