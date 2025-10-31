@@ -243,9 +243,10 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
     }
     $controllersArray = array();
     $zonesArray = array();
-    if (!empty($controller_id))
+    if (!empty($controller_id)){
         $controllersArray = getControllers($pdo, NULL, $controller_id);
         $zonesArray = getZonesArray($pdo, $controller_id);
+    }
 
     if ($debug)
         echo sprintf(
@@ -267,7 +268,8 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
         }
 
         $powerConditions = json_decode($power['other'], true);
-        if ($debug) echo sprintf("power(%s) : %s ==> json powerConditions : %s <br>", $key, var_export($power, true), var_export($powerConditions,true));
+        if ($debug) 
+            echo sprintf("power(%s) : %s ==> json powerConditions : %s <br>", $key, var_export($power, true), var_export($powerConditions,true));
 
         // Base state is always keep
         $keepElement = true;
@@ -279,7 +281,8 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
             }
             // If condition is an array, check details
             else if( is_array($powerConditions[$state_text]) ) {
-                if ($debug) echo sprintf("powerConditions[%s] is array : %s  <br>", $state_text, var_export($powerConditions[$state_text], true));
+                if ($debug)
+                     echo sprintf("powerConditions[%s] is array : %s  <br>", $state_text, var_export($powerConditions[$state_text], true));
 
                 // OR condition block
                 if (!empty($powerConditions[$state_text]['OR']) ){
@@ -302,7 +305,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
 
                 // Direct checks
                 if (!empty($workersArray) ) {
-                    if ($debug) echo sprintf("!empty(workersArray) (%s): %s <br>", $workersArray, var_export($workersArray,true));
+                    if ($debug) echo sprintf("!empty(workersArray) (%s): %s <br>", gettype($workersArray), var_export($workersArray,true));
                     if (isset($powerConditions[$state_text]['age']) && ($powerConditions[$state_text]['age'] > $workersArray[0]['age']) ) {
                         if ($debug) echo 'test FAILED the age condition : <br/>' ;
                         $keepElement = false;
@@ -312,10 +315,10 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                         if ($debug) echo 'test the worker_is_alive condition :';
                         if ($debug) echo sprintf(' $workersArray[0][is_alive] (%s): %s ',  gettype( $workersArray[0]['is_alive']),  $workersArray[0]['is_alive']);
                         if ($debug) echo sprintf(' $powerConditions[$state_text][worker_is_alive] (%s): %s ',  gettype( $powerConditions[$state_text]['worker_is_alive']),  $powerConditions[$state_text]['worker_is_alive']);
-                        $should_be_alive = true;
+                        $should_be_alive = 1;
                         if ($powerConditions[$state_text]['worker_is_alive'] == "0" ) $should_be_alive = false;
                         if ($debug) echo sprintf(' $should_be_alive (%s): %s ',  gettype($should_be_alive), $should_be_alive );
-                        if ( $workersArray[0]['is_alive'] !== $should_be_alive ) {
+                        if ((INT)$workersArray[0]['is_alive'] !== (INT)$should_be_alive) {
                             if ($debug) echo ' FAILED' ;
                             $keepElement = false;
                         }
