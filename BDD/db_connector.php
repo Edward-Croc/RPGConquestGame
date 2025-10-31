@@ -138,12 +138,15 @@ function destroyAllTables($pdo) {
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $tables = array(
+                'controller_ressources',
+                'ressources_config',
                 'location_attack_logs',
                 'controllers_known_enemies',
                 'controller_known_locations', 
                 'controller_worker',
                 'worker_actions',
                 'worker_powers',
+                'workers_trace_links',
                 'workers',
                 'worker_names',
                 'worker_origins',
