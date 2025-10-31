@@ -73,13 +73,13 @@
             echo $htmlFaction;
             if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
                 $ressources = getRessources($gameReady, $controllers['id']);
-                // if ($debug) 
+                if ($debug) 
                     echo sprintf('<p> ressources: %s </p>', var_export($ressources, true));
                 if (!empty($ressources)) {
                     $htmlRessources = '<h3 class="title is-5 mt-4">Vos Ressources :</h3>';
                     foreach ($ressources as $ressource) {
                         $htmlRessources .= '<p>';
-                        $htmlRessources .= sprintf($ressource['presentation'], $ressource['amount'], $ressource['ressource_name']);
+                        $htmlRessources .= sprintf($ressource['presentation'], $ressource['amount'], $ressource['ressource_name'], $ressource['end_turn_gain']);
                         if ($ressource['amount_stored'] > 0) {
                             $htmlRessources .= "</br>".sprintf($ressource['stored_text'], $ressource['amount_stored'], $ressource['ressource_name']);
                         }
@@ -94,12 +94,16 @@
             $htmlBase = '<h3 class="title is-5 mt-4">Votre Base :</h3>';
             if (empty($bases) && $controllers['can_build_base']) {
                 if (!hasEnoughRessourcesToBuildBase($gameReady, $controllers['id'])) {
-                    $htmlBase .= '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base.</div>';
+                    $htmlBase .= sprintf(
+                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base %s %s.</div>',
+                        $ressource['ressource_name'],
+                        $ressource['amount']
+                    );
                 } else {
                     $htmlBase .= sprintf(
                         '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                             <div class="control">
-                                %1$s
+                                %1$s %3$s
                             </div>
                             %2$s
                             <div class="control">
@@ -107,7 +111,8 @@
                             </div>
                         </div><br />',
                         getConfig($gameReady, 'textControllerActionCreateBase'),
-                        showZoneSelect($gameReady, $zonesArray, null, false, false, true)
+                        showZoneSelect($gameReady, $zonesArray, null, false, false, true),
+                        buildBaseCostHTML($gameReady, $controllers['id'])
                     );
                 }
             } else {
@@ -116,7 +121,7 @@
                 $baseMoveHTML = '
                     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                     <div class="control">
-                        %1$s
+                        %1$s %8$s
                     </div>
                     %2$s
                     <div class="control">
@@ -125,7 +130,10 @@
                 </div>';
 
                 if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id']))
-                    $baseMoveHTML = '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base.</div>';
+                    $baseMoveHTML = sprintf('<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base.</div>',
+                    $ressource['ressource_name'],
+                    $ressource['amount']
+                );
 
                 $htmlBase .= '<p>';
                 foreach ($bases as $base ){
@@ -148,7 +156,8 @@
                         $base['name'],
                         $base['zone_name'],
                         $base['discovery_diff'],
-                        nl2br($base['description'])
+                        nl2br($base['description']),
+                        moveBaseCostHTML($gameReady, $controllers['id'])
                     );
                 }
             }
@@ -253,7 +262,7 @@
             $controllerLinkedLocations = listControllerLinkedLocations($gameReady, $controllers['id']);
 
             if (!$controllerLinkedLocations) {
-                echo '<p class="notification is-warning">Aucun lieux.</p>';
+                echo '<p class="notification is-warning">Aucun lieu.</p>';
             } else {
                 $htmlLinkedLocations = "";
                 // Build Bulma HTML

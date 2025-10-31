@@ -112,6 +112,28 @@ function spendRessourcesToBuildBase($pdo, $controller_id) {
 }
 
 /**
+ * Get the cost HTML to build a base
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return string
+ */
+function buildBaseCostHTML($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    $html = '';
+    if (!empty($controllerRessources)) {
+        $html = '<br> Coût de construction : ';
+        foreach ($controllerRessources as $controllerRessource) {
+            if ($controllerRessource['base_building_cost'] > 0) {
+                $html .= sprintf('%s %s', $controllerRessource['base_building_cost'], $controllerRessource['ressource_name']);
+            }
+        }
+    }
+    return $html;
+}
+
+/**
  * Does the controller have enought ressources to move a base ?
  *
  * @param PDO $pdo
@@ -156,6 +178,29 @@ function spendRessourcesToMoveBase($pdo, $controller_id) {
 }
 
 /**
+ * Get the cost HTML to move a base
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return string
+ */
+function moveBaseCostHTML($pdo, $controller_id) {
+
+    $controllerRessources = getRessources($pdo, $controller_id);
+    $html = '';
+    if (!empty($controllerRessources)) {
+        $html = '<br> Coût : ';
+        foreach ($controllerRessources as $controllerRessource) {
+            if ($controllerRessource['base_moving_cost'] > 0) {
+                $html .= sprintf('%s %s', $controllerRessource['base_moving_cost'], $controllerRessource['ressource_name']);
+            }
+        }
+    }
+    return $html;
+}
+
+/**
  * Does the controller have enought ressources to repair a location ?
  *
  * @param PDO $pdo
@@ -170,6 +215,30 @@ function hasEnoughRessourcesToRepairLocation($pdo, $controller_id) {
             if ($controllerRessource['amount'] < $controllerRessource['location_repaire_cost']) {
                 return false;
             }
+        }
+    }
+    return true;
+}
+
+/**
+ * Spend the ressources to repair a location
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return bool
+ */
+function spendRessourcesToRepairLocation($pdo, $controller_id) {
+    $controllerRessources = getRessources($pdo, $controller_id);
+    foreach ($controllerRessources as $controllerRessource) {
+        if ($controllerRessource['location_repaire_cost'] > 0) {
+            $controllerRessource['amount'] -= $controllerRessource['location_repaire_cost'];
+        }
+        $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
+        if (!$stmt->rowCount()) {
+            echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
         }
     }
     return true;
