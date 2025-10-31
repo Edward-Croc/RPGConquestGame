@@ -351,7 +351,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $powerTransformationArray = getPowersByType($gameReady,'4', null, false);
                     if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br />",var_export($powerTransformationArray, true));
                     $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation' );
-                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray: %s <br/>", var_export($powerTransformationArray, true));
+                    if ( $debug_transformation_age ) echo sprintf("powerTransformationArray Json parsed: %s <br/>", var_export($powerTransformationArray, true));
                     if (! empty($powerTransformationArray) )
                         $upgradeTransformationHTML .= sprintf('
                             <div class="field is-grouped is-grouped-multiline">
