@@ -43,7 +43,7 @@ require_once '../controllers/view.php';
 
         // Display controller details
         document.getElementById('controllerDetails').style.display = 'block';
-        document.getElementById('controllerDetails').innerHTML = "<h3>controller Details</h3>" +
+        document.getElementById('controllerDetails').innerHTML = "<h3>Controller Details</h3>" +
             "<p>Name: " + selectedController.firstname + " " + selectedController.lastname +
             ", ID: " + selectedController.id +
             ", Faction Name: " + selectedController.faction_name + "</p>";
