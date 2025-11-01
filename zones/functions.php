@@ -390,7 +390,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $returnText = '';
     // Bases owned by this controller in the zone
     $sql = "
-        SELECT l.id, l.name, l.can_be_destroyed, l.description
+        SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description
         FROM locations l
         WHERE l.controller_id = :controller_id
         AND l.zone_id = :zone_id
@@ -406,9 +406,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         $returnText .= "<p><strong>Vos lieux secrets:</strong><br />";
         foreach ($owned_bases as $base) {
             $returnText .=  sprintf(
-                "<b>%s</b><br><em>%s</em><br />",
+                "<b>%s</b><br><em>%s%s</em><br />",
                 $base['name'],
-                $base['description']
+                $base['description'],
+                $base['hidden_description']
             );
 
             // Fetch artefacts for this location
@@ -438,7 +439,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
 
     // Known enemy bases in the zone
     $sql = "
-        SELECT l.id, l.name, l.can_be_destroyed, l.description
+        SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description, ckl.found_secret
         FROM controller_known_locations ckl
         JOIN locations l ON ckl.location_id = l.id
         WHERE ckl.controller_id = :controller_id
@@ -455,9 +456,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         $returnText .=  "<p><strong>Lieux découverts :</strong><br />";
         foreach ($known_bases as $base) {
             $returnText .=  sprintf(
-                "<b>%s</b><br/><em>%s</em><br/>",
-                htmlspecialchars($base['name']),
-                htmlspecialchars($base['description'])
+                "<b>%s</b><br/><em>%s%s</em><br/>",
+                $base['name'],
+                $base['description'],
+                ((INT)$base['found_secret'] == 1) ? $base['hidden_description'] : ''
             );
 
             if ($base['can_be_destroyed'] && hasBase($pdo, $controller_id)) {
@@ -492,6 +494,13 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  * If $limitByDestroyed is true, it will only return locations that can be destroyed.
  * If false, it will return all locations.
  * @return array|null array of controllers know locations
+ *  array of [zone_id]=> locations[]=> [
+ *      'id' => int,
+ *      'name' => string,
+ *      'description' => string,
+ *      'hidden_description' => string,
+ *      'can_be_destroyed' => bool
+ *  ]
  */
 function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false): array|null {
     $sql = sprintf("
@@ -502,6 +511,8 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
             l.id AS location_id,
             l.name AS location_name,
             l.description AS location_description,
+            l.hidden_description AS location_hidden_description,
+            ckl.found_secret AS location_found_secret,
             l.can_be_destroyed AS location_can_be_destroyed 
         FROM controller_known_locations ckl
         JOIN locations l ON ckl.location_id = l.id
@@ -533,6 +544,7 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
             'id' => $row['location_id'],
             'name' => $row['location_name'],
             'description' => $row['location_description'],
+            'hidden_description' => ((INT)$row['location_found_secret'] == 1) ? $row['location_hidden_description'] : '',
             'can_be_destroyed' => $row['location_can_be_destroyed']
         ];
     }
@@ -556,6 +568,7 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
             l.id AS location_id,
             l.name AS location_name,
             l.description AS location_description,
+            l.hidden_description AS location_hidden_description,
             l.can_be_destroyed AS location_can_be_destroyed 
         FROM locations l
         JOIN zones z ON l.zone_id = z.id
@@ -594,7 +607,7 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
         $grouped[$zoneId]['locations'][] = [
             'id' => $row['location_id'],
             'name' => $row['location_name'],
-            'description' => $row['location_description'],
+            'description' => $row['location_description'] . $row['location_hidden_description'],
             'can_be_destroyed' => $row['location_can_be_destroyed'],
             'artefacts' => $artefacts // array of ['name' => ..., 'full_description' => ...]
         ];

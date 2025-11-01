@@ -156,7 +156,7 @@
                         $base['name'],
                         $base['zone_name'],
                         $base['discovery_diff'],
-                        nl2br($base['description']),
+                        nl2br($base['description'].$base['hidden_description']),
                         moveBaseCostHTML($gameReady, $controllers['id'])
                     );
                 }
@@ -247,9 +247,10 @@
                         $htmlKnownLocations .= sprintf(
                             '<li> <details>
                                 <summary class="has-text-weight-semibold">%s</summary>
-                             %s </details></li>',
+                             %s%s </details></li>',
                             $loc['name'],
-                            $loc['description']
+                            $loc['description'],
+                            $loc['hidden_description']
                         );
                     }
                     $htmlKnownLocations .= '</ul></details></div>';

@@ -217,6 +217,7 @@ CREATE TABLE locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
+    hidden_description TEXT DEFAULT NULL,
     zone_id INT,
     setup_turn INT DEFAULT 0, -- Turn in which the location was created
     discovery_diff INT DEFAULT 0,
@@ -242,6 +243,7 @@ CREATE TABLE controller_known_locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     controller_id INT NOT NULL,
     location_id INT NOT NULL,
+    found_secret  TINYINT(1) DEFAULT 0,
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -40,6 +40,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             l.discovery_diff AS found_discovery_diff,
             l.name AS found_name,
             l.description AS found_description,
+            l.hidden_description AS found_hidden_description,
             l.can_be_destroyed AS found_can_be_destroyed,
             l.controller_id AS location_controller,
             CONCAT(lc.firstname, ' ', lc.lastname) AS location_controller_name,
@@ -113,9 +114,7 @@ function locationSearchMechanic($pdo, $mechanics) {
                 // 		- Inférieur	ne sais pas
                 // 		- 0-2		découvre le réseau
                 // 		- 3+		découvre le réseau, le contrôleur 
-                if ( (int)$row['zone_discovery_diff']
-                
-                > 0 ) {
+                if ( (int)$row['zone_discovery_diff'] > 0 ) {
                     $holderTexte = sprintf(
                         " Ce %s est défendu par le réseau <strong> %s </strong>",
                         $textForZoneType,
@@ -145,37 +144,24 @@ function locationSearchMechanic($pdo, $mechanics) {
 
         if ($row['searcher_controller_id'] == $row['location_controller']) continue;
 
-        if ($row['enquete_difference'] >= $LOCATIONNAMEDIFF) {
+        if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONNAMEDIFF) {
+            $found_secret = false;
             $reportElement = "<p>".sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
 
-            if ($row['enquete_difference'] >= $LOCATIONINFORMATIONDIFF) {
-                $checkStmt = $pdo->prepare("SELECT id FROM controller_known_locations WHERE controller_id = :cid AND location_id = :lid");
-                $checkStmt->execute([
-                    ':cid' => $row['searcher_controller_id'],
-                    ':lid' => $row['found_id']
-                ]);
-
-                if ($known = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $updateStmt = $pdo->prepare("UPDATE controller_known_locations SET last_discovery_turn = :turn WHERE id = :id");
-                    $updateStmt->execute([
-                        ':turn' => $turn_number,
-                        ':id' => $known['id']
-                    ]);
-                } else {
-                    $insertStmt = $pdo->prepare("INSERT INTO controller_known_locations (controller_id, location_id, first_discovery_turn, last_discovery_turn) VALUES (:cid, :lid, :turn, :turn)");
-                    $insertStmt->execute([
-                        ':cid' => $row['searcher_controller_id'],
-                        ':lid' => $row['found_id'],
-                        ':turn' => $turn_number
-                    ]);
-                }
-
+            if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONINFORMATIONDIFF) {
                 $reportElement = "<p>".sprintf($locationDescText[array_rand($locationDescText)], $row['found_name'], $row['found_description']);
-                if ($row['found_can_be_destroyed']) {
+                
+                if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONARTEFACTSDIFF) {
+                    if (!empty($row['found_hidden_description'])) {
+                        $reportElement .= "<br />" . $row['found_hidden_description'];
+                        $found_secret = true;
+                    }
+                }
+                if ((INT)$row['found_can_be_destroyed'] == 1) {
                     $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
                 }
 
-                if ($row['enquete_difference'] >= $LOCATIONARTEFACTSDIFF) {
+                if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONARTEFACTSDIFF) {
                     // Fetch artefacts for this location
                     $stmtArt = $pdo->prepare("
                     SELECT name, description
@@ -197,6 +183,38 @@ function locationSearchMechanic($pdo, $mechanics) {
                         $reportElement .= "</ul>";
                     }
                 }
+
+                $checkStmt = $pdo->prepare("SELECT id, found_secret FROM controller_known_locations WHERE controller_id = :cid AND location_id = :lid");
+                $checkStmt->execute([
+                    ':cid' => $row['searcher_controller_id'],
+                    ':lid' => $row['found_id']
+                ]);
+                if ($known = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $sql = "UPDATE controller_known_locations SET last_discovery_turn = :turn WHERE id = :id";
+                    if ( (int)$known['found_secret'] == 0 && $found_secret == true) 
+                        $sql = "UPDATE controller_known_locations SET found_secret = :found_secret, last_discovery_turn = :turn WHERE id = :id";
+            
+                    $updateStmt = $pdo->prepare($sql);
+                    if ( (int)$known['found_secret'] == 0 && $found_secret == true)
+                        $updateStmt->bindParam(':found_secret', $found_secret);
+                    $updateStmt->bindParam(':turn', $turn_number);
+                    $updateStmt->bindParam(':id', $known['id']);
+                    $updateStmt->execute();
+                } else {
+                    $sqlInsert = "INSERT INTO controller_known_locations (
+                        controller_id, location_id, found_secret, first_discovery_turn, last_discovery_turn
+                    ) VALUES (
+                        :cid, :lid, :found_secret, :first_discovery_turn, :last_discovery_turn
+                    )";
+                    $insertStmt = $pdo->prepare($sqlInsert);
+                    $insertStmt->bindParam(':cid', $row['searcher_controller_id'], PDO::PARAM_INT);
+                    $insertStmt->bindParam(':lid', $row['found_id'], PDO::PARAM_INT);
+                    $insertStmt->bindParam(':found_secret', $found_secret, PDO::PARAM_BOOL);
+                    $insertStmt->bindParam(':first_discovery_turn', $turn_number, PDO::PARAM_INT);
+                    $insertStmt->bindParam(':last_discovery_turn', $turn_number, PDO::PARAM_INT);
+                    $insertStmt->execute();
+                }
+
             }
             $reportElement .= '</p>';
             $reportArray[$row['searcher_id']] .= $reportElement;

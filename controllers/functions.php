@@ -241,8 +241,9 @@ function createBase($pdo, $controller_id, $zone_id) {
         strtolower($timeValue),
         getConfig($pdo, 'controllerNameDenominatorOf')
     );
+    $hidden_description = '';
     if ($controllers[0]['faction_id'] != $controllers[0]['fake_faction_id'])
-        $description .= sprintf(
+        $hidden_description = sprintf(
             getConfig($pdo, 'texteHiddenFactionBase'),
             $controllers[0]['fake_faction_name'],
             $controllers[0]['faction_name']
@@ -265,8 +266,8 @@ function createBase($pdo, $controller_id, $zone_id) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
     }
 
-    $sql = "INSERT INTO locations (zone_id, name, description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        (:zone_id, :baseName, :description, :controller_id, :discovery_diff, True, True)";
+    $sql = "INSERT INTO locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True)";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -274,6 +275,7 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmt->bindParam(':baseName', $baseName);
         $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':hidden_description', $hidden_description);
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->execute();

@@ -216,6 +216,7 @@ CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
     description text NOT NULL,
+    hidden_description text DEFAULT NULL,
     zone_id INT,
     setup_turn INT DEFAULT 0, -- Turn in which the location was created
     discovery_diff INT DEFAULT 0,
@@ -241,6 +242,7 @@ CREATE TABLE controller_known_locations (
     id SERIAL PRIMARY KEY,
     controller_id INT NOT NULL,
     location_id INT NOT NULL,
+    found_secret BOOLEAN DEFAULT FALSE,
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
