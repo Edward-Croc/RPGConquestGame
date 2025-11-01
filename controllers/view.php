@@ -37,10 +37,11 @@
                         <div class="control">
                             <input type="submit" name="chosir" value="Choisir" class="button is-link">
                         </div>
+                        <!-- Display controller details section (initially hidden) changed by the select action-->
+                        <div id="controllerDetails" style="display: none;"> </div>
                     </div>
                 </form>
-                <!-- Display controller details section (initially hidden) changed by the select action-->
-                <div id="controllerDetails" style="display: none;"> </div>', 
+                ', 
                 $_SESSION['FOLDER'],
                 showControllerSelect(
                     $controllers, 
@@ -124,7 +125,7 @@
                     </div>
                     %2$s
                     <div class="control">
-                        <input type="submit" name="moveBase" value="Démenager" class="button is-warning controller-action-btn">
+                        <input type="submit" name="moveBase" value="Déménager" class="button is-warning controller-action-btn">
                     </div>
                 </div>';
 
@@ -195,7 +196,7 @@
                                 </div>
                                 %2$s
                                 <div class="control">
-                                    <input type="submit" name="attackLocation" value="Attacker" class="button is-danger controller-action-btn">
+                                    <input type="submit" name="attackLocation" value="Attaquer" class="button is-danger controller-action-btn">
                                 </div>
                             </div>
                         </form>',
