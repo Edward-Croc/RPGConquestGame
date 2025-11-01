@@ -238,7 +238,7 @@ function gameReady() {
                 echo 'END <br />';
 
                 if ( isset($_POST['config_name']) ) {
-                    $fileNames = ['base', 'textes', 'worker_names'];
+                    $fileNames = ['base', 'zones', 'textes', 'worker_names'];
                     foreach ( $fileNames as $fileName ) {
                         $sqlFile =  sprintf('%s/var/%s/setup%s_%s.sql',  $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
                         echo "Loading $sqlFile ...<br />";
