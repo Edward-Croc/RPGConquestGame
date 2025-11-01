@@ -68,6 +68,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $upd->execute(['id' => $cid]);
         $message = "Turn recruited firstcome workers reset.";
     }
+
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "GET") {
+    if (isset($_GET['giftInformation'])){
+        //  Get Turn Number
+        $mechanics = getMechanics($gameReady);
+        $zone_id = $_GET['zone_id'];
+        $target_controller_id = $_GET['target_controller_id'];
+        $enemy_worker_id = $_GET['enemy_worker_id'];
+
+        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+    }
 }
 
 // Fetch all players and controllers
@@ -177,4 +190,5 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
         }
         ?>
     </table>
+    <?php echo buildGiveKnowledgeHTML($gameReady, 'admin'); ?>
 </div>

@@ -742,22 +742,39 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
 
     $returnLink = '/controllers/action.php';
     if ($origin == 'admin') 
-        $returnLink = '/controllers/management.php';
+        $returnLink = '/controllers/managment.php';
 
     
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
 
     $zones = getZonesArray($pdo);
+
+    $zoneSearchElement = '<input type="hidden" name="controller_id" value="'.$controller_id.'">';
+    if ($origin == 'admin') { 
+        $zoneSearchElement = showZoneSelect($pdo, $zones, null, false, false, true);
+    }
+
     $enemyWorkerOptions = '';
     // For each zone
-    foreach ($zones as $zone) {
-        $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
-        foreach ( $zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
-            $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+    if ($origin != 'admin') { 
+        foreach ($zones as $zone) {
+            $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
+            foreach ( $zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
+                $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+            }
+            foreach ( $zoneEnemyWorkers['workers_with_controller'] as $enemyWorker) {
+                $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+            }
         }
-        foreach ( $zoneEnemyWorkers['workers_with_controller'] as $enemyWorker) {
-            $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+    } else {
+        // select from all workers
+        $sql = "SELECT w.id AS worker_id, CONCAT (w.firstname, ' ', w.lastname) AS name, z.name AS zone_name FROM workers w JOIN zones z ON w.zone_id = z.id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($workers as $worker) {
+            $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $worker['worker_id'],  $worker['name'], $worker['zone_name']);
         }
     }
     $enemyWorkersSelect = sprintf("
@@ -773,11 +790,11 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $enemyWorkerOptions
     );
 
-    $controllers = getControllers($pdo);
+    $controllers = getControllers($pdo, null, null, ($origin != 'admin'));
     $html = sprintf('
             <h3 class="title is-5 mt-5">Donner des informations:</h3>
                 <form action="/%s/%s" method="GET" class="box mb-5">
-                    <input type="hidden" name="controller_id" value="%s">
+                    %s
                     <div class="field">
                         Sélectionner un contrôleur : %s
                     </div>
@@ -793,7 +810,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
                 </form>', 
                 $_SESSION['FOLDER'],
                 $returnLink,
-                $controller_id,
+                $zoneSearchElement,
                 showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
                 $enemyWorkersSelect
             );
