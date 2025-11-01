@@ -425,9 +425,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                 foreach ($artefacts as $art) {
                     $returnText .= sprintf(
                         "<li><strong>%s</strong>: %s %s</li>",
-                        htmlspecialchars($art['name']),
-                        htmlspecialchars($art['description']),
-                        htmlspecialchars($art['full_description'])
+                        $art['name'],
+                        $art['description'],
+                        $art['full_description']
                     );
                 }
                 $returnText .= "</ul>";
