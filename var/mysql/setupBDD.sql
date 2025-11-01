@@ -126,7 +126,7 @@ VALUES
     ,('maxBonusDefenceTurns', 3, 'Maximum bonus obtainable from age of base' )
     ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
     ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir.', 'Text for location destroyed')
-    ,('textLocationPillaged', 'Le lieu %s a été pillée, mais nous n’avons pas pu le détruire.', 'Text for location pillaged')
+    ,('textLocationPillaged', 'Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.', 'Text for location pillaged')
     ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses.', 'Text for location not destroyed')
     ,('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts')
     -- Ressource management

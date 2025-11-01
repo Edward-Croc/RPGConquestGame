@@ -204,7 +204,7 @@
                         $_SESSION['FOLDER']
                     );
                 } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
-            } else echo '<span class="has-text-grey">Les attaques de lieux sont impossible sans une base d\'opération.</span>';
+            } else echo '<span class="has-text-grey">Les attaques de lieux sont impossibles sans une base d\'opération.</span>';
 
             $ownedArtefacts = showOwnedArtefacts($gameReady, $controllers['id']);
             if (!empty($ownedArtefacts)) 
