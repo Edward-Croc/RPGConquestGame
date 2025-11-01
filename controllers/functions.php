@@ -361,6 +361,43 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
 }
 
 /**
+ * Affiche les options de sélection pour les bases connues et réparables par un contrôleur
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * 
+ * @return string returnText
+ * 
+ */
+function showRepairableControllerKnownLocations($pdo, $controller_id) {
+    $locations = listControllerKnownLocations($pdo, $controller_id, false, true);
+    if (empty($locations)) return NULL;
+
+    $options = '';
+    foreach ($locations as $zone) {
+        foreach ($zone['locations'] as $loc) {
+            $options .= sprintf(
+                '<option value="%d">%s (%s)</option>',
+                (int)$loc['id'],
+                $loc['name'],
+                $zone['name']
+            );
+        }
+    }
+
+    return sprintf('
+            <div class="control for-select">
+                <div class="select is-fullwidth">
+                    <select id="repairLocationSelect" name="target_location_id">
+                        <option value="">Sélectionner un lieu à réparer</option>
+                        %s
+                    </select>
+                </div>
+            </div>
+    ', $options);
+}
+
+/**
  * 
  * 
  * @param PDO $pdo

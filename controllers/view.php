@@ -206,7 +206,6 @@
                 } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
             } else echo '<span class="has-text-grey">Les attaques de lieux sont impossible sans une base d\'opération.</span>';
             echo '</p>';
-
             // Outgoing attacks this turn
             $outgoingStmt = $gameReady->prepare("
             SELECT * FROM location_attack_logs 
@@ -226,6 +225,31 @@
                     echo "<li>". $attack['attacker_result_text'] . "</li>";
                 }
                 echo "</ul></div>";
+            }
+    
+            $showRepairableControllerKnownLocations = showRepairableControllerKnownLocations($gameReady, $controllers['id']);
+            if($showRepairableControllerKnownLocations !== NULL) {
+                if(hasEnoughRessourcesToRepairLocation($gameReady, $controllers['id'])) {
+                    echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
+                        <input type="hidden" name="controller_id" value="%1$s">
+                        <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                            <div class="control">
+                                Réparer un lieu : %4$s
+                            </div>
+                            %2$s
+                            <div class="control">
+                                <input type="submit" name="repairLocation" value="Réparer" class="button is-success controller-action-btn">
+                            </div>
+                        </div>
+                        </form>',
+                        $controllers['id'],
+                        $showRepairableControllerKnownLocations,
+                        $_SESSION['FOLDER'],
+                        repairLocationCostHTML($gameReady, $controllers['id'])
+                    );
+                } else {
+                    echo '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour réparer un lieu.</div>';
+                }
             }
 
             $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id']);

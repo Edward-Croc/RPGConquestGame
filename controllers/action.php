@@ -34,9 +34,18 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['attackLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
-        if ($debug) echo sprintf('end <br/>', $attackLocationResult['success'], $attackLocationResult['message']);
+        if ($debug) echo sprintf('end %s %s<br/>', $attackLocationResult['success'], $attackLocationResult['message']);
     }
-    
+    if (isset($_GET['repairLocation'])){
+        if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
+        spendRessourcesToRepairLocation($gameReady, $controller_id);
+        $stmt = $gameReady->prepare("SELECT * FROM locations WHERE id = ?");
+        $stmt->execute([$target_location_id]);
+        $location = $stmt->fetch(PDO::FETCH_ASSOC);
+        $activate_json = json_decode($location['activate_json'], true);
+        updateLocation($gameReady, $location, $activate_json);
+        if ($debug) echo sprintf('end <br/>');
+    }
 }
 
 require_once '../base/baseHTML.php';

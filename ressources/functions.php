@@ -259,3 +259,27 @@ function spendRessourcesToRepairLocation($pdo, $controller_id) {
     }
     return true;
 }
+
+/**
+ * Get the cost HTML to repair a location
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return string
+ */
+function repairLocationCostHTML($pdo, $controller_id) {
+    $html = '';
+    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
+        $controllerRessources = getRessources($pdo, $controller_id);
+        if (!empty($controllerRessources)) {
+            $html = '<br> Coût : ';
+            foreach ($controllerRessources as $controllerRessource) {
+                if ($controllerRessource['location_repaire_cost'] > 0) {
+                    $html .= sprintf('%s %s', $controllerRessource['location_repaire_cost'], $controllerRessource['ressource_name']);
+                }
+            }
+        }
+    }
+    return $html;
+}
