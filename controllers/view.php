@@ -72,6 +72,7 @@
                 $_SESSION['FOLDER']
             );
             echo $htmlFaction;
+
             if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
                 $ressources = getRessources($gameReady, $controllers['id']);
                 if ($debug) 
@@ -135,7 +136,6 @@
                         moveBaseCostHTML($gameReady, $controllers['id'])
                     );
 
-
                 $htmlBase .= '<p>';
                 foreach ($bases as $base ){
                     $htmlBase .= sprintf('
@@ -161,30 +161,29 @@
                         moveBaseCostHTML($gameReady, $controllers['id'])
                     );
                 }
+                $htmlBase .= '</p>';
             }
             // Incoming attacks this turn
             $incomingStmt = $gameReady->prepare("
-            SELECT * FROM location_attack_logs 
-            WHERE target_controller_id = :controller_id 
-            AND turn = :turn
-            ORDER BY id DESC
+                SELECT * FROM location_attack_logs 
+                WHERE target_controller_id = :controller_id 
+                AND turn = :turn
+                ORDER BY id DESC
             ");
             $incomingStmt->execute([
-            'controller_id' => $_SESSION['controller']['id'],
-            'turn' => $mechanics['turncounter']
+                'controller_id' => $_SESSION['controller']['id'],
+                'turn' => $mechanics['turncounter']
             ]);
             $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($incomingAttacks)) {
-                echo "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
+                $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
                 foreach ($incomingAttacks as $attack) {
-                    echo sprintf( "<li> %s</li>", $attack['target_result_text']);
+                    $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
                 }
-                echo "</ul></div>";
+                $htmlBase .= "</ul></div>";
             }
-            $htmlBase .= '</p>';
             echo $htmlBase;
-            echo '<h3 class="title is-5 mt-5">Les lieux découverts:</h3>
-            <p>';
+
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             if( hasBase($gameReady, $controllers['id'])) {
                 if($showAttackableControllerKnownLocations !== NULL) {
@@ -206,17 +205,22 @@
                     );
                 } else echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
             } else echo '<span class="has-text-grey">Les attaques de lieux sont impossible sans une base d\'opération.</span>';
-            echo '</p>';
+
+            $ownedArtefacts = showOwnedArtefacts($gameReady, $controllers['id']);
+            if (!empty($ownedArtefacts)) 
+                echo sprintf('<h3 class="title is-5 mt-5">%s</h3><p>%s</p>', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
+
+        echo '<h3 class="title is-5 mt-5">Vos lieux découverts:</h3>';
             // Outgoing attacks this turn
             $outgoingStmt = $gameReady->prepare("
-            SELECT * FROM location_attack_logs 
-            WHERE attacker_id = :controller_id 
-            AND turn = :turn
-            ORDER BY id DESC
+                SELECT * FROM location_attack_logs 
+                WHERE attacker_id = :controller_id 
+                AND turn = :turn
+                ORDER BY id DESC
             ");
             $outgoingStmt->execute([
-            'controller_id' =>  $_SESSION['controller']['id'],
-            'turn' => $mechanics['turncounter']
+                'controller_id' =>  $_SESSION['controller']['id'],
+                'turn' => $mechanics['turncounter']
             ]);
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($outgoingAttacks)) {
@@ -227,7 +231,6 @@
                 }
                 echo "</ul></div>";
             }
-    
             $showRepairableControllerKnownLocations = showRepairableControllerKnownLocations($gameReady, $controllers['id']);
             if($showRepairableControllerKnownLocations !== NULL) {
                 if(hasEnoughRessourcesToRepairLocation($gameReady, $controllers['id'])) {
@@ -284,7 +287,6 @@
             }
 
             echo '<h3 class="title is-5 mt-5">Vos lieux secrets:</h3>';
-
             $controllerLinkedLocations = listControllerLinkedLocations($gameReady, $controllers['id']);
 
             if (!$controllerLinkedLocations) {

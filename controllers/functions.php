@@ -791,6 +791,31 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
     return $ckl_existing_record_id;
 }
 
+/**
+ * Show the owned artefacts of a controller
+ * 
+ * @param PDO $pdo
+ * @param int $controller_id
+ * 
+ * @return string
+ */
+function showOwnedArtefacts($pdo, $controller_id) {
+    $html = '';
+    $sql ="SELECT artefacts.name, artefacts.description, artefacts.full_description
+        FROM artefacts
+        JOIN locations ON artefacts.location_id = locations.id
+        WHERE locations.controller_id = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$controller_id]);
+    $artefacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($artefacts)) {
+        foreach ($artefacts as $artefact) {
+            $html .= sprintf('<strong>%s</strong> : %s %s</li>', $artefact['name'], $artefact['description'], $artefact['full_description']);
+        }
+    }
+    return $html;
+}
+
 /** Build HTML to give knowleadge of a worker to a controller
  * 
  * @param PDO $pdo : database connection

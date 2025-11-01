@@ -21,6 +21,8 @@ UPDATE config SET value =  'ce' WHERE name = 'timeDenominatorThis';
 UPDATE config SET value =  'le' WHERE name = 'timeDenominatorThe';
 UPDATE config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
+UPDATE config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts';
+
 INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', 0, ''),
     ('shingen', 'takeda', 0, ''),
