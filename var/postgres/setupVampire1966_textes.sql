@@ -280,7 +280,7 @@ VALUES
     "<p>Nous avons échoué à neutraliser %1$s. Iel demeure vivant.e et peut encore riposter.</p>"
 ]', 'Texts for failed attacks in inclusive language'),
 ('unfoundAttackTextes', '[
-    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a du l’atteindre avant nous.</p>"
+    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a dû l’atteindre avant nous.</p>"
 ]', 'Texts for unfound attacks in inclusive language');
 
 INSERT INTO config (name, value, description)
@@ -344,7 +344,7 @@ VALUES
 -- Aucun paramètre : simple indication de la possibilité de destruction
 ('TEXT_LOCATION_CAN_BE_DESTROYED', '[
     " Cette localisation peut être ciblée pour destruction.",
-    " Il est possible d’organiser une opération pour la neutraliser."
+    " Il est possible d’organiser une opération pour la detruire."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
 ;
 

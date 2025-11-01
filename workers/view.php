@@ -276,7 +276,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $worker['id'],
                     $controller_id,
                     $other_controllers[0]['controller_id'],
-                    'Relacher le prisonier !',
+                    'Relâcher le prisonnier !',
                     $_SESSION['FOLDER']
                 );
             }

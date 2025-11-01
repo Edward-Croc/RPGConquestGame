@@ -276,7 +276,10 @@ VALUES
     "<p>Nous avons échoué à neutraliser <strong>%1$s</strong>. Iel demeure vivant.e et peut encore riposter.</p>"
 ]', 'Texts for failed attacks in inclusive language'),
 ('unfoundAttackTextes', '[
-    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a du l’atteindre avant nous.</p>"
+    "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a dû l’atteindre avant nous.</p>",
+    "<p>Les traces sont fraîches… mais <strong>%1$s</strong> n’est plus là. Un autre groupe a dû frapper avant nous.</p>",
+    "<p>Les portes sont éventrées, le sang séché. <strong>%1$s</strong> ne se trouve plus ici — quelqu’un a déjà réclamé sa vie.</p>"
+
 ]', 'Texts for unfound attacks in inclusive language');
 
 INSERT INTO config (name, value, description)
@@ -349,8 +352,8 @@ VALUES
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
 ('TEXT_LOCATION_CAN_BE_DESTROYED', '[
-    " Nous pouvons retourner cette information contre son maître et nous y attaquer.",
-    " Il est possible d’organiser une mission pour faire disparaître ce problème."
+    " Nous pouvons retourner cette information contre son maître et nous y attaquer au lieu pour le détruire.",
+    " Il est possible d’organiser une mission pour détruire ce lieu."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
 ;
 
@@ -360,7 +363,8 @@ VALUES
 -- %1$s : nom du lieu attaqué 
 -- %2$s: identifiant du réseau attaquant
 ('TEXT_LOCATION_ATTACK_SUCCESS', '[
-    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont malheureusement franchi les portes."
+    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont malheureusement franchi les portes.",
+    "Les bannières du réseau %2$s flottent désormais sur %1$s. Nos défenseur·euse·s ont été submergé·e·s."
 ]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée')
 
 -- %1$s: nom du lieu attaqué 
