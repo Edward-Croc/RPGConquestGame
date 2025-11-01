@@ -46,6 +46,20 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         updateLocation($gameReady, $location, $activate_json);
         if ($debug) echo sprintf('end <br/>');
     }
+    if (isset($_GET['giftInformation'])){
+        //  Get Turn Number
+        $mechanics = getMechanics($gameReady);
+        $controller_id = $_GET['controller_id'];
+        $target_controller_id = $_GET['target_controller_id'];
+        $enemy_worker_id = $_GET['enemy_worker_id'];
+
+        // Get zone from controllers_known_enemies where controller_id = $controller_id and discovered_worker_id = $enemyWorkersSelect
+        $sql = "SELECT zone_id FROM controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+        $stmt = $gameReady->prepare($sql);
+        $stmt->execute([$controller_id, $enemy_worker_id]);
+        $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
+        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+    }
 }
 
 require_once '../base/baseHTML.php';

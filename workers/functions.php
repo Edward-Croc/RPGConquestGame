@@ -1160,14 +1160,14 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
  * 
  * @param PDO $pdo : database connection
  * @param int $zone_id
- * @param int $controller_id
+ * @param int|null $controller_id
  * 
  * @return array (
  *   -'workers_without_controller'
  *   -'workers_with_controller'
  * 
  */
-function getEnemyWorkers($pdo, $zone_id, $controller_id) {
+function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
     // Select from controllers_known_enemies by $zone_id, $controller_id
         // return table of :
         // A worker discovered_worker_id with no discovered_controller_id
@@ -1179,7 +1179,7 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
     }
     try {
         // Query for workers with no discovered_controller_id (A)
-        $sqlA = "
+        $sqlA = sprintf("
             SELECT
                 cke.id,
                 cke.discovered_worker_id,
@@ -1192,19 +1192,19 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
                 workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
-                AND cke.controller_id = :controller_id
+                %s
                 AND cke.discovered_controller_id IS NULL
             ORDER BY last_discovery_turn DESC
-        ";
+        ", (!empty($controller_id)) ? "AND cke.controller_id = :controller_id" : ""
+        );
         $stmtA = $pdo->prepare($sqlA);
-        $stmtA->execute([
-            ':zone_id' => $zone_id,
-            ':controller_id' => $controller_id
-        ]);
+        if (!empty($controller_id)) $stmtA->bindParam(':controller_id', $controller_id);
+        $stmtA->bindParam(':zone_id', $zone_id);
+        $stmtA->execute();
         $workersWithoutController = $stmtA->fetchAll(PDO::FETCH_ASSOC);
 
         // Query for workers with identical discovered_controller_id (B)
-        $sqlB = "
+        $sqlB = sprintf("
             SELECT
                 cke.id,
                 cke.discovered_worker_id,
@@ -1219,15 +1219,15 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id) {
                 workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
-                AND cke.controller_id = :controller_id
+                %s
                 AND cke.discovered_controller_id IS NOT NULL
             ORDER BY discovered_controller_name ASC, discovered_controller_id ASC, last_discovery_turn DESC
-        ";
+        ", (!empty($controller_id)) ? "AND cke.controller_id = :controller_id" : ""
+        );
         $stmtB = $pdo->prepare($sqlB);
-        $stmtB->execute([
-            ':zone_id' => $zone_id,
-            ':controller_id' => $controller_id
-        ]);
+        if (!empty($controller_id)) $stmtB->bindParam(':controller_id', $controller_id);
+        $stmtB->bindParam(':zone_id', $zone_id);
+        $stmtB->execute();
         $workersWithController = $stmtB->fetchAll(PDO::FETCH_ASSOC);
 
         // Return the combined result
@@ -1281,7 +1281,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
         foreach ( $enemyWorkersArray['workers_without_controller'] as $enemyWorker) {
             if (!isset($enemyWorker['last_discovery_turn'])) continue;
             if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow))
-                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
+                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
         }
     }
     if (!empty($enemyWorkersArray['workers_with_controller'])) {
@@ -1299,7 +1299,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
                         $enemyWorker['discovered_controller_name'],
                     );
                 }
-                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s (%1$s) </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
+                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
             }
         }
     }

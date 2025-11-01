@@ -331,9 +331,10 @@
                 echo $htmlLinkedLocations ;
             }
 
-            echo '
-            </form>
-            </div>';
+            echo '</form>';
+            echo buildGiveKnowledgeHTML($gameReady, 'controller', $controllers['id']);
+            echo '</div>';
+            
     }
     echo '</div>';
 

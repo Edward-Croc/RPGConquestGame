@@ -8,6 +8,7 @@
  * @param PDO $pdo : database connection
  * @param int|null $player_id
  * @param int|null $controller_id
+ * @param bool $hide_secret_controllers default: true
  * 
  * @return array|null 
  * 
@@ -726,4 +727,76 @@ function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, 
         $cke_existing_record_id = $pdo->lastInsertId();
     }
     return $cke_existing_record_id;
+}
+
+/** Build HTML to give knowleadge of a worker to a controller
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $controller_id
+ * @param int $turn_number
+ * 
+ * @return string
+ */
+function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = NULL) {
+    $html = '';
+
+    $returnLink = '/controllers/action.php';
+    if ($origin == 'admin') 
+        $returnLink = '/controllers/management.php';
+
+    
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
+
+    $zones = getZonesArray($pdo);
+    $enemyWorkerOptions = '';
+    // For each zone
+    foreach ($zones as $zone) {
+        $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
+        foreach ( $zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
+            $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+        }
+        foreach ( $zoneEnemyWorkers['workers_with_controller'] as $enemyWorker) {
+            $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name'], $zone['name']);
+        }
+    }
+    $enemyWorkersSelect = sprintf("
+        <div class='control for-select'>
+            <div class='select is-fullwidth'>
+                <select id='enemyWorkersSelect' name='enemy_worker_id' >
+                    <option value=\"\">Sélectionner un agent</option>
+                    %s
+                </select>
+            </div>
+        </div>
+        ",
+        $enemyWorkerOptions
+    );
+
+    $controllers = getControllers($pdo);
+    $html = sprintf('
+            <h3 class="title is-5 mt-5">Donner des informations:</h3>
+                <form action="/%s/%s" method="GET" class="box mb-5">
+                    <input type="hidden" name="controller_id" value="%s">
+                    <div class="field">
+                        Sélectionner un contrôleur : %s
+                    </div>
+                    <div class="field">
+                        Sélectionner un agent connu: 
+                        %s
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <input type="submit" name="giftInformation" value="Donner l\'information" class="button is-link">
+                        </div>
+                    </div>
+                </form>', 
+                $_SESSION['FOLDER'],
+                $returnLink,
+                $controller_id,
+                showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
+                $enemyWorkersSelect
+            );
+
+    return $html;
 }
