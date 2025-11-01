@@ -29,8 +29,14 @@ function getPowerTypesDescription($pdo, $name){
  * @return string
  */
 function getSQLPowerText($short = true) {
-    if (!$short) return "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', IFNULL(p.description,'')) AS power_text";
-    return "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+    $sql = "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
+    if (!$short) {
+        $sql = "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', p.description) AS power_text";
+        if ($_SESSION['DBTYPE'] == 'mysql')
+            $sql = "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', IFNULL(p.description,'')) AS power_text";
+    }
+    
+    return $sql;
 }
 
 /**
@@ -57,11 +63,11 @@ function getPowersByWorkers($pdo, $worker_id_str) {
     ORDER BY w.id ASC
     ";
     try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
     } catch (PDOException $e) {
-    echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-    return NULL;
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return array();
     }
     // Fetch the results
     $workers_powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
