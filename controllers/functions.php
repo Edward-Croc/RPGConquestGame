@@ -436,9 +436,9 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
     if ($debug) echo sprintf("%s() attackLocationDiff : %s <br>",__FUNCTION__, var_export($attackLocationDiff, true));
-    $controllerAttack = calculatecontrollerAttack($pdo, $controller_id, $zone_id);
+    $controllerAttack = calculatecontrollerAttack($pdo, $zone_id, $controller_id);
     if ($debug) echo sprintf("%s() controllerAttack : %s <br>",__FUNCTION__, var_export($controllerAttack, true));
-    $locationDefence = calculateSecretLocationDefence($pdo, $location[0]['controller_id'], $zone_id, $target_location_id);
+    $locationDefence = calculateSecretLocationDefence($pdo, $zone_id, $target_location_id, $location[0]['controller_id']);
     if ($debug) echo sprintf("%s() locationDefence : %s <br>",__FUNCTION__, var_export($locationDefence, true));
 
     // Check result

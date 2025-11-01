@@ -214,10 +214,10 @@ function recalculateBaseDefence($pdo) {
 function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
     # $debug = $_SESSION['DEBUG'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
-   ## $debug = true;
+    # $debug = true;
     $value = 0;
 
-    if ($debug) echo sprintf("calculateControllerValue : %s, %s, %s, %s<br>", $type, $zone_id, $controller_id, $location_id);
+    if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
 
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
@@ -280,7 +280,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
         if ($workerMultiplier !== 0) {
             $sql = "
-                SELECT COUNT(*) AS worker_count
+                SELECT COUNT(w.id) AS worker_count
                 FROM workers w
                 JOIN controller_worker cw ON cw.worker_id = w.id
                 WHERE cw.controller_id = :controller_id
@@ -288,11 +288,14 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 AND w.is_active = True
             ";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':controller_id' => $controller_id,
-                ':zone_id' => $zone_id
-            ]);
-            $worker_count = (int)($stmt->fetch(PDO::FETCH_ASSOC)['worker_count'] ?? 0);
+            $stmt->bindParam(':controller_id', $controller_id);
+            $stmt->bindParam(':zone_id', $zone_id);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($debug) echo sprintf( "result: %s<br>", var_export($result, true));
+            $worker_count = $result['worker_count'];
+            if ($debug) echo sprintf( "worker_count: %s<br>", $worker_count);
+
             $bonus = ceil($worker_count * $workerMultiplier);
             if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
             $value += $bonus;
