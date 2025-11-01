@@ -729,6 +729,68 @@ function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, 
     return $cke_existing_record_id;
 }
 
+/**
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $location_id
+ * @param int $turn_number
+ *
+ * @return int $ckl_existing_record_id
+ * 
+ */
+function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
+    $ckl_existing_record_id = NULL;
+
+    // Search for the existing controller-Worker combo
+    $sql = "SELECT id FROM controller_known_locations
+        WHERE controller_id = :controller_id
+            AND location_id = :location_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':controller_id' => $controller_id,
+        ':location_id' => $location_id
+    ]);
+    $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+
+    if (!empty($existingRecord)) {
+        $ckl_existing_record_id = $existingRecord['id'];
+        // Update if record exists
+        $sql = sprintf("UPDATE controller_known_locations
+            SET last_discovery_turn = :turn_number
+            %s
+            WHERE id = :id",
+            $found_secret ? ", found_secret = :found_secret" : ""
+        );
+        $stmt = $pdo->prepare($sql);
+        if ($found_secret) {
+            $stmt->bindParam(':found_secret', $found_secret, PDO::PARAM_BOOL);
+        }
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        // Insert if record doesn't exist
+        $sqlInsert = "INSERT INTO controller_known_locations (
+            controller_id, location_id, found_secret, first_discovery_turn, last_discovery_turn
+        ) VALUES (
+            :cid, :lid, :found_secret, :first_discovery_turn, :last_discovery_turn
+        )";
+        $insertStmt = $pdo->prepare($sqlInsert);
+        $insertStmt->bindParam(':cid', $controller_id, PDO::PARAM_INT);
+        $insertStmt->bindParam(':lid', $location_id, PDO::PARAM_INT);
+        $insertStmt->bindParam(':found_secret', $found_secret, PDO::PARAM_BOOL);
+        $insertStmt->bindParam(':first_discovery_turn', $turn_number, PDO::PARAM_INT);
+        $insertStmt->bindParam(':last_discovery_turn', $turn_number, PDO::PARAM_INT);
+        $insertStmt->execute();
+        $ckl_existing_record_id = $pdo->lastInsertId();
+    }
+    return $ckl_existing_record_id;
+}
+
 /** Build HTML to give knowleadge of a worker to a controller
  * 
  * @param PDO $pdo : database connection
@@ -757,7 +819,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
 
     $enemyWorkerOptions = '';
     // For each zone
-    if ($origin != 'admin') { 
+    if ($origin != 'admin') {
         foreach ($zones as $zone) {
             $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
             foreach ( $zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
@@ -792,11 +854,11 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
 
     $controllers = getControllers($pdo, null, null, ($origin != 'admin'));
     $html = sprintf('
-            <h3 class="title is-5 mt-5">Donner des informations:</h3>
+            <h3 class="title is-5 mt-5">Donner des informations sur les agents connus:</h3>
                 <form action="/%s/%s" method="GET" class="box mb-5">
                     %s
                     <div class="field">
-                        Sélectionner un contrôleur : %s
+                        Sélectionner une faction à informer : %s
                     </div>
                     <div class="field">
                         Sélectionner un agent connu: 
@@ -804,7 +866,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
                     </div>
                     <div class="field">
                         <div class="control">
-                            <input type="submit" name="giftInformation" value="Donner l\'information" class="button is-link">
+                            <input type="submit" name="giftInformationAgent" value="Donner l\'information" class="button is-link">
                         </div>
                     </div>
                 </form>', 
@@ -815,5 +877,63 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
                 $enemyWorkersSelect
             );
 
+
+    //$knownLocationsSelect = showKnownLocationsSelect($pdo, $controller_id);
+    $knownLocationsOptions = '';
+    if ($origin == 'admin') {
+        $locations = getLocationsArray($pdo);
+        foreach ($locations as $location) {
+            $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $location['zone_name']);
+        }
+    } else {
+        $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id);
+        $controllerLinkedLocations = listControllerLinkedLocations($pdo, $controller_id);
+        foreach ($zones as $zone) {
+            if (isset($controllerKnownLocations[$zone['id']])) {
+                foreach ($controllerKnownLocations[$zone['id']]['locations'] as $location) {
+                    $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $zone['name']);
+                }
+            }
+            if (isset($controllerLinkedLocations[$zone['id']])) {
+                foreach ($controllerLinkedLocations[$zone['id']]['locations'] as $location) {
+                    $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $zone['name']);
+                }
+            }
+        }
+    }
+    $knownLocationsSelect = sprintf("
+        <div class='control for-select'>
+            <div class='select is-fullwidth'>
+                <select id='locationsSelect' name='location_id' >
+                    <option value=\"\">Sélectionner un lieu</option>
+                    %s
+                </select>
+            </div>
+        </div>
+        ",
+        $knownLocationsOptions
+    );
+        
+    $html .= sprintf('
+        <h3 class="title is-5 mt-5">Donner des informations sur les lieux connus:</h3>
+        <form action="/%s/%s" method="GET" class="box mb-5">
+            <div class="field">
+                Sélectionner une faction à informer : %s
+            </div>
+            <div class="field">
+                Sélectionner un lieu connu: 
+                %s
+            </div>
+            <div class="field">
+                <div class="control">
+                    <input type="submit" name="giftInformationLocation" value="Donner l\'information" class="button is-link">
+                </div>
+            </div>
+        </form>', 
+        $_SESSION['FOLDER'],
+        $returnLink,
+        showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
+        $knownLocationsSelect
+    );
     return $html;
 }

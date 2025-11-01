@@ -133,7 +133,10 @@ function getLocationsArray($pdo) {
     $locationsArray = array();
 
     try{
-        $sql = "SELECT * FROM locations AS z";
+        $sql = "SELECT l.id AS id, z.id AS zone_id, z.name AS zone_name, l.*
+            FROM locations AS l
+            JOIN zones AS z ON l.zone_id = z.id
+            ORDER BY z.id, l.id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {

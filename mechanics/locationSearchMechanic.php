@@ -157,6 +157,8 @@ function locationSearchMechanic($pdo, $mechanics) {
                         $found_secret = true;
                     }
                 }
+                addLocationToCKL($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $found_secret);
+
                 if ((INT)$row['found_can_be_destroyed'] == 1) {
                     $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
                 }
@@ -182,37 +184,6 @@ function locationSearchMechanic($pdo, $mechanics) {
                         }
                         $reportElement .= "</ul>";
                     }
-                }
-
-                $checkStmt = $pdo->prepare("SELECT id, found_secret FROM controller_known_locations WHERE controller_id = :cid AND location_id = :lid");
-                $checkStmt->execute([
-                    ':cid' => $row['searcher_controller_id'],
-                    ':lid' => $row['found_id']
-                ]);
-                if ($known = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
-                    $sql = "UPDATE controller_known_locations SET last_discovery_turn = :turn WHERE id = :id";
-                    if ( (int)$known['found_secret'] == 0 && $found_secret == true) 
-                        $sql = "UPDATE controller_known_locations SET found_secret = :found_secret, last_discovery_turn = :turn WHERE id = :id";
-            
-                    $updateStmt = $pdo->prepare($sql);
-                    if ( (int)$known['found_secret'] == 0 && $found_secret == true)
-                        $updateStmt->bindParam(':found_secret', $found_secret);
-                    $updateStmt->bindParam(':turn', $turn_number);
-                    $updateStmt->bindParam(':id', $known['id']);
-                    $updateStmt->execute();
-                } else {
-                    $sqlInsert = "INSERT INTO controller_known_locations (
-                        controller_id, location_id, found_secret, first_discovery_turn, last_discovery_turn
-                    ) VALUES (
-                        :cid, :lid, :found_secret, :first_discovery_turn, :last_discovery_turn
-                    )";
-                    $insertStmt = $pdo->prepare($sqlInsert);
-                    $insertStmt->bindParam(':cid', $row['searcher_controller_id'], PDO::PARAM_INT);
-                    $insertStmt->bindParam(':lid', $row['found_id'], PDO::PARAM_INT);
-                    $insertStmt->bindParam(':found_secret', $found_secret, PDO::PARAM_BOOL);
-                    $insertStmt->bindParam(':first_discovery_turn', $turn_number, PDO::PARAM_INT);
-                    $insertStmt->bindParam(':last_discovery_turn', $turn_number, PDO::PARAM_INT);
-                    $insertStmt->execute();
                 }
 
             }

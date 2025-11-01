@@ -46,7 +46,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         updateLocation($gameReady, $location, $activate_json);
         if ($debug) echo sprintf('end <br/>');
     }
-    if (isset($_GET['giftInformation'])){
+    if (isset($_GET['giftInformationAgent'])){
         //  Get Turn Number
         $mechanics = getMechanics($gameReady);
         $controller_id = $_GET['controller_id'];
@@ -59,6 +59,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt->execute([$controller_id, $enemy_worker_id]);
         $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+    }
+    if (isset($_GET['giftInformationLocation'])){
+        // Get Turn Number
+        $mechanics = getMechanics($gameReady);
+        $target_controller_id = $_GET['target_controller_id'];
+        $location_id = $_GET['location_id'];
+        addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
     }
 }
 

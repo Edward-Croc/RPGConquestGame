@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-    if (isset($_GET['giftInformation'])){
+    if (isset($_GET['giftInformationAgent'])){
         //  Get Turn Number
         $mechanics = getMechanics($gameReady);
         $zone_id = $_GET['zone_id'];
@@ -80,6 +80,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $enemy_worker_id = $_GET['enemy_worker_id'];
 
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+    }
+    if (isset($_GET['giftInformationLocation'])){
+        //  Get Turn Number
+        $mechanics = getMechanics($gameReady);
+        $target_controller_id = $_GET['target_controller_id'];
+        $location_id = $_GET['location_id'];
+        addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
     }
 }
 
