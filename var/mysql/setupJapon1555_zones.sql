@@ -128,7 +128,7 @@ Il nous faut gagner leur confiance, et enquêter sur leur identité et leurs int
 Nous avons pu nous infiltrer parmi leurs rangs de fanatiques et découvrir que les forces Jōdo-Shinshū sous la bannière des Ikko-ikki ont bien affronté les troupes Chōsokabe (長宗我部) aux côtés des Takeda (武田) lors de la bataille des plaines de Kyōto au printemps 1555.
 Ayant gagné leur confiance, nous avons pu accéder aux archives locales de l’arbre familial de Rennyo (蓮如), huitième abbé du mouvement.
 Son fils adoptif Ren-jō (連城) n’est autre que Harumoto (晴元) Hosokawa (細川), un allié des Takeda et un ennemi du Shogun, exilé il y a 5 ans après sa défaite et désormais devenu moine.
-(Vous pouvez demander à l’orga la carte 1 et 2 de la bataille)'
+(Vous pouvez demander à l’orga la carte 1 et 2 de la bataille)',
         7, 0,
         (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
         (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
@@ -148,39 +148,29 @@ INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone
         '{ "update_location": {
             "name": "Ruines de l’Ishizuchi-jinja (石鎚神社)", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Au pied du mont sacré Ishizuchi, il ne reste du temple qu’un champ de cendres et des colonnes calcinées dressées comme des spectres.
-Les archives ont été déchirées ou emportées, les statues brisées à coups de marteau ; seule l’odeur persistante du bois brûlé rappelle qu’ici priaient jadis les disciples de Kūkai et de Shinnen.",
+            "description": "Au pied du mont sacré Ishizuchi, il ne reste du temple qu’un champ de cendres et des colonnes calcinées dressées comme des spectres. Les archives ont été déchirées ou emportées, les statues brisées à coups de marteau ; seule l’odeur persistante du bois brûlé rappelle qu’ici priaient jadis les disciples de Kūkai et de Shinnen.",
             "future_location": {
                 "name": "Ishizuchi-jinja (石鎚神社), le 64ᵉ temple du pèlerinage", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Au pied du mont Ishizuchi, le temple renaît de ses cendres, ses toits vernis reflétant la lumière du matin comme des éclats de jade.
-Les cloches résonnent à nouveau dans la vallée, et les fidèles reprennent le pèlerinage sur les sentiers rajeunis, tandis que les statues soigneusement réparées semblent veiller sur chaque pas des visiteurs, rappelant la sagesse de Kūkai et les espoirs de Yūbien Shinnen.
-Les moines reconstituent les archives de mémoire, comme le nom du jeune homme venu se faire moine qui se nommait Michinao (通直) Kōno (河野)."
+                "description": "Au pied du mont Ishizuchi, le temple renaît de ses cendres, ses toits vernis reflétant la lumière du matin comme des éclats de jade. Les cloches résonnent à nouveau dans la vallée, et les fidèles reprennent le pèlerinage sur les sentiers rajeunis, tandis que les statues soigneusement réparées semblent veiller sur chaque pas des visiteurs, rappelant la sagesse de Kūkai et les espoirs de Yūbien Shinnen. Les moines reconstituent les archives de mémoire, comme le nom du jeune homme venu se faire moine qui se nommait Michinao (通直) Kōno (河野)."
             }
         }}'
     ),
     -- Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto
     (
         'Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto', 
-        'Ce sanctuaire, situé sur l’île d’Ōmishima dans la mer intérieure de Seto, au nord de Saijō, fait partie des vingt temples mineurs du pèlerinage de Shikoku.
-C’est le sanctuaire ancestral du clan Kōno (河野), descendants d’Iyo-Shinnō, fils de l’empereur Kanmu (781–806), qui fonda la province d’Iyo sur l’île de Shikoku.
-Le sanctuaire est dédié aux dieux qui protègent les marins et les soldats. Pour cette raison, de nombreux Daimyōs viennent y faire des offrandes dans l’espoir de succès, ou en remerciement de leurs victoires.
-Les derniers membres du clan Kōno (河野) s’y retrouvent parfois pour parler, à voix basse et triste, de leur héritage disparu et de leurs terres confisquées.
-(Pour explorer davantage ce lieu, allez voir un orga !)',
+        'Ce sanctuaire, situé sur l’île d’Ōmishima dans la mer intérieure de Seto, au nord de Saijō, fait partie des vingt temples mineurs du pèlerinage de Shikoku. C’est le sanctuaire ancestral du clan Kōno (河野), descendants d’Iyo-Shinnō, fils de l’empereur Kanmu (781–806), qui fonda la province d’Iyo sur l’île de Shikoku. Le sanctuaire est dédié aux dieux qui protègent les marins et les soldats. Pour cette raison, de nombreux Daimyōs viennent y faire des offrandes dans l’espoir de succès, ou en remerciement de leurs victoires. Les derniers membres du clan Kōno (河野) s’y retrouvent parfois pour parler, à voix basse et triste, de leur héritage disparu et de leurs terres confisquées. (Pour explorer davantage ce lieu, allez voir un orga !)',
         7, 0,
         (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'),
         (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)'),
         '{ "update_location": {
             "name": "Ruines de l’Ōyamazumi-jinja (大山祇神社)", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Sur l’île d’Ōmishima, le sanctuaire d’Oyamazumi-Jinja gît en ruines, ses toits effondrés et ses portes brisées laissant entrer le vent salé de la mer intérieure de Seto.
-Les statues des dieux protecteurs sont éclatées, les offrandes piétinées, et le silence des lieux ne porte plus que le souvenir des Kōno et de leur héritage perdu.",
+            "description": "Sur l’île d’Ōmishima, le sanctuaire d’Oyamazumi-Jinja gît en ruines, ses toits effondrés et ses portes brisées laissant entrer le vent salé de la mer intérieure de Seto. Les statues des dieux protecteurs sont éclatées, les offrandes piétinées, et le silence des lieux ne porte plus que le souvenir des Kōno et de leur héritage perdu.",
             "future_location": {
                 "name": "Temple de Ōyamazumi-jinja (大山祇神社) -- sanctuaire shinto", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Sur l’île d’Ōmishima, l’Oyamazumi-Jinja s’élève à nouveau dans une splendeur éclatante : toits laqués, bois sculpté et dorures étincelantes célèbrent la puissance des dieux protecteurs des marins et des guerriers.
-Une plaque commémorative montrant le Mōn des Kōno rappelle que leur mémoire n’a pas été effacée par les horreurs commises ici, et les statues ancestrales veillent de nouveau sur les lieux. Les membres du clan viennent y murmurer leurs prières, comme pour renouer avec l’héritage de leurs ancêtres.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Sur l’île d’Ōmishima, l’Oyamazumi-Jinja s’élève à nouveau dans une splendeur éclatante : toits laqués, bois sculpté et dorures étincelantes célèbrent la puissance des dieux protecteurs des marins et des guerriers. Une plaque commémorative montrant le Mōn des Kōno rappelle que leur mémoire n’a pas été effacée par les horreurs commises ici, et les statues ancestrales veillent de nouveau sur les lieux. Les membres du clan viennent y murmurer leurs prières, comme pour renouer avec l’héritage de leurs ancêtres. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
@@ -212,8 +202,7 @@ Le silence n’y est troublé que par les pas des geôliers — ou les rires des
         '{"update_location": {
             "name": "Prison en ruines", "discovery_diff": 6,
             "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Creusées dans la falaise, les anciennes geôles des Wako ne sont plus qu’un amoncellement de pierres effondrées et de poutres brisées.
-Les chaînes tordues et rouillées pendent désormais au-dessus de flaques d’eau croupie, et le vent hurle à travers les fissures, emportant les échos des rires cruels qui autrefois glaçaient le sang des captifs.",
+            "description": "Creusées dans la falaise, les anciennes geôles des Wako ne sont plus qu’un amoncellement de pierres effondrées et de poutres brisées. Les chaînes tordues et rouillées pendent désormais au-dessus de flaques d’eau croupie, et le vent hurle à travers les fissures, emportant les échos des rires cruels qui autrefois glaçaient le sang des captifs.",
             "future_location": {
                 "name": "Geôles des Kaizokushū", "discovery_diff": 8,
             "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
@@ -233,13 +222,11 @@ On y trouve des armes et des provisions, tout le nécessaire pour qu’un membre
         '{"update_location": {
             "name": "Ruines d’un pavillon de chasse", "discovery_diff": 6,
             "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe gît en ruines.
-Les murs sont éventrés, les provisions brûlées ou pillées, et les armes jonchent le sol noirci par le feu. Les traces de lutte et de chaos témoignent d’une intrusion violente, laissant derrière elle un lieu autrefois sûr devenu un souvenir menaçant et silencieux.",
+            "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe gît en ruines. Les murs sont éventrés, les provisions brûlées ou pillées, et les armes jonchent le sol noirci par le feu. Les traces de lutte et de chaos témoignent d’une intrusion violente, laissant derrière elle un lieu autrefois sûr devenu un souvenir menaçant et silencieux.",
             "future_location": {
                 "name": "Pavillon de chasse des Chōsokabe", "discovery_diff": 8,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe a été reconstruit avec soin et élégance.
-Les murs de bois tiédissent au soleil, les provisions et les armes sont à nouveau rangées avec ordre. La retraite offre un refuge paisible, mêlant confort discret et préparation guerrière, fidèle à l’esprit vigilant du clan."
+                "description": "Perché sur les flancs escarpés du cap sud de Tosa, le pavillon de chasse des Chōsokabe a été reconstruit avec soin et élégance. Les murs de bois tiédissent au soleil, les provisions et les armes sont à nouveau rangées avec ordre. La retraite offre un refuge paisible, mêlant confort discret et préparation guerrière, fidèle à l’esprit vigilant du clan."
             }
         }}'
     )
@@ -257,10 +244,7 @@ Ce lieu sert également de relais discret pour faire entrer armes, livres et mes
             "name": "Ruines d’un Sanctuaire chrétien clandestin", 
             "discovery_diff": 5, "save_to_json": "TRUE",
             "can_be_destroyed": 0, "can_be_repaired": 0,
-            "description": "Les ruelles du port de Tokushima portent encore l’odeur âcre du feu. Là où se tenait la maison aux volets tirés, il ne reste qu’un amas de cendres et de poutres tordues.
-Les symboles du Christ ont été brisés, mêlés à la suie et au sel.
-Certains murmurent qu’on a vu des silhouettes en armure quitter les lieux avant l’aube, d’autres jurent avoir entendu des prières étouffées sous les cris.
-Le sanctuaire clandestin de Luís Fróis n’est plus — seulement un tas de décombres où même les mouettes se taisent."
+            "description": "Les ruelles du port de Tokushima portent encore l’odeur âcre du feu. Là où se tenait la maison aux volets tirés, il ne reste qu’un amas de cendres et de poutres tordues. Les symboles du Christ ont été brisés, mêlés à la suie et au sel. Certains murmurent qu’on a vu des silhouettes en armure quitter les lieux avant l’aube, d’autres jurent avoir entendu des prières étouffées sous les cris. Le sanctuaire clandestin de Luís Fróis n’est plus — seulement un tas de décombres où même les mouettes se taisent."
         }}'
     )
 ;
@@ -277,19 +261,15 @@ Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec 
         '{ "update_location": {
             "name": "Ruines des colines de Kubokawa", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Accroché aux flancs ravinés de la côte de Tosa, le sanctuaire n’est plus qu’un amas de poutres brisées et de pierres éclatées.
-Les forges de la vallée battent encore, mais ici ne règnent plus que la suie, l’odeur de poudre et le silence d’un lieu profané.",
+            "description": "Accroché aux flancs ravinés de la côte de Tosa, le sanctuaire n’est plus qu’un amas de poutres brisées et de pierres éclatées. Les forges de la vallée battent encore, mais ici ne règnent plus que la suie, l’odeur de poudre et le silence d’un lieu profané.",
             "future_location": {
                 "name": "Temple des colines de Kubokawa", "discovery_diff": 8,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Tel une araignée, un sanctuaire rénové est accroché aux flancs d’un ravin de la côte de Tosa. Les poutres, qui ont été coupées dans des arbres centenaires, suintent de sève, et la roche de la falaise a été retaillée bien net. Les forges résonnent joyeusement dans la vallée.
-La nuit, une légère odeur de poudre se fait sentir et on peut entendre des cliquetis secs, accompagnés des étincelles du silex sur le métal.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Tel une araignée, un sanctuaire rénové est accroché aux flancs d’un ravin de la côte de Tosa. Les poutres, qui ont été coupées dans des arbres centenaires, suintent de sève, et la roche de la falaise a été retaillée bien net. Les forges résonnent joyeusement dans la vallée. La nuit, une légère odeur de poudre se fait sentir et on peut entendre des cliquetis secs, accompagnés des étincelles du silex sur le métal. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}')
     -- Vent - Tessen
     , ('Vieux temple de la falaise d’Esaki', 8, 1, (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),  (SELECT ID FROM controllers WHERE lastname = 'Shikoku (四国)'),
-        -- Réécriture de la description démentire la présence du prisonier Chōsokabe
         'Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, fragile et silencieux.
 La porte ne ferme plus, et le papier des lanternes s’effiloche. Pourtant, nul grain de poussière ne s’y pose.
 Lorsque l’on entre, l’air se fait soudain glacé, et un bruissement court dans les chevrons — comme si un éventail invisible fendait l’air avec colère.
@@ -297,16 +277,11 @@ Lorsque l’on entre, l’air se fait soudain glacé, et un bruissement court da
         '{ "update_location": {
             "name": "Ruines de la falaise d’Esaki", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Perché au sommet de la falaise d’Awaji, il ne reste plus du pavillon qu’une carcasse calcinée.
-Les piliers noircis s’élèvent comme des doigts tordus, griffant le ciel, et les tuiles éclatées jonchent le sol en éclats tranchants.
-Les lanternes sont réduites à des carcasses de bois carbonisé, et l’autel, brisé à coups de hache, suinte encore d’une odeur de cendre froide.
-Un silence lourd règne, brisé parfois par le vent qui gémit à travers les poutres fendues — comme un sanglot étouffé du sanctuaire profané.",
+            "description": "Perché au sommet de la falaise d’Awaji, il ne reste plus du pavillon qu’une carcasse calcinée. Les piliers noircis s’élèvent comme des doigts tordus, griffant le ciel, et les tuiles éclatées jonchent le sol en éclats tranchants. Les lanternes sont réduites à des carcasses de bois carbonisé, et l’autel, brisé à coups de hache, suinte encore d’une odeur de cendre froide. Un silence lourd règne, brisé parfois par le vent qui gémit à travers les poutres fendues — comme un sanglot étouffé du sanctuaire profané.",
             "future_location": {
                 "name": "Temple de la falaise d’Esaki", "discovery_diff": 8,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, des planches fraîches de cèdre sentent encore la sève.
-Ce lieu est neuf, reconstruit il y a peu par une bonne âme après une destruction insensée. Les fondations de vieilles pierres portent les cicatrices d’un feu ayant même fendu la roche par endroits. Un bruissement léger se fait entendre de temps en temps, presque comme si un éventail invisible s’agitait insouciamment.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Perché au sommet d’une falaise d’Awaji, un petit pavillon de bois battu par les vents se dresse, des planches fraîches de cèdre sentent encore la sève. Ce lieu est neuf, reconstruit il y a peu par une bonne âme après une destruction insensée. Les fondations de vieilles pierres portent les cicatrices d’un feu ayant même fendu la roche par endroits. Un bruissement léger se fait entendre de temps en temps, presque comme si un éventail invisible s’agitait insouciamment. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
 )
@@ -319,14 +294,11 @@ Pourtant nul prêtre et nul pèlerin en vue.
         '{ "update_location": {
             "name": "Ruines du vallon de Tengu-Iwa", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Dans le vallon brumeux, il ne reste du temple que des poutres éclatées et des tuiles fendues, mêlées aux cendres froides.
-Le parfum de saké s’est mué en odeur de fumée âcre, et une vibration sourde et gênante semble provenir de la roche.",
+            "description": "Dans le vallon brumeux, il ne reste du temple que des poutres éclatées et des tuiles fendues, mêlées aux cendres froides. Le parfum de saké s’est mué en odeur de fumée âcre, et une vibration sourde et gênante semble provenir de la roche.",
             "future_location": {
                 "name": "Temple du vallon de Tengu-Iwa", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Sous les brumes de Shōdoshima, le temple du vallon de Tengu-Iwa renaît, patiemment reconstruit sur ses ruines. Les poutres neuves exhalent encore l’odeur du bois frais, et le biwa résonne à nouveau au crépuscule, plus clair, plus mélancolique qu’autrefois.
-Certains pèlerins affirment pourtant que lorsque le vent tombe, on entend sous les chants une note étrangère — comme un écho venu des cendres anciennes.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Sous les brumes de Shōdoshima, le temple du vallon de Tengu-Iwa renaît, patiemment reconstruit sur ses ruines. Les poutres neuves exhalent encore l’odeur du bois frais, et le biwa résonne à nouveau au crépuscule, plus clair, plus mélancolique qu’autrefois. Certains pèlerins affirment pourtant que lorsque le vent tombe, on entend sous les chants une note étrangère — comme un écho venu des cendres anciennes. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
@@ -339,14 +311,11 @@ Parfois, on y entend cliqueter une chaîne sur la pierre nue, comme si une arme 
         '{ "update_location": {
             "name": "Ruines au sommet du Mont Ishizuchi", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Taillé dans la roche, le temple d’Ishizuchi a été souillé par ceux qui n’ont pu détruire les pierres robustes. Des graffitis ont été tracés au charbon, les autels renversés, et la porte d’entrée sortie de ses gonds gît dans le précipice. Le reste est rongé par les intempéries.
-Les chaînes qui pendaient jadis à son flanc gisent brisées, et quand le vent s’y engouffre, on croirait entendre le râle d’un guerrier mort oublié dans la montagne.",
+            "description": "Taillé dans la roche, le temple d’Ishizuchi a été souillé par ceux qui n’ont pu détruire les pierres robustes. Des graffitis ont été tracés au charbon, les autels renversés, et la porte d’entrée sortie de ses gonds gît dans le précipice. Le reste est rongé par les intempéries. Les chaînes qui pendaient jadis à son flanc gisent brisées, et quand le vent s’y engouffre, on croirait entendre le râle d’un guerrier mort oublié dans la montagne.",
             "future_location": {
                 "name": "Temple au sommet du Mont Ishizuchi", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Creusé à même la roche, le temple d’Ishizuchi a été nettoyé, la pierre retaillée pour effacer les traces de la profanation et la peinture fraîche remplace l’odeur de brûlé qui hantait les lieux.
-Des chaînes robustes pendent sur le flanc de montagne mais aucun vent ne semble les faire bouger. Pourtant, on peut parfois les entendre cliqueter sur la pierre nue. Pas un oiseau n’ose s’y nicher.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Creusé à même la roche, le temple d’Ishizuchi a été nettoyé, la pierre retaillée pour effacer les traces de la profanation et la peinture fraîche remplace l’odeur de brûlé qui hantait les lieux. Des chaînes robustes pendent sur le flanc de montagne mais aucun vent ne semble les faire bouger. Pourtant, on peut parfois les entendre cliqueter sur la pierre nue. Pas un oiseau n’ose s’y nicher. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
@@ -356,28 +325,32 @@ Des chaînes robustes pendent sur le flanc de montagne mais aucun vent ne semble
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
     -- Thé d’Oboké
     ('Vallée fertile d’Iya', 
-    'Dans la vallée profonde d’Iya, où le bruit de la rivière est permanent, poussent à flanc de roche de rares théiers.
+        'Dans la vallée profonde d’Iya, où le bruit de la rivière est permanent, poussent à flanc de roche de rares théiers.
 Leurs feuilles, amères et puissantes, sont cueillies à la main par les familles montagnardes, suspendues au-dessus du grondement des eaux.
-Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle cette zone.', 6, (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa')
+Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle cette zone.',
+        6, (SELECT ID FROM zones WHERE name = 'Vallée d’Iya et d’Oboké d’Awa')
     ),
 
     -- Armure en fer de Tosa
     ('Mine de fer de Kubokawa',
-    'Dans les profondeurs du cap sud de Tosa, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
+        'Dans les profondeurs du cap sud de Tosa, des veines de fer noir sont extraites à la force des bras puis forgées en cuirasses robustes dans les forges voisines.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle cette zone.',
-    6, (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa')),
+        6, (SELECT ID FROM zones WHERE name = 'Cap sud de Tosa')
+    ),
 
     -- Cheval de Sanuki
     ('Écuries de Takamatsu',
-    'Les vastes pâturages de Sanuki forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
-Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pourrions toujours tenter de négocier avec le clan qui contrôle ce territoire.  ',
-    6, (SELECT ID FROM zones WHERE name = 'Province de Sanuki')),
+        'Les vastes pâturages de Sanuki forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
+Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pourrions toujours tenter de négocier avec le clan qui contrôle ce territoire.',
+        6, (SELECT ID FROM zones WHERE name = 'Province de Sanuki')
+    ),
 
     -- Encens coréen
     ('Port marchand de Matsuyama',
-    'Des voiliers venus de la péninsule coréenne accostent à Matsuyama, chargés de résines rares dont les parfums servent aux temples autant qu’aux intrigues.
+        'Des voiliers venus de la péninsule coréenne accostent à Matsuyama, chargés de résines rares dont les parfums servent aux temples autant qu’aux intrigues.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle cette zone.',
-    6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo'));
+        6, (SELECT ID FROM zones WHERE name = 'Côte Ouest d’Iyo')
+);
 
 -- Fluff
 INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
@@ -439,9 +412,9 @@ L’une d’elles prétend avoir lu une lettre scellée, confiée par un émissa
     ('Crique de Tonoshō', 5, (SELECT ID FROM zones WHERE name = 'Ile de Shōdoshima'),
         'Cette crique isolée, souvent balayée par les vents, est connue des contrebandiers comme des pêcheurs.
 Depuis quelques jours, un bruit court : un important émissaire impérial aurait été intercepté par les pirates Wako et détenu dans une grotte voisine, en attendant rançon ou silence.'
-    )
+    ),
+    -- Un dementi est présent sur l'info 'Camp des éclaireur Takeda'
     ('Maison de thé de la Lune d’Or', 5, (SELECT ID FROM zones WHERE name = 'Cité impériale de Kyōto'),
-     -- Un dementi est présent sur l'info 'Camp des éclaireur Takeda'
         'Située à l’écart de la Suzaku Mon, la "Lune d’Or" attire les lettrés, les poètes… et les oreilles curieuses.
 On dit qu’un marchand de soie y viendrait chaque soir, parlant peu mais observant tout.
 Selon une geisha, il serait en réalité un espion du clan Takeda (武田), infiltré pour sonder la loyauté des Daimyōs de l’Est.
@@ -449,8 +422,8 @@ Il aurait même été vu avec un membre de la famille Chōsokabe (長宗我部).
 Pourtant, nul ne peut confirmer cette histoire, et certains prétendent qu’il n’est en réalité qu’un veuf mélancolique, égaré dans ses souvenirs.
 Mais à Kyōto, les apparences mentent plus souvent qu’elles ne disent vrai.'
     ),
-    ('Camp des éclaireurs Takeda', 5, (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
      -- Un dementi est présent sur l'info 'Grande route et relais de poste'
+    ('Camp des éclaireurs Takeda', 5, (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
         'On trouve, caché dans un bosquet, entre deux collines, un camp qui fait clairement partie des forces Takeda (武田). Ils ont l’air d’avoir été battus lors de l’affrontement du printemps 1555 et fait de multiples prisonniers dans les forces Chōsokabe (長宗我部).
 Il est clair que les rumeurs d’alliances entre les Chōsokabe et les Takeda sont sans fondement, mais cette simple constatation ne sera pas suffisante pour convaincre.
 La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le Shogun.
@@ -508,19 +481,16 @@ Le comptoir est sous le contrôle de moines chrétiens, et les rumeurs de pirate
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, can_be_repaired, zone_id, controller_id, activate_json) VALUES
     ('Ruines du Daihō-ji (大宝寺)',
         'Le Daihō-ji (大宝寺), 44ème temple du pèlerinage de Shikoku, n’a que quelques piliers carbonisés qui subsistent, noirs et fissurés par les flammes. Ici, les pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent gravée d’inscriptions latines.
-Les paysans parlent d’un prêtre chrétien et de l’Inquisition jésuite elle-même. Mais les recherches menées par les Yamabushi locaux (milices et petits samouraïs vassaux) n’ont rien révélé de probant. (Peut-être pouvons-nous restaurer ce lieu ?)'
-         5, 0, 1 (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'), NULL,
+Les paysans parlent d’un prêtre chrétien et de l’Inquisition jésuite elle-même. Mais les recherches menées par les Yamabushi locaux (milices et petits samouraïs vassaux) n’ont rien révélé de probant. (Peut-être pouvons-nous restaurer ce lieu ?)',
+         5, 0, 1, (SELECT ID FROM zones WHERE name = 'Montagnes d’Iyo'), NULL,
         '{"update_location": {
                 "name": "Temple Daihō-ji (大宝寺)", "discovery_diff": 6,
                 "can_be_destroyed": 1, "can_be_repaired": 0,
-                "description": "Le 44ᵉ temple du pèlerinage de Shikoku, Daihō-ji (大宝寺), dont les piliers ont été remplacés et les toits refaits de bois verni, a retrouvé son éclat d’antan.
-L’autel, soigneusement restauré, abrite de nouveau des objets rituels et les pèlerins viennent réciter leurs prières dans le calme retrouvé, tandis que les légendes de la violence des prêtres chrétiens et de l’Inquisition se murmurent à voix basse, comme des échos du passé.
-Les forces Yamabushi (milices et petits samouraïs vassaux) veillent sur ce temple avec prudence."
+                "description": "Le 44ᵉ temple du pèlerinage de Shikoku, Daihō-ji (大宝寺), dont les piliers ont été remplacés et les toits refaits de bois verni, a retrouvé son éclat d’antan. L’autel, soigneusement restauré, abrite de nouveau des objets rituels et les pèlerins viennent réciter leurs prières dans le calme retrouvé, tandis que les légendes de la violence des prêtres chrétiens et de l’Inquisition se murmurent à voix basse, comme des échos du passé. Les forces Yamabushi (milices et petits samouraïs vassaux) veillent sur ce temple avec prudence.",
                 "future_location": {
                     "name": "Ruines du Daihō-ji (大宝寺)", "discovery_diff": 5,
                     "can_be_destroyed": 0, "can_be_repaired": 1, "save_to_json": "TRUE",
-                    "description": "Les toits brillants du 44ᵉ temple du pèlerinage de Shikoku, Daihō-ji (大宝寺), ont été effondrés, les piliers neufs taillés à la hache et l’autel a été renversé avec violence, répandant les offrandes et objets de culte. Les larmes des pèlerins mouillent les charbons encore chauds des murs de bois vert.
-Quels monstres ont bien pu s’en prendre à la beauté des lieux ? Certains pointent du doigt les chrétiens et l’Inquisition mais aucune preuve n’a été avancée."
+                    "description": "Les toits brillants du 44ᵉ temple du pèlerinage de Shikoku, Daihō-ji (大宝寺), ont été effondrés, les piliers neufs taillés à la hache et l’autel a été renversé avec violence, répandant les offrandes et objets de culte. Les larmes des pèlerins mouillent les charbons encore chauds des murs de bois vert. Quels monstres ont bien pu s’en prendre à la beauté des lieux ? Certains pointent du doigt les chrétiens et l’Inquisition mais aucune preuve n’a été avancée."
                 }
             }
         }'
@@ -546,9 +516,7 @@ Le silence y est si pur qu’on entend le battement de son propre cœur.
             "future_location": {
                 "name": "Temple de Yashima-ji (屋島寺) -- Le chemin du Nirvana", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Niché entre les forêts brumeuses d’Iya, ce temple montre encore les plaies fraîchement refermées d’une attaque récente. Le bois vert est par endroits assemblé avec des poutres anciennes encore en bon état et les nouvelles pierres taillées ont une couleur plus claire que les anciennes se souvenant des pèlerins passés.
-Lorsque l’on s’y attarde, le silence n’est brisé que par les craquements du bois neuf qui travaille en séchant et les battement de son propre cœur.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Niché entre les forêts brumeuses d’Iya, ce temple montre encore les plaies fraîchement refermées d’une attaque récente. Le bois vert est par endroits assemblé avec des poutres anciennes encore en bon état et les nouvelles pierres taillées ont une couleur plus claire que les anciennes se souvenant des pèlerins passés. Lorsque l’on s’y attarde, le silence n’est brisé que par les craquements du bois neuf qui travaille en séchant et les battement de son propre cœur. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
 )
@@ -569,9 +537,7 @@ Le vent porte leurs chants jusqu’aux barques des pêcheurs, comme des prières
             "future_location": {
                 "name": "Temple de Chikurin-ji (竹林寺) -- Le chemin de l’ascèse", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Une colline surplombant la baie laisse entendre des prières vivaces, semblant compenser une période de silence.
-Le temple Chikurin-ji a visiblement été remis en état il y a peu. Les pans de papier de riz sont plus blancs que l’écume et le parfum du cèdre embaume les lieux. Le ressac couvre les prières dans un rythme que seule la mer connaît.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Une colline surplombant la baie laisse entendre des prières vivaces, semblant compenser une période de silence. Le temple Chikurin-ji a visiblement été remis en état il y a peu. Les pans de papier de riz sont plus blancs que l’écume et le parfum du cèdre embaume les lieux. Le ressac couvre les prières dans un rythme que seule la mer connaît. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
@@ -588,15 +554,11 @@ Les sages disent que ceux qui y méditent peuvent entrevoir la Lumière Véritab
         '{ "update_location": {
             "name": "Ruines du Ryūkō-ji (竜光寺)", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Accroché à la montagne, le Ryūkō-ji n’est plus qu’un squelette calciné, ses poutres noires béant vers la mer comme les côtes d’un dragon mort.
-L’autel n’exhale plus de lumière : seulement des cendres froides que le vent disperse au fil des brumes.",
+            "description": "Accroché à la montagne, le Ryūkō-ji n’est plus qu’un squelette calciné, ses poutres noires béant vers la mer comme les côtes d’un dragon mort. L’autel n’exhale plus de lumière : seulement des cendres froides que le vent disperse au fil des brumes.",
             "future_location": {
                 "name": "Temple de Ryūkō-ji (竜光寺) -- Le chemin de l’illumination", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Soutenu par des poutres fraîchement peintes, le Ryūkō-ji rénové contemple de nouveau la mer intérieure comme un dragon convalescent.
-On raconte qu’au lever du soleil, les brumes se déchirent et révèlent un éclat doré émanant de l’autel reconstruit.
-Les sages, revenus après s’être dispersés lors des attaques, disent que ceux qui y méditent peuvent entrevoir la Lumière Véritable.
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Soutenu par des poutres fraîchement peintes, le Ryūkō-ji rénové contemple de nouveau la mer intérieure comme un dragon convalescent. On raconte qu’au lever du soleil, les brumes se déchirent et révèlent un éclat doré émanant de l’autel reconstruit. Les sages, revenus après s’être dispersés lors des attaques, disent que ceux qui y méditent peuvent entrevoir la Lumière Véritable. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
@@ -612,14 +574,11 @@ Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux 
         '{ "update_location": {
             "name": "Ruines du Yashima-ji (屋島寺)", 
             "discovery_diff": 6, "can_be_destroyed": 0, "can_be_repaired": 1,
-            "description": "Perché sur son promontoire, Yashima-ji n’est plus qu’un squelette calciné, ses statues brisées gisant parmi les pierres éclatées.
-Là où régnaient jadis la paix et le silence, il ne reste que le vent hurlant à travers les stupas fendus, emportant les cendres d’un autel brisé.",
+            "description": "Perché sur son promontoire, Yashima-ji n’est plus qu’un squelette calciné, ses statues brisées gisant parmi les pierres éclatées. Là où régnaient jadis la paix et le silence, il ne reste que le vent hurlant à travers les stupas fendus, emportant les cendres d’un autel brisé.",
             "future_location": {
                 "name": "Temple de Yashima-ji (屋島寺) -- Le chemin du Nirvana", "discovery_diff": 7,
                 "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
-                "description": "Le parfum du cèdre est la signature du travail des Miyadaikus (charpentiers spécialisés dans les temples et sanctuaires) qui ont rétabli la beauté du Yashima-ji. Les efforts des sculpteurs ont redressé les statues et retracé les chemins de pierre.
-Ce bastion rénové surplombe les flots, il reste le gardien de la mémoire des batailles et des ermites. Les pèlerins peuvent de nouveau y sentir l’oubli du monde. 
-(Pour explorer davantage ce lieu, allez voir un orga !)"
+                "description": "Le parfum du cèdre est la signature du travail des Miyadaikus (charpentiers spécialisés dans les temples et sanctuaires) qui ont rétabli la beauté du Yashima-ji. Les efforts des sculpteurs ont redressé les statues et retracé les chemins de pierre. Ce bastion rénové surplombe les flots, il reste le gardien de la mémoire des batailles et des ermites. Les pèlerins peuvent de nouveau y sentir l’oubli du monde. (Pour explorer davantage ce lieu, allez voir un orga !)"
             }
         }}'
     )
