@@ -26,8 +26,9 @@ UPDATE config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts
 INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', 0, ''),
     ('shingen', 'takeda', 0, ''),
-    ('yoshiteru', 'ashikaga', 0, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
-    ('yoshiaki', 'ashikaga', 0, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
+    ('yoshiteru', 'ashizero', 0, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
+    ('yoshiaki', 'ashizero', 0, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
+    ('yoshihide', 'ashizero', 0, 'https://docs.google.com/document/d/1FcjTlNsO31TBnwXBQcF2BbuTKzH_gmMc-TGl6g-tW5Y'),
     ('motochika', 'chosone', 0, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
     ('kanetsugu', 'chosone', 0, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
     ('shoho', 'chosone', 0, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
@@ -36,7 +37,7 @@ INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('sogo', 'miytwo', 0, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
     ('rennyo', 'renthree', 0, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
     ('ren-jo', 'renthree', 0, 'https://docs.google.com/document/d/1WC11-CiBHk1pkfxub39VdR7iS29n_tl7Krca9w4khxI'),
-    ('renko', 'renthree', 0, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
+    ('ennyo', 'renthree', 0, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
     ('tadaoki', 'hosfour', 0, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
     ('tama', 'hosfour', 0, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
     ('joha', 'hosfour', 0, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
@@ -74,7 +75,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Yōkai'),
         (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
     ),
-    ('Shogun', 'Ashikaga (足利)', 'passif', 1,
+    ('Shogunat', 'Ashikaga (足利)', 'passif', 1,
         'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4', '', 
         1,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'),
@@ -176,6 +177,10 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
         (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
     ),
     (
+        (SELECT ID FROM players WHERE username = 'yoshihide'),
+        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+    ),
+    (
         (SELECT ID FROM players WHERE username = 'motochika'),
         (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
@@ -208,7 +213,7 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
         (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'renko'),
+        (SELECT ID FROM players WHERE username = 'ennyo'),
         (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
