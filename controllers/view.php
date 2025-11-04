@@ -78,7 +78,7 @@
                 if ($debug) 
                     echo sprintf('<p> ressources: %s </p>', var_export($ressources, true));
                 if (!empty($ressources)) {
-                    $htmlRessources = '<h3 class="title is-5 mt-4">Vos Ressources :</h3>';
+                    $htmlRessources = '<div class="box mb-5"><h3 class="title is-5 mt-4">Vos Ressources :</h3>';
                     foreach ($ressources as $ressource) {
                         $htmlRessources .= '<p>';
                         $htmlRessources .= sprintf($ressource['presentation'], $ressource['amount'], $ressource['ressource_name'], $ressource['end_turn_gain']);
@@ -88,12 +88,14 @@
                         $htmlRessources .= '</p>';
                         $htmlRessources .= '<br>';
                     }
+                    $htmlRessources .= '</div>';
                     echo $htmlRessources;
                 }
             }
 
+            echo '<div class="box mb-5"> <h3 class="title is-5 mt-4">Les lieux :</h3>';
             $bases = hasBase($gameReady, $controllers['id']);
-            $htmlBase = '<h3 class="title is-5 mt-4">Votre Base :</h3>';
+            $htmlBase = '<h4 class="title is-5 mt-4">Votre Base :</h4>';
             if (empty($bases) && $controllers['can_build_base']) {
                 if (!hasEnoughRessourcesToBuildBase($gameReady, $controllers['id'])) {
                     $htmlBase .= sprintf(
@@ -208,9 +210,9 @@
 
             $ownedArtefacts = showOwnedArtefacts($gameReady, $controllers['id']);
             if (!empty($ownedArtefacts)) 
-                echo sprintf('<h3 class="title is-5 mt-5">%s</h3><p>%s</p>', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
+                echo sprintf('<h4 class="title is-5 mt-5">%s</h4><p>%s</p>', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
 
-        echo '<h3 class="title is-5 mt-5">Vos lieux découverts:</h3>';
+        echo '<h4 class="title is-5 mt-5">Vos lieux découverts:</h4>';
             // Outgoing attacks this turn
             $outgoingStmt = $gameReady->prepare("
                 SELECT * FROM location_attack_logs 
@@ -286,7 +288,7 @@
                 echo $htmlKnownLocations ;
             }
 
-            echo '<h3 class="title is-5 mt-5">Vos lieux secrets:</h3>';
+            echo '<h4 class="title is-5 mt-5">Vos lieux secrets:</h4>';
             $controllerLinkedLocations = listControllerLinkedLocations($gameReady, $controllers['id']);
 
             if (!$controllerLinkedLocations) {
@@ -333,7 +335,7 @@
                 echo $htmlLinkedLocations ;
             }
 
-            echo '</form>';
+            echo '</div></form>';
             echo buildGiveKnowledgeHTML($gameReady, 'controller', $controllers['id']);
             echo '</div>';
             

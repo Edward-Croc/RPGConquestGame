@@ -878,32 +878,31 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     );
 
     $controllers = getControllers($pdo, null, null, ($origin != 'admin'));
-    $html = sprintf('
-            <h3 class="title is-5 mt-5">Donner des informations sur les agents connus:</h3>
-                <form action="/%s/%s" method="GET" class="box mb-5">
-                    %s
-                    <div class="field">
-                        Sélectionner une faction à informer : %s
-                    </div>
-                    <div class="field">
-                        Sélectionner un agent connu: 
-                        %s
-                    </div>
-                    <div class="field">
-                        <div class="control">
-                            <input type="submit" name="giftInformationAgent" value="Donner l\'information" class="button is-link">
-                        </div>
-                    </div>
-                </form>', 
-                $_SESSION['FOLDER'],
-                $returnLink,
-                $zoneSearchElement,
-                showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
-                $enemyWorkersSelect
-            );
+    $htmlGiftInformationAgent = sprintf('
+        <form action="/%s/%s" method="GET">
+        <h4 class="title is-5 mt-5">Sur les agents connus:</h4>
+            %s
+            <div class="field">
+                Sélectionner une faction à informer : %s
+            </div>
+            <div class="field">
+                Sélectionner un agent connu: 
+                %s
+            </div>
+            <div class="field">
+                <div class="control">
+                    <input type="submit" name="giftInformationAgent" value="Donner l\'information" class="button is-link">
+                </div>
+            </div>
+        </form>', 
+        $_SESSION['FOLDER'],
+        $returnLink,
+        $zoneSearchElement,
+        showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
+        $enemyWorkersSelect
+    );
 
 
-    //$knownLocationsSelect = showKnownLocationsSelect($pdo, $controller_id);
     $knownLocationsOptions = '';
     if ($origin == 'admin') {
         $locations = getLocationsArray($pdo);
@@ -939,9 +938,9 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $knownLocationsOptions
     );
         
-    $html .= sprintf('
-        <h3 class="title is-5 mt-5">Donner des informations sur les lieux connus:</h3>
-        <form action="/%s/%s" method="GET" class="box mb-5">
+    $htmlGiftInformationLocation = sprintf('
+        <form action="/%s/%s" method="GET" >
+        <h4 class="title is-5 mt-5">Sur les lieux connus:</h4>
             <div class="field">
                 Sélectionner une faction à informer : %s
             </div>
@@ -960,5 +959,10 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         showControllerSelect($controllers, $controller_id, 'target_controller_id' ),
         $knownLocationsSelect
     );
+
+    $html = '<div class="box mb-5"><h3 class="title is-5 mt-5">Donner des informations :</h3>';
+    $html .= $htmlGiftInformationAgent;
+    $html .= $htmlGiftInformationLocation;
+    $html .= '</div>';
     return $html;
 }
