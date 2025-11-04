@@ -11,11 +11,15 @@ UPDATE config SET
        Le contrôle du clan Chōsokabe vacille sur Shikoku et les vassaux même du clan voient la disparition de Kunichika Chōsokabe comme une opportunité sans précédent.
        Celui qui pourra s’octroyer l’allégeance de la majorité des 4 provinces sera maître de l’île de Shikoku.<br>
         <button onclick="window.open(''https://docs.google.com/document/d/1ibggeKiMASJFWr_BnAgUzgQj0bJpZkB2LPtQWVRKt3s'', ''_blank'')"> Document d’introduction Joueur !</button>        
+        <button onclick="window.open(''https://docs.google.com/document/d/1HNBfPIBOOdMBjc_8iQ0cMD60J-q56VY6WCJ0h1XvVtM'', ''_blank'')"> Document Lore !</button> 
         </p>'
     WHERE name = 'PRESENTATION';
 
 UPDATE config SET
-    value = ' <p>  <button onclick="window.open(''https://docs.google.com/document/d/1qrYEpObe6sVdp1egCMnOcGW9BNXebPp_PWiLrD4Lqb8'', ''_blank'')"> Documents Orga !</button> </p>'
+    value = ' <p>  <button onclick="window.open(''https://docs.google.com/document/d/1qrYEpObe6sVdp1egCMnOcGW9BNXebPp_PWiLrD4Lqb8'', ''_blank'')"> Documents Orga !</button>  
+        <button onclick="window.open(''https://docs.google.com/document/d/1ibggeKiMASJFWr_BnAgUzgQj0bJpZkB2LPtQWVRKt3s'', ''_blank'')"> Document d’introduction Joueur !</button>       
+        <button onclick="window.open(''https://docs.google.com/document/d/1HNBfPIBOOdMBjc_8iQ0cMD60J-q56VY6WCJ0h1XvVtM'', ''_blank'')"> Document Lore !</button>
+        </p>'
     WHERE name = 'IntrigueOrga';
 
 INSERT INTO config (name, value, description)

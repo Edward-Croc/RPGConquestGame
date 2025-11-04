@@ -106,7 +106,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
-        ' '
+        ''
     ),
     (
         'Clan', 'Miyoshi (三好)',  -- https://fr.wikipedia.org/wiki/Clan_Miyoshi
@@ -134,7 +134,7 @@ INSERT INTO controllers (
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
-        ' '
+        ''
     )
 ;
 
