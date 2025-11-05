@@ -78,8 +78,8 @@ require_once '../base/baseHTML.php';
                 <h1>List</h1>
                 <?php echo sprintf( '
                 <p> <a href="/%1$s/zones/managment_zones.php">Zone control list</a> </p>
-                <p> <a href="/%1$s/zones/managment_bases.php">Attack on player base list</a> </p>
-                <p> <a href="/%1$s/zones/managment_locations.php">Discovered location list</a> </p>',
+                <p> <a href="/%1$s/zones/managment_locations.php">Discovered location list</a> </p>
+                <p> <a href="/%1$s/zones/managment_bases.php">Attack on player base list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
@@ -105,6 +105,12 @@ require_once '../base/baseHTML.php';
         </div>
     </div>
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+        <div class="config">
+            <h1>Workers</h1>
+            <?php echo sprintf( '<p> <a href="/%1$s/workers/managment_workers.php">Worker list</a> </p>',
+                $_SESSION['FOLDER']
+                ); ?>
+        </div>
         <?php
             // Allow for admin creation of a perfect agent
             require_once '../workers/newPerfectWorker.php';

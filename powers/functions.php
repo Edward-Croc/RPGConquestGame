@@ -199,7 +199,7 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = true){
     }
 
     $label = $showText ? getPowerTypesDescription($pdo, 'Discipline').' :' : '';
-    
+
     $showDisciplineSelect = sprintf('
             %s
             <div class="control for-select">
