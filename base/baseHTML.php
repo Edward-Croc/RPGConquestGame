@@ -46,8 +46,8 @@ if (
             // Define main links
             $links = [
                 'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
-                'view_workers' => ['label' => 'Mes Agents', 'path' => 'workers/viewAll.php'],
                 'controllers_action' => ['label' => 'Ma Faction', 'path' => 'controllers/action.php'],
+                'view_workers' => ['label' => 'Agents de la faction', 'path' => 'workers/viewAll.php'],
                 'zones_action' => ['label' => 'Les Zones', 'path' => 'zones/action.php'],
                 'systemPresentation' => ['label' => 'Le Système', 'path' => 'base/systemPresentation.php']
             ];

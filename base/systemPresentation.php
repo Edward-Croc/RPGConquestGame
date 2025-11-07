@@ -12,7 +12,8 @@ require_once '../base/baseHTML.php';
 Ce système repose sur une simulation stratégique en tour par tour mettant en scène des <strong>contrôleurs/factions</strong>,
  leurs <strong>agents</strong>, des <strong>zones</strong> et des <strong>lieux spécifiques</strong> à découvrir, défendre ou conquérir.<br>
 Ce système est créé pour assiter le fonctionnement des mécaniques de jeu d'une <strong>soirée enquête</strong>.
-Il n'est pas prévu pour fonctionner sans une phase de négociations entre joueurs à chaque tour.
+Il n'est pas prévu pour fonctionner sans une phase de négociations entre joueurs à chaque tour.<br>
+Un tutoriel pour la configuration Shikoku est disponible <a href="https://drive.google.com/file/d/1oRmi4oy_D6cPm3zzd7wn-3uEVQ1u-XsP/view?usp=sharing" target="_blank"><strong>PDF</strong></a>.
 </p>
 
 <h3>1. Contrôleurs/Factions et Agents</h3>
