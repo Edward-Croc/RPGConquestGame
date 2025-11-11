@@ -129,12 +129,15 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 }
             }
             $workerActionText .= '.';
-            if (!empty($zonesArray[0]['holder_controller_id']) && $zonesArray[0]['holder_controller_id'] == $controller_id) 
+            $zoneOwner = false;
+            if (!empty($zonesArray[0]['holder_controller_id']) && $zonesArray[0]['holder_controller_id'] == $controller_id){
+                $zoneOwner = true;
                 $workerActionText .= sprintf(
                     ' %s %s est déjà sous notre contrôle !',
                     ucfirst(getConfig($gameReady, 'timeDenominatorThis')),
                     getConfig($gameReady, 'textForZoneType')
-                );
+                );     
+            } 
 
             // build view history HTML
             $viewHistoryHTML = sprintf(
@@ -214,11 +217,11 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         </div>
                         <div class="field is-grouped is-grouped-multiline">
                             <div class="control">
-                                Revendiquer le %8$s au nom de
+                                %14$s le %8$s au nom de
                             </div>
                             %5$s
                             <div class="control">
-                                <input type="submit" name="claim" value="Revendiquer" class="button is-success">
+                                <input type="submit" name="claim" value="%14$s" class="button is-success">
                             </div>
                         </div>
                         %3$s
@@ -256,7 +259,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %10$s
                 ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %11$s
                 $workerActionText, // %12$s
-                ucfirst(getConfig($gameReady, 'timeValue')) // %13$s
+                ucfirst(getConfig($gameReady, 'timeValue')), // %13$s
+                ($zoneOwner) ? 'Protéger/Revendiquer' : 'Revendiquer'
                 );
             }
 
