@@ -645,6 +645,7 @@ function updateLocation($pdo, $location, $activate_json) {
         $update_location = array(
             'name' => $location['name'],
             'description' => $location['description'],
+            'hidden_description' => $location['hidden_description'],
             'discovery_diff' => $location['discovery_diff'],
             'can_be_destroyed' => $location['can_be_destroyed'],
             'can_be_repaired' => $location['can_be_repaired'],
@@ -667,6 +668,7 @@ function updateLocation($pdo, $location, $activate_json) {
     $fields_to_update = [
         'name' => PDO::PARAM_STR,
         'description' => PDO::PARAM_STR,
+        'hidden_description' => PDO::PARAM_STR,
         'discovery_diff' => PDO::PARAM_INT,
         'can_be_destroyed' => PDO::PARAM_INT,
         'can_be_repaired' => PDO::PARAM_INT,

@@ -585,6 +585,29 @@ Certains pèlerins affirment y avoir senti l’oubli du monde descendre sur eux 
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
+INSERT INTO locations (name, description, hidden_description, zone_id, controller_id, is_base, can_be_destroyed, can_be_repaired, discovery_diff, activate_json) VALUES
+(
+    'Forteresse des Samouraïs Ashikaga',
+    'Nous avons localisé la forteresse du Shōgun, siège du clan Ashikaga (足利).
+Il faudrait être insensé pour songer à renverser le Shōgun — mais prendre ce château serait une étape inévitable pour cela, et nul bastion n’est réellement imprenable.
+Une telle attaque provoquerait sans doute des remous à la cour shogunale et ferait de nous des ennemis de la nation, au même titre que les Takeda.
+Leur défense, toutefois, n’est pas encore totalement rétablie après la guerre.',
+    'Nous avons intercepté des extraits des rapports personnels du Shōgun. Aucun des cinq Shugo ne paraît en mesure de lui prêter main-forte, et les deux Kanrei ne sont plus que des titres vides, occupés par des nobles sans influence.
+À la cour, les conseillers murmurent que l’autorité du Shōgun ne repose plus que sur un équilibre fragile — celui des traditions qu’il incarne et des ambitions qui le cernent.',
+    (SELECT ID FROM zones WHERE name = 'Cité Impériale de Kyoto'),
+    (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'),
+    1, 1, 0, 8,
+    '{"update_location": {
+        "name": "Forteresse des Samouraïs Ashikaga",
+        "discovery_diff": 7, "can_be_destroyed": 0, "can_be_repaired": 0,
+        "description": "Les murs de la forteresse du Shōgun portent encore les marques de l’assaut : portes arrachées, pavés noircis, bannières shogunales déchirées. Là où régnaient le protocole et la majesté de la tradition, il ne subsiste que le chaos — un affront direct à la lignée Ashikaga et à l’autorité même du bakufu.
+Dès lors, celui qui a osé porter la main sur le siège du Shōgun n’est plus simplement un rival : il est devenu l’ennemi public, un rebelle qu’il est désormais permis — voire attendu — d’abattre. Les samouraïs des provinces invoquent l’honneur pour brandir leurs lances, et les temples dénoncent la rupture des ordres établis.
+Le Japon tout entier retient son souffle, prêt à s’embraser.",
+        "hidden_description": "",
+    }}'
+);
+
+-- Warning: If you read this file, you will no longer be eligible to participate as a player.
 INSERT INTO artefacts (name, description, full_description, location_id) VALUES
     (
         'Fujitaka (藤孝) Hosokawa (細川) le Daimyō prisonnier',
