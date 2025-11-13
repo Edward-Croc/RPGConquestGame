@@ -480,11 +480,7 @@ INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
     )),
     ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
-    )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+        WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
     )),
     ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
         SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id

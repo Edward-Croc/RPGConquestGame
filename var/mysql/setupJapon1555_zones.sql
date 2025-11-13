@@ -600,10 +600,8 @@ Leur défense, toutefois, n’est pas encore totalement rétablie après la guer
     '{"update_location": {
         "name": "Forteresse des Samouraïs Ashikaga",
         "discovery_diff": 7, "can_be_destroyed": 0, "can_be_repaired": 0,
-        "description": "Les murs de la forteresse du Shōgun portent encore les marques de l’assaut : portes arrachées, pavés noircis, bannières shogunales déchirées. Là où régnaient le protocole et la majesté de la tradition, il ne subsiste que le chaos — un affront direct à la lignée Ashikaga et à l’autorité même du bakufu.
-Dès lors, celui qui a osé porter la main sur le siège du Shōgun n’est plus simplement un rival : il est devenu l’ennemi public, un rebelle qu’il est désormais permis — voire attendu — d’abattre. Les samouraïs des provinces invoquent l’honneur pour brandir leurs lances, et les temples dénoncent la rupture des ordres établis.
-Le Japon tout entier retient son souffle, prêt à s’embraser.",
-        "hidden_description": "",
+        "description": "Les murs de la forteresse du Shōgun portent encore les marques de l’assaut : portes arrachées, pavés noircis, bannières shogunales déchirées. Là où régnaient le protocole et la majesté de la tradition, il ne subsiste que le chaos — un affront direct à la lignée Ashikaga et à l’autorité même du bakufu. Dès lors, celui qui a osé porter la main sur le siège du Shōgun n’est plus simplement un rival : il est devenu l’ennemi public, un rebelle qu’il est désormais permis — voire attendu — d’abattre. Les samouraïs des provinces invoquent l’honneur pour brandir leurs lances, et les temples dénoncent la rupture des ordres établis. Le Japon tout entier retient son souffle, prêt à s’embraser.",
+        "hidden_description": ""
     }}'
 );
 
