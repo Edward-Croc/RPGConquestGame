@@ -236,15 +236,19 @@ function calculateVals($pdo, $mechanics){
                 FROM (
                     SELECT
                         z.id AS zone_id,
-                        COALESCE(COUNT(w.id)+1, 0) AS worker_count
+                        COALESCE(COUNT(w.id), 0) AS worker_count
                     FROM
                         zones z
                     LEFT JOIN
                         workers w ON w.zone_id = z.id
+                    LEFT JOIN 
+                        worker_actions wa ON wa.worker_id = w.id
                     LEFT JOIN
                         controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = True
                     WHERE
                         z.holder_controller_id = cw.controller_id
+                        AND wa.action_choice NOT IN ('dead', 'captured', 'trace')
+                        AND wa.turn_number = :turn_number
                     GROUP BY
                         z.id
                 ) AS subquery
@@ -255,11 +259,14 @@ function calculateVals($pdo, $mechanics){
             $sql = "UPDATE zones z
                 JOIN (
                     SELECT z.id AS zone_id, 
-                        COALESCE(COUNT(w.id)+1, 0) AS worker_count 
+                        COALESCE(COUNT(w.id), 0) AS worker_count 
                     FROM zones z 
                     LEFT JOIN workers w ON w.zone_id = z.id 
+                    LEFT JOIN worker_actions wa ON wa.worker_id = w.id
                     LEFT JOIN controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = 1 
                     WHERE z.holder_controller_id = cw.controller_id 
+                    AND wa.action_choice NOT IN ('dead', 'captured', 'trace')
+                    AND wa.turn_number = :turn_number
                     GROUP BY z.id
                 ) AS subquery ON z.id = subquery.zone_id
                 SET z.calculated_defence_val = z.defence_val + subquery.worker_count
@@ -267,6 +274,7 @@ function calculateVals($pdo, $mechanics){
         }
         // Prepare and execute SQL query
         $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter']);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
