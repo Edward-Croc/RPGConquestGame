@@ -205,6 +205,10 @@ INSERT INTO player_controller (player_id, controller_id) VALUES
         (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
     ),
     (
+        (SELECT ID FROM players WHERE username = 'sogo'),
+        (SELECT ID FROM controllers WHERE lastname in ('Sogō (十河)'))
+    ),
+    (
         (SELECT ID FROM players WHERE username = 'rennyo'),
         (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
@@ -277,20 +281,19 @@ INSERT INTO power_types (id, name, description) VALUES
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO powers ( name, enquete, attack, defence, other, description) VALUES
     ('Cheval Sanuki', 0, 1,1 
-        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki", "worker_in_zone": "Province de Sanuki" } }'
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki"} }'
         , ', les meilleures montures de Shikoku ont le pied sûr et rapide'
     )
     , ('Armure en fer de Tosa', 0, 1,1
-        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa", "worker_in_zone": "Cap sud de Tosa"  } }'
-        , ', faite de l’acier sombre extrait du cœur des montagnes et forgé en écailles plus dures que celles des tortues
-'
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa"} }'
+        , ', faite de l’acier sombre extrait du cœur des montagnes et forgé en écailles plus dures que celles des tortues'
     )
     , ('Thé d’Oboké', 1, 0,0
-        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallée d’Iya et d’Oboké d’Awa", "worker_in_zone": "Vallée d’Iya et d’Oboké d’Awa" } }'
+        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallée d’Iya et d’Oboké d’Awa"} }'
         ,', un breuvage rare qui élève l’âme'
     )
     , ('Encens Coréen', 1, 0,0
-        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo", "worker_in_zone": "Côte Ouest d’Iyo"} }'
+        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo"} }'
         ,', fabriqué à partir de résines et d’épices introuvables au Japon'
     )
 ;
