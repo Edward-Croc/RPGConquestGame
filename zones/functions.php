@@ -30,10 +30,20 @@ function getZoneName($pdo, $zone_id){
  *
  * @return array $zonesArray
  */
-function getZonesArray($pdo, $controller_id = null, $zone_id = null) {
+function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null, $zone_id = null) {
     $zonesArray = array();
 
     try{
+
+        $where_clauses = "";
+        if ( !empty($controller_id) || !empty($holder_controller_id) ) {
+            $where_clauses .= (!empty($zone_id))? "AND (" : " WHERE (";
+            $where_clauses .= (!empty($controller_id))? "c.id = :controler_id" : "";
+            $where_clauses .= (!empty($holder_controller_id) && !empty($controller_id))? " OR " : "";
+            $where_clauses .= (!empty($holder_controller_id))? " h.id = :holder_controller_id" : "";
+            $where_clauses .= ")";
+        }
+
         $sql = sprintf(
             "SELECT
                 z.id AS zone_id,
@@ -47,16 +57,15 @@ function getZonesArray($pdo, $controller_id = null, $zone_id = null) {
             FROM zones AS z
             LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
             LEFT JOIN controllers AS h ON h.id = z.holder_controller_id
-            %s %s %s %s
+            %s %s
             ORDER BY z.id ASC",
-            (!empty($controller_id) || !empty($zone_id))? "WHERE" : "",
-            (!empty($controller_id))? "c.id = :controler_id" : "",
-            (!empty($controller_id) && !empty($zone_id))? " AND " : "",
-            (!empty($zone_id))? " z.id = :zone_id" : ""
+            (!empty($zone_id))? "WHERE z.id = :zone_id" : "",
+            $where_clauses,
         );
         $stmt = $pdo->prepare($sql);
-        if (!empty($controller_id)) $stmt->bindParam(':controler_id', $controller_id);
-        if (!empty($zone_id)) $stmt->bindParam(':zone_id', $zone_id);
+        if (!empty($zone_id)) $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        if (!empty($controller_id)) $stmt->bindParam(':controler_id', $controller_id, PDO::PARAM_INT);
+        if (!empty($holder_controller_id)) $stmt->bindParam(':holder_controller_id', $holder_controller_id, PDO::PARAM_INT);
         // Execute the statement
         $stmt->execute();
         // Fetch the results

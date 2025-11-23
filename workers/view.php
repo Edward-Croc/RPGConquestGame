@@ -120,7 +120,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             );
 
             // get zone value by  $worker['zone_id'] and use to get controller name
-            $zonesArray = getZonesArray($gameReady, null, $worker['zone_id']);
+            $zonesArray = getZonesArray($gameReady, null, null, $worker['zone_id']);
             if ( !empty($zonesArray[0]['claimer_controller_id']) ) {
                 if ($zonesArray[0]['claimer_controller_id'] == $controller_id) {
                     $workerActionText .= ' qui est sous notre bannière';

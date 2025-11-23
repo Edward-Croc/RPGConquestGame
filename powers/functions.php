@@ -251,7 +251,8 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
     $zonesArray = array();
     if (!empty($controller_id)){
         $controllersArray = getControllers($pdo, NULL, $controller_id);
-        $zonesArray = getZonesArray($pdo, $controller_id);
+        $zonesArray = getZonesArray($pdo, $controller_id, null, null);
+        $zonesArrayHolder = getZonesArray($pdo, null, $controller_id, null);
     }
 
     if ($debug)
@@ -344,7 +345,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
 
                 // controller_has_zone
                 if (!empty($powerConditions[$state_text]['controller_has_zone']) ) {
-                    if (empty($zonesArray)) {
+                    if (empty($zonesArray) && empty($zonesArrayHolder)) {
                         $keepElement = false;
                         if ($debug)
                             echo "FAILED controller_has_zone check<br/>";
@@ -352,6 +353,10 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
                         $foundZone = false;
                         foreach ( $zonesArray as $zone ){
                            if ( $zone['name'] == $powerConditions[$state_text]['controller_has_zone'])
+                            $foundZone = true;
+                        }
+                        foreach ( $zonesArrayHolder as $zone ){
+                            if ( $zone['name'] == $powerConditions[$state_text]['controller_has_zone'])
                             $foundZone = true;
                         }
                         if ( !$foundZone ) $keepElement = false;
