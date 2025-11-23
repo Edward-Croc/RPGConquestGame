@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch controllers and ressources
 $controllerRessources = $gameReady->query(
-        "SELECT rc.id as rc_id, r.id as ressource_id, *
+        "SELECT rc.id as rc_id, r.id as ressource_id, rc.*, r.*, c.*
         FROM controller_ressources rc
         JOIN ressources_config r ON rc.ressource_id = r.id
         JOIN controllers c ON rc.controller_id = c.id
@@ -68,7 +68,7 @@ require_once '../base/baseHTML.php';
             <td>%10$s</td>
             <td>%11$s</td>
             <td></td>',
-            $ressourceConfig['id'],
+            $ressourceConfig['rc_id'],
             $ressourceConfig['ressource_name'],
             $ressourceConfig['presentation'],
             $ressourceConfig['stored_text'],
