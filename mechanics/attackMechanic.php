@@ -325,20 +325,24 @@ function attackMechanic($pdo, $mechanics){
                         echo $defender['defender_name']. ' Was Captured ! <br />';
                         $defender_status = 'captured';
                         $attackerReport['attack_report'] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
-                        // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
-                        $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
-                        $stmt->execute([
-                            'controller_id' => $defender['defender_controller_id'],
-                            'worker_id' => $defender['defender_id'],
-                            'is_primary' => 0
-                        ]);
-                        // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
-                        $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
-                        $stmt->execute([
-                            'controller_id' => $defender['attacker_controller_id'],
-                            'worker_id' => $defender['defender_id'],
-                            'is_primary' => 1
-                        ]);
+                        try{
+                            // in controller_worker update defender_controller_id, defender_id, is_primary_controller = false
+                            $stmt = $pdo->prepare("UPDATE controller_worker SET is_primary_controller = :is_primary WHERE controller_id = :controller_id AND worker_id = :worker_id");
+                            $stmt->execute([
+                                'controller_id' => $defender['defender_controller_id'],
+                                'worker_id' => $defender['defender_id'],
+                                'is_primary' => 0
+                            ]);
+                            // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
+                            $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
+                            $stmt->execute([
+                                'controller_id' => $defender['attacker_controller_id'],
+                                'worker_id' => $defender['defender_id'],
+                                'is_primary' => 1
+                            ]);
+                        } catch (PDOException $e) {
+                            echo __FUNCTION__." (): Error updating controller_worker: " . $e->getMessage();
+                        }
                     }
                     updateWorkerActiveStatus($pdo, $defender['defender_id']);
                     updateWorkerAliveStatus($pdo, $defender['defender_id'], $is_alive);
@@ -377,7 +381,6 @@ function attackMechanic($pdo, $mechanics){
                         }
                     } catch (PDOException $e) {
                         echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
-                        return [];
                     }
                     $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
                 }
