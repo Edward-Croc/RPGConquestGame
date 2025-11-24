@@ -98,7 +98,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             }
 
             if ( !empty($deadWorkerArray )) {
-                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos morts :</h3>";
+                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Anciens agents :</h3>";
                 foreach ($deadWorkerArray as $worker) {
                     echo $worker['view'];
                 }
