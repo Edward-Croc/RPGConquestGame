@@ -364,12 +364,12 @@ function showWorkerShort($pdo, $worker, $mechanics) {
     }
 
     $return = sprintf(
-        '<div ><form action="/%7$s/workers/action.php" method="GET">
-            <input type="hidden" name="worker_id" value=%1$s>
-            <b onclick="toggleInfo(%1$s)" style="cursor: pointer;" > %2$s %3$s </b> %5$s %4$s.
-            <div id="info-%1$s" style="display: none;"> %6$s
-            </div>
-        </form> </div>
+        '<div class="worker-short">
+            <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold is-size-5" role="button" style="text-decoration:none;">
+                %2$s %3$s
+            </a>
+            <span class="ml-2">%6$s %5$s %4$s.</span>
+        </div>
         ',
         $worker['id'], // %1$s
         $worker['firstname'], // %2$s
@@ -377,10 +377,7 @@ function showWorkerShort($pdo, $worker, $mechanics) {
         $worker['zone_name'], // %4$s
         $textActionUpdated, // %5$s
         sprintf(
-            '<i>
-                Capacité d’enquête : <strong>%1$s</strong>. Capacité d’attaque / défense : <strong>%2$s</strong> / <strong>%3$s</strong> <br />
-                <input type="submit" name="voir" value="Voir" class="button is-info">
-            </i>',
+            '<i>(<strong>%1$s</strong>, <strong>%2$s</strong>/<strong>%3$s</strong>)</i>',
             $worker['total_enquete'], // %1$s
             $worker['total_attack'], // %2$s
             $worker['total_defence'] // %3$s
