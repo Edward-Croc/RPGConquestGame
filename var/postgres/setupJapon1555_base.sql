@@ -301,7 +301,7 @@ INSERT INTO powers ( name, enquete, attack, defence, other, description) VALUES
         ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki"} }'
         , ', les meilleures montures de Shikoku ont le pied sûr et rapide'
     )
-    , ('Armure en fer de Tosa', 0, 1,1
+    , ('Armure en fer de Tosa', 0, 0,2
         ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa"} }'
         , ', faite de l’acier sombre extrait du cœur des montagnes et forgé en écailles plus dures que celles des tortues'
     )
@@ -312,6 +312,10 @@ INSERT INTO powers ( name, enquete, attack, defence, other, description) VALUES
     , ('Encens Coréen', 1, 0,0
         ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo"} }'
         ,', fabriqué à partir de résines et d’épices introuvables au Japon'
+    )
+    , ('Teppo Européen', -1, 2,0
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Est d’Awa"} }'
+        ,', armes à feu importées par les missionnaires chrétiens'
     )
 ;
 
