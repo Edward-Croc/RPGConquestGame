@@ -466,7 +466,20 @@ function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
         $originList = $tmpOrigine;
     }
     // TODO : Add locking of origins by controller_id
-    // TODO : Add locking of origins by config on metiers and hobbies
+
+    // Locking of origins by config on metiers and hobbies
+    if ( !empty($newWorker['power_1']['other']) ){
+        $otherJson = json_decode($newWorker['power_1']['other'], true);
+        if ( !empty($otherJson['on_recrutment']['origin_list']) ){
+            $originList = $otherJson['on_recrutment']['origin_list'];
+        }
+    }
+    if ( !empty($newWorker['power_2']['other']) ){
+        $otherJson = json_decode($newWorker['power_2']['other'], true);
+        if ( !empty($otherJson['on_recrutment']['origin_list']) ){
+            $originList = $otherJson['on_recrutment']['origin_list'];
+        }
+    }
 
     $sqlOriginId = '';
     if ( !empty($originList) ){

@@ -97,7 +97,7 @@ function randomPowersByType($pdo, $type, $newWorker) {
         $randCommand = 'RAND()';
     try{
         // Get x random values from powers for a power_type
-        $sql = sprintf("SELECT *, %s FROM powers AS p
+        $sql = sprintf("SELECT p.*, %s FROM powers AS p
             INNER JOIN link_power_type ON link_power_type.power_id = p.id
             WHERE link_power_type.power_type_id = %s ORDER BY %s LIMIT 1",
             $power_text,
