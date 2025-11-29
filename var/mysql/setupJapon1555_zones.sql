@@ -422,13 +422,6 @@ Il aurait même été vu avec un membre de la famille Chōsokabe (長宗我部).
 Pourtant, nul ne peut confirmer cette histoire, et certains prétendent qu’il n’est en réalité qu’un veuf mélancolique, égaré dans ses souvenirs.
 Mais à Kyōto, les apparences mentent plus souvent qu’elles ne disent vrai.'
     ),
-     -- Un dementi est présent sur l'info 'Grande route et relais de poste'
-    ('Camp des éclaireurs Takeda', 5, (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
-        'On trouve, caché dans un bosquet, entre deux collines, un camp qui fait clairement partie des forces Takeda (武田). Ils ont l’air d’avoir été battus lors de l’affrontement du printemps 1555 et fait de multiples prisonniers dans les forces Chōsokabe (長宗我部).
-Il est clair que les rumeurs d’alliances entre les Chōsokabe et les Takeda sont sans fondement, mais cette simple constatation ne sera pas suffisante pour convaincre.
-La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le Shogun.
-(Si vous voulez entrer en contact avec les Takeda, allez voir un orga ! )'
-    ),
     ('Phare abandonné d`Esaki', 5,
     -- Un démenti est existant sur le 'vieux temple d'Esaki', il est possible de le trouver dans les rumeurs
         (SELECT ID FROM zones WHERE name = 'Ile d’Awaji'),
@@ -477,6 +470,28 @@ Le comptoir est sous le contrôle de moines chrétiens, et les rumeurs de pirate
     )
 ;
 
+-- démenti de la fausse piste de la Lune D’Or
+INSERT INTO locations (name, description, discovery_diff, is_base, can_be_destroyed, can_be_repaired, zone_id, controller_id, activate_json) VALUES
+    ('Camp des éclaireurs Takeda (武田)', 
+    'On trouve, caché dans un bosquet, entre deux collines, un camp qui fait clairement partie des forces Takeda (武田). Ils ont l’air d’avoir été battus lors de l’affrontement du printemps 1555 et fait de multiples prisonniers dans les forces Chōsokabe (長宗我部).
+Il est clair que les rumeurs d’alliances entre les Chōsokabe et les Takeda sont sans fondement, mais cette simple constatation ne sera pas suffisante pour convaincre.
+La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le Shogun.
+(Si vous voulez entrer en contact avec les Takeda, allez voir un orga ! )',
+    5, 1, 1, 0, (SELECT ID FROM zones WHERE name = 'Plaines du Kansai'),
+    (SELECT ID FROM controllers WHERE lastname = 'Takeda (武田)'),
+    '{"update_location": {
+        "name": "Ruines du Camp Takeda (武田)", "discovery_diff": 5,
+        "is_base": 0,
+        "can_be_destroyed": 0, "can_be_repaired": 1,
+        "description": "Les ruines d’un camp militaire autrefois occupé par les forces Takeda (武田). Sa destruction semble nettement plus récente que la bataille du printemps 1555. Des ninjas nous ont proposé, contre une somme conséquente, d’organiser une rencontre avec Shingen Takeda (武田). (Pour explorer davantage ce lieu, adressez-vous à un orga !)",
+        "future_location": {
+            "name": "Camp de la révolte Takeda (武田)", "discovery_diff": 7,
+            "is_base": 1,
+            "can_be_destroyed": 0, "can_be_repaired": 1, "save_to_json": "TRUE",
+            "description": "Un camp militaire de la révolte Takeda (武田), clairement établi sur la plaine du Kansai. Reste à déterminer s’ils nourrissent encore des intentions belliqueuses envers le Shōgun. (Si vous souhaitez entrer en contact avec le clan Takeda, adressez-vous à un orga !)",
+        }
+    }}'
+);
 
 INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, can_be_repaired, zone_id, controller_id, activate_json) VALUES
     ('Ruines du Daihō-ji (大宝寺)',
