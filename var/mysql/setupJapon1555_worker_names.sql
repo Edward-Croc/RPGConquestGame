@@ -51,6 +51,8 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Mao', 'Hirano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
     ('Sena', 'Kawaguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
     ('Yuma', 'Tachibana', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Kawashima', 'Noriyasu', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
+    ('Shigekatsu', 'Fujii', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awa')),
 
 -- Shikoku - Sanuki
     ('Rina', 'Yoshikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
@@ -62,18 +64,20 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Shiori', 'Ichikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
     ('Hinako', 'Sakai', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
     ('Yuto', 'Kiriyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
+    ('Kazuya', 'Fujikawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Sanuki')),
 
 -- Shikoku - Awaji
     ('Keita', 'Nagano', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Emi', 'Morita', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Kazuki', 'Yamaguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
-    ('Sayaka', 'Hosokawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
+    ('Sayaka', 'Gōno', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Miki', 'Kubota', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Taiga', 'Koga', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Haruna', 'Tani', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Koji', 'Arakawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
-    ('Nanami', 'Iguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji'))
-    
+    ('Nanami', 'Iguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
+    ('Masatsune', 'Miyaji', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji'))
+
 -- Shikoku - Shōdoshima
     , ('Nao', 'Miyamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
     , ('Koki', 'Maruyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
@@ -153,20 +157,19 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Luciana', 'Marsala', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Michelangelo', 'Belluchi', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Umberto', 'Venezio', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
-    ('Venturo', 'Vesuvio', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
+    ('Venturo', 'Dio', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Gino', 'Giancarlo', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Hortensio', 'Honorius', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Bianca', 'Abriana', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Paolo', 'Pisano', (SELECT ID FROM worker_origins WHERE name = 'Portugal'));
 
+-- France
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Jean', 'Martin', (SELECT ID FROM worker_origins WHERE name = 'France')),
-    ('Marie', 'Bernard', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Pierre', 'Dubois', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Jacques', 'Thomas', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Michel', 'Robert', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Claude', 'Richard', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Nicolas', 'Petit', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Thomas', 'Durand', (SELECT ID FROM worker_origins WHERE name = 'France')),
-    ('Sophie', 'Leroy', (SELECT ID FROM worker_origins WHERE name = 'France')),
-    ('Claire', 'Moreau', (SELECT ID FROM worker_origins WHERE name = 'France'));
+    ('Bernard', 'Leroy', (SELECT ID FROM worker_origins WHERE name = 'France'));
