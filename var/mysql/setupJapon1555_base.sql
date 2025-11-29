@@ -141,19 +141,19 @@ INSERT INTO controllers (
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 INSERT INTO controllers (
     firstname, lastname, ia_type, secret_controller,
-    url, story, can_build_base,
-    turn_recruited_workers, turn_firstcome_workers,
+    url, story, 
+    can_build_base, start_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
     ('Clan', 'Sogō (十河)', NULL, 1, 
         NULL, '',
-        0, 1, 1,
+        0, 0, 1, 1,
         (SELECT ID FROM factions WHERE name = 'Chrétiens'),
         (SELECT ID FROM factions WHERE name = 'Chrétiens')
     ),
     ('Clan', 'Takeda (武田)', 'passif', 1, 
         'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e', '',
-        0, 0, 0,
+        0, 10, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda')
     )

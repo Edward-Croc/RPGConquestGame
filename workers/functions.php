@@ -356,7 +356,7 @@ function getWorkerStatus($worker) {
  *
  * @return string
  */
-function showWorkerShort($pdo, $worker, $mechanics) {
+function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
 
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
@@ -399,24 +399,26 @@ function showWorkerShort($pdo, $worker, $mechanics) {
 
     $return = sprintf(
         '<div class="worker-short">
+            %8$s
             <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold is-size-5" role="button" style="text-decoration:none;">
                 %2$s %3$s
             </a>
-            <span class="ml-2">%6$s %5$s %4$s.</span>
+            <span>%6$s %5$s %4$s.</span>
         </div>
         ',
-        $worker['id'], // %1$s
-        $worker['firstname'], // %2$s
-        $worker['lastname'], // %3$s
-        $worker['zone_name'], // %4$s
-        $textActionUpdated, // %5$s
-        sprintf(
+        $worker['id'] // %1$s
+        , $worker['firstname'] // %2$s
+        , $worker['lastname'] // %3$s
+        , $worker['zone_name'] // %4$s
+        , $textActionUpdated // %5$s
+        , sprintf(
             '<i>(<strong>%1$s</strong>, <strong>%2$s</strong>/<strong>%3$s</strong>)</i>',
             $worker['total_enquete'], // %1$s
             $worker['total_attack'], // %2$s
             $worker['total_defence'] // %3$s
-        ), // %6$s
-        $_SESSION['FOLDER'] // %7$s
+        ) // %6$s
+        , $_SESSION['FOLDER'] // %7$s
+        , ($showCheckBox ? sprintf('<input type="checkbox" name="worker_ids[]" value="%s" class="mr-2">', $worker['id']) : '') // %8$s
     );
 
     return $return;
@@ -900,7 +902,7 @@ function moveWorker($pdo, $workerId, $zoneId) {
     }
     $zone_name = getZoneName($pdo, $zoneId);
     if (empty($currentReport['life_report'])) $currentReport['life_report'] = '';
-    $currentReport['life_report'] .= "J'ai déménagé vers $zone_name. <br/>";
+    $currentReport['life_report'] .= "J'ai déménagé vers <strong>$zone_name</strong>. <br/>";
 
     if ($debug) echo sprintf("%s(): Repport built %s <br/>", __FUNCTION__, $currentReport['life_report']);
     // Encode the updated array back into JSON

@@ -55,11 +55,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ( $worker['controller_id'] != $controller_id) continue;
                 if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
 
-                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
-
                 // liveWorkerArray : worker alive and active and that we control
-                if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] )
+                if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
+                    $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true);
                     $liveWorkerArray[] = $worker;
+                } else {
+                    $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
+                }
 
                 //doubleAgentWorkerArray : worker alive and active that we don't control
                 if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] )
@@ -73,11 +75,22 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller']  ) )
                     $deadWorkerArray[] = $worker;
             }
-            if ( !empty($liveWorkerArray )) {
+            if (!empty($liveWorkerArray)) {
                 echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
+                // Mass worker action form
+                echo sprintf("<form action='/%s/workers/massAction.php' method='GET' class='mb-4'>", $_SESSION['FOLDER']);
                 foreach ($liveWorkerArray as $worker) {
                     echo $worker['view'];
                 }
+                // Mass worker action
+                // Mass move to zone
+                    // Zone select
+                    echo '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">';
+                    echo showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true);
+                    echo " <div class='control'> <input type='submit' name='mass_move' value='Déplacer les agents sélectionnés' class='button is-warning mb-2 ml-2'></div>";
+                    echo "</div>";
+                    // Submit button
+                echo "</form>";
                 echo "</div>";
             }
 
