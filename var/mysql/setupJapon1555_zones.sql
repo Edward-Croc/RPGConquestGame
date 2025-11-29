@@ -488,7 +488,7 @@ La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le
             "name": "Camp de la révolte Takeda (武田)", "discovery_diff": 7,
             "is_base": 1,
             "can_be_destroyed": 0, "can_be_repaired": 1, "save_to_json": "TRUE",
-            "description": "Un camp militaire de la révolte Takeda (武田), clairement établi sur la plaine du Kansai. Reste à déterminer s’ils nourrissent encore des intentions belliqueuses envers le Shōgun. (Si vous souhaitez entrer en contact avec le clan Takeda, adressez-vous à un orga !)",
+            "description": "Un camp militaire de la révolte Takeda (武田), clairement établi sur la plaine du Kansai. Reste à déterminer s’ils nourrissent encore des intentions belliqueuses envers le Shōgun. (Si vous souhaitez entrer en contact avec le clan Takeda, adressez-vous à un orga !)"
         }
     }}'
 );
