@@ -68,11 +68,11 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
 
 INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
     ('Prêtre chrétien(司祭)', 'missionnaire et guide spirituel', 1,1,1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
+        '{"on_recrutment": {"origin_list": "12", "action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Marin européen (南蛮水夫)', 'employé sur les vaisseaux noirs portugais ou français', 1,1,1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
+        '{"on_recrutment": {"origin_list": "12, 13", "action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Jōdo-shinshū (浄土真宗)"} } }'),
+        '{"on_recrutment": {"origin_list": "7,9,10,11", "action": {"type":"go_traitor", "controller_lastname": "Jōdo-shinshū (浄土真宗)"} } }'),
     ('Hōshi (法師) – Moine bouddhiste itinérant', ', parfois proche conseiller du daimyō', 1, 0, 1,
-        '{"on_recrutment": {"action": {"type":"go_traitor", "controller_lastname": "Tendai (天台宗)"} } }')
+        '{"on_recrutment": {"origin_list": "1,2,3,4,5,8", "action": {"type":"go_traitor", "controller_lastname": "Tendai (天台宗)"} } }')
 ;

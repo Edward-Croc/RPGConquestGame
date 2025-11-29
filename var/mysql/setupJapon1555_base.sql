@@ -1,6 +1,6 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-
-UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
+UPDATE config SET value =  '1,2,3,4,5,6,7,8,9,10,11' WHERE name = 'first_come_origin_list';
+UPDATE config SET value =  '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
 UPDATE config SET value =  '1' WHERE name = 'recrutement_disciplines';
 UPDATE config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline';

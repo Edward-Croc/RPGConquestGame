@@ -1,26 +1,6 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-
--- TODO : Add Controler action 'purge' - immediate action, 
-    -- Fortresse must be present in zone
-    -- All ennemi Agents (that where once known) in zone are attacked by the controler (3 + 1-6 dice + all disciplines + 1 if held zone + x is local servants  )
-    -- On success the ennemi agent dies, ON fail he is bannished to controllers forteress zone and knows what happend
-    -- All un targeted ennemi agents in zone are bannished to controllers forteress zone and knows what happend
-
--- TODO : ADD Controler number of actions in turn (2 ? 3 ?)
-    -- Each attack / purge uses / move or build fortress uses 1 action
-
--- TODO : Add Controller action JSON activatable => Violent zone conversion
-    -- Zone changes claimer/owner to Violent faction/Active Controller
-    -- If owned Zone
-    -- If ennemi zone, agent should die
-    -- Parameters : 
-        -- If held 
-        -- If agent present in zone
-        -- Action name, 
-        -- Action result text,
-        -- Make possible for Ikko-ikki, (Monks and Chritians)
-
-UPDATE config SET value = '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
+UPDATE config SET value =  '1,2,3,4,5,6,7,8,9,10,11' WHERE name = 'first_come_origin_list';
+UPDATE config SET value =  '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
 UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
 UPDATE config SET value =  '1' WHERE name = 'recrutement_disciplines';
 UPDATE config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline';
@@ -163,18 +143,18 @@ INSERT INTO controllers (
 INSERT INTO controllers (
     firstname, lastname, ia_type, secret_controller,
     url, story, can_build_base,
-    turn_recruited_workers, turn_firstcome_workers,
+    start_workers, turn_recruited_workers, turn_firstcome_workers,
     faction_id, fake_faction_id
 ) VALUES
     ('Clan', 'Sogō (十河)', NULL, True, 
         NULL, '',
-        False, 1, 1,
+        False, 0, 1, 1,
         (SELECT ID FROM factions WHERE name = 'Chrétiens'),
         (SELECT ID FROM factions WHERE name = 'Chrétiens')
     ),
     ('Clan', 'Takeda (武田)', 'passif', True, 
         'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e', '',
-        False, 0, 0,
+        False, 10, 0, 0,
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'),
         (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda')
     )

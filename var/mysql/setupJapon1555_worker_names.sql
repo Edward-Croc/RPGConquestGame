@@ -7,13 +7,13 @@ INSERT INTO worker_origins (name) VALUES
     , ('Shikoku - Sanuki')
     , ('Shikoku - Awaji')
     , ('Shikoku - Shōdoshima')
+    , ('Honshu - Kansai')
     , ('Honshu - Kyoto')
-    , ('Honshu - Osaka')
     , ('Honshu - Okayama')
     , ('Honshu - Hiroshima')
     , ('Kyushu - Öita')
-    -- , ('France')
     , ('Portugal')
+    , ('France')
 ;
 
 -- Insert names into worker_names
@@ -74,7 +74,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Koji', 'Arakawa', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji')),
     ('Nanami', 'Iguchi', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Awaji'))
     
-    
+-- Shikoku - Shōdoshima
     , ('Nao', 'Miyamoto', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
     , ('Koki', 'Maruyama', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
     , ('Ren', 'Takada', (SELECT ID FROM worker_origins WHERE name = 'Shikoku - Shōdoshima'))
@@ -98,17 +98,17 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Kenji', 'Narita', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
     ('Ayumi', 'Tateishi', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto'));
 
--- Honshu - Osaka
+-- Honshu - Kansai
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Shinji', 'Tsukamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Mariko', 'Ogawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Yusuke', 'Okamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Nozomi', 'Ichinose', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Rei', 'Furukawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Tomoya', 'Suda', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Takuto', 'Saeki', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Minami', 'Kurata', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Sosuke', 'Muraoka', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka'));
+    ('Shinji', 'Tsukamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Mariko', 'Ogawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Yusuke', 'Okamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Nozomi', 'Ichinose', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Rei', 'Furukawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Tomoya', 'Suda', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Takuto', 'Saeki', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Minami', 'Kurata', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai')),
+    ('Sosuke', 'Muraoka', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kansai'));
 
 -- Honshu - Okayama
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
@@ -146,7 +146,7 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Hikaru', 'Shimoda', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
     ('Ami', 'Naruse', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita'));
 
-
+-- Portugal
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Amerigo', 'Attilio', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Marco', 'Martino', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
@@ -159,7 +159,6 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Bianca', 'Abriana', (SELECT ID FROM worker_origins WHERE name = 'Portugal')),
     ('Paolo', 'Pisano', (SELECT ID FROM worker_origins WHERE name = 'Portugal'));
 
-/*
 INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Jean', 'Martin', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Marie', 'Bernard', (SELECT ID FROM worker_origins WHERE name = 'France')),
@@ -171,69 +170,3 @@ INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
     ('Thomas', 'Durand', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Sophie', 'Leroy', (SELECT ID FROM worker_origins WHERE name = 'France')),
     ('Claire', 'Moreau', (SELECT ID FROM worker_origins WHERE name = 'France'));
-*/
-
--- Honshu - Kyoto
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Masaru', 'Yoshida', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Aya', 'Fukuda', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Shiro', 'Morimoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Kanon', 'Matsumoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Jiro', 'Tominaga', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Riko', 'Shimura', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Hiroki', 'Noma', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Misaki', 'Kamiyama', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Kenji', 'Narita', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto')),
-    ('Ayumi', 'Tateishi', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Kyoto'));
-
--- Honshu - Osaka
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Shinji', 'Tsukamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Mariko', 'Ogawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Yusuke', 'Okamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Nozomi', 'Ichinose', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Rei', 'Furukawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Tomoya', 'Suda', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Rina', 'Tokunaga', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Takuto', 'Saeki', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Minami', 'Kurata', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka')),
-    ('Sosuke', 'Muraoka', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Osaka'));
-
--- Honshu - Okayama
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Atsushi', 'Higashiyama', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Mami', 'Seto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Yuto', 'Ono', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Kaho', 'Mochizuki', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Naoya', 'Kurihara', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Arisa', 'Komatsu', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Soma', 'Morikawa', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Yuri', 'Inaba', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Ryunosuke', 'Takemoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama')),
-    ('Kaori', 'Uchida', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Okayama'));
-
--- Honshu - Hiroshima
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Shunpei', 'Hamamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Sayuri', 'Kawano', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Takao', 'Oshiro', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Natsuki', 'Minami', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Keisuke', 'Asano', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Chihiro', 'Nomura', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Haruto', 'Iwamoto', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Mizuki', 'Kudo', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Tetsuya', 'Ogino', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima')),
-    ('Hikari', 'Yokoyama', (SELECT ID FROM worker_origins WHERE name = 'Honshu - Hiroshima'));
-
--- Kyushu - Ōita
-INSERT INTO worker_names (firstname, lastname, origin_id) VALUES
-    ('Masaki', 'Tajima', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Naomi', 'Ebina', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Soutaro', 'Kawai', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Rena', 'Furuya', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Takahiro', 'Nishimoto', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Kana', 'Tachikawa', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Yuto', 'Baba', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Misao', 'Tokuda', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Hikaru', 'Shimoda', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita')),
-    ('Ami', 'Naruse', (SELECT ID FROM worker_origins WHERE name = 'Kyushu - Öita'));
