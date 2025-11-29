@@ -1,6 +1,40 @@
 <?php
 
 /**
+ * Generate a new worker
+ * 
+ * @param PDO $pdo : database connection
+ * @param int $controller_id
+ * @param string $buttonClicked
+ * 
+ * @return array $newWorker
+ */
+function generateNewWorker($pdo, $controller_id, $buttonClicked) {
+    $newWorker = array('controller_id' => $controller_id);
+
+    $generationOrder = getConfig($pdo, 'generation_order');
+    if (empty($generationOrder)){
+        $generationOrder = 'metier,hobby,origin';
+    }
+    $generationOrderArray = explode(',', $generationOrder);
+
+    foreach ($generationOrderArray as $generationOrder) {
+        if ($generationOrder == 'origin') {
+            $newWorker = randomWorkerOrigin($pdo, $newWorker, $buttonClicked);
+            $newWorker = randomWorkerName($pdo, $newWorker);
+        }
+        if ($generationOrder == 'metier') {
+            $newWorker = randomPowersByType($pdo, '2', $newWorker);
+        }
+        if ($generationOrder == 'hobby') {
+            $newWorker = randomPowersByType($pdo, '1', $newWorker);
+        }
+    }
+
+    return $newWorker;
+}
+
+/**
  *
  * @param PDO $pdo : database connection
  * @param int $workerId
@@ -419,27 +453,36 @@ function getActionsByWorkers($pdo, $worker_id_str){
  * Function get a random Origin for Worker
  *
  * @param PDO $pdo : database connection
- * @param string $limit
+ * @param array $newWorker
  * @param string|null $originList
  *
  * @return array|null originsArray
  */
-function randomWorkerOrigin($pdo, $limit = 1, $originList = null) {
-    $originsArray = array();
+function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
+
+    $tmpOrigine = getConfig($pdo, $buttonClicked.'_origin_list');
+    $originList = null;
+    if ( !empty($tmpOrigine) && $tmpOrigine != 'rand' ){
+        $originList = $tmpOrigine;
+    }
+    // TODO : Add locking of origins by controller_id
+    // TODO : Add locking of origins by config on metiers and hobbies
 
     $sqlOriginId = '';
     if ( !empty($originList) ){
         $sqlOriginId .= " WHERE id in ($originList)";
     }
 
+    $randCommand = 'RANDOM()';
+    if ($_SESSION['DBTYPE'] == 'mysql')
+        $randCommand = 'RAND()';
+
     try{
         // Get a random value from worker_origins
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RANDOM() LIMIT $limit";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "SELECT * FROM worker_origins $sqlOriginId ORDER BY RAND() LIMIT $limit";
-        }
+        $sql = sprintf("SELECT id, name FROM worker_origins %s ORDER BY %s LIMIT 1",
+            $sqlOriginId,
+            $randCommand
+        );
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -451,64 +494,52 @@ function randomWorkerOrigin($pdo, $limit = 1, $originList = null) {
     $workerOrigins = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Store worker_origins in the array
-    foreach ($workerOrigins as $workerOrigin) {
-        $originsArray[] = $workerOrigin;
-    }
+    $newWorker['origin_id'] = $workerOrigins[0]['id'];
+    $newWorker['origin'] = $workerOrigins[0]['name'];
     if ($_SESSION['DEBUG'] == true) 
-        echo sprintf("originsArray: %s <br /> <br />", var_export($originsArray,true));
+        echo sprintf("newWorker: %s <br /> <br />", var_export($newWorker,true));
 
-    return $originsArray;
+    return $newWorker;
 }
 
 /**
  * Function get random Name for Worker for originList
  *
  * @param PDO $pdo : database connection
- * @param int $iterations
- * @param string|null $originList
+ * @param array $newWorker
  *
  * @return array|null nameArray
  *
  */
-function randomWorkerName($pdo, $iterations = 1, $originList = null) {
-    $nameArray = array();
+function randomWorkerName($pdo, $newWorker) {
 
-    $originsArray = randomWorkerOrigin($pdo,  $iterations, $originList);
+    // Get 2 random values from worker_names for and origin ID
+    $randCommand = 'RANDOM()';
+    if ($_SESSION['DBTYPE'] == 'mysql')
+        $randCommand = 'RAND()';
 
-    for ($iteration = 0; $iteration < $iterations; $iteration++) {
-        $origin_id = $originsArray[$iteration]['id'];
-        // Get 2 random values from worker_names for and origin ID
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "SELECT * FROM worker_names
-                JOIN worker_origins ON worker_origins.id = worker_names.origin_id
-                WHERE origin_id = $origin_id
-                ORDER BY RANDOM()
-                LIMIT 2";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "SELECT * FROM worker_names
-                JOIN worker_origins ON worker_origins.id = worker_names.origin_id
-                WHERE origin_id = $origin_id
-                ORDER BY RAND()
-                LIMIT 2";
-        }
-        try{
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute();
-        } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-            return NULL;
-        }
-
-        // Fetch the results
-        $worker_names = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // Store worker_origins in the array
-        $nameArray[$iteration]['firstname'] = $worker_names[0]['firstname'];
-        $nameArray[$iteration]['lastname'] = $worker_names[1]['lastname'];
-        $nameArray[$iteration]['origin_id'] = $origin_id;
-        $nameArray[$iteration]['origin'] = $worker_names[1]['name'];
+    $sql = sprintf("SELECT * FROM worker_names
+        JOIN worker_origins ON worker_origins.id = worker_names.origin_id
+        WHERE origin_id = %d
+        ORDER BY %s
+        LIMIT 2",
+        $newWorker['origin_id'],
+        $randCommand
+    );
+    try{
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        return NULL;
     }
-    return $nameArray;
+
+    // Fetch the results
+    $worker_names = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Store worker_origins in the array
+    $newWorker['firstname'] = $worker_names[0]['firstname'];
+    $newWorker['lastname'] = $worker_names[1]['lastname'];
+    return $newWorker;
 }
 
 /**

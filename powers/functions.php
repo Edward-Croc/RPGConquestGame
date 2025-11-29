@@ -81,27 +81,29 @@ function getPowersByWorkers($pdo, $worker_id_str) {
  *  get a number of random elements from the type of power given
  *
  * @param PDO $pdo
- * @param string $type_list
- * @param int $limit
+ * @param string $type
+ * @param array $newWorker
  *
- * @return array|null : $powerArray
+ * @return array : $newWorker
  */
-// TODO : Add a select limit by controller_id like in the getPowersByType function
-function randomPowersByType($pdo, $type_list, $limit = 1) {
-    $powerArray = array();
+function randomPowersByType($pdo, $type, $newWorker) {
+
+    // TODO : Add a select limit by controller_id like in the getPowersByType function
+    // TODO : Allow locking certain Hobbys/Metiers by origin or controler !
+
     $power_text = getSQLPowerText(false);
+    $randCommand = 'RANDOM()';
+    if ($_SESSION['DBTYPE'] == 'mysql')
+        $randCommand = 'RAND()';
     try{
         // Get x random values from powers for a power_type
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "SELECT *, $power_text FROM powers AS p
-                INNER JOIN link_power_type ON link_power_type.power_id = p.id
-                WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RANDOM() LIMIT $limit";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "SELECT *, $power_text FROM powers AS p
+        $sql = sprintf("SELECT *, %s FROM powers AS p
             INNER JOIN link_power_type ON link_power_type.power_id = p.id
-            WHERE link_power_type.power_type_id IN ($type_list) ORDER BY RAND() LIMIT $limit";
-        }
+            WHERE link_power_type.power_type_id = %s ORDER BY %s LIMIT 1",
+            $power_text,
+            $type,
+            $randCommand
+        );
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -111,7 +113,10 @@ function randomPowersByType($pdo, $type_list, $limit = 1) {
 
     // Fetch the results
     $powerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    return $powerArray;
+
+    $newWorker['power_'.$type] = $powerArray[0];
+    
+    return $newWorker;
 }
 
 /**

@@ -72,24 +72,10 @@ if ($_SESSION['DEBUG'] == true){
     echo"<br />";
 }
 
-$tmpOrigine = getConfig($gameReady, $buttonClicked.'_origin_list');
-$originList = null;
-if ( !empty($tmpOrigine) && $tmpOrigine != 'rand' ){
-    $originList = $tmpOrigine;
-}
-
-// TODO : Allow locking certain origins by controler
-$nameArray = randomWorkerName($gameReady, $nbChoices, $originList);
-// TODO : Allow locking certain Hobbys/Metiers by origin or controler !
-$powerHobbyArray = randomPowersByType($gameReady,'1',$nbChoices);
-$powerMetierArray = randomPowersByType($gameReady,'2',$nbChoices);
 $powerDisciplineArray = getPowersByType($gameReady,'3', $controller_id, true);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true){
-    echo "nameArray: ".var_export($nameArray, true)."<br /><br />";
-    echo "powerHobbyArray: ".var_export($powerHobbyArray, true)."<br /><br />";
-    echo "powerMetierArray: ".var_export($powerMetierArray, true)."<br /><br />";
-    echo "powerDisciplineArray: ".var_export($powerDisciplineArray, true);"<br /><br />";
+    echo "powerDisciplineArray: ".var_export($powerDisciplineArray, true)."<br /><br />";
     echo "zonesArray: ".var_export($zonesArray, true). "<br /><br />";
 }
 
@@ -101,6 +87,10 @@ echo "
 ";
 
 for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
+    $newWorker = generateNewWorker($gameReady, $controller_id, $buttonClicked);
+    if ($_SESSION['DEBUG'] == true){
+        echo "newWorker: ".var_export($newWorker, true)."<br /><br />";
+    }
     echo sprintf ('
     <div class="workers">
     <form action="/%10$s/workers/action.php" method="GET">
@@ -119,14 +109,14 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         <input type="hidden" name="power_metier_id" value="%8$s">
         <input type="hidden" name="controller_id" value="%9$s">
     ',
-    $nameArray[$iteration]['firstname'],
-    $nameArray[$iteration]['lastname'],
-    $nameArray[$iteration]['origin'],
-    $powerHobbyArray[$iteration]['power_text'],
-    $powerMetierArray[$iteration]['power_text'],
-    $nameArray[$iteration]['origin_id'],
-    $powerHobbyArray[$iteration]['id'],
-    $powerMetierArray[$iteration]['id'],
+    $newWorker['firstname'],
+    $newWorker['lastname'],
+    $newWorker['origin'],
+    $newWorker['power_1']['power_text'],
+    $newWorker['power_2']['power_text'],
+    $newWorker['origin_id'],
+    $newWorker['power_1']['id'],
+    $newWorker['power_2']['id'],
     $controller_id,
     $_SESSION['FOLDER']
     );
