@@ -681,7 +681,15 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
  * @return int $cke_existing_record_id
  * 
  */
-function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, $zone_id) {
+function addWorkerToCKE(
+        $pdo,
+        $searcher_controller_id,
+        $found_worker_id,
+        $turn_number,
+        $zone_id,
+        $discovered_controller_id = NULL,
+        $discovered_controller_name = NULL
+    ) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     $cke_existing_record_id = NULL;
@@ -689,11 +697,11 @@ function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, 
     // Search for the existing controller-Worker combo
     $sql = "SELECT id FROM controllers_known_enemies
         WHERE controller_id = :searcher_controller_id
-            AND discovered_worker_id = :found_id";
+            AND discovered_worker_id = :found_worker_id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':searcher_controller_id' => $searcher_controller_id,
-        ':found_id' => $found_id
+        ':found_worker_id' => $found_worker_id
     ]);
     $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
@@ -701,29 +709,39 @@ function addWorkerToCKE($pdo, $searcher_controller_id, $found_id, $turn_number, 
     if (!empty($existingRecord)) {
         $cke_existing_record_id = $existingRecord['id'];
         // Update if record exists
-        $sql = "UPDATE controllers_known_enemies
+        $sql = sprintf("UPDATE controllers_known_enemies
             SET last_discovery_turn = :turn_number, zone_id = :zone_id
-            WHERE id = :id";
+            %s %s
+            WHERE id = :id",
+            $discovered_controller_id ? ", discovered_controller_id = :discovered_controller_id" : "",
+            $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : ""
+        );
         if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':turn_number' => $turn_number,
-            ':zone_id' => $zone_id,
-            ':id' => $existingRecord['id']
-        ]);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
+        if ($discovered_controller_id) {
+            $stmt->bindParam(':discovered_controller_id', $discovered_controller_id, PDO::PARAM_INT);
+        }
+        if ($discovered_controller_name) {
+            $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
+        }
+        $stmt->execute();
     } else {
         // Insert if record doesn't exist
         $sql = "INSERT INTO controllers_known_enemies
-            (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id)
-            VALUES (:searcher_controller_id, :found_id, :turn_number, :turn_number, :zone_id)";
+            (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name)
+            VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name)";
         if ($debug) echo "sql :".var_export($sql, true)." <br>";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-        ':searcher_controller_id' => $searcher_controller_id,
-        ':found_id' => $found_id,
-        ':turn_number' => $turn_number,
-        ':zone_id' => $zone_id,
-        ]);
+        $stmt->bindParam(':searcher_controller_id', $searcher_controller_id, PDO::PARAM_INT);
+        $stmt->bindParam(':found_worker_id', $found_worker_id, PDO::PARAM_INT);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->bindParam(':discovered_controller_id', $discovered_controller_id, PDO::PARAM_INT);
+        $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
+        $stmt->execute();
         $cke_existing_record_id = $pdo->lastInsertId();
     }
     return $cke_existing_record_id;
