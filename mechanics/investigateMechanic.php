@@ -461,40 +461,27 @@ function investigateMechanic($pdo, $mechanics) {
             if ($debug) echo "<p> Start controllers_known_enemies - <br /> ";
             // Add to controllers_known_enemies
             try {
-
-                $cke_existing_record_id = addWorkerToCKE($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $row['zone_id'] ) ;
-
-                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 && $cke_existing_record_id !== NULL ) {
-                    $discovered_controller_name_sql = '';
-                    if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
-                        $discovered_controller_name_sql = ', discovered_controller_name = :discovered_controller_name ';
-                    }
-                    // Update if record exists
-                    $sqlUpdate = sprintf("UPDATE controllers_known_enemies
-                            SET discovered_controller_id = :discovered_controller_id
-                            %s
-                            WHERE id = :id",
-                            $discovered_controller_name_sql
-                    );
-                    if ($debug) echo "sql :".var_export($sqlUpdate, true)." <br>";
-                    $stmtUpdate = $pdo->prepare($sqlUpdate);
-                    $stmtUpdate->bindParam(':discovered_controller_id', $row['found_controller_id']);
-                    $stmtUpdate->bindParam(':id',$cke_existing_record_id);
-                    if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
-                        $stmtUpdate->bindParam(':discovered_controller_name', $row['found_controller_name']);
-                    }
-                    $stmtUpdate->execute();
-                }
+                $discovered_controller_name = null;
+                $discovered_controller_id = null;
+                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 )
+                    $discovered_controller_id = $row['found_controller_id'];
+                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 )
+                    $discovered_controller_name = $row['found_controller_name'];
+                addWorkerToCKE(
+                    $pdo,
+                    $row['searcher_controller_id'],
+                    $row['found_id'],
+                    $turn_number,
+                    $row['zone_id'],
+                    $discovered_controller_id,
+                    $discovered_controller_name
+                );
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): Error: " . $e->getMessage();
             }
-            if ($debug) echo " DONE </p>";
+            if ($debug) echo " DONE controllers_known_enemies </p>";
         }
     }
-
-    if ($debug)
-        echo "<div>".var_export( $reportArray, true)."</div>";
-
     foreach ($reportArray as $worker_id => $report){
         try{
             updateWorkerAction($pdo, $worker_id,  $turn_number, NULL, ['investigate_report' => $report]);

@@ -373,11 +373,7 @@ function attackMechanic($pdo, $mechanics){
                             }
                         } else {
                             // No Add to know ennemies
-                            $sqlInsert = sprintf(
-                                "INSERT INTO controllers_known_enemies (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id) VALUES (%s, %s, %s, %s, %s)",
-                                $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['turn_number'], $defender['zone_id'] );
-                            $stmtInsert = $pdo->prepare($sqlInsert);
-                            $stmtInsert->execute();
+                            addWorkerToCKE($pdo, $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['zone_id']);
                         }
                     } catch (PDOException $e) {
                         echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
