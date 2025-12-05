@@ -53,12 +53,19 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         $target_controller_id = $_GET['target_controller_id'];
         $enemy_worker_id = $_GET['enemy_worker_id'];
 
-        // Get zone from controllers_known_enemies where controller_id = $controller_id and discovered_worker_id = $enemyWorkersSelect
-        $sql = "SELECT zone_id FROM controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+        // Only gift information if the worker is not controlled by the target controller
+        $sql = "SELECT COUNT(*) FROM controller_worker WHERE controller_id = ? AND worker_id = ?";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([$controller_id, $enemy_worker_id]);
-        $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
-        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+        $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+        if ($count = 0) {
+            // Get zone from controllers_known_enemies where controller_id = $controller_id and discovered_worker_id = $enemyWorkersSelect
+            $sql = "SELECT zone_id FROM controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+            $stmt = $gameReady->prepare($sql);
+            $stmt->execute([$controller_id, $enemy_worker_id]);
+            $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
+            addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+        }
     }
     if (isset($_GET['giftInformationLocation'])){
         // Get Turn Number
