@@ -694,6 +694,16 @@ function addWorkerToCKE(
 
     $cke_existing_record_id = NULL;
 
+    // Only add information to controllers_known_enemies if the worker is not controlled by the target controller
+    $sql = "SELECT COUNT(*) FROM controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':searcher_controller_id' => $searcher_controller_id,
+        ':found_worker_id' => $found_worker_id
+    ]);
+    $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    if ($count == 0)  return NULL;
+
     // Search for the existing controller-Worker combo
     $sql = "SELECT id FROM controllers_known_enemies
         WHERE controller_id = :searcher_controller_id
