@@ -1321,8 +1321,9 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
  *
  */ 
 function createTraceWorker($pdo, $worker_id, $controller_id) {
-    $debug = false;
-    if ($_SESSION['DEBUG'] == true) $debug = true;
+
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     if ($debug) echo __FUNCTION__."(): createTraceWorker <br/><br/>";
     try {
         // Begin transaction
@@ -1416,9 +1417,8 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
  */ 
 function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
-    $debug = false;
-    if ($_SESSION['DEBUG'] == true) $debug = true;
-    $debug = true;
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     if ($debug) echo __FUNCTION__."(): destroyTraceWorker <br/><br/>";
 
     // Step 1 : find the trace_worker_id in the workers_trace_links table
