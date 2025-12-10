@@ -304,9 +304,6 @@ CREATE TABLE workers (
     lastname TEXT NOT NULL,
     origin_id INT NOT NULL,
     zone_id INT NOT NULL,
-    is_alive TINYINT(1) DEFAULT 1,
-    is_active TINYINT(1) DEFAULT 1,
-    is_trace TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (id),
     FOREIGN KEY (zone_id) REFERENCES zones (id)
@@ -440,6 +437,11 @@ CREATE TABLE controllers_known_enemies (
     FOREIGN KEY (discovered_controller_id) REFERENCES controllers (id), -- Link to controllers table
     FOREIGN KEY (zone_id) REFERENCES zones (id) -- Link to zones table
 );
+-- Create indexes on the controllers_known_enemies table
+CREATE INDEX idx_controllers_known_enemies_controller_id ON controllers_known_enemies (controller_id);
+CREATE INDEX idx_controllers_known_enemies_discovered_worker_id ON controllers_known_enemies (discovered_worker_id);
+CREATE INDEX idx_controllers_known_enemies_discovered_controller_id ON controllers_known_enemies (discovered_controller_id);
+CREATE INDEX idx_controllers_known_enemies_zone_id ON controllers_known_enemies (zone_id);
 
 CREATE TABLE ressources_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -466,3 +468,6 @@ CREATE TABLE controller_ressources (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     FOREIGN KEY (ressource_id) REFERENCES ressources_config (id)
 );
+-- Create indexes on the controller_ressources table
+CREATE INDEX idx_controller_ressources_controller_id ON controller_ressources (controller_id);
+CREATE INDEX idx_controller_ressources_ressource_id ON controller_ressources (ressource_id);

@@ -56,7 +56,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
 
                 // liveWorkerArray : worker alive and active and that we control
-                if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
+                if (
+                    in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
+                    && $worker['is_primary_controller']
+                ) {
                     $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true);
                     $liveWorkerArray[] = $worker;
                 } else {
@@ -64,15 +67,21 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 }
 
                 //doubleAgentWorkerArray : worker alive and active that we don't control
-                if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] )
+                if ( in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS) && !$worker['is_primary_controller'] )
                     $doubleAgentWorkerArray[] = $worker;
 
                 //prisonersWorkerArray : worker alive and not active that we do control are our prisonners
-                if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] )
+                if (
+                    $worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured' 
+                    && $worker['is_primary_controller']
+                )
                     $prisonersWorkerArray[] = $worker;
 
                 // deadWorkerArray : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control) 
-                if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller']  ) )
+                if (
+                    in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)
+                    && !($worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured')
+                )
                     $deadWorkerArray[] = $worker;
             }
             if (!empty($liveWorkerArray)) {

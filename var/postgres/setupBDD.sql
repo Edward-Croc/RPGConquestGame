@@ -303,9 +303,6 @@ CREATE TABLE workers (
     lastname text NOT NULL,
     origin_id INT NOT NULL,
     zone_id INT NOT NULL,
-    is_alive BOOLEAN DEFAULT TRUE,
-    is_active BOOLEAN DEFAULT TRUE,
-    is_trace BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (id),
     FOREIGN KEY (zone_id) REFERENCES zones (id)

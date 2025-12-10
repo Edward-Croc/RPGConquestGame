@@ -244,10 +244,10 @@ function calculateVals($pdo, $mechanics){
                     LEFT JOIN 
                         worker_actions wa ON wa.worker_id = w.id
                     LEFT JOIN
-                        controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = True
+                        controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
                     WHERE
                         z.holder_controller_id = cw.controller_id
-                        AND wa.action_choice NOT IN ('dead', 'captured', 'trace')
+                        AND wa.action_choice IN (%s)
                         AND wa.turn_number = :turn_number
                     GROUP BY
                         z.id
@@ -263,9 +263,9 @@ function calculateVals($pdo, $mechanics){
                     FROM zones z 
                     LEFT JOIN workers w ON w.zone_id = z.id 
                     LEFT JOIN worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = 1 
+                    LEFT JOIN controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
                     WHERE z.holder_controller_id = cw.controller_id 
-                    AND wa.action_choice NOT IN ('dead', 'captured', 'trace')
+                    AND wa.action_choice IN (%s)
                     AND wa.turn_number = :turn_number
                     GROUP BY z.id
                 ) AS subquery ON z.id = subquery.zone_id
@@ -273,8 +273,13 @@ function calculateVals($pdo, $mechanics){
             ";
         }
         // Prepare and execute SQL query
+        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+        $is_primary_controller = true;
+
+        $sql = sprintf($sql, $active_actions);
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':turn_number', $mechanics['turncounter']);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
+        $stmt->bindParam(':is_primary_controller', $is_primary_controller, PDO::PARAM_BOOL);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
@@ -504,14 +509,19 @@ function claimMechanic($pdo, $mechanics) {
             $sql_workers_by_zone = "SELECT *
                 FROM workers w
                 JOIN controller_worker cw ON cw.worker_id = w.id
+                JOIN worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE
                     w.zone_id = :zone_id
                     AND cw.controller_id != :controller_id
-                    AND w.is_active = True";
+                    AND wa.action_choice IN (%s)";
             try {
+                $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+                $sql_workers_by_zone = sprintf($sql_workers_by_zone, $active_actions);
+
                 $stmt = $pdo->prepare($sql_workers_by_zone);
                 $stmt->bindParam(':zone_id', $claimer['zone_id'], PDO::PARAM_INT);
                 $stmt->bindParam(':controller_id', $claimer['claimer_controller_id'], PDO::PARAM_INT);
+                $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
                 $stmt->execute();
                 $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } catch (PDOException $e) {

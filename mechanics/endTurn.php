@@ -32,13 +32,17 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
     $valsResult = true;
     $valsResult = calculateVals($gameReady, $mechanics);
     if ($valsResult) {
+        $inactive_actions = "'".implode("','", INACTIVE_ACTIONS)."'";
         // Add calculated values to worker report
-        $sql = "SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val
+        $sql = sprintf("SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val
             FROM workers w
             JOIN worker_actions wa ON wa.worker_id = w.id AND turn_number = :turn_number
-            WHERE is_alive = True AND is_active = True";
+            WHERE wa.action_choice NOT IN (%s)
+            ", $inactive_actions
+        );
         $stmt = $gameReady->prepare($sql);
-        $stmt->execute([':turn_number' => $mechanics['turncounter']]);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
+        $stmt->execute();
         $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $timeValue = strtolower(getConfig($gameReady, 'timeValue'));

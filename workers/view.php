@@ -17,7 +17,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
         foreach ($workersArray as $worker){
             if ( $worker['controller_id'] != $controller_id) continue;
 
-            $workerStatus = getWorkerStatus($worker);
+            $workerStatus = getWorkerStatus($worker, $mechanics);
 
             $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
@@ -159,8 +159,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             // build view actions HTML
             $actionHTML = '';
-            // worker must be active to be allowed actions
-            if ($worker['is_active']) {
+            // worker must be active to have actions available
+            if (in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)) {
                 // on $workerStatus = 'double_agent' show recall button
                 $recallWorkerButton = '';
                 if (!empty($workerStatus) && $workerStatus == 'double_agent'){
@@ -287,8 +287,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             // build upgrade HTML
             $upgradeHTML = '';
-            // worker must be active to get upgrades
-            if ($worker['is_active']) {
+            // worker must be active to have upgrades available
+            if (in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)) {
                 // TODO : UPDATE powers on age code ?
                 /* ('age_hobby', 'false', ''),
                 ('age_metier', 'false', ''), */

@@ -288,18 +288,22 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
         if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
         if ($workerMultiplier !== 0) {
+            $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
             $sql = "
                 SELECT COUNT(w.id) AS worker_count
                 FROM workers w
                 JOIN controller_worker cw ON cw.worker_id = w.id
+                JOIN worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE cw.controller_id = :controller_id
                 AND w.zone_id = :zone_id
-                AND w.is_active = True
+                AND wa.action_choice IN (%s)
             ";
-            $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(':controller_id', $controller_id);
-            $stmt->bindParam(':zone_id', $zone_id);
+            $stmt = $pdo->prepare(sprintf($sql, $active_actions));
+            $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+            $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+            $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
             $stmt->execute();
+
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($debug) echo sprintf( "result: %s<br>", var_export($result, true));
             $worker_count = $result['worker_count'];

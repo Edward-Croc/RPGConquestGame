@@ -109,8 +109,8 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
             FROM searchers s
             JOIN zones z ON z.id = s.zone_id
             JOIN worker_actions wa ON
-                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured', 'trace')
-            JOIN workers w ON wa.worker_id = w.ID AND w.is_trace = false AND w.is_active = true
+                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice IN (%s)
+            JOIN workers w ON wa.worker_id = w.id
             JOIN worker_origins wo ON wo.id = w.origin_id
             JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = true
             JOIN controllers c ON cw.controller_id = c.ID
@@ -191,8 +191,8 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
             ) s
             JOIN zones z ON z.id = s.zone_id
             JOIN worker_actions wa ON
-                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice NOT IN ('dead', 'captured', 'trace')
-            JOIN workers w ON wa.worker_id = w.ID
+                s.zone_id = wa.zone_id AND turn_number = :turn_number AND action_choice IN (%s)
+            JOIN workers w ON wa.worker_id = w.id
             JOIN worker_origins wo ON wo.id = w.origin_id
             JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = 1
             JOIN controllers c ON cw.controller_id = c.ID
@@ -201,17 +201,24 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
                 AND s.searcher_controller_id != wa.controller_id
         ";
     }
-    if ( !EMPTY($searcher_id) ) $sql .= " AND s.searcher_id = :searcher_id";
+    if ( !EMPTY($searcher_id) ) $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
+    if ($debug) echo sprintf("sql : %s <br/>", $sql);
     try{
+        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+        if ($debug) echo sprintf("turn_number : %s <br/>", $turn_number);
+        if ($debug) echo sprintf("active_actions : %s <br/>", $active_actions);
+        $sql = sprintf($sql, $active_actions);
+
         // Prepare and execute the statement
         $stmt = $pdo->prepare($sql);
-        if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
-        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $stmt->execute();
 
     } catch (PDOException $e) {
         echo __FUNCTION__."(): Error: " . $e->getMessage();
     }
+    if ($debug) echo sprintf("stmt->rowCount() : %s <br/>", $stmt->rowCount());
+
     // Fetch and return the results
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -466,21 +473,21 @@ function investigateMechanic($pdo, $mechanics) {
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
             if ($debug) echo "<p> Start controllers_known_enemies - <br /> ";
             // Add to controllers_known_enemies
-                $discovered_controller_name = null;
-                $discovered_controller_id = null;
-                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 )
-                    $discovered_controller_id = $row['found_controller_id'];
-                if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 )
-                    $discovered_controller_name = $row['found_controller_name'];
-                addWorkerToCKE(
-                    $pdo,
-                    $row['searcher_controller_id'],
-                    $row['found_id'],
-                    $turn_number,
-                    $row['zone_id'],
-                    $discovered_controller_id,
-                    $discovered_controller_name
-                );
+            $discovered_controller_name = null;
+            $discovered_controller_id = null;
+            if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 )
+                $discovered_controller_id = $row['found_controller_id'];
+            if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 )
+                $discovered_controller_name = $row['found_controller_name'];
+            addWorkerToCKE(
+                $pdo,
+                $row['searcher_controller_id'],
+                $row['found_id'],
+                $turn_number,
+                $row['zone_id'],
+                $discovered_controller_id,
+                $discovered_controller_name
+            );
 
             // If the seracher is a double agent, add the found_id to controllers_known_enemies for the other controller
             try {

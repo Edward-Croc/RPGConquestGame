@@ -1,5 +1,8 @@
 <?php
 
+define('ACTIVE_ACTIONS', [ 'passive', 'investigate', 'attack', 'claim', 'hide' ]);
+define('INACTIVE_ACTIONS', [ 'dead', 'captured', 'trace' ]);
+
 /**
  * Generate a new worker
  * 
@@ -35,61 +38,6 @@ function generateNewWorker($pdo, $controller_id, $buttonClicked) {
 }
 
 /**
- *
- * @param PDO $pdo : database connection
- * @param int $workerId
- * @param bool $isActive
- *
- * @return bool success
- */
-function updateWorkerActiveStatus($pdo, $workerId, $isActive = false) {
-    if (is_null($isActive)) {
-        if ( $_SESSION['DEBUG'] == true ) echo  __FUNCTION__."(): isActive: NULL<br />";
-        return false;
-    }
-
-    $query = "UPDATE workers SET is_active = :is_active WHERE id = :worker_id";
-    try{
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':is_active', $isActive, PDO::PARAM_BOOL);
-        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
-        return false;
-    }
-    return true;
-}
-
-/**
- *
- * @param PDO $pdo : database connection
- * @param int $workerId
- * @param bool $isAlive
- *
- * @return bool success
- *
- */
-function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
-    if (is_null($isAlive)) {
-        if ( $_SESSION['DEBUG'] == true ) echo  __FUNCTION__."(): isAlive: NULL<br />";
-        return false;
-    }
-
-    $query = "UPDATE workers SET is_alive = :is_alive WHERE id = :worker_id";
-    try{
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':is_alive', $isAlive, PDO::PARAM_BOOL);
-        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
-        return false;
-    }
-    return true;
-}
-
-/**
  * Update worker action table for a turn and change the action and/or add to the report
  *
  * @param PDO $pdo : database connection
@@ -97,10 +45,11 @@ function updateWorkerAliveStatus($pdo, $workerId, $isAlive = false) {
  * @param int $turnNumber
  * @param string|null $actionChoice
  * @param string|null $reportAppendArray
+ * @param array|null $jsonArray
  *
  * @return bool success
  */
-function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null) {
+function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null, $jsonArray = null) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     $query = "UPDATE worker_actions SET ";
@@ -110,10 +59,20 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
     if (!empty($actionChoice)) {
         $updates[] = "action_choice = '$actionChoice'";
     }
+    if (!empty($jsonArray)) {
+        $updates[] = "action_params = :json";
+        $params['json'] = json_encode($jsonArray);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo  __FUNCTION__."(): Failed to encode JSON: " . json_last_error_msg()."<br />";
+            return false;
+        }
+    }
     if (!empty($reportAppendArray)) {
         // Step 1: Fetch the existing report
         $stmt = $pdo->prepare("SELECT report FROM worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number");
-        $stmt->execute($params);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
+        $stmt->bindParam(':turn_number', $turnNumber, PDO::PARAM_INT);
+        $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             echo  __FUNCTION__."(): No record found for worker_id $workerId and turn_number $turnNumber.<br />";
@@ -313,25 +272,36 @@ function setWorkerCurrentAction($workerActions, $turncounter) {
  * get Worker satus
  * 
  * @param array $worker : must contain following keys
- * - 'is_alive'
- * - 'is_active'
+ * - ['actions'][current_turn_number]['action_choice']
  * - 'is_primary_controller'
  * 
  * @return string 
  */
-function getWorkerStatus($worker) {
+function getWorkerStatus($worker, $mechanics) {
     $workerStatus = 'unfound';
     // alive: worker alive and active and that we control
-    if ( $worker['is_alive'] && $worker['is_active'] && $worker['is_primary_controller'] ) {
+    if (
+        in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
+        && $worker['is_primary_controller']
+    ) {
         $workerStatus = 'alive';
     //double_agent : worker alive and active that we don't control
-    } else if ( $worker['is_alive'] && $worker['is_active'] && !$worker['is_primary_controller'] ) {
+    } else if (
+        in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
+        && !$worker['is_primary_controller']
+    ) {
         $workerStatus = 'double_agent';
     //prisoner : worker alive and not active that we do control are our prisonners
-    } else if ( $worker['is_alive'] && !$worker['is_active'] && $worker['is_primary_controller'] ) {
+    } else if (
+        $worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured'
+        && $worker['is_primary_controller']
+    ) {
         $workerStatus = 'prisoner';
     // dead : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
-    } else if ( !$worker['is_alive'] || ( $worker['is_alive'] && !$worker['is_active'] && !$worker['is_primary_controller'] ) ) {
+    } else if (
+        in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)
+        && !($worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured')
+    ) {
         $workerStatus = 'dead';
     }
     if ( $_SESSION['DEBUG'] == true )
@@ -360,7 +330,7 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
 
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
-    $workerStatus = getWorkerStatus($worker);
+    $workerStatus = getWorkerStatus($worker, $mechanics);
 
     $textActionUpdated = getConfig($pdo,'txt_ps_'.$currentAction['action_choice']);
     // change action text if prisonner or double agent
@@ -886,39 +856,17 @@ function moveWorker($pdo, $workerId, $zoneId) {
     }
 
     if ($debug) echo __FUNCTION__."(): Step 2 UPDATE worker_actions <br/>";
-    // get worker action status for turn
     $actions = getWorkerActions($pdo, $workerId);
-    $action = $actions[0];
-    if ($debug) echo __FUNCTION__."(): action: ".var_export($action, true)."<br/><br/>";
 
-    // Decode the existing JSON into an associative array
-    $currentReport = array();
-    if (!empty($action['report'])) {
-        $currentReport = json_decode($action['report'], true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
-            $currentReport = array();
-        }
-    }
+    $mechanics = getMechanics($pdo);
     $zone_name = getZoneName($pdo, $zoneId);
-    if (empty($currentReport['life_report'])) $currentReport['life_report'] = '';
-    $currentReport['life_report'] .= "J'ai déménagé vers <strong>$zone_name</strong>. <br/>";
+    updateWorkerAction($pdo, $workerId, $mechanics['turncounter'], 'passive', ['life_report' => "J'ai déménagé vers <strong>$zone_name</strong>. <br/>"], json_encode([]));
 
-    if ($debug) echo sprintf("%s(): Repport built %s <br/>", __FUNCTION__, $currentReport['life_report']);
-    // Encode the updated array back into JSON
-    $updatedReportJson = json_encode($currentReport);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON encoding error: " . json_last_error_msg() . "<br />";
-        return null;
-    }
     try{
         // UPDATE worker_actions values
-        $action_params = json_encode([]);
-        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id, action_choice = 'passive', action_params = :action_params, report = :report WHERE id = :id ");
-        $stmt->bindParam(':zone_id', $zoneId);
-        $stmt->bindParam(':id', $action['id']);
-        $stmt->bindParam(':report', $updatedReportJson);
-        $stmt->bindParam(':action_params', $action_params);
+        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id WHERE id = :id ");
+        $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $actions[0]['id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
@@ -1157,9 +1105,6 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':worker_id' => $workerId
                 ]);
 
-                // Update the worker status table
-                updateWorkerActiveStatus($pdo, $workerId, true);
-
                 // Update the worker_actions table
                 $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
@@ -1383,17 +1328,14 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         // Begin transaction
         $pdo->beginTransaction();
 
-        // Step 1 : Copy the worker table except id, active = false, alive = false and trace = true
+        // Step 1 : Copy the worker table except id
         $query = "
-            INSERT INTO workers (firstname, lastname, origin_id, zone_id, is_active, is_alive, is_trace) 
-            SELECT firstname, lastname, origin_id, zone_id, :is_active, :is_alive, :is_trace 
+            INSERT INTO workers (firstname, lastname, origin_id, zone_id) 
+            SELECT firstname, lastname, origin_id, zone_id
             FROM workers WHERE id = :worker_id
         ";
         if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
-        $stmt->bindValue(':is_active', false, PDO::PARAM_BOOL);
-        $stmt->bindValue(':is_alive', false, PDO::PARAM_BOOL);
-        $stmt->bindValue(':is_trace', true, PDO::PARAM_BOOL);
         $stmt->bindValue(':worker_id', $worker_id, PDO::PARAM_INT);
         $stmt->execute();
         $new_worker_id = $pdo->lastInsertId();
