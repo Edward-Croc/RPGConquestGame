@@ -45,7 +45,6 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
         $timeDenominatorThis = strtolower(getConfig($gameReady, 'timeDenominatorThis'));
 
         foreach ($workers as $worker) {
-            // Example: retrieve stats from a helper function or inline logic
             $investigation = $worker['enquete_val'];
             $attack = $worker['attack_val'];
             $defense = $worker['defence_val'];
@@ -71,7 +70,22 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
         return false;
     }
 }
+
+// set Controlled by IA actions
+// $IAResult = aiMechanic($gameReady);
+
 if ($mechanics['end_step'] == 'calculateValsReport') {
+    // check attacks
+    $attackResult = attackMechanic($gameReady, $mechanics);
+    if ( !$attackResult){
+        echo __FUNCTION__."(): Failed to attack: attackMechanic <br />";
+        return false;
+    }
+    changeEndTurnState($gameReady, 'attackMechanic', $mechanics);
+    $mechanics['end_step'] = 'attackMechanic';
+}
+
+if ($mechanics['end_step'] == 'attackMechanic') {
     // recalculate base defence
     $bdrResult = recalculateBaseDefence($gameReady);
     if ( !$bdrResult){
@@ -82,19 +96,18 @@ if ($mechanics['end_step'] == 'calculateValsReport') {
     $mechanics['end_step'] = 'recalculateBaseDefence';
 }
 
-// set Controlled by IA actions
-// $IAResult = aiMechanic($gameReady);
 if ($mechanics['end_step'] == 'recalculateBaseDefence') {
-    // check attacks
-    $attackResult = attackMechanic($gameReady, $mechanics);
-    if ( !$attackResult){
-        echo __FUNCTION__."(): Failed to attack: attackMechanic <br />";
+    // check claiming territory
+    $claimResult = claimMechanic($gameReady, $mechanics);
+    if ( !$claimResult){
+        echo __FUNCTION__."(): Failed to claim: claimMechanic <br />";
         return false;
     }
-    changeEndTurnState($gameReady, 'attackMechanic', $mechanics);
-    $mechanics['end_step'] = 'attackMechanic';
+    changeEndTurnState($gameReady, 'claimMechanic', $mechanics);
+    $mechanics['end_step'] = 'claimMechanic';
 }
-if ($mechanics['end_step'] == 'attackMechanic') {
+
+if ($mechanics['end_step'] == 'claimMechanic') {
     // check investigations
     $investigateResult = investigateMechanic($gameReady, $mechanics);
     if ( !$investigateResult){
@@ -104,6 +117,7 @@ if ($mechanics['end_step'] == 'attackMechanic') {
     changeEndTurnState($gameReady, 'investigateMechanic', $mechanics);
     $mechanics['end_step'] = 'investigateMechanic';
 }
+
 if ($mechanics['end_step'] == 'investigateMechanic') {
     // check locations seach
     $locationsearchResult = locationSearchMechanic($gameReady, $mechanics);
@@ -114,19 +128,10 @@ if ($mechanics['end_step'] == 'investigateMechanic') {
     changeEndTurnState($gameReady, 'locationSearchMechanic', $mechanics);
     $mechanics['end_step'] = 'locationSearchMechanic';
 }
-if ($mechanics['end_step'] == 'locationSearchMechanic') {
-    // check claiming territory
-    $claimResult = claimMechanic($gameReady, $mechanics);
-    if ( !$claimResult){
-        echo __FUNCTION__."(): Failed to claim: claimMechanic <br />";
-        return false;
-    }
-    changeEndTurnState($gameReady, 'claimMechanic', $mechanics);
-    $mechanics['end_step'] = 'claimMechanic';
-}
+
 // update turn counter
 $turn = (INT)$mechanics['turncounter'] + 1;
-if ($mechanics['end_step'] == 'claimMechanic') {
+if ($mechanics['end_step'] == 'locationSearchMechanic') {
     // create new turn lines
     $turnLinesResult = createNewTurnLines($gameReady, $turn);
     if ( !$turnLinesResult){
@@ -136,6 +141,7 @@ if ($mechanics['end_step'] == 'claimMechanic') {
     changeEndTurnState($gameReady, 'createNewTurnLines', $mechanics);
     $mechanics['end_step'] = 'createNewTurnLines';
 }
+
 if ($mechanics['end_step'] == 'createNewTurnLines') {
     $restartRecrutementCount = restartTurnRecrutementCount($gameReady);
     if ( !$restartRecrutementCount){
@@ -145,6 +151,7 @@ if ($mechanics['end_step'] == 'createNewTurnLines') {
     changeEndTurnState($gameReady, 'restartTurnRecrutementCount', $mechanics);
     $mechanics['end_step'] = 'restartTurnRecrutementCount';
 }
+
 if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     try{
         // SQL query to select username from the players table
@@ -155,5 +162,8 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
     }
-    echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
+    changeEndTurnState($gameReady, 'SetTurncounter', $mechanics);
+    $mechanics['end_step'] = 'SetTurncounter';
 }
+
+echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
