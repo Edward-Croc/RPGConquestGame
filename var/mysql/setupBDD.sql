@@ -77,7 +77,7 @@ VALUES
     ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
     -- Attack choices
     ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
-    ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
+    ('canAttackNetwork', 1, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
     -- Diff vals for attack results
     ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),

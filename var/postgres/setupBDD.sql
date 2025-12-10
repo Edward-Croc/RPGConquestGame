@@ -76,7 +76,7 @@ VALUES
     ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
     -- Attack choices
     ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
-    ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
+    ('canAttackNetwork', 1, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
     -- Diff vals for attack results
     ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
@@ -198,6 +198,9 @@ CREATE TABLE player_controller (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     FOREIGN KEY (player_id) REFERENCES players (id)
 );
+-- Create indexes on the player_controller table
+CREATE INDEX idx_player_controller_controller_id ON player_controller (controller_id);
+CREATE INDEX idx_player_controller_player_id ON player_controller (player_id);
 
 -- Create the zones and locations
 CREATE TABLE zones (

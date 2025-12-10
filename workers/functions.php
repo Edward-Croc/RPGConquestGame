@@ -1338,12 +1338,12 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
                 if ( $discovered_controller_id != $enemyWorker['discovered_controller_id'] && $canAttackNetwork > 0){
                     $discovered_controller_id = $enemyWorker['discovered_controller_id'];
                     $enemyWorkerOptions .= sprintf(
-                        '<option value=\'network_%1$s\'>Réseau %1$s - %2$s</option>',
+                        '<option value=\'network_%1$s\'>Réseau %1$s - %2$s :</option>',
                         $enemyWorker['discovered_controller_id'],
                         $enemyWorker['discovered_controller_name'],
                     );
                 }
-                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
+                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s">- %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
             }
         }
     }
