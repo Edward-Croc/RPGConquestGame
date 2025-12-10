@@ -1,7 +1,6 @@
 <?php
 
 require_once '../base/basePHP.php';
-$_SESSION['DEBUG'] = true;
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";

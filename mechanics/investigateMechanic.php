@@ -466,7 +466,6 @@ function investigateMechanic($pdo, $mechanics) {
         if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
             if ($debug) echo "<p> Start controllers_known_enemies - <br /> ";
             // Add to controllers_known_enemies
-            try {
                 $discovered_controller_name = null;
                 $discovered_controller_id = null;
                 if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 )
@@ -482,10 +481,36 @@ function investigateMechanic($pdo, $mechanics) {
                     $discovered_controller_id,
                     $discovered_controller_name
                 );
+
+            // If the seracher is a double agent, add the found_id to controllers_known_enemies for the other controller
+            try {
+                $sql = sprintf(
+                    "SELECT controller_id FROM controller_worker 
+                    WHERE worker_id = %s AND controller_id !=  %s",
+                    $row['searcher_id'],
+                    $row['searcher_controller_id']
+               );
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute();
+                $controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($controllers as $controller) {
+                    addWorkerToCKE(
+                        $pdo,
+                        $controller['controller_id'],
+                        $row['found_id'],
+                        $turn_number,
+                        $row['zone_id'],
+                        $discovered_controller_id,
+                        $discovered_controller_name
+                    );
+                }
             } catch (PDOException $e) {
-                echo __FUNCTION__."(): Error: " . $e->getMessage();
+                echo __FUNCTION__."(): Error SELECT controller_id FROM controller_worker Failed: " . $e->getMessage()."<br />";
             }
-            if ($debug) echo " DONE controllers_known_enemies </p>";
+
+            if ($debug)
+                echo " DONE controllers_known_enemies </p>";
+            
         }
     }
     foreach ($reportArray as $worker_id => $report){

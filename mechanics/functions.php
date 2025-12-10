@@ -116,7 +116,7 @@ function calculateVals($pdo, $mechanics){
     $array[] = ['attack', 'activeAttackActions', true];
     $array[] = ['defence', 'passiveDefenceActions', false];
     $array[] = ['defence', 'activeDefenceActions', true];
-    echo '<div> calculateVals : <p>';
+    echo '<div> <h3> calculateVals : </h3> <p>';
 
     // foreach type of action
     foreach ($array as $elements) {
@@ -228,7 +228,7 @@ function calculateVals($pdo, $mechanics){
         echo "DONE <br /></p>";
     }
 
-    echo '<p> Calculate zone defense values <br />';
+    echo '</div><div><p> <h3> Calculate zone defense values: </h3> ';
     try {
         if ($_SESSION['DBTYPE'] == 'postgres'){
             $sql = "UPDATE zones
