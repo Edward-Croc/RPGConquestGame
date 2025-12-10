@@ -694,6 +694,7 @@ function addWorkerToCKE(
 
     $cke_existing_record_id = NULL;
 
+    try{
     // Only add information to controllers_known_enemies if the worker is not controlled by the target controller
     $sql = "SELECT COUNT(*) FROM controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
     $stmt = $pdo->prepare($sql);
@@ -702,8 +703,15 @@ function addWorkerToCKE(
         ':found_worker_id' => $found_worker_id
     ]);
     $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    if ($count == 0)  return NULL;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error COUNT(*) FROM controller_worker Failed: " . $e->getMessage()."<br />";
+    }
+    if ($count == 1) {
+        echo __FUNCTION__."(): COUNT(*) FROM controller_worker is 1, Worker is already controlled by the target controller<br />";
+        return NULL;
+    }
 
+    try{
     // Search for the existing controller-Worker combo
     $sql = "SELECT id FROM controllers_known_enemies
         WHERE controller_id = :searcher_controller_id
@@ -715,8 +723,13 @@ function addWorkerToCKE(
     ]);
     $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT id FROM controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
 
     if (!empty($existingRecord)) {
+        try{
         $cke_existing_record_id = $existingRecord['id'];
         // Update if record exists
         $sql = sprintf("UPDATE controllers_known_enemies
@@ -738,7 +751,11 @@ function addWorkerToCKE(
             $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
         }
         $stmt->execute();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Error UPDATE controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        }
     } else {
+        try{
         // Insert if record doesn't exist
         $sql = "INSERT INTO controllers_known_enemies
             (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name)
@@ -753,6 +770,9 @@ function addWorkerToCKE(
         $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
         $stmt->execute();
         $cke_existing_record_id = $pdo->lastInsertId();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Error INSERT INTO controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        }
     }
     return $cke_existing_record_id;
 }
@@ -785,6 +805,7 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
     if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
 
     if (!empty($existingRecord)) {
+        try{
         $ckl_existing_record_id = $existingRecord['id'];
         // Update if record exists
         $sql = sprintf("UPDATE controller_known_locations
@@ -800,7 +821,11 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
         $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
         $stmt->execute();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Error UPDATE controller_known_locations Failed: " . $e->getMessage()."<br />";
+        }
     } else {
+        try{
         // Insert if record doesn't exist
         $sqlInsert = "INSERT INTO controller_known_locations (
             controller_id, location_id, found_secret, first_discovery_turn, last_discovery_turn
@@ -815,6 +840,9 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
         $insertStmt->bindParam(':last_discovery_turn', $turn_number, PDO::PARAM_INT);
         $insertStmt->execute();
         $ckl_existing_record_id = $pdo->lastInsertId();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): Error INSERT INTO controller_known_locations Failed: " . $e->getMessage()."<br />";
+        }
     }
     return $ckl_existing_record_id;
 }
