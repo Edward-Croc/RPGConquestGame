@@ -600,10 +600,10 @@ function createWorker($pdo, $array) {
         $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
         INNER JOIN controller_worker AS cw ON cw.worker_id = w.id
         WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
-        $stmt->bindParam(':firstname', $array['firstname']);
-        $stmt->bindParam(':lastname', $array['lastname']);
-        $stmt->bindParam(':origin_id', $array['origin_id']);
-        $stmt->bindParam(':controller_id', $array['controller_id']);
+        $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
+        $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
+        $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
@@ -616,10 +616,10 @@ function createWorker($pdo, $array) {
     try{
         // Insert new workers value into the database
         $stmt = $pdo->prepare("INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES (:firstname, :lastname, :origin_id, :zone_id)");
-        $stmt->bindParam(':firstname', $array['firstname']);
-        $stmt->bindParam(':lastname', $array['lastname']);
-        $stmt->bindParam(':origin_id', $array['origin_id']);
-        $stmt->bindParam(':zone_id', $array['zone_id']);
+        $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
+        $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
+        $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $array['zone_id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT workers Failed: " . $e->getMessage()."<br />";
@@ -638,8 +638,8 @@ function createWorker($pdo, $array) {
     try{
         // Insert new controller_worker value into the database
         $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id) VALUES (:controller_id, :worker_id)");
-        $stmt->bindParam(':controller_id', $array['controller_id']);
-        $stmt->bindParam(':worker_id', $workerId );
+        $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
@@ -686,8 +686,8 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
     try{
         // Insert new worker_powers value into the database
         $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
-        $stmt->bindParam(':link_power_type_id', $link_power_type_id);
-        $stmt->bindParam(':worker_id', $workerId );
+        $stmt->bindParam(':link_power_type_id', $link_power_type_id, PDO::PARAM_INT);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
@@ -811,10 +811,10 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
     try{
         // Insert new controller_worker value into the database
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':controller_id', $controllerId,);
-        $stmt->bindParam(':worker_id', $workerId );
-        $stmt->bindParam(':zone_id', $zoneId );
-        $stmt->bindParam(':turn_number', $mechanics['turncounter']);
+        $stmt->bindParam(':controller_id', $controllerId, PDO::PARAM_INT);
+        $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
         if (!empty($hasReport)) $stmt->bindParam(':report', $reportJson);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -877,8 +877,8 @@ function moveWorker($pdo, $workerId, $zoneId) {
     try{
         // UPDATE workers value
         $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
-        $stmt->bindParam(':id', $workerId);
-        $stmt->bindParam(':zone_id', $zoneId);
+        $stmt->bindParam(':id', $workerId, PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
@@ -1189,9 +1189,9 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
         if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
         // Insert new workers value into the database
         $stmt = $pdo->prepare($sql_worker_actions);
-        $stmt->bindParam(':id', $worker_actions[0]['id']);
-        $stmt->bindParam(':turn_number', $turn_number );
-        $stmt->bindParam(':report', $updatedReportJson );
+        $stmt->bindParam(':id', $worker_actions[0]['id'], PDO::PARAM_INT);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':report', $updatedReportJson, PDO::PARAM_STR);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
@@ -1242,8 +1242,8 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
         ", (!empty($controller_id)) ? "AND cke.controller_id = :controller_id" : ""
         );
         $stmtA = $pdo->prepare($sqlA);
-        if (!empty($controller_id)) $stmtA->bindParam(':controller_id', $controller_id);
-        $stmtA->bindParam(':zone_id', $zone_id);
+        if (!empty($controller_id)) $stmtA->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $stmtA->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmtA->execute();
         $workersWithoutController = $stmtA->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1269,8 +1269,8 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
         ", (!empty($controller_id)) ? "AND cke.controller_id = :controller_id" : ""
         );
         $stmtB = $pdo->prepare($sqlB);
-        if (!empty($controller_id)) $stmtB->bindParam(':controller_id', $controller_id);
-        $stmtB->bindParam(':zone_id', $zone_id);
+        if (!empty($controller_id)) $stmtB->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $stmtB->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
         $stmtB->execute();
         $workersWithController = $stmtB->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1407,8 +1407,8 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         ";
         if ($debug) echo sprintf("%s(): Step 2 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':new_worker_id', $new_worker_id);
-        $stmt->bindParam(':worker_id', $worker_id);
+        $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
+        $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
         $stmt->execute();
 
         // Step 3 : Copy the worker_powers
@@ -1419,8 +1419,8 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         ";
         if ($debug) echo sprintf("%s(): Step 3 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':new_worker_id', $new_worker_id);
-        $stmt->bindParam(':worker_id', $worker_id);
+        $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
+        $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
         $stmt->execute();
 
         // Step 4 : Copy the add new worker to the controller_worker table as primary controller
@@ -1430,8 +1430,8 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         ";
         if ($debug) echo sprintf("%s(): Step 4 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':controller_id', $controller_id);
-        $stmt->bindParam(':new_worker_id', $new_worker_id);
+        $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
         $stmt->execute();
 
         // Step 5: Add a new entry to the workers_trace_links table with the old worker_id as primary_worker_id and the new worker_id as trace_worker_id and the controller_id
@@ -1441,9 +1441,9 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         ";
         if ($debug) echo sprintf("%s(): Step 5 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':worker_id', $worker_id);
-        $stmt->bindParam(':new_worker_id', $new_worker_id);
-        $stmt->bindParam(':controller_id', $controller_id);
+        $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+        $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->execute();
 
         // Step 6 : Commit the transaction and return the new worker_id
@@ -1485,8 +1485,8 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
     ";
     if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
     $stmt = $pdo->prepare($query);
-    $stmt->bindParam(':worker_id', $worker_id);
-    $stmt->bindParam(':controller_id', $controller_id);
+    $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+    $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
     $stmt->execute();
     $traceWorkers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($debug) echo sprintf("%s(): Step 1 : traceWorkers: %s <br/><br/>",  __FUNCTION__, var_export($traceWorkers, true));
@@ -1506,8 +1506,8 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                     DELETE FROM controller_worker WHERE worker_id = :trace_worker_id AND controller_id = :controller_id AND is_primary_controller = true
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
-                $stmt->bindParam(':controller_id', $controller_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
+                $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 3 : Delete the worker_powers for the trace worker
@@ -1515,7 +1515,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                     DELETE FROM worker_powers WHERE worker_id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 4 : Delete the worker_actions for the trace worker where action_choice = 'trace'
@@ -1523,7 +1523,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                     DELETE FROM worker_actions WHERE worker_id = :trace_worker_id AND action_choice = 'trace'
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 5 : Delete the controllers_known_enemies for the trace worker (this should not exist
@@ -1532,7 +1532,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                     DELETE FROM controllers_known_enemies WHERE discovered_worker_id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 6 : Delete the entry from the workers_trace_links table
@@ -1543,9 +1543,9 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                         AND controller_id = :controller_id
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':worker_id', $worker_id);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
-                $stmt->bindParam(':controller_id', $controller_id);
+                $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
+                $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 5 : Delete the trace worker from the workers
@@ -1553,7 +1553,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                     DELETE FROM workers WHERE id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
-                $stmt->bindParam(':trace_worker_id', $trace_worker_id);
+                $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
                 $stmt->execute();
 
                 // Step 7 : Commit the transaction and return the success

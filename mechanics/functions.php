@@ -413,7 +413,7 @@ function claimMechanic($pdo, $mechanics) {
         // Prepare and execute the statement
         $stmt = $pdo->prepare($sql);
         if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
-        $stmt->bindParam(':turn_number', $turn_number);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
@@ -580,7 +580,7 @@ function claimMechanic($pdo, $mechanics) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->bindParam(':id', $zoneInfo['claimer']['zone_id'], PDO::PARAM_INT);
                 $stmt->bindParam(':holder_controller_id', $zoneInfo['claimer']['claimer_controller_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':claimer_controller_id', $claimer_controller_id);
+                $stmt->bindParam(':claimer_controller_id', $claimer_controller_id, PDO::PARAM_INT);
                 $stmt->execute();
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";

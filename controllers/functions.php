@@ -274,9 +274,9 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt = $pdo->prepare($sql);
 
         $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
-        $stmt->bindParam(':baseName', $baseName);
-        $stmt->bindParam(':description', $description);
-        $stmt->bindParam(':hidden_description', $hidden_description);
+        $stmt->bindParam(':baseName', $baseName, PDO::PARAM_STR);
+        $stmt->bindParam(':description', $description, PDO::PARAM_STR);
+        $stmt->bindParam(':hidden_description', $hidden_description, PDO::PARAM_STR);
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->execute();
@@ -553,12 +553,12 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         $logStmt = $pdo->prepare($logSql);
         $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
-        $logStmt->bindParam(':location_name', $location[0]['name']);
+        $logStmt->bindParam(':location_name', $location[0]['name'], PDO::PARAM_STR);
         $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
         $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
         $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
-        $logStmt->bindParam(':target_result_text', $targetResultText);
-        $logStmt->bindParam(':attacker_result_text', $return['message']);
+        $logStmt->bindParam(':target_result_text', $targetResultText, PDO::PARAM_STR);
+        $logStmt->bindParam(':attacker_result_text', $return['message'], PDO::PARAM_STR );
         $logStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $logStmt->execute();
     } catch (PDOException $e) {

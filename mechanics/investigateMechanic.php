@@ -26,7 +26,10 @@ function cleanAndSplitString($input) {
  * 
  */
 function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
-    if (empty($turn_number)) {
+
+    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
+
+    if ( !isset($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
         echo "turn_number : $turn_number <br>";
@@ -235,12 +238,15 @@ function investigateMechanic($pdo, $mechanics) {
     if ($debug) {
         echo "REPORTDIFF0 : $REPORTDIFF0 <br/>";
         echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
-        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
-        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
+        echo "REPORTDIFF2 : $REPORTDIFF2 <br/>";
+        echo "REPORTDIFF3 : $REPORTDIFF3 <br/>";
     }
 
     // Get investigations worker vs workers
     $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
+    if ($debug)
+        echo sprintf("investigations : %s <br/>", var_export($investigations, true));
+
     $reportArray = [];
 
     $txtArray = [];

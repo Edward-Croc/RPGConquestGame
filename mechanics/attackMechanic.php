@@ -69,9 +69,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                         $sqlNetworkSearch ="SELECT discovered_worker_id FROM controllers_known_enemies
                             WHERE zone_id = :zone_id AND discovered_controller_id = :network_id AND controller_id = :controller_id";
                         $stmtNetworkSearch = $pdo->prepare($sqlNetworkSearch);
-                        $stmtNetworkSearch->bindParam(':network_id', $param['attackID']);
-                        $stmtNetworkSearch->bindParam(':zone_id', $attackAction['zone_id']);
-                        $stmtNetworkSearch->bindParam(':controller_id', $attackAction['controller_id']);
+                        $stmtNetworkSearch->bindParam(':network_id', $param['attackID'], PDO::PARAM_INT);
+                        $stmtNetworkSearch->bindParam(':zone_id', $attackAction['zone_id'], PDO::PARAM_INT);
+                        $stmtNetworkSearch->bindParam(':controller_id', $attackAction['controller_id'], PDO::PARAM_INT);
                         $stmtNetworkSearch->execute();
                     } catch (PDOException $e) {
                         echo __FUNCTION__."(): Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
@@ -358,9 +358,9 @@ function attackMechanic($pdo, $mechanics){
                                 AND discovered_worker_id = :discovered_worker_id
                                 AND zone_id = :zone_id";
                         $stmtA = $pdo->prepare($sql_known_ennemies);
-                        $stmtA->bindParam(':controller_id', $defender['defender_controller_id']);
-                        $stmtA->bindParam(':discovered_worker_id', $defender['attacker_id']);
-                        $stmtA->bindParam(':zone_id', $defender['zone_id']);
+                        $stmtA->bindParam(':controller_id', $defender['defender_controller_id'], PDO::PARAM_INT);
+                        $stmtA->bindParam(':discovered_worker_id', $defender['attacker_id'], PDO::PARAM_INT);
+                        $stmtA->bindParam(':zone_id', $defender['zone_id'], PDO::PARAM_INT);
                         $stmtA->execute();
                         $knownEnemy = $stmtA->fetchAll(PDO::FETCH_ASSOC); // Only return worker IDs
                         if (!empty($knownEnemy)) {
