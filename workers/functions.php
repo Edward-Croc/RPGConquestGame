@@ -257,8 +257,10 @@ function setWorkerCurrentAction($workerActions, $turncounter) {
     foreach($workerActions as $action) {
         if ( $_SESSION['DEBUG'] == true )
             echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
+
         if ( $_SESSION['DEBUG'] == true )
             echo sprintf('action[turn_number] : %s  <br>', var_export($action['turn_number'],true));
+
         if (isset($action['turn_number']) && (INT)$action['turn_number'] == (INT)$turncounter  ) {
             if ( $_SESSION['DEBUG'] == true ) echo sprintf('Set currentAction : %s  <br>', var_export($action,true));
             return $action;
@@ -336,34 +338,35 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
     // change action text if prisonner or double agent
     if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
 
-        $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name
-        FROM controllers AS c
-        JOIN controller_worker AS cw ON cw.controller_id = c.id
-        WHERE cw.worker_id = :worker_id
-        AND cw.is_primary_controller = :is_primary_controller
-        LIMIT 1";
-        //  ORDER BY controller_worker.id
-        $stmt = $pdo->prepare($sql);
-
-        // for prisonner get name of original controller
+        // for double agent get name of infiltrated network
         if ($workerStatus == 'double_agent') {
+            $sql = "SELECT cw.controller_id
+            FROM controller_worker AS cw
+            WHERE cw.worker_id = :worker_id
+            AND cw.is_primary_controller = :is_primary_controller
+            LIMIT 1";
+            //  ORDER BY controller_worker.id
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':worker_id' => $worker['id'],
                 ':is_primary_controller' => 1
             ]);
+            $controller_id = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $controller_name = getControllerName($pdo, $controller_id[0]);
         }
-        // for double agent get name of infiltrated network
+        // for prisonner get name of original controller
         if ($workerStatus == 'prisoner') {
-            $stmt->execute([
-                ':worker_id' => $worker['id'],
-                ':is_primary_controller' => 0
-            ]);
+            $params = json_decode($currentAction['action_params'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+            }
+            $controller_name = getControllerName($pdo, $params['original_controller_id']);
         }
-        $controller_name = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         $textActionUpdated = sprintf(
             getConfig($pdo,'txt_ps_'.$workerStatus),
-            $controller_name[0]
+            getConfig($pdo,'controllerNameDenominatorOf'),
+            $controller_name
         );
     }
 
@@ -1083,25 +1086,21 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): returnPrisoner <br/><br/>";
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
             $currentReport['life_report'] .= sprintf(
-                "J'ai été <strong>relacher</strong> par le <strong>réseau %s</strong>.<br />",
-                $extraVal['recall_controller_id']
+                "J'ai été <strong>relacher</strong> par le <strong>réseau %s</strong> vers %s.<br />",
+                $extraVal['recall_controller_id'],
+                getControllerName($pdo, $extraVal['return_controller_id'])                
             );
 
             try {
                 // Update the controller_worker table
                 $sqlcontrollerWorker = sprintf(
-                    "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
+                    "UPDATE controller_worker SET controller_id = :return_controller_id WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
                     ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
                 );
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
+                    ':return_controller_id' => $extraVal['return_controller_id'],
                     ':extraVal' => $extraVal['recall_controller_id'],
-                    ':worker_id' => $workerId
-                ]);
-                $sqlcontrollerWorker = "UPDATE controller_worker SET is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . " WHERE worker_id = :worker_id AND controller_id = :extraVal";
-                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
-                $stmtcontrollerWorker->execute([
-                    ':extraVal' => $extraVal['return_controller_id'],
                     ':worker_id' => $workerId
                 ]);
 

@@ -55,7 +55,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     if (isset($_GET['gift'])){
         activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
-        header(sprintf('Location: /%s/base/accueil.php', $_SESSION['FOLDER']));
+        header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
     if (isset($_GET['recallDoubleAgent'])){
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
@@ -67,6 +67,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             'returnPrisoner',
             array('recall_controller_id' => $recall_controller_id, 'return_controller_id' => $return_controller_id)
         );
+        header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER'], $worker_id));
     }
 
     if (isset($_GET['teach_discipline']) ){

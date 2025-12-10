@@ -241,8 +241,8 @@ VALUES
 -- %1$s - controller id
 ('workerCapturedTexts', '[
     "<p>J’ai été capturé.e et interrogé.e par le réseau <strong>%1$s</strong>.</p>",
-    "<p>Je suis tombé.e entre les mains du réseau <strong>%1$s</strong> et il m’ont forcer a reveler mes informations.</p>",
-    "<p>Ma capture par le réseau <strong>%1$s</strong> m’a forcé a reveler mes informations.</p>"
+    "<p>Je suis tombé.e entre les mains du réseau <strong>%1$s</strong> et il m’ont forcé.e à révéler mes informations.</p>",
+    "<p>Ma capture par le réseau <strong>%1$s</strong> m’a forcé.e à révéler mes informations.</p>"
 ]
 ', 'Templates used for worker captured text');
 

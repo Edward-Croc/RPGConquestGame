@@ -25,39 +25,40 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             // change action text if prisoner or double agent
             if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
 
-                $sql = "SELECT CONCAT(c.firstname, ' ', c.lastname) AS controller_name, c.id AS controller_id
-                FROM controllers AS c
-                JOIN controller_worker AS cw ON cw.controller_id = c.id
-                WHERE cw.worker_id = :worker_id
-                AND cw.is_primary_controller = :is_primary_controller
-                LIMIT 1";
-                //  ORDER BY controller_worker.id
-                $stmt = $gameReady->prepare($sql);
-
                 // for double agent get name of infiltrated network
                 if ($workerStatus == 'double_agent') {
+                    $sql = "SELECT cw.controller_id
+                    FROM controller_worker AS cw
+                    WHERE cw.worker_id = :worker_id
+                    AND cw.is_primary_controller = :is_primary_controller
+                    LIMIT 1";
+                    //  ORDER BY controller_worker.id
+                    $stmt = $gameReady->prepare($sql);
                     $stmt->execute([
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 1
                     ]);
-                    $other_controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $controller_id = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $controller_name = getControllerName($gameReady, $controller_id[0]);
     
                     $textActionUpdated .= sprintf(
                         ' et ' . getConfig($gameReady,'txt_ps_'.$workerStatus),
-                        $other_controllers[0]['controller_name']
+                        getConfig($gameReady,'controllerNameDenominatorOf'),
+                        $controller_name
                     );
                 }
-                // for prisoner get name of original controller
+                // for prisonner get name of original controller
                 if ($workerStatus == 'prisoner') {
-                    $stmt->execute([
-                        ':worker_id' => $worker['id'],
-                        ':is_primary_controller' => 0
-                    ]);
-                    $other_controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+                    $params = json_decode($currentAction['action_params'], true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                    }
+                    $controller_name = getControllerName($gameReady, $params['original_controller_id']);
+
                     $textActionUpdated = sprintf(
                         getConfig($gameReady,'txt_ps_'.$workerStatus),
-                        $other_controllers[0]['controller_name']
+                        getConfig($gameReady,'controllerNameDenominatorOf'),
+                        $controller_name
                     );
                 }
             }
@@ -266,23 +267,51 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner'){
+
+                $params = json_decode($worker['actions'][$mechanics['turncounter']]['action_params'], true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    echo "JSON decoding error: " . json_last_error_msg() . "<br />";
+                }
+                $return_controller_id = $params['original_controller_id'];
+                $double_agent_controller_id = (!empty($params['double_agent_controller_id'])) ? $params['double_agent_controller_id'] : null;
+
+                $actionHTML .= '<div class="actions"><h3>Actions : </h3> <p>';
+                $controllerName = getControllerName($gameReady, $return_controller_id);
                 $actionHTML .= sprintf('
-                    <div class="actions">
                     <form action="/%5$s/workers/action.php" method="GET">
                     <input type="hidden" name="worker_id" value=%1$s>
-                    <h3>Actions : </h3> <p>
                         <input type="hidden" name="recall_controller_id" value="%2$s">
                         <input type="hidden" name="return_controller_id" value="%3$s">
-                        <input type="submit" name="returnPrisoner" value="%4$s" class="worker-action-btn"><br />
-                    </p></div>
+                        %6$s
+                        <input type="submit" name="returnPrisoner" value="%4$s" class="button is-info"><br />
                     </form>
                 ',
                     $worker['id'],
-                    $controller_id,
-                    $other_controllers[0]['controller_id'],
-                    'Relâcher le prisonnier !',
-                    $_SESSION['FOLDER']
+                    $controller_id, // %2$s
+                    $return_controller_id, // %3$s
+                    'Relâcher le prisonnier vers ' . $controllerName . ' !', // %4$s
+                    $_SESSION['FOLDER'], // %5$s
+                    (!empty($double_agent_controller_id)) ? sprintf('<input type="hidden" name="double_controller_id" value="%s">', $double_agent_controller_id) : '' // %6$s
                 );
+                if (!empty($double_agent_controller_id)) {
+                    $controllerName = getControllerName($gameReady, $double_agent_controller_id);
+                    $actionHTML .= sprintf('
+                        <form action="/%5$s/workers/action.php" method="GET">
+                        <input type="hidden" name="worker_id" value=%1$s>
+                            <input type="hidden" name="recall_controller_id" value="%2$s">
+                            <input type="hidden" name="return_controller_id" value="%3$s">
+                            <input type="submit" name="returnPrisoner" value="%4$s" class="button is-warning"><br />
+                       
+                        </form>
+                    ',
+                        $worker['id'],
+                        $controller_id,
+                        $double_agent_controller_id,
+                        'Relâcher le prisonnier vers ' . $controllerName . ' !',
+                        $_SESSION['FOLDER']
+                    );
+                }
+                $actionHTML .= '</p></div>';
             }
 
             // build upgrade HTML
