@@ -172,7 +172,7 @@ function getLocationsArray($pdo) {
  *
  */
 function recalculateBaseDefence($pdo) {
-    echo "Recalculating base defence<br />";
+    echo "<div><h3>Recalculating base defence</h3><br />";
 
     // Get all bases with their controller and zone
     $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = True";
@@ -206,6 +206,7 @@ function recalculateBaseDefence($pdo) {
 
         echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controller_id, $zone_id, $new_diff);
     }
+    echo "</div>";
     return true;
 }
 
