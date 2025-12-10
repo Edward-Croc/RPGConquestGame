@@ -166,8 +166,6 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
     }
-    changeEndTurnState($gameReady, 'SetTurncounter', $mechanics);
-    $mechanics['end_step'] = 'SetTurncounter';
 }
 
 echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
