@@ -208,12 +208,14 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 a.zone_id = wa.zone_id AND wa.turn_number = :turn_number AND wa.action_choice IN (%s)
         JOIN workers w ON wa.worker_id = w.ID
         JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = :is_primary_controller
+        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = %s
         LEFT JOIN controllers_known_enemies cke ON cke.controller_id = cw.controller_id AND cke.discovered_worker_id = a.attacker_id
         WHERE w.id IN (%s)
         ";
+
     $final_attacks_aggregate = array();
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+    $is_primary_controller = true;
 
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
         try {
@@ -221,11 +223,14 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 echo sprintf("compared_attacker_id : %s => defender_ids : %s <br/>", $compared_attacker_id, var_export($defender_ids, true));
 
             $stmtValCompare = $pdo->prepare(
-                sprintf($sqlValCompare, $active_actions, implode(',', $defender_ids))
+                sprintf(
+                    $sqlValCompare, $active_actions, 
+                    ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true',
+                    implode(',', $defender_ids)
+                )
             );
             $stmtValCompare->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
             $stmtValCompare->bindParam(':attacker_id', $compared_attacker_id, PDO::PARAM_INT);
-            $stmtValCompare->bindParam(':is_primary_controller', true, PDO::PARAM_BOOL);
             $stmtValCompare->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__."():Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
@@ -288,7 +293,7 @@ function attackMechanic($pdo, $mechanics){
 
         // get updated attacker action choice from worker_actions for turn_number
         $attackerInfo = getWorkers($pdo, [$attacker_id]);
-        if (in_array($attackerInfo[0][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)) {
+        if (in_array($attackerInfo[0]['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)) {
             continue;
         }
         // For each defender, check if attack is successful and update defender status
@@ -303,7 +308,7 @@ function attackMechanic($pdo, $mechanics){
             // get updated defender status from worker_actions for turn_number
             $defenderArray = getWorkers($pdo, [$defender['defender_id']]);
             // if defender already is dead or prisoner, skip attack and add to report
-            if (in_array($defenderArray[0][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)) {
+            if (in_array($defenderArray[0]['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)) {
                 $attackerReport['attack_report'] = sprintf($unfoundAttackTextes[array_rand($unfoundAttackTextes)], $defender['defender_name']);
                 updateWorkerAction($pdo, $defender['attacker_id'], $mechanics['turncounter'], $attacker_status, $attackerReport );
             } else {
@@ -336,13 +341,15 @@ function attackMechanic($pdo, $mechanics){
 
                         // Si l'agent était agent double, on crée une trace et on enregistre son maitre dans le action_params et on l'ajoute à son rapport
                         try{
-                            $sqlDoubleAgent = "SELECT controller_id
-                                FROM controller_worker
-                                WHERE primary_worker_id = :is_primary AND worker_id = :worker_id
-                            ";
+                            $sqlDoubleAgent = sprintf("SELECT controller_id
+                                    FROM controller_worker
+                                    WHERE is_primary_controller = %s AND worker_id = :worker_id
+                                ",
+                                ($_SESSION['DBTYPE'] == 'mysql') ? 0 : 'false'
+                            );
+
                             $stmt = $pdo->prepare($sqlDoubleAgent);
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
-                            $stmt->bindParam(':is_primary', 0, PDO::PARAM_BOOL);
                             $stmt->execute();
                             $doubleAgentControllerId = $stmt->fetch(PDO::FETCH_ASSOC)['controller_id'];
                             if (!empty($doubleAgentControllerId)) {
@@ -365,10 +372,13 @@ function attackMechanic($pdo, $mechanics){
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
                             $stmt->execute();
                             // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
-                            $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, :is_primary)");
+                            $sql = sprintf( 
+                                "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, %s)",
+                                ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true'
+                            );
+                            $stmt = $pdo->prepare($sql);
                             $stmt->bindParam(':controller_id', $defender['attacker_controller_id'], PDO::PARAM_INT);
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
-                            $stmt->bindParam(':is_primary', 1, PDO::PARAM_BOOL);
                             $stmt->execute();
                         } catch (PDOException $e) {
                             echo __FUNCTION__." (): Error updating controller_worker: " . $e->getMessage();
