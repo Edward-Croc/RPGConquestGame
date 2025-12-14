@@ -1122,6 +1122,17 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             } catch (PDOException $e) {
                 echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
+            if ( !empty($extraVal['double_controller_id']) ) {
+                try {
+                    // Add non primary controller for the worker
+                    $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
+                            VALUES (:extraVal , :worker_id, False)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([':extraVal' => $extraVal['double_controller_id'], ':worker_id' => $workerId]);
+                } catch (PDOException $e) {
+                    echo __FUNCTION__."(): returnPrisoner and go_traitor => INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+                }
+            }
 
             $new_action = 'passive';
             break;
