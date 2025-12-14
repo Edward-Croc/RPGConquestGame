@@ -133,7 +133,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         JOIN worker_actions wa ON
             w.id = wa.worker_id AND wa.turn_number = :turn_number AND wa.action_choice IN (%s)
         JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controller_worker cw ON w.id = cw.worker_id AND is_primary_controller = :is_primary_controller
+        JOIN controller_worker cw ON w.id = cw.worker_id AND is_primary_controller = %s
             WHERE w.id IN (%s)
     )
     SELECT
@@ -215,7 +215,6 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
     $final_attacks_aggregate = array();
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-    $is_primary_controller = true;
 
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
         try {
@@ -224,7 +223,8 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
             $stmtValCompare = $pdo->prepare(
                 sprintf(
-                    $sqlValCompare, $active_actions, 
+                    $sqlValCompare,
+                    $active_actions,
                     ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true',
                     implode(',', $defender_ids)
                 )
