@@ -38,13 +38,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         ':worker_id' => $worker['id'],
                         ':is_primary_controller' => 1
                     ]);
-                    $controller_id = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                    $controller_name = getControllerName($gameReady, $controller_id[0]);
+                    $infiltrated_controller_id = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                    $infiltrated_controller_name = getControllerName($gameReady, $infiltrated_controller_id[0]);
     
                     $textActionUpdated .= sprintf(
                         ' et ' . getConfig($gameReady,'txt_ps_'.$workerStatus),
                         getConfig($gameReady,'controllerNameDenominatorOf'),
-                        $controller_name
+                        $infiltrated_controller_name
                     );
                 }
                 // for prisonner get name of original controller
