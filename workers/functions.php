@@ -1091,6 +1091,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                 getControllerName($pdo, $extraVal['return_controller_id'])                
             );
 
+            if (createTraceWorker($pdo, $workerId, $extraVal['recall_controller_id']) === false) {
+                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+            }
+            if (destroyTraceWorker($pdo, $workerId, $extraVal['return_controller_id']) === false) {
+                echo __FUNCTION__." (): Failed to destroy trace worker ! <br />";
+            }
             try {
                 // Update the controller_worker table
                 $sqlcontrollerWorker = sprintf(
