@@ -77,7 +77,7 @@ VALUES
     ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
     -- Attack choices
     ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
-    ('canAttackNetwork', 0, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
+    ('canAttackNetwork', 1, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
     -- Diff vals for attack results
     ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
     ('ATTACKDIFF0', 1, 'Value for Attack Success'),
@@ -95,8 +95,8 @@ VALUES
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
     ('txt_ps_captured', 'a disparu', 'Text for captured action'),
     ('txt_ps_dead', 'a disparu', 'Text for dead action'),
-    ('txt_ps_prisoner', 'est un.e agent de %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
-    ('txt_ps_double_agent', 'a infiltré le réseau de %s ', 'Text for being infiltrator'),
+    ('txt_ps_prisoner', 'est un.e agent %s %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
+    ('txt_ps_double_agent', 'a infiltré le réseau %s %s ', 'Text for being infiltrator'),
     ('txt_inf_passive', 'surveiller', 'Text for passive action'),
     ('txt_inf_investigate', 'enquêter', 'Text for investigate action'),
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
@@ -199,6 +199,9 @@ CREATE TABLE player_controller (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     FOREIGN KEY (player_id) REFERENCES players (id)
 );
+-- Create indexes on the player_controller table
+CREATE INDEX idx_player_controller_controller_id ON player_controller (controller_id);
+CREATE INDEX idx_player_controller_player_id ON player_controller (player_id);
 
 -- Create the zones and locations
 CREATE TABLE zones (
@@ -213,6 +216,9 @@ CREATE TABLE zones (
     FOREIGN KEY (claimer_controller_id) REFERENCES controllers (id),
     FOREIGN KEY (holder_controller_id) REFERENCES controllers (id)
 );
+-- Create indexes on the zones table
+CREATE INDEX idx_zones_claimer_controller_id ON zones (claimer_controller_id);
+CREATE INDEX idx_zones_holder_controller_id ON zones (holder_controller_id);
 
 CREATE TABLE locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -230,6 +236,9 @@ CREATE TABLE locations (
     FOREIGN KEY (zone_id) REFERENCES zones (id),
     FOREIGN KEY (controller_id) REFERENCES controllers (id)
 );
+-- Create indexes on the locations table
+CREATE INDEX idx_locations_zone_id ON locations (zone_id);
+CREATE INDEX idx_locations_controller_id ON locations (controller_id);
 
 CREATE TABLE artefacts (
     id INT AUTO_INCREMENT PRIMARY KEY,          -- Unique id of the artefact
@@ -239,6 +248,8 @@ CREATE TABLE artefacts (
     full_description TEXT NOT NULL,  -- Description of the artefact if the player controls the location
     FOREIGN KEY (location_id) REFERENCES locations (id) -- Link to locations table
 );
+-- Create indexes on the artefacts table
+CREATE INDEX idx_artefacts_location_id ON artefacts (location_id);
 
 CREATE TABLE controller_known_locations (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -252,6 +263,9 @@ CREATE TABLE controller_known_locations (
     FOREIGN KEY (controller_id) REFERENCES controllers (id), -- Link to controllers table
     FOREIGN KEY (location_id) REFERENCES locations (id) -- Link to locations table
 );
+-- Create indexes on the controller_known_locations table
+CREATE INDEX idx_controller_known_locations_controller_id ON controller_known_locations (controller_id);
+CREATE INDEX idx_controller_known_locations_location_id ON controller_known_locations (location_id);
 
 CREATE TABLE location_attack_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -290,13 +304,13 @@ CREATE TABLE workers (
     lastname TEXT NOT NULL,
     origin_id INT NOT NULL,
     zone_id INT NOT NULL,
-    is_alive TINYINT(1) DEFAULT 1,
-    is_active TINYINT(1) DEFAULT 1,
-    is_trace TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (origin_id) REFERENCES worker_origins (id),
     FOREIGN KEY (zone_id) REFERENCES zones (id)
 );
+-- Create indexes on the workers table
+CREATE INDEX idx_workers_origin_id ON workers (origin_id);
+CREATE INDEX idx_workers_zone_id ON workers (zone_id);
 
 CREATE TABLE workers_trace_links (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -308,6 +322,10 @@ CREATE TABLE workers_trace_links (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     UNIQUE (trace_worker_id)
 );
+-- Create indexes on the workers_trace_links table
+CREATE INDEX idx_workers_trace_links_primary_worker_id ON workers_trace_links (primary_worker_id);
+CREATE INDEX idx_workers_trace_links_trace_worker_id ON workers_trace_links (trace_worker_id);
+CREATE INDEX idx_workers_trace_links_controller_id ON workers_trace_links (controller_id);
 
 CREATE TABLE controller_worker (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -322,6 +340,9 @@ CREATE TABLE controller_worker (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     FOREIGN KEY (worker_id) REFERENCES workers (id)
 );
+-- Create indexes on the controller_worker table
+CREATE INDEX idx_controller_worker_controller_id ON controller_worker (controller_id);
+CREATE INDEX idx_controller_worker_worker_id ON controller_worker (worker_id);
 
 CREATE TABLE power_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -347,6 +368,9 @@ CREATE TABLE link_power_type (
     FOREIGN KEY (power_type_id) REFERENCES power_types (id),
     FOREIGN KEY (power_id) REFERENCES powers (id)
 );
+-- Create indexes on the link_power_type table
+CREATE INDEX idx_link_power_type_power_type_id ON link_power_type (power_type_id);
+CREATE INDEX idx_link_power_type_power_id ON link_power_type (power_id);
 
 CREATE TABLE worker_powers (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -357,6 +381,9 @@ CREATE TABLE worker_powers (
     FOREIGN KEY (worker_id) REFERENCES workers (id),
     FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
 );
+-- Create indexes on the worker_powers table
+CREATE INDEX idx_worker_powers_worker_id ON worker_powers (worker_id);
+CREATE INDEX idx_worker_powers_link_power_type_id ON worker_powers (link_power_type_id);
 
 CREATE TABLE faction_powers (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -366,6 +393,9 @@ CREATE TABLE faction_powers (
     FOREIGN KEY (faction_id) REFERENCES factions (id),
     FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
 );
+-- Create indexes on the faction_powers table
+CREATE INDEX idx_faction_powers_faction_id ON faction_powers (faction_id);
+CREATE INDEX idx_faction_powers_link_power_type_id ON faction_powers (link_power_type_id);
 
 CREATE TABLE worker_actions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -385,6 +415,11 @@ CREATE TABLE worker_actions (
     FOREIGN KEY (zone_id) REFERENCES zones (id),
     FOREIGN KEY (controller_id) REFERENCES controllers (id)
 );
+-- Create indexes on the worker_actions table
+CREATE INDEX idx_worker_actions_worker_id ON worker_actions (worker_id);
+CREATE INDEX idx_worker_actions_turn_number ON worker_actions (turn_number);
+CREATE INDEX idx_worker_actions_zone_id ON worker_actions (zone_id);
+CREATE INDEX idx_worker_actions_controller_id ON worker_actions (controller_id);
 
 CREATE TABLE controllers_known_enemies (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -402,6 +437,11 @@ CREATE TABLE controllers_known_enemies (
     FOREIGN KEY (discovered_controller_id) REFERENCES controllers (id), -- Link to controllers table
     FOREIGN KEY (zone_id) REFERENCES zones (id) -- Link to zones table
 );
+-- Create indexes on the controllers_known_enemies table
+CREATE INDEX idx_controllers_known_enemies_controller_id ON controllers_known_enemies (controller_id);
+CREATE INDEX idx_controllers_known_enemies_discovered_worker_id ON controllers_known_enemies (discovered_worker_id);
+CREATE INDEX idx_controllers_known_enemies_discovered_controller_id ON controllers_known_enemies (discovered_controller_id);
+CREATE INDEX idx_controllers_known_enemies_zone_id ON controllers_known_enemies (zone_id);
 
 CREATE TABLE ressources_config (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -428,3 +468,6 @@ CREATE TABLE controller_ressources (
     FOREIGN KEY (controller_id) REFERENCES controllers (id),
     FOREIGN KEY (ressource_id) REFERENCES ressources_config (id)
 );
+-- Create indexes on the controller_ressources table
+CREATE INDEX idx_controller_ressources_controller_id ON controller_ressources (controller_id);
+CREATE INDEX idx_controller_ressources_ressource_id ON controller_ressources (ressource_id);

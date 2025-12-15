@@ -57,8 +57,8 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
     );
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':turn_number', $turn_number);
-        if (!empty($searcher_id)) $stmt->bindParam(':searcher_id', $searcher_id);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        if (!empty($searcher_id)) $stmt->bindParam(':searcher_id', $searcher_id, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
         echo __FUNCTION__ . "(): Error: " . $e->getMessage();

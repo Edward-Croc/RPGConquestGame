@@ -21,7 +21,7 @@ require_once '../base/baseHTML.php';
             <th>ID / CID</th>
             <th>Nom Prénom (Stat.)</th>
             <th>Zone</th>
-            <th>Alive/Active/Trace</th>
+            <th>Ongoing action</th>
             <th>Action</th>
         </tr>
     <?php 
@@ -62,7 +62,7 @@ require_once '../base/baseHTML.php';
             showTransformationSelect($gameReady, $powerTransformationArray, true),
             $_SESSION['FOLDER'],
             $worker['controller_id'],
-            $worker['is_alive']."/".$worker['is_active']."/".$worker['is_trace']
+            $worker['actions'][$mechanics['turncounter']]['action_choice']
         );
         echo $workerHtml;
     }  ?>

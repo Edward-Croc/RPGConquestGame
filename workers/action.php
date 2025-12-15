@@ -19,15 +19,22 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     $claim_controller_id = NULL;
     if ( !empty($_GET['claim_controller_id']) ) $claim_controller_id = $_GET['claim_controller_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "claim_controller_id: ".var_export($claim_controller_id, true)."<br /><br />";
+
     $gift_controller_id = NULL;
     if ( !empty($_GET['gift_controller_id']) ) $gift_controller_id = $_GET['gift_controller_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "gift_controller_id: ".var_export($gift_controller_id, true)."<br /><br />";
+
     $recall_controller_id = NULL;
     if ( !empty($_GET['recall_controller_id']) ) $recall_controller_id = $_GET['recall_controller_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "recall_controller_id: ".var_export($recall_controller_id, true)."<br /><br />";
+
     $return_controller_id = NULL;
     if ( !empty($_GET['return_controller_id']) ) $return_controller_id = $_GET['return_controller_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "return_controller_id: ".var_export($return_controller_id, true)."<br /><br />";
+
+    $double_controller_id = NULL;
+    if ( !empty($_GET['double_controller_id']) ) $double_controller_id = $_GET['double_controller_id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "double_controller_id: ".var_export($double_controller_id, true)."<br /><br />";
 
     if (isset($_GET['creation'])){
         $worker_id = createWorker($gameReady, $_GET);
@@ -55,7 +62,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     if (isset($_GET['gift'])){
         activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
-        header(sprintf('Location: /%s/base/accueil.php', $_SESSION['FOLDER']));
+        header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
     if (isset($_GET['recallDoubleAgent'])){
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
@@ -65,8 +72,9 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             $gameReady,
             $worker_id,
             'returnPrisoner',
-            array('recall_controller_id' => $recall_controller_id, 'return_controller_id' => $return_controller_id)
+            array('recall_controller_id' => $recall_controller_id, 'return_controller_id' => $return_controller_id, 'double_controller_id' => $double_controller_id)
         );
+        header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER'], $worker_id));
     }
 
     if (isset($_GET['teach_discipline']) ){

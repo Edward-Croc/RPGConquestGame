@@ -58,6 +58,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([$controller_id, $enemy_worker_id]);
         $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
+
+        // Gift information
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
     }
     if (isset($_GET['giftInformationLocation'])){

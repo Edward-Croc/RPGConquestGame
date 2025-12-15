@@ -1,7 +1,6 @@
 <?php
 
 require_once '../base/basePHP.php';
-$_SESSION['DEBUG'] = true;
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
@@ -14,7 +13,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ( $_SESSION['DEBUG'] == true ) echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
 
     // Mass move workers to zone
-    if (isset($_GET['mass_move']) && !empty($zone_id)){
+    if (isset($_GET['mass_move']) && !empty($zone_id) && !empty($worker_ids)){
         foreach ($worker_ids as $worker_id) {
             moveWorker($gameReady, $worker_id, $zone_id);
         }
