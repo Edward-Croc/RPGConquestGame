@@ -92,11 +92,18 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         if (!empty($value['attackScope']) && ($value['attackScope'] == "worker") ) {
                             $attackedWorkerIds[] = $value['attackID'];
                         }
+                        if (!empty($value['attackScope']) && ($value['attackScope'] == "network") ) {
+                            $attackedNetworkIds[] = $value['attackID'];
+                        }
+                    }
+                    $workerActionInfo .= ' contre ';
+                    if (!empty($attackedNetworkIds)) {
+                        $workerActionInfo .= "les réseaux ".implode(', ', $attackedNetworkIds);
                     }
                     // $attackedWorkerIds has elements
                     if (!empty($attackedWorkerIds)) {
+                        if (!empty($attackedNetworkIds)) $workerActionInfo .= ' et contre ';
                         $workersArray = getWorkers($gameReady, $attackedWorkerIds);
-                        $workerActionInfo .= ' contre ';
                         foreach( $workersArray AS $k => $w ) {
                             $workerActionInfo .= sprintf(
                                 '%1$s %2$s %3$s',
