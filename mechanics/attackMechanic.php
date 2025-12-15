@@ -334,16 +334,14 @@ function attackMechanic($pdo, $mechanics){
                         $defender_json = array('original_controller_id' => $defender['defender_controller_id']);
 
                         $tmpLifeReport = $defenderReport['life_report'];
-                        $defenderReport['life_report'] = sprintf(
-                            $workerCapturedTexts[array_rand($workerCapturedTexts)],
-                            $defender['attacker_controller_id']
-                        );
 
+                        $tmpDoubleAgentReport = "";
                         // Si l'agent était agent double, on crée une trace et on enregistre son maitre dans le action_params et on l'ajoute à son rapport
                         try{
-                            $sqlDoubleAgent = sprintf("SELECT controller_id
-                                    FROM controller_worker
-                                    WHERE is_primary_controller = %s AND worker_id = :worker_id
+                            $sqlDoubleAgent = sprintf("SELECT cw.controller_id, CONCAT(c.firstname, ' ', c.lastname) AS double_agent_contoller_name
+                                    FROM controller_worker AS cw
+                                    JOIN controllers AS c ON c.id = cw.controller_id
+                                    WHERE cw.is_primary_controller = %s AND cw.worker_id = :worker_id
                                 ",
                                 ($_SESSION['DBTYPE'] == 'mysql') ? 0 : 'false'
                             );
@@ -351,16 +349,24 @@ function attackMechanic($pdo, $mechanics){
                             $stmt = $pdo->prepare($sqlDoubleAgent);
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
                             $stmt->execute();
-                            $doubleAgentControllerId = $stmt->fetch(PDO::FETCH_ASSOC)['controller_id'];
-                            if (!empty($doubleAgentControllerId)) {
-                                $defender_json['double_agent_controller_id'] = $doubleAgentControllerId;
+                            $doubleAgentControllerResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                            if (!empty($doubleAgentControllerResult)) {
+                                $defender_json['double_agent_controller_id'] = $doubleAgentControllerResult['controller_id'];
                                 // Create Trace
-                                $traceWrokerID = createTraceWorker($pdo, $defender['defender_id'], $doubleAgentControllerId);
+                                $traceWrokerID = createTraceWorker($pdo, $defender['defender_id'], $defender_json['double_agent_controller_id']);
                                 updateWorkerAction($pdo, $traceWrokerID, $defender['turn_number'], null, ['life_report' => $tmpLifeReport] );
+                                // 
+                                $tmpDoubleAgentReport = sprintf("<br/> J'était un <strong>agent double %s%s</strong>", getConfig($pdo,'controllerNameDenominatorOf'), $doubleAgentControllerResult['double_agent_contoller_name']);
                             }
                         } catch (PDOException $e) {
                             echo __FUNCTION__." (): Error fetching double agent: " . $e->getMessage();
                         }
+
+                        $defenderReport['life_report'] = sprintf(
+                            $workerCapturedTexts[array_rand($workerCapturedTexts)],
+                            $defender['attacker_controller_id'],
+                            $tmpDoubleAgentReport
+                        );
 
                         // Create Trace
                         $traceWrokerID = createTraceWorker($pdo, $defender['defender_id'], $defender['defender_controller_id']);

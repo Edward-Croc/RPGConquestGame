@@ -715,7 +715,7 @@ function addWorkerToCKE(
         echo __FUNCTION__."(): Error COUNT(*) FROM controller_worker Failed: " . $e->getMessage()."<br />";
     }
     if ($count == 1) {
-        echo __FUNCTION__."(): COUNT(*) FROM controller_worker is 1, Worker is already controlled by the target controller<br />";
+        if ($debug) echo __FUNCTION__."(): COUNT(*) FROM controller_worker; Worker is already controlled by the target controller<br />";
         return NULL;
     }
 
