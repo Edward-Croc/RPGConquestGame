@@ -1086,8 +1086,9 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): returnPrisoner <br/><br/>";
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
             $currentReport['life_report'] .= sprintf(
-                "J'ai été <strong>relacher</strong> par le <strong>réseau %s</strong> vers %s.<br />",
+                "J'ai été <strong>relaché</strong> par le <strong>réseau %s</strong> vers %s %s.<br />",
                 $extraVal['recall_controller_id'],
+                getConfig($pdo,'controllerNameDenominatorThe'),
                 getControllerName($pdo, $extraVal['return_controller_id'])                
             );
 
