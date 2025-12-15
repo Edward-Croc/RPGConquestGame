@@ -1448,8 +1448,8 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
     $stmt->execute();
     $traceWorkers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if ($debug) echo sprintf("%s(): Step 1 : traceWorkers: %s <br/><br/>",  __FUNCTION__, var_export($traceWorkers, true));
-    if (empty($traceWorkers)) {
-        echo __FUNCTION__." (): No trace worker found for the primary worker_id: " . $worker_id . " and controller_id: " . $controller_id;
+    if (empty($traceWorkers) && $debug == true ) {
+        echo __FUNCTION__." (): No trace worker found for the primary worker_id: " . $worker_id . " and controller_id: " . $controller_id . "<br />";
     }
     if  ($traceWorkers !== false && !empty($traceWorkers)) {
         foreach ($traceWorkers as $traceWorker) {
