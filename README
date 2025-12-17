@@ -1,32 +1,37 @@
 
-RPGConquestGame is a test game project about conquering and maintaining control of a Town, Suburb or Street against AI or other players.
+RPGConquestGame is a test game project about conquering and maintaining control of a Region, Town, Suburb or Street against other players.
 The game is a worker placement game where your spies and agents try to investigate each other and control sectors of the map.
 This game is originally meant to be an accessory to a LARP event where the players can discuss actions and objectives.
 But it may evolve into a stand alone Game of its own.
 
-Project : 
- - This project was run as a personal training exercise on the use, quality and lack of, for GPT-4o mini. Much of the code and texts will be ChatGPT generated.
- - All code review should take into account the previous statement, the additional lake of time and non commercial destination of the project. (Be nice.)
- - You are welcome to participate into the project.
+Project :
+ - This project was run as a personal training exercise on the use, quality and lack of, for GPT-4o mini, and from beta version Curor AI. Much of the code and texts will be ChatGPT/ClaudCode/Cursor generated.
+ - All code review should take into account the previous statement, the additional lack of time and non commercial destination of the project. (Be nice.)
+ - You are welcome to participate in the project from the https://github.com/Edward-Croc/RPGConquestGame.
 
 Code : 
  - The code choice is Flat PHP 8.0, respecting PHP PSR-2 at minimum.
     - This was done for speed and ease of setup.
-    - An upgrade to a known Framework should be envisaged for à V2.
- - Database is in postgresql.
+    - An upgrade to a known Framework Symphony should be envisaged for à V2.
+ - Database maintenance is done for postgresql and mysql.
  - Front is simple HTML and Javascript.
 
 Installation : 
  - Create a folder called RPGConquestGame and pull the sources to it.
- - Setup a database, add info to the ./var/config.ini file and execute the ./var/setupBDD.sql file
+ - Create a config.ini file in the VAR folder and add the parent folder name to it.
+ - Setup a database, and add the conneciton info to the ./var/config.ini file and execute the ./var/setupBDD.sql file
  - The base game is set up with a user: gm; pwd: orga.
 
-Preparing a game : 
- - Chose a scenario in the available configurations OR prepare your own configuration
+Preparing a game :
+ - Chose a scenario in the available configurations OR prepare your own configuration. (You can ask for help.)
  - Enjoy !
 
-Post 1st Test Game Notes:
- - By Turn 3, the volume of generated information took players up to 20 minutes to process. Negotiations and discussions added significant time on top of that.
- - The next test game will feature teams of three per faction, with an estimated duration of 2 hours per turn.
+   Post 1st Test Game Notes:
+   - By Turn 3, the volume of generated information took players up to 20 minutes to process. Negotiations and discussions added significant time on top of that.
+   - The next test game will feature teams of three per faction, with an estimated duration of 2 hours per turn.
 
-A demo is beeing built here : https://rpgconquestgame.infinityfreeapp.com/base/systemPresentation.php 
+   Post 2 Game Notes :
+   - Full LARP event with 18 players (6 factions of 3 on the Shikoku 1555 config) was a success.
+   - Updates for players usage and quality will be added.
+
+A demo is built here : https://voix-eidolon.fr/RPGConquestGameDemo/base/systemPresentation.php
