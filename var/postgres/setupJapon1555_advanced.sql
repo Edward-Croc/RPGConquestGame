@@ -25,31 +25,31 @@ WITH names_data(firstname, lastname, origin_name, zone_name) AS (
         ('Kosagi (小鷺)', 'Noayame', 'Shikoku - Awaji', 'Ile d’Awaji'),
         ('Hiuchi (火打)', 'Kagaribi', 'Shikoku - Tosa', 'Cap sud de Tosa')
 )
-INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id)
 SELECT
     nd.firstname,
     nd.lastname,
     wo.id AS origin_id,
     z.id AS zone_id
 FROM names_data nd
-JOIN worker_origins wo ON wo.name = nd.origin_name
-JOIN zones z ON z.name = nd.zone_name;
+JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
+JOIN {prefix}zones z ON z.name = nd.zone_name;
 
 
 -- Now, get controller ID once
 -- Then add the links
 WITH controller AS (
-    SELECT id AS controller_id FROM controllers WHERE lastname = 'Shikoku (四国)'
+    SELECT id AS controller_id FROM {prefix}controllers WHERE lastname = 'Shikoku (四国)'
 ),
 worker_ids AS (
-    SELECT id AS worker_id FROM workers WHERE lastname IN ('Kotatsu', 'Jizane', 'Noayame', 'Kagaribi')
+    SELECT id AS worker_id FROM {prefix}workers WHERE lastname IN ('Kotatsu', 'Jizane', 'Noayame', 'Kagaribi')
 )
-INSERT INTO controller_worker (controller_id, worker_id)
+INSERT INTO {prefix}controller_worker (controller_id, worker_id)
 SELECT controller.controller_id, worker_ids.worker_id
 FROM controller, worker_ids;
 
 -- Add actions to the workers :
-INSERT INTO worker_actions (
+INSERT INTO {prefix}worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
@@ -70,12 +70,12 @@ FROM (
     UNION ALL SELECT  'Kagaribi', 'passive', '{}',
         '{"life_report":"Depuis des siecles moi Hiuchi (火打 — « pierre à feu ») des Yōkai (妖怪) je terrorise le cap sud de Tosa."}'
 ) AS entry
-JOIN workers w ON w.lastname = entry.lastname
-JOIN controller_worker cw ON cw.worker_id = w.id;
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 ;
 
 -- Add powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id)
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
@@ -116,30 +116,30 @@ WITH names_data(firstname, lastname, origin_name, zone_name) AS (
     VALUES
         ('Renjun (蓮淳)', 'fils de Rennyo (蓮如)', 'Honshu - Kyoto', 'Montagnes d’Iyo')
 )
-INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id)
 SELECT
     nd.firstname,
     nd.lastname,
     wo.id AS origin_id,
     z.id AS zone_id
 FROM names_data nd
-JOIN worker_origins wo ON wo.name = nd.origin_name
-JOIN zones z ON z.name = nd.zone_name;
+JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
+JOIN {prefix}zones z ON z.name = nd.zone_name;
 
 -- Now, get controller ID once
 -- Then add the links
 WITH controller AS (
-    SELECT id AS controller_id FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'
+    SELECT id AS controller_id FROM {prefix}controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'
 ),
 worker_ids AS (
-    SELECT id AS worker_id FROM workers WHERE lastname IN ('fils de Rennyo (蓮如)')
+    SELECT id AS worker_id FROM {prefix}workers WHERE lastname IN ('fils de Rennyo (蓮如)')
 )
-INSERT INTO controller_worker (controller_id, worker_id)
+INSERT INTO {prefix}controller_worker (controller_id, worker_id)
 SELECT controller.controller_id, worker_ids.worker_id
 FROM controller, worker_ids;
 
 -- Add actions to the workers :
-INSERT INTO worker_actions (
+INSERT INTO {prefix}worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
@@ -154,12 +154,12 @@ FROM (
     SELECT 'fils de Rennyo (蓮如)' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
         '{"life_report":"Je suis Renjun (蓮淳), un des fils de Rennyo (蓮如) et l’oncle d’Ennyo (円如), venu du nord de Kyoto pour soutenir ma famille et subvertir la religion Tendai dans les Montagnes d’Iyo."}' AS report
 ) AS entry
-JOIN workers w ON w.lastname = entry.lastname
-JOIN controller_worker cw ON cw.worker_id = w.id;
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 ;
 
 -- Add powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id)
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
@@ -200,31 +200,31 @@ WITH names_data(firstname, lastname, origin_name, zone_name) AS (
         ('Takeda(武田)', 'Renryū-dono(蓮竜-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto'),
         ('', 'Sōen-dono(僧円-殿)', 'Honshu - Kyoto', 'Cité Impériale de Kyoto')
 )
-INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id)
 SELECT
     nd.firstname,
     nd.lastname,
     wo.id AS origin_id,
     z.id AS zone_id
 FROM names_data nd
-JOIN worker_origins wo ON wo.name = nd.origin_name
-JOIN zones z ON z.name = nd.zone_name;
+JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
+JOIN {prefix}zones z ON z.name = nd.zone_name;
 
 
 -- Now, get controller ID once
 -- Then add the links
 WITH controller AS (
-    SELECT id AS controller_id FROM controllers WHERE lastname = 'Ashikaga (足利)'
+    SELECT id AS controller_id FROM {prefix}controllers WHERE lastname = 'Ashikaga (足利)'
 ),
 worker_ids AS (
-    SELECT id AS worker_id FROM workers WHERE lastname IN ('Mitsunao-dono(光直-殿)', 'Ibara-dono(茨の紅-殿)', 'Renryū-dono(蓮竜-殿)', 'Sōen-dono(僧円-殿)')
+    SELECT id AS worker_id FROM {prefix}workers WHERE lastname IN ('Mitsunao-dono(光直-殿)', 'Ibara-dono(茨の紅-殿)', 'Renryū-dono(蓮竜-殿)', 'Sōen-dono(僧円-殿)')
 )
-INSERT INTO controller_worker (controller_id, worker_id)
+INSERT INTO {prefix}controller_worker (controller_id, worker_id)
 SELECT controller.controller_id, worker_ids.worker_id
 FROM controller, worker_ids;
 
 -- Add actions to the workers :
-INSERT INTO worker_actions (
+INSERT INTO {prefix}worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
 )
 SELECT
@@ -245,12 +245,12 @@ FROM (
     UNION ALL SELECT  'Sōen-dono(僧円-殿)', 'passive', '{}',
         '{"life_report":"Je suis Sōen-dono(僧円-殿), maitre moine Tendai au service du Shogun au palais impérial de Kyoto."}'
 ) AS entry
-JOIN workers w ON w.lastname = entry.lastname
-JOIN controller_worker cw ON cw.worker_id = w.id;
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 ;
 
 -- Add powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id)
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id

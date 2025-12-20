@@ -1,8 +1,8 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
-UPDATE config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
+UPDATE {prefix}config SET value = 'Shikoku (四国) 1555' WHERE name = 'TITLE';
 -- https://fr.wikipedia.org/wiki/%C3%89poque_Sengoku
-UPDATE config SET
+UPDATE {prefix}config SET
     value = '<p> En plein Sengoku Jidai(戦国時代), les turbulences sociales, intrigues politiques et conflits militaires divisent le Japon.
        Les guerres fratricides font rage sur l’archipel nippon, et le Shogunat Ashikaga(足利) fragilisé peine à rétablir la paix.
        Au printemps 1555, les forces du shugo (守護) de Shikoku(四国), composées du daimyô Kunichika(国親) Chōsokabe(長宗我部), accompagné de son vassal Fujitaka (藤孝) Hosokawa(細川) et en l’absence notable du daimyô du clan Miyoshi(三好),
@@ -15,14 +15,14 @@ UPDATE config SET
         </p>'
     WHERE name = 'PRESENTATION';
 
-UPDATE config SET
+UPDATE {prefix}config SET
     value = ' <p>  <button onclick="window.open(''https://docs.google.com/document/d/1qrYEpObe6sVdp1egCMnOcGW9BNXebPp_PWiLrD4Lqb8'', ''_blank'')"> Documents Orga !</button>  
         <button onclick="window.open(''https://docs.google.com/document/d/1ibggeKiMASJFWr_BnAgUzgQj0bJpZkB2LPtQWVRKt3s'', ''_blank'')"> Document d’introduction Joueur !</button>       
         <button onclick="window.open(''https://docs.google.com/document/d/1HNBfPIBOOdMBjc_8iQ0cMD60J-q56VY6WCJ0h1XvVtM'', ''_blank'')"> Document Lore !</button>
         </p>'
     WHERE name = 'IntrigueOrga';
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  ('textRecrutementJobHobby', 'Est un.e %5$s avec un.e %4$s.', 'string to present hobby %4$s and job %5$s on recrutement')
  ,('textViewWorkerJobHobby','c’est un.e %2$s avec un.e %3$s.', 'string to present hobby %2$s and job %3$s view of worker')
@@ -44,14 +44,14 @@ VALUES
 )
 ;
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  ('textControllerActionCreateBase', 'Créer une forteresse dans la région :', 'create base texte in controller view actions')
  ,('textControllerActionMoveBase', 'Déménager dans une forteresse de la région :', 'move base texte in controller view actions')
  ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir établi une forteresse.', 'needed base for recrutment')
 ;
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  (
     'textesStartInvestigate', '<p> Nous avons mené l’enquête dans le territoire <strong>%s</strong>.</p>', 'Texts for start of investigation')
@@ -66,7 +66,7 @@ VALUES
     'Texts for extra disciplines'
 )
     ;
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 (
     'textesOrigine',
@@ -78,7 +78,7 @@ VALUES
     'Texts for origin detection'
 );
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- textesDiff01Array     
 -- (nom) - %1$s
@@ -170,7 +170,7 @@ VALUES
 );
 
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 ('textesTransformationDiff1', '[
     " et nous observons qu’iel possède un.e %s",
@@ -183,7 +183,7 @@ VALUES
 ;
 
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- Observers of a **failed** violent claim
 ('textesClaimFailViewArray', '[
@@ -217,7 +217,7 @@ VALUES
     "<strong>%2$s</strong> est tombé.e sous votre coupe.<br/>"
 ]', 'Texts for the success report of the claiming worker');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - timeDenominatorThe lowercase
 -- %2$s - timeDenominatorOf lowercase
@@ -236,7 +236,7 @@ VALUES
     "<p>%1$s %3$s %4$s signe le début du silence complet de cet agent.</p>"
 ]', 'Templates used for worker disappearance text with a week number placeholder');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - controller id
 ('workerCapturedTexts', '[
@@ -246,7 +246,7 @@ VALUES
 ]
 ', 'Templates used for worker captured text');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('attackSuccessTexts', '[
@@ -259,7 +259,7 @@ VALUES
     "<p>Mission accomplie : <strong>%1$s</strong> est désormais une simple note dans les rouleaux de l’histoire.</p>"
 ]', 'Templates for successful attack reports mentioning the target name');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('captureSuccessTexts', '[
@@ -274,7 +274,7 @@ VALUES
     "<p>Mission terminée brillamment : <strong>%1$s</strong> est capturé.e et ne nous échappera plus.</p>"
 ]', 'Inclusive templates for successful capture reports mentioning the target name');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('failedAttackTextes', '[
@@ -293,7 +293,7 @@ VALUES
     "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a dû l’atteindre avant nous.</p>"
 ]', 'Texts for unfound attacks in inclusive language');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - attacker name
 ('escapeTextes', '[
@@ -309,7 +309,7 @@ VALUES
     "<p>L’assaut de <strong>%1$s</strong> n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>"
 ]', 'Texts for successful escapes in inclusive language');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - target name
 ('textesAttackFailedAndCountered', '[
@@ -320,7 +320,7 @@ VALUES
     "<p>Le groupe envoyé pour neutraliser <strong>%s</strong> n’est jamais revenu.</p>"
 ]', 'Texts for missions that fail and result in counter-attack or disappearance');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - Assaulter name 
 ('counterAttackTexts', '[
@@ -336,7 +336,7 @@ VALUES
     "<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>"
 ]', 'Texts for the worker who was atacked an the successfully countered');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s = nom de la localisation
 ('TEXT_LOCATION_DISCOVERED_NAME', '[
@@ -369,7 +369,7 @@ VALUES
 ;
 
 -- Text for worker participating in controller attack reports
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s : nom du lieu attaqué 
 -- %2$s: identifiant du réseau attaquant

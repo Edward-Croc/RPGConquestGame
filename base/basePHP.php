@@ -25,9 +25,10 @@ require_once '../zones/functions.php';
  * @return string|null $value 
  */
 function getConfig($pdo, $configName) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
-            FROM config
+            FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
@@ -46,8 +47,9 @@ function getConfig($pdo, $configName) {
  * @return array|null : $mechanics
  */
 function getMechanics($pdo) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
-        $stmt = $pdo->query("SELECT * FROM mechanics");
+        $stmt = $pdo->query("SELECT * FROM {$prefix}mechanics");
         $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if ($_SESSION['DEBUG'] == true){
             echo "mechanics :  <br />";

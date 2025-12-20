@@ -18,9 +18,10 @@ require_once './BDD/db_connector.php';
  * @return string|null : value
  */
 function getConfig($pdo, $configName) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
-            FROM config
+            FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);

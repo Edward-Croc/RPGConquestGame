@@ -4,11 +4,12 @@
 
     $controllersArray = array();
     $playerURL = null;
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if (isset( $_SESSION['user_id'])) {
         try{
             $sqlPlayers = sprintf("SELECT p.*
-                FROM players p
+                FROM {$prefix}players p
                 WHERE p.id = %s
             ", $_SESSION['user_id']);
             $stmtPlayers = $gameReady->prepare($sqlPlayers);
@@ -164,25 +165,26 @@
                     );
                 }
                 $htmlBase .= '</p>';
-            }
-            // Incoming attacks this turn
-            $incomingStmt = $gameReady->prepare("
-                SELECT * FROM location_attack_logs 
-                WHERE target_controller_id = :controller_id 
-                AND turn = :turn
-                ORDER BY id DESC
-            ");
-            $incomingStmt->execute([
-                'controller_id' => $_SESSION['controller']['id'],
-                'turn' => $mechanics['turncounter']
-            ]);
-            $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
-            if (!empty($incomingAttacks)) {
-                $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
-                foreach ($incomingAttacks as $attack) {
-                    $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
+            
+                // Incoming attacks this turn
+                $incomingStmt = $gameReady->prepare("
+                    SELECT * FROM {$prefix}location_attack_logs 
+                    WHERE target_controller_id = :controller_id 
+                    AND turn = :turn
+                    ORDER BY id DESC
+                ");
+                $incomingStmt->execute([
+                    'controller_id' => $_SESSION['controller']['id'],
+                    'turn' => $mechanics['turncounter']
+                ]);
+                $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
+                if (!empty($incomingAttacks)) {
+                    $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
+                    foreach ($incomingAttacks as $attack) {
+                        $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
+                    }
+                    $htmlBase .= "</ul></div>";
                 }
-                $htmlBase .= "</ul></div>";
             }
             echo $htmlBase;
 
@@ -215,7 +217,7 @@
         echo '<h4 class="title is-5 mt-5">Vos lieux découverts:</h4>';
             // Outgoing attacks this turn
             $outgoingStmt = $gameReady->prepare("
-                SELECT * FROM location_attack_logs 
+                SELECT * FROM {$prefix}location_attack_logs 
                 WHERE attacker_id = :controller_id 
                 AND turn = :turn
                 ORDER BY id DESC
@@ -337,8 +339,7 @@
 
             echo '</div></form>';
             echo buildGiveKnowledgeHTML($gameReady, 'controller', $controllers['id']);
-            echo '</div>';
-            
+            echo '</div>';  
     }
     echo '</div>';
 

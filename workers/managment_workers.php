@@ -2,8 +2,9 @@
 require_once '../base/basePHP.php'; // Set up $pdo and session
 $pageName = 'admin_workers';
 
+$prefix = $_SESSION['GAME_PREFIX'];
 $workerIds = [];
-$workerIds = $gameReady->query("SELECT id FROM workers ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+$workerIds = $gameReady->query("SELECT id FROM {$prefix}workers ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
 
 $workers = getWorkers($gameReady, $workerIds);
 

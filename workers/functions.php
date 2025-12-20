@@ -51,8 +51,9 @@ function generateNewWorker($pdo, $controller_id, $buttonClicked) {
  */
 function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null, $jsonArray = null) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
-    $query = "UPDATE worker_actions SET ";
+    $query = "UPDATE {$prefix}worker_actions SET ";
     $updates = [];
     $params = ['worker_id' => $workerId, 'turn_number' => $turnNumber];
 
@@ -69,7 +70,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
     }
     if (!empty($reportAppendArray)) {
         // Step 1: Fetch the existing report
-        $stmt = $pdo->prepare("SELECT report FROM worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number");
+        $stmt = $pdo->prepare("SELECT report FROM {$prefix}worker_actions WHERE worker_id = :worker_id AND turn_number = :turn_number");
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->bindParam(':turn_number', $turnNumber, PDO::PARAM_INT);
         $stmt->execute();
@@ -128,6 +129,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
  * @return array|null workersArray
  */
 function getWorkers($pdo, $workerIds) {
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if ( empty($workerIds) ) return NULL;
     $worker_id_str = implode(',', $workerIds);
@@ -139,7 +141,7 @@ function getWorkers($pdo, $workerIds) {
             cw.controller_id AS controller_id,
             cw.is_primary_controller,
             (SELECT MAX(wa.turn_number) - MIN(wa.turn_number)
-                FROM worker_actions wa
+                FROM {$prefix}worker_actions wa
                 WHERE wa.worker_id = w.id
                 GROUP BY wa.worker_id
             ) AS age,
@@ -147,18 +149,18 @@ function getWorkers($pdo, $workerIds) {
             COALESCE(SUM(p.attack), 0) AS total_attack,
             COALESCE(SUM(p.defence), 0) AS total_defence
         FROM
-            workers AS w
-        JOIN controller_worker AS cw ON cw.worker_id = w.id
+            {$prefix}workers AS w
+        JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
         JOIN
-            worker_origins AS wo ON wo.id = w.origin_id
+            {$prefix}worker_origins AS wo ON wo.id = w.origin_id
         JOIN
-            zones AS z ON z.id = w.zone_id
+            {$prefix}zones AS z ON z.id = w.zone_id
         LEFT JOIN
-            worker_powers wp ON w.id = wp.worker_id
+            {$prefix}worker_powers wp ON w.id = wp.worker_id
         LEFT JOIN
-            link_power_type lpt ON wp.link_power_type_id = lpt.ID
+            {$prefix}link_power_type lpt ON wp.link_power_type_id = lpt.ID
         LEFT JOIN
-            powers p ON lpt.power_id = p.ID
+            {$prefix}powers p ON lpt.power_id = p.ID
         WHERE
             w.id IN ($worker_id_str)
         GROUP BY w.id, wo.name, z.name, cw.is_primary_controller, cw.controller_id
@@ -220,8 +222,9 @@ function getWorkers($pdo, $workerIds) {
  *
  */
 function getWorkersByController($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
 
-    $sql = " SELECT * FROM controller_worker AS cw
+    $sql = " SELECT * FROM {$prefix}controller_worker AS cw
         WHERE cw.controller_id = :controller_id
     ";
     try {
@@ -340,8 +343,9 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
 
         // for double agent get name of infiltrated network
         if ($workerStatus == 'double_agent') {
+            $prefix = $_SESSION['GAME_PREFIX'];
             $sql = "SELECT cw.controller_id
-            FROM controller_worker AS cw
+            FROM {$prefix}controller_worker AS cw
             WHERE cw.worker_id = :worker_id
             AND cw.is_primary_controller = :is_primary_controller
             LIMIT 1";
@@ -406,7 +410,8 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
  * @return array|null workerActions
  */
 function getActionsByWorkers($pdo, $worker_id_str){
-    $sql = "SELECT * FROM worker_actions w
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $sql = "SELECT * FROM {$prefix}worker_actions w
         WHERE worker_id IN ($worker_id_str)
         ORDER BY worker_id ASC, turn_number DESC
     ";
@@ -434,6 +439,11 @@ function getActionsByWorkers($pdo, $worker_id_str){
  * @return array|null originsArray
  */
 function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
+    $randCommand = 'RANDOM()';
+    if ($_SESSION['DBTYPE'] == 'mysql')
+        $randCommand = 'RAND()';
+
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $tmpOrigine = getConfig($pdo, $buttonClicked.'_origin_list');
     $originList = null;
@@ -461,14 +471,9 @@ function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
     if ( !empty($originList) ){
         $sqlOriginId .= " WHERE id in ($originList)";
     }
-
-    $randCommand = 'RANDOM()';
-    if ($_SESSION['DBTYPE'] == 'mysql')
-        $randCommand = 'RAND()';
-
     try{
         // Get a random value from worker_origins
-        $sql = sprintf("SELECT id, name FROM worker_origins %s ORDER BY %s LIMIT 1",
+        $sql = sprintf("SELECT id, name FROM {$prefix}worker_origins %s ORDER BY %s LIMIT 1",
             $sqlOriginId,
             $randCommand
         );
@@ -507,8 +512,9 @@ function randomWorkerName($pdo, $newWorker) {
     if ($_SESSION['DBTYPE'] == 'mysql')
         $randCommand = 'RAND()';
 
-    $sql = sprintf("SELECT * FROM worker_names
-        JOIN worker_origins ON worker_origins.id = worker_names.origin_id
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $sql = sprintf("SELECT * FROM {$prefix}worker_names
+        JOIN {$prefix}worker_origins ON worker_origins.id = worker_names.origin_id
         WHERE origin_id = %d
         ORDER BY %s
         LIMIT 2",
@@ -567,11 +573,13 @@ function createWorker($pdo, $array) {
         return false;
     }
 
+    $prefix = $_SESSION['GAME_PREFIX'];
+    
     // Check if worker already exists :
     try{
         // Select worker value from the database
-        $stmt = $pdo->prepare("SELECT w.id AS id FROM workers AS w
-        INNER JOIN controller_worker AS cw ON cw.worker_id = w.id
+        $stmt = $pdo->prepare("SELECT w.id AS id FROM {$prefix}workers AS w
+        INNER JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
         WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
         $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
         $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
@@ -588,7 +596,7 @@ function createWorker($pdo, $array) {
 
     try{
         // Insert new workers value into the database
-        $stmt = $pdo->prepare("INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES (:firstname, :lastname, :origin_id, :zone_id)");
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}workers (firstname, lastname, origin_id, zone_id) VALUES (:firstname, :lastname, :origin_id, :zone_id)");
         $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
         $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
         $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
@@ -610,7 +618,7 @@ function createWorker($pdo, $array) {
 
     try{
         // Insert new controller_worker value into the database
-        $stmt = $pdo->prepare("INSERT INTO controller_worker (controller_id, worker_id) VALUES (:controller_id, :worker_id)");
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}controller_worker (controller_id, worker_id) VALUES (:controller_id, :worker_id)");
         $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
@@ -631,7 +639,7 @@ function createWorker($pdo, $array) {
 
     try{
         // increment recrutment values
-        $sqlUpdateRecrutementCounter = 'UPDATE controllers SET recruited_workers = recruited_workers +1 WHERE id = :controller_id';
+        $sqlUpdateRecrutementCounter = "UPDATE {$prefix}controllers SET recruited_workers = recruited_workers +1 WHERE id = :controller_id";
         $stmtUpdateRecrutementCounter = $pdo->prepare($sqlUpdateRecrutementCounter);
         $stmtUpdateRecrutementCounter->execute([
             ':controller_id' => $array['controller_id']
@@ -655,10 +663,11 @@ function createWorker($pdo, $array) {
  */
 function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = false){
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
         // Insert new worker_powers value into the database
-        $stmt = $pdo->prepare("INSERT INTO worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}worker_powers (worker_id, link_power_type_id) VALUES (:worker_id, :link_power_type_id)");
         $stmt->bindParam(':link_power_type_id', $link_power_type_id, PDO::PARAM_INT);
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
@@ -671,8 +680,8 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
     try {
         $sql = "
             SELECT p.other
-            FROM powers p
-            JOIN link_power_type lpt ON lpt.power_id = p.id
+            FROM {$prefix}powers p
+            JOIN {$prefix}link_power_type lpt ON lpt.power_id = p.id
             WHERE lpt.id = :link_power_type_id
             LIMIT 1
         ";
@@ -709,6 +718,7 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
  */
 function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = false) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // If it is a recrutment effect
     if ($isRecrutment && !empty($otherJson['on_recrutment']) && is_array($otherJson['on_recrutment']) ){
@@ -724,8 +734,8 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                 if ( $element['type'] == 'go_traitor' && !empty($element['controller_lastname']) ){
                     try {
                         // Add non primary controller for the worker
-                        $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
-                                VALUES ( (SELECT id FROM controllers WHERE lastname = :lastname), :worker_id, False)";
+                        $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
+                                VALUES ( (SELECT id FROM {$prefix}controllers WHERE lastname = :lastname), :worker_id, False)";
                         if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
@@ -760,11 +770,12 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
 function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray = null){
     // Get turn nubmer
     $mechanics = getMechanics($pdo);
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $hasReport = false;
 
     $sql = "INSERT
-            INTO worker_actions (worker_id, turn_number, zone_id, controller_id)
+            INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id)
             VALUES (:worker_id, :turn_number, :zone_id, :controller_id)";
     if (!empty($reportArray)) {
         // Encode the report
@@ -773,7 +784,7 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
             echo "JSON encoding error: " . json_last_error_msg() . "<br />";
         }else{
             $sql = "INSERT
-                INTO worker_actions (worker_id, turn_number, zone_id, controller_id, report)
+                INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id, report)
                 VALUES (:worker_id, :turn_number, :zone_id, :controller_id, :report)";
             $hasReport = true;
         }
@@ -807,16 +818,17 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
  * @return array {int worker_id, int discipline_count}
  */
 function countWorkerDisciplines($pdo, $workerIds = NULL) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = sprintf("SELECT
                 wp.worker_id,
                 COUNT(*) AS discipline_count
             FROM
-                worker_powers wp
+                {$prefix}worker_powers wp
             INNER JOIN
-                link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                {$prefix}link_power_type lpt ON wp.link_power_type_id = lpt.ID
             INNER JOIN
-                power_types pt ON lpt.power_type_id = pt.ID
+                {$prefix}power_types pt ON lpt.power_type_id = pt.ID
             WHERE
                 pt.name = 'Discipline'
                 %s
@@ -846,10 +858,11 @@ function countWorkerDisciplines($pdo, $workerIds = NULL) {
  */
 function moveWorker($pdo, $workerId, $zoneId) {
     $debug = $_SESSION['DEBUG'];
+    $prefix = $_SESSION['GAME_PREFIX'];
     if ($debug) echo __FUNCTION__."(): Step 1 UPDATE workers <br/>";
     try{
         // UPDATE workers value
-        $stmt = $pdo->prepare("UPDATE workers SET zone_id = :zone_id WHERE id = :id ");
+        $stmt = $pdo->prepare("UPDATE {$prefix}workers SET zone_id = :zone_id WHERE id = :id ");
         $stmt->bindParam(':id', $workerId, PDO::PARAM_INT);
         $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
         $stmt->execute();
@@ -867,7 +880,7 @@ function moveWorker($pdo, $workerId, $zoneId) {
 
     try{
         // UPDATE worker_actions values
-        $stmt = $pdo->prepare("UPDATE worker_actions SET zone_id = :zone_id WHERE id = :id ");
+        $stmt = $pdo->prepare("UPDATE {$prefix}worker_actions SET zone_id = :zone_id WHERE id = :id ");
         $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
         $stmt->bindParam(':id', $actions[0]['id'], PDO::PARAM_INT);
         $stmt->execute();
@@ -888,13 +901,14 @@ function moveWorker($pdo, $workerId, $zoneId) {
  * 
  */
 function getWorkerActions($pdo, $workerId, $turn_number = null ){
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
     }
 
-    $sql = "SELECT * FROM worker_actions
+    $sql = "SELECT * FROM {$prefix}worker_actions
         WHERE worker_id = $workerId
         AND turn_number = $turn_number
         ORDER BY id DESC
@@ -929,6 +943,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // get worker action status for turn
     $worker_actions = getWorkerActions($pdo, $workerId);
@@ -943,7 +958,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
         }
     }
-    $sql_worker_actions = "UPDATE worker_actions SET ";
+    $sql_worker_actions = "UPDATE {$prefix}worker_actions SET ";
     if ($_SESSION['DEBUG'] == true) echo sprintf("%s(): activate : %s <br/>", __FUNCTION__, $action);
     $new_action = $action;
     $jsonOutput = '{}';
@@ -1001,7 +1016,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
             // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
             try {
-                $sqlcontrollerWorker = "DELETE FROM controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $sqlcontrollerWorker = "DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
@@ -1013,14 +1028,14 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
                 // Update the controller_worker table
-                $sqlcontrollerWorker = "UPDATE controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
+                $sqlcontrollerWorker = "UPDATE {$prefix}controller_worker SET controller_id = :extraVal WHERE worker_id = :worker_id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "";
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
                     ':worker_id' => $workerId
                 ]);
                 // Update the worker_actions table
-                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal , action_params = '$jsonOutput'
+                $sqlWorkerActions = "UPDATE {$prefix}worker_actions SET controller_id = :extraVal , action_params = '$jsonOutput'
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
@@ -1051,7 +1066,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
                 // Update the controller_worker table
                 $sqlDropControllerWorker = sprintf(
-                    "DELETE FROM controller_worker WHERE worker_id = :worker_id AND is_primary_controller = %s AND NOT controller_id = :extraVal",
+                    "DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id AND is_primary_controller = %s AND NOT controller_id = :extraVal",
                     $_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1'
                 );
                 $stmtDropControllerWorker = $pdo->prepare($sqlDropControllerWorker);
@@ -1059,7 +1074,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':worker_id' => $workerId,
                     ':extraVal' => $extraVal
                 ]);
-                $sqlUpdatecontrollerWorker = sprintf("UPDATE controller_worker SET is_primary_controller = %s WHERE worker_id = :worker_id AND controller_id = :extraVal",
+                $sqlUpdatecontrollerWorker = sprintf("UPDATE {$prefix}controller_worker SET is_primary_controller = %s WHERE worker_id = :worker_id AND controller_id = :extraVal",
                     ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
                 );
                 $stmtUpdateControllerWorker = $pdo->prepare($sqlUpdatecontrollerWorker);
@@ -1069,7 +1084,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                 ]);
 
                 // Update the worker_actions table
-                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
+                $sqlWorkerActions = "UPDATE {$prefix}worker_actions SET controller_id = :extraVal
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
@@ -1101,7 +1116,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             try {
                 // Update the controller_worker table
                 $sqlcontrollerWorker = sprintf(
-                    "UPDATE controller_worker SET controller_id = :return_controller_id WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
+                    "UPDATE {$prefix}controller_worker SET controller_id = :return_controller_id WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
                     ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
                 );
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
@@ -1112,7 +1127,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                 ]);
 
                 // Update the worker_actions table
-                $sqlWorkerActions = "UPDATE worker_actions SET controller_id = :extraVal
+                $sqlWorkerActions = "UPDATE {$prefix}worker_actions SET controller_id = :extraVal
                     WHERE worker_id = :worker_id AND turn_number = :turn_number";
                 $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
                 $stmtWorkerActions->execute([
@@ -1126,7 +1141,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             if ( !empty($extraVal['double_controller_id']) ) {
                 try {
                     // Add non primary controller for the worker
-                    $sql = "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
+                    $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
                             VALUES (:extraVal , :worker_id, False)";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([':extraVal' => $extraVal['double_controller_id'], ':worker_id' => $workerId]);
@@ -1174,6 +1189,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
  * 
  */
 function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Select from controllers_known_enemies by $zone_id, $controller_id
         // return table of :
         // A worker discovered_worker_id with no discovered_controller_id
@@ -1193,9 +1209,9 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
             FROM
-                controllers_known_enemies cke
+                {$prefix}controllers_known_enemies cke
             JOIN
-                workers AS w ON cke.discovered_worker_id = w.id
+                {$prefix}workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
                 %s
@@ -1220,9 +1236,9 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
                 last_discovery_turn,
                 (last_discovery_turn - first_discovery_turn) AS discovery_age
             FROM
-                controllers_known_enemies cke
+                {$prefix}controllers_known_enemies cke
             JOIN
-                workers AS w ON cke.discovered_worker_id = w.id
+                {$prefix}workers AS w ON cke.discovered_worker_id = w.id
             WHERE
                 cke.zone_id = :zone_id
                 %s
@@ -1340,6 +1356,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
 function createTraceWorker($pdo, $worker_id, $controller_id) {
 
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if ($debug) echo __FUNCTION__."(): createTraceWorker <br/><br/>";
     try {
@@ -1348,9 +1365,9 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 
         // Step 1 : Copy the worker table except id
         $query = "
-            INSERT INTO workers (firstname, lastname, origin_id, zone_id) 
+            INSERT INTO {$prefix}workers (firstname, lastname, origin_id, zone_id) 
             SELECT firstname, lastname, origin_id, zone_id
-            FROM workers WHERE id = :worker_id
+            FROM {$prefix}workers WHERE id = :worker_id
         ";
         if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
@@ -1361,9 +1378,9 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 
         // Step 2 : Copy the worker_actions table except id, worker_id = new worker_id and action_choice = 'trace'
         $query = "
-            INSERT INTO worker_actions (worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, action_choice, action_params, report)
+            INSERT INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, action_choice, action_params, report)
             SELECT :new_worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, 'trace', action_params, report 
-            FROM worker_actions WHERE worker_id = :worker_id
+            FROM {$prefix}worker_actions WHERE worker_id = :worker_id
         ";
         if ($debug) echo sprintf("%s(): Step 2 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
@@ -1373,9 +1390,9 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 
         // Step 3 : Copy the worker_powers
         $query = "
-            INSERT INTO worker_powers (worker_id, link_power_type_id)
+            INSERT INTO {$prefix}worker_powers (worker_id, link_power_type_id)
             SELECT :new_worker_id, link_power_type_id
-            FROM worker_powers WHERE worker_id = :worker_id
+            FROM {$prefix}worker_powers WHERE worker_id = :worker_id
         ";
         if ($debug) echo sprintf("%s(): Step 3 : %s <br/><br/>",  __FUNCTION__, $query);
         $stmt = $pdo->prepare($query);
@@ -1385,7 +1402,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 
         // Step 4 : Copy the add new worker to the controller_worker table as primary controller
         $query = "
-            INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller)
+            INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
             SELECT :controller_id, :new_worker_id, true
         ";
         if ($debug) echo sprintf("%s(): Step 4 : %s <br/><br/>",  __FUNCTION__, $query);
@@ -1396,7 +1413,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 
         // Step 5: Add a new entry to the workers_trace_links table with the old worker_id as primary_worker_id and the new worker_id as trace_worker_id and the controller_id
         $query = "
-            INSERT INTO workers_trace_links (primary_worker_id, trace_worker_id, controller_id)
+            INSERT INTO {$prefix}workers_trace_links (primary_worker_id, trace_worker_id, controller_id)
             SELECT  :worker_id, :new_worker_id, :controller_id
         ";
         if ($debug) echo sprintf("%s(): Step 5 : %s <br/><br/>",  __FUNCTION__, $query);
@@ -1435,12 +1452,13 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if ($debug) echo __FUNCTION__."(): destroyTraceWorker <br/><br/>";
 
     // Step 1 : find the trace_worker_id in the workers_trace_links table
     $query = "
-        SELECT trace_worker_id FROM workers_trace_links WHERE primary_worker_id = :worker_id AND controller_id = :controller_id
+        SELECT trace_worker_id FROM {$prefix}workers_trace_links WHERE primary_worker_id = :worker_id AND controller_id = :controller_id
     ";
     if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
     $stmt = $pdo->prepare($query);
@@ -1462,7 +1480,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
                 // Step 2 : Delete the trace worker from the controller_worker table as primary controller
                 $query = "
-                    DELETE FROM controller_worker WHERE worker_id = :trace_worker_id AND controller_id = :controller_id AND is_primary_controller = true
+                    DELETE FROM {$prefix}controller_worker WHERE worker_id = :trace_worker_id AND controller_id = :controller_id AND is_primary_controller = true
                 ";
                 $stmt = $pdo->prepare($query);
                 $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
@@ -1471,7 +1489,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
                 // Step 3 : Delete the worker_powers for the trace worker
                 $query = "
-                    DELETE FROM worker_powers WHERE worker_id = :trace_worker_id
+                    DELETE FROM {$prefix}worker_powers WHERE worker_id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
                 $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
@@ -1479,7 +1497,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
                 // Step 4 : Delete the worker_actions for the trace worker where action_choice = 'trace'
                 $query = "
-                    DELETE FROM worker_actions WHERE worker_id = :trace_worker_id AND action_choice = 'trace'
+                    DELETE FROM {$prefix}worker_actions WHERE worker_id = :trace_worker_id AND action_choice = 'trace'
                 ";
                 $stmt = $pdo->prepare($query);
                 $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
@@ -1488,7 +1506,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                 // Step 5 : Delete the controllers_known_enemies for the trace worker (this should not exist
                 // done by caution
                 $query = "
-                    DELETE FROM controllers_known_enemies WHERE discovered_worker_id = :trace_worker_id
+                    DELETE FROM {$prefix}controllers_known_enemies WHERE discovered_worker_id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
                 $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);
@@ -1496,7 +1514,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
                 // Step 6 : Delete the entry from the workers_trace_links table
                 $query = "
-                    DELETE FROM workers_trace_links
+                    DELETE FROM {$prefix}workers_trace_links
                         WHERE primary_worker_id = :worker_id
                         AND trace_worker_id = :trace_worker_id
                         AND controller_id = :controller_id
@@ -1509,7 +1527,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
                 // Step 5 : Delete the trace worker from the workers
                 $query = "
-                    DELETE FROM workers WHERE id = :trace_worker_id
+                    DELETE FROM {$prefix}workers WHERE id = :trace_worker_id
                 ";
                 $stmt = $pdo->prepare($query);
                 $stmt->bindParam(':trace_worker_id', $trace_worker_id, PDO::PARAM_INT);

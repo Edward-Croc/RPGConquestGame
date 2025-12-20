@@ -14,7 +14,7 @@
     -- ('', 2,0,-1), => Maitres Enqueteurs
     -- ('', -1,2,1), => Maitres Combattants
 
-INSERT INTO powers (name, description, enquete, attack, defence) VALUES
+INSERT INTO {prefix}powers (name, description, enquete, attack, defence) VALUES
     -- ('', 1,0,0), => Enqueteurs
     ('Juzu (数珠) – Un bracelet de perles bouddhistes', ', utilisé pour la prière mais aussi comme symbole d’appartenance à une école spirituelle', 1,0,0),
     ('Jirei (持鈴) – Une petite clochette', ', utilisée pour signaler sa présence dans les temples, ou détourner l’attention', 1,0,0),

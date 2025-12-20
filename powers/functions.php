@@ -8,9 +8,10 @@
  * @return string|NULL : $description
  */
 function getPowerTypesDescription($pdo, $name){
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT description
-            FROM power_types
+            FROM {$prefix}power_types
             WHERE name = :name
         ");
         $stmt->execute([':name' => $name]);
@@ -49,16 +50,17 @@ function getSQLPowerText($short = true) {
  */
 function getPowersByWorkers($pdo, $worker_id_str) {
     $power_text = getSQLPowerText(false);
+    $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "SELECT
         w.id AS worker_id,
         p.*,
         $power_text,
         pt.name AS power_type_name
-    FROM workers w
-    JOIN worker_powers wp ON w.id = wp.worker_id
-    JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-    JOIN powers p ON lpt.power_id = p.ID
-    JOIN power_types pt ON lpt.power_type_id = pt.ID
+    FROM {$prefix}workers w
+    JOIN {$prefix}worker_powers wp ON w.id = wp.worker_id
+    JOIN {$prefix}link_power_type lpt ON wp.link_power_type_id = lpt.ID
+    JOIN {$prefix}powers p ON lpt.power_id = p.ID
+    JOIN {$prefix}power_types pt ON lpt.power_type_id = pt.ID
     WHERE w.id IN ($worker_id_str)
     ORDER BY w.id ASC
     ";
@@ -95,10 +97,11 @@ function randomPowersByType($pdo, $type, $newWorker) {
     $randCommand = 'RANDOM()';
     if ($_SESSION['DBTYPE'] == 'mysql')
         $randCommand = 'RAND()';
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         // Get x random values from powers for a power_type
-        $sql = sprintf("SELECT p.*, %s FROM powers AS p
-            INNER JOIN link_power_type ON link_power_type.power_id = p.id
+        $sql = sprintf("SELECT p.*, %s FROM {$prefix}powers AS p
+            INNER JOIN {$prefix}link_power_type ON link_power_type.power_id = p.id
             WHERE link_power_type.power_type_id = %s ORDER BY %s LIMIT 1",
             $power_text,
             $type,
@@ -151,20 +154,21 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = tr
         $controller_id != "" ? "controllers.id IN ($controller_id)" : '');
     }
 
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Get all powers from a type_list
-    $sql = sprintf('SELECT p.*, %3$s, link_power_type.id as link_power_type_id
-        FROM powers AS p
-        JOIN link_power_type ON link_power_type.power_id = p.id
+    $sql = sprintf("SELECT p.*, %3\$s, link_power_type.id as link_power_type_id
+        FROM {$prefix}powers AS p
+        JOIN {$prefix}link_power_type ON link_power_type.power_id = p.id
         WHERE p.id IN (
             SELECT distinct(powers.id)
-            FROM powers
-            JOIN link_power_type ON link_power_type.power_id = powers.id
-            LEFT JOIN faction_powers ON faction_powers.link_power_type_id = link_power_type.id
-            LEFT JOIN factions ON factions.id = faction_powers.faction_id
-            LEFT JOIN controllers ON controllers.faction_id = factions.id
-            WHERE link_power_type.power_type_id IN ( %1$s )
-            %2$s
-        )',
+            FROM {$prefix}powers
+            JOIN {$prefix}link_power_type ON link_power_type.power_id = powers.id
+            LEFT JOIN {$prefix}faction_powers ON faction_powers.link_power_type_id = link_power_type.id
+            LEFT JOIN {$prefix}factions ON factions.id = faction_powers.faction_id
+            LEFT JOIN {$prefix}controllers ON controllers.faction_id = factions.id
+            WHERE link_power_type.power_type_id IN ( %1\$s )
+            %2\$s
+        )",
         $type_list,
         $conditions,
         $power_text,

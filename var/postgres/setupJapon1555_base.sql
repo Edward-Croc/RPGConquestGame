@@ -1,29 +1,29 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-UPDATE config SET value =  '1,2,3,4,5,6,7,8,9,10,11' WHERE name = 'first_come_origin_list';
-UPDATE config SET value =  '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
-UPDATE config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
-UPDATE config SET value =  '1' WHERE name = 'recrutement_disciplines';
-UPDATE config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline';
-UPDATE config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
-UPDATE config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
+UPDATE {prefix}config SET value =  '1,2,3,4,5,6,7,8,9,10,11' WHERE name = 'first_come_origin_list';
+UPDATE {prefix}config SET value =  '1,2,3,4,5,6,7' WHERE name = 'recrutement_origin_list';
+UPDATE {prefix}config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list';
+UPDATE {prefix}config SET value =  '1' WHERE name = 'recrutement_disciplines';
+UPDATE {prefix}config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline';
+UPDATE {prefix}config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
+UPDATE {prefix}config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
 
 -- MAP INFO
-UPDATE config SET value =  'Carte_Shikoku_1555.jpg' WHERE name = 'map_file';
-UPDATE config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
+UPDATE {prefix}config SET value =  'Carte_Shikoku_1555.jpg' WHERE name = 'map_file';
+UPDATE {prefix}config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
 
 -- Text time info
-UPDATE config SET value =  'le ' WHERE name = 'controllerNameDenominatorThe';
-UPDATE config SET value =  'du' WHERE name = 'controllerNameDenominatorOf';
-UPDATE config SET value =  'des' WHERE name = 'controllerLastNameDenominatorOf';
-UPDATE config SET value =  'territoire' WHERE name = 'textForZoneType';
-UPDATE config SET value =  'Trimestre' WHERE name = 'timeValue';
-UPDATE config SET value =  'ce' WHERE name = 'timeDenominatorThis';
-UPDATE config SET value =  'le' WHERE name = 'timeDenominatorThe';
-UPDATE config SET value =  'du' WHERE name = 'timeDenominatorOf';
+UPDATE {prefix}config SET value =  'le ' WHERE name = 'controllerNameDenominatorThe';
+UPDATE {prefix}config SET value =  'du' WHERE name = 'controllerNameDenominatorOf';
+UPDATE {prefix}config SET value =  'des' WHERE name = 'controllerLastNameDenominatorOf';
+UPDATE {prefix}config SET value =  'territoire' WHERE name = 'textForZoneType';
+UPDATE {prefix}config SET value =  'Trimestre' WHERE name = 'timeValue';
+UPDATE {prefix}config SET value =  'ce' WHERE name = 'timeDenominatorThis';
+UPDATE {prefix}config SET value =  'le' WHERE name = 'timeDenominatorThe';
+UPDATE {prefix}config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
-UPDATE config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts';
+UPDATE {prefix}config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts';
 
-INSERT INTO players (username, passwd, is_privileged, url) VALUES
+INSERT INTO {prefix}players (username, passwd, is_privileged, url) VALUES
     ('player0', 'yokai', False, ''),
     ('shingen', 'takeda', False, ''),
     ('yoshiteru', 'ashikaga', False, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
@@ -49,7 +49,7 @@ INSERT INTO players (username, passwd, is_privileged, url) VALUES
     ('yubien', 'kobsix', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
 ;
 
-INSERT INTO factions (name) VALUES
+INSERT INTO {prefix}factions (name) VALUES
     ('Samouraïs Chōsokabe')
     ,('Samouraïs Miyoshi')
     ,('Samouraïs Hosokawa')
@@ -64,7 +64,7 @@ INSERT INTO factions (name) VALUES
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-INSERT INTO controllers (
+INSERT INTO {prefix}controllers (
     firstname, lastname, ia_type, secret_controller,
     url, story, can_build_base,
     faction_id, fake_faction_id
@@ -72,24 +72,24 @@ INSERT INTO controllers (
     ('妖怪 de', 'Shikoku (四国)', 'passif', True, -- https://fr.wikipedia.org/wiki/Y%C5%8Dkai#:~:text=Le%20terme%20y%C5%8Dkai%20(%E5%A6%96%E6%80%AA%2C%20%C2%AB,la%20culture%20orale%20au%20Japon.
         'https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI', '',
         True,
-        (SELECT ID FROM factions WHERE name = 'Yōkai'),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes')
+        (SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes')
     ),
     ('Shogun', 'Ashikaga (足利)', 'passif', True,
         'https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4', '', 
         True,
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga')
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga')
     ), 
     ('Clan', 'Kōno (河野)', NULL, True, --https://it.wikipedia.org/wiki/Clan_K%C5%8Dno
         'https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI', '',
         False,
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Kōno')
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno')
     )
 ;
 
-INSERT INTO controllers (
+INSERT INTO {prefix}controllers (
     firstname, lastname,
     faction_id, fake_faction_id,
     url, 
@@ -97,50 +97,50 @@ INSERT INTO controllers (
 ) VALUES
     (
         'Clan', 'Chōsokabe (長宗我部)', --https://fr.wikipedia.org/wiki/Clan_Ch%C5%8Dsokabe
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe' ),
         'https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I',
         ''
     ),
     (
         'Clan', 'Hosokawa (細川)', -- https://fr.wikipedia.org/wiki/Clan_Hosokawa
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa' ),
         'https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg',
         ''
     ),
     (
         'Clan', 'Miyoshi (三好)',  --https://fr.wikipedia.org/wiki/Clan_Miyoshi
-        (SELECT ID FROM factions WHERE name = 'Chrétiens' ),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi' ),
         'https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4',
         ''
     ),
     (
         'Temple', 'Jōdo-shinshū (浄土真宗)', -- https://fr.wikipedia.org/wiki/Rennyo
-        (SELECT ID FROM factions WHERE name = 'Ikkō-ikki' ),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes' ),
         'https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA',
         ''
     ),
     (
         'Temple', 'Tendai (天台宗)', -- https://en.wikipedia.org/wiki/K%C5%ABkai
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
-        (SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'),
         'https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8',
         ''
     ),
     (
         'Groupe', 'Wako (和光)', --
-        (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
-        (SELECT ID FROM factions WHERE name = 'Kaizokushū' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū' ),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū' ),
         'https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg',
         ''
     )
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-INSERT INTO controllers (
+INSERT INTO {prefix}controllers (
     firstname, lastname, ia_type, secret_controller,
     url, story, can_build_base,
     start_workers, turn_recruited_workers, turn_firstcome_workers,
@@ -149,126 +149,126 @@ INSERT INTO controllers (
     ('Clan', 'Sogō (十河)', NULL, True, 
         NULL, '',
         False, 0, 1, 1,
-        (SELECT ID FROM factions WHERE name = 'Chrétiens'),
-        (SELECT ID FROM factions WHERE name = 'Chrétiens')
+        (SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens')
     ),
     ('Clan', 'Takeda (武田)', 'passif', True, 
         'https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e', '',
         False, 10, 0, 0,
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'),
-        (SELECT ID FROM factions WHERE name = 'Samouraïs Takeda')
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'),
+        (SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda')
     )
 ;
 
-INSERT INTO player_controller (controller_id, player_id)
-    SELECT ID, (SELECT ID FROM players WHERE username = 'gm')
-    FROM controllers;
+INSERT INTO {prefix}player_controller (controller_id, player_id)
+    SELECT ID, (SELECT ID FROM {prefix}players WHERE username = 'gm')
+    FROM {prefix}controllers;
 
-INSERT INTO player_controller (player_id, controller_id) VALUES
+INSERT INTO {prefix}player_controller (player_id, controller_id) VALUES
     (
-        (SELECT ID FROM players WHERE username = 'player0'),
-        (SELECT ID FROM controllers WHERE lastname in ('Shikoku (四国)'))
+        (SELECT ID FROM {prefix}players WHERE username = 'player0'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Shikoku (四国)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'yoshiteru'),
-        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+        (SELECT ID FROM {prefix}players WHERE username = 'yoshiteru'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Ashikaga (足利)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'yoshiaki'),
-        (SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)')
+        (SELECT ID FROM {prefix}players WHERE username = 'yoshiaki'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Ashikaga (足利)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'motochika'),
-        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+        (SELECT ID FROM {prefix}players WHERE username = 'motochika'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'shoho'),
-        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+        (SELECT ID FROM {prefix}players WHERE username = 'shoho'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'kanetsugu'),
-        (SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)')
+        (SELECT ID FROM {prefix}players WHERE username = 'kanetsugu'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Chōsokabe (長宗我部)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'nagayoshi'),
-        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
+        (SELECT ID FROM {prefix}players WHERE username = 'nagayoshi'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Miyoshi (三好)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'fudzisan'),
-        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
+        (SELECT ID FROM {prefix}players WHERE username = 'fudzisan'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Miyoshi (三好)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'sogo'),
-        (SELECT ID FROM controllers WHERE lastname in ('Miyoshi (三好)'))
+        (SELECT ID FROM {prefix}players WHERE username = 'sogo'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Miyoshi (三好)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'sogo'),
-        (SELECT ID FROM controllers WHERE lastname in ('Sogō (十河)'))
+        (SELECT ID FROM {prefix}players WHERE username = 'sogo'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Sogō (十河)'))
     ),
     (
-        (SELECT ID FROM players WHERE username = 'rennyo'),
-        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'rennyo'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'ren-jo'),
-        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'ren-jo'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'renko'),
-        (SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'renko'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'tadaoki'),
-        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+        (SELECT ID FROM {prefix}players WHERE username = 'tadaoki'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Hosokawa (細川)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'tama'),
-        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+        (SELECT ID FROM {prefix}players WHERE username = 'tama'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Hosokawa (細川)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'joha'),
-        (SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)')
+        (SELECT ID FROM {prefix}players WHERE username = 'joha'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Hosokawa (細川)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'murai'),
-        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+        (SELECT ID FROM {prefix}players WHERE username = 'murai'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Wako (和光)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'tsuruhime'),
-        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+        (SELECT ID FROM {prefix}players WHERE username = 'tsuruhime'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Wako (和光)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'wang'),
-        (SELECT ID FROM controllers WHERE lastname = 'Wako (和光)')
+        (SELECT ID FROM {prefix}players WHERE username = 'wang'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Wako (和光)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'kukai'),
-        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'kukai'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'satomura'),
-        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'satomura'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'yubien'),
-        (SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)')
+        (SELECT ID FROM {prefix}players WHERE username = 'yubien'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Tendai (天台宗)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'tsuruhime'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
+        (SELECT ID FROM {prefix}players WHERE username = 'tsuruhime'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Kōno (河野)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'yubien'),
-        (SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)')
+        (SELECT ID FROM {prefix}players WHERE username = 'yubien'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Kōno (河野)')
     ),
     (
-        (SELECT ID FROM players WHERE username = 'shingen'),
-        (SELECT ID FROM controllers WHERE lastname = 'Takeda (武田)')
+        (SELECT ID FROM {prefix}players WHERE username = 'shingen'),
+        (SELECT ID FROM {prefix}controllers WHERE lastname = 'Takeda (武田)')
     )
 ;
 
 -- Table of Fixed Power Types used by code
-INSERT INTO power_types (id, name, description) VALUES
+INSERT INTO {prefix}power_types (id, name, description) VALUES
     (1, 'Hobby', 'Objet fétiche'),
     (2, 'Metier', 'Rôle'),
     (3, 'Discipline', 'Maitrise des Arts'),
@@ -276,7 +276,7 @@ INSERT INTO power_types (id, name, description) VALUES
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
-INSERT INTO powers ( name, enquete, attack, defence, other, description) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence, other, description) VALUES
     ('Cheval Sanuki', 0, 1,1 
         ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki"} }'
         , ', les meilleures montures de Shikoku ont le pied sûr et rapide'
@@ -299,18 +299,18 @@ INSERT INTO powers ( name, enquete, attack, defence, other, description) VALUES
     )
 ;
 
-INSERT INTO  link_power_type ( power_type_id, power_id ) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Cheval Sanuki'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Armure en fer de Tosa'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Thé d’Oboké'))
-    , ((SELECT ID FROM power_types WHERE name = 'Transformation'),(SELECT ID FROM powers WHERE name = 'Encens Coréen'))
+INSERT INTO  {prefix}link_power_type ( power_type_id, power_id ) VALUES
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Cheval Sanuki'))
+    , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Armure en fer de Tosa'))
+    , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Thé d’Oboké'))
+    , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Encens Coréen'))
 ;
 
-UPDATE config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''
+UPDATE {prefix}config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''
 WHERE name = 'basePowerNames';
 
 -- insert Powers
-INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence, description) VALUES
     -- Suggested Disciplines
     -- Possible Values Based on +2 :
     -- ('', 1,1,0), ('', 0,1,1), ('', 1,0,1),
@@ -389,204 +389,204 @@ INSERT INTO powers ( name, enquete, attack, defence, description) VALUES
      ', art martial occulte / discipline hybride entre ninjutsu et pratiques yōkai' )
 ;
 
-INSERT INTO link_power_type (power_type_id, power_id) VALUES
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Sōjutsu (槍術) – Art de la lance (Yari)')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kyūjutsu (弓術) – Art du tir à l’arc')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Shodō (書道) – Calligraphie')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kadō / Ikebana (華道 / 生け花) – Art floral')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kenjutsu (剣術) – Art du sabre')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Heihō (兵法) – Stratégie militaire')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Waka (和歌) – Poésie classique')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bajutsu (馬術) – Art de l’équitation militaire')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Gagaku (雅楽) – Musique de cour')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Iaijutsu (居合術) – Art du sabre')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Bugaku (舞楽) – Danse de cour')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Chadō (茶道) – Voie du thé')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Yawara (和) – Ancienne forme de techniques de soumission')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Naginatajutsu (薙刀術) – Art de la hallebarde')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tantōjutsu (短刀術) – Combat au couteau')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Shigin (詩吟) – Chant poétique')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kōdō (香道) – Voie de l’encens')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagenkō (影言講) – L’art de la parole de l’ombre')),
-    ((SELECT ID FROM power_types WHERE name = 'Discipline'), (SELECT ID FROM powers WHERE name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'))
+INSERT INTO {prefix}link_power_type (power_type_id, power_id) VALUES
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Sōjutsu (槍術) – Art de la lance (Yari)')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kyūjutsu (弓術) – Art du tir à l’arc')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Shodō (書道) – Calligraphie')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kadō / Ikebana (華道 / 生け花) – Art floral')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kenjutsu (剣術) – Art du sabre')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Heihō (兵法) – Stratégie militaire')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Waka (和歌) – Poésie classique')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Bajutsu (馬術) – Art de l’équitation militaire')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Gagaku (雅楽) – Musique de cour')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Iaijutsu (居合術) – Art du sabre')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Bugaku (舞楽) – Danse de cour')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Chadō (茶道) – Voie du thé')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Yawara (和) – Ancienne forme de techniques de soumission')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Naginatajutsu (薙刀術) – Art de la hallebarde')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Tantōjutsu (短刀術) – Combat au couteau')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Shigin (詩吟) – Chant poétique')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kōdō (香道) – Voie de l’encens')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kagenkō (影言講) – L’art de la parole de l’ombre')),
+    ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'), (SELECT ID FROM {prefix}powers WHERE name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'))
 ;
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 -- Add base powers to the factions :
 -- Samouraïs Chōsokabe
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Kenjutsu (剣術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Waka (和歌) – Poésie classique'
     ));
 
 -- Samouraïs Miyoshi /Chrétiens 
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
 -- Samouraïs Hosokawa
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     ));
 
 -- Samouraïs Ashikaga
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
 -- Ikkō-ikki
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
     ));
 
 -- Moines Bouddhistes
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Yawara (和) – Ancienne forme de techniques de soumission'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Naginatajutsu (薙刀術) – Art de la hallebarde'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     ));
 
 -- Kaizokushū Pirates
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tantōjutsu (短刀術) – Combat au couteau'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Shigin (詩吟) – Chant poétique'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
 -- Samouraïs Kōno
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
 -- Yōkai
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Kōdō (香道) – Voie de l’encens'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Kagenkō (影言講) – L’art de la parole de l’ombre'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
     ));
 
 -- Takeda
-INSERT INTO faction_powers (faction_id, link_power_type_id) VALUES
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
     )),
-    ((SELECT ID FROM factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM link_power_type JOIN powers ON powers.ID = link_power_type.power_id
+    ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
+        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
         WHERE powers.name = 'Chadō (茶道) – Voie du thé'
     ));
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
-INSERT INTO ressources_config (
+INSERT INTO {prefix}ressources_config (
     ressource_name, 
     presentation,
     stored_text,
@@ -608,29 +608,29 @@ INSERT INTO ressources_config (
     1000
 );
 
-INSERT INTO controller_ressources (
+INSERT INTO {prefix}controller_ressources (
     controller_id, ressource_id,
     amount, amount_stored, end_turn_gain
 ) VALUES 
-    ((SELECT ID FROM controllers WHERE lastname = 'Chōsokabe (長宗我部)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Chōsokabe (長宗我部)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Hosokawa (細川)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Hosokawa (細川)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Miyoshi (三好)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Miyoshi (三好)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Jōdo-shinshū (浄土真宗)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Tendai (天台宗)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Tendai (天台宗)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Wako (和光)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Wako (和光)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 1000, 0, 1000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Sogō (十河)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Sogō (十河)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 0, 0, 0),
-    ((SELECT ID FROM controllers WHERE lastname = 'Kōno (河野)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Kōno (河野)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 0, 0, 0),
-    ((SELECT ID FROM controllers WHERE lastname = 'Takeda (武田)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Takeda (武田)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 2000, 0, 2000),
-    ((SELECT ID FROM controllers WHERE lastname = 'Ashikaga (足利)'), (SELECT ID FROM ressources_config WHERE ressource_name = 'Koku')
+    ((SELECT ID FROM {prefix}controllers WHERE lastname = 'Ashikaga (足利)'), (SELECT ID FROM {prefix}ressources_config WHERE ressource_name = 'Koku')
         , 2000, 0, 2000)
 ;
 

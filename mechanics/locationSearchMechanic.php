@@ -12,6 +12,7 @@
  * 
  */
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Define the SQL query
     $sql = sprintf(
         "WITH searchers AS (
@@ -21,7 +22,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
                 wa.enquete_val AS searcher_enquete_val,
                 wa.zone_id
             FROM
-                worker_actions wa
+                {$prefix}worker_actions wa
             WHERE
                 wa.action_choice IN ('passive', 'investigate')
                 AND turn_number = :turn_number
@@ -46,11 +47,11 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             CONCAT(lc.firstname, ' ', lc.lastname) AS location_controller_name,
             (s.searcher_enquete_val - l.discovery_diff) AS enquete_difference
         FROM searchers s
-        JOIN zones z ON z.id = s.zone_id
-        LEFT JOIN controllers zcc ON z.claimer_controller_id = zcc.id
-        LEFT JOIN controllers zhc ON z.holder_controller_id = zhc.id
-        JOIN locations l ON s.zone_id = l.zone_id
-        LEFT JOIN controllers lc ON l.controller_id = lc.id
+        JOIN {$prefix}zones z ON z.id = s.zone_id
+        LEFT JOIN {$prefix}controllers zcc ON z.claimer_controller_id = zcc.id
+        LEFT JOIN {$prefix}controllers zhc ON z.holder_controller_id = zhc.id
+        JOIN {$prefix}locations l ON s.zone_id = l.zone_id
+        LEFT JOIN {$prefix}controllers lc ON l.controller_id = lc.id
         %s
         ORDER BY l.discovery_diff DESC, l.id DESC;",
         (!empty($searcher_id)) ? " WHERE s.searcher_id = :searcher_id" : ''
@@ -81,6 +82,7 @@ function locationSearchMechanic($pdo, $mechanics) {
     echo '<div><h3>locationSearchMechanic :</h3>';
     $turn_number = $mechanics['turncounter'];
     echo "turn_number : $turn_number <br>";
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
 
@@ -167,7 +169,7 @@ function locationSearchMechanic($pdo, $mechanics) {
                     // Fetch artefacts for this location
                     $stmtArt = $pdo->prepare("
                     SELECT name, description
-                    FROM artefacts 
+                    FROM {$prefix}artefacts 
                     WHERE location_id = :location_id
                     ");
                     $stmtArt->execute([':location_id' => $row['found_id']]);
