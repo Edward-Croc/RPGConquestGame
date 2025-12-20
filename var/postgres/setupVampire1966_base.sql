@@ -280,7 +280,7 @@ INSERT INTO {prefix}powers ( name, enquete, attack, defence, other) VALUES
     ('Garou', 1,2,2, '{"hidden" : "2", "on_recrutment": {"controller_faction": "Garou"}, "on_transformation": "FALSE"}')
 ;
 
-INSERT INTO {prefix} link_power_type ( power_type_id, power_id ) VALUES
+INSERT INTO {prefix}link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Goule')),
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Vampire nouveau né')),
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Szlatcha')),
@@ -329,7 +329,7 @@ INSERT INTO {prefix}powers ( name, enquete, attack, defence) VALUES
 ;
 
 
-INSERT INTO {prefix} link_power_type ( power_type_id, power_id ) VALUES
+INSERT INTO {prefix}link_power_type ( power_type_id, power_id ) VALUES
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'),(SELECT ID FROM {prefix}powers WHERE name = 'Aliénation')),
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'),(SELECT ID FROM {prefix}powers WHERE name = 'Célérité')),
     ((SELECT ID FROM {prefix}power_types WHERE name = 'Discipline'),(SELECT ID FROM {prefix}powers WHERE name = 'Chimérie')),
@@ -354,168 +354,168 @@ INSERT INTO {prefix} link_power_type ( power_type_id, power_id ) VALUES
 -- Add base powers to the factions :
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Brujah'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Célérité'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Brujah'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Puissance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Brujah'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Présence'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Présence'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ventrue'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Présence'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Présence'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ventrue'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Domination'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ventrue'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Endurance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Endurance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Toréador'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Célérité'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Toréador'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Présence'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Présence'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Toréador'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Augure'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Augure'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tremere'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Augure'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Augure'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tremere'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Thaumaturgie'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Thaumaturgie'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tremere'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Domination'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Malkavien'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Augure'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Augure'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Malkavien'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Occultation'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Occultation'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Malkavien'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Aliénation'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Aliénation'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Gangrel'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Endurance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Endurance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Gangrel'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Protéisme'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Protéisme'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Gangrel'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Animalisme'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Animalisme'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Nosfératu'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Animalisme'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Animalisme'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Nosfératu'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Puissance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Nosfératu'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Occultation'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Occultation'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Giovanni'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Puissance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Giovanni'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Domination'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Giovanni'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Nécromancie'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Nécromancie'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Assamites'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Célérité'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Célérité'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Assamites'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Occultation'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Occultation'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Assamites'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Quiétus'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Quiétus'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Disciple'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Serpentis'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Serpentis'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Disciple'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Endurance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Endurance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Disciple'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Présence'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Présence'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tzimisce'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Vicissitude'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Vicissitude'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tzimisce'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Animalisme'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Animalisme'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Tzimisce'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Augure'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Augure'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Lasombra'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Obténébration'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Obténébration'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Lasombra'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Puissance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Lasombra'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Domination'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Démon'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Obténébration'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Obténébration'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Démon'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Puissance'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Puissance'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Démon'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Domination'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Domination'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Eglise'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Vraie Foi'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Vraie Foi'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Eglise'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers on powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Sentir le mal'
+        SELECT lpt.ID FROM {prefix}link_power_type AS lpt JOIN {prefix}powers AS p ON p.id = lpt.power_id
+        WHERE p.name = 'Sentir le mal'
     ))
 ;
 

@@ -79,8 +79,7 @@ INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM
-    workers w
+FROM {prefix}workers w
 JOIN (
     SELECT 'Kotatsu' AS lastname, 'Biwa Hōshi (琵琶法師) – Conteur aveugle itinérant' AS power_name
     UNION ALL SELECT 'Kotatsu', 'Tokkuri (徳利) – Bouteille à saké'
@@ -107,8 +106,8 @@ JOIN (
     UNION ALL SELECT 'Kagaribi', 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
     UNION ALL SELECT 'Kagaribi', 'Encens Coréen'
 ) AS wp ON wp.lastname = w.lastname
-JOIN powers p ON p.name = wp.power_name
-JOIN link_power_type lpt ON lpt.power_id = p.id;
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;
 
 
 -- Create the start workers for Jōdo-shinshū (浄土真宗)
@@ -163,15 +162,14 @@ INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM
-    workers w
+FROM {prefix}workers w
 JOIN (
     SELECT 'fils de Rennyo (蓮如)' AS lastname, 'Reishi (霊師) – Médium ou exorciste' AS power_name
     UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Tokkuri (徳利) – Bouteille à saké'
     UNION ALL SELECT 'fils de Rennyo (蓮如)', 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
 ) AS wp ON wp.lastname = w.lastname
-JOIN powers p ON p.name = wp.power_name
-JOIN link_power_type lpt ON lpt.power_id = p.id;
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;
 
 
 -- Create the Shougunat start workers
@@ -254,8 +252,7 @@ INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM
-    workers w
+FROM {prefix}workers w
 JOIN (
     SELECT 'Sōen-dono(僧円-殿)' AS lastname, 'Kannushi (神主) – Prêtre shintō' AS power_name
     UNION ALL SELECT 'Sōen-dono(僧円-殿)', 'Chadōgu (茶道具) – Ustensiles du thé'
@@ -283,5 +280,5 @@ JOIN (
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Shodō (書道) – Calligraphie'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Tosa'
 ) AS wp ON wp.lastname = w.lastname
-JOIN powers p ON p.name = wp.power_name
-JOIN link_power_type lpt ON lpt.power_id = p.id;
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;

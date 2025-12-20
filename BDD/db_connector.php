@@ -113,10 +113,10 @@ function tableExists($pdo, $tableName) {
     $prefixedTableName = $prefix . $tableName;
     try{
         if ($_SESSION['DBTYPE'] == 'postgres'){
+            $tableSchema = 'public';
             if (strpos($prefix, '.') !== false){
                 $tableSchema = explode('.', $prefix)[0];
             } else {
-                $tableSchema = 'public';
                 $tableName = $prefixedTableName;
             }
             $stmt = $pdo->prepare("SELECT EXISTS (
@@ -152,10 +152,24 @@ function destroyAllTables($pdo) {
 
     try {
         if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
-            // Get list of tables in the database
-            $stmt = $pdo->query($sql);
+
+            $tableSchema = 'public';
+            if (strpos($prefix, '.') !== false){
+                $tableSchema = explode('.', $prefix)[0];
+                $prefix = '';
+            }
+            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = :tableSchema AND table_type = 'BASE TABLE'";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':tableSchema' => $tableSchema]);
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            echo "tables: " . var_export($tables, true) . "<br />";
+
+            // Drop each table
+            foreach ($tables as $table) {
+                $pdo->exec("DROP TABLE IF EXISTS {$tableSchema}.{$prefix}{$table} CASCADE");
+                echo "Table {$tableSchema}.{$prefix}{$table} dropped successfully.<br \>";
+            }
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $tables = array(
@@ -185,15 +199,16 @@ function destroyAllTables($pdo) {
                 'mechanics',
                 'config'
             );
+
+            echo "tables: " . var_export($tables, true) . "<br />";
+
+            // Drop each table
+            foreach ($tables as $table) {
+                $pdo->exec("DROP TABLE IF EXISTS {$prefix}{$table} CASCADE");
+                echo "Table {$prefix}{$table} dropped successfully.<br \>";
+            }
         }
 
-        echo "tables: " . var_export($tables, true) . "<br />";
-
-        // Drop each table
-        foreach ($tables as $table) {
-            $pdo->exec("DROP TABLE IF EXISTS {$prefix}{$table} CASCADE");
-            echo "Table $table dropped successfully.<br \>";
-        }
 
         // Success message
         echo "All tables in database have been destroyed successfully.<br />";

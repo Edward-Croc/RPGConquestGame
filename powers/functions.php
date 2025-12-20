@@ -156,17 +156,17 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = tr
 
     $prefix = $_SESSION['GAME_PREFIX'];
     // Get all powers from a type_list
-    $sql = sprintf("SELECT p.*, %3\$s, link_power_type.id as link_power_type_id
+    $sql = sprintf("SELECT p.*, %3\$s, lpt.id as link_power_type_id
         FROM {$prefix}powers AS p
-        JOIN {$prefix}link_power_type ON link_power_type.power_id = p.id
+        JOIN {$prefix}link_power_type AS lpt ON lpt.power_id = p.id
         WHERE p.id IN (
-            SELECT distinct(powers.id)
-            FROM {$prefix}powers
-            JOIN {$prefix}link_power_type ON link_power_type.power_id = powers.id
-            LEFT JOIN {$prefix}faction_powers ON faction_powers.link_power_type_id = link_power_type.id
-            LEFT JOIN {$prefix}factions ON factions.id = faction_powers.faction_id
-            LEFT JOIN {$prefix}controllers ON controllers.faction_id = factions.id
-            WHERE link_power_type.power_type_id IN ( %1\$s )
+            SELECT distinct(sp.id)
+            FROM {$prefix}powers AS sp
+            JOIN {$prefix}link_power_type AS slpt ON slpt.power_id = sp.id
+            LEFT JOIN {$prefix}faction_powers AS sfp ON sfp.link_power_type_id = slpt.id
+            LEFT JOIN {$prefix}factions sf ON sf.id = sfp.faction_id
+            LEFT JOIN {$prefix}controllers sc ON sc.faction_id = sf.id
+            WHERE slpt.power_type_id IN ( %1\$s )
             %2\$s
         )",
         $type_list,

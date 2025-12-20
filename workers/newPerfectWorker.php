@@ -13,8 +13,8 @@
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         // Get all values from worker_names
-        $sql = "SELECT * FROM {$prefix}worker_names
-        JOIN {$prefix}worker_origins ON worker_names.origin_id = worker_origins.ID";
+        $sql = "SELECT * FROM {$prefix}worker_names wn
+        JOIN {$prefix}worker_origins wo ON wn.origin_id = wo.id";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {

@@ -53,7 +53,7 @@ INSERT INTO {prefix}controller_worker (controller_id, worker_id) VALUES
     )
 ;
 
-UPDATE worker_actions
+UPDATE {prefix}worker_actions
 SET action_choice = 'claim', action_params = '{"claim_controller_id":"2"}'
 WHERE worker_id = (SELECT ID FROM {prefix}workers WHERE lastname in ('Matthews'));
 
@@ -68,7 +68,7 @@ SELECT
     w.zone_id,
     entry.action_choice,
     entry.action_params::json
-FROM {prefix}(
+FROM (
     -- Base test claim, passive, investigate
     SELECT 'Popescu' AS lastname, 'passive' AS action_choice, '{}' AS action_params  -- empty JSON object
     UNION ALL
@@ -96,9 +96,8 @@ INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT 
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM {prefix}
-    workers w
-JOIN {prefix}(
+FROM {prefix}workers w
+JOIN (
     SELECT 'Matthews' AS lastname, 'Vampire nouveau né' AS power_name
     UNION ALL SELECT 'Popescu', 'Punk à chien'
     UNION ALL SELECT 'Popescu', 'Militaire'
@@ -249,7 +248,7 @@ SELECT
     nd.lastname,
     wo.id AS origin_id,
     z.id AS zone_id
-FROM {prefix}names_data nd
+FROM names_data nd
 JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
 JOIN {prefix}zones z ON z.name = nd.zone_name;
 
@@ -275,7 +274,7 @@ SELECT
     w.zone_id,
     'passive',
     '{}'::json
-FROM {prefix}(
+FROM (
     SELECT '1' AS lastname
     UNION ALL SELECT '2'
     UNION ALL SELECT  '3'
@@ -287,7 +286,7 @@ JOIN {prefix}workers w ON w.lastname = entry.lastname
 JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 ;
 
-UPDATE worker_actions
+UPDATE {prefix}worker_actions
 SET action_choice = 'investigate'
 WHERE worker_id = (SELECT ID FROM {prefix}workers WHERE lastname in ('6'));
 

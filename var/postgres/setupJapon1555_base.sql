@@ -422,167 +422,167 @@ INSERT INTO {prefix}link_power_type (power_type_id, power_id) VALUES
 -- Samouraïs Chōsokabe
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Kenjutsu (剣術) – Art du sabre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Kenjutsu (剣術) – Art du sabre'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Heihō (兵法) – Stratégie militaire'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Chōsokabe'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Waka (和歌) – Poésie classique'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Waka (和歌) – Poésie classique'
     ));
 
 -- Samouraïs Miyoshi /Chrétiens 
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Miyoshi'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Gagaku (雅楽) – Musique de cour'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Chrétiens'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
 -- Samouraïs Hosokawa
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Bugaku (舞楽) – Danse de cour'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Hosokawa'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Chadō (茶道) – Voie du thé'
     ));
 
 -- Samouraïs Ashikaga
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bugaku (舞楽) – Danse de cour'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Bugaku (舞楽) – Danse de cour'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Chadō (茶道) – Voie du thé'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Ashikaga'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Gagaku (雅楽) – Musique de cour'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Gagaku (雅楽) – Musique de cour'
     ));
 
 -- Ikkō-ikki
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Jūjutsu (柔術) – Techniques de lutte à mains nues'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Ninjutsu (忍術) – Techniques d’espionnage et de guérilla'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Ikkō-ikki'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques'
     ));
 
 -- Moines Bouddhistes
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Yawara (和) – Ancienne forme de techniques de soumission'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Yawara (和) – Ancienne forme de techniques de soumission'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Naginatajutsu (薙刀術) – Art de la hallebarde'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Naginatajutsu (薙刀術) – Art de la hallebarde'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Moines Bouddhistes'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     ));
 
 -- Kaizokushū Pirates
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Tantōjutsu (短刀術) – Combat au couteau'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Tantōjutsu (短刀術) – Combat au couteau'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Shigin (詩吟) – Chant poétique'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Shigin (詩吟) – Chant poétique'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Kaizokushū'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
 -- Samouraïs Kōno
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Iaijutsu (居合術) – Art du sabre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers p ON p.ID = lpt.power_id
+        WHERE p.name = 'Iaijutsu (居合術) – Art du sabre'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Haikai / Haiku (俳諧 / 俳句) – Poésie courte'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Kōno'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer'
     ));
 
 -- Yōkai
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Kōdō (香道) – Voie de l’encens'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Kōdō (香道) – Voie de l’encens'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Kagenkō (影言講) – L’art de la parole de l’ombre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Kagenkō (影言講) – L’art de la parole de l’ombre'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Yōkai'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Kagekui-ryū (影喰流) – École du Mange-Ombre'
     ));
 
 -- Takeda
 INSERT INTO {prefix}faction_powers (faction_id, link_power_type_id) VALUES
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Bajutsu (馬術) – Art de l’équitation militaire'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Heihō (兵法) – Stratégie militaire'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Heihō (兵法) – Stratégie militaire'
     )),
     ((SELECT ID FROM {prefix}factions WHERE name = 'Samouraïs Takeda'), (
-        SELECT link_power_type.ID FROM {prefix}link_power_type JOIN {prefix}powers ON powers.ID = link_power_type.power_id
-        WHERE powers.name = 'Chadō (茶道) – Voie du thé'
+        SELECT lpt.ID FROM {prefix}link_power_type lpt JOIN {prefix}powers AS p ON p.ID = lpt.power_id
+        WHERE p.name = 'Chadō (茶道) – Voie du thé'
     ));
 
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
