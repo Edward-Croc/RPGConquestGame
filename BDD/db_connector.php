@@ -45,6 +45,27 @@ function loadDBConfig($path, $configFile) {
             }
         }
     }
+
+    // Validate config 
+    $notNullList = ['host', 'dbname', 'username', 'password', 'db_type', 'folder'];
+    foreach ( $notNullList as $key ) {
+        if ( !isset($config[$key]) ){
+            echo " Config key $key is not set !";
+            die();
+        }
+    }
+    foreach ( $config as $key => $value )
+    if ( $config['db_type'] == 'postgres'){
+        if (strpos( $config['game_prefix'], '.') !== false){
+            // split prefix to elements 
+            $prefixShards = explode('.', $config['game_prefix']);
+            // if there are more than 2 elemet Postgresql will fail 
+            if (count($prefixShards) > 2 ){
+                echo " Table prefix Must never contain more than one '.' !";
+                die();
+            }
+        }
+    }
     return $config;
 }
 
@@ -154,11 +175,19 @@ function destroyAllTables($pdo) {
         if ($_SESSION['DBTYPE'] == 'postgres'){
 
             $tableSchema = 'public';
+            $prefix_sql = '';
             if (strpos($prefix, '.') !== false){
-                $tableSchema = explode('.', $prefix)[0];
-                $prefix = '';
+                // split prefix to elements 
+                $prefixShards = explode('.', $prefix);
+                $tableSchema = $prefixShards[0];
+                if (isset($prefixShards[1]))
+                    $prefix_sql = " AND table_name LIKE '{$prefixShards[1]}%'";
+
+            } else {
+                $prefix_sql = " AND table_name LIKE '{$prefix}%'";
             }
-            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = :tableSchema AND table_type = 'BASE TABLE'";
+            $prefix = '';
+            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = :tableSchema AND table_type = 'BASE TABLE' {$prefix_sql}";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':tableSchema' => $tableSchema]);
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
