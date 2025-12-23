@@ -13,6 +13,7 @@
 function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
     $debug = false;
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = true;
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // Check turn number is selected
     if (empty($turn_number)) {
@@ -30,7 +31,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 wa.zone_id,
                 wa.turn_number
             FROM
-                worker_actions wa
+                {$prefix}worker_actions wa
             WHERE
                 wa.action_choice IN ('attack')
                 AND turn_number = :turn_number
@@ -66,7 +67,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 // If the attacker targets the network
                 if ($param['attackScope'] == 'network'){
                     try{
-                        $sqlNetworkSearch ="SELECT discovered_worker_id FROM controllers_known_enemies
+                        $sqlNetworkSearch ="SELECT discovered_worker_id FROM {$prefix}controllers_known_enemies
                             WHERE zone_id = :zone_id AND discovered_controller_id = :network_id AND controller_id = :controller_id";
                         $stmtNetworkSearch = $pdo->prepare($sqlNetworkSearch);
                         $stmtNetworkSearch->bindParam(':network_id', $param['attackID'], PDO::PARAM_INT);
@@ -109,9 +110,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             CONCAT(c.firstname, ' ', c.lastname) AS attacker_controller_name,
             wa.turn_number
         FROM
-            worker_actions wa
-            JOIN workers w ON w.id = wa.worker_id
-            JOIN controllers c ON wa.controller_id = c.ID
+            {$prefix}worker_actions wa
+            JOIN {$prefix}workers w ON w.id = wa.worker_id
+            JOIN {$prefix}controllers c ON wa.controller_id = c.ID
         WHERE
             wa.worker_id = :attacker_id
             AND wa.turn_number = :turn_number
@@ -128,12 +129,12 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         cw.controller_id as defender_controller_id,
         z.id AS zone_id,
         z.name AS zone_name
-        FROM workers w
-        JOIN zones z ON z.id = w.zone_id
-        JOIN worker_actions wa ON
+        FROM {$prefix}workers w
+        JOIN {$prefix}zones z ON z.id = w.zone_id
+        JOIN {$prefix}worker_actions wa ON
             w.id = wa.worker_id AND wa.turn_number = :turn_number AND wa.action_choice IN (%s)
-        JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controller_worker cw ON w.id = cw.worker_id AND is_primary_controller = %s
+        JOIN {$prefix}worker_origins wo ON wo.id = w.origin_id
+        JOIN {$prefix}controller_worker cw ON w.id = cw.worker_id AND is_primary_controller = %s
             WHERE w.id IN (%s)
     )
     SELECT
@@ -158,7 +159,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         (d.defender_attack_val - a.attacker_defence_val) AS riposte_difference
         FROM attacker a
         CROSS JOIN defenders d
-        LEFT JOIN controllers_known_enemies cke ON 
+        LEFT JOIN {$prefix}controllers_known_enemies cke ON 
             cke.controller_id = d.defender_controller_id AND cke.discovered_worker_id = a.attacker_id
         ORDER BY d.defender_enquete_val DESC
     ";
@@ -175,9 +176,9 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                 wa.zone_id,
                 CONCAT(c.firstname, ' ', c.lastname) AS attacker_controller_name
             FROM
-                worker_actions wa
-                JOIN workers w ON w.id = wa.worker_id
-                JOIN controllers c ON wa.controller_id = c.ID
+                {$prefix}worker_actions wa
+                JOIN {$prefix}workers w ON w.id = wa.worker_id
+                JOIN {$prefix}controllers c ON wa.controller_id = c.ID
             WHERE
                 wa.worker_id = :attacker_id
                 AND turn_number = :turn_number
@@ -203,13 +204,13 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             (wa.attack_val - a.attacker_defence_val) AS riposte_difference,
             cke.id AS defender_knows_enemy
         FROM attacker a
-        JOIN zones z ON z.id = a.zone_id
-        JOIN worker_actions wa ON
+        JOIN {$prefix}zones z ON z.id = a.zone_id
+        JOIN {$prefix}worker_actions wa ON
                 a.zone_id = wa.zone_id AND wa.turn_number = :turn_number AND wa.action_choice IN (%s)
-        JOIN workers w ON wa.worker_id = w.ID
-        JOIN worker_origins wo ON wo.id = w.origin_id
-        JOIN controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = %s
-        LEFT JOIN controllers_known_enemies cke ON cke.controller_id = cw.controller_id AND cke.discovered_worker_id = a.attacker_id
+        JOIN {$prefix}workers w ON wa.worker_id = w.ID
+        JOIN {$prefix}worker_origins wo ON wo.id = w.origin_id
+        JOIN {$prefix}controller_worker cw ON wa.worker_id = cw.worker_id AND is_primary_controller = %s
+        LEFT JOIN {$prefix}controllers_known_enemies cke ON cke.controller_id = cw.controller_id AND cke.discovered_worker_id = a.attacker_id
         WHERE w.id IN (%s)
         ";
 
@@ -254,6 +255,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 */
 function attackMechanic($pdo, $mechanics){
     echo '<div> <h3>  attackMechanic : </h3> ';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_ATTACK')) === 'true';
     $ATTACKDIFF0 = getConfig($pdo, 'ATTACKDIFF0');
@@ -339,8 +341,8 @@ function attackMechanic($pdo, $mechanics){
                         // Si l'agent était agent double, on crée une trace et on enregistre son maitre dans le action_params et on l'ajoute à son rapport
                         try{
                             $sqlDoubleAgent = sprintf("SELECT cw.controller_id, CONCAT(c.firstname, ' ', c.lastname) AS double_agent_contoller_name
-                                    FROM controller_worker AS cw
-                                    JOIN controllers AS c ON c.id = cw.controller_id
+                                    FROM {$prefix}controller_worker AS cw
+                                    JOIN {$prefix}controllers AS c ON c.id = cw.controller_id
                                     WHERE cw.is_primary_controller = %s AND cw.worker_id = :worker_id
                                 ",
                                 ($_SESSION['DBTYPE'] == 'mysql') ? 0 : 'false'
@@ -374,12 +376,12 @@ function attackMechanic($pdo, $mechanics){
 
                         try{
                             // in controller_worker delete defender_id
-                            $stmt = $pdo->prepare("DELETE FROM controller_worker WHERE worker_id = :worker_id");
+                            $stmt = $pdo->prepare("DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id");
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
                             $stmt->execute();
                             // in controller_worker insert attacker_controller_id, defender_id, is_primary_controller = true
                             $sql = sprintf( 
-                                "INSERT INTO controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, %s)",
+                                "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller) VALUES (:controller_id, :worker_id, %s)",
                                 ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true'
                             );
                             $stmt = $pdo->prepare($sql);
@@ -400,7 +402,7 @@ function attackMechanic($pdo, $mechanics){
                     try{
                         $knownEnemycontroller = '';
                         $sql_known_ennemies = "
-                            SELECT * FROM controllers_known_enemies
+                            SELECT * FROM {$prefix}controllers_known_enemies
                                 WHERE controller_id = :controller_id
                                 AND discovered_worker_id = :discovered_worker_id
                                 AND zone_id = :zone_id";

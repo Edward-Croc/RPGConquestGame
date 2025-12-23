@@ -4,22 +4,24 @@ require_once '../base/basePHP.php';
 
 $pageName = 'ressources_admin';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_ressource'])) {
-        $stmt = $gameReady->prepare("INSERT INTO controller_ressources (controller_id, ressource_id, amount, amount_stored, end_turn_gain) VALUES (:controller_id, :ressource_id, :amount, :amount_stored, :end_turn_gain)");
+        $stmt = $gameReady->prepare("INSERT INTO {$prefix}controller_ressources (controller_id, ressource_id, amount, amount_stored, end_turn_gain) VALUES (:controller_id, :ressource_id, :amount, :amount_stored, :end_turn_gain)");
         $stmt->execute([':controller_id' => $_POST['controller_id'], ':ressource_id' => $_POST['ressource_id'], ':amount' => $_POST['amount'], ':amount_stored' => $_POST['amount_stored'], ':end_turn_gain' => $_POST['end_turn_gain']]);
         echo "Ressource added to controller .";
     }
 
     if (isset($_POST['update_ressource'])) {
-        $stmt = $gameReady->prepare("UPDATE controller_ressources SET amount = :amount, amount_stored = :amount_stored, end_turn_gain = :end_turn_gain WHERE id = :id");
+        $stmt = $gameReady->prepare("UPDATE {$prefix}controller_ressources SET amount = :amount, amount_stored = :amount_stored, end_turn_gain = :end_turn_gain WHERE id = :id");
         $stmt->execute([':amount' => $_POST['amount'], ':amount_stored' => $_POST['amount_stored'], ':end_turn_gain' => $_POST['end_turn_gain'], ':id' => $_POST['controller_ressource_id']]);
         echo "Ressource updated.";
     }
 
     if (isset($_POST['remove_ressource'])) {
-        $stmt = $gameReady->prepare("DELETE FROM controller_ressources WHERE id = :id");
+        $stmt = $gameReady->prepare("DELETE FROM {$prefix}controller_ressources WHERE id = :id");
         $stmt->execute([':id' => $_POST['controller_ressource_id']]);
         echo "Ressource removed from controller.";
     }
@@ -28,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Fetch controllers and ressources
 $controllerRessources = $gameReady->query(
         "SELECT rc.id as rc_id, r.id as ressource_id, rc.*, r.*, c.*
-        FROM controller_ressources rc
-        JOIN ressources_config r ON rc.ressource_id = r.id
-        JOIN controllers c ON rc.controller_id = c.id
+        FROM {$prefix}controller_ressources rc
+        JOIN {$prefix}ressources_config r ON rc.ressource_id = r.id
+        JOIN {$prefix}controllers c ON rc.controller_id = c.id
         ORDER BY rc.controller_id DESC")->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
@@ -38,7 +40,7 @@ require_once '../base/baseHTML.php';
 /**    
   *  Show ressources_config table
   */
-  $ressourcesConfig = $gameReady->query("SELECT * FROM ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+  $ressourcesConfig = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
   ?> 
   <div class="managment">
         <h1>Ressources Config</h1>
@@ -131,8 +133,8 @@ require_once '../base/baseHTML.php';
  *  - Redirect to the 1st form
  */
 
- $ressources = $gameReady->query("SELECT * FROM ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
- $controllers = $gameReady->query("SELECT * FROM controllers ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+ $ressources = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+ $controllers = $gameReady->query("SELECT * FROM {$prefix}controllers ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
  ?>
  <div class='managment'>
     <h1>Add Ressource to Controller</h1>

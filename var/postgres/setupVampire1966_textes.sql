@@ -1,14 +1,14 @@
 -- Warning: If you read this file, you will no longer be eligible to participate as a player.
 
-UPDATE config SET value = 'Firenze 1966' WHERE name = 'TITLE';
-UPDATE config SET
+UPDATE {prefix}config SET value = 'Firenze 1966' WHERE name = 'TITLE';
+UPDATE {prefix}config SET
     value = '<p>Le 6 novembre 1966, l’Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d’œuvre et déplaçant la population du centre ville.
         Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.
         Dans les jours suivant la catastrophe les forces surnaturelles reprennent doucement pied dans la ville. Retrouverez vous votre pouvoir d’antan ?
         </p>'
     WHERE name = 'PRESENTATION';
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  ('textRecrutementJobHobby', '%5$s, %4$s', 'string to present hobby %4$s and job %5$s on recrutement')
  ,('textViewWorkerJobHobby','c’était un.e %3$s et iel est un.e %2$s', 'string to present hobby %2$s and job %3$s view of worker')
@@ -36,14 +36,14 @@ VALUES
  )
 ;
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  ('textControllerActionCreateBase', 'Créer un repaire dans le quartier :', 'create base texte in controller view actions')
  ,('textControllerActionMoveBase', 'Déplacer le repaire vers le quartier :', 'move base texte in controller view actions')
  ,('textcontrollerRecrutmentNeedsBase', 'Nous ne pouvons pas recruter sans avoir un repaire.', 'needed base for recrutment')
 ;
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
  (
     'textesStartInvestigate', '<p> Nous avons mené l’enquête dans le quartier %s.</p>', 'Texts for start of investigation')
@@ -58,7 +58,7 @@ VALUES
     'Texts for extra disciplines'
 )
     ;
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 (
     'textesOrigine',
@@ -70,7 +70,7 @@ VALUES
     'Texts for origin detection'
 );
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- textesDiff01Array
 -- (nom) - %1$s
@@ -162,7 +162,7 @@ VALUES
 );
 
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - transformation name
 ('textesTransformationDiff1', '[
@@ -177,7 +177,7 @@ VALUES
 ]', 'Texts for transformation level 2')
 ;
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- Observers of a **failed** violent claim
 -- %1$s - worker name
@@ -220,7 +220,7 @@ VALUES
     "%2$s est tombé.e sous votre coupe.<br/>"
 ]', 'Texts for the success report of the claiming worker');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - week number
 ('workerDisappearanceTexts', '[
@@ -236,7 +236,7 @@ VALUES
     "<p>La semaine %s signe le début du silence radio complet de cet agent.</p>"
 ]', 'Templates used for worker disappearance text with a week number placeholder');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('attackSuccessTexts', '[
@@ -249,7 +249,7 @@ VALUES
     "<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>"
 ]', 'Templates for successful attack reports mentioning the target name');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('captureSuccessTexts', '[
@@ -264,7 +264,7 @@ VALUES
     "<p>Mission terminée avec brio : %1$s est capturé.e et ne nous échappera plus.</p>"
 ]', 'Inclusive templates for successful capture reports mentioning the target name');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - target name
 ('failedAttackTextes', '[
@@ -283,7 +283,7 @@ VALUES
     "<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a dû l’atteindre avant nous.</p>"
 ]', 'Texts for unfound attacks in inclusive language');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s - attacker name
 ('escapeTextes', '[
@@ -299,7 +299,7 @@ VALUES
     "<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>"
 ]', 'Texts for successful escapes in inclusive language');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - target name
 ('textesAttackFailedAndCountered', '[
@@ -310,7 +310,7 @@ VALUES
     "<p>L’équipe envoyée pour neutraliser %s n’est jamais revenue.</p>"
 ]', 'Texts for missions that fail and result in counter-attack or disappearance');
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s - Assaulter name 
 ('counterAttackTexts', '[
@@ -327,7 +327,7 @@ VALUES
 ]', 'Texts for the worker who was atacked an the successfully countered');
 
 
-INSERT INTO config (name, value, description)
+INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s = nom de la localisation
 ('TEXT_LOCATION_DISCOVERED_NAME', '[

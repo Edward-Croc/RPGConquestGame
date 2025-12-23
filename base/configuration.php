@@ -3,6 +3,8 @@ $pageName = 'Configuration';
 
 require_once '../base/basePHP.php';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if action is to add a new config value
     if (isset($_POST['add_config'])) {
@@ -11,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         try{
             // Insert new config value into the database
-            $stmt = $gameReady->prepare("INSERT INTO config (name, value) VALUES (:name, :value)");
+            $stmt = $gameReady->prepare("INSERT INTO {$prefix}config (name, value) VALUES (:name, :value)");
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':value', $value);
             $stmt->execute();
@@ -29,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $id = $_POST['id'];
 
             // Delete config value from the database
-            $stmt = $gameReady->prepare("DELETE FROM config WHERE ID = :id");
+            $stmt = $gameReady->prepare("DELETE FROM {$prefix}config WHERE ID = :id");
             $stmt->bindParam(':id', $id);
             $stmt->execute();
         } catch (PDOException $e) {
@@ -47,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $value = $_POST['value'];
 
             // Update config value in the database
-            $stmt = $gameReady->prepare("UPDATE config SET value = :value WHERE ID = :id");
+            $stmt = $gameReady->prepare("UPDATE {$prefix}config SET value = :value WHERE ID = :id");
             $stmt->bindParam(':id', $id);
             $stmt->bindParam(':value', $value);
             $stmt->execute();
@@ -59,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 try{
     // Retrieve config values from the database
-    $stmt = $gameReady->query("SELECT * FROM config ORDER BY ID ASC");
+    $stmt = $gameReady->query("SELECT * FROM {$prefix}config ORDER BY ID ASC");
     $config_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     echo __FUNCTION__."(): GET config Failed: " . $e->getMessage()."<br />";

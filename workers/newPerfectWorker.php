@@ -10,10 +10,11 @@
 
     // Select one origin from worker_origins
     // Select one firstname and one lastname from worker_names where origin_id = selected origin
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         // Get all values from worker_names
-        $sql = "SELECT * FROM worker_names
-        JOIN worker_origins ON worker_names.origin_id = worker_origins.ID";
+        $sql = "SELECT * FROM {$prefix}worker_names wn
+        JOIN {$prefix}worker_origins wo ON wn.origin_id = wo.id";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {

@@ -19,9 +19,10 @@ require_once '../controllers/functions.php';
  * @return string|null value
  */
 function getConfig($pdo, $configName) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
-            FROM config
+            FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
@@ -69,13 +70,18 @@ if (
     try {
         // SQL query to select username from the players table
         // Prepare and execute SQL query
-        $stmt = $gameReady->prepare("SELECT id, is_privileged FROM players WHERE username = :username AND passwd = :passwd");
-        $stmt->execute([':username' => $_SESSION['username'], ':passwd' => $passwd]);
+        $prefix = $_SESSION['GAME_PREFIX'];
+        $stmt = $gameReady->prepare("SELECT id, is_privileged FROM {$prefix}players WHERE username = :username AND passwd = :passwd");
+        $stmt->bindParam(':username', $_SESSION['username'], PDO::PARAM_STR);
+        $stmt->bindParam(':passwd', $passwd, PDO::PARAM_STR);
+        $stmt->execute();
         // Fetch the result
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Output the result
         if ($result) {
+            session_regenerate_id(true);
+
             $_SESSION['user_id'] = $result['id'];
             $_SESSION['is_privileged'] = $result['is_privileged'];
             $_SESSION['logged_in'] = true;

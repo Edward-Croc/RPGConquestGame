@@ -1,5 +1,5 @@
 
-INSERT INTO powers ( name, enquete, attack, defence) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence) VALUES
     -- Suggested Hobbies
     -- Possible Values Based on +1 :
     -- ('', 1,0,0), ('', 0,1,0), ('', 0,0,1),
@@ -74,7 +74,7 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
 ;
 
 
-INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence, other) VALUES
     ('Chrétien.ne pratiquant.e', 1,1,1,'{"on_recrutment": {
         "action": {"type":"add_opposition", "controller_lastname": "Lorenzo"},
         "action": {"type": "go_traitor", "controller_lastname": "Lorenzo"}

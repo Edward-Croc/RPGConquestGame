@@ -2,18 +2,20 @@
 require_once '../base/basePHP.php'; // Set up $pdo and session
 $pageName = 'admin_zones';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $zoneId = $_POST['zone_id'];
     $newClaimer = !empty($_POST['claimer_id']) ? $_POST['claimer_id'] : null;
     $newHolder = !empty($_POST['holder_id']) ? $_POST['holder_id'] : null;
 
-    $stmt = $gameReady->prepare("UPDATE zones SET claimer_controller_id = ?, holder_controller_id = ? WHERE id = ?");
+    $stmt = $gameReady->prepare("UPDATE {$prefix}zones SET claimer_controller_id = ?, holder_controller_id = ? WHERE id = ?");
     $stmt->execute([$newClaimer, $newHolder, $zoneId]);
 
     $update_msg = "<p style='color: green;'>Zone #$zoneId mise à jour avec succès.</p>";
 }
 
-$controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname) AS name FROM controllers ORDER BY id ASC");
+$controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname) AS name FROM {$prefix}controllers ORDER BY id ASC");
 $allControllers = $controllerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $zoneSql = "
@@ -25,9 +27,9 @@ SELECT
     CONCAT(claimer.firstname, ' ', claimer.lastname) AS claimer_name,
     holder.id AS holder_id,
     CONCAT(holder.firstname, ' ', holder.lastname) AS holder_name
-FROM zones z
-LEFT JOIN controllers claimer ON z.claimer_controller_id = claimer.id
-LEFT JOIN controllers holder ON z.holder_controller_id = holder.id
+FROM {$prefix}zones z
+LEFT JOIN {$prefix}controllers claimer ON z.claimer_controller_id = claimer.id
+LEFT JOIN {$prefix}controllers holder ON z.holder_controller_id = holder.id
 ORDER BY z.id ASC
 ";
 $zoneStmt = $gameReady->query($zoneSql);

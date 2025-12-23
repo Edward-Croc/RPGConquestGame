@@ -16,17 +16,18 @@
 // Function to get controllers and return as an array
 function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true) {
     $controllersArray = array();
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
         $sql = "SELECT c.*,
             f.name AS faction_name, 
             ff.name AS fake_faction_name
-            FROM controllers c
-            LEFT JOIN factions f ON c.faction_id = f.ID
-            LEFT JOIN factions ff ON c.fake_faction_id = ff.ID";
+            FROM {$prefix}controllers c
+            LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
+            LEFT JOIN {$prefix}factions ff ON c.fake_faction_id = ff.ID";
         if ($player_id !== NULL){
             $sql .= "
-                INNER JOIN player_controller pc ON pc.controller_id = c.id
+                INNER JOIN {$prefix}player_controller pc ON pc.controller_id = c.id
                 WHERE pc.player_id = '$player_id'";
         }
         if ($controller_id !== NULL){
@@ -67,8 +68,9 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
  * @return string
  */
 function getControllerName($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{ 
-        $sql = "SELECT  CONCAT(c.firstname, ' ', c.lastname) AS controller_name FROM controllers c WHERE c.id = :controller_id";
+        $sql = "SELECT  CONCAT(c.firstname, ' ', c.lastname) AS controller_name FROM {$prefix}controllers c WHERE c.id = :controller_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':controller_id' => $controller_id]);
         $controller = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -123,7 +125,8 @@ function showControllerSelect($controllers, $selectedID = null ,$field_name = 'c
 
 /** This function resets the turn_recruited_workers and turn_firstcome_workers to 0 for every controller */
 function  restartTurnRecrutementCount($pdo){
-    $sql = 'UPDATE controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE True';
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $sql = "UPDATE {$prefix}controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE True";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -189,9 +192,10 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
  * @return array|null : $bases
  */
 function hasBase($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
 
-    $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM locations l
-        LEFT JOIN zones z ON l.zone_id = z.ID
+    $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM {$prefix}locations l
+        LEFT JOIN {$prefix}zones z ON l.zone_id = z.ID
         WHERE controller_id = :controller_id and is_base = True
     ";
     try{
@@ -218,6 +222,8 @@ function hasBase($pdo, $controller_id) {
 */
 function createBase($pdo, $controller_id, $zone_id) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     spendRessourcesToBuildBase($pdo, $controller_id);
 
@@ -252,7 +258,7 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     try{
     // Check if base already exists for this controller in the zone
-    $checkSql = "SELECT COUNT(*) FROM locations WHERE zone_id = :zone_id AND controller_id = :controller_id AND is_base = True";
+    $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE zone_id = :zone_id AND controller_id = :controller_id AND is_base = True";
     $checkStmt = $pdo->prepare($checkSql);
     $checkStmt->execute([
         ':zone_id' => $zone_id,
@@ -267,7 +273,7 @@ function createBase($pdo, $controller_id, $zone_id) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
     }
 
-    $sql = "INSERT INTO locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
+    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
         (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True)";
     try{
         // Update config value in the database
@@ -301,8 +307,9 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
 
     spendRessourcesToMoveBase($pdo, $controller_id);
 
+    $prefix = $_SESSION['GAME_PREFIX'];
     // update locations set zone_id where controller_id = "%s";
-    $sql = "UPDATE locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM mechanics LIMIT 1) WHERE id = :base_id";
+    $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -312,7 +319,7 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         $stmt->execute();
 
         // Delete controller knowledge of the location
-        $deleteSQL = "DELETE FROM controller_known_locations WHERE location_id = :base_id";
+        $deleteSQL = "DELETE FROM {$prefix}controller_known_locations WHERE location_id = :base_id";
         $deleteStmt = $pdo->prepare($deleteSQL);
         $deleteStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $deleteStmt->execute();
@@ -412,6 +419,8 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $debug = $_SESSION['DEBUG'];
     $return = array('success' => false, 'message' => '');
 
+    $prefix = $_SESSION['GAME_PREFIX'];
+
     //  Get Turn Number
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
@@ -419,8 +428,8 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $targetResultText = '';
     try{
         // Get location informatipon from target_location_id
-        $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM locations l
-            JOIN zones z ON l.zone_id = z.id
+        $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM {$prefix}locations l
+            JOIN {$prefix}zones z ON l.zone_id = z.id
             WHERE l.id = :id
             LIMIT 1";
         $stmt = $pdo->prepare($sql);
@@ -494,10 +503,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         if ($destroy && $captureResult['success']) {
             // Delete elements from players and location tables
             try{
-                $sql = "DELETE FROM controller_known_locations WHERE location_id = :id";
+                $sql = "DELETE FROM {$prefix}controller_known_locations WHERE location_id = :id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([':id' => $target_location_id]);
-                $sql = "DELETE FROM locations WHERE id = :id";
+                $sql = "DELETE FROM {$prefix}locations WHERE id = :id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([':id' => $target_location_id]);
             } catch (PDOException $e) {
@@ -527,7 +536,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         $target_controller_id = (!empty($location[0]['controller_id'])) ? $location[0]['controller_id'] : null;
         // ADD Base was attacked succesfuly/unsuccesfuly to show on Admin Page
         $logSql = "
-            INSERT INTO location_attack_logs (
+            INSERT INTO {$prefix}location_attack_logs (
                 target_controller_id,
                 location_name,
                 attacker_id,
@@ -587,19 +596,20 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
     // Get worker ids
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+    
     $sqlWorkerForZoneAndController = sprintf("SELECT w.id
-        FROM workers w
-        JOIN controller_worker cw ON cw.worker_id = w.id
-        JOIN worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+        FROM {$prefix}workers w
+        JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+        JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
         WHERE cw.controller_id = :controller_id
             AND w.zone_id = :zone_id
             AND wa.action_choice IN (%s)
-            AND cw.is_primary_controller = :is_primary_controller",
-        $active_actions
+            AND cw.is_primary_controller = %s",
+        $active_actions,
+        ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true'
     );
     $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
     $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-    $stmt->bindParam(':is_primary_controller', true, PDO::PARAM_BOOL);
     $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
     $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
     $stmt->execute();
@@ -626,7 +636,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
         // Get worker ids
         $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
-        $stmt->execute([':controller_id' => $location[0]['controller_id'], ':zone_id' => $zone_id]);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $location[0]['controller_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->execute();
         $workerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
         foreach ($workerIds as $workerId) {
             $report = sprintf(
@@ -652,9 +665,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
  */
 function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
     $return = array('success' => true, 'message' => '');
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // Step 1: Get base location of the controller
-    $stmt = $pdo->prepare("SELECT id FROM locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
+    $stmt = $pdo->prepare("SELECT id FROM {$prefix}locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
     $stmt->execute([$controller_id]);
     $baseLocation = $stmt->fetchColumn();
 
@@ -665,7 +679,7 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
     }
 
     // Step 2: Move artefacts from captured location to base
-    $stmt = $pdo->prepare("UPDATE artefacts SET location_id = ? WHERE location_id = ?");
+    $stmt = $pdo->prepare("UPDATE {$prefix}artefacts SET location_id = ? WHERE location_id = ?");
     $stmt->execute([$baseLocation, $location_id]);
 
     // Step 3: Optional — count how many artefacts moved
@@ -702,9 +716,11 @@ function addWorkerToCKE(
 
     $cke_existing_record_id = NULL;
 
+    $prefix = $_SESSION['GAME_PREFIX'];
+    
     try{
         // Only add information to controllers_known_enemies if the worker is not controlled by the target controller
-        $sql = "SELECT COUNT(*) FROM controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
+        $sql = "SELECT COUNT(*) FROM {$prefix}controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':searcher_controller_id' => $searcher_controller_id,
@@ -712,16 +728,16 @@ function addWorkerToCKE(
         ]);
         $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error COUNT(*) FROM controller_worker Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): Error COUNT(*) FROM {$prefix}controller_worker Failed: " . $e->getMessage()."<br />";
     }
     if ($count == 1) {
-        if ($debug) echo __FUNCTION__."(): COUNT(*) FROM controller_worker; Worker is already controlled by the target controller<br />";
+        if ($debug) echo __FUNCTION__."(): COUNT(*) FROM {$prefix}controller_worker; Worker is already controlled by the target controller<br />";
         return NULL;
     }
 
     try{
         // Search for the existing controller-Worker combo
-        $sql = "SELECT id FROM controllers_known_enemies
+        $sql = "SELECT id FROM {$prefix}controllers_known_enemies
             WHERE controller_id = :searcher_controller_id
                 AND discovered_worker_id = :found_worker_id";
         $stmt = $pdo->prepare($sql);
@@ -732,7 +748,7 @@ function addWorkerToCKE(
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error SELECT id FROM controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): Error SELECT id FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 
@@ -740,7 +756,7 @@ function addWorkerToCKE(
         try{
             $cke_existing_record_id = $existingRecord['id'];
             // Update if record exists
-            $sql = sprintf("UPDATE controllers_known_enemies
+            $sql = sprintf("UPDATE {$prefix}controllers_known_enemies
                 SET last_discovery_turn = :turn_number, zone_id = :zone_id
                 %s %s
                 WHERE id = :id",
@@ -760,12 +776,12 @@ function addWorkerToCKE(
             }
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error UPDATE controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): Error UPDATE {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
         }
     } else {
         try{
             // Insert if record doesn't exist
-            $sql = "INSERT INTO controllers_known_enemies
+            $sql = "INSERT INTO {$prefix}controllers_known_enemies
                 (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name)
                 VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name)";
             if ($debug) echo "sql :".var_export($sql, true)." <br>";
@@ -779,7 +795,7 @@ function addWorkerToCKE(
             $stmt->execute();
             $cke_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error INSERT INTO controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): Error INSERT INTO {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
         }
     }
     return $cke_existing_record_id;
@@ -797,11 +813,12 @@ function addWorkerToCKE(
  */
 function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $ckl_existing_record_id = NULL;
 
     // Search for the existing controller-Worker combo
-    $sql = "SELECT id FROM controller_known_locations
+    $sql = "SELECT id FROM {$prefix}controller_known_locations
         WHERE controller_id = :controller_id
             AND location_id = :location_id";
     $stmt = $pdo->prepare($sql);
@@ -816,7 +833,7 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
         try{
             $ckl_existing_record_id = $existingRecord['id'];
             // Update if record exists
-            $sql = sprintf("UPDATE controller_known_locations
+            $sql = sprintf("UPDATE {$prefix}controller_known_locations
                 SET last_discovery_turn = :turn_number
                 %s
                 WHERE id = :id",
@@ -830,12 +847,12 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
             $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error UPDATE controller_known_locations Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): Error UPDATE {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
         }
     } else {
         try{
             // Insert if record doesn't exist
-            $sqlInsert = "INSERT INTO controller_known_locations (
+            $sqlInsert = "INSERT INTO {$prefix}controller_known_locations (
                 controller_id, location_id, found_secret, first_discovery_turn, last_discovery_turn
             ) VALUES (
                 :cid, :lid, :found_secret, :first_discovery_turn, :last_discovery_turn
@@ -849,7 +866,7 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
             $insertStmt->execute();
             $ckl_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error INSERT INTO controller_known_locations Failed: " . $e->getMessage()."<br />";
+            echo __FUNCTION__."(): Error INSERT INTO {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
         }
     }
     return $ckl_existing_record_id;
@@ -865,9 +882,10 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
  */
 function showOwnedArtefacts($pdo, $controller_id) {
     $html = '';
+    $prefix = $_SESSION['GAME_PREFIX'];
     $sql ="SELECT artefacts.name, artefacts.description, artefacts.full_description
-        FROM artefacts
-        JOIN locations ON artefacts.location_id = locations.id
+        FROM {$prefix}artefacts artefacts
+        JOIN {$prefix}locations locations ON artefacts.location_id = locations.id
         WHERE locations.controller_id = ?";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$controller_id]);
@@ -895,9 +913,6 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     if ($origin == 'admin') 
         $returnLink = '/controllers/managment.php';
 
-    
-    $mechanics = getMechanics($pdo);
-    $turn_number = $mechanics['turncounter'];
 
     $zones = getZonesArray($pdo);
 
@@ -920,7 +935,8 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         }
     } else {
         // select from all workers
-        $sql = "SELECT w.id AS worker_id, CONCAT (w.firstname, ' ', w.lastname) AS name, z.name AS zone_name FROM workers w JOIN zones z ON w.zone_id = z.id";
+        $prefix = $_SESSION['GAME_PREFIX'];
+        $sql = "SELECT w.id AS worker_id, CONCAT (w.firstname, ' ', w.lastname) AS name, z.name AS zone_name FROM {$prefix}workers w JOIN {$prefix}zones z ON w.zone_id = z.id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -1,5 +1,5 @@
 
-INSERT INTO powers ( name, enquete, attack, defence) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence) VALUES
     -- Suggested Jobs :
     -- Possible Values Based on +1 :
     -- ('', 1,0,0), ('', 0,1,1), ('', 0,0,1),
@@ -85,7 +85,7 @@ INSERT INTO powers ( name, enquete, attack, defence) VALUES
     ('Gardien.ne de prison', -1,2,1)
 ;
 
-INSERT INTO powers ( name, enquete, attack, defence, other) VALUES
+INSERT INTO {prefix}powers ( name, enquete, attack, defence, other) VALUES
     ('Angeli Del Fango ', 1,0,1,'{"on_recrutment": {"action":  {"type": "go_traitor", "controller_lastname": "da Firenze"} } }')
     , ('Angels of the Mud ', 1,0,1,'{"on_recrutment": {"action":  {"type": "go_traitor", "controller_lastname": "da Firenze"} } }')
     , ('Mud Angels', 1,0,1,'{"on_recrutment": {"action":  {"type": "go_traitor", "controller_lastname": "Franco"} } }')

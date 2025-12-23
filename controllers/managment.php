@@ -6,6 +6,8 @@ $pageName = 'Controller Management';
 require_once '../base/basePHP.php';
 require_once '../base/baseHTML.php';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 // Handle form submissions
 $message = '';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -14,17 +16,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (isset($_POST['add'])) {
         // Add player to controller
-        $sql = "INSERT INTO player_controller (player_id, controller_id) 
+        $sql = "INSERT INTO {$prefix}player_controller (player_id, controller_id) 
                 SELECT :player_id, :controller_id
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM player_controller WHERE player_id = :player_id AND controller_id = :controller_id
+                    SELECT 1 FROM {$prefix}player_controller WHERE player_id = :player_id AND controller_id = :controller_id
                 )";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute(['player_id' => $player_id, 'controller_id' => $controller_id]);
         $message = "Player added to controller.";
     } elseif (isset($_POST['remove'])) {
         // Remove player from controller
-        $sql = "DELETE FROM player_controller WHERE player_id = :player_id AND controller_id = :controller_id";
+        $sql = "DELETE FROM {$prefix}player_controller WHERE player_id = :player_id AND controller_id = :controller_id";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute(['player_id' => $player_id, 'controller_id' => $controller_id]);
         $message = "Player removed from controller.";
@@ -33,11 +35,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Toggle can_build_base
     if (isset($_POST['toggle_base_controller_id'])) {
         $cid = intval($_POST['toggle_base_controller_id']);
-        $current = $gameReady->prepare("SELECT can_build_base FROM controllers WHERE id = :id");
+        $current = $gameReady->prepare("SELECT can_build_base FROM {$prefix}controllers WHERE id = :id");
         $current->execute(['id' => $cid]);
         $val = $current->fetchColumn();
         $newVal = ($val) ? 0 : 1;
-        $upd = $gameReady->prepare("UPDATE controllers SET can_build_base = :newVal WHERE id = :id");
+        $upd = $gameReady->prepare("UPDATE {$prefix}controllers SET can_build_base = :newVal WHERE id = :id");
         $upd->execute(['newVal' => $newVal, 'id' => $cid]);
         $message = "Can Build Base status toggled.";
     }
@@ -45,11 +47,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Toggle secret_controller
     if (isset($_POST['toggle_secret_controller_id'])) {
         $cid = intval($_POST['toggle_secret_controller_id']);
-        $current = $gameReady->prepare("SELECT secret_controller FROM controllers WHERE id = :id");
+        $current = $gameReady->prepare("SELECT secret_controller FROM {$prefix}controllers WHERE id = :id");
         $current->execute(['id' => $cid]);
         $val = $current->fetchColumn();
         $newVal = ($val) ? 0 : 1;
-        $upd = $gameReady->prepare("UPDATE controllers SET secret_controller = :newVal WHERE id = :id");
+        $upd = $gameReady->prepare("UPDATE {$prefix}controllers SET secret_controller = :newVal WHERE id = :id");
         $upd->execute(['newVal' => $newVal, 'id' => $cid]);
         $message = "Secret Controller status toggled.";
     }
@@ -57,14 +59,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Reset turn_recruited_workers
     if (isset($_POST['reset_turn_recruited_workers_id'])) {
         $cid = intval($_POST['reset_turn_recruited_workers_id']);
-        $upd = $gameReady->prepare("UPDATE controllers SET turn_recruited_workers = 0 WHERE id = :id");
+        $upd = $gameReady->prepare("UPDATE {$prefix}controllers SET turn_recruited_workers = 0 WHERE id = :id");
         $upd->execute(['id' => $cid]);
         $message = "Turn recruited workers reset.";
     }
     // Reset turn_firstcome_workers
     if (isset($_POST['reset_turn_firstcome_workers_id'])) {
         $cid = intval($_POST['reset_turn_firstcome_workers_id']);
-        $upd = $gameReady->prepare("UPDATE controllers SET turn_firstcome_workers = 0 WHERE id = :id");
+        $upd = $gameReady->prepare("UPDATE {$prefix}controllers SET turn_firstcome_workers = 0 WHERE id = :id");
         $upd->execute(['id' => $cid]);
         $message = "Turn recruited firstcome workers reset.";
     }
@@ -91,8 +93,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 }
 
 // Fetch all players and controllers
-$players = $gameReady->query("SELECT id, username FROM players ORDER BY username")->fetchAll(PDO::FETCH_ASSOC);
-$controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
+$players = $gameReady->query("SELECT id, username FROM {$prefix}players ORDER BY username")->fetchAll(PDO::FETCH_ASSOC);
+$controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <div class="content">
@@ -142,7 +144,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
                 c.recruited_workers,
                 c.turn_recruited_workers,
                 c.turn_firstcome_workers
-            FROM controllers c
+            FROM {$prefix}controllers c
             ORDER BY c.lastname
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -150,8 +152,8 @@ $controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY 
             // Fetch players for this controller
             $players = $gameReady->prepare("
                 SELECT p.username 
-                FROM player_controller pc
-                JOIN players p ON pc.player_id = p.id
+                FROM {$prefix}player_controller pc
+                JOIN {$prefix}players p ON pc.player_id = p.id
                 WHERE pc.controller_id = :controller_id
                 ORDER BY p.username
             ");

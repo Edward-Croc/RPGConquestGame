@@ -7,58 +7,58 @@
     -- Multi claim, should be violent, 
 */
 
-INSERT INTO workers (firstname, lastname, origin_id, zone_id) VALUES
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id) VALUES
     -- Base test claim, passive, investigate
-    ('Andrei', 'Popescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
-    ('Indro', 'Lombardi', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Palazzo Pitti')),
+    ('Andrei', 'Popescu', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM {prefix}zones WHERE name = 'Palazzo Pitti')),
+    ('Indro', 'Lombardi', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Firenze'), (SELECT ID FROM {prefix}zones WHERE name = 'Palazzo Pitti')),
     -- Multi claim, should be violent
-    ('Amerigo', 'Martino', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Railway Station')),
-    ('Roman', 'Aliev', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Railway Station')),
-    ('Hortensio', 'Honorius', (SELECT ID FROM worker_origins WHERE name = 'Venezia'), (SELECT ID FROM zones WHERE name = 'Railway Station')),
+    ('Amerigo', 'Martino', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Firenze'), (SELECT ID FROM {prefix}zones WHERE name = 'Railway Station')),
+    ('Roman', 'Aliev', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM {prefix}zones WHERE name = 'Railway Station')),
+    ('Hortensio', 'Honorius', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Venezia'), (SELECT ID FROM {prefix}zones WHERE name = 'Railway Station')),
     -- Attacking ?
-    ('Maria', 'Ionescu', (SELECT ID FROM worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
-    ('Mercury', 'Messala', (SELECT ID FROM worker_origins WHERE name = 'Firenze'), (SELECT ID FROM zones WHERE name = 'Fortezza Basso')),
-    ('Maria', 'Marotta', (SELECT ID FROM worker_origins WHERE name = 'Venezia'), (SELECT ID FROM zones WHERE name = 'Fortezza Basso'));
+    ('Maria', 'Ionescu', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Roumanie'), (SELECT ID FROM {prefix}zones WHERE name = 'Fortezza Basso')),
+    ('Mercury', 'Messala', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Firenze'), (SELECT ID FROM {prefix}zones WHERE name = 'Fortezza Basso')),
+    ('Maria', 'Marotta', (SELECT ID FROM {prefix}worker_origins WHERE name = 'Venezia'), (SELECT ID FROM {prefix}zones WHERE name = 'Fortezza Basso'));
 
-INSERT INTO controller_worker (controller_id, worker_id) VALUES
+INSERT INTO {prefix}controller_worker (controller_id, worker_id) VALUES
     -- Base test claim, passive, investigate
     (
-        (SELECT ID FROM controllers WHERE lastname in ('Calabreze')),
-        (SELECT ID FROM workers WHERE lastname in ('Lombardi'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Calabreze')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Lombardi'))
     ), (
-        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
-        (SELECT ID FROM workers WHERE lastname in ('Popescu'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Popescu'))
     )
     -- Multi claim, should be violent
     ,(
-        (SELECT ID FROM controllers WHERE lastname in ('da Firenze')),
-        (SELECT ID FROM workers WHERE lastname in ('Honorius'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('da Firenze')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Honorius'))
     ), (
-        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
-        (SELECT ID FROM workers WHERE lastname in ('Aliev'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Aliev'))
     ), (
-        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
-        (SELECT ID FROM workers WHERE lastname in ('Martino'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Martino'))
     )
     -- Attacking ?
     ,(
-        (SELECT ID FROM controllers WHERE lastname in ('da Firenze')),
-        (SELECT ID FROM workers WHERE lastname in ('Messala'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('da Firenze')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Messala'))
     ), (
-        (SELECT ID FROM controllers WHERE lastname in ('Walkil', 'Vizirof')),
-        (SELECT ID FROM workers WHERE lastname in ('Ionescu'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Walkil', 'Vizirof')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Ionescu'))
     ), (
-        (SELECT ID FROM controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
-        (SELECT ID FROM workers WHERE lastname in ('Marotta'))
+        (SELECT ID FROM {prefix}controllers WHERE lastname in ('Mazzino', 'Ricciotti')),
+        (SELECT ID FROM {prefix}workers WHERE lastname in ('Marotta'))
     )
 ;
 
-UPDATE worker_actions
+UPDATE {prefix}worker_actions
 SET action_choice = 'claim', action_params = '{"claim_controller_id":"2"}'
-WHERE worker_id = (SELECT ID FROM workers WHERE lastname in ('Matthews'));
+WHERE worker_id = (SELECT ID FROM {prefix}workers WHERE lastname in ('Matthews'));
 
 -- Add actions to the workers :
-INSERT INTO worker_actions (
+INSERT INTO {prefix}worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params
 )
 SELECT
@@ -88,16 +88,15 @@ FROM (
     UNION ALL
     SELECT 'Marotta', 'investigate', '{}'
 ) AS entry
-JOIN workers w ON w.lastname = entry.lastname
-JOIN controller_worker cw ON cw.worker_id = w.id;
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 
 -- Add powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id)
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT 
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM 
-    workers w
+FROM {prefix}workers w
 JOIN (
     SELECT 'Matthews' AS lastname, 'Vampire nouveau né' AS power_name
     UNION ALL SELECT 'Popescu', 'Punk à chien'
@@ -150,8 +149,8 @@ JOIN (
     UNION ALL SELECT 'Marotta', 'Augure'
     UNION ALL SELECT 'Marotta', 'Goule'
 ) AS wp ON wp.lastname = w.lastname
-JOIN powers p ON p.name = wp.power_name
-JOIN link_power_type lpt ON lpt.power_id = p.id;
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;
 
 /*
 Tests should be :
@@ -243,29 +242,29 @@ WITH names_data(firstname, lastname, origin_name, zone_name) AS (
         ('5', '5', 'Firenze', 'Piazza della Liberta & Savonarola'),
         ('6', '6', 'Firenze', 'Piazza della Liberta & Savonarola')
 )
-INSERT INTO workers (firstname, lastname, origin_id, zone_id)
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id)
 SELECT
     nd.firstname,
     nd.lastname,
     wo.id AS origin_id,
     z.id AS zone_id
 FROM names_data nd
-JOIN worker_origins wo ON wo.name = nd.origin_name
-JOIN zones z ON z.name = nd.zone_name;
+JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
+JOIN {prefix}zones z ON z.name = nd.zone_name;
 
 
-INSERT INTO controller_worker (controller_id, worker_id) VALUES
+INSERT INTO {prefix}controller_worker (controller_id, worker_id) VALUES
     -- Base test claim, passive, investigate
-    ( 1, (SELECT ID FROM workers WHERE lastname in ('1')))
-    , ( 2, (SELECT ID FROM workers WHERE lastname in ('2')))
-    , ( 3, (SELECT ID FROM workers WHERE lastname in ('3')))
-    , ( 4, (SELECT ID FROM workers WHERE lastname in ('4')))
-    , ( 5, (SELECT ID FROM workers WHERE lastname in ('5')))
-    , ( 6, (SELECT ID FROM workers WHERE lastname in ('6')))
+    ( 1, (SELECT ID FROM {prefix}workers WHERE lastname in ('1')))
+    , ( 2, (SELECT ID FROM {prefix}workers WHERE lastname in ('2')))
+    , ( 3, (SELECT ID FROM {prefix}workers WHERE lastname in ('3')))
+    , ( 4, (SELECT ID FROM {prefix}workers WHERE lastname in ('4')))
+    , ( 5, (SELECT ID FROM {prefix}workers WHERE lastname in ('5')))
+    , ( 6, (SELECT ID FROM {prefix}workers WHERE lastname in ('6')))
 ;
 
 -- Add actions to the workers :
-INSERT INTO worker_actions (
+INSERT INTO {prefix}worker_actions (
     worker_id, controller_id, turn_number, zone_id, action_choice, action_params
 )
 SELECT
@@ -283,21 +282,20 @@ FROM (
     UNION ALL SELECT  '5'
     UNION ALL SELECT  '6'
 ) AS entry
-JOIN workers w ON w.lastname = entry.lastname
-JOIN controller_worker cw ON cw.worker_id = w.id;
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
 ;
 
-UPDATE worker_actions
+UPDATE {prefix}worker_actions
 SET action_choice = 'investigate'
-WHERE worker_id = (SELECT ID FROM workers WHERE lastname in ('6'));
+WHERE worker_id = (SELECT ID FROM {prefix}workers WHERE lastname in ('6'));
 
 -- Add powers to the workers :
-INSERT INTO worker_powers (worker_id, link_power_type_id)
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
 SELECT 
     w.id AS worker_id,
     lpt.id AS link_power_type_id
-FROM 
-    workers w
+FROM {prefix}workers w
 JOIN (
     -- Agent 1 and 2 should have a investigation lvl of 4 and a combat lvl of 4/4
     SELECT '1' AS lastname, 'Vampire nouveau né' AS power_name --1,1,2
@@ -331,15 +329,15 @@ JOIN (
     UNION ALL SELECT '6', 'Agent.e de sécurité' --0,1,1
     UNION ALL SELECT '6', 'Collectionneur.se de couteaux' -- 0,1,1
 ) AS wp ON wp.lastname = w.lastname
-JOIN powers p ON p.name = wp.power_name
-JOIN link_power_type lpt ON lpt.power_id = p.id;
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;
 
 /*
         - In the zone A we need to create 1 location with description and artefact
             - Location A have discovery diff of 4, a name a description and a linked artefact
 */
-INSERT INTO locations (name, description, discovery_diff, zone_id) VALUES
-    ('Pallazzo Medeci Ricardi', 'TESTDecription', 4,(SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola'))
+INSERT INTO {prefix}locations (name, description, discovery_diff, zone_id) VALUES
+    ('Pallazzo Medeci Ricardi', 'TESTDecription', 4,(SELECT ID FROM {prefix}zones WHERE name = 'Piazza della Liberta & Savonarola'))
 ;
-INSERT INTO locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
-   ('Attack target', 'TESTDecription Attackable', 4, true, (SELECT ID FROM zones WHERE name = 'Piazza della Liberta & Savonarola'), 1)
+INSERT INTO {prefix}locations (name, description, discovery_diff, can_be_destroyed, zone_id, controller_id) VALUES
+   ('Attack target', 'TESTDecription Attackable', 4, true, (SELECT ID FROM {prefix}zones WHERE name = 'Piazza della Liberta & Savonarola'), 1)

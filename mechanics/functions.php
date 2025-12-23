@@ -15,14 +15,15 @@ require_once '../mechanics/locationSearchMechanic.php';
  * @return bool : success
  */
 function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // SQL query to update gamestate
     $sql = '';
     if ($start && $mechanics['gamestate'] == 0) {
-        $sql = "UPDATE mechanics SET gamestate = 1 WHERE id = :id ";
+        $sql = "UPDATE {$prefix}mechanics SET gamestate = 1 WHERE id = :id ";
     }
     if (!$start && $mechanics['gamestate'] == 1) {
-        $sql = "UPDATE mechanics SET gamestate = 0 WHERE id = :id ";
+        $sql = "UPDATE {$prefix}mechanics SET gamestate = 0 WHERE id = :id ";
     }
     if (!empty($sql)) {
         try{
@@ -47,7 +48,8 @@ function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
  * @return bool : success
  */
 function changeEndTurnState($pdo, $state, $mechanics) {
-    $sql = "UPDATE mechanics set end_step = :end_step WHERE id = :id";
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $sql = "UPDATE {$prefix}mechanics set end_step = :end_step WHERE id = :id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':end_step' => $state, ':id' => $mechanics['id']]);
 }
@@ -59,15 +61,15 @@ function changeEndTurnState($pdo, $state, $mechanics) {
  *
  */
 function diceSQL() {
-    return sprintf(<<<'SQL'
-        FLOOR(
-            %1$s * (
-                CAST((SELECT value FROM config WHERE name = 'MAXROLL') AS %2$s)
-                - CAST((SELECT value FROM config WHERE name = 'MINROLL') AS %2$s)
+    $prefix = $_SESSION['GAME_PREFIX'];
+    return sprintf(
+        "FLOOR(
+            %1\$s * (
+                CAST((SELECT value FROM {$prefix}config WHERE name = 'MAXROLL') AS %2\$s)
+                - CAST((SELECT value FROM {$prefix}config WHERE name = 'MINROLL') AS %2\$s)
                 +  1
-            ) + CAST((SELECT value FROM config WHERE name = 'MINROLL') AS %2$s)
-        )
-    SQL,
+            ) + CAST((SELECT value FROM {$prefix}config WHERE name = 'MINROLL') AS %2\$s)
+        )",
         ($_SESSION['DBTYPE'] == 'postgres') ? 'RANDOM()' : 'RAND()',
         ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED'
     );
@@ -107,6 +109,7 @@ function diceRoll($pdo) {
  */
 function calculateVals($pdo, $mechanics){
     $turn_number =  $mechanics['turncounter'];
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     $sqlArray = [];
     $array = [];
@@ -125,9 +128,7 @@ function calculateVals($pdo, $mechanics){
 
         // chose SQL for value generation
         $valBaseSQL = sprintf(
-            <<<'SQL'
-                (SELECT CAST(value AS %s) FROM config WHERE name = 'PASSIVEVAL')
-            SQL,
+            "(SELECT CAST(value AS %s) FROM {$prefix}config WHERE name = 'PASSIVEVAL')",
             ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED'
         );
         if ($elements[2]) {
@@ -137,9 +138,7 @@ function calculateVals($pdo, $mechanics){
         // Name of configured bonus (ex : ENQUETE_ZONE_BONUS)
         $zoneBonusColumn = strtoupper("{$elements[0]}_zone_bonus");
         $zoneBonusSQL = sprintf(
-            <<<'SQL'
-                (SELECT CAST(value AS %s) FROM config WHERE name = '%s')
-            SQL,
+            "(SELECT CAST(value AS %s) FROM {$prefix}config WHERE name = '%s')",
             ($_SESSION['DBTYPE'] == 'postgres') ? 'INT' : 'SIGNED',
             $zoneBonusColumn
         );
@@ -171,19 +170,19 @@ function calculateVals($pdo, $mechanics){
         $valSQL = sprintf("%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
-                FROM workers AS w
-                LEFT JOIN worker_powers wp ON w.id = wp.worker_id
-                LEFT JOIN link_power_type lpt ON wp.link_power_type_id = lpt.ID
-                LEFT JOIN powers p ON lpt.power_id = p.ID
+                FROM {$prefix}workers AS w
+                LEFT JOIN {$prefix}worker_powers wp ON w.id = wp.worker_id
+                LEFT JOIN {$prefix}link_power_type lpt ON wp.link_power_type_id = lpt.ID
+                LEFT JOIN {$prefix}powers p ON lpt.power_id = p.ID
                 WHERE wa1.worker_id = w.id
             ), 0)
             + %s
             + CASE
                 WHEN EXISTS (
                     SELECT 1
-                    FROM workers w2
-                    JOIN zones z2 ON w2.zone_id = z2.id
-                    JOIN controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = True
+                    FROM {$prefix}workers w2
+                    JOIN {$prefix}zones z2 ON w2.zone_id = z2.id
+                    JOIN {$prefix}controller_worker cw2 ON cw2.worker_id = w2.id AND is_primary_controller = True
                     WHERE w2.id = wa1.worker_id
                       AND z2.holder_controller_id = cw2.controller_id
                 )
@@ -193,19 +192,19 @@ function calculateVals($pdo, $mechanics){
             %s
 
         )",
-        $elements[0],
-        $elements[0],
-        $valBaseSQL,
-        $zoneBonusSQL,
-        $flatBonusSQL
-    );
+            $elements[0],
+            $elements[0],
+            $valBaseSQL,
+            $zoneBonusSQL,
+            $flatBonusSQL
+        );
 
         // get list of actions to calibrate
         if (!empty($config)){
             // add to list of updates
             $sqlArray[] = array(
                 'sql'=> sprintf(
-                    'UPDATE worker_actions wa1 SET %1$s WHERE turn_number = %2$s AND action_choice IN (%3$s)',
+                    "UPDATE {$prefix}worker_actions wa1 SET %1\$s WHERE turn_number = %2\$s AND action_choice IN (%3\$s)",
                     $valSQL, $turn_number, $config
                 ),
                 'config' => $config
@@ -231,20 +230,20 @@ function calculateVals($pdo, $mechanics){
     echo '</div><div><p> <h3> Calculate zone defense values: </h3> ';
     try {
         if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "UPDATE zones
+            $sql = "UPDATE {$prefix}zones
                 SET calculated_defence_val = defence_val + subquery.worker_count
                 FROM (
                     SELECT
                         z.id AS zone_id,
                         COALESCE(COUNT(w.id), 0) AS worker_count
                     FROM
-                        zones z
+                        {$prefix}zones z
                     LEFT JOIN
-                        workers w ON w.zone_id = z.id
+                        {$prefix}workers w ON w.zone_id = z.id
                     LEFT JOIN 
-                        worker_actions wa ON wa.worker_id = w.id
+                        {$prefix}worker_actions wa ON wa.worker_id = w.id
                     LEFT JOIN
-                        controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
+                        {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
                     WHERE
                         z.holder_controller_id = cw.controller_id
                         AND wa.action_choice IN (%s)
@@ -252,18 +251,18 @@ function calculateVals($pdo, $mechanics){
                     GROUP BY
                         z.id
                 ) AS subquery
-                WHERE zones.id = subquery.zone_id
+                WHERE {$prefix}zones.id = subquery.zone_id
             ";
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "UPDATE zones z
+            $sql = "UPDATE {$prefix}zones z
                 JOIN (
                     SELECT z.id AS zone_id, 
                         COALESCE(COUNT(w.id), 0) AS worker_count 
-                    FROM zones z 
-                    LEFT JOIN workers w ON w.zone_id = z.id 
-                    LEFT JOIN worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
+                    FROM {$prefix}zones z 
+                    LEFT JOIN {$prefix}workers w ON w.zone_id = z.id 
+                    LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
+                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
                     WHERE z.holder_controller_id = cw.controller_id 
                     AND wa.action_choice IN (%s)
                     AND wa.turn_number = :turn_number
@@ -304,9 +303,10 @@ function calculateVals($pdo, $mechanics){
  */
 function createNewTurnLines($pdo, $turn_number){
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
-        INSERT INTO worker_actions (worker_id, turn_number, zone_id, controller_id, action_choice, action_params)
+        INSERT INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id, action_choice, action_params)
         SELECT
             w.id AS worker_id,
             :turn_number AS turn_number,
@@ -314,10 +314,10 @@ function createNewTurnLines($pdo, $turn_number){
             cw.controller_id AS controller_id,
             wa.action_choice,
             wa.action_params
-        FROM workers w
-        JOIN controller_worker AS cw ON cw.worker_id = w.id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "
-        JOIN worker_actions AS wa ON wa.worker_id = w.id AND turn_number = :turn_number_n_1
-        WHERE wa.worker_id NOT IN ( SELECT worker_id FROM worker_actions wa2 WHERE wa2.turn_number = :turn_number )
+        FROM {$prefix}workers w
+        JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id AND is_primary_controller = " . ($_SESSION['DBTYPE'] == 'postgres' ? 'true' : '1') . "
+        JOIN {$prefix}worker_actions AS wa ON wa.worker_id = w.id AND turn_number = :turn_number_n_1
+        WHERE wa.worker_id NOT IN ( SELECT worker_id FROM {$prefix}worker_actions wa2 WHERE wa2.turn_number = :turn_number )
     ";
     try {
         $stmtInsert = $pdo->prepare($sqlInsert);
@@ -332,8 +332,8 @@ function createNewTurnLines($pdo, $turn_number){
     $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
     if (!$config_continuing_investigate_action){
         $sqlSetInvestigate = "
-            UPDATE worker_actions wa1
-            JOIN worker_actions wa2 ON wa1.worker_id = wa2.worker_id
+            UPDATE {$prefix}worker_actions wa1
+            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
             SET wa1.action_choice = 'passive'
             WHERE wa1.turn_number = :turn_number
             AND wa2.action_choice = 'investigate'
@@ -352,8 +352,8 @@ function createNewTurnLines($pdo, $turn_number){
     $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
         if (!$config_continuing_claimed_action){
         $sqlSetClaim = "
-            UPDATE worker_actions wa1
-            JOIN worker_actions wa2 ON wa1.worker_id = wa2.worker_id
+            UPDATE {$prefix}worker_actions wa1
+            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
             SET wa1.action_choice = 'passive'
             WHERE wa1.turn_number = :turn_number
             AND wa2.action_choice = 'claim'
@@ -391,6 +391,8 @@ function claimMechanic($pdo, $mechanics) {
     echo '<div> <h3>  claimMechanic : </h3> ';
     echo "turn_number : $turn_number <br>";
 
+    $prefix = $_SESSION['GAME_PREFIX'];
+    
     // Define the SQL query
     $sql = "SELECT
             wa.worker_id AS claimer_id,
@@ -404,9 +406,9 @@ function claimMechanic($pdo, $mechanics) {
             z.holder_controller_id AS zone_holder_controller_id,
             (wa.enquete_val - z.calculated_defence_val) AS discrete_claim,
             (wa.attack_val - z.calculated_defence_val) AS violent_claim
-        FROM worker_actions wa
-        JOIN zones z ON z.id = wa.zone_id
-        JOIN workers w ON w.id = wa.worker_id
+        FROM {$prefix}worker_actions wa
+        JOIN {$prefix}zones z ON z.id = wa.zone_id
+        JOIN {$prefix}workers w ON w.id = wa.worker_id
         -- JOIN controller c ON c.id = wa.controller_id
         WHERE
             wa.action_choice = 'claim'
@@ -507,9 +509,9 @@ function claimMechanic($pdo, $mechanics) {
         if ($arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']) {
             // get all workers of zone
             $sql_workers_by_zone = "SELECT *
-                FROM workers w
-                JOIN controller_worker cw ON cw.worker_id = w.id
-                JOIN worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                FROM {$prefix}workers w
+                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE
                     w.zone_id = :zone_id
                     AND cw.controller_id != :controller_id
@@ -584,7 +586,7 @@ function claimMechanic($pdo, $mechanics) {
                 if ($claimer_params['claim_controller_id'] == 'null') $claimer_controller_id = null;
             }
 
-            $sql = "UPDATE zones SET claimer_controller_id = :claimer_controller_id , holder_controller_id = :holder_controller_id WHERE id = :id";
+            $sql = "UPDATE {$prefix}zones SET claimer_controller_id = :claimer_controller_id , holder_controller_id = :holder_controller_id WHERE id = :id";
             try{
                 // Update config value in the database
                 $stmt = $pdo->prepare($sql);

@@ -32,7 +32,8 @@ function loadDBConfig($path, $configFile) {
         'username' => 'postgres',
         'password' => 'postgres',
         'db_type' => 'postgres',
-        'folder' => 'RPGConquestGame'
+        'folder' => 'RPGConquestGame',
+        'game_prefix' => ''  // e.g., 'rpg1_' or 'demo_'
     ];
 
     // Check if the file exists
@@ -41,6 +42,27 @@ function loadDBConfig($path, $configFile) {
         foreach ($config as $key => $value) {
             if (isset($fileConfig[$key])) {
                 $config[$key] = $fileConfig[$key];
+            }
+        }
+    }
+
+    // Validate config 
+    $notNullList = ['host', 'dbname', 'username', 'password', 'db_type', 'folder'];
+    foreach ( $notNullList as $key ) {
+        if ( !isset($config[$key]) ){
+            echo " Config key $key is not set !";
+            die();
+        }
+    }
+    foreach ( $config as $key => $value )
+    if ( $config['db_type'] == 'postgres'){
+        if (strpos( $config['game_prefix'], '.') !== false){
+            // split prefix to elements 
+            $prefixShards = explode('.', $config['game_prefix']);
+            // if there are more than 2 elemet Postgresql will fail 
+            if (count($prefixShards) > 2 ){
+                echo " Table prefix Must never contain more than one '.' !";
+                die();
             }
         }
     }
@@ -57,8 +79,9 @@ function getDBConnection ($path, $configFile) {
 
     $config = loadDBConfig($path, $configFile);
     $_SESSION['DBNAME'] = $config['dbname'];
-    $_SESSION['DBTYPE'] = $config['db_type'] ;
+    $_SESSION['DBTYPE'] = $config['db_type'];
     $_SESSION['FOLDER'] = $config['folder'];
+    $_SESSION['GAME_PREFIX'] = $config['game_prefix'];
 
     if ( $config['db_type'] == 'mysql' ) {
         // Attempt to connect to PostgreSQL database
@@ -107,15 +130,32 @@ function getDBConnection ($path, $configFile) {
  *
  */
 function tableExists($pdo, $tableName) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $prefixedTableName = $prefix . $tableName;
     try{
-        $stmt = $pdo->prepare("SELECT EXISTS (
-            SELECT 1
-            FROM information_schema.tables
-            WHERE table_name = :tableName
-        )");
-        $stmt->execute([':tableName' => $tableName]);
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $tableSchema = 'public';
+            if (strpos($prefix, '.') !== false){
+                $tableSchema = explode('.', $prefix)[0];
+            } else {
+                $tableName = $prefixedTableName;
+            }
+            $stmt = $pdo->prepare("SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_name = :tableName AND table_schema = :tableSchema
+            )");
+            $stmt->execute([':tableName' => $tableName, ':tableSchema' => $tableSchema]);
+        } else if ($_SESSION['DBTYPE'] == 'mysql'){
+            $stmt = $pdo->prepare("SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_name = :tableName
+            )");
+            $stmt->execute([':tableName' => $prefixedTableName]);
+        }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): $tableName failed: " . $e->getMessage()."<br />";
+        echo __FUNCTION__."(): $prefixedTableName failed: " . $e->getMessage()."<br />";
         return NULL;
     }
     return $stmt->fetchColumn();
@@ -129,12 +169,36 @@ function tableExists($pdo, $tableName) {
  * @return bool
  */
 function destroyAllTables($pdo) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+
     try {
         if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'";
-            // Get list of tables in the database
-            $stmt = $pdo->query($sql);
+
+            $tableSchema = 'public';
+            $prefix_sql = '';
+            if (strpos($prefix, '.') !== false){
+                // split prefix to elements 
+                $prefixShards = explode('.', $prefix);
+                $tableSchema = $prefixShards[0];
+                if (isset($prefixShards[1]))
+                    $prefix_sql = " AND table_name LIKE '{$prefixShards[1]}%'";
+
+            } else {
+                $prefix_sql = " AND table_name LIKE '{$prefix}%'";
+            }
+            $prefix = '';
+            $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = :tableSchema AND table_type = 'BASE TABLE' {$prefix_sql}";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':tableSchema' => $tableSchema]);
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            echo "tables: " . var_export($tables, true) . "<br />";
+
+            // Drop each table
+            foreach ($tables as $table) {
+                $pdo->exec("DROP TABLE IF EXISTS {$tableSchema}.{$prefix}{$table} CASCADE");
+                echo "Table {$tableSchema}.{$prefix}{$table} dropped successfully.<br \>";
+            }
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $tables = array(
@@ -164,15 +228,16 @@ function destroyAllTables($pdo) {
                 'mechanics',
                 'config'
             );
+
+            echo "tables: " . var_export($tables, true) . "<br />";
+
+            // Drop each table
+            foreach ($tables as $table) {
+                $pdo->exec("DROP TABLE IF EXISTS {$prefix}{$table} CASCADE");
+                echo "Table {$prefix}{$table} dropped successfully.<br \>";
+            }
         }
 
-        echo "tables: " . var_export($tables, true) . "<br />";
-
-        // Drop each table
-        foreach ($tables as $table) {
-            $pdo->exec("DROP TABLE IF EXISTS $table CASCADE");
-            echo "Table $table dropped successfully.<br \>";
-        }
 
         // Success message
         echo "All tables in database have been destroyed successfully.<br />";
@@ -231,6 +296,7 @@ function gameReady() {
                     echo 'Start <br />';
                     // Read SQL file
                     $sqlQueries = file_get_contents($sqlFile);
+                    $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                     // Execute SQL queries
                     $pdo->exec($sqlQueries);
                     echo "SQL file executed successfully.<br />";
@@ -246,6 +312,7 @@ function gameReady() {
                             echo 'Start <br />';
                             // Read SQL file
                             $sqlQueries = file_get_contents($sqlFile);
+                            $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";
@@ -258,12 +325,14 @@ function gameReady() {
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
+                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
+                        $prefix = $_SESSION['GAME_PREFIX'];
                         try{
                             // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM power_types WHERE name = 'Hobby'";
+                            $sql = "SELECT id FROM {$prefix}power_types WHERE name = 'Hobby'";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
                         } catch (PDOException $e) {
@@ -274,8 +343,8 @@ function gameReady() {
                         $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
                             // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM powers WHERE id NOT IN
-                                ( SELECT power_id FROM link_power_type )";
+                            $sql = "SELECT id FROM {$prefix}powers WHERE id NOT IN
+                                ( SELECT power_id FROM {$prefix}link_power_type )";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
                         } catch (PDOException $e) {
@@ -285,7 +354,7 @@ function gameReady() {
                         // Fetch the results
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             // Get all powers with no link_power_type
-                            $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
+                            $sql = "INSERT INTO {$prefix}link_power_type(power_id, power_type_id) VALUES ";
                             $firstIter = true;
                             foreach ($powers as $power){
                                 $sql .= sprintf(
@@ -312,12 +381,13 @@ function gameReady() {
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
+                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
                         try{
                             // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM power_types WHERE name = 'Metier'";
+                            $sql = "SELECT id FROM {$prefix}power_types WHERE name = 'Metier'";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
                         } catch (PDOException $e) {
@@ -328,8 +398,8 @@ function gameReady() {
                         $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
                         try{
                             // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM powers WHERE id NOT IN
-                                ( SELECT power_id FROM link_power_type )";
+                            $sql = "SELECT id FROM {$prefix}powers WHERE id NOT IN
+                                ( SELECT power_id FROM {$prefix}link_power_type )";
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute();
                         } catch (PDOException $e) {
@@ -339,7 +409,7 @@ function gameReady() {
                         // Fetch the results
                         $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             // Get all powers with no link_power_type
-                            $sql = "INSERT INTO link_power_type(power_id, power_type_id) VALUES ";
+                            $sql = "INSERT INTO {$prefix}link_power_type(power_id, power_type_id) VALUES ";
                             $firstIter = true;
                             foreach ($powers as $power){
                                 $sql .= sprintf(
@@ -365,6 +435,7 @@ function gameReady() {
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
+                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
@@ -383,6 +454,7 @@ function gameReady() {
                             echo 'Start <br />';
                             // Read SQL file
                             $sqlQueries = file_get_contents($sqlFile);
+                            $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";

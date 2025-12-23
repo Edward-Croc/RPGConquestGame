@@ -14,7 +14,7 @@
     -- ('', 2,0,-1), => Maitres Enqueteurs
     -- ('', -1,2,1), => Maitres Combattants
 
-INSERT INTO powers (name, description, enquete, attack, defence) VALUES
+INSERT INTO {prefix}powers (name, description, enquete, attack, defence) VALUES
     -- ('', 1,0,0), => Enqueteurs
     ('Kinjirō (金次郎) – Intendant financier', ', chargé de la gestion des richesses et récoltes du domaine', 1, 0, 0),
     ('Kashi (歌師) – Poète officiel', ', ou maître du chant, souvent présent pour les divertissements de cour', 1, 0, 0),
@@ -66,7 +66,7 @@ INSERT INTO powers (name, description, enquete, attack, defence) VALUES
     ('Ishitsukai (医使) – Médecin de cour', ', parfois moine ou alchimiste, pratiquant acupuncture et médecine spirituelle', 1, 1,-1)
 ;
 
-INSERT INTO powers ( name, description, enquete, attack, defence, other) VALUES
+INSERT INTO {prefix}powers ( name, description, enquete, attack, defence, other) VALUES
     ('Prêtre chrétien(司祭)', 'missionnaire et guide spirituel', 1,1,1,
         '{"on_recrutment": {"origin_list": "12", "action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Marin européen (南蛮水夫)', 'employé sur les vaisseaux noirs portugais ou français', 1,1,1,

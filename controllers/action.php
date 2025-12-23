@@ -6,6 +6,7 @@ $debug = strtolower($_SESSION['DEBUG']) === 'true';
 
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($debug) echo "_GET:".var_export($_GET, true)." <br /> <br />";
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // ID Getters
     $controller_id = NULL;
@@ -39,22 +40,25 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['repairLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         spendRessourcesToRepairLocation($gameReady, $controller_id);
-        $stmt = $gameReady->prepare("SELECT * FROM locations WHERE id = ?");
+        $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
         $stmt->execute([$target_location_id]);
         $location = $stmt->fetch(PDO::FETCH_ASSOC);
         $activate_json = json_decode($location['activate_json'], true);
         updateLocation($gameReady, $location, $activate_json);
         if ($debug) echo sprintf('end <br/>');
     }
+
+    // Get Turn Number
+    $mechanics = getMechanics($gameReady);
+
     if (isset($_GET['giftInformationAgent'])){
         //  Get Turn Number
-        $mechanics = getMechanics($gameReady);
         $controller_id = $_GET['controller_id'];
         $target_controller_id = $_GET['target_controller_id'];
         $enemy_worker_id = $_GET['enemy_worker_id'];
 
         // Get zone from controllers_known_enemies where controller_id = $controller_id and discovered_worker_id = $enemyWorkersSelect
-        $sql = "SELECT zone_id FROM controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+        $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([$controller_id, $enemy_worker_id]);
         $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
@@ -63,8 +67,6 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
     }
     if (isset($_GET['giftInformationLocation'])){
-        // Get Turn Number
-        $mechanics = getMechanics($gameReady);
         $target_controller_id = $_GET['target_controller_id'];
         $location_id = $_GET['location_id'];
         addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);

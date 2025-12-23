@@ -2,6 +2,8 @@
 require_once '../base/basePHP.php'; // Set up $pdo and session
 $pageName = 'admin_location_attacks';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 // Fetch attack logs with JOINs to get names
 $sql = "
     SELECT 
@@ -15,8 +17,8 @@ $sql = "
         bal.attacker_result_text,
         bal.created_at,
         CONCAT(c.firstname, ' ', c.lastname) AS attacker_name
-    FROM location_attack_logs bal
-    LEFT JOIN controllers c ON bal.attacker_id = c.id
+    FROM {$prefix}location_attack_logs bal
+    LEFT JOIN {$prefix}controllers c ON bal.attacker_id = c.id
     ORDER BY bal.created_at DESC
 ";
 $stmt = $gameReady->query($sql);
