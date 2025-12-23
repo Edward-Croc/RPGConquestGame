@@ -175,12 +175,13 @@ function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
  */
 function spendRessourcesToMoveBase($pdo, $controller_id) {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
+        $prefix = $_SESSION['GAME_PREFIX'];
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
             if ($controllerRessource['base_moving_cost'] > 0) {
                 $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
             }
-            $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
             if (!$stmt->rowCount()) {

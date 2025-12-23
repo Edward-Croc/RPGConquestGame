@@ -165,26 +165,25 @@
                     );
                 }
                 $htmlBase .= '</p>';
-            
-                // Incoming attacks this turn
-                $incomingStmt = $gameReady->prepare("
-                    SELECT * FROM {$prefix}location_attack_logs 
-                    WHERE target_controller_id = :controller_id 
-                    AND turn = :turn
-                    ORDER BY id DESC
-                ");
-                $incomingStmt->execute([
-                    'controller_id' => $_SESSION['controller']['id'],
-                    'turn' => $mechanics['turncounter']
-                ]);
-                $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
-                if (!empty($incomingAttacks)) {
-                    $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
-                    foreach ($incomingAttacks as $attack) {
-                        $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
-                    }
-                    $htmlBase .= "</ul></div>";
+            }
+            // Incoming attacks this turn
+            $incomingStmt = $gameReady->prepare("
+                SELECT * FROM {$prefix}location_attack_logs 
+                WHERE target_controller_id = :controller_id 
+                AND turn = :turn
+                ORDER BY id DESC
+            ");
+            $incomingStmt->execute([
+                'controller_id' => $_SESSION['controller']['id'],
+                'turn' => $mechanics['turncounter']
+            ]);
+            $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!empty($incomingAttacks)) {
+                $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
+                foreach ($incomingAttacks as $attack) {
+                    $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
                 }
+                $htmlBase .= "</ul></div>";
             }
             echo $htmlBase;
 

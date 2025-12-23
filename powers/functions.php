@@ -101,8 +101,8 @@ function randomPowersByType($pdo, $type, $newWorker) {
     try{
         // Get x random values from powers for a power_type
         $sql = sprintf("SELECT p.*, %s FROM {$prefix}powers AS p
-            INNER JOIN {$prefix}link_power_type ON link_power_type.power_id = p.id
-            WHERE link_power_type.power_type_id = %s ORDER BY %s LIMIT 1",
+            INNER JOIN {$prefix}link_power_type lpt ON lpt.power_id = p.id
+            WHERE lpt.power_type_id = %s ORDER BY %s LIMIT 1",
             $power_text,
             $type,
             $randCommand
@@ -149,9 +149,9 @@ function getPowersByType($pdo, $type_list, $controller_id = NULL, $add_base = tr
     $conditions = '';
     if ($controller_id != "" || $basePowerNames != "") {
         $conditions = sprintf("AND ( %s %s %s)",
-        $basePowerNames != "" ? "powers.name IN ($basePowerNames)" : '',
+        $basePowerNames != "" ? "sp.name IN ($basePowerNames)" : '',
         ($controller_id != "" && $basePowerNames != "") ? "OR" : '',
-        $controller_id != "" ? "controllers.id IN ($controller_id)" : '');
+        $controller_id != "" ? "sc.id IN ($controller_id)" : '');
     }
 
     $prefix = $_SESSION['GAME_PREFIX'];

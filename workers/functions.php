@@ -513,9 +513,9 @@ function randomWorkerName($pdo, $newWorker) {
         $randCommand = 'RAND()';
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    $sql = sprintf("SELECT * FROM {$prefix}worker_names
-        JOIN {$prefix}worker_origins ON worker_origins.id = worker_names.origin_id
-        WHERE origin_id = %d
+    $sql = sprintf("SELECT * FROM {$prefix}worker_names wn
+        JOIN {$prefix}worker_origins wo ON wo.id = wn.origin_id
+        WHERE wn.origin_id = %d
         ORDER BY %s
         LIMIT 2",
         $newWorker['origin_id'],

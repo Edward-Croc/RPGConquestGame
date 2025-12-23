@@ -596,6 +596,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
     // Get worker ids
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+    
     $sqlWorkerForZoneAndController = sprintf("SELECT w.id
         FROM {$prefix}workers w
         JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
@@ -603,12 +604,12 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         WHERE cw.controller_id = :controller_id
             AND w.zone_id = :zone_id
             AND wa.action_choice IN (%s)
-            AND cw.is_primary_controller = :is_primary_controller",
-        $active_actions
+            AND cw.is_primary_controller = %s",
+        $active_actions,
+        ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true'
     );
     $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
     $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-    $stmt->bindParam(':is_primary_controller', true, PDO::PARAM_BOOL);
     $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
     $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
     $stmt->execute();
@@ -635,7 +636,10 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
         // Get worker ids
         $stmt = $pdo->prepare($sqlWorkerForZoneAndController);
-        $stmt->execute([':controller_id' => $location[0]['controller_id'], ':zone_id' => $zone_id]);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $location[0]['controller_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->execute();
         $workerIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
         foreach ($workerIds as $workerId) {
             $report = sprintf(
