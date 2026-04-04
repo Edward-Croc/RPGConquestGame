@@ -249,6 +249,168 @@ function destroyAllTables($pdo) {
 }
 
 /**
+ * Load CSV file and insert data into database table
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $csvFile Path to CSV file
+ * @param string $tableName Target table name (without prefix)
+ * @param array $columns Array of column names in CSV order (can include lookup columns like 'origin_name->origin_id')
+ * @return bool Success status
+ */
+function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $prefixedTable = $prefix . $tableName;
+
+    if (!file_exists($csvFile)) {
+        echo "CSV file $csvFile not found.<br />";
+        return false;
+    }
+
+    try {
+        $handle = fopen($csvFile, 'r');
+        if ($handle === false) {
+            echo "Failed to open CSV file $csvFile.<br />";
+            return false;
+        }
+
+        // Read header row
+        $header = fgetcsv($handle);
+
+        // Process columns to handle lookups (e.g., 'origin_name->origin_id')
+        $dbColumns = [];
+        $lookupMaps = [];
+        foreach ($columns as $col) {
+            if (strpos($col, '->') !== false) {
+                list($originCol, $targetCol) = explode('->', $col);
+                $dbColumns[] = $targetCol;
+                list($table, $column) = explode('__', $originCol);
+                $lookupMaps[$targetCol] = ['table' => $table, 'column' => $column];
+            } else {
+                $dbColumns[] = $col;
+            }
+        }
+
+        // Build lookup caches for foreign keys
+        $lookupCaches = [];
+        foreach ($lookupMaps as $targetCol => $lookupInfo) {
+            $lookupTable = $prefix . $lookupInfo['table'];
+            $lookupNameCol =  $lookupInfo['column'];
+            try {
+                $stmt = $pdo->query("SELECT id, {$lookupNameCol} FROM {$lookupTable}");
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($results as $row) {
+                    $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
+                }
+            } catch (PDOException $e) {
+                echo "Warning: Could not build lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
+            }
+        }
+        
+        // Prepare insert statement
+        $placeholders = implode(',', array_fill(0, count($dbColumns), '?'));
+        $columnList = implode(',', array_map(function($col){
+            return $col;
+        }, $dbColumns));
+        $sql = "INSERT INTO {$prefixedTable} ({$columnList}) VALUES ({$placeholders})";
+        $stmt = $pdo->prepare($sql);
+        
+        $rowCount = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) !== count($header)) {
+                echo "Warning: Row " . ($rowCount + 1) . " " . var_export($row, true) . " has " . count($row) . " columns, expected " . count($header) . " in $csvFile.<br />";
+                continue;
+            }
+            
+            // Map CSV columns to values
+            $rowData = array_combine($header, $row);
+            
+            // Build values array in column order
+            $values = [];
+            foreach ($columns as $col) {
+                if (strpos($col, '->') !== false) {
+                    list($csvCol, $dbCol) = explode('->', $col);
+                    $lookupValue = $rowData[$col] ?? '';
+                    if (isset($lookupCaches[$dbCol][$lookupValue])) {
+                        $values[] = $lookupCaches[$dbCol][$lookupValue];
+                    } else {
+                        echo "Warning: Lookup value '{$lookupValue}' not found for {$col} in row " . ($rowCount + 1) . ".<br />";
+                        echo "from: " . var_export($rowData, true) . "<br />";
+                        $values[] = null;
+                    }
+                } else {
+                    $value = $rowData[$col] ?? '';
+                    // Convert empty strings to NULL for numeric fields
+                    $values[] = ($value === '' || $value === null) ? null : $value;
+                }
+            }
+            
+            $stmt->execute($values);
+            $rowCount++;
+        }
+        
+        fclose($handle);
+        echo "CSV file $csvFile loaded successfully ($rowCount rows).<br />";
+        return true;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error loading CSV $csvFile: " . $e->getMessage()."<br />";
+        return false;
+    }
+}
+
+/**
+ * Execute SQL UPDATE statements from CSV
+ * CSV format: table_name,column_name,where_column,where_value,new_value
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $csvFile Path to CSV file
+ * @return bool Success status
+ */
+function loadCSVUpdates($pdo, $csvFile) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    
+    if (!file_exists($csvFile)) {
+        echo "CSV file $csvFile not found.<br />";
+        return false;
+    }
+    
+    try {
+        $handle = fopen($csvFile, 'r');
+        if ($handle === false) {
+            echo "Failed to open CSV file $csvFile.<br />";
+            return false;
+        }
+        
+        // Skip header row
+        $header = fgetcsv($handle);
+        
+        $updateCount = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 5) {
+                continue;
+            }
+            
+            $tableName = $prefix . trim($row[0]);
+            $columnName = $prefix . trim($row[1]);
+            $whereColumn = $prefix . trim($row[2]);
+            $whereValue = trim($row[3]);
+            $newValue = trim($row[4]);
+            
+            $sql = "UPDATE {$tableName} SET {$columnName} = ? WHERE {$whereColumn} = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$newValue, $whereValue]);
+            $updateCount++;
+        }
+        
+        fclose($handle);
+        echo "CSV updates from $csvFile executed successfully ($updateCount updates).<br />";
+        return true;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error loading CSV updates $csvFile: " . $e->getMessage()."<br />";
+        return false;
+    }
+}
+
+/**
  * Check that the game is ready:
  *  - databse is accessible
  *  - tables are loaded
@@ -304,11 +466,41 @@ function gameReady() {
                 echo 'END <br />';
 
                 if ( isset($_POST['config_name']) ) {
-                    $fileNames = ['base', 'zones', 'textes', 'worker_names'];
-                    foreach ( $fileNames as $fileName ) {
-                        $sqlFile =  sprintf('%s/var/%s/setup%s_%s.sql',  $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
-                        echo "Loading $sqlFile ...<br />";
-                        if (file_exists($sqlFile)) {
+                    $fileNames = [
+                        'base' => '',
+                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
+                        'textes' => ['name', 'value', 'description'],
+                        'worker_origins' => ['name'],
+                        'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
+                    ];
+                    foreach ( $fileNames as $fileName => $columns ) {
+                        // Check for CSV file first
+                        $csvFile = sprintf('%s/var/csv/setup%s_%s.csv', $path, $_POST['config_name'], $fileName);
+                        $sqlFile = sprintf('%s/var/%s/setup%s_%s.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
+
+                        if (file_exists($csvFile)) {
+                            echo "Loading CSV file $csvFile ...<br />";
+                            echo 'Start <br />';
+                            
+                            // Handle specific file types
+                            if (in_array($fileName, ['worker_origins', 'worker_names', 'textes'])) {
+                                loadCSVFile($pdo, $csvFile, $fileName, $columns);
+                            } elseif ($fileName === 'config') {
+                                loadCSVUpdates($pdo, $csvFile);
+                            } else {
+                                // For base and zones, they contain complex SQL with subqueries
+                                // CSV support for these would require more complex handling
+                                echo "CSV file $csvFile found, but complex SQL operations required. Using SQL fallback.<br />";
+                                if (file_exists($sqlFile)) {
+                                    $sqlQueries = file_get_contents($sqlFile);
+                                    $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
+                                    $pdo->exec($sqlQueries);
+                                    echo "SQL file $sqlFile executed successfully.<br />";
+                                }
+                            }
+                        } else if (file_exists($sqlFile)) {
+                            // Load SQL file if CSV doesn't exist
+                            echo "Loading $sqlFile ...<br />";
                             echo 'Start <br />';
                             // Read SQL file
                             $sqlQueries = file_get_contents($sqlFile);
@@ -316,12 +508,23 @@ function gameReady() {
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";
-                        } else echo "SQL file $sqlFile UNFOUND.<br />";
+                        } else {
+                            echo "Neither CSV nor SQL file found for $fileName.<br />";
+                        }
                     }
 
-                    $sqlFile =  sprintf('%s/var/%s/setup%s_hobbys.sql',$path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    echo "Loading $sqlFile ...<br />";
-                    if (file_exists($sqlFile)) {
+                    // Check for CSV file first
+                    $csvFile = sprintf('%s/var/csv/setup%s_hobbys.csv', $path, $_POST['config_name']);
+                    $sqlFile = sprintf('%s/var/%s/setup%s_hobbys.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
+                    
+                    if (file_exists($csvFile)) {
+                        echo "Loading CSV file $csvFile ...<br />";
+                        echo 'Start <br />';
+                        // Load powers from CSV
+                        loadCSVFile($pdo, $csvFile, 'powers', ['name', 'description', 'enquete', 'attack', 'defence', 'other']);
+                        echo "CSV file $csvFile loaded successfully.<br />";
+                    } else if (file_exists($sqlFile)) {
+                        echo "Loading $sqlFile ...<br />";
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
@@ -329,6 +532,11 @@ function gameReady() {
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
+                    } else {
+                        echo "Neither CSV nor SQL file found for hobbys.<br />";
+                    }
+                    
+                    if (file_exists($csvFile) || file_exists($sqlFile)) {
                         $prefix = $_SESSION['GAME_PREFIX'];
                         try{
                             // Get all powers with no link_power_type
@@ -375,9 +583,18 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
+                    // Check for CSV file first
+                    $csvFile = sprintf('%s/var/csv/setup%s_jobs.csv', $path, $_POST['config_name']);
                     $sqlFile = sprintf('%s/var/%s/setup%s_jobs.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    echo "Loading $sqlFile ...<br />";
-                    if (file_exists($sqlFile)) {
+                    
+                    if (file_exists($csvFile)) {
+                        echo "Loading CSV file $csvFile ...<br />";
+                        echo 'Start <br />';
+                        // Load powers from CSV
+                        loadCSVFile($pdo, $csvFile, 'powers', ['name', 'description', 'enquete', 'attack', 'defence', 'other']);
+                        echo "CSV file $csvFile loaded successfully.<br />";
+                    } else if (file_exists($sqlFile)) {
+                        echo "Loading $sqlFile ...<br />";
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
@@ -385,6 +602,11 @@ function gameReady() {
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
+                    } else {
+                        echo "Neither CSV nor SQL file found for jobs.<br />";
+                    }
+                    
+                    if (file_exists($csvFile) || file_exists($sqlFile)) {
                         try{
                             // Get all powers with no link_power_type
                             $sql = "SELECT id FROM {$prefix}power_types WHERE name = 'Metier'";
@@ -430,8 +652,27 @@ function gameReady() {
                         echo "SQL INSERT link_power_type executed successfully.<br />";
                     } else echo "SQL file $sqlFile UNFOUND.<br />";
 
+                    // Check for CSV file first
+                    $csvFile = sprintf('%s/var/csv/setup%s_advanced.csv', $path, $_POST['config_name']);
                     $sqlFile = sprintf('%s/var/%s/setup%s_advanced.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    if (file_exists($sqlFile)) {
+                    
+                    if (file_exists($csvFile)) {
+                        echo "Loading CSV file $csvFile ...<br />";
+                        echo 'Start <br />';
+                        loadCSVFile(
+                            $pdo,
+                            $csvFile,
+                            'advanced',
+                            [
+                                'firstname',
+                                'lastname',
+                                'worker_origins__name->origin_id',
+                                'zones__name->zone_id',
+                                'controllers__lastname->controller_worker__id&new__id',
+                                'controllers__lastname->holder_controller_id'
+                            ]
+                        );
+                    } else if (file_exists($sqlFile)) {
                         echo 'Start <br />';
                         // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
@@ -439,7 +680,9 @@ function gameReady() {
                         // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
-                    } else echo "SQL file $sqlFile UNFOUND.<br />";
+                    } else if (!file_exists($csvFile) && !file_exists($sqlFile)) {
+                        echo "Neither CSV nor SQL file found for advanced.<br />";
+                    }
 
                     if (
                         (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
@@ -448,9 +691,19 @@ function gameReady() {
                         || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
                         || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
                     ) {
+                        // Check for CSV file first
+                        $csvFile = sprintf('%s/var/csv/setup%s_advanced_tests.csv', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
                         $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                        echo "Loading $sqlFile ...<br />";
-                        if (file_exists($sqlFile)) {
+                        
+                        if (file_exists($csvFile)) {
+                            echo "Loading CSV file $csvFile ...<br />";
+                            echo 'Start <br />';
+                            // Advanced tests CSV files may contain multiple tables, handle as needed
+                            echo "CSV file $csvFile found, but specific loader not yet implemented for advanced_tests. Using SQL fallback.<br />";
+                        }
+                        
+                        if (!file_exists($csvFile) && file_exists($sqlFile)) {
+                            echo "Loading $sqlFile ...<br />";
                             echo 'Start <br />';
                             // Read SQL file
                             $sqlQueries = file_get_contents($sqlFile);
@@ -458,7 +711,9 @@ function gameReady() {
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";
-                        } else echo "SQL file $sqlFile UNFOUND.<br />";
+                        } else if (!file_exists($csvFile) && !file_exists($sqlFile)) {
+                            echo "Neither CSV nor SQL file found for advanced_tests.<br />";
+                        }
                     }
                 }
 

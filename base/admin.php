@@ -54,8 +54,9 @@ require_once '../base/baseHTML.php';
             <?php echo sprintf('<form action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
                 <h2> FULL Reset :
                     <select id="configSelect" name="config_name">
-                        <option  value='Vampire1966'> Firenze Vampire 1966 </option>
+                        <option  value='TestConfig'> Configuration de test </option>
                         <option  value='Japon1555'> Shikoku (四国) Succession 1555 </option>
+                        <option  value='Vampire1966'> Firenze Vampire 1966 </option>
                     </select>
                     <input type="hidden" name="resetBDD" />
                     <input type="submit" name="submit" value="Submit" />

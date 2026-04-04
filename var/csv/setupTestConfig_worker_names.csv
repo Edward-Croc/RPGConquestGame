@@ -1,0 +1,9 @@
+firstname,lastname,worker_origins__name->origin_id
+one,one,origine Accessible
+two,two,origine Accessible
+three,three,origine Accessible
+four,four,origine Accessible
+un,un,origine Limitée
+deux,deux,origine Limitée
+trois,trois,origine Limitée
+test,test,origine Commune

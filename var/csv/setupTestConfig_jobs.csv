@@ -1,0 +1,8 @@
+name,description,enquete,attack,defence,other
+"Investigator Job",", test Investigator Job",1,0,0,
+"Investigator2 Job",", test Investigator Job 2 ",1,0,0,
+"Master Investigator Job"," test Master Investigator Job",2,0,-1,
+"Warrior Job",", test Warrior Job",0,1,1,
+"Warrior 2 Job",", test Warrior phase 2 Job ",0,1,1,
+"Tank Warrior Job",",  test tank warrior Job",-1,2,1,
+"Glasse canon Job",", test Job Job",1,1,-1

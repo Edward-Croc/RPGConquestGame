@@ -35,3 +35,12 @@ Preparing a game :
    - Updates for players usage and quality will be added.
 
 A demo is built here : https://voix-eidolon.fr/RPGConquestGameDemo/base/systemPresentation.php
+
+Testing :
+ - A Docker Compose setup provides a local MySQL 8.0 test environment.
+ - Start the test environment: docker compose up -d
+ - Tests use pytest (unit tests) and Playwright (browser E2E tests).
+ - Run all tests: python3 -m pytest tests/ -v
+ - Run unit tests only: python3 -m pytest tests/test_csv_load.py -v
+ - Run E2E tests only: python3 -m pytest tests/test_admin_csv_load_e2e.py -v
+ - Stop the test environment: docker compose down

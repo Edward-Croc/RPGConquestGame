@@ -1,0 +1,9 @@
+name,description,enquete,attack,defence,other
+"Investigator Hobby",", test Investigator hobby",1,0,0,
+"Investigator2 Hobby",", test Investigator hobby 2 ",1,0,0,
+"Master Investigator Hobby"," test Master Investigator",2,0,-1,
+"Warrior Hobby",", test Warrior",0,1,1,
+"Warrior 2 Hobby",", test Warrior phase 2 ",0,1,1,
+"Tank Warrior Hobby",",  test tank warrior",-1,2,1,
+"Glasse canon Hobby",", test hobby",1,1,-1
+

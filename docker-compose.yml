@@ -1,0 +1,35 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rpg_mysql_test
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rpgconquestgame_test
+      MYSQL_USER: rpg_test
+      MYSQL_PASSWORD: rpg_test
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./var/mysql:/var/sql:ro
+      - ./tests/docker/init_mysql.sh:/docker-entrypoint-initdb.d/01_init.sh:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  php:
+    image: php:8.0-apache
+    container_name: rpg_php_test
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/RPGConquestGame
+    working_dir: /var/www/html/RPGConquestGame
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    command: >
+      bash -c "docker-php-ext-install pdo pdo_mysql mysqli && apache2-foreground"
