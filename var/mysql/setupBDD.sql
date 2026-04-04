@@ -379,7 +379,7 @@ CREATE TABLE {prefix}worker_powers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (worker_id, link_power_type_id), -- Adding unique constraint
     FOREIGN KEY (worker_id) REFERENCES {prefix}workers (id),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
+    FOREIGN KEY (link_power_type_id) REFERENCES {prefix}link_power_type (id)
 );
 -- Create indexes on the worker_powers table
 CREATE INDEX idx_worker_powers_worker_id ON {prefix}worker_powers (worker_id);
@@ -391,7 +391,7 @@ CREATE TABLE {prefix}faction_powers (
     link_power_type_id INT NOT NULL,
     UNIQUE (faction_id, link_power_type_id), -- Adding unique constraint
     FOREIGN KEY (faction_id) REFERENCES {prefix}factions (id),
-    FOREIGN KEY (link_power_type_id) REFERENCES link_power_type (id)
+    FOREIGN KEY (link_power_type_id) REFERENCES {prefix}link_power_type (id)
 );
 -- Create indexes on the faction_powers table
 CREATE INDEX idx_faction_powers_faction_id ON {prefix}faction_powers (faction_id);
