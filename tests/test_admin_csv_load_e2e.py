@@ -117,7 +117,13 @@ class TestLoginFlow:
         expect(page.locator("input[type='password']")).to_be_visible()
 
     def test_login_as_gm(self, logged_in_page: Page, base_url):
-        """After login, session should be authenticated (can access admin)."""
+        """After login, the redirect to accueil.php should fire and the session is authenticated."""
+        # Regression: loginForm.php used to echo debug text before header(),
+        # breaking the Location redirect when DEBUG was enabled.
+        assert "loginForm.php" not in logged_in_page.url, \
+            f"Login redirect failed — still on loginForm.php: {logged_in_page.url}"
+        assert "accueil.php" in logged_in_page.url, \
+            f"Expected redirect to accueil.php, got: {logged_in_page.url}"
         logged_in_page.goto(f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()

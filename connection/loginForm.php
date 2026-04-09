@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Buffer output so header() redirects work even when DEBUG echoes are emitted
 if ( !isset($_SESSION['DEBUG']) ){
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
