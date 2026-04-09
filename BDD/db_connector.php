@@ -390,8 +390,8 @@ function loadCSVUpdates($pdo, $csvFile) {
             }
             
             $tableName = $prefix . trim($row[0]);
-            $columnName = $prefix . trim($row[1]);
-            $whereColumn = $prefix . trim($row[2]);
+            $columnName = trim($row[1]);
+            $whereColumn = trim($row[2]);
             $whereValue = trim($row[3]);
             $newValue = trim($row[4]);
             
@@ -483,7 +483,7 @@ function gameReady() {
                             echo 'Start <br />';
                             
                             // Handle specific file types
-                            if (in_array($fileName, ['worker_origins', 'worker_names', 'textes'])) {
+                            if (in_array($fileName, ['worker_origins', 'worker_names', 'textes', 'zones'])) {
                                 loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } elseif ($fileName === 'config') {
                                 loadCSVUpdates($pdo, $csvFile);

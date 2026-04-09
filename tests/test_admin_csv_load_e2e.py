@@ -173,6 +173,8 @@ class TestCSVLoadViaAdmin:
             "TestConfig should load at least 3 worker origins"
         assert table_row_count("worker_names") >= 8, \
             "TestConfig should load at least 8 worker names"
+        assert table_row_count("zones") >= 6, \
+            "TestConfig should load zones via CSV (6 rows in setupTestConfig_zones.csv)"
         assert table_row_count("powers") >= 6, \
             "TestConfig should load hobbys into powers"
 
