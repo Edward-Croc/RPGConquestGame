@@ -25,7 +25,7 @@ from playwright.sync_api import Page
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL,
+    PHP_BASE_URL, ensure_gm_login,
 )
 
 DB_AVAILABLE = False
@@ -86,16 +86,6 @@ def get_controller_id(controller_lastname):
     conn.close()
     return row['id'] if row else None
 
-
-def ensure_gm_login(page: Page, base_url: str):
-    """Login as gm if not already logged in. Skip login if session is active."""
-    page.goto(f"{base_url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
-    if "loginForm.php" in page.url:
-        page.locator("input[name='username']").fill("gm")
-        page.locator("input[name='passwd']").fill("orga")
-        page.locator("input[type='submit']").first.click()
-        page.wait_for_load_state("networkidle")
 
 
 # ---------------------------------------------------------------------------

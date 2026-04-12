@@ -20,6 +20,19 @@ SQL_DIR = os.path.join(PROJECT_ROOT, "var", "mysql")
 PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquestGame")
 
 
+def ensure_gm_login(page, base_url=None):
+    """Login as gm if not already logged in. Skip login if session is active."""
+    from playwright.sync_api import Page
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/base/accueil.php")
+    page.wait_for_load_state("networkidle")
+    if "loginForm.php" in page.url:
+        page.locator("input[name='username']").fill("gm")
+        page.locator("input[name='passwd']").fill("orga")
+        page.locator("input[type='submit']").first.click()
+        page.wait_for_load_state("networkidle")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def ensure_db_usable_after_tests():
     """Ensure gm/orga and mechanics exist after all tests complete."""
