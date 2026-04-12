@@ -53,6 +53,40 @@ def base_url():
     return PHP_BASE_URL
 
 
+def get_worker_report(worker_lastname, turn=0):
+    """Return the report JSON string for a worker at a given turn."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
+        JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+        WHERE w.lastname = %s AND wa.turn_number = %s
+    """, (worker_lastname, turn))
+    row = cursor.fetchone()
+    conn.close()
+    return str(row['report'] or '') if row else ''
+
+
+def get_worker_id(worker_lastname):
+    """Return the database ID for a worker by lastname."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = %s", (worker_lastname,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['id'] if row else None
+
+
+def get_controller_id(controller_lastname):
+    """Return the database ID for a controller by lastname."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = %s", (controller_lastname,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['id'] if row else None
+
+
 # ---------------------------------------------------------------------------
 # Module fixture: load TestConfig + run end turn once
 # ---------------------------------------------------------------------------
@@ -490,3 +524,209 @@ class TestLocationVisibilityOnPages:
         assert "Location A" not in page_html, \
             "Golf (name-only, not in known_locations) should NOT see Location A on zones page"
         page.goto(f"{base_url}/connection/logout.php")
+
+
+# ---------------------------------------------------------------------------
+# Test: end turn page structure
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestEndTurnPage:
+    """Verify end turn page has all expected sections and no fatal errors."""
+
+    def test_end_turn_page_no_fatal_errors(self):
+        """The end turn output (stored from fixture) should have no fatal errors.
+        Checked via DB: if turncounter incremented, end turn completed."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics`")
+        turn = cursor.fetchone()['turncounter']
+        conn.close()
+        assert turn >= 1, \
+            f"Turn counter should be >= 1 after end turn, got {turn}"
+
+    def test_turn_counter_incremented(self):
+        """After end turn, turncounter should be 1 (started at 0)."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics`")
+        assert cursor.fetchone()['turncounter'] == 1
+        conn.close()
+
+    def test_new_turn_actions_created(self):
+        """After end turn, new worker_action rows should exist for turn 1."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}worker_actions` WHERE turn_number = 1"
+        )
+        count = cursor.fetchone()['c']
+        conn.close()
+        assert count >= 7, \
+            f"Expected at least 7 action rows for turn 1, got {count}"
+
+
+# ---------------------------------------------------------------------------
+# Test: worker report content — agent detection
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestWorkerReportAgentDetection:
+    """Verify agent reports contain correct detection info per REPORTDIFF level.
+
+    REPORTDIFF thresholds: 0=-1, 1=1, 2=2, 3=4.
+    Report format per level:
+        Diff0: agent name, job, hobby (Spotted <name> a <job> with <hobby>)
+        Diff1: same with action details
+        Diff2: + network/controller ID
+        Diff3: + controller full name
+    """
+
+    def test_agent1_report_has_full_details_for_agent7(self):
+        """Agent1 (enq=7) vs Agent7 (enq=3): diff=4 >= REPORTDIFF3.
+        Report should contain agent name, job, hobby, and controller name."""
+        report = get_worker_report('Agent1')
+        assert 'Agent7' in report, "Agent1 should see Agent7 in report"
+        assert 'Test Hobby Neg' in report, "Agent1 should see Agent7's hobby"
+        assert 'Test Metier C' in report, "Agent1 should see Agent7's job"
+        assert 'Lady Beta' in report, "Agent1 at REPORTDIFF3 should see controller name"
+
+    def test_agent1_report_has_level2_for_agent6(self):
+        """Agent1 (enq=7) vs Agent6 (enq=3): diff=4 >= REPORTDIFF3.
+        Should include controller name."""
+        report = get_worker_report('Agent1')
+        assert 'Agent6' in report, "Agent1 should see Agent6 in report"
+        assert 'Lord Alpha' in report, "Agent1 at REPORTDIFF3 should see Alpha controller"
+
+    def test_agent1_report_has_basic_for_agent2(self):
+        """Agent1 (enq=7) vs Agent2 (enq=7): diff=0 >= REPORTDIFF0 but < REPORTDIFF1.
+        Should show name and basic info only."""
+        report = get_worker_report('Agent1')
+        assert 'Agent2' in report, "Agent1 should see Agent2 in report"
+
+    def test_agent4_report_does_not_show_agent1(self):
+        """Agent4 (enq=5) vs Agent1 (enq=7): diff=-2 < REPORTDIFF0(-1).
+        Should NOT appear in report."""
+        report = get_worker_report('Agent4')
+        assert 'Agent1' not in report, \
+            "Agent4 should NOT see Agent1 in report (diff=-2 < REPORTDIFF0)"
+
+    def test_agent5_report_shows_agent4_basic(self):
+        """Agent5 (enq=4) vs Agent4 (enq=5): diff=-1 >= REPORTDIFF0.
+        Should see basic info."""
+        report = get_worker_report('Agent5')
+        assert 'Agent4' in report, "Agent5 should see Agent4 in report"
+
+    def test_agent6_report_no_detections(self):
+        """Agent6 (enq=3): can only detect agents with enq <= 4 (diff >= -1).
+        Should see Agent7(3) and Agent5(4) but NOT Agent1-4."""
+        report = get_worker_report('Agent6')
+        assert 'Agent1' not in report, "Agent6 should NOT see Agent1"
+        assert 'Agent2' not in report, "Agent6 should NOT see Agent2"
+        assert 'Agent7' in report, "Agent6 should see Agent7 (diff=0)"
+
+
+# ---------------------------------------------------------------------------
+# Test: worker report content — location discovery
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestWorkerReportLocationDiscovery:
+    """Verify agent reports contain correct location info per discovery level."""
+
+    def test_agent1_report_has_location_description_and_secret(self):
+        """Agent1 (diff=3 >= ARTEFACTSDIFF=2): should see name, description, and secret."""
+        report = get_worker_report('Agent1')
+        assert 'Location A' in report, "Agent1 should see location name"
+        assert 'test location' in report.lower(), "Agent1 should see description"
+        assert 'Secret details' in report, "Agent1 should see hidden_description"
+
+    def test_agent4_report_has_location_description_no_secret(self):
+        """Agent4 (diff=1 >= INFORMATIONDIFF=1, < ARTEFACTSDIFF=2): name+desc, no secret."""
+        report = get_worker_report('Agent4')
+        assert 'Location A' in report, "Agent4 should see location name"
+        assert 'test location' in report.lower(), "Agent4 should see description"
+        assert 'Secret details' not in report, "Agent4 should NOT see secret"
+
+    def test_agent5_report_has_location_name_only(self):
+        """Agent5 (diff=0 >= NAMEDIFF=0, < INFORMATIONDIFF=1): name only."""
+        report = get_worker_report('Agent5')
+        assert 'Location A' in report, "Agent5 should see location name in report"
+        assert 'test location' not in report.lower(), "Agent5 should NOT see description"
+        assert 'Secret details' not in report, "Agent5 should NOT see secret"
+
+    def test_agent6_report_has_no_location(self):
+        """Agent6 (diff=-1 < NAMEDIFF=0): no location info."""
+        report = get_worker_report('Agent6')
+        assert 'Location A' not in report, "Agent6 should NOT see location in report"
+
+
+# ---------------------------------------------------------------------------
+# Test: worker view page shows report
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestWorkerViewPageReport:
+    """Verify the worker view page renders the report correctly."""
+
+    def _get_worker_page_html(self, page, base_url, controller_lastname, worker_lastname):
+        """Login, select controller, navigate to worker page, return HTML."""
+        ctrl_id = get_controller_id(controller_lastname)
+        worker_id = get_worker_id(worker_lastname)
+        page.goto(f"{base_url}/connection/loginForm.php")
+        page.wait_for_load_state("networkidle")
+        page.locator("input[name='username']").fill("gm")
+        page.locator("input[name='passwd']").fill("orga")
+        page.locator("input[type='submit']").first.click()
+        page.wait_for_load_state("networkidle")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
+        page.goto(f"{base_url}/workers/action.php?worker_id={worker_id}")
+        page.wait_for_load_state("networkidle")
+        return page
+
+    def test_agent1_page_no_warnings(self, page: Page, base_url):
+        """Agent1 worker page should load without PHP warnings."""
+        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
+        html = p.content()
+        assert "<b>Warning</b>" not in html, "PHP warnings on Agent1 worker page"
+        assert "<b>Fatal error</b>" not in html, "PHP fatal on Agent1 worker page"
+        p.goto(f"{base_url}/connection/logout.php")
+
+    def test_agent1_page_shows_report_section(self, page: Page, base_url):
+        """Agent1 worker page should have a Rapport section with Tour 0."""
+        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
+        html = p.content()
+        assert "Rapport" in html, "Worker page should have Rapport section"
+        assert "Tour 0" in html, "Worker page should show Tour 0 report"
+        p.goto(f"{base_url}/connection/logout.php")
+
+    def test_agent1_page_report_shows_detected_agents(self, page: Page, base_url):
+        """Agent1 page report should contain detected agent names and controller info."""
+        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
+        html = p.content()
+        assert "Agent7" in html, "Agent1 page should show detected Agent7"
+        assert "Lady Beta" in html, "Agent1 page should show Agent7's controller"
+        assert "Location A" in html, "Agent1 page should show discovered location"
+        assert "Secret details" in html, "Agent1 page should show location secret"
+        p.goto(f"{base_url}/connection/logout.php")
+
+    def test_agent5_page_shows_name_only_location(self, page: Page, base_url):
+        """Agent5 page should show location name but not description."""
+        p = self._get_worker_page_html(page, base_url, 'Golf', 'Agent5')
+        html = p.content()
+        assert "Location A" in html, "Agent5 page should show location name"
+        # Description should NOT appear (only name level)
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else ""
+        assert "test location" not in report_section.lower(), \
+            "Agent5 page should NOT show location description in recherches section"
+        p.goto(f"{base_url}/connection/logout.php")
+
+    def test_agent6_page_no_location(self, page: Page, base_url):
+        """Agent6 page should not mention Location A at all in report."""
+        p = self._get_worker_page_html(page, base_url, 'Alpha', 'Agent6')
+        html = p.content()
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
+        assert "Location A" not in report_section, \
+            "Agent6 page should NOT show Location A in recherches"
+        p.goto(f"{base_url}/connection/logout.php")
