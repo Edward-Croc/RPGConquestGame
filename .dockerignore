@@ -1,0 +1,10 @@
+.git
+.claude
+.vscode
+__pycache__
+.pytest_cache
+*.ini
+node_modules
+tests
+docker-compose.yml
+docker-compose.override.yml

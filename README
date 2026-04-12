@@ -16,10 +16,36 @@ Code :
  - Database maintenance is done for postgresql and mysql.
  - Front is simple HTML and Javascript.
 
-Installation : 
+Installation (Docker — recommended):
+ - Prerequisites: Docker and Docker Compose.
+   Windows users: install Docker Desktop and enable the WSL2 backend.
+ - Clone the repository:
+     git clone git@github.com:Edward-Croc/RPGConquestGame.git
+ - Start the application:
+     cd RPGConquestGame
+     docker compose up -d
+ - First start builds the PHP image and initializes the database (may take 1-2 minutes).
+ - The application is available at: http://localhost:8080/RPGConquestGame/
+ - MySQL is accessible at localhost:3307 (user: rpg_user / rpg_pass, database: rpgconquestgame).
+ - The base game is set up with a user: gm; pwd: orga.
+ - Stop the application:
+     docker compose down
+ - To reset the database (destroy data volume):
+     docker compose down -v
+
+ Environment variable overrides (in docker-compose.yml under php > environment):
+   DB_HOST       — database hostname (default: mysql)
+   DB_NAME       — database name (default: rpgconquestgame)
+   DB_USER       — database user (default: rpg_user)
+   DB_PASS       — database password (default: rpg_pass)
+   DB_TYPE       — mysql or postgres (default: mysql)
+   GAME_PREFIX   — table prefix for multi-game setups (default: empty)
+   FOLDER        — URL folder name (default: RPGConquestGame)
+
+Installation (manual):
  - Create a folder called RPGConquestGame and pull the sources to it.
  - Create a config.ini file in the VAR folder and add the parent folder name to it.
- - Setup a database, and add the conneciton info to the ./var/config.ini file and execute the ./var/setupBDD.sql file
+ - Setup a database, and add the connection info to the ./var/config.ini file and execute the ./var/setupBDD.sql file.
  - The base game is set up with a user: gm; pwd: orga.
 
 Preparing a game :

@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rpg_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: rpgconquestgame
+      MYSQL_USER: rpg_user
+      MYSQL_PASSWORD: rpg_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - rpg_mysql_data:/var/lib/mysql
+      - ./docker/init_mysql.sh:/docker-entrypoint-initdb.d/init_mysql.sh
+      - ./var/mysql/setupBDD.sql:/tmp/setupBDD.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  php:
+    build: .
+    container_name: rpg_php
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/RPGConquestGame
+    environment:
+      DB_HOST: mysql
+      DB_NAME: rpgconquestgame
+      DB_USER: rpg_user
+      DB_PASS: rpg_pass
+      DB_TYPE: mysql
+      FOLDER: RPGConquestGame
+      GAME_PREFIX: ""
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  rpg_mysql_data:
