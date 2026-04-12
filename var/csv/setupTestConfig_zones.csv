@@ -1,7 +1,7 @@
 name,description,hide_turn_zero,controllers__lastname->claimer_controller_id,controllers__lastname->holder_controller_id
 ZoneA,"servant de test aux enquetes",0,,
-ZoneB,"servant de test aux attaques",0,,
-ZoneC,"Controler par A et Revendiquée par A",0,,
+ZoneB,"servant de test aux attaques",0,Alpha,Alpha
+ZoneC,"Controler par A et Revendiquée par A",0,Beta,
 ZoneD,"Controler par B avec revendication par A",0,,
 ZoneE,"Controler par B Sans revendication",0,,
 ZoneF,"Illogique : Revendiquer Par A sans Controle",0,,

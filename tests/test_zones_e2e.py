@@ -96,20 +96,8 @@ def load_test_config_with_controllers(browser):
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # CSVs now load factions, controllers, players, and player_controller.
-    # Only zone claims need SQL seeding (not in any CSV).
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # ZoneB: claimed AND held by Alpha (triggers both banner + "our control" tag)
-    cursor.execute(
-        f"UPDATE `{GAME_PREFIX}zones` SET claimer_controller_id = 1, holder_controller_id = 1 WHERE name = 'ZoneB'"
-    )
-    cursor.execute(
-        f"UPDATE `{GAME_PREFIX}zones` SET claimer_controller_id = 2 WHERE name = 'ZoneC'"
-    )
-    conn.commit()
-    conn.close()
+    # All data now comes from CSVs: zones CSV has ZoneB claimed+held by Alpha,
+    # ZoneC claimed by Beta.
     yield
 
 
