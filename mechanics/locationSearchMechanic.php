@@ -152,7 +152,7 @@ function locationSearchMechanic($pdo, $mechanics) {
 
             if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONINFORMATIONDIFF) {
                 $reportElement = "<p>".sprintf($locationDescText[array_rand($locationDescText)], $row['found_name'], $row['found_description']);
-                
+
                 if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONARTEFACTSDIFF) {
                     if (!empty($row['found_hidden_description'])) {
                         $reportElement .= "<br />" . $row['found_hidden_description'];
@@ -169,7 +169,7 @@ function locationSearchMechanic($pdo, $mechanics) {
                     // Fetch artefacts for this location
                     $stmtArt = $pdo->prepare("
                     SELECT name, description
-                    FROM {$prefix}artefacts 
+                    FROM {$prefix}artefacts
                     WHERE location_id = :location_id
                     ");
                     $stmtArt->execute([':location_id' => $row['found_id']]);
@@ -187,7 +187,6 @@ function locationSearchMechanic($pdo, $mechanics) {
                         $reportElement .= "</ul>";
                     }
                 }
-
             }
             $reportElement .= '</p>';
             $reportArray[$row['searcher_id']] .= $reportElement;

@@ -276,50 +276,217 @@ class TestAgentDetection:
 
 
 # ---------------------------------------------------------------------------
-# Test: agent detection of locations
+# Test: location detection — 4 discovery levels
 # ---------------------------------------------------------------------------
 
 @pytest.mark.db
-class TestLocationDetection:
-    """Verify location discovery based on enquete_val vs discovery_diff.
+class TestLocationDetectionLevels:
+    """Verify the 4 levels of location discovery.
 
-    Location A has discovery_diff=4.
-    LOCATIONNAMEDIFF = 0 (discover if diff >= 0, i.e. enquete_val >= 4).
+    Location A: discovery_diff=4, in ZoneA.
+    Thresholds: LOCATIONNAMEDIFF=0, LOCATIONINFORMATIONDIFF=1, LOCATIONARTEFACTSDIFF=2.
+
+    Level -1 (unfound):  diff < 0 — nothing in report or known_locations.
+    Level  0 (name):     diff >= 0, < 1 — name in agent report only, NOT in known_locations.
+    Level  1 (desc):     diff >= 1, < 2 — name+desc in report, added to known_locations (secret=0).
+    Level  2 (secret):   diff >= 2 — name+desc+secret in report, known_locations (secret=1).
+
+    Agents:
+        Agent6 (Alpha,  enq=3): diff=-1 → unfound
+        Agent5 (Golf,   enq=4): diff=0  → name only
+        Agent4 (Foxtrot,enq=5): diff=1  → name+desc, in known_locations
+        Agent1 (Charlie,enq=7): diff=3  → everything, in known_locations with secret
     """
 
-    def test_high_enquete_discovers_location(self):
-        """Agents with enquete >= 5 should discover Location A (diff >= 1)."""
-        # Agent1(7), Agent2(7) on Charlie/Delta
-        for ctrl in ['Charlie', 'Delta']:
-            locs = get_location_discoveries_for_controller(ctrl)
-            assert 'Location A' in locs, \
-                f"Controller {ctrl} (enquete>=7) should discover Location A"
+    def test_level_unfound_no_report(self):
+        """Agent6 (diff=-1): no location info in report, not in known_locations."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Agent6' AND wa.turn_number = 0
+        """)
+        report = str(cursor.fetchone()['report'] or '')
+        conn.close()
 
-    def test_medium_enquete_discovers_location(self):
-        """Agent3 (enquete=6) and Agent4 (enquete=5) should discover Location A."""
-        for ctrl in ['Echo', 'Foxtrot']:
-            locs = get_location_discoveries_for_controller(ctrl)
-            assert 'Location A' in locs, \
-                f"Controller {ctrl} should discover Location A"
-
-    def test_low_enquete_no_discovery(self):
-        """Agent6 (enquete=3) should NOT discover Location A (diff = 3-4 = -1 < 0)."""
+        assert 'Location A' not in report, \
+            "Agent6 (diff=-1) should have no location info in report"
         locs = get_location_discoveries_for_controller('Alpha')
         assert 'Location A' not in locs, \
-            "Alpha (Agent6, enquete=3) should NOT discover Location A"
+            "Agent6 should NOT appear in known_locations"
 
-    def test_borderline_enquete_discovery(self):
-        """Agent5 (enquete=4) vs Location A (diff=4): diff=0.
-        Check whether the threshold is >= 0 or > 0."""
+    def test_level0_name_in_report_only(self):
+        """Agent5 (diff=0): location name in report, NOT in known_locations."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Agent5' AND wa.turn_number = 0
+        """)
+        report = str(cursor.fetchone()['report'] or '')
+        conn.close()
+
+        assert 'Location A' in report, \
+            "Agent5 (diff=0) should see location NAME in report"
+        assert 'test location' not in report.lower(), \
+            "Agent5 (diff=0) should NOT see location description in report"
         locs = get_location_discoveries_for_controller('Golf')
-        # Document actual behavior — this test captures the threshold semantics
-        # If Golf does NOT find it: threshold is strictly > 0
-        # If Golf finds it: threshold is >= 0
-        if 'Location A' in locs:
-            pass  # threshold is >= LOCATIONNAMEDIFF (inclusive)
-        else:
-            pass  # threshold is > LOCATIONNAMEDIFF (exclusive)
-        # For now, just assert the actual result matches future runs
-        # Based on observed data: Golf did NOT discover Location A
         assert 'Location A' not in locs, \
-            "Agent5 (enquete=4, diff=0) does not discover Location A — threshold is exclusive (>)"
+            "Agent5 (diff=0) should NOT be in known_locations (requires diff>=1)"
+
+    def test_level1_desc_in_report_and_known_locations(self):
+        """Agent4 (diff=1): name+desc in report, added to known_locations without secret."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Agent4' AND wa.turn_number = 0
+        """)
+        report = str(cursor.fetchone()['report'] or '')
+        conn.close()
+
+        assert 'Location A' in report, \
+            "Agent4 (diff=1) should see location name in report"
+        assert 'test location' in report.lower(), \
+            "Agent4 (diff=1) should see location description in report"
+        assert 'Secret details' not in report, \
+            "Agent4 (diff=1) should NOT see hidden_description"
+
+        locs = get_location_discoveries_for_controller('Foxtrot')
+        assert 'Location A' in locs, \
+            "Agent4 (diff=1) should be in known_locations"
+
+        # Verify secret flag is 0
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT kl.found_secret FROM `{GAME_PREFIX}controller_known_locations` kl
+            JOIN `{GAME_PREFIX}controllers` c ON c.id = kl.controller_id
+            JOIN `{GAME_PREFIX}locations` l ON l.id = kl.location_id
+            WHERE c.lastname = 'Foxtrot' AND l.name = 'Location A'
+        """)
+        assert cursor.fetchone()['found_secret'] == 0, \
+            "Agent4 (diff=1) should have found_secret=0"
+        conn.close()
+
+    def test_level2_secret_in_report_and_known_locations(self):
+        """Agent1 (diff=3): name+desc+secret in report, known_locations with secret=1."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Agent1' AND wa.turn_number = 0
+        """)
+        report = str(cursor.fetchone()['report'] or '')
+        conn.close()
+
+        assert 'Location A' in report, \
+            "Agent1 (diff=3) should see location name in report"
+        assert 'test location' in report.lower(), \
+            "Agent1 (diff=3) should see location description in report"
+        assert 'Secret details' in report, \
+            "Agent1 (diff=3) should see hidden_description (secret)"
+
+        locs = get_location_discoveries_for_controller('Charlie')
+        assert 'Location A' in locs, \
+            "Agent1 (diff=3) should be in known_locations"
+
+        # Verify secret flag is 1
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT kl.found_secret FROM `{GAME_PREFIX}controller_known_locations` kl
+            JOIN `{GAME_PREFIX}controllers` c ON c.id = kl.controller_id
+            JOIN `{GAME_PREFIX}locations` l ON l.id = kl.location_id
+            WHERE c.lastname = 'Charlie' AND l.name = 'Location A'
+        """)
+        assert cursor.fetchone()['found_secret'] == 1, \
+            "Agent1 (diff=3) should have found_secret=1"
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Test: location visibility on pages
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestLocationVisibilityOnPages:
+    """Verify discovered locations appear on zones and controller pages."""
+
+    def _login_and_select_controller(self, page, base_url, controller_id):
+        """Login as gm and select a specific controller."""
+        page.goto(f"{base_url}/connection/loginForm.php")
+        page.wait_for_load_state("networkidle")
+        page.locator("input[name='username']").fill("gm")
+        page.locator("input[name='passwd']").fill("orga")
+        page.locator("input[type='submit']").first.click()
+        page.wait_for_load_state("networkidle")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={controller_id}")
+        page.wait_for_load_state("networkidle")
+
+    def test_discovered_location_on_zones_page(self, page: Page, base_url):
+        """Controller Charlie (discovered Location A) should see it on zones page.
+        Location info is inside hidden description divs — check HTML content."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Charlie'")
+        ctrl_id = cursor.fetchone()['id']
+        conn.close()
+
+        self._login_and_select_controller(page, base_url, ctrl_id)
+        page.goto(f"{base_url}/zones/action.php")
+        page.wait_for_load_state("networkidle")
+        page_html = page.content()
+        assert "Location A" in page_html, \
+            "Charlie should see 'Location A' in zones page HTML"
+        page.goto(f"{base_url}/connection/logout.php")
+
+    def test_discovered_location_on_controller_page(self, page: Page, base_url):
+        """Controller Charlie should see Location A in 'Lieux connus' on accueil."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Charlie'")
+        ctrl_id = cursor.fetchone()['id']
+        conn.close()
+
+        self._login_and_select_controller(page, base_url, ctrl_id)
+        page_text = page.inner_text("body")
+        assert "Location A" in page_text, \
+            "Charlie should see 'Location A' on controller/accueil page"
+        page.goto(f"{base_url}/connection/logout.php")
+
+    def test_undiscovered_location_not_on_zones_page(self, page: Page, base_url):
+        """Controller Alpha (Agent6, unfound) should NOT see Location A."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Alpha'")
+        ctrl_id = cursor.fetchone()['id']
+        conn.close()
+
+        self._login_and_select_controller(page, base_url, ctrl_id)
+        page.goto(f"{base_url}/zones/action.php")
+        page.wait_for_load_state("networkidle")
+        page_html = page.content()
+        assert "Location A" not in page_html, \
+            "Alpha (unfound) should NOT see 'Location A' on zones page"
+        page.goto(f"{base_url}/connection/logout.php")
+
+    def test_name_only_location_not_on_zones_page(self, page: Page, base_url):
+        """Controller Golf (Agent5, name-only) should NOT see Location A on zones page."""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Golf'")
+        ctrl_id = cursor.fetchone()['id']
+        conn.close()
+
+        self._login_and_select_controller(page, base_url, ctrl_id)
+        page.goto(f"{base_url}/zones/action.php")
+        page.wait_for_load_state("networkidle")
+        page_html = page.content()
+        assert "Location A" not in page_html, \
+            "Golf (name-only, not in known_locations) should NOT see Location A on zones page"
+        page.goto(f"{base_url}/connection/logout.php")
