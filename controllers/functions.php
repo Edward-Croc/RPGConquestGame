@@ -720,7 +720,7 @@ function addWorkerToCKE(
     
     try{
         // Only add information to controllers_known_enemies if the worker is not controlled by the target controller
-        $sql = "SELECT COUNT(*) FROM {$prefix}controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
+        $sql = "SELECT COUNT(*) AS count FROM {$prefix}controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':searcher_controller_id' => $searcher_controller_id,
