@@ -200,5 +200,5 @@ function locationSearchMechanic($pdo, $mechanics) {
     }
 
     echo '<p> locationSearchMechanic : DONE </p> </div>';
-    return $report ?? null;
+    return true;
 }
