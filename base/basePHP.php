@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Buffer output so header() redirects work even when warnings are emitted
 if ( !isset($_SESSION['DEBUG']) ){
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
@@ -56,7 +57,7 @@ function getMechanics($pdo) {
             print_r ($mechanics);
             echo "<br />";
         }
-        return $mechanics[0];
+        return $mechanics[0] ?? NULL;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): failed: " . $e->getMessage()."<br />";
         return NULL;

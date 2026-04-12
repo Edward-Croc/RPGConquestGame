@@ -65,6 +65,20 @@ def load_test_config_with_controllers(browser):
         yield
         return
 
+    # Ensure gm user exists before loading TestConfig
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        f"INSERT IGNORE INTO `{GAME_PREFIX}players` "
+        f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
+    )
+    cursor.execute(
+        f"INSERT IGNORE INTO `{GAME_PREFIX}mechanics` "
+        f"(turncounter, gamestate) VALUES (0, 0)"
+    )
+    conn.commit()
+    conn.close()
+
     # Load TestConfig via admin UI
     context = browser.new_context()
     page = context.new_page()

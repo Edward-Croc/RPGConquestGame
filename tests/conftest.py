@@ -20,6 +20,31 @@ SQL_DIR = os.path.join(PROJECT_ROOT, "var", "mysql")
 PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquestGame")
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_db_usable_after_tests():
+    """Ensure gm/orga and mechanics exist after all tests complete."""
+    yield
+    # Session teardown: restore minimal usable state
+    try:
+        conn = pymysql.connect(
+            host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
+            password=MYSQL_PASSWORD, database=MYSQL_DB,
+            charset="utf8mb4", autocommit=True,
+        )
+        cursor = conn.cursor()
+        cursor.execute(
+            f"INSERT IGNORE INTO `{GAME_PREFIX}players` "
+            f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
+        )
+        cursor.execute(
+            f"INSERT IGNORE INTO `{GAME_PREFIX}mechanics` "
+            f"(turncounter, gamestate) VALUES (0, 0)"
+        )
+        conn.close()
+    except Exception:
+        pass  # DB might not be available
+
+
 @pytest.fixture
 def db_connection():
     """Provide a MySQL connection to the test database."""
