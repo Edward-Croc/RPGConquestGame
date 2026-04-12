@@ -29,9 +29,6 @@ VALUES
     ('DEBUG_ATTACK', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
     ('DEBUG_TRANSFORM', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
     ('ACTIVATE_TESTS', 'TRUE', 'Activates the insertion of tests values'),
-    ('TITLE', 'RPGConquest', 'Name of game'),
-    ('PRESENTATION', 'RPGConquest', 'Name of game'),
-    ('IntrigueOrga', 'IntrigueOrga', 'Organisation info'),
     ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
     -- worker creation
     ('turn_recrutable_workers', '1', 'Number of workers recrutable per turn'),
