@@ -279,7 +279,7 @@ Contrôler ce territoire nous permettrait d’avoir accès à cette ressource ra
     6, (SELECT ID FROM {prefix}zones WHERE name = 'Cap sud de Tosa')),
 
     -- Cheval de Sanuki
-    ('Écuries de Takamastu',
+    ('Écuries de Takamatsu',
     'Les vastes pâturages de Sanuki forment l’écrin idéal pour l’élevage de chevaux endurants, prisés tant pour la guerre que pour les grandes caravanes.
 Contrôler ce territoire nous permettrait d’avoir accès à cette ressource rare, sinon nous pouvons toujours tenter de négocier avec le clan qui contrôle ce territoire.
     ',
@@ -316,7 +316,7 @@ Les voyageurs s’y arrêtent pour goûter un saké réputé, brassé à l’eau
 
     ('Port de Naruto',
      'Carrefour maritime entre Honshū et Shikoku, le port de Naruto bruisse de dialectes et de voiles étrangères.
-Dans les ruelles proches du marché, on parle parfois espagnol, ou latin, à voix basse.',
+Dans les ruelles proches du marché, on parle parfois portugais, ou latin, à voix basse.',
      6, (SELECT ID FROM {prefix}zones WHERE name = 'Côte Est d’Awa')),
 
     ('Grande route et relais de poste',

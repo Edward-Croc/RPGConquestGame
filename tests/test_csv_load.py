@@ -232,10 +232,8 @@ class TestLoadCSVFile:
             conn, csv_file, "powers",
             ["name", "description", "enquete", "attack", "defence", "other"]
         )
-        # Last row in hobbys CSV is missing the 'other' column → skipped as malformed
-        assert count == 6
-        # last data row missing 'other' column + trailing empty line = 2 skipped
-        assert len(warnings) == 2
+        assert count == 7
+        assert len(warnings) == 0
 
         cursor = conn.cursor()
         cursor.execute(f"SELECT name, enquete, attack, defence FROM `{GAME_PREFIX}powers` ORDER BY id")
@@ -409,7 +407,7 @@ class TestFullScenarioLoad:
         assert cursor.fetchone()["c"] == 8
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}powers`")
-        assert cursor.fetchone()["c"] == 12  # 6 hobbys + 6 jobs (last row in each CSV is malformed)
+        assert cursor.fetchone()["c"] == 13  # 7 hobbys + 6 jobs (last row in jobs CSV is malformed)
 
         # Verify FK integrity: all worker_names have valid origin_ids
         cursor.execute(f"""

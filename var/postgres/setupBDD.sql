@@ -349,6 +349,13 @@ CREATE TABLE {prefix}power_types (
     description text
 );
 
+-- Fixed power types used by application code (hobbys/jobs linking logic).
+-- ON CONFLICT so scenario-specific SQL files can supply their own extended set.
+INSERT INTO {prefix}power_types (id, name, description) VALUES
+    (1, 'Hobby', 'Objet fétiche'),
+    (2, 'Metier', 'Rôle')
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE {prefix}powers (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,

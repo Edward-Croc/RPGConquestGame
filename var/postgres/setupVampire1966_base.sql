@@ -262,11 +262,13 @@ INSERT INTO {prefix}locations (name, description, discovery_diff, zone_id) VALUE
 ('Le rituel','', 8, (SELECT ID FROM {prefix}zones WHERE name = 'Bosco Bello'));
 
 -- Table of Fixed Power Types used by code
+-- Hobby and Metier are pre-seeded by setupBDD.sql; update descriptions to scenario values
 INSERT INTO {prefix}power_types (id, name, description) VALUES
     (1, 'Hobby', 'Hobby'),
     (2, 'Metier', 'Metier'),
     (3, 'Discipline', 'Discipline'),
-    (4, 'Transformation', 'Transformation');
+    (4, 'Transformation', 'Transformation')
+ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description;
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation

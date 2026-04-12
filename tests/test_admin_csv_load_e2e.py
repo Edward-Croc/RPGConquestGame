@@ -175,12 +175,29 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(2000)
 
+        page_html = logged_in_page.content()
+
+        # No PHP warnings should appear on the page
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings found on page after TestConfig reset"
+
+        # Verify CSV load success messages with correct row counts
+        assert "setupTestConfig_worker_origins.csv loaded successfully (3 rows)" in page_html, \
+            "Expected worker_origins CSV to load 3 rows"
+        assert "setupTestConfig_worker_names.csv loaded successfully (8 rows)" in page_html, \
+            "Expected worker_names CSV to load 8 rows"
+        assert "setupTestConfig_zones.csv loaded successfully (7 rows)" in page_html, \
+            "Expected zones CSV to load 7 rows"
+        assert "setupTestConfig_hobbys.csv loaded successfully (7 rows)" in page_html, \
+            "Expected hobbys CSV to load 7 rows"
+
+        # Verify DB row counts
         assert table_row_count("worker_origins") >= 3, \
             "TestConfig should load at least 3 worker origins"
         assert table_row_count("worker_names") >= 8, \
             "TestConfig should load at least 8 worker names"
         assert table_row_count("zones") >= 6, \
-            "TestConfig should load zones via CSV (6 rows in setupTestConfig_zones.csv)"
+            "TestConfig should load zones via CSV"
         assert table_row_count("powers") >= 6, \
             "TestConfig should load hobbys into powers"
 
@@ -194,6 +211,25 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(3000)
 
+        page_html = logged_in_page.content()
+
+        # No PHP warnings should appear on the page
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings found on page after Japon1555 reset"
+
+        # Verify CSV load success messages with correct row counts
+        assert "setupJapon1555_zones.csv loaded successfully (11 rows)" in page_html, \
+            "Expected zones CSV to load 11 rows"
+        assert "setupJapon1555_worker_origins.csv loaded successfully (13 rows)" in page_html, \
+            "Expected worker_origins CSV to load 13 rows"
+        assert "setupJapon1555_worker_names.csv loaded successfully (122 rows)" in page_html, \
+            "Expected worker_names CSV to load 122 rows"
+        assert "setupJapon1555_hobbys.csv loaded successfully (46 rows)" in page_html, \
+            "Expected hobbys CSV to load 46 rows"
+        assert "setupJapon1555_jobs.csv loaded successfully (46 rows)" in page_html, \
+            "Expected jobs CSV to load 46 rows"
+
+        # Verify DB row counts
         assert table_row_count("worker_origins") >= 10, \
             "Japon1555 should load 13+ origins"
         assert table_row_count("zones") >= 8, \

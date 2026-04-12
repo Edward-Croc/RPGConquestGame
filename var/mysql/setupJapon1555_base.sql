@@ -271,11 +271,13 @@ INSERT INTO {prefix}player_controller (player_id, controller_id) VALUES
 ;
 
 -- Table of Fixed Power Types used by code
+-- Hobby and Metier are pre-seeded by setupBDD.sql; update descriptions to scenario values
 INSERT INTO {prefix}power_types (id, name, description) VALUES
     (1, 'Hobby', 'Objet fétiche'),
     (2, 'Metier', 'Rôle'),
     (3, 'Discipline', 'Maitrise des Arts'),
-    (4, 'Transformation', 'Equipements Rares');
+    (4, 'Transformation', 'Equipements Rares')
+ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation

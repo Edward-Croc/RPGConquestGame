@@ -5,5 +5,4 @@ name,description,enquete,attack,defence,other
 "Warrior Hobby",", test Warrior",0,1,1,
 "Warrior 2 Hobby",", test Warrior phase 2 ",0,1,1,
 "Tank Warrior Hobby",",  test tank warrior",-1,2,1,
-"Glasse canon Hobby",", test hobby",1,1,-1
-
+"Glasse canon Hobby",", test hobby",1,1,-1,

@@ -350,6 +350,12 @@ CREATE TABLE {prefix}power_types (
     description TEXT
 );
 
+-- Fixed power types used by application code (hobbys/jobs linking logic).
+-- INSERT IGNORE so scenario-specific SQL files can supply their own extended set.
+INSERT IGNORE INTO {prefix}power_types (id, name, description) VALUES
+    (1, 'Hobby', 'Objet fétiche'),
+    (2, 'Metier', 'Rôle');
+
 CREATE TABLE {prefix}powers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT NOT NULL,
