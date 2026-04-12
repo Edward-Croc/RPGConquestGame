@@ -483,8 +483,11 @@ function gameReady() {
                             echo 'Start <br />';
                             
                             // Handle specific file types
+                            // Map file names to actual table names where they differ
+                            $tableNameMap = ['textes' => 'config'];
                             if (in_array($fileName, ['worker_origins', 'worker_names', 'textes', 'zones'])) {
-                                loadCSVFile($pdo, $csvFile, $fileName, $columns);
+                                $tableName = $tableNameMap[$fileName] ?? $fileName;
+                                loadCSVFile($pdo, $csvFile, $tableName, $columns);
                             } elseif ($fileName === 'config') {
                                 loadCSVUpdates($pdo, $csvFile);
                             } else {

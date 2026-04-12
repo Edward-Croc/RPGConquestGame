@@ -201,6 +201,13 @@ class TestCSVLoadViaAdmin:
         assert table_row_count("powers") >= 6, \
             "TestConfig should load hobbys into powers"
 
+        # Verify page title and header reflect the loaded scenario
+        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        logged_in_page.wait_for_load_state("networkidle")
+        header_text = logged_in_page.locator("div.header").inner_text()
+        assert "Tour" in header_text, \
+            f"Header should show turn info after reset, got: {header_text}"
+
     def test_full_reset_japon1555(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555 and verify larger dataset."""
         logged_in_page.goto(f"{base_url}/base/admin.php")
@@ -236,3 +243,13 @@ class TestCSVLoadViaAdmin:
             "Japon1555 should load 8+ zones"
         assert table_row_count("worker_names") >= 50, \
             "Japon1555 should load 50+ worker names"
+
+        # Verify page title and header reflect Japon1555 scenario
+        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        logged_in_page.wait_for_load_state("networkidle")
+        page_html = logged_in_page.content()
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings on accueil after Japon1555 reset"
+        header_text = logged_in_page.locator("div.header").inner_text()
+        assert "Shikoku" in header_text or "1555" in header_text, \
+            f"Header should reflect Japon1555 scenario, got: {header_text}"
