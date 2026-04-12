@@ -1,3 +1,8 @@
 firstname,lastname,factions__name->faction_id,factions__name->fake_faction_id
 Lord,Alpha,FactionAlpha,FactionAlpha
 Lady,Beta,FactionBeta,FactionBeta
+Agent1,Charlie,FactionCharlie,FactionCharlie
+Agent2,Delta,FactionDelta,FactionDelta
+Agent3,Echo,FactionEcho,FactionEcho
+Agent4,Foxtrot,FactionFoxtrot,FactionFoxtrot
+Agent5,Golf,FactionGolf,FactionGolf

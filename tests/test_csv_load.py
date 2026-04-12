@@ -232,7 +232,7 @@ class TestLoadCSVFile:
             conn, csv_file, "powers",
             ["name", "description", "enquete", "attack", "defence", "other"]
         )
-        assert count == 7
+        assert count == 13
         assert len(warnings) == 0
 
         cursor = conn.cursor()
@@ -407,7 +407,7 @@ class TestFullScenarioLoad:
         assert cursor.fetchone()["c"] == 8
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}powers`")
-        assert cursor.fetchone()["c"] == 13  # 7 hobbys + 6 jobs (last row in jobs CSV is malformed)
+        assert cursor.fetchone()["c"] == 25  # 13 hobbys + 12 jobs
 
         # Verify FK integrity: all worker_names have valid origin_ids
         cursor.execute(f"""

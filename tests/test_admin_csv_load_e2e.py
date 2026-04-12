@@ -188,8 +188,8 @@ class TestCSVLoadViaAdmin:
             "Expected worker_names CSV to load 8 rows"
         assert "setupTestConfig_zones.csv loaded successfully (7 rows)" in page_html, \
             "Expected zones CSV to load 7 rows"
-        assert "setupTestConfig_hobbys.csv loaded successfully (7 rows)" in page_html, \
-            "Expected hobbys CSV to load 7 rows"
+        assert "setupTestConfig_hobbys.csv loaded successfully (13 rows)" in page_html, \
+            "Expected hobbys CSV to load 13 rows"
 
         # Verify DB row counts
         assert table_row_count("worker_origins") >= 3, \

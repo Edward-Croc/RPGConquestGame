@@ -1,6 +1,11 @@
 players__username->player_id,controllers__lastname->controller_id
 gm,Alpha
 gm,Beta
+gm,Charlie
+gm,Delta
+gm,Echo
+gm,Foxtrot
+gm,Golf
 single_player,Alpha
 multi_player,Alpha
 multi_player,Beta

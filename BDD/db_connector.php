@@ -473,6 +473,7 @@ function gameReady() {
                         'controllers' => ['firstname', 'lastname', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
+                        'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json'],
                         'textes' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
@@ -489,7 +490,7 @@ function gameReady() {
                             // Handle specific file types
                             // Map file names to actual table names where they differ
                             $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['factions', 'players', 'controllers', 'player_controller', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
+                            if (in_array($fileName, ['factions', 'players', 'controllers', 'player_controller', 'locations', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
                                 $tableName = $tableNameMap[$fileName] ?? $fileName;
                                 loadCSVFile($pdo, $csvFile, $tableName, $columns);
                             } elseif ($fileName === 'config') {

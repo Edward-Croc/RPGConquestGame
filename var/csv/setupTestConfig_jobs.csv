@@ -5,4 +5,9 @@ name,description,enquete,attack,defence,other
 "Warrior Job",", test Warrior Job",0,1,1,
 "Warrior 2 Job",", test Warrior phase 2 Job ",0,1,1,
 "Tank Warrior Job",",  test tank warrior Job",-1,2,1,
-"Glasse canon Job",", test Job Job",1,1,-1
+"Glasse canon Job",", test Job Job",1,1,-1,
+"Test Metier A"," enquete-focused metier",2,2,2,
+"Test Metier B"," balanced enquete metier",2,0,1,
+"Test Metier C"," minimal enquete metier",1,0,0,
+"Test Metier D"," combat metier",1,2,1,
+"Test Metier E"," blank metier",0,0,0,
