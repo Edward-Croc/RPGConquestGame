@@ -87,6 +87,17 @@ def get_controller_id(controller_lastname):
     return row['id'] if row else None
 
 
+def ensure_gm_login(page: Page, base_url: str):
+    """Login as gm if not already logged in. Skip login if session is active."""
+    page.goto(f"{base_url}/base/accueil.php")
+    page.wait_for_load_state("networkidle")
+    if "loginForm.php" in page.url:
+        page.locator("input[name='username']").fill("gm")
+        page.locator("input[name='passwd']").fill("orga")
+        page.locator("input[type='submit']").first.click()
+        page.wait_for_load_state("networkidle")
+
+
 # ---------------------------------------------------------------------------
 # Module fixture: load TestConfig + run end turn once
 # ---------------------------------------------------------------------------
@@ -451,73 +462,44 @@ class TestLocationDetectionLevels:
 class TestLocationVisibilityOnPages:
     """Verify discovered locations appear on zones and controller pages."""
 
-    def _login_and_select_controller(self, page, base_url, controller_id):
-        """Login as gm and select a specific controller."""
-        page.goto(f"{base_url}/connection/loginForm.php")
-        page.wait_for_load_state("networkidle")
-        page.locator("input[name='username']").fill("gm")
-        page.locator("input[name='passwd']").fill("orga")
-        page.locator("input[type='submit']").first.click()
-        page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/base/accueil.php?controller_id={controller_id}")
-        page.wait_for_load_state("networkidle")
-
     def test_discovered_location_on_zones_page(self, page: Page, base_url):
         """Controller Charlie (discovered Location A) should see it on zones page.
         Location info is inside hidden description divs — check HTML content."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Charlie'")
-        ctrl_id = cursor.fetchone()['id']
-        conn.close()
-
-        self._login_and_select_controller(page, base_url, ctrl_id)
+        ensure_gm_login(page, base_url)
+        ctrl_id = get_controller_id('Charlie')
+        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         page_html = page.content()
         assert "Location A" in page_html, \
             "Charlie should see 'Location A' in zones page HTML"
-        page.goto(f"{base_url}/connection/logout.php")
-
     def test_discovered_location_on_controller_page(self, page: Page, base_url):
         """Controller Charlie should see Location A in 'Lieux connus' on accueil."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Charlie'")
-        ctrl_id = cursor.fetchone()['id']
-        conn.close()
-
-        self._login_and_select_controller(page, base_url, ctrl_id)
+        ensure_gm_login(page, base_url)
+        ctrl_id = get_controller_id('Charlie')
+        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
         page_text = page.inner_text("body")
         assert "Location A" in page_text, \
             "Charlie should see 'Location A' on controller/accueil page"
-        page.goto(f"{base_url}/connection/logout.php")
-
     def test_undiscovered_location_not_on_zones_page(self, page: Page, base_url):
         """Controller Alpha (Agent6, unfound) should NOT see Location A."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Alpha'")
-        ctrl_id = cursor.fetchone()['id']
-        conn.close()
-
-        self._login_and_select_controller(page, base_url, ctrl_id)
+        ensure_gm_login(page, base_url)
+        ctrl_id = get_controller_id('Alpha')
+        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         page_html = page.content()
         assert "Location A" not in page_html, \
             "Alpha (unfound) should NOT see 'Location A' on zones page"
-        page.goto(f"{base_url}/connection/logout.php")
-
     def test_name_only_location_not_on_zones_page(self, page: Page, base_url):
         """Controller Golf (Agent5, name-only) should NOT see Location A on zones page."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Golf'")
-        ctrl_id = cursor.fetchone()['id']
-        conn.close()
-
-        self._login_and_select_controller(page, base_url, ctrl_id)
+        ensure_gm_login(page, base_url)
+        ctrl_id = get_controller_id('Golf')
+        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         page_html = page.content()
@@ -669,64 +651,52 @@ class TestWorkerReportLocationDiscovery:
 class TestWorkerViewPageReport:
     """Verify the worker view page renders the report correctly."""
 
-    def _get_worker_page_html(self, page, base_url, controller_lastname, worker_lastname):
-        """Login, select controller, navigate to worker page, return HTML."""
+    def _go_to_worker(self, page, base_url, controller_lastname, worker_lastname):
+        """Login if needed, select controller, navigate to worker page."""
+        ensure_gm_login(page, base_url)
         ctrl_id = get_controller_id(controller_lastname)
         worker_id = get_worker_id(worker_lastname)
-        page.goto(f"{base_url}/connection/loginForm.php")
-        page.wait_for_load_state("networkidle")
-        page.locator("input[name='username']").fill("gm")
-        page.locator("input[name='passwd']").fill("orga")
-        page.locator("input[type='submit']").first.click()
-        page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("networkidle")
-        return page
 
     def test_agent1_page_no_warnings(self, page: Page, base_url):
         """Agent1 worker page should load without PHP warnings."""
-        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
-        html = p.content()
+        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        html = page.content()
         assert "<b>Warning</b>" not in html, "PHP warnings on Agent1 worker page"
         assert "<b>Fatal error</b>" not in html, "PHP fatal on Agent1 worker page"
-        p.goto(f"{base_url}/connection/logout.php")
 
     def test_agent1_page_shows_report_section(self, page: Page, base_url):
         """Agent1 worker page should have a Rapport section with Tour 0."""
-        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
-        html = p.content()
+        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        html = page.content()
         assert "Rapport" in html, "Worker page should have Rapport section"
         assert "Tour 0" in html, "Worker page should show Tour 0 report"
-        p.goto(f"{base_url}/connection/logout.php")
 
     def test_agent1_page_report_shows_detected_agents(self, page: Page, base_url):
         """Agent1 page report should contain detected agent names and controller info."""
-        p = self._get_worker_page_html(page, base_url, 'Charlie', 'Agent1')
-        html = p.content()
+        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        html = page.content()
         assert "Agent7" in html, "Agent1 page should show detected Agent7"
         assert "Lady Beta" in html, "Agent1 page should show Agent7's controller"
         assert "Location A" in html, "Agent1 page should show discovered location"
         assert "Secret details" in html, "Agent1 page should show location secret"
-        p.goto(f"{base_url}/connection/logout.php")
 
     def test_agent5_page_shows_name_only_location(self, page: Page, base_url):
         """Agent5 page should show location name but not description."""
-        p = self._get_worker_page_html(page, base_url, 'Golf', 'Agent5')
-        html = p.content()
+        self._go_to_worker(page, base_url, 'Golf', 'Agent5')
+        html = page.content()
         assert "Location A" in html, "Agent5 page should show location name"
-        # Description should NOT appear (only name level)
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else ""
         assert "test location" not in report_section.lower(), \
             "Agent5 page should NOT show location description in recherches section"
-        p.goto(f"{base_url}/connection/logout.php")
 
     def test_agent6_page_no_location(self, page: Page, base_url):
         """Agent6 page should not mention Location A at all in report."""
-        p = self._get_worker_page_html(page, base_url, 'Alpha', 'Agent6')
-        html = p.content()
+        self._go_to_worker(page, base_url, 'Alpha', 'Agent6')
+        html = page.content()
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Location A" not in report_section, \
             "Agent6 page should NOT show Location A in recherches"
-        p.goto(f"{base_url}/connection/logout.php")
