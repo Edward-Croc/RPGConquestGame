@@ -1,0 +1,3 @@
+firstname,lastname,factions__name->faction_id,factions__name->fake_faction_id
+Lord,Alpha,FactionAlpha,FactionAlpha
+Lady,Beta,FactionBeta,FactionBeta

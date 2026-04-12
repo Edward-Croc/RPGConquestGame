@@ -96,40 +96,17 @@ def load_test_config_with_controllers(browser):
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # Seed test factions, controllers, and zone claims
+    # CSVs now load factions, controllers, players, and player_controller.
+    # Only zone claims need SQL seeding (not in any CSV).
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Step 1: factions (no FK deps)
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}factions` (id, name) VALUES "
-        f"(1, 'FactionAlpha'), (2, 'FactionBeta') "
-        f"ON DUPLICATE KEY UPDATE name=VALUES(name)"
-    )
-    conn.commit()
-
-    # Step 2: controllers (depends on factions)
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}controllers` "
-        f"(id, firstname, lastname, faction_id, fake_faction_id) VALUES "
-        f"(1, 'Lord', 'Alpha', 1, 1), (2, 'Lady', 'Beta', 2, 2) "
-        f"ON DUPLICATE KEY UPDATE firstname=VALUES(firstname)"
-    )
-    conn.commit()
-
-    # Step 3: assign zone claims (depends on controllers)
     # ZoneB: claimed AND held by Alpha (triggers both banner + "our control" tag)
     cursor.execute(
         f"UPDATE `{GAME_PREFIX}zones` SET claimer_controller_id = 1, holder_controller_id = 1 WHERE name = 'ZoneB'"
     )
     cursor.execute(
         f"UPDATE `{GAME_PREFIX}zones` SET claimer_controller_id = 2 WHERE name = 'ZoneC'"
-    )
-
-    # Step 4: link gm to controller Alpha
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}player_controller` (player_id, controller_id) VALUES "
-        f"(1, 1) ON DUPLICATE KEY UPDATE player_id=VALUES(player_id)"
     )
     conn.commit()
     conn.close()

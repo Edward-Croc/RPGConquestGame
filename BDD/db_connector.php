@@ -468,6 +468,10 @@ function gameReady() {
                 if ( isset($_POST['config_name']) ) {
                     $fileNames = [
                         'base' => '',
+                        'factions' => ['name'],
+                        'players' => ['username', 'passwd', 'is_privileged'],
+                        'controllers' => ['firstname', 'lastname', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
                         'textes' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
@@ -485,7 +489,7 @@ function gameReady() {
                             // Handle specific file types
                             // Map file names to actual table names where they differ
                             $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['worker_origins', 'worker_names', 'textes', 'zones'])) {
+                            if (in_array($fileName, ['factions', 'players', 'controllers', 'player_controller', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
                                 $tableName = $tableNameMap[$fileName] ?? $fileName;
                                 loadCSVFile($pdo, $csvFile, $tableName, $columns);
                             } elseif ($fileName === 'config') {

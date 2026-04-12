@@ -97,44 +97,8 @@ def load_test_config_with_players(browser):
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # Seed test data with proper ordering for FK constraints
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Step 1: factions
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}factions` (id, name) VALUES "
-        f"(1, 'FactionAlpha'), (2, 'FactionBeta') "
-        f"ON DUPLICATE KEY UPDATE name=VALUES(name)"
-    )
-    conn.commit()
-
-    # Step 2: controllers (depends on factions)
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}controllers` "
-        f"(id, firstname, lastname, faction_id, fake_faction_id) VALUES "
-        f"(1, 'Lord', 'Alpha', 1, 1), (2, 'Lady', 'Beta', 2, 2) "
-        f"ON DUPLICATE KEY UPDATE firstname=VALUES(firstname)"
-    )
-    conn.commit()
-
-    # Step 3: test players
-    cursor.execute(
-        f"INSERT INTO `{GAME_PREFIX}players` (id, username, passwd, is_privileged) VALUES "
-        f"(2, 'single_player', 'test', 0), "
-        f"(3, 'multi_player', 'test', 0) "
-        f"ON DUPLICATE KEY UPDATE username=VALUES(username)"
-    )
-    conn.commit()
-
-    # Step 4: player-controller links
-    for vals in ["(1, 1)", "(1, 2)", "(2, 1)", "(3, 1)", "(3, 2)"]:
-        cursor.execute(
-            f"INSERT INTO `{GAME_PREFIX}player_controller` (player_id, controller_id) VALUES "
-            f"{vals} ON DUPLICATE KEY UPDATE player_id=VALUES(player_id)"
-        )
-    conn.commit()
-    conn.close()
+    # All test data (factions, controllers, players, player_controller)
+    # is now loaded from CSVs by the admin reset above.
     yield
 
 

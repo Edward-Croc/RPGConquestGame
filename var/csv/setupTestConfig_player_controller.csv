@@ -1,0 +1,6 @@
+players__username->player_id,controllers__lastname->controller_id
+gm,Alpha
+gm,Beta
+single_player,Alpha
+multi_player,Alpha
+multi_player,Beta
