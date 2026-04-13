@@ -351,7 +351,9 @@ CREATE TABLE {prefix}power_types (
 -- INSERT IGNORE so scenario-specific SQL files can supply their own extended set.
 INSERT IGNORE INTO {prefix}power_types (id, name, description) VALUES
     (1, 'Hobby', 'Objet fétiche'),
-    (2, 'Metier', 'Rôle');
+    (2, 'Metier', 'Rôle'),
+    (3, 'Discipline', 'Maitrise des Arts'),
+    (4, 'Transformation', 'Equipements Rares');
 
 CREATE TABLE {prefix}powers (
     id INT AUTO_INCREMENT PRIMARY KEY,

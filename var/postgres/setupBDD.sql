@@ -350,7 +350,9 @@ CREATE TABLE {prefix}power_types (
 -- ON CONFLICT so scenario-specific SQL files can supply their own extended set.
 INSERT INTO {prefix}power_types (id, name, description) VALUES
     (1, 'Hobby', 'Objet fétiche'),
-    (2, 'Metier', 'Rôle')
+    (2, 'Metier', 'Rôle'),
+    (3, 'Discipline', 'Maitrise des Arts'),
+    (4, 'Transformation', 'Equipements Rares')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE {prefix}powers (

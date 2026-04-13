@@ -276,11 +276,29 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         // Read header row
         $header = fgetcsv($handle);
 
-        // Process columns to handle lookups (e.g., 'origin_name->origin_id')
+        // Separate columns into: regular, FK lookups, and linkTable_ junction inserts
         $dbColumns = [];
         $lookupMaps = [];
+        $linkTableDefs = [];
+
         foreach ($columns as $col) {
-            if (strpos($col, '->') !== false) {
+            if (strpos($col, 'linkTable_') === 0) {
+                // linkTable_ column: e.g. linkTable_power_types__name->link_power_type__power_type_id
+                // Creates a row in a junction table after the main INSERT.
+                // Format: linkTable_{lookupTable}__{lookupCol}->{junctionTable}__{junctionCol}
+                $spec = substr($col, strlen('linkTable_'));
+                list($lookupPart, $junctionPart) = explode('->', $spec);
+                list($lookupTable, $lookupCol) = explode('__', $lookupPart);
+                list($junctionTable, $junctionCol) = explode('__', $junctionPart);
+
+                $linkTableDefs[] = [
+                    'csvHeader'     => $col,
+                    'lookupTable'   => $lookupTable,
+                    'lookupCol'     => $lookupCol,
+                    'junctionTable' => $junctionTable,
+                    'junctionCol'   => $junctionCol,
+                ];
+            } elseif (strpos($col, '->') !== false) {
                 list($originCol, $targetCol) = explode('->', $col);
                 $dbColumns[] = $targetCol;
                 list($table, $column) = explode('__', $originCol);
@@ -290,7 +308,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
             }
         }
 
-        // Build lookup caches for foreign keys
+        // Build lookup caches for FK columns
         $lookupCaches = [];
         foreach ($lookupMaps as $targetCol => $lookupInfo) {
             $lookupTable = $prefix . $lookupInfo['table'];
@@ -305,49 +323,115 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                 echo "Warning: Could not build lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
             }
         }
-        
-        // Prepare insert statement
+
+        // Build lookup caches for linkTable_ columns
+        $linkTableCaches = [];
+        foreach ($linkTableDefs as $def) {
+            $ltTable = $prefix . $def['lookupTable'];
+            $ltCol = $def['lookupCol'];
+            try {
+                $stmt = $pdo->query("SELECT id, {$ltCol} FROM {$ltTable}");
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($results as $row) {
+                    $linkTableCaches[$def['csvHeader']][$row[$ltCol]] = $row['id'];
+                }
+            } catch (PDOException $e) {
+                echo "Warning: Could not build linkTable cache for {$def['csvHeader']}: " . $e->getMessage() . "<br />";
+            }
+        }
+
+        // Detect back-reference column for each junction table
+        // The junction table has: id, {junctionCol}, and a back-reference to the main table
+        // The back-reference column is the one referencing the main table (e.g. power_id for powers)
+        foreach ($linkTableDefs as &$def) {
+            $jtPrefixed = $prefix . $def['junctionTable'];
+            try {
+                $stmt = $pdo->query("DESCRIBE {$jtPrefixed}");
+                $jtColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                // Find the column that isn't 'id' and isn't the junction lookup column
+                foreach ($jtColumns as $jtCol) {
+                    if ($jtCol !== 'id' && $jtCol !== $def['junctionCol']) {
+                        $def['backRefCol'] = $jtCol;
+                        break;
+                    }
+                }
+            } catch (PDOException $e) {
+                echo "Warning: Could not detect back-ref column for {$def['junctionTable']}: " . $e->getMessage() . "<br />";
+            }
+        }
+        unset($def);
+
+        // Prepare main insert statement
         $placeholders = implode(',', array_fill(0, count($dbColumns), '?'));
-        $columnList = implode(',', array_map(function($col){
-            return $col;
-        }, $dbColumns));
+        $columnList = implode(',', $dbColumns);
         $sql = "INSERT INTO {$prefixedTable} ({$columnList}) VALUES ({$placeholders})";
         $stmt = $pdo->prepare($sql);
-        
+
+        // Prepare junction table insert statements
+        $linkTableStmts = [];
+        foreach ($linkTableDefs as $def) {
+            if (!empty($def['backRefCol'])) {
+                $jtPrefixed = $prefix . $def['junctionTable'];
+                $ltSql = "INSERT INTO {$jtPrefixed} ({$def['junctionCol']}, {$def['backRefCol']}) VALUES (?, ?)";
+                $linkTableStmts[$def['csvHeader']] = $pdo->prepare($ltSql);
+            }
+        }
+
         $rowCount = 0;
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) !== count($header)) {
                 echo "Warning: Row " . ($rowCount + 1) . " " . var_export($row, true) . " has " . count($row) . " columns, expected " . count($header) . " in $csvFile.<br />";
                 continue;
             }
-            
+
             // Map CSV columns to values
             $rowData = array_combine($header, $row);
-            
-            // Build values array in column order
+
+            // Build values array for main table insert
             $values = [];
             foreach ($columns as $col) {
-                if (strpos($col, '->') !== false) {
+                if (strpos($col, 'linkTable_') === 0) {
+                    continue; // handled after main insert
+                } elseif (strpos($col, '->') !== false) {
                     list($csvCol, $dbCol) = explode('->', $col);
                     $lookupValue = $rowData[$col] ?? '';
                     if (isset($lookupCaches[$dbCol][$lookupValue])) {
                         $values[] = $lookupCaches[$dbCol][$lookupValue];
                     } else {
-                        echo "Warning: Lookup value '{$lookupValue}' not found for {$col} in row " . ($rowCount + 1) . ".<br />";
-                        echo "from: " . var_export($rowData, true) . "<br />";
+                        if ($lookupValue !== '') {
+                            echo "Warning: Lookup value '{$lookupValue}' not found for {$col} in row " . ($rowCount + 1) . ".<br />";
+                            echo "from: " . var_export($rowData, true) . "<br />";
+                        }
                         $values[] = null;
                     }
                 } else {
                     $value = $rowData[$col] ?? '';
-                    // Convert empty strings to NULL for numeric fields
                     $values[] = ($value === '' || $value === null) ? null : $value;
                 }
             }
-            
+
             $stmt->execute($values);
+            $newId = $pdo->lastInsertId();
+
+            // Process linkTable_ junction inserts
+            foreach ($linkTableDefs as $def) {
+                $csvHeader = $def['csvHeader'];
+                $lookupValue = $rowData[$csvHeader] ?? '';
+                if ($lookupValue === '') continue;
+
+                if (isset($linkTableCaches[$csvHeader][$lookupValue])) {
+                    $lookupId = $linkTableCaches[$csvHeader][$lookupValue];
+                    if (isset($linkTableStmts[$csvHeader])) {
+                        $linkTableStmts[$csvHeader]->execute([$lookupId, $newId]);
+                    }
+                } else {
+                    echo "Warning: linkTable lookup '{$lookupValue}' not found for {$csvHeader} in row " . ($rowCount + 1) . ".<br />";
+                }
+            }
+
             $rowCount++;
         }
-        
+
         fclose($handle);
         echo "CSV file $csvFile loaded successfully ($rowCount rows).<br />";
         return true;
@@ -521,144 +605,86 @@ function gameReady() {
                         }
                     }
 
-                    // Check for CSV file first
-                    $csvFile = sprintf('%s/var/csv/setup%s_hobbys.csv', $path, $_POST['config_name']);
-                    $sqlFile = sprintf('%s/var/%s/setup%s_hobbys.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    
-                    if (file_exists($csvFile)) {
-                        echo "Loading CSV file $csvFile ...<br />";
-                        echo 'Start <br />';
-                        // Load powers from CSV
-                        loadCSVFile($pdo, $csvFile, 'powers', ['name', 'description', 'enquete', 'attack', 'defence', 'other']);
-                        echo "CSV file $csvFile loaded successfully.<br />";
-                    } else if (file_exists($sqlFile)) {
-                        echo "Loading $sqlFile ...<br />";
-                        echo 'Start <br />';
-                        // Read SQL file
-                        $sqlQueries = file_get_contents($sqlFile);
-                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
-                        // Execute SQL queries
-                        $pdo->exec($sqlQueries);
-                        echo "SQL file $sqlFile executed successfully.<br />";
-                    } else {
-                        echo "Neither CSV nor SQL file found for hobbys.<br />";
-                    }
-                    
-                    if (file_exists($csvFile) || file_exists($sqlFile)) {
-                        $prefix = $_SESSION['GAME_PREFIX'];
-                        try{
-                            // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM {$prefix}power_types WHERE name = 'Hobby'";
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute();
-                        } catch (PDOException $e) {
-                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-                            return NULL;
-                        }
-                        // Fetch the results
-                        $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
-                        try{
-                            // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM {$prefix}powers WHERE id NOT IN
-                                ( SELECT power_id FROM {$prefix}link_power_type )";
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute();
-                        } catch (PDOException $e) {
-                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-                            return NULL;
-                        }
-                        // Fetch the results
-                        $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            // Get all powers with no link_power_type
-                            $sql = "INSERT INTO {$prefix}link_power_type(power_id, power_type_id) VALUES ";
-                            $firstIter = true;
-                            foreach ($powers as $power){
-                                $sql .= sprintf(
-                                    "%s(%s,%s)",
-                                    $firstIter ? '' : ',',
-                                    $power['id'],
-                                    $powerTypes[0]['id']
-                                );
-                                $firstIter = false;
-                            }
-                            try{
-                                $stmt = $pdo->prepare($sql);
-                                $stmt->execute();
-                            } catch (PDOException $e) {
-                                echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-                                return NULL;
-                            }
-                        echo "SQL INSERT link_power_type executed successfully.<br />";
-                    } else echo "SQL file $sqlFile UNFOUND.<br />";
+                    // Load powers from CSV or SQL files for each power type.
+                    // CSV files with linkTable_ column handle link_power_type automatically.
+                    // SQL fallback uses post-processing to link unlinked powers to their type.
+                    $powerFileTypes = [
+                        'hobbys'          => 'Hobby',
+                        'jobs'            => 'Metier',
+                        'disciplines'     => 'Discipline',
+                        'transformations' => 'Transformation',
+                    ];
+                    $powerCsvColumns = ['name', 'description', 'enquete', 'attack', 'defence', 'other',
+                        'linkTable_power_types__name->link_power_type__power_type_id'];
 
-                    // Check for CSV file first
-                    $csvFile = sprintf('%s/var/csv/setup%s_jobs.csv', $path, $_POST['config_name']);
-                    $sqlFile = sprintf('%s/var/%s/setup%s_jobs.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    
-                    if (file_exists($csvFile)) {
-                        echo "Loading CSV file $csvFile ...<br />";
-                        echo 'Start <br />';
-                        // Load powers from CSV
-                        loadCSVFile($pdo, $csvFile, 'powers', ['name', 'description', 'enquete', 'attack', 'defence', 'other']);
-                        echo "CSV file $csvFile loaded successfully.<br />";
-                    } else if (file_exists($sqlFile)) {
-                        echo "Loading $sqlFile ...<br />";
-                        echo 'Start <br />';
-                        // Read SQL file
-                        $sqlQueries = file_get_contents($sqlFile);
-                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
-                        // Execute SQL queries
-                        $pdo->exec($sqlQueries);
-                        echo "SQL file $sqlFile executed successfully.<br />";
-                    } else {
-                        echo "Neither CSV nor SQL file found for jobs.<br />";
-                    }
-                    
-                    if (file_exists($csvFile) || file_exists($sqlFile)) {
-                        try{
-                            // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM {$prefix}power_types WHERE name = 'Metier'";
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute();
-                        } catch (PDOException $e) {
-                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-                            return NULL;
+                    foreach ($powerFileTypes as $powerFileName => $powerTypeName) {
+                        $csvFile = sprintf('%s/var/csv/setup%s_%s.csv', $path, $_POST['config_name'], $powerFileName);
+                        $sqlFile = sprintf('%s/var/%s/setup%s_%s.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name'], $powerFileName);
+
+                        $loaded = false;
+                        $usedCsv = false;
+                        if (file_exists($csvFile)) {
+                            echo "Loading CSV file $csvFile ...<br />";
+                            echo 'Start <br />';
+                            loadCSVFile($pdo, $csvFile, 'powers', $powerCsvColumns);
+                            echo "CSV file $csvFile loaded successfully.<br />";
+                            $loaded = true;
+                            $usedCsv = true;
+                        } elseif (file_exists($sqlFile)) {
+                            echo "Loading $sqlFile ...<br />";
+                            echo 'Start <br />';
+                            $sqlQueries = file_get_contents($sqlFile);
+                            $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
+                            $pdo->exec($sqlQueries);
+                            echo "SQL file $sqlFile executed successfully.<br />";
+                            $loaded = true;
+                        } else {
+                            echo "Neither CSV nor SQL file found for $powerFileName.<br />";
                         }
-                        // Fetch the results
-                        $powerTypes = $stmt->fetchALL(PDO::FETCH_ASSOC);
-                        try{
-                            // Get all powers with no link_power_type
-                            $sql = "SELECT id FROM {$prefix}powers WHERE id NOT IN
-                                ( SELECT power_id FROM {$prefix}link_power_type )";
-                            $stmt = $pdo->prepare($sql);
-                            $stmt->execute();
-                        } catch (PDOException $e) {
-                            echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
-                            return NULL;
-                        }
-                        // Fetch the results
-                        $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            // Get all powers with no link_power_type
-                            $sql = "INSERT INTO {$prefix}link_power_type(power_id, power_type_id) VALUES ";
-                            $firstIter = true;
-                            foreach ($powers as $power){
-                                $sql .= sprintf(
-                                    "%s(%s,%s)",
-                                    $firstIter ? '' : ',',
-                                    $power['id'],
-                                    $powerTypes[0]['id']
-                                );
-                                $firstIter = false;
-                            }
-                            try{
+
+                        // SQL fallback: link unlinked powers to their power_type.
+                        // Not needed for CSV with linkTable_ column (handled automatically).
+                        if ($loaded && !$usedCsv) {
+                            $prefix = $_SESSION['GAME_PREFIX'];
+                            try {
+                                $sql = "SELECT id FROM {$prefix}power_types WHERE name = '{$powerTypeName}'";
                                 $stmt = $pdo->prepare($sql);
                                 $stmt->execute();
                             } catch (PDOException $e) {
-                                echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
                                 return NULL;
                             }
-                        echo "SQL INSERT link_power_type executed successfully.<br />";
-                    } else echo "SQL file $sqlFile UNFOUND.<br />";
+                            $powerTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            if (!empty($powerTypes)) {
+                                try {
+                                    $sql = "SELECT id FROM {$prefix}powers WHERE id NOT IN
+                                        ( SELECT power_id FROM {$prefix}link_power_type )";
+                                    $stmt = $pdo->prepare($sql);
+                                    $stmt->execute();
+                                } catch (PDOException $e) {
+                                    echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                    return NULL;
+                                }
+                                $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                if (!empty($powers)) {
+                                    $sql = "INSERT INTO {$prefix}link_power_type(power_id, power_type_id) VALUES ";
+                                    $firstIter = true;
+                                    foreach ($powers as $power) {
+                                        $sql .= sprintf("%s(%s,%s)", $firstIter ? '' : ',', $power['id'], $powerTypes[0]['id']);
+                                        $firstIter = false;
+                                    }
+                                    try {
+                                        $stmt = $pdo->prepare($sql);
+                                        $stmt->execute();
+                                    } catch (PDOException $e) {
+                                        echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                        return NULL;
+                                    }
+                                }
+                                echo "SQL INSERT link_power_type for $powerTypeName executed successfully.<br />";
+                            }
+                        }
+                    }
 
                     // Check for CSV file first
                     $csvFile = sprintf('%s/var/csv/setup%s_advanced.csv', $path, $_POST['config_name']);

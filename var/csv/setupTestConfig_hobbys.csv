@@ -1,14 +1,14 @@
-name,description,enquete,attack,defence,other
-"Investigator Hobby",", test Investigator hobby",1,0,0,
-"Investigator2 Hobby",", test Investigator hobby 2 ",1,0,0,
-"Master Investigator Hobby"," test Master Investigator",2,0,-1,
-"Warrior Hobby",", test Warrior",0,1,1,
-"Warrior 2 Hobby",", test Warrior phase 2 ",0,1,1,
-"Tank Warrior Hobby",",  test tank warrior",-1,2,1,
-"Glasse canon Hobby",", test hobby",1,1,-1,
-"Test Hobby A"," enquete-focused hobby",2,1,1,
-"Test Hobby B"," balanced low hobby",1,0,1,
-"Test Hobby C"," minimal enquete hobby",1,0,0,
-"Test Hobby D"," combat-focused hobby",0,3,2,
-"Test Hobby E"," blank hobby",0,0,0,
-"Test Hobby Neg"," negative values hobby",-1,1,-1,
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+"Investigator Hobby",", test Investigator hobby",1,0,0,,Hobby
+"Investigator2 Hobby",", test Investigator hobby 2 ",1,0,0,,Hobby
+"Master Investigator Hobby"," test Master Investigator",2,0,-1,,Hobby
+"Warrior Hobby",", test Warrior",0,1,1,,Hobby
+"Warrior 2 Hobby",", test Warrior phase 2 ",0,1,1,,Hobby
+"Tank Warrior Hobby",",  test tank warrior",-1,2,1,,Hobby
+"Glasse canon Hobby",", test hobby",1,1,-1,,Hobby
+"Test Hobby A"," enquete-focused hobby",2,1,1,,Hobby
+"Test Hobby B"," balanced low hobby",1,0,1,,Hobby
+"Test Hobby C"," minimal enquete hobby",1,0,0,,Hobby
+"Test Hobby D"," combat-focused hobby",0,3,2,,Hobby
+"Test Hobby E"," blank hobby",0,0,0,,Hobby
+"Test Hobby Neg"," negative values hobby",-1,1,-1,,Hobby
