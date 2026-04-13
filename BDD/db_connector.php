@@ -362,9 +362,14 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         unset($def);
 
         // Prepare main insert statement
+        // Use upsert for config table (base defaults + scenario overrides coexist)
         $placeholders = implode(',', array_fill(0, count($dbColumns), '?'));
         $columnList = implode(',', $dbColumns);
         $sql = "INSERT INTO {$prefixedTable} ({$columnList}) VALUES ({$placeholders})";
+        if ($tableName === 'config') {
+            $updateCols = array_map(fn($col) => "{$col}=VALUES({$col})", $dbColumns);
+            $sql .= " ON DUPLICATE KEY UPDATE " . implode(',', $updateCols);
+        }
         $stmt = $pdo->prepare($sql);
 
         // Prepare junction table insert statements

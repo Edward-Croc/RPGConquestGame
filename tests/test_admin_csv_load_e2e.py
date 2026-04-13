@@ -145,7 +145,7 @@ class TestAdminPanel:
         select = logged_in_page.locator("select[name='config_name']")
         options = select.locator("option").all()
         option_values = [opt.get_attribute("value") for opt in options]
-        assert "Japon1555" in option_values
+        assert "Japon1555SQL" in option_values
 
 
 # ---------------------------------------------------------------------------
@@ -208,12 +208,12 @@ class TestCSVLoadViaAdmin:
         assert "Tour" in header_text, \
             f"Header should show turn info after reset, got: {header_text}"
 
-    def test_full_reset_japon1555(self, logged_in_page: Page, base_url):
-        """Trigger a full reset with Japon1555 and verify larger dataset."""
+    def test_full_reset_japon1555_sql(self, logged_in_page: Page, base_url):
+        """Trigger a full reset with Japon1555SQL and verify larger dataset."""
         logged_in_page.goto(f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
 
-        logged_in_page.locator("select[name='config_name']").select_option("Japon1555")
+        logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
         logged_in_page.locator("input[name='submit'][value='Submit']").click()
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(3000)
@@ -222,19 +222,17 @@ class TestCSVLoadViaAdmin:
 
         # No PHP warnings should appear on the page
         assert "<b>Warning</b>" not in page_html, \
-            "PHP warnings found on page after Japon1555 reset"
+            "PHP warnings found on page after Japon1555SQL reset"
 
-        # Verify CSV load success messages with correct row counts
-        assert "setupJapon1555_zones.csv loaded successfully (11 rows)" in page_html, \
-            "Expected zones CSV to load 11 rows"
-        assert "setupJapon1555_worker_origins.csv loaded successfully (13 rows)" in page_html, \
-            "Expected worker_origins CSV to load 13 rows"
-        assert "setupJapon1555_worker_names.csv loaded successfully (122 rows)" in page_html, \
-            "Expected worker_names CSV to load 122 rows"
-        assert "setupJapon1555_hobbys.csv loaded successfully (46 rows)" in page_html, \
-            "Expected hobbys CSV to load 46 rows"
-        assert "setupJapon1555_jobs.csv loaded successfully (46 rows)" in page_html, \
-            "Expected jobs CSV to load 46 rows"
+        # Verify SQL load success messages
+        assert "setupJapon1555SQL_zones.sql executed successfully" in page_html, \
+            "Expected zones SQL to execute successfully"
+        assert "setupJapon1555SQL_worker_names.sql executed successfully" in page_html, \
+            "Expected worker_names SQL to execute successfully"
+        assert "setupJapon1555SQL_hobbys.sql executed successfully" in page_html, \
+            "Expected hobbys SQL to execute successfully"
+        assert "setupJapon1555SQL_jobs.sql executed successfully" in page_html, \
+            "Expected jobs SQL to execute successfully"
 
         # Verify DB row counts
         assert table_row_count("worker_origins") >= 10, \
@@ -249,7 +247,7 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
-            "PHP warnings on accueil after Japon1555 reset"
+            "PHP warnings on accueil after Japon1555SQL reset"
         header_text = logged_in_page.locator("div.header").inner_text()
         assert "Shikoku" in header_text or "1555" in header_text, \
             f"Header should reflect Japon1555 scenario, got: {header_text}"
