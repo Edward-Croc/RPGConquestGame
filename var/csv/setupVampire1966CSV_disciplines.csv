@@ -1,0 +1,20 @@
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+Célérité,,1,1,1,{},Discipline
+Domination,,1,1,1,{},Discipline
+Aliénation,,1,1,1,{},Discipline
+Obténébration,,1,1,1,{},Discipline
+Protéisme,,1,1,1,{},Discipline
+Thaumaturgie,,1,1,1,{},Discipline
+Endurance,,0,1,2,{},Discipline
+Puissance,,0,2,1,{},Discipline
+Animalisme,,2,0,0,{},Discipline
+Présence,,2,0,0,{},Discipline
+Chimérie,,2,0,0,{},Discipline
+Nécromancie,,2,0,0,{},Discipline
+Serpentis,,2,0,0,{},Discipline
+Vicissitude,,2,0,0,{},Discipline
+Quiétus,,2,1,-1,{},Discipline
+Occultation,,2,1,-1,{},Discipline
+Augure,,2,-1,1,{},Discipline
+Vraie Foi,,-1,2,3,{},Discipline
+Sentir le mal,,3,1,1,{},Discipline

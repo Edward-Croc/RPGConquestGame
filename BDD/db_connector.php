@@ -394,6 +394,23 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         }
         unset($def);
 
+        // Detect column nullability and type for empty-value handling
+        // (text NOT NULL columns must receive '' not NULL; numeric columns prefer NULL)
+        $columnInfo = [];
+        try {
+            $stmt = $pdo->query("DESCRIBE {$prefixedTable}");
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $info) {
+                $type = strtolower($info['Type']);
+                $isText = (strpos($type, 'char') !== false || strpos($type, 'text') !== false || strpos($type, 'json') !== false);
+                $columnInfo[$info['Field']] = [
+                    'nullable' => $info['Null'] === 'YES',
+                    'is_text'  => $isText,
+                ];
+            }
+        } catch (PDOException $e) {
+            // proceed without column info — fallback to old behavior
+        }
+
         // Prepare main insert statement
         // Use upsert for config table (base defaults + scenario overrides coexist)
         $placeholders = implode(',', array_fill(0, count($dbColumns), '?'));
@@ -452,7 +469,17 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                     }
                 } else {
                     $value = $rowData[$col] ?? '';
-                    $values[] = ($value === '' || $value === null) ? null : $value;
+                    if ($value === '' || $value === null) {
+                        // Empty value: send '' for non-nullable text columns, NULL otherwise
+                        $info = $columnInfo[$col] ?? null;
+                        if ($info && !$info['nullable'] && $info['is_text']) {
+                            $values[] = '';
+                        } else {
+                            $values[] = null;
+                        }
+                    } else {
+                        $values[] = $value;
+                    }
                 }
             }
 

@@ -1,0 +1,4 @@
+firstname,lastname,worker_origins__name->origin_id,zones__name->zone_id,controllers__lastname->controller_id,action_choice,action_params,powers
+Harvey,Matthews,Angleterre,Palazzo Pitti,Mazzino,passive,{},Alcoolique|Augure|Goule|Policier.ère
+Michelangelo,Marsala,Roma,Bosco Bello,Cacciatore,passive,{},Adepte de muscu|Célérité|Garou|Retraité.e curieux.se
+Natalia,Cacciatore,Firenze,Monticelli,Cacciatore,passive,{},Célérité|Garou|Policier.ère|Propriétaire de lévrier italien

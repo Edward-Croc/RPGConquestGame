@@ -1,0 +1,70 @@
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+Plombier.ère,,1,0,0,{},Metier
+Électricien.ne,,1,0,0,{},Metier
+Étudiant.e en arts et lettres,,1,0,0,{},Metier
+Écrivain.e raté.e,,1,0,0,{},Metier
+Marchand.e ambulant.e,,1,0,0,{},Metier
+Retraité.e curieux.se,,1,0,0,{},Metier
+Professeur.e de langues,,1,0,0,{},Metier
+Professeur.e de philo,,1,0,0,{},Metier
+Boutiquier.ère,,1,0,0,{},Metier
+Bibliothécaire,,1,0,0,{},Metier
+Secrétaire,,1,0,0,{},Metier
+Concierge,,1,0,0,{},Metier
+Postier.ère à vélo,,1,0,0,{},Metier
+Contrôleur.se de train,,1,0,0,{},Metier
+Pianiste de bar,,1,0,0,{},Metier
+Comptable méticuleux.se,,1,0,0,{},Metier
+Serveur.se de bistrot,,1,0,0,{},Metier
+Coiffeur.se de quartier,,1,0,0,{},Metier
+Journaliste radio,,1,0,0,{},Metier
+Photographe de presse,,1,0,0,{},Metier
+Caissier.ère insomniaque,,1,0,0,{},Metier
+Gardien.ne de musée,,1,0,0,{},Metier
+Pharmacien.ne de quartier,,1,0,0,{},Metier
+Assistant.e d’imprimerie,,1,0,0,{},Metier
+Employé.e du cadastre,,1,0,0,{},Metier
+Guichetier.ère de gare,,1,0,0,{},Metier
+Agent.e de sécurité,,0,1,1,{},Metier
+Pompier.ère,,0,1,1,{},Metier
+Ouvrier.ère du bâtiment,,0,1,1,{},Metier
+Ouvrier.ère en usine,,0,1,1,{},Metier
+Chercheur.euse en chimie,,0,1,1,{},Metier
+Racaille,,0,1,1,{},Metier
+Professeur.e de sport,,0,1,1,{},Metier
+Camionneur.se,,0,1,1,{},Metier
+Manutentionnaire,,0,1,1,{},Metier
+Garagiste indépendant.e,,0,1,1,{},Metier
+Facteur.trice syndiqué.e,,0,1,1,{},Metier
+Livreur.se à vélo,,0,1,1,{},Metier
+Agent.e de voirie,,0,1,1,{},Metier
+Ambulancier.ère,,0,1,1,{},Metier
+Déménageur.se,,0,1,1,{},Metier
+Mécanicien.ne,,0,1,1,{},Metier
+Gardien.ne de zoo,,0,1,1,{},Metier
+Mafieux.se,,0,1,1,{},Metier
+Pêcheur.se sicilien.ne,,0,1,1,{},Metier
+Ouvrier.ère métallurgiste,,0,1,1,{},Metier
+Maçon.ne calabrais.e,,0,1,1,{},Metier
+Journalier.ère contestataire,,0,1,1,{},Metier
+Ouvrier.ère Fiat,,0,1,1,{},Metier
+Vendeur.se au marché noir,,0,1,1,{},Metier
+Policier.ère,,1,1,-1,{},Metier
+Voleur.se,,1,1,-1,{},Metier
+Éboueur.se,,1,1,-1,{},Metier
+Parent solo de famille nombreuse,,1,1,-1,{},Metier
+Médecin urgentiste,,1,1,-1,{},Metier
+Chef.fe de chantier,,1,1,-1,{},Metier
+Militant.e féministe,,1,1,-1,{},Metier
+Conducteur.rice de taxi,,2,0,-1,{},Metier
+SDF,,2,0,-1,{},Metier
+Détective privé.e,,2,0,-1,{},Metier
+Inspecteur.rice des impôts,,2,0,-1,{},Metier
+Militaire,,-1,2,1,{},Metier
+CRS,,-1,2,1,{},Metier
+Gardien.ne de prison,,-1,2,1,{},Metier
+Angeli Del Fango ,,1,0,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""da Firenze""}}}",Metier
+Angels of the Mud ,,1,0,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""da Firenze""}}}",Metier
+Mud Angels,,1,0,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""Franco""}}}",Metier
+Ange de la boue,,1,0,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""Bonapart""}}}",Metier
+Prêtre,,1,1,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""Lorenzo""}}}",Metier

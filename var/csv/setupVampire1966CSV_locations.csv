@@ -1,0 +1,26 @@
+name,description,hidden_description,discovery_diff,zones__name->zone_id,controllers__lastname->controller_id,is_base,can_be_destroyed,can_be_repaired,activate_json
+Stazione ferroviaria,Test Description,,0,Railway Station,,0,0,0,{}
+Les anges de la boue,Test Description,,6,Railway Station,,0,0,0,{}
+Le barrage,,,6,Railway Station,,0,0,0,{}
+Les anges de la boue,,,6,Le Cascine,,0,0,0,{}
+L’infant,,,6,Le Cascine,,0,0,0,{}
+Cairn,,,6,Monticelli,,0,0,0,{}
+Fortezza da Basso,,,0,Fortezza Basso,,0,0,0,{}
+Facolta di Ingegneria,,,6,Fortezza Basso,,0,0,0,{}
+Gare/Les anges de la boue,,,6,Santa Maria Novella,,0,0,0,{}
+Balistero,,,0,Santa Maria Novella,,0,0,0,{}
+Instituto Leonardo Da Vinci,,,0,Indipendenza,,0,0,0,{}
+Piazza della Liberta,,,0,Indipendenza,,0,0,0,{}
+Palazzo Vecchio,,,0,Duomo,,0,0,0,{}
+Duomo,,,0,Duomo,,0,0,0,{}
+Palazzo Pitti,,,0,Palazzo Pitti,,0,0,0,{}
+Ponte Vecchio,,,6,Palazzo Pitti,,0,0,0,{}
+Santa Croce,,,6,Santa Croce - Oberdan,,0,0,0,{}
+Banca Di Firenze,,,0,Santa Croce - Oberdan,,0,0,0,{}
+Piazza della Liberta,,,0,Piazza della Liberta & Savonarola,,0,0,0,{}
+Pallazzo Medeci Ricardi,,,6,Piazza della Liberta & Savonarola,,0,0,0,{}
+Musée Degli di Firenze,,,0,Michelangelo-Gavinana,,0,0,0,{}
+Stazione ferroviaria fret,,,0,Campo di Marte,,0,0,0,{}
+Le prince,,,8,Campo di Marte,,0,0,0,{}
+Cairn,,,8,Bosco Bello,,0,0,0,{}
+Le rituel,,,8,Bosco Bello,,0,0,0,{}

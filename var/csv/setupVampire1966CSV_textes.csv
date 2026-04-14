@@ -1,0 +1,302 @@
+name,value,description
+DEBUG,FALSE,Activates the Debugging texts
+DEBUG_REPORT,FALSE,Activates the Debugging texts for the investigation report
+DEBUG_ATTACK,FALSE,Activates the Debugging texts for the attack report mechanics
+DEBUG_TRANSFORM,FALSE,Activates the Debugging texts for the attack report mechanics
+ACTIVATE_TESTS,TRUE,Activates the insertion of tests values
+TITLE,Firenze 1966,Name of game
+PRESENTATION,"<p>Le 6 novembre 1966, l’Arno inonde une grande partie du centre-ville, endommageant de nombreux chefs-d’œuvre et déplaçant la population du centre ville.
+        Un grand mouvement de solidarité internationale naît à la suite de cet évènement et mobilise des milliers de volontaires, surnommés Les anges de la boue.
+        Dans les jours suivant la catastrophe les forces surnaturelles reprennent doucement pied dans la ville. Retrouverez vous votre pouvoir d’antan ?
+        </p>",Presentation text
+IntrigueOrga,,Organisation info
+basePowerNames,"'Célérité', 'Endurance', 'Puissance'",List of Powers accessible to all workers
+turn_recrutable_workers,1,Number of workers recrutable per turn
+turn_firstcome_workers,1,Number of worker recrutable by firstcome pick per turn
+first_come_nb_choices,1,Number of worker options presented for 1st come recrutment
+first_come_origin_list,rand,Origins used for worker generation
+recrutement_nb_choices,3,Number of choices presented for recrutment
+recrutement_origin_list,"1,2,3,4,5",Origins used for worker generation
+local_origin_list,1,Spécific list of local origins for investigations texts
+recrutement_disciplines,1,Number of disciplines allowed on recrutment
+recrutement_transformation,"{""action"": ""check""}",Json string calibrating transformations allowed on recrutment
+age_discipline,"{""age"": [""2""]}",If disciplines can be gained with AGE
+age_transformation,"{""action"": ""check""}",If transformation can be gained with AGE
+MINROLL,1,Minimum Roll for an active worker
+MAXROLL,6,Maximum Roll for a an active worker
+PASSIVEVAL,3,Value for passive actions
+ENQUETE_ZONE_BONUS,0,Bonus à la valeur enquete si le worker est dans une zone contrôlée
+ATTACK_ZONE_BONUS,0,Bonus à la valeur attaque si le worker est dans une zone contrôlée
+DEFENCE_ZONE_BONUS,1,Bonus à la valeur défense si le worker est dans une zone contrôlée
+HIDE_ENQUETE_FLAT_BONUS,4,Bonus to the investigate value if the worker is using hide
+HIDE_DEFENCE_FLAT_BONUS,1,Bonus to the investigate value if the worker is using hide
+passiveInvestigateActions,"'passive','attack','captured','hide'",Liste of passive investigation actions
+activeInvestigateActions,"'investigate','claim'",Liste of active investigation actions
+passiveAttackActions,"'passive','investigate','hide'",Liste of passive attack actions
+activeAttackActions,"'attack','claim'",Liste of active attack actions
+passiveDefenceActions,"'passive','investigate','attack','claim','captured','hide'",Liste of passive defence actions
+activeDefenceActions,,Liste of active defense actions
+REPORTDIFF0,-1,Value for Level 0 information
+REPORTDIFF1,1,Value for Level 1 information
+REPORTDIFF2,2,Value for Level 2 information
+REPORTDIFF3,4,Value for Level 3 information
+LOCATIONNAMEDIFF,0,Value for Location Name
+LOCATIONINFORMATIONDIFF,1,Value for Location Information
+LOCATIONARTEFACTSDIFF,2,Value for Location Artefact discovery
+attackTimeWindow,1,Number of turns a discovered worker is attackable after being lost
+canAttackNetwork,1,"If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained "
+LIMIT_ATTACK_BY_ZONE,0,"If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone"
+ATTACKDIFF0,1,Value for Attack Success
+ATTACKDIFF1,3,Value for Capture
+RIPOSTACTIVE,1,Activate Ripost when attacked
+RIPOSTDIFF,2,Value for Successful Ripost
+DISCRETECLAIMDIFF,2,Value for discrete claim
+VIOLENTCLAIMDIFF,0,Value for violent claim
+txt_ps_passive,surveille,Text for passive action
+txt_ps_investigate,enquête,Text for investigate action
+txt_ps_hide,se cache,Text for hide action
+txt_ps_attack,attaque,Text for attack action
+txt_ps_claim,revendique le quartier,Text for claim action
+txt_ps_captured,a disparu,Text for captured action
+txt_ps_dead,a disparu,Text for dead action
+txt_ps_prisoner,est un.e agent %s %s que nous avons fait.e prisonnier.e,Text for beeing prisoner
+txt_ps_double_agent,a infiltré le réseau %s %s ,Text for being infiltrator
+txt_inf_passive,surveiller,Text for passive action
+txt_inf_investigate,enquêter,Text for investigate action
+txt_inf_hide,se cacher,Text for hide action
+txt_inf_attack,attaquer,Text for attack action
+txt_inf_claim,revendiquer le quartier,Text for claim action
+txt_inf_captured,as été capturer,Text for captured action
+txt_inf_dead,est mort,Text for dead action
+continuing_investigate_action,false,Does the investigate action stay active
+continuing_claimed_action,false,Does the claim action stay active
+baseDiscoveryDiff,3,Base discovery value for bases
+baseDiscoveryDiffAddPowers,1,Base discovery value Power presence ponderation 0 for no
+baseDiscoveryDiffAddWorkers,1,Base discovery value worker presence ponderation 0 for no
+baseDiscoveryDiffAddTurns,0.5,Base discovery value base age presence ponderation 0 for no
+maxBonusDiscoveryDiffPowers,5,Maximum bonus obtainable from power presence
+maxBonusDiscoveryDiffWorkers,4,Maximum bonus obtainable from worker presence
+maxBonusDiscoveryDiffTurns,3,Maximum bonus obtainable from age of base
+baseAttack,0,Base attack value for bases
+baseAttackAddPowers,1,Base attack value Power presence ponderation 0 for no
+baseAttackAddWorkers,1,Base attack value worker presence ponderation 0 for no
+baseDefence,0,Base defence value for bases
+baseDefenceAddPowers,1,Base defence value Power presence ponderation 0 for no
+baseDefenceAddWorkers,1,Base defence value worker presence ponderation 0 for no
+baseDefenceAddTurns,0.5,Base defence value base age presence ponderation 0 for no
+noControllerDefenceBonus,3,Base defence value for no controller
+maxBonusDefenceTurns,3,Maximum bonus obtainable from age of base
+attackLocationDiff,1,Difficulty to destroy a Location
+textLocationDestroyed,Le lieu %s a été détruit selon votre bon vouloir.,Text for location destroyed
+textLocationPillaged,"Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.",Text for location pillaged
+textLocationNotDestroyed,"Le lieu %s n’a pas été détruit, nos excuses.",Text for location not destroyed
+textOwnedArtefacts,Vos artefacts :,Text for location owned artefacts
+ressource_management,FALSE,Ressource management configuration
+map_file,carte_quartiers_florence.jpg,Map file to use
+map_alt,Carte des Quartiers de Florence,Map alt
+controllerNameDenominatorThe,,Denominator ’the’ for the controler name
+controllerNameDenominatorOf,de,Denominator ’of’ for the controler name
+controllerLastNameDenominatorOf,de,Denominator ’of’ for the controler last name
+textForZoneType,quartier,Text for the type of zone
+timeValue,Semaine,Text for time span
+timeDenominatorThis,cette,Denominator ’this’ for time text
+timeDenominatorThe,la,Denominator ’the’ for time text
+timeDenominatorOf,de la,Denominator ’of’ for time text
+textRecrutementJobHobby,"%5$s, %4$s",string to present hobby %4$s and job %5$s on recrutement
+textViewWorkerJobHobby,c’était un.e %3$s et iel est un.e %2$s,string to present hobby %2$s and job %3$s view of worker
+textViewWorkerDisciplines,Ses disciplines développées sont : %s <br />,Texts for worker view page disciplines
+textViewWorkerTransformations,Iel a été transformé.e en : %s <br />,Texts for worker view page transformations
+texteNameBase,Repaire %s,Text for Name of base
+texteDescriptionBase,"Nous avons trouvé le repaire de %1$s des %2$s. Ses serviteurs ne semblent pas avoir fini de remettre en place les défenses qui existaient avant la crue.
+    En attaquant ce lieu nous pourrions lui porter un coup fatal.
+    Sa disparition provoquerait certainement quelques questions à l’Elyséum, mais un joueur en moins sur l’échiquier politique est toujours bénéfique.
+    Nous ne devons pas tarder à prendre notre décision, ses défenses se renforcent de %3$s en %3$s.",Texts for description of base
+texteHiddenFactionBase,"
+       Il nous apparait en fouillant le lieu que quelqu’un s’est donné beaucoup de mal pour que ce repaire donne l’impression d’être du clan %1$s, mais en réalité son propriétaire est du clan %2$s.",Texts for secret faction description of base
+textControllerActionCreateBase,Créer un repaire dans le quartier :,create base texte in controller view actions
+textControllerActionMoveBase,Déplacer le repaire vers le quartier :,move base texte in controller view actions
+textcontrollerRecrutmentNeedsBase,Nous ne pouvons pas recruter sans avoir un repaire.,needed base for recrutment
+textesStartInvestigate,<p> Nous avons mené l’enquête dans le quartier %s.</p>,Texts for start of investigation
+textesFoundDisciplines,"[
+        ""Iel a de plus une maitrise de la discipline %s. "",
+        ""En plus, iel maitrise la discipline %s. "",
+        ""Nous avons également remarqué sa pratique de la discipline %s. "",
+        ""Ces observations se cumulent avec son utilisation de la discipline %s. ""
+    ]",Texts for extra disciplines
+textesOrigine,"[
+        ""J’ai des raisons de penser qu’iel est natif.ve de %s. "",
+        ""En plus, iel est originaire de %s. "",
+        ""Je m’en méfie, iel vient de %s. ""
+    ]",Texts for origin detection
+textesDiff01Array,"[
+        [
+            ""J’ai vu un.e %2$s du nom de %1$s qui %4$s dans ma zone d’action. %9$s"",
+            ""C’est à la base un.e %3$s mais je suis sûr qu’iel possède aussi la discipline de %6$s%8$s. ""
+        ],
+        [
+            ""Nous avons repéré un.e %2$s du nom de %1$s qui %4$s dans notre quartier. %9$s"",
+            ""En poussant nos recherches il s’avère qu’iel maitrise %6$s%8$s. Iel est aussi %3$s, mais cette information n’est pas si pertinente. ""
+        ],
+        [
+            ""J’ai trouvé %1$s, qui n’est clairement pas un agent à nous, c’est un.e %2$s et un.e %3$s. "",
+            ""%9$sIel démontre une légère maitrise de la discipline %6$s%8$s. ""
+        ],
+        [
+            ""Je me suis rendu compte que %1$s, que je prenais pour un.e simple %3$s, %4$s dans la région. %9$s"",
+            ""C’était louche, alors j’ai enquêté et trouvé qu’iel a en réalité des pouvoirs de %6$s, ce qui en fait un.e %2$s un peu trop spécial.e%8$s. ""
+        ],
+        [
+            ""On a suivi %1$s parce qu’on l’a repéré.e en train de %5$s, ce qui nous a mis la puce à l’oreille. C’est normalement un.e %2$s mais on a découvert qu’iel était aussi un.e %3$s. "",
+            ""%9$sCela dit, le vrai problème, c’est qu’iel semble maîtriser %6$s, au moins partiellement%8$s. ""
+        ]
+    ]",Texts for search results level 1 (structured dialogue in pairs)
+textesDiff01TransformationDiff0Array,"[
+        [
+            ""Nous avons repéré un.e %7$s du nom de %1$s qui %4$s dans notre quartier. %9$s"",
+            ""En poussant nos recherches il s’avère qu’iel maitrise %6$s. Iel est aussi %3$s, mais cette information n’est pas pertinente. ""
+        ],
+        [
+            ""J’ai trouvé %1$s, un.e %7$s qui n’est clairement pas un loyal serviteur à vous, c’est un.e %2$s et un.e %3$s. "",
+            ""%9$sIel démontre une légère maitrise de la discipline %6$s. ""
+        ],
+        [
+            ""Je me suis rendu compte qu’un.e %7$s %4$s dans le coin. On l’a entendu.e se faire appeler %1$s. %9$s"",
+            ""C’était louche, alors j’ai enquêté et trouvé qu’iel a des pouvoirs de %4$s, ce qui en fait un.e %2$s un peu trop spécial.e. ""
+        ]
+    ]",Variation text blocks for Diff01 transformation reports
+textesDiff2,"[
+        ""%2$sEn plus, sa famille a des liens avec le réseau %1$s. %3$s"",
+        ""Iel fait partie du réseau %1$s. %3$s %2$s"",
+        ""%2$sEn creusant, iel est rattaché.e au réseau %1$s. %3$s"",
+        ""%3$s Iel reçoit un soutien financier du réseau %1$s. %2$s"",
+        ""%2$sIel traîne avec le réseau %1$s. %3$s""
+    ]",Texts for search results level 2
+textesDiff3,"[
+        ""Ce réseau répond à %1$s. "",
+        ""A partir de là on a pu remonter jusqu’à %1$s. "",
+        ""Du coup, iel travaille forcément pour %1$s. "",
+        ""Nous l’avons vu.e rencontrer en personne %1$s. "",
+        ""Ce qui veut dire que c’est un des agents de %1$s. ""
+    ]",Texts for search results level 3
+textesTransformationDiff1,"[
+    "" et nous concluons que c’est un.e %s"",
+    "", ce qui laisse penser que c’est un.e %s""
+]",Texts for transformation level 1
+textesTransformationDiff2,"[
+    ""C’est probablement un.e %s mais les preuves nous manquent encore. "",
+    ""Iel n’est clairement pas normal.e, peut-être un.e %s. ""
+]",Texts for transformation level 2
+textesClaimFailViewArray,"[
+    ""J’ai vu %1$s tenter de prendre le contrôle du quartier %2$s, mais la défense l’a repoussé.e brutalement."",
+    ""L’assaut de %1$s sur le quartier %2$s a échoué ; c’était un vrai carnage."",
+    ""%1$s a voulu s’imposer au %2$s, sans succès. Iel a été forcé.e de battre en retraite."",
+    ""Je pense que %1$s pensait avoir une chance au %2$s. C’était mal calculé, iel s’est planté.e.""
+]",Texts the workers observing the failed violent claiming of a zone
+textesClaimSuccessViewArray,"[
+    ""J’ai vu %1$s renverser l’autorité sur %2$s. La zone a changé de mains.<br/>"",
+    ""%2$s appartient désormais au maitre de %1$s. Iel a balayé toute résistance.<br/>"",
+    ""L’opération de %1$s sur %2$s a été une réussite totale, malgré les dégats.<br/>"",
+    ""%1$s a pris %2$s par la force. Iel n’a laissé aucune chance aux défenseurs.<br/>""
+]",Texts the workers observing the successful violent claiming of a zone
+textesClaimFailArray,"[
+    ""Notre tentative de prise de contrôle de %2$s a échoué. La défense était trop solide.<br/>"",
+    ""Nous avons échoué à nous imposer en force sur %2$s. Il faudra retenter plus tard.<br/>"",
+    ""Notre assaut sur %2$s a été un échec. Les forces en place ont tenu bon.<br/>"",
+    ""La mission de domination de %2$s n’a pas abouti. Trop de résistance à notre autorité sur place.<br/>""
+]",Texts for the fail report of the claiming worker
+textesClaimSuccessArray,"[
+    ""Nous avons pris le contrôle du quartier %2$s avec succès. Félicitations, vous en êtes désormais le maitre.<br/>"",
+    ""Notre offensive sur la zone %2$s a porté ses fruits. Elle est maintenant à vous.<br/>"",
+    ""Nous avons su imposer votre autorité sur %2$s. Le quartier vous obéit désormais.<br/>"",
+    ""%2$s est tombé.e sous votre coupe.<br/>""
+]",Texts for the success report of the claiming worker
+workerDisappearanceTexts,"[
+    ""<p>Cet agent a disparu sans laisser de trace à partir de la semaine %s.</p>"",
+    ""<p>Depuis la semaine %s, plus aucun signal ni message de cet agent.</p>"",
+    ""<p>La connexion avec l’agent s’est perdue la semaine %s, et nous ignorons où iel se trouve.</p>"",
+    ""<p>À partir de la semaine %s, cet agent semble s’être volatilisé.e dans la nature.</p>"",
+    ""<p>Nous avons perdu toute communication avec cet agent depuis la semaine %s.</p>"",
+    ""<p>La dernière trace de cet agent remonte à la semaine %s, depuis iel est aux abonnés absents.</p>"",
+    ""<p>La semaine %s marque la disparition totale de cet agent. Aucun indice sur sa situation actuelle.</p>"",
+    ""<p>L’agent s’est évanoui dans la nature après la semaine %s. Aucune nouvelle depuis.</p>"",
+    ""<p>Depuis la semaine %s, cet agent est un fantôme, insaisissable et introuvable.</p>"",
+    ""<p>La semaine %s signe le début du silence radio complet de cet agent.</p>""
+]",Templates used for worker disappearance text with a week number placeholder
+attackSuccessTexts,"[
+    ""<p>J’ai pu mener à bien ma mission sur %1$s, son silence est assuré.</p>"",
+    ""<p>J’ai accompli l’attaque sur %1$s, iel a trouvé son repos final.</p>"",
+    ""<p>Notre cible %1$s a été accompagnée à l’hôpital dans un état critique, nous n’avons plus rien à craindre.</p>"",
+    ""<p>Un.e suicidé.e sera retrouvé dans l’Arno demain, %1$s n’est plus des nôtres.</p>"",
+    ""<p>Je confirme que %1$s ne posera plus jamais problème, iel a rejoint le silence éternel.</p>"",
+    ""<p>Le dossier %1$s est officiellement clos. Son existence appartient désormais au passé.</p>"",
+    ""<p>Mission accomplie : %1$s est désormais une simple note dans les annales de l’histoire.</p>""
+]",Templates for successful attack reports mentioning the target name
+captureSuccessTexts,"[
+    ""<p>La mission est un succès total : %1$s est désormais entre nos mains, et nous allons mener l’interrogatoire.</p>"",
+    ""<p>La mission s’est déroulée comme prévu : %1$s est capturé.e et prêt.e à livrer ses secrets.</p>"",
+    ""<p>Succès complet sur %1$s : iel est désormais sous notre garde et n’aura d’autre choix que de parler.</p>"",
+    ""<p>Nous avons maîtrisé %1$s : iel est maintenant entre nos mains, prêt.e pour l’interrogatoire.</p>"",
+    ""<p>Mission accomplie : %1$s est capturé.e et en sécurité pour un débriefing approfondi.</p>"",
+    ""<p>L’objectif %1$s est neutralisé et sous notre contrôle. L’interrogatoire peut commencer.</p>"",
+    ""<p>Nous avons intercepté %1$s sans heurt : iel est désormais à notre merci pour un échange d’informations.</p>"",
+    ""<p>Le succès est total : %1$s est retenu.e, et ses révélations ne tarderont pas.</p>"",
+    ""<p>Mission terminée avec brio : %1$s est capturé.e et ne nous échappera plus.</p>""
+]",Inclusive templates for successful capture reports mentioning the target name
+failedAttackTextes,"[
+    ""<p>Malheureusement, %1$s a réussi à nous échapper et reste en vie.</p>"",
+    ""<p>L’opération contre %1$s a échoué. La cible a survécu et demeure une menace.</p>"",
+    ""<p>Notre tentative contre %1$s s’est soldée par un échec. Iel est toujours actif.ve.</p>"",
+    ""<p>L’attaque n’a pas atteint son objectif : %1$s a survécu et garde sa liberté.</p>"",
+    ""<p>Nous n’avons pas pu neutraliser %1$s. Iel reste introuvable après l’affrontement.</p>"",
+    ""<p>La mission a été un revers : %1$s est toujours debout et hors de notre portée.</p>"",
+    ""<p>Malgré nos efforts, %1$s s’est défendu.e avec succès et a réussi à fuir.</p>"",
+    ""<p>Notre assaut n’a pas suffi : %1$s a survécu et continue d’agir.</p>"",
+    ""<p>La cible %1$s s’est montrée plus résistante que prévu. Iel a échappé à notre emprise.</p>"",
+    ""<p>Nous avons échoué à neutraliser %1$s. Iel demeure vivant.e et peut encore riposter.</p>""
+]",Texts for failed attacks in inclusive language
+unfoundAttackTextes,"[
+    ""<p>Malheureusement, <strong>%1$s</strong> est introuvable, quelqu’un a dû l’atteindre avant nous.</p>""
+]",Texts for unfound attacks in inclusive language
+escapeTextes,"[
+    ""<p>J’ai été pris.e pour cible par %1$s, mais j’ai réussi à lui échapper de justesse.</p>"",
+    ""<p>Une attaque orchestrée par %1$s a failli m’avoir, mais j’ai pu me faufiler hors de sa portée.</p>"",
+    ""<p>L’embuscade tendue par %1$s n’a pas suffi à me retenir, j’ai pu m’échapper.</p>"",
+    ""<p>J’ai croisé %1$s sur ma route, iel a tenté de m’intercepter, mais j’ai fui avant qu’il ne soit trop tard.</p>"",
+    ""<p>L’attaque de %1$s a échoué, je suis sauf.ve et hors de danger.</p>"",
+    ""<p>Un assaut surprise de %1$s m’a pris.e au dépourvu, mais j’ai échappé à ses griffes à temps.</p>"",
+    ""<p>Malgré une attaque menée par %1$s, j’ai gardé mon calme et trouvé un chemin pour m’échapper.</p>"",
+    ""<p>J’ai senti %1$s venir et, bien que surpris.e, j’ai su échapper à son piège.</p>"",
+    ""<p>%1$s a tenté de me capturer, mais ma fuite a été rapide et efficace.</p>"",
+    ""<p>L’assaut de %1$s n’a pas eu le résultat escompté, je suis parvenu.e à m’enfuir indemne.</p>""
+]",Texts for successful escapes in inclusive language
+textesAttackFailedAndCountered,"[
+    ""<p>Je pars mettre en route le plan d’assassinat de %s. [Le rapport n’a jamais été terminé.e.]</p>"",
+    ""<p>Début de la mission : %s. [Le rapport n’a jamais été terminé.e.]</p>"",
+    ""<p>Nous avons perdu contact avec l’agent juste après le début de l’opération sur %s.</p>"",
+    ""<p>Le silence radio après le lancement de la mission contre %s est inquiétant…</p>"",
+    ""<p>L’équipe envoyée pour neutraliser %s n’est jamais revenue.</p>""
+]",Texts for missions that fail and result in counter-attack or disappearance
+counterAttackTexts,"[
+    ""<p>%1$s m’a attaqué.e, j’ai survécu et ma riposte l’a anéanti.e. J’ai jeté son corps dans l’Arno.</p>"",
+    ""<p>Après avoir été attaqué.e par %1$s, j’ai non seulement survécu, mais ma riposte nous assure qu’iel ne posera plus problème.</p>"",
+    ""<p>%1$s a cru m’avoir, mais ma riposte a brisé ses espoirs et l’a détruit.e.</p>"",
+    ""<p>Iel a tenté de me réduire au silence, mais après avoir survécu à l’attaque de %1$s, j’ai répondu par une riposte fatale.</p>"",
+    ""<p>Malgré l’assaut de %1$s, ma riposte a non seulement sauvé ma vie, mais a mis fin à ses ambitions.</p>"",
+    ""<p>Attaqué.e par %1$s, j’ai résisté et ma riposte l’a anéanti.e sans retour.</p>"",
+    ""<p>Iels ont cherché à me faire tomber, mais ma riposte après l’attaque de %1$s a effacé toute menace.</p>"",
+    ""<p>L’attaque de %1$s a échoué, et ma réponse a été rapide, fatale et décisive.</p>"",
+    ""<p>Je me suis retrouvé.e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>"",
+    ""<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>""
+]",Texts for the worker who was atacked an the successfully countered
+TEXT_LOCATION_DISCOVERED_NAME,"[
+    ""Nous avons identifié une installation appelée %s."",
+    ""Des signes pointent vers une présence suspecte à l’endroit de %s.""
+]",Phrases pour signaler qu’une localisation a été découverte (nom uniquement)
+TEXT_LOCATION_DISCOVERED_DESCRIPTION,"[
+    "" Description : %s."",
+    "" Détails révélés : %s""
+]",Phrases pour décrire une localisation après enquête
+TEXT_LOCATION_CAN_BE_DESTROYED,"[
+    "" Cette localisation peut être ciblée pour destruction."",
+    "" Il est possible d’organiser une opération pour la detruire.""
+]",Phrases pour signaler qu’une localisation peut être détruite
