@@ -1,0 +1,3 @@
+controllers__lastname->controller_id,ressources_config__ressource_name->ressource_id,amount,amount_stored,end_turn_gain
+Alpha,Gold,100,50,10
+Beta,Gold,80,30,8

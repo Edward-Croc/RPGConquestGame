@@ -299,10 +299,23 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                     'junctionCol'   => $junctionCol,
                 ];
             } elseif (strpos($col, '->') !== false) {
-                list($originCol, $targetCol) = explode('->', $col);
-                $dbColumns[] = $targetCol;
+                list($originCol, $targetPart) = explode('->', $col);
                 list($table, $column) = explode('__', $originCol);
-                $lookupMaps[$targetCol] = ['table' => $table, 'column' => $column];
+
+                if (strpos($targetPart, '__') !== false) {
+                    // Compound lookup: table__col->junctionTable__junctionCol
+                    // Resolves: lookup table by col → get id → find junction row where junctionCol = id → return junction.id
+                    list($junctionTable, $junctionCol) = explode('__', $targetPart);
+                    $dbColumns[] = $junctionTable . '_id';
+                    $lookupMaps[$junctionTable . '_id'] = [
+                        'table' => $table, 'column' => $column,
+                        'compound' => true, 'junctionTable' => $junctionTable, 'junctionCol' => $junctionCol
+                    ];
+                } else {
+                    // Simple lookup: table__col->targetCol
+                    $dbColumns[] = $targetPart;
+                    $lookupMaps[$targetPart] = ['table' => $table, 'column' => $column];
+                }
             } else {
                 $dbColumns[] = $col;
             }
@@ -312,15 +325,35 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         $lookupCaches = [];
         foreach ($lookupMaps as $targetCol => $lookupInfo) {
             $lookupTable = $prefix . $lookupInfo['table'];
-            $lookupNameCol =  $lookupInfo['column'];
-            try {
-                $stmt = $pdo->query("SELECT id, {$lookupNameCol} FROM {$lookupTable}");
-                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                foreach ($results as $row) {
-                    $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
+            $lookupNameCol = $lookupInfo['column'];
+
+            if (!empty($lookupInfo['compound'])) {
+                // Compound lookup: resolve through a junction table
+                // e.g. powers.name → powers.id → link_power_type.power_id → link_power_type.id
+                $jt = $prefix . $lookupInfo['junctionTable'];
+                $jc = $lookupInfo['junctionCol'];
+                try {
+                    $stmt = $pdo->query("SELECT jt.id, lt.{$lookupNameCol}
+                        FROM {$jt} jt
+                        JOIN {$lookupTable} lt ON lt.id = jt.{$jc}");
+                    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($results as $row) {
+                        $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
+                    }
+                } catch (PDOException $e) {
+                    echo "Warning: Could not build compound lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
                 }
-            } catch (PDOException $e) {
-                echo "Warning: Could not build lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
+            } else {
+                // Simple lookup
+                try {
+                    $stmt = $pdo->query("SELECT id, {$lookupNameCol} FROM {$lookupTable}");
+                    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($results as $row) {
+                        $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
+                    }
+                } catch (PDOException $e) {
+                    echo "Warning: Could not build lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
+                }
             }
         }
 
@@ -366,7 +399,8 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         $placeholders = implode(',', array_fill(0, count($dbColumns), '?'));
         $columnList = implode(',', $dbColumns);
         $sql = "INSERT INTO {$prefixedTable} ({$columnList}) VALUES ({$placeholders})";
-        if ($tableName === 'config') {
+        $upsertTables = ['config', 'power_types'];
+        if (in_array($tableName, $upsertTables)) {
             $updateCols = array_map(fn($col) => "{$col}=VALUES({$col})", $dbColumns);
             $sql .= " ON DUPLICATE KEY UPDATE " . implode(',', $updateCols);
         }
@@ -398,7 +432,14 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                 if (strpos($col, 'linkTable_') === 0) {
                     continue; // handled after main insert
                 } elseif (strpos($col, '->') !== false) {
-                    list($csvCol, $dbCol) = explode('->', $col);
+                    list($csvCol, $targetPart) = explode('->', $col);
+                    // For compound lookups, the cache key is {junctionTable}_id
+                    if (strpos($targetPart, '__') !== false) {
+                        list($junctionTable, ) = explode('__', $targetPart);
+                        $dbCol = $junctionTable . '_id';
+                    } else {
+                        $dbCol = $targetPart;
+                    }
                     $lookupValue = $rowData[$col] ?? '';
                     if (isset($lookupCaches[$dbCol][$lookupValue])) {
                         $values[] = $lookupCaches[$dbCol][$lookupValue];
@@ -557,10 +598,13 @@ function gameReady() {
                 if ( isset($_POST['config_name']) ) {
                     $fileNames = [
                         'base' => '',
+                        'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
                         'players' => ['username', 'passwd', 'is_privileged'],
-                        'controllers' => ['firstname', 'lastname', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'controllers' => ['firstname', 'lastname', 'ia_type', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
+                        'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost'],
+                        'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json'],
                         'textes' => ['name', 'value', 'description'],
@@ -579,7 +623,7 @@ function gameReady() {
                             // Handle specific file types
                             // Map file names to actual table names where they differ
                             $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['factions', 'players', 'controllers', 'player_controller', 'locations', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
                                 $tableName = $tableNameMap[$fileName] ?? $fileName;
                                 loadCSVFile($pdo, $csvFile, $tableName, $columns);
                             } elseif ($fileName === 'config') {
@@ -689,6 +733,26 @@ function gameReady() {
                                 echo "SQL INSERT link_power_type for $powerTypeName executed successfully.<br />";
                             }
                         }
+                    }
+
+                    // Load faction_powers (after powers + link_power_type are populated)
+                    $csvFile = sprintf('%s/var/csv/setup%s_faction_powers.csv', $path, $_POST['config_name']);
+                    $sqlFile = sprintf('%s/var/%s/setup%s_faction_powers.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
+                    if (file_exists($csvFile)) {
+                        echo "Loading CSV file $csvFile ...<br />";
+                        echo 'Start <br />';
+                        loadCSVFile($pdo, $csvFile, 'faction_powers',
+                            ['factions__name->faction_id', 'powers__name->link_power_type__power_id']);
+                        echo "CSV file $csvFile loaded successfully.<br />";
+                    } elseif (file_exists($sqlFile)) {
+                        echo "Loading $sqlFile ...<br />";
+                        echo 'Start <br />';
+                        $sqlQueries = file_get_contents($sqlFile);
+                        $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
+                        $pdo->exec($sqlQueries);
+                        echo "SQL file $sqlFile executed successfully.<br />";
+                    } else {
+                        echo "Neither CSV nor SQL file found for faction_powers.<br />";
                     }
 
                     // Check for CSV file first
