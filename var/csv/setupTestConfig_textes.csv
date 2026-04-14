@@ -1,4 +1,6 @@
 "name","value","description"
+"MINROLL","3","Minimum dice roll (test: fixed at 3)"
+"MAXROLL","3","Maximum dice roll (test: fixed at 3)"
 "TITLE","TestConfig","Name of game"
 "PRESENTATION","Test scenario for automated testing","Presentation text"
 "IntrigueOrga","Test Config Admin","Organisation info"

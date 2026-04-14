@@ -1,0 +1,8 @@
+firstname,lastname,worker_origins__name->origin_id,zones__name->zone_id,controllers__lastname->controller_id,action_choice,action_params,powers
+Test,Agent1,origine Accessible,ZoneA,Charlie,passive,{},Test Hobby A|Test Metier A
+Test,Agent2,origine Accessible,ZoneA,Delta,passive,{},Test Hobby A|Test Metier A
+Test,Agent3,origine Limitée,ZoneA,Echo,passive,{},Test Hobby B|Test Metier B
+Test,Agent4,origine Limitée,ZoneA,Foxtrot,passive,{},Test Hobby C|Test Metier C
+Test,Agent5,origine Commune,ZoneA,Golf,passive,{},Test Hobby D|Test Metier D
+Test,Agent6,origine Commune,ZoneA,Alpha,investigate,{},Test Hobby E|Test Metier E
+Test,Agent7,origine Commune,ZoneA,Beta,passive,{},Test Hobby Neg|Test Metier C

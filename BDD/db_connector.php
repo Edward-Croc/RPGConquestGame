@@ -488,9 +488,143 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
 }
 
 /**
+ * Load workers from CSV into 4 tables: workers, controller_worker,
+ * worker_actions, worker_powers. One row per worker in the CSV.
+ *
+ * CSV columns:
+ *   firstname, lastname,
+ *   worker_origins__name->origin_id,
+ *   zones__name->zone_id,
+ *   controllers__lastname->controller_id,
+ *   action_choice, action_params,
+ *   powers (pipe-separated list of power names)
+ *
+ * @param PDO $pdo Database connection
+ * @param string $csvFile Path to CSV file
+ * @return bool Success status
+ */
+function loadWorkersCSV($pdo, $csvFile) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+
+    if (!file_exists($csvFile)) {
+        echo "Workers CSV file $csvFile not found.<br />";
+        return false;
+    }
+
+    try {
+        $handle = fopen($csvFile, 'r');
+        if ($handle === false) {
+            echo "Failed to open workers CSV $csvFile.<br />";
+            return false;
+        }
+        $header = fgetcsv($handle);
+
+        // Build lookup caches
+        $originCache = [];
+        $stmt = $pdo->query("SELECT id, name FROM {$prefix}worker_origins");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $originCache[$r['name']] = $r['id'];
+        }
+        $zoneCache = [];
+        $stmt = $pdo->query("SELECT id, name FROM {$prefix}zones");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $zoneCache[$r['name']] = $r['id'];
+        }
+        $controllerCache = [];
+        $stmt = $pdo->query("SELECT id, lastname FROM {$prefix}controllers");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $controllerCache[$r['lastname']] = $r['id'];
+        }
+        // Compound lookup: power name -> link_power_type.id
+        $linkPowerCache = [];
+        $stmt = $pdo->query("SELECT lpt.id, p.name
+            FROM {$prefix}link_power_type lpt
+            JOIN {$prefix}powers p ON p.id = lpt.power_id");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $linkPowerCache[$r['name']] = $r['id'];
+        }
+
+        // Prepared statements for the 4 tables
+        $insertWorker = $pdo->prepare(
+            "INSERT INTO {$prefix}workers (firstname, lastname, origin_id, zone_id) VALUES (?, ?, ?, ?)"
+        );
+        $insertCW = $pdo->prepare(
+            "INSERT INTO {$prefix}controller_worker (controller_id, worker_id) VALUES (?, ?)"
+        );
+        $insertAction = $pdo->prepare(
+            "INSERT INTO {$prefix}worker_actions
+             (worker_id, controller_id, turn_number, zone_id, action_choice, action_params)
+             VALUES (?, ?, 0, ?, ?, ?)"
+        );
+        $insertPower = $pdo->prepare(
+            "INSERT INTO {$prefix}worker_powers (worker_id, link_power_type_id) VALUES (?, ?)"
+        );
+
+        $rowCount = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) !== count($header)) {
+                echo "Warning: Row " . ($rowCount + 1) . " has wrong column count in $csvFile.<br />";
+                continue;
+            }
+            $data = array_combine($header, $row);
+
+            $originName = $data['worker_origins__name->origin_id'] ?? '';
+            $zoneName = $data['zones__name->zone_id'] ?? '';
+            $controllerName = $data['controllers__lastname->controller_id'] ?? '';
+
+            $originId = $originCache[$originName] ?? null;
+            $zoneId = $zoneCache[$zoneName] ?? null;
+            $controllerId = $controllerCache[$controllerName] ?? null;
+
+            if ($originId === null || $zoneId === null || $controllerId === null) {
+                echo "Warning: Row " . ($rowCount + 1) . " has unresolved lookups (origin=$originName, zone=$zoneName, ctrl=$controllerName).<br />";
+                continue;
+            }
+
+            // 1. Insert worker
+            $insertWorker->execute([$data['firstname'], $data['lastname'], $originId, $zoneId]);
+            $workerId = $pdo->lastInsertId();
+
+            // 2. Insert controller_worker junction
+            $insertCW->execute([$controllerId, $workerId]);
+
+            // 3. Insert worker_actions for turn 0
+            $insertAction->execute([
+                $workerId, $controllerId, $zoneId,
+                $data['action_choice'] ?? 'passive',
+                $data['action_params'] ?? '{}',
+            ]);
+
+            // 4. Insert worker_powers (pipe-separated list)
+            $powersList = $data['powers'] ?? '';
+            if ($powersList !== '') {
+                foreach (explode('|', $powersList) as $powerName) {
+                    $powerName = trim($powerName);
+                    if ($powerName === '') continue;
+                    if (isset($linkPowerCache[$powerName])) {
+                        $insertPower->execute([$workerId, $linkPowerCache[$powerName]]);
+                    } else {
+                        echo "Warning: Power '{$powerName}' not found for worker {$data['lastname']}.<br />";
+                    }
+                }
+            }
+
+            $rowCount++;
+        }
+
+        fclose($handle);
+        echo "Workers CSV $csvFile loaded successfully ($rowCount rows).<br />";
+        return true;
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error loading workers CSV $csvFile: " . $e->getMessage()."<br />";
+        return false;
+    }
+}
+
+/**
  * Execute SQL UPDATE statements from CSV
  * CSV format: table_name,column_name,where_column,where_value,new_value
- * 
+ *
  * @param PDO $pdo Database connection
  * @param string $csvFile Path to CSV file
  * @return bool Success status
@@ -755,35 +889,21 @@ function gameReady() {
                         echo "Neither CSV nor SQL file found for faction_powers.<br />";
                     }
 
-                    // Check for CSV file first
+                    // Load workers (advanced): workers + controller_worker + worker_actions + worker_powers
                     $csvFile = sprintf('%s/var/csv/setup%s_advanced.csv', $path, $_POST['config_name']);
                     $sqlFile = sprintf('%s/var/%s/setup%s_advanced.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                    
+
                     if (file_exists($csvFile)) {
                         echo "Loading CSV file $csvFile ...<br />";
                         echo 'Start <br />';
-                        loadCSVFile(
-                            $pdo,
-                            $csvFile,
-                            'advanced',
-                            [
-                                'firstname',
-                                'lastname',
-                                'worker_origins__name->origin_id',
-                                'zones__name->zone_id',
-                                'controllers__lastname->controller_worker__id&new__id',
-                                'controllers__lastname->holder_controller_id'
-                            ]
-                        );
+                        loadWorkersCSV($pdo, $csvFile);
                     } else if (file_exists($sqlFile)) {
                         echo 'Start <br />';
-                        // Read SQL file
                         $sqlQueries = file_get_contents($sqlFile);
                         $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
-                        // Execute SQL queries
                         $pdo->exec($sqlQueries);
                         echo "SQL file $sqlFile executed successfully.<br />";
-                    } else if (!file_exists($csvFile) && !file_exists($sqlFile)) {
+                    } else {
                         echo "Neither CSV nor SQL file found for advanced.<br />";
                     }
 
