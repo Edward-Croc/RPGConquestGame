@@ -32,4 +32,5 @@ services:
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
     command: >
-      bash -c "docker-php-ext-install pdo pdo_mysql mysqli && apache2-foreground"
+      bash -c "apt-get update && apt-get install -y default-mysql-client &&
+              docker-php-ext-install pdo pdo_mysql mysqli && apache2-foreground"
