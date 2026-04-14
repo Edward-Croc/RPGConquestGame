@@ -741,6 +741,7 @@ function gameReady() {
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json'],
+                        'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
                         'textes' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
@@ -757,7 +758,7 @@ function gameReady() {
                             // Handle specific file types
                             // Map file names to actual table names where they differ
                             $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
                                 $tableName = $tableNameMap[$fileName] ?? $fileName;
                                 loadCSVFile($pdo, $csvFile, $tableName, $columns);
                             } elseif ($fileName === 'config') {
@@ -786,6 +787,22 @@ function gameReady() {
                         } else {
                             echo "Neither CSV nor SQL file found for $fileName.<br />";
                         }
+                    }
+
+                    // Auto-assign every controller to every privileged player.
+                    // This replaces the need to list gm->all_controllers links in the
+                    // player_controller CSV — admins get full access automatically.
+                    try {
+                        $prefix = $_SESSION['GAME_PREFIX'];
+                        $sql = "INSERT IGNORE INTO {$prefix}player_controller (player_id, controller_id)
+                                SELECT p.id, c.id
+                                FROM {$prefix}players p
+                                CROSS JOIN {$prefix}controllers c
+                                WHERE p.is_privileged = 1";
+                        $pdo->exec($sql);
+                        echo "Auto-assigned all controllers to privileged players.<br />";
+                    } catch (PDOException $e) {
+                        echo "Warning: auto-assign privileged players failed: " . $e->getMessage() . "<br />";
                     }
 
                     // Load powers from CSV or SQL files for each power type.

@@ -1,0 +1,34 @@
+factions__name->faction_id,powers__name->link_power_type__power_id
+Samouraïs Chōsokabe,Kenjutsu (剣術) – Art du sabre
+Samouraïs Chōsokabe,Heihō (兵法) – Stratégie militaire
+Samouraïs Chōsokabe,Waka (和歌) – Poésie classique
+Samouraïs Miyoshi,Hōjutsu (砲術) – Art des armes à feu (teppō)
+Samouraïs Miyoshi,Bajutsu (馬術) – Art de l’équitation militaire
+Samouraïs Miyoshi,Gagaku (雅楽) – Musique de cour
+Chrétiens,Hōjutsu (砲術) – Art des armes à feu (teppō)
+Chrétiens,Bajutsu (馬術) – Art de l’équitation militaire
+Chrétiens,Gagaku (雅楽) – Musique de cour
+Samouraïs Hosokawa,Iaijutsu (居合術) – Art du sabre
+Samouraïs Hosokawa,Bugaku (舞楽) – Danse de cour
+Samouraïs Hosokawa,Chadō (茶道) – Voie du thé
+Samouraïs Ashikaga,Iaijutsu (居合術) – Art du sabre
+Samouraïs Ashikaga,Heihō (兵法) – Stratégie militaire
+Samouraïs Ashikaga,Gagaku (雅楽) – Musique de cour
+Ikkō-ikki,Jūjutsu (柔術) – Techniques de lutte à mains nues
+Ikkō-ikki,Ninjutsu (忍術) – Techniques d’espionnage et de guérilla
+Ikkō-ikki,Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques
+Moines Bouddhistes,Yawara (和) – Ancienne forme de techniques de soumission
+Moines Bouddhistes,Naginatajutsu (薙刀術) – Art de la hallebarde
+Moines Bouddhistes,Haikai / Haiku (俳諧 / 俳句) – Poésie courte
+Kaizokushū,Tantōjutsu (短刀術) – Combat au couteau
+Kaizokushū,Shigin (詩吟) – Chant poétique
+Kaizokushū,Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer
+Samouraïs Kōno,Iaijutsu (居合術) – Art du sabre
+Samouraïs Kōno,Haikai / Haiku (俳諧 / 俳句) – Poésie courte
+Samouraïs Kōno,Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer
+Yōkai,Kōdō (香道) – Voie de l’encens
+Yōkai,Kagenkō (影言講) – L’art de la parole de l’ombre
+Yōkai,Kagekui-ryū (影喰流) – École du Mange-Ombre
+Samouraïs Takeda,Bajutsu (馬術) – Art de l’équitation militaire
+Samouraïs Takeda,Heihō (兵法) – Stratégie militaire
+Samouraïs Takeda,Chadō (茶道) – Voie du thé

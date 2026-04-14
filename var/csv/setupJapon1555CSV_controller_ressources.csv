@@ -1,0 +1,11 @@
+controllers__lastname->controller_id,ressources_config__ressource_name->ressource_id,amount,amount_stored,end_turn_gain
+Chōsokabe (長宗我部),Koku,1000,0,1000
+Hosokawa (細川),Koku,1000,0,1000
+Miyoshi (三好),Koku,1000,0,1000
+Jōdo-shinshū (浄土真宗),Koku,1000,0,1000
+Tendai (天台宗),Koku,1000,0,1000
+Wako (和光),Koku,1000,0,1000
+Sogō (十河),Koku,0,0,0
+Kōno (河野),Koku,0,0,0
+Takeda (武田),Koku,2000,0,2000
+Ashikaga (足利),Koku,2000,0,2000

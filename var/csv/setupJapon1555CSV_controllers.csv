@@ -1,0 +1,12 @@
+firstname,lastname,ia_type,secret_controller,url,story,can_build_base,start_workers,turn_recruited_workers,turn_firstcome_workers,factions__name->faction_id,factions__name->fake_faction_id
+妖怪 de,Shikoku (四国),passif,1,https://docs.google.com/document/d/1gLcK961mCzDSAvaPVTy886JmRTpkPiACUyP8ArSkoPI,,1,1,0,0,Yōkai,Moines Bouddhistes
+Shogunat,Ashikaga (足利),passif,1,https://docs.google.com/document/d/1CMSbdrjJqZz_wabuMNKS1qSh6T7apqDq_Ag7NpI7Xx4,,1,1,0,0,Samouraïs Ashikaga,Samouraïs Ashikaga
+Clan,Kōno (河野),,1,https://docs.google.com/document/d/1SCqA_PNN6U_42t4FVYE_kIXBW1xUsS-eHwBszIKD5KI,,0,1,0,0,Samouraïs Kōno,Samouraïs Kōno
+Clan,Chōsokabe (長宗我部),,0,https://docs.google.com/document/d/1P2Mz4PAkw00DMXXG4hgyod3FJNJkdXHU2JHbvkn327I,,1,1,0,0,Samouraïs Chōsokabe,Samouraïs Chōsokabe
+Clan,Hosokawa (細川),,0,https://docs.google.com/document/d/14R_8j-5zbjC8Wzm72SsHS9QC8KDQ8l3AbkW5ZNmECAg,,1,1,0,0,Samouraïs Hosokawa,Samouraïs Hosokawa
+Clan,Miyoshi (三好),,0,https://docs.google.com/document/d/1EVtV5G1xr9O2GeOep8D3SmrEp1i7Fw5wOnuj3aGSui4,,1,1,0,0,Chrétiens,Samouraïs Miyoshi
+Temple,Jōdo-shinshū (浄土真宗),,0,https://docs.google.com/document/d/1xKYPslqDdxlps6A4ydFh_iUu6cvdP5VC9145goVmLrA,,1,1,0,0,Ikkō-ikki,Moines Bouddhistes
+Temple,Tendai (天台宗),,0,https://docs.google.com/document/d/1bP2AGEA7grFw4k4CatLrTmeZkDDlczTqUEGg151GpQ8,,1,1,0,0,Moines Bouddhistes,Moines Bouddhistes
+Groupe,Wako (和光),,0,https://docs.google.com/document/d/1lgVjCyPTpzxA0nU649PyeDldVxCKtLSh9t7AJOmwREg,,1,1,0,0,Kaizokushū,Kaizokushū
+Clan,Sogō (十河),,1,,,0,0,1,1,Chrétiens,Chrétiens
+Clan,Takeda (武田),passif,1,https://docs.google.com/document/d/1xSeM0-AGy8TakF7F-XvjJKMUmZ76hZfqLRKAzZO5s9A/edit?tab=t.0#heading=h.v3wi0mldiz4e,,0,10,0,0,Samouraïs Takeda,Samouraïs Takeda
