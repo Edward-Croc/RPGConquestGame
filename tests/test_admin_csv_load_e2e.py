@@ -251,3 +251,121 @@ class TestCSVLoadViaAdmin:
         header_text = logged_in_page.locator("div.header").inner_text()
         assert "Shikoku" in header_text or "1555" in header_text, \
             f"Header should reflect Japon1555 scenario, got: {header_text}"
+
+    def test_full_reset_japon1555_csv(self, logged_in_page: Page, base_url):
+        """Trigger a full reset with Japon1555CSV and verify CSV-loaded dataset."""
+        logged_in_page.goto(f"{base_url}/base/admin.php")
+        logged_in_page.wait_for_load_state("networkidle")
+
+        logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
+        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.wait_for_load_state("networkidle")
+        logged_in_page.wait_for_timeout(5000)
+
+        page_html = logged_in_page.content()
+
+        # No PHP warnings should appear on the page
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings found on page after Japon1555CSV reset"
+
+        # Verify CSV load success messages with exact row counts
+        assert "setupJapon1555CSV_worker_origins.csv loaded successfully (13 rows)" in page_html, \
+            "Expected worker_origins CSV to load 13 rows"
+        assert "setupJapon1555CSV_worker_names.csv loaded successfully (122 rows)" in page_html, \
+            "Expected worker_names CSV to load 122 rows"
+        assert "setupJapon1555CSV_zones.csv loaded successfully (11 rows)" in page_html, \
+            "Expected zones CSV to load 11 rows"
+        assert "setupJapon1555CSV_hobbys.csv loaded successfully (48 rows)" in page_html, \
+            "Expected hobbys CSV to load 48 rows"
+        assert "setupJapon1555CSV_jobs.csv loaded successfully (46 rows)" in page_html, \
+            "Expected jobs CSV to load 46 rows"
+        assert "setupJapon1555CSV_factions.csv loaded successfully (11 rows)" in page_html, \
+            "Expected factions CSV to load 11 rows"
+        assert "setupJapon1555CSV_locations.csv loaded successfully (48 rows)" in page_html, \
+            "Expected locations CSV to load 48 rows"
+        assert "setupJapon1555CSV_advanced.csv loaded successfully (9 rows)" in page_html, \
+            "Expected advanced workers CSV to load 9 rows"
+
+        # Verify DB row counts
+        assert table_row_count("worker_origins") == 13, \
+            "Japon1555CSV should load exactly 13 worker origins"
+        assert table_row_count("zones") == 11, \
+            "Japon1555CSV should load exactly 11 zones"
+        assert table_row_count("worker_names") == 122, \
+            "Japon1555CSV should load exactly 122 worker names"
+        assert table_row_count("factions") == 11, \
+            "Japon1555CSV should load exactly 11 factions"
+        assert table_row_count("locations") == 48, \
+            "Japon1555CSV should load exactly 48 locations"
+        # Workers from advanced.csv (9 rows × 1 worker each)
+        assert table_row_count("workers") == 9, \
+            "Japon1555CSV advanced should create exactly 9 workers"
+
+        # Verify page header reflects Japon1555 scenario
+        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        logged_in_page.wait_for_load_state("networkidle")
+        page_html = logged_in_page.content()
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings on accueil after Japon1555CSV reset"
+        header_text = logged_in_page.locator("div.header").inner_text()
+        assert "Shikoku" in header_text or "1555" in header_text, \
+            f"Header should reflect Japon1555 scenario, got: {header_text}"
+
+    def test_full_reset_vampire1966_csv(self, logged_in_page: Page, base_url):
+        """Trigger a full reset with Vampire1966CSV and verify CSV-loaded dataset."""
+        logged_in_page.goto(f"{base_url}/base/admin.php")
+        logged_in_page.wait_for_load_state("networkidle")
+
+        logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
+        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.wait_for_load_state("networkidle")
+        logged_in_page.wait_for_timeout(5000)
+
+        page_html = logged_in_page.content()
+
+        # No PHP warnings should appear on the page
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings found on page after Vampire1966CSV reset"
+
+        # Verify CSV load success messages with exact row counts
+        assert "setupVampire1966CSV_worker_origins.csv loaded successfully (12 rows)" in page_html, \
+            "Expected worker_origins CSV to load 12 rows"
+        assert "setupVampire1966CSV_worker_names.csv loaded successfully (116 rows)" in page_html, \
+            "Expected worker_names CSV to load 116 rows"
+        assert "setupVampire1966CSV_zones.csv loaded successfully (13 rows)" in page_html, \
+            "Expected zones CSV to load 13 rows"
+        assert "setupVampire1966CSV_hobbys.csv loaded successfully (53 rows)" in page_html, \
+            "Expected hobbys CSV to load 53 rows"
+        assert "setupVampire1966CSV_jobs.csv loaded successfully (69 rows)" in page_html, \
+            "Expected jobs CSV to load 69 rows"
+        assert "setupVampire1966CSV_factions.csv loaded successfully (16 rows)" in page_html, \
+            "Expected factions CSV to load 16 rows"
+        assert "setupVampire1966CSV_locations.csv loaded successfully (25 rows)" in page_html, \
+            "Expected locations CSV to load 25 rows"
+        assert "setupVampire1966CSV_advanced.csv loaded successfully (3 rows)" in page_html, \
+            "Expected advanced workers CSV to load 3 rows"
+
+        # Verify DB row counts
+        assert table_row_count("worker_origins") == 12, \
+            "Vampire1966CSV should load exactly 12 worker origins"
+        assert table_row_count("zones") == 13, \
+            "Vampire1966CSV should load exactly 13 zones"
+        assert table_row_count("worker_names") == 116, \
+            "Vampire1966CSV should load exactly 116 worker names"
+        assert table_row_count("factions") == 16, \
+            "Vampire1966CSV should load exactly 16 factions"
+        assert table_row_count("locations") == 25, \
+            "Vampire1966CSV should load exactly 25 locations"
+        # Workers from advanced.csv (3 rows × 1 worker each)
+        assert table_row_count("workers") == 3, \
+            "Vampire1966CSV advanced should create exactly 3 workers"
+
+        # Verify page header reflects Vampire1966 scenario
+        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        logged_in_page.wait_for_load_state("networkidle")
+        page_html = logged_in_page.content()
+        assert "<b>Warning</b>" not in page_html, \
+            "PHP warnings on accueil after Vampire1966CSV reset"
+        header_text = logged_in_page.locator("div.header").inner_text()
+        assert "Firenze" in header_text or "1966" in header_text or "Vampire" in header_text, \
+            f"Header should reflect Vampire1966 scenario, got: {header_text}"
