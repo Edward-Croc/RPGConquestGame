@@ -3,7 +3,7 @@
 Tests the investigation mechanic: after end turn, verify which agents
 detect which other agents and locations based on investigation values.
 
-Test data loaded via TestConfig CSVs + setupTestConfig_advanced.sql.
+Test data loaded via TestConfig CSVs (setupTestConfig_advanced.csv).
 
 Agent stats (PASSIVEVAL=3, MINROLL=MAXROLL=3):
     Finder_1 (Charlie):  enquete=7  (passive 3 + power bonus 4)
@@ -183,8 +183,6 @@ def load_and_end_turn(browser):
     page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
 
-    page.goto(f"{PHP_BASE_URL}/connection/logout.php")
-    page.wait_for_load_state("networkidle")
     context.close()
     yield
 
@@ -220,8 +218,8 @@ class TestEndTurn:
         )
         count = cursor.fetchone()['c']
         conn.close()
-        assert count >= 7, \
-            f"Expected at least 7 action rows for turn 1, got {count}"
+        assert count >= 26, \
+            f"Expected at least 26 action rows for turn 1, got {count}"
 
     def test_end_turn_page_no_warnings(self, page: Page, base_url):
         """Re-visit end turn page and verify no PHP warnings.

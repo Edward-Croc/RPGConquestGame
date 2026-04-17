@@ -110,9 +110,6 @@ def load_empty_scenario(browser):
     page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
 
-    # Logout
-    page.goto(f"{PHP_BASE_URL}/connection/logout.php")
-    page.wait_for_load_state("networkidle")
     context.close()
     yield
 
