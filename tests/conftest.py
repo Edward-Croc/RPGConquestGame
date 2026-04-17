@@ -37,7 +37,7 @@ def ensure_gm_login(page, base_url=None):
 def ensure_db_usable_after_tests():
     """Ensure gm/orga and mechanics exist after all tests complete."""
     yield
-    # Session teardown: restore minimal usable state
+    # Session teardown: ensure gm login works for manual browsing
     try:
         conn = pymysql.connect(
             host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,

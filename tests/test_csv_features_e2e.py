@@ -7,7 +7,7 @@ Tests:
 - linkTable_: each power has a link_power_type entry matching its type
 - Compound FK lookup: faction_powers correctly resolves power name -> link_power_type_id
 - Missing file handling: admin reset completes even when optional files absent
-- loadWorkersCSV: 7 workers (Finder_1..5, Searcher_1, Bystander_1) created with controllers, actions, and powers
+- loadWorkersCSV: 26 workers (7 detection + 19 combat) created with controllers, actions, and powers
 
 Run:
     python3 -m pytest tests/test_csv_features_e2e.py -v
@@ -325,7 +325,7 @@ class TestMissingFileHandling:
 class TestLoadWorkersCSV:
     """Verify loadWorkersCSV creates 4 tables of data from one CSV row per worker.
 
-    setupTestConfig_advanced.csv has 7 rows. Each should create:
+    setupTestConfig_advanced.csv has 26 rows. Each should create:
     - 1 row in workers
     - 1 row in controller_worker
     - 1 row in worker_actions (turn 0)
@@ -333,13 +333,13 @@ class TestLoadWorkersCSV:
     """
 
     def test_workers_table_populated(self):
-        """Exactly 7 workers should exist."""
+        """Exactly 26 workers should exist."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}workers`")
         count = cursor.fetchone()['c']
         conn.close()
-        assert count == 7
+        assert count == 26
 
     def test_all_workers_have_origin_and_zone(self):
         """Every worker should have non-null origin_id and zone_id (FK lookups resolved)."""
@@ -399,9 +399,22 @@ class TestLoadWorkersCSV:
         conn.close()
 
         expected = {
+            # Detection agents (Alpha-Investigation zone)
             'Finder_1': 'Charlie', 'Finder_2': 'Delta', 'Finder_3': 'Echo',
             'Finder_4': 'Foxtrot', 'Finder_5': 'Golf',
             'Searcher_1': 'Alpha', 'Bystander_1': 'Beta',
+            # Chain attack (Beta-Combat zone)
+            'Chain_A': 'Alpha', 'Chain_B': 'Beta', 'Chain_C': 'Charlie',
+            'Chain_D': 'Delta', 'Chain_E': 'Echo', 'Chain_F': 'Foxtrot', 'Chain_G': 'Golf',
+            # Base interactions (Beta-Combat zone)
+            'Even_Atk': 'Alpha', 'Even_Def': 'Beta',
+            'Counter_Atk': 'Golf', 'Counter_Def': 'Foxtrot',
+            # Blocked investigate (Beta-Combat zone)
+            'Inv_Atk_1': 'Alpha', 'Inv_Def_1': 'Beta',
+            'Inv_Atk_2': 'Charlie', 'Inv_Def_2': 'Delta',
+            # Blocked claim (Beta-Combat zone)
+            'Claim_Atk_1': 'Echo', 'Claim_Def_1': 'Beta',
+            'Claim_Atk_2': 'Charlie', 'Claim_Def_2': 'Delta',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
@@ -434,7 +447,7 @@ class TestLoadWorkersCSV:
         conn.close()
 
     def test_pipe_separated_powers_parsed(self):
-        """Each agent has 2 powers (pipe-separated in CSV) → 2 worker_powers rows."""
+        """Workers have correct power counts (2 or 4 depending on CSV pipe list)."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
@@ -443,9 +456,11 @@ class TestLoadWorkersCSV:
             LEFT JOIN `{GAME_PREFIX}worker_powers` wp ON wp.worker_id = w.id
             GROUP BY w.id, w.lastname
         """)
+        four_power_agents = {'Chain_A', 'Inv_Atk_1', 'Claim_Atk_1'}
         for r in cursor.fetchall():
-            assert r['power_count'] == 2, \
-                f"Worker '{r['lastname']}' has {r['power_count']} powers, expected 2"
+            expected = 4 if r['lastname'] in four_power_agents else 2
+            assert r['power_count'] == expected, \
+                f"Worker '{r['lastname']}' has {r['power_count']} powers, expected {expected}"
         conn.close()
 
     def test_finder1_has_correct_powers(self):
