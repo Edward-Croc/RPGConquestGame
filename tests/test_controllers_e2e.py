@@ -92,7 +92,7 @@ def load_test_config_with_players(browser):
     page.goto(f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click(no_wait_after=True)
+    page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
     context.close()

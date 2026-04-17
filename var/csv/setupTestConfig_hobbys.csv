@@ -1,14 +1,14 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
-"Investigator Hobby",", test Investigator hobby",1,0,0,,Hobby
-"Investigator2 Hobby",", test Investigator hobby 2 ",1,0,0,,Hobby
-"Master Investigator Hobby"," test Master Investigator",2,0,-1,,Hobby
-"Warrior Hobby",", test Warrior",0,1,1,,Hobby
-"Warrior 2 Hobby",", test Warrior phase 2 ",0,1,1,,Hobby
-"Tank Warrior Hobby",",  test tank warrior",-1,2,1,,Hobby
-"Glasse canon Hobby",", test hobby",1,1,-1,,Hobby
-"Test Hobby A"," enquete-focused hobby",2,1,1,,Hobby
-"Test Hobby B"," balanced low hobby",1,0,1,,Hobby
-"Test Hobby C"," minimal enquete hobby",1,0,0,,Hobby
-"Test Hobby D"," combat-focused hobby",0,3,2,,Hobby
-"Test Hobby E"," blank hobby",0,0,0,,Hobby
-"Test Hobby Neg"," negative values hobby",-1,1,-1,,Hobby
+"Keen Eye"," perceptive investigator",1,0,0,,Hobby
+"Sharp Instinct"," intuitive investigator",1,0,0,,Hobby
+"Sixth Sense"," master investigator, fragile",2,0,-1,,Hobby
+"Steady Arm"," balanced fighter",0,1,1,,Hobby
+"Combat Drill"," trained fighter",0,1,1,,Hobby
+"Iron Wall"," tank, low awareness",-1,2,1,,Hobby
+"Reckless Strike"," glass cannon",1,1,-1,,Hobby
+"Eagle Scout"," enquete-focused, versatile",2,1,1,,Hobby
+"Careful Watch"," cautious observer",1,0,1,,Hobby
+"Basic Awareness"," minimal perception",1,0,0,,Hobby
+"Brute Force"," raw combat power",0,3,2,,Hobby
+"Blank Slate"," no aptitude",0,0,0,,Hobby
+"Dark Impulse"," reckless, fragile",-1,1,-1,,Hobby

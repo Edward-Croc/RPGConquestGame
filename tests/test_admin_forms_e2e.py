@@ -87,7 +87,7 @@ def load_test_config(browser):
     page.goto(f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click(no_wait_after=True)
+    page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
     context.close()
@@ -149,28 +149,28 @@ class TestCreatePerfectAgentForm:
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#zoneSelect option").all_inner_texts()
-        assert any("ZoneA" in t for t in options_text), f"Should have ZoneA: {options_text}"
-        assert any("ZoneB" in t for t in options_text), f"Should have ZoneB: {options_text}"
+        assert any("Alpha-Investigation" in t for t in options_text), f"Should have Alpha-Investigation: {options_text}"
+        assert any("Beta-Combat" in t for t in options_text), f"Should have Beta-Combat: {options_text}"
 
     def test_hobby_dropdown_includes_test_powers(self, page: Page, base_url):
-        """Hobby dropdown should have Test Hobby A loaded from TestConfig CSV."""
+        """Hobby dropdown should have Eagle Scout loaded from TestConfig CSV."""
         ensure_gm_login(page, base_url)
         page.goto(f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_hobby_id option").all_inner_texts()
-        assert any("Test Hobby A" in t for t in options_text), \
-            f"Hobby dropdown should include Test Hobby A: {options_text[:5]}"
+        assert any("Eagle Scout" in t for t in options_text), \
+            f"Hobby dropdown should include Eagle Scout: {options_text[:5]}"
 
     def test_metier_dropdown_includes_test_powers(self, page: Page, base_url):
-        """Metier dropdown should have Test Metier A from TestConfig CSV."""
+        """Metier dropdown should have Veteran Tactician from TestConfig CSV."""
         ensure_gm_login(page, base_url)
         page.goto(f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_metier_id option").all_inner_texts()
-        assert any("Test Metier A" in t for t in options_text), \
-            f"Metier dropdown should include Test Metier A"
+        assert any("Veteran Tactician" in t for t in options_text), \
+            f"Metier dropdown should include Veteran Tactician"
 
     def test_create_worker_via_form_inserts_into_db(self, page: Page, base_url):
         """Submitting the form should create a worker row in the DB."""

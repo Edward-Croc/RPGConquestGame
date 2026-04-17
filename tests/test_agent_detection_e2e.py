@@ -6,15 +6,15 @@ detect which other agents and locations based on investigation values.
 Test data loaded via TestConfig CSVs + setupTestConfig_advanced.sql.
 
 Agent stats (PASSIVEVAL=3, MINROLL=MAXROLL=3):
-    Agent1 (Charlie):  enquete=7  (passive 3 + power bonus 4)
-    Agent2 (Delta):    enquete=7  (passive 3 + power bonus 4)
-    Agent3 (Echo):     enquete=6  (passive 3 + power bonus 3)
-    Agent4 (Foxtrot):  enquete=5  (passive 3 + power bonus 2)
-    Agent5 (Golf):     enquete=4  (passive 3 + power bonus 1)
-    Agent6 (Alpha):    enquete=3  (investigate roll 3 + power bonus 0)
-    Agent7 (Beta):     enquete=3  (passive 3 + power bonus 0, negative defence)
+    Finder_1 (Charlie):  enquete=7  (passive 3 + power bonus 4)
+    Finder_2 (Delta):    enquete=7  (passive 3 + power bonus 4)
+    Finder_3 (Echo):     enquete=6  (passive 3 + power bonus 3)
+    Finder_4 (Foxtrot):  enquete=5  (passive 3 + power bonus 2)
+    Finder_5 (Golf):     enquete=4  (passive 3 + power bonus 1)
+    Searcher_1 (Alpha):    enquete=3  (investigate roll 3 + power bonus 0)
+    Bystander_1 (Beta):     enquete=3  (passive 3 + power bonus 0, negative defence)
 
-Location A: discovery_diff=4, in ZoneA.
+Location A: discovery_diff=4, in Alpha-Investigation.
 
 Run:
     python3 -m pytest tests/test_agent_detection_e2e.py -v
@@ -175,7 +175,7 @@ def load_and_end_turn(browser):
     page.goto(f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click(no_wait_after=True)
+    page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
 
@@ -256,147 +256,147 @@ class TestAgentDetection:
     # --- Calculated values ---
 
     def test_agent1_calculated_values(self):
-        """Agent1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6."""
+        """Finder_1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6."""
         vals = get_calculated_values()
-        assert vals['Agent1']['enquete_val'] == 7
-        assert vals['Agent1']['attack_val'] == 6
-        assert vals['Agent1']['defence_val'] == 6
+        assert vals['Finder_1']['enquete_val'] == 7
+        assert vals['Finder_1']['attack_val'] == 6
+        assert vals['Finder_1']['defence_val'] == 6
 
     def test_agent2_calculated_values(self):
-        """Agent2: identical to Agent1 (same powers)."""
+        """Finder_2: identical to Finder_1 (same powers)."""
         vals = get_calculated_values()
-        assert vals['Agent2']['enquete_val'] == 7
-        assert vals['Agent2']['attack_val'] == 6
-        assert vals['Agent2']['defence_val'] == 6
+        assert vals['Finder_2']['enquete_val'] == 7
+        assert vals['Finder_2']['attack_val'] == 6
+        assert vals['Finder_2']['defence_val'] == 6
 
     def test_agent3_calculated_values(self):
-        """Agent3: passive(3) + power(3,0,2) = enq=6, atk=3, def=5."""
+        """Finder_3: passive(3) + power(3,0,2) = enq=6, atk=3, def=5."""
         vals = get_calculated_values()
-        assert vals['Agent3']['enquete_val'] == 6
-        assert vals['Agent3']['attack_val'] == 3
-        assert vals['Agent3']['defence_val'] == 5
+        assert vals['Finder_3']['enquete_val'] == 6
+        assert vals['Finder_3']['attack_val'] == 3
+        assert vals['Finder_3']['defence_val'] == 5
 
     def test_agent4_calculated_values(self):
-        """Agent4: passive(3) + power(2,0,0) = enq=5, atk=3, def=3."""
+        """Finder_4: passive(3) + power(2,0,0) = enq=5, atk=3, def=3."""
         vals = get_calculated_values()
-        assert vals['Agent4']['enquete_val'] == 5
-        assert vals['Agent4']['attack_val'] == 3
-        assert vals['Agent4']['defence_val'] == 3
+        assert vals['Finder_4']['enquete_val'] == 5
+        assert vals['Finder_4']['attack_val'] == 3
+        assert vals['Finder_4']['defence_val'] == 3
 
     def test_agent5_calculated_values(self):
-        """Agent5: passive(3) + power(1,5,3) = enq=4, atk=8, def=6."""
+        """Finder_5: passive(3) + power(1,5,3) = enq=4, atk=8, def=6."""
         vals = get_calculated_values()
-        assert vals['Agent5']['enquete_val'] == 4
-        assert vals['Agent5']['attack_val'] == 8
-        assert vals['Agent5']['defence_val'] == 6
+        assert vals['Finder_5']['enquete_val'] == 4
+        assert vals['Finder_5']['attack_val'] == 8
+        assert vals['Finder_5']['defence_val'] == 6
 
     def test_agent6_calculated_values(self):
-        """Agent6: investigate roll(3) + power(0,0,0) = enq=3, atk=3, def=3."""
+        """Searcher_1: investigate roll(3) + power(0,0,0) = enq=3, atk=3, def=3."""
         vals = get_calculated_values()
-        assert vals['Agent6']['enquete_val'] == 3
-        assert vals['Agent6']['attack_val'] == 3
-        assert vals['Agent6']['defence_val'] == 3
+        assert vals['Searcher_1']['enquete_val'] == 3
+        assert vals['Searcher_1']['attack_val'] == 3
+        assert vals['Searcher_1']['defence_val'] == 3
 
     def test_agent7_negative_defence(self):
-        """Agent7: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2."""
+        """Bystander_1: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2."""
         vals = get_calculated_values()
-        assert vals['Agent7']['enquete_val'] == 3
-        assert vals['Agent7']['attack_val'] == 4
-        assert vals['Agent7']['defence_val'] == 2
+        assert vals['Bystander_1']['enquete_val'] == 3
+        assert vals['Bystander_1']['attack_val'] == 4
+        assert vals['Bystander_1']['defence_val'] == 2
 
     # --- DB-level detection: who detects whom ---
 
     def test_agent1_detects_all_others(self):
-        """Agent1 (enq=7) detects all other agents on different controllers."""
+        """Finder_1 (enq=7) detects all other agents on different controllers."""
         detected = get_detections_for_controller('Charlie')
-        for agent in ['Agent2', 'Agent3', 'Agent4', 'Agent5', 'Agent6', 'Agent7']:
+        for agent in ['Finder_2', 'Finder_3', 'Finder_4', 'Finder_5', 'Searcher_1', 'Bystander_1']:
             assert agent in detected, \
-                f"Agent1 (Charlie, enq=7) should detect {agent}"
+                f"Finder_1 (Charlie, enq=7) should detect {agent}"
 
     def test_agent2_detects_all_others(self):
-        """Agent2 (enq=7) symmetric with Agent1 — detects all others."""
+        """Finder_2 (enq=7) symmetric with Finder_1 — detects all others."""
         detected = get_detections_for_controller('Delta')
-        for agent in ['Agent1', 'Agent3', 'Agent4', 'Agent5', 'Agent6', 'Agent7']:
+        for agent in ['Finder_1', 'Finder_3', 'Finder_4', 'Finder_5', 'Searcher_1', 'Bystander_1']:
             assert agent in detected, \
-                f"Agent2 (Delta, enq=7) should detect {agent}"
+                f"Finder_2 (Delta, enq=7) should detect {agent}"
 
     def test_agent3_detects_all_within_threshold(self):
-        """Agent3 (enq=6): diff >= -1 for Agent1(7) and Agent2(7)."""
+        """Finder_3 (enq=6): diff >= -1 for Finder_1(7) and Finder_2(7)."""
         detected = get_detections_for_controller('Echo')
-        assert 'Agent1' in detected, "Agent3 should detect Agent1 (diff=-1 >= -1)"
-        assert 'Agent2' in detected, "Agent3 should detect Agent2 (diff=-1 >= -1)"
-        assert 'Agent4' in detected
-        assert 'Agent5' in detected
+        assert 'Finder_1' in detected, "Finder_3 should detect Finder_1 (diff=-1 >= -1)"
+        assert 'Finder_2' in detected, "Finder_3 should detect Finder_2 (diff=-1 >= -1)"
+        assert 'Finder_4' in detected
+        assert 'Finder_5' in detected
 
     def test_agent4_cannot_detect_much_stronger(self):
-        """Agent4 (enq=5): cannot detect Agent1/2 (diff=-2 < -1)."""
+        """Finder_4 (enq=5): cannot detect Finder_1/2 (diff=-2 < -1)."""
         detected = get_detections_for_controller('Foxtrot')
-        assert 'Agent3' in detected, "Agent4 should detect Agent3 (diff=-1)"
-        assert 'Agent5' in detected, "Agent4 should detect Agent5 (diff=1)"
-        assert 'Agent6' in detected, "Agent4 should detect Agent6 (diff=2)"
-        assert 'Agent1' not in detected, "Agent4 should NOT detect Agent1 (diff=-2)"
-        assert 'Agent2' not in detected, "Agent4 should NOT detect Agent2 (diff=-2)"
+        assert 'Finder_3' in detected, "Finder_4 should detect Finder_3 (diff=-1)"
+        assert 'Finder_5' in detected, "Finder_4 should detect Finder_5 (diff=1)"
+        assert 'Searcher_1' in detected, "Finder_4 should detect Searcher_1 (diff=2)"
+        assert 'Finder_1' not in detected, "Finder_4 should NOT detect Finder_1 (diff=-2)"
+        assert 'Finder_2' not in detected, "Finder_4 should NOT detect Finder_2 (diff=-2)"
 
     def test_agent5_detects_weaker_only(self):
-        """Agent5 (enq=4): only detects Agent4(5), Agent6(3), Agent7(3)."""
+        """Finder_5 (enq=4): only detects Finder_4(5), Searcher_1(3), Bystander_1(3)."""
         detected = get_detections_for_controller('Golf')
-        assert 'Agent4' in detected, "Agent5 should detect Agent4 (diff=-1)"
-        assert 'Agent6' in detected, "Agent5 should detect Agent6 (diff=1)"
-        assert 'Agent1' not in detected, "Agent5 should NOT detect Agent1 (diff=-3)"
-        assert 'Agent2' not in detected, "Agent5 should NOT detect Agent2 (diff=-3)"
-        assert 'Agent3' not in detected, "Agent5 should NOT detect Agent3 (diff=-2)"
+        assert 'Finder_4' in detected, "Finder_5 should detect Finder_4 (diff=-1)"
+        assert 'Searcher_1' in detected, "Finder_5 should detect Searcher_1 (diff=1)"
+        assert 'Finder_1' not in detected, "Finder_5 should NOT detect Finder_1 (diff=-3)"
+        assert 'Finder_2' not in detected, "Finder_5 should NOT detect Finder_2 (diff=-3)"
+        assert 'Finder_3' not in detected, "Finder_5 should NOT detect Finder_3 (diff=-2)"
 
     def test_agent6_detects_equal_and_weaker(self):
-        """Agent6 (enq=3, Alpha): detects Agent7(3) and Agent5(4)."""
+        """Searcher_1 (enq=3, Alpha): detects Bystander_1(3) and Finder_5(4)."""
         detected = get_detections_for_controller('Alpha')
-        assert 'Agent7' in detected, "Agent6 should detect Agent7 (diff=0)"
-        assert 'Agent5' in detected, "Agent6 should detect Agent5 (diff=-1)"
-        assert 'Agent1' not in detected, "Agent6 should NOT detect Agent1 (diff=-4)"
+        assert 'Bystander_1' in detected, "Searcher_1 should detect Bystander_1 (diff=0)"
+        assert 'Finder_5' in detected, "Searcher_1 should detect Finder_5 (diff=-1)"
+        assert 'Finder_1' not in detected, "Searcher_1 should NOT detect Finder_1 (diff=-4)"
 
     def test_agent7_detects_equal_and_weaker(self):
-        """Agent7 (enq=3, Beta): detects Agent6(3) and Agent5(4)."""
+        """Bystander_1 (enq=3, Beta): detects Searcher_1(3) and Finder_5(4)."""
         detected = get_detections_for_controller('Beta')
-        assert 'Agent6' in detected, "Agent7 should detect Agent6 (diff=0)"
-        assert 'Agent5' in detected, "Agent7 should detect Agent5 (diff=-1)"
-        assert 'Agent1' not in detected, "Agent7 should NOT detect Agent1 (diff=-4)"
+        assert 'Searcher_1' in detected, "Bystander_1 should detect Searcher_1 (diff=0)"
+        assert 'Finder_5' in detected, "Bystander_1 should detect Finder_5 (diff=-1)"
+        assert 'Finder_1' not in detected, "Bystander_1 should NOT detect Finder_1 (diff=-4)"
 
     # --- Report content: agent detection ---
 
     def test_agent1_report_full_details_for_agent7(self):
-        """Agent1 vs Agent7: diff=4 >= REPORTDIFF3. Report has name, job, hobby, controller."""
-        report = get_worker_report('Agent1')
-        assert 'Agent7' in report, "Agent1 should see Agent7 name"
-        assert 'Test Hobby Neg' in report, "Agent1 should see Agent7's hobby"
-        assert 'Test Metier C' in report, "Agent1 should see Agent7's job"
-        assert 'Lady Beta' in report, "Agent1 at REPORTDIFF3 should see controller name"
+        """Finder_1 vs Bystander_1: diff=4 >= REPORTDIFF3. Report has name, job, hobby, controller."""
+        report = get_worker_report('Finder_1')
+        assert 'Bystander_1' in report, "Finder_1 should see Bystander_1 name"
+        assert 'Dark Impulse' in report, "Finder_1 should see Bystander_1's hobby"
+        assert 'Patrol Warden' in report, "Finder_1 should see Bystander_1's job"
+        assert 'Lady Beta' in report, "Finder_1 at REPORTDIFF3 should see controller name"
 
     def test_agent1_report_full_details_for_agent6(self):
-        """Agent1 vs Agent6: diff=4 >= REPORTDIFF3. Should include controller."""
-        report = get_worker_report('Agent1')
-        assert 'Agent6' in report
-        assert 'Lord Alpha' in report, "Agent1 should see Alpha controller name"
+        """Finder_1 vs Searcher_1: diff=4 >= REPORTDIFF3. Should include controller."""
+        report = get_worker_report('Finder_1')
+        assert 'Searcher_1' in report
+        assert 'Lord Alpha' in report, "Finder_1 should see Alpha controller name"
 
     def test_agent1_report_basic_for_agent2(self):
-        """Agent1 vs Agent2: diff=0 >= REPORTDIFF0 but < REPORTDIFF1. Basic info only."""
-        report = get_worker_report('Agent1')
-        assert 'Agent2' in report, "Agent1 should see Agent2 in report"
+        """Finder_1 vs Finder_2: diff=0 >= REPORTDIFF0 but < REPORTDIFF1. Basic info only."""
+        report = get_worker_report('Finder_1')
+        assert 'Finder_2' in report, "Finder_1 should see Finder_2 in report"
 
     def test_agent4_report_excludes_agent1(self):
-        """Agent4 vs Agent1: diff=-2 < REPORTDIFF0. Not in report."""
-        report = get_worker_report('Agent4')
-        assert 'Agent1' not in report, "Agent4 should NOT see Agent1 (diff=-2)"
+        """Finder_4 vs Finder_1: diff=-2 < REPORTDIFF0. Not in report."""
+        report = get_worker_report('Finder_4')
+        assert 'Finder_1' not in report, "Finder_4 should NOT see Finder_1 (diff=-2)"
 
     def test_agent5_report_shows_agent4(self):
-        """Agent5 vs Agent4: diff=-1 >= REPORTDIFF0. Basic info."""
-        report = get_worker_report('Agent5')
-        assert 'Agent4' in report, "Agent5 should see Agent4"
+        """Finder_5 vs Finder_4: diff=-1 >= REPORTDIFF0. Basic info."""
+        report = get_worker_report('Finder_5')
+        assert 'Finder_4' in report, "Finder_5 should see Finder_4"
 
     def test_agent6_report_sees_agent7_not_agent1(self):
-        """Agent6: sees Agent7 (diff=0) and Agent5 (diff=-1), not Agent1 (diff=-4)."""
-        report = get_worker_report('Agent6')
-        assert 'Agent7' in report, "Agent6 should see Agent7"
-        assert 'Agent1' not in report, "Agent6 should NOT see Agent1"
-        assert 'Agent2' not in report, "Agent6 should NOT see Agent2"
+        """Searcher_1: sees Bystander_1 (diff=0) and Finder_5 (diff=-1), not Finder_1 (diff=-4)."""
+        report = get_worker_report('Searcher_1')
+        assert 'Bystander_1' in report, "Searcher_1 should see Bystander_1"
+        assert 'Finder_1' not in report, "Searcher_1 should NOT see Finder_1"
+        assert 'Finder_2' not in report, "Searcher_1 should NOT see Finder_2"
 
 
 # ---------------------------------------------------------------------------
@@ -407,7 +407,7 @@ class TestAgentDetection:
 class TestLocationDetection:
     """Verify location discovery at all 4 levels, in DB, reports, and pages.
 
-    Location A: discovery_diff=4, in ZoneA.
+    Location A: discovery_diff=4, in Alpha-Investigation.
     Thresholds: LOCATIONNAMEDIFF=0, LOCATIONINFORMATIONDIFF=1, LOCATIONARTEFACTSDIFF=2.
 
     Level -1 (unfound):  diff < 0 — nothing.
@@ -416,28 +416,28 @@ class TestLocationDetection:
     Level  2 (secret):   diff >= 2 — all info in report, known_locations (secret=1).
     """
 
-    # --- Level -1: unfound (Agent6, enq=3, diff=-1) ---
+    # --- Level -1: unfound (Searcher_1, enq=3, diff=-1) ---
 
     def test_unfound_not_in_report(self):
-        """Agent6 (diff=-1): no location info in report."""
-        report = get_worker_report('Agent6')
+        """Searcher_1 (diff=-1): no location info in report."""
+        report = get_worker_report('Searcher_1')
         assert 'Location A' not in report
 
     def test_unfound_not_in_known_locations(self):
-        """Agent6: not in controller_known_locations."""
+        """Searcher_1: not in controller_known_locations."""
         locs = get_location_discoveries_for_controller('Alpha')
         assert not any(r['name'] == 'Location A' for r in locs)
 
-    # --- Level 0: name only (Agent5, enq=4, diff=0) ---
+    # --- Level 0: name only (Finder_5, enq=4, diff=0) ---
 
     def test_name_only_in_report(self):
-        """Agent5 (diff=0): location name in report, no description."""
-        report = get_worker_report('Agent5')
+        """Finder_5 (diff=0): location name in report, no description."""
+        report = get_worker_report('Finder_5')
         assert 'Location A' in report
         assert 'test location' not in report.lower(), "Should NOT see description"
 
     def test_name_only_not_in_known_locations(self):
-        """Agent5: NOT in controller_known_locations (requires diff>=1)."""
+        """Finder_5: NOT in controller_known_locations (requires diff>=1)."""
         locs = get_location_discoveries_for_controller('Golf')
         assert not any(r['name'] == 'Location A' for r in locs)
 
@@ -450,17 +450,17 @@ class TestLocationDetection:
         page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
-    # --- Level 1: description (Agent4, enq=5, diff=1) ---
+    # --- Level 1: description (Finder_4, enq=5, diff=1) ---
 
     def test_desc_in_report(self):
-        """Agent4 (diff=1): name + description in report, no secret."""
-        report = get_worker_report('Agent4')
+        """Finder_4 (diff=1): name + description in report, no secret."""
+        report = get_worker_report('Finder_4')
         assert 'Location A' in report
         assert 'test location' in report.lower(), "Should see description"
         assert 'Secret details' not in report, "Should NOT see secret"
 
     def test_desc_in_known_locations_no_secret(self):
-        """Agent4: in controller_known_locations with found_secret=0."""
+        """Finder_4: in controller_known_locations with found_secret=0."""
         locs = get_location_discoveries_for_controller('Foxtrot')
         match = [r for r in locs if r['name'] == 'Location A']
         assert len(match) == 1, "Foxtrot should have Location A in known_locations"
@@ -482,17 +482,17 @@ class TestLocationDetection:
         page.wait_for_load_state("networkidle")
         assert "Location A" in page.inner_text("body") or "Location A" in page.content()
 
-    # --- Level 2: secret (Agent1, enq=7, diff=3) ---
+    # --- Level 2: secret (Finder_1, enq=7, diff=3) ---
 
     def test_secret_in_report(self):
-        """Agent1 (diff=3): name + description + secret in report."""
-        report = get_worker_report('Agent1')
+        """Finder_1 (diff=3): name + description + secret in report."""
+        report = get_worker_report('Finder_1')
         assert 'Location A' in report
         assert 'test location' in report.lower()
         assert 'Secret details' in report, "Should see hidden_description"
 
     def test_secret_in_known_locations_with_flag(self):
-        """Agent1: in controller_known_locations with found_secret=1."""
+        """Finder_1: in controller_known_locations with found_secret=1."""
         locs = get_location_discoveries_for_controller('Charlie')
         match = [r for r in locs if r['name'] == 'Location A']
         assert len(match) == 1
@@ -536,54 +536,54 @@ class TestWorkerViewPage:
         page.wait_for_load_state("networkidle")
 
     def test_agent1_page_no_warnings(self, page: Page, base_url):
-        """Agent1 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        """Finder_1 worker page loads without PHP warnings."""
+        self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
         html = page.content()
         assert "<b>Warning</b>" not in html
         assert "<b>Fatal error</b>" not in html
 
     def test_agent1_page_has_report(self, page: Page, base_url):
-        """Agent1 page has Rapport section with Tour 0."""
-        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        """Finder_1 page has Rapport section with Tour 0."""
+        self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
         html = page.content()
         assert "Rapport" in html
         assert "Tour 0" in html
 
     def test_agent1_page_shows_detected_agents_and_location(self, page: Page, base_url):
-        """Agent1 page shows detected Agent7, controller name, location + secret."""
-        self._go_to_worker(page, base_url, 'Charlie', 'Agent1')
+        """Finder_1 page shows detected Bystander_1, controller name, location + secret."""
+        self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
         html = page.content()
-        assert "Agent7" in html
+        assert "Bystander_1" in html
         assert "Lady Beta" in html
         assert "Location A" in html
         assert "Secret details" in html
 
     def test_agent4_page_shows_location_desc_no_secret(self, page: Page, base_url):
-        """Agent4 page shows Location A with description but no secret."""
-        self._go_to_worker(page, base_url, 'Foxtrot', 'Agent4')
+        """Finder_4 page shows Location A with description but no secret."""
+        self._go_to_worker(page, base_url, 'Foxtrot', 'Finder_4')
         html = page.content()
         assert "Location A" in html
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Secret details" not in report_section
 
     def test_agent5_page_shows_location_name_only(self, page: Page, base_url):
-        """Agent5 page shows location name but not description."""
-        self._go_to_worker(page, base_url, 'Golf', 'Agent5')
+        """Finder_5 page shows location name but not description."""
+        self._go_to_worker(page, base_url, 'Golf', 'Finder_5')
         html = page.content()
         assert "Location A" in html
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else ""
         assert "test location" not in report_section.lower()
 
     def test_agent6_page_no_location(self, page: Page, base_url):
-        """Agent6 page has no mention of Location A in recherches."""
-        self._go_to_worker(page, base_url, 'Alpha', 'Agent6')
+        """Searcher_1 page has no mention of Location A in recherches."""
+        self._go_to_worker(page, base_url, 'Alpha', 'Searcher_1')
         html = page.content()
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Location A" not in report_section
 
     def test_agent4_page_no_warnings(self, page: Page, base_url):
-        """Agent4 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Foxtrot', 'Agent4')
+        """Finder_4 worker page loads without PHP warnings."""
+        self._go_to_worker(page, base_url, 'Foxtrot', 'Finder_4')
         html = page.content()
         assert "<b>Warning</b>" not in html
         assert "<b>Fatal error</b>" not in html

@@ -1,9 +1,9 @@
 firstname,lastname,worker_origins__name->origin_id
-one,one,origine Accessible
-two,two,origine Accessible
-three,three,origine Accessible
-four,four,origine Accessible
-un,un,origine Limitée
-deux,deux,origine Limitée
-trois,trois,origine Limitée
-test,test,origine Commune
+Sentinel,Vanguard,origine Accessible
+Watcher,Patrol,origine Accessible
+Scout,Tracker,origine Accessible
+Runner,Swift,origine Accessible
+Shadow,Whisper,origine Limitée
+Phantom,Drift,origine Limitée
+Ghost,Veil,origine Limitée
+Recruit,Steadfast,origine Commune

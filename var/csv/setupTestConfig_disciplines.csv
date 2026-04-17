@@ -1,4 +1,4 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
-"Test Discipline A"," offensive discipline",0,1,0,,Discipline
-"Test Discipline B"," defensive discipline",0,0,1,,Discipline
-"Test Discipline C"," investigation discipline",1,0,0,,Discipline
+"Offensive Stance"," attack boost discipline",0,1,0,,Discipline
+"Defensive Posture"," defence boost discipline",0,0,1,,Discipline
+"Focused Mind"," enquete boost discipline",1,0,0,,Discipline

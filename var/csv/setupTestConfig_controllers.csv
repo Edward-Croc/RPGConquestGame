@@ -1,8 +1,8 @@
 firstname,lastname,ia_type,secret_controller,url,story,can_build_base,start_workers,turn_recruited_workers,turn_firstcome_workers,factions__name->faction_id,factions__name->fake_faction_id
 Lord,Alpha,,,,,1,1,0,0,FactionAlpha,FactionAlpha
 Lady,Beta,,,,,1,1,0,0,FactionBeta,FactionBeta
-Agent1,Charlie,,,,,0,0,0,0,FactionCharlie,FactionCharlie
-Agent2,Delta,,,,,0,0,0,0,FactionDelta,FactionDelta
-Agent3,Echo,,,,,0,0,0,0,FactionEcho,FactionEcho
-Agent4,Foxtrot,,,,,0,0,0,0,FactionFoxtrot,FactionFoxtrot
-Agent5,Golf,,,,,0,0,0,0,FactionGolf,FactionGolf
+Lord,Charlie,,,,,0,0,0,0,FactionCharlie,FactionCharlie
+Lady,Delta,,,,,0,0,0,0,FactionDelta,FactionDelta
+Lord,Echo,,,,,0,0,0,0,FactionEcho,FactionEcho
+Lady,Foxtrot,,,,,0,0,0,0,FactionFoxtrot,FactionFoxtrot
+Lord,Golf,,,,,0,0,0,0,FactionGolf,FactionGolf

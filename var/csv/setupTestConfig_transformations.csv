@@ -1,3 +1,3 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
-"Test Transformation A"," combat equipment",0,2,1,"{""on_recrutment"": ""FALSE""}",Transformation
-"Test Transformation B"," stealth equipment",1,0,1,"{""on_recrutment"": ""FALSE""}",Transformation
+"War Gear"," combat equipment",0,2,1,"{""on_recrutment"": ""FALSE""}",Transformation
+"Shadow Cloak"," stealth equipment",1,0,1,"{""on_recrutment"": ""FALSE""}",Transformation

@@ -7,7 +7,7 @@ Tests:
 - linkTable_: each power has a link_power_type entry matching its type
 - Compound FK lookup: faction_powers correctly resolves power name -> link_power_type_id
 - Missing file handling: admin reset completes even when optional files absent
-- loadWorkersCSV: 7 workers created with controllers, actions, and powers
+- loadWorkersCSV: 7 workers (Finder_1..5, Searcher_1, Bystander_1) created with controllers, actions, and powers
 
 Run:
     python3 -m pytest tests/test_csv_features_e2e.py -v
@@ -81,7 +81,7 @@ def _load_test_config(browser):
     page.goto(f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click(no_wait_after=True)
+    page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
     context.close()
@@ -130,21 +130,21 @@ class TestLinkTableFeature:
         conn.close()
 
     def test_hobbys_linked_to_hobby_type(self):
-        """All hobby CSV powers should be linked to power_type 'Hobby'."""
+        """All 13 hobby CSV powers should be linked to power_type 'Hobby'."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
             SELECT pt.name AS type_name, COUNT(*) AS c
             FROM `{GAME_PREFIX}link_power_type` lpt
-            JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
             JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE p.name LIKE '%Hobby%'
+            WHERE pt.name = 'Hobby'
             GROUP BY pt.name
         """)
         rows = cursor.fetchall()
         conn.close()
         assert len(rows) == 1, f"Hobby powers should link only to 'Hobby' type, got: {rows}"
         assert rows[0]['type_name'] == 'Hobby'
+        assert rows[0]['c'] == 13, f"Expected 13 hobby powers, got {rows[0]['c']}"
 
     def test_disciplines_linked_to_discipline_type(self):
         """All discipline CSV powers should be linked to power_type 'Discipline'."""
@@ -155,7 +155,7 @@ class TestLinkTableFeature:
             FROM `{GAME_PREFIX}link_power_type` lpt
             JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
             JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE p.name LIKE 'Test Discipline%'
+            WHERE p.name IN ('Offensive Stance', 'Defensive Posture', 'Focused Mind')
         """)
         rows = cursor.fetchall()
         conn.close()
@@ -173,7 +173,7 @@ class TestLinkTableFeature:
             FROM `{GAME_PREFIX}link_power_type` lpt
             JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
             JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE p.name LIKE 'Test Transformation%'
+            WHERE p.name IN ('War Gear', 'Shadow Cloak')
             GROUP BY pt.name
         """)
         rows = cursor.fetchall()
@@ -236,12 +236,12 @@ class TestCompoundFKLookup:
         conn.close()
 
         expected = [
-            ('FactionAlpha', 'Investigator Hobby'),
-            ('FactionAlpha', 'Warrior Job'),
-            ('FactionBeta', 'Investigator Job'),
-            ('FactionBeta', 'Warrior Hobby'),
-            ('FactionCharlie', 'Test Hobby A'),
-            ('FactionDelta', 'Test Hobby A'),
+            ('FactionAlpha', 'Keen Eye'),
+            ('FactionAlpha', 'Sword Bearer'),
+            ('FactionBeta', 'Field Analyst'),
+            ('FactionBeta', 'Steady Arm'),
+            ('FactionCharlie', 'Eagle Scout'),
+            ('FactionDelta', 'Eagle Scout'),
         ]
         assert results == expected, f"Expected {expected}, got {results}"
 
@@ -385,7 +385,7 @@ class TestLoadWorkersCSV:
         conn.close()
 
     def test_specific_agent_controller_mapping(self):
-        """Verify Agent1 -> Charlie, Agent6 -> Alpha, etc. match the CSV."""
+        """Verify Finder_1 -> Charlie, Searcher_1 -> Alpha, etc. match the CSV."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
@@ -399,20 +399,20 @@ class TestLoadWorkersCSV:
         conn.close()
 
         expected = {
-            'Agent1': 'Charlie', 'Agent2': 'Delta', 'Agent3': 'Echo',
-            'Agent4': 'Foxtrot', 'Agent5': 'Golf',
-            'Agent6': 'Alpha', 'Agent7': 'Beta',
+            'Finder_1': 'Charlie', 'Finder_2': 'Delta', 'Finder_3': 'Echo',
+            'Finder_4': 'Foxtrot', 'Finder_5': 'Golf',
+            'Searcher_1': 'Alpha', 'Bystander_1': 'Beta',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
-    def test_agent6_has_investigate_action(self):
-        """Agent6 CSV has action_choice='investigate' — should appear in DB."""
+    def test_searcher1_has_investigate_action(self):
+        """Searcher_1 CSV has action_choice='investigate' — should appear in DB."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
             SELECT wa.action_choice FROM `{GAME_PREFIX}worker_actions` wa
             JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE w.lastname = 'Agent6' AND wa.turn_number = 0
+            WHERE w.lastname = 'Searcher_1' AND wa.turn_number = 0
         """)
         action = cursor.fetchone()['action_choice']
         conn.close()
@@ -426,7 +426,7 @@ class TestLoadWorkersCSV:
             SELECT w.lastname, wa.action_choice
             FROM `{GAME_PREFIX}worker_actions` wa
             JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE wa.turn_number = 0 AND w.lastname != 'Agent6'
+            WHERE wa.turn_number = 0 AND w.lastname != 'Searcher_1'
         """)
         for r in cursor.fetchall():
             assert r['action_choice'] == 'passive', \
@@ -448,8 +448,8 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has {r['power_count']} powers, expected 2"
         conn.close()
 
-    def test_agent1_has_correct_powers(self):
-        """Agent1 CSV: powers='Test Hobby A|Test Metier A'."""
+    def test_finder1_has_correct_powers(self):
+        """Finder_1 CSV: powers='Eagle Scout|Veteran Tactician'."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
@@ -458,15 +458,15 @@ class TestLoadWorkersCSV:
             JOIN `{GAME_PREFIX}worker_powers` wp ON wp.worker_id = w.id
             JOIN `{GAME_PREFIX}link_power_type` lpt ON lpt.id = wp.link_power_type_id
             JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
-            WHERE w.lastname = 'Agent1'
+            WHERE w.lastname = 'Finder_1'
             ORDER BY p.name
         """)
         powers = [r['name'] for r in cursor.fetchall()]
         conn.close()
-        assert powers == ['Test Hobby A', 'Test Metier A']
+        assert powers == ['Eagle Scout', 'Veteran Tactician']
 
-    def test_agent7_has_negative_power(self):
-        """Agent7 has 'Test Hobby Neg' with negative defence — verify power is linked."""
+    def test_bystander1_has_negative_power(self):
+        """Bystander_1 has 'Dark Impulse' with negative defence — verify power is linked."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"""
@@ -475,9 +475,9 @@ class TestLoadWorkersCSV:
             JOIN `{GAME_PREFIX}worker_powers` wp ON wp.worker_id = w.id
             JOIN `{GAME_PREFIX}link_power_type` lpt ON lpt.id = wp.link_power_type_id
             JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
-            WHERE w.lastname = 'Agent7' AND p.name LIKE '%Neg%'
+            WHERE w.lastname = 'Bystander_1' AND p.name = 'Dark Impulse'
         """)
         row = cursor.fetchone()
         conn.close()
-        assert row is not None, "Agent7 should have Test Hobby Neg power"
-        assert row['defence'] == -1, f"Test Hobby Neg should have defence=-1, got {row['defence']}"
+        assert row is not None, "Bystander_1 should have Dark Impulse power"
+        assert row['defence'] == -1, f"Dark Impulse should have defence=-1, got {row['defence']}"

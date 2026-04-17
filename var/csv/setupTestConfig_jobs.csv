@@ -1,13 +1,13 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
-"Investigator Job",", test Investigator Job",1,0,0,,Metier
-"Investigator2 Job",", test Investigator Job 2 ",1,0,0,,Metier
-"Master Investigator Job"," test Master Investigator Job",2,0,-1,,Metier
-"Warrior Job",", test Warrior Job",0,1,1,,Metier
-"Warrior 2 Job",", test Warrior phase 2 Job ",0,1,1,,Metier
-"Tank Warrior Job",",  test tank warrior Job",-1,2,1,,Metier
-"Glasse canon Job",", test Job Job",1,1,-1,,Metier
-"Test Metier A"," enquete-focused metier",2,2,2,,Metier
-"Test Metier B"," balanced enquete metier",2,0,1,,Metier
-"Test Metier C"," minimal enquete metier",1,0,0,,Metier
-"Test Metier D"," combat metier",1,2,1,,Metier
-"Test Metier E"," blank metier",0,0,0,,Metier
+"Field Analyst"," investigative profession",1,0,0,,Metier
+"Data Miner"," information specialist",1,0,0,,Metier
+"Code Breaker"," master analyst, fragile",2,0,-1,,Metier
+"Sword Bearer"," professional soldier",0,1,1,,Metier
+"Shield Guard"," defensive specialist",0,1,1,,Metier
+"Siege Engine"," heavy assault, tunnel vision",-1,2,1,,Metier
+"Powder Keg"," explosive but exposed",1,1,-1,,Metier
+"Veteran Tactician"," seasoned strategist",2,2,2,,Metier
+"Scout Runner"," mobile reconnaissance",2,0,1,,Metier
+"Patrol Warden"," basic watchman",1,0,0,,Metier
+"War Drummer"," combat inspiration",1,2,1,,Metier
+"Common Folk"," untrained civilian",0,0,0,,Metier

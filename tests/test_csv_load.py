@@ -219,9 +219,9 @@ class TestLoadCSVFile:
         """)
         rows = cursor.fetchall()
         assert len(rows) == 8
-        assert rows[0]["firstname"] == "one"
+        assert rows[0]["firstname"] == "Sentinel"
         assert rows[0]["origin_name"] == "origine Accessible"
-        assert rows[4]["firstname"] == "un"
+        assert rows[4]["firstname"] == "Shadow"
         assert rows[4]["origin_name"] == "origine Limitée"
 
     def test_load_hobbys_with_numeric_fields(self, clean_tables):
@@ -238,8 +238,8 @@ class TestLoadCSVFile:
         cursor = conn.cursor()
         cursor.execute(f"SELECT name, enquete, attack, defence FROM `{GAME_PREFIX}powers` ORDER BY id")
         rows = cursor.fetchall()
-        # "Master Investigator Hobby" has enquete=2, attack=0, defence=-1
-        master = [r for r in rows if r["name"] == "Master Investigator Hobby"][0]
+        # "Sixth Sense" has enquete=2, attack=0, defence=-1
+        master = [r for r in rows if r["name"] == "Sixth Sense"][0]
         assert master["enquete"] == 2
         assert master["attack"] == 0
         assert master["defence"] == -1

@@ -1,7 +1,7 @@
 factions__name->faction_id,powers__name->link_power_type__power_id
-FactionAlpha,Investigator Hobby
-FactionAlpha,Warrior Job
-FactionBeta,Warrior Hobby
-FactionBeta,Investigator Job
-FactionCharlie,Test Hobby A
-FactionDelta,Test Hobby A
+FactionAlpha,Keen Eye
+FactionAlpha,Sword Bearer
+FactionBeta,Steady Arm
+FactionBeta,Field Analyst
+FactionCharlie,Eagle Scout
+FactionDelta,Eagle Scout

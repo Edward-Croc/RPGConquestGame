@@ -91,13 +91,13 @@ def load_test_config_with_controllers(browser):
     page.goto(f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click(no_wait_after=True)
+    page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # All data now comes from CSVs: zones CSV has ZoneB claimed+held by Alpha,
-    # ZoneC claimed by Beta.
+    # All data now comes from CSVs: zones CSV has Gamma-Claims claimed+held by Alpha,
+    # Delta-Disputed claimed by Beta.
     yield
 
 
@@ -149,7 +149,7 @@ class TestZonesPageStructure:
         gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
 
-        for zone_name in ["ZoneA", "ZoneB", "ZoneC", "ZoneD", "ZoneE", "ZoneF", "ZoneG"]:
+        for zone_name in ["Alpha-Investigation", "Beta-Combat", "Gamma-Claims", "Delta-Disputed", "Epsilon-Controlled", "Zeta-Unclaimed", "Eta-Hidden"]:
             assert zone_name in page_text, \
                 f"Zone '{zone_name}' not found on zones page"
 
@@ -169,7 +169,7 @@ class TestZonesPageControllers:
     """Zones with assigned controllers show banner tags."""
 
     def test_claimed_zones_show_banner(self, gm_page: Page, base_url):
-        """ZoneB and ZoneC were claimed — they should have banner tags."""
+        """Gamma-Claims and Delta-Disputed were claimed — they should have banner tags."""
         gm_page.goto(f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         banner_tags = gm_page.locator("span.tag.is-warning")
@@ -182,13 +182,13 @@ class TestZonesPageControllers:
         gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
         assert "Alpha" in page_text, \
-            "Controller 'Alpha' banner not found (ZoneB claimer)"
+            "Controller 'Alpha' banner not found (Gamma-Claims claimer)"
         assert "Beta" in page_text, \
-            "Controller 'Beta' banner not found (ZoneC claimer)"
+            "Controller 'Beta' banner not found (Delta-Disputed claimer)"
 
     def test_own_zone_shows_control_tag(self, gm_page: Page, base_url):
         """Zones held by the player's controller should show 'our control' tag."""
-        # gm is linked to controller Alpha who claims ZoneB
+        # gm is linked to controller Alpha who claims Gamma-Claims
         gm_page.goto(f"{base_url}/base/accueil.php?controller_id=1")
         gm_page.wait_for_load_state("networkidle")
         gm_page.goto(f"{base_url}/zones/action.php")

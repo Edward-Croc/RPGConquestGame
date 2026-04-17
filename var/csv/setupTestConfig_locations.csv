@@ -1,2 +1,2 @@
 "name","description","hidden_description","discovery_diff","zones__name->zone_id","controllers__lastname->controller_id","is_base","can_be_destroyed","can_be_repaired","activate_json"
-"Location A","A test location for discovery testing in ZoneA","Secret details of Location A visible at high investigation",4,"ZoneA","",0,0,0,""
+"Location A","A test location for discovery testing","Secret details of Location A visible at high investigation",4,"Alpha-Investigation","",0,0,0,""
