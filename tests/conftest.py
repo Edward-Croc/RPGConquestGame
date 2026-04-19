@@ -6,9 +6,9 @@ import pytest
 # Docker MySQL connection defaults
 MYSQL_HOST = os.environ.get("MYSQL_HOST", "127.0.0.1")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3307"))
-MYSQL_USER = os.environ.get("MYSQL_USER", "rpg_test")
-MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "rpg_test")
-MYSQL_DB = os.environ.get("MYSQL_DB", "rpgconquestgame_test")
+MYSQL_USER = os.environ.get("MYSQL_USER", "rpg_user")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "rpg_pass")
+MYSQL_DB = os.environ.get("MYSQL_DB", "rpgconquestgame")
 GAME_PREFIX = "game2_"
 
 # Path to project root
