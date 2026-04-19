@@ -26,7 +26,11 @@ services:
     ports:
       - "8080:80"
     volumes:
+      # Game 2 (default) — URL: /RPGConquestGame, prefix: game2_
       - .:/var/www/html/RPGConquestGame
+      # Game 1 — URL: /RPGConquestGame1, prefix: game1_ (same source, different config)
+      - .:/var/www/html/RPGConquestGame1
+      - ./docker/local_config_game1.ini:/var/www/html/RPGConquestGame1/var/local_config.ini:ro
     environment:
       DB_HOST: mysql
       DB_NAME: rpgconquestgame
