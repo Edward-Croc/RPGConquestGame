@@ -42,6 +42,45 @@ Installation (Docker — recommended):
    GAME_PREFIX   — table prefix for multi-game setups (default: empty)
    FOLDER        — URL folder name (default: RPGConquestGame)
 
+ Security notice — DEV USE ONLY:
+   The shipped docker-compose.yml uses hardcoded weak credentials
+   (MYSQL_ROOT_PASSWORD=root, rpg_user / rpg_pass). This is intended
+   for local development only. For any production / public-facing
+   deployment, change all passwords and remove the MYSQL_ROOT_PASSWORD
+   from the compose file (inject via a secrets store or a .env file
+   that is not committed).
+
+ Smoke test (optional, verifies a fresh Docker boot end-to-end):
+     ./docker/smoke_test.sh
+   Resets volumes, rebuilds the image, waits for the app, checks the
+   login page and that the schema + gm user loaded. Leaves containers
+   running on success.
+
+Troubleshooting:
+ - Port 8080 already in use: another service is using the port. Either
+   stop that service or change the host port in docker-compose.yml
+   (php > ports: "NEW:80").
+ - Port 3307 already in use: change the host port for MySQL in
+   docker-compose.yml (mysql > ports: "NEW:3306"). The tests default
+   to 3307 — set MYSQL_PORT env var when running pytest to match.
+ - "Connection failed: Access denied" after changing credentials:
+   the container caches config in var/local_config.ini. The entrypoint
+   regenerates it on every container start, so `docker compose restart php`
+   will pick up new env vars.
+ - "The game is not ready" page: MySQL may not have finished initial
+   schema load. Check `docker compose logs mysql` for errors; retry
+   after ~15 seconds on first boot.
+ - Shell script line endings on Windows: the repo uses .gitattributes
+   to force LF on docker/*.sh. If you see "bash: bad interpreter"
+   errors, run `git config core.autocrlf false` before cloning.
+ - WSL2 on Windows: Docker Desktop must be configured to use the
+   WSL2 backend. File mount performance is much better when the
+   repo is inside the WSL2 filesystem, not a Windows drive (C:\...).
+ - Tests fail with "No local MySQL available": pytest connects to
+   127.0.0.1:3307 with rpg_user/rpg_pass. Verify the mysql container
+   is healthy: `docker compose ps` should show "(healthy)".
+ - Windows-specific setup: see README_setup_windows.md.
+
 Installation (manual):
  - Create a folder called RPGConquestGame and pull the sources to it.
  - Create a config.ini file in the VAR folder and add the parent folder name to it.

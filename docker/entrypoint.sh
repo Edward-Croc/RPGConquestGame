@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-# Generate var/local_config.ini from environment variables if it does not exist
+# Always regenerate var/local_config.ini from environment variables.
+# (Skipping regeneration left stale credentials when the bind-mounted
+# source directory carried over a previous run's config file.)
 CONFIG_FILE="/var/www/html/RPGConquestGame/var/local_config.ini"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Generating $CONFIG_FILE from environment variables..."
-    cat > "$CONFIG_FILE" <<EOF
+echo "Generating $CONFIG_FILE from environment variables..."
+cat > "$CONFIG_FILE" <<EOF
 host = ${DB_HOST:-mysql}
 dbname = ${DB_NAME:-rpgconquestgame}
 username = ${DB_USER:-rpg_user}
@@ -15,10 +15,7 @@ db_type = ${DB_TYPE:-mysql}
 folder = ${FOLDER:-RPGConquestGame}
 game_prefix = ${GAME_PREFIX:-}
 EOF
-    echo "Config file created."
-else
-    echo "Config file already exists, skipping generation."
-fi
+echo "Config file created."
 
 # Initialize the database schema if requested
 if [ "${INIT_DB:-false}" = "true" ]; then
