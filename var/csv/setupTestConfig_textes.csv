@@ -23,6 +23,7 @@
 "textControllerActionCreateBase","Create a fortress in zone:","Create base action text"
 "textControllerActionMoveBase","Move to a fortress in zone:","Move base action text"
 "textcontrollerRecrutmentNeedsBase","Cannot recruit without a base.","Recruitment needs base text"
+"basePowerNames","'Focused Mind'","base discipline available to all factions for recruitment"
 "textesClaimFailViewArray","[""Saw <strong>%1$s</strong> fail to claim <strong>%2$s</strong>.""]","Claim fail view text"
 "textesClaimSuccessViewArray","[""Saw <strong>%1$s</strong> take control of <strong>%2$s</strong>.""]","Claim success view text"
 "textesClaimFailArray","[""Our claim on <strong>%2$s</strong> failed.""]","Claim fail text"

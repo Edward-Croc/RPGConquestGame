@@ -212,13 +212,13 @@ class TestCompoundFKLookup:
     """
 
     def test_faction_powers_row_count(self):
-        """TestConfig faction_powers CSV has 6 rows."""
+        """TestConfig faction_powers CSV has 8 rows (6 base + 2 recruitment disciplines)."""
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}faction_powers`")
         count = cursor.fetchone()['c']
         conn.close()
-        assert count == 6
+        assert count == 8
 
     def test_compound_lookup_resolves_to_correct_power(self):
         """Each faction_powers row should link the faction to the correct power."""
@@ -237,7 +237,9 @@ class TestCompoundFKLookup:
 
         expected = [
             ('FactionAlpha', 'Keen Eye'),
+            ('FactionAlpha', 'Offensive Stance'),
             ('FactionAlpha', 'Sword Bearer'),
+            ('FactionBeta', 'Defensive Posture'),
             ('FactionBeta', 'Field Analyst'),
             ('FactionBeta', 'Steady Arm'),
             ('FactionCharlie', 'Eagle Scout'),
