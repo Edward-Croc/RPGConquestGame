@@ -29,15 +29,14 @@ def base_url():
 
 @pytest.fixture(scope="module", autouse=True)
 def load_test_config_with_controllers(browser):
-    """Load TestConfig scenario and seed minimal controllers for testing."""
-    if not DB_AVAILABLE:
-        yield
-        return
+    """Load TestConfig scenario. Seeds gm locally (DB-direct) if available,
+    then loads the scenario via admin UI. Scenario load works against any
+    reachable target (local or remote prod) because it goes through HTTP."""
+    # Local bootstrap — skip when running against prod (DB not reachable).
+    if DB_AVAILABLE:
+        load_minimal_data()
 
-    # Seed gm, config, power_types, mechanics via the minimalData replay
-    load_minimal_data()
-
-    # Load TestConfig via admin UI
+    # Load TestConfig via admin UI (works everywhere)
     context = browser.new_context()
     page = context.new_page()
     page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
@@ -54,15 +53,7 @@ def load_test_config_with_controllers(browser):
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # All data now comes from CSVs: zones CSV has Gamma-Claims claimed+held by Alpha,
-    # Delta-Disputed claimed by Beta.
     yield
-
-
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
 
 
 @pytest.fixture
@@ -76,7 +67,6 @@ def gm_page(page: Page, base_url):
 # Zones page tests
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestZonesPageNoWarnings:
     """Zones page should load without PHP warnings or errors."""
 
@@ -90,7 +80,6 @@ class TestZonesPageNoWarnings:
             "PHP fatal error on zones page"
 
 
-@pytest.mark.db
 class TestZonesPageStructure:
     """Zones page displays zone section with correct content."""
 
@@ -122,7 +111,6 @@ class TestZonesPageStructure:
             f"Expected at least 7 description divs, found {count}"
 
 
-@pytest.mark.db
 class TestZonesPageControllers:
     """Zones with assigned controllers show banner tags."""
 

@@ -3,13 +3,29 @@ import os
 import pymysql
 import pytest
 
-# Docker MySQL connection defaults
+# Docker MySQL connection defaults (override via env for alt setups)
 MYSQL_HOST = os.environ.get("MYSQL_HOST", "127.0.0.1")
 MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3307"))
 MYSQL_USER = os.environ.get("MYSQL_USER", "rpg_user")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "rpg_pass")
 MYSQL_DB = os.environ.get("MYSQL_DB", "rpgconquestgame")
-GAME_PREFIX = "game_test_"
+GAME_PREFIX = os.environ.get("GAME_PREFIX", "game_test_")
+
+# UI-only mode skips any test marked @pytest.mark.db.
+# Intended for running the suite against a remote (production) deployment
+# where direct MySQL access isn't available — tests then rely exclusively
+# on the HTTP/UI path.
+UI_ONLY = os.environ.get("UI_ONLY", "").lower() in ("1", "true", "yes")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Auto-skip @pytest.mark.db tests when UI_ONLY=1 is set."""
+    if not UI_ONLY:
+        return
+    skip_db = pytest.mark.skip(reason="UI_ONLY=1 — test requires direct DB access")
+    for item in items:
+        if "db" in item.keywords:
+            item.add_marker(skip_db)
 
 # Path to project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

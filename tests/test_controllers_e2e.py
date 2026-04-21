@@ -33,15 +33,11 @@ def base_url():
 
 @pytest.fixture(scope="module", autouse=True)
 def load_test_config_with_players(browser):
-    """Load TestConfig and seed factions, controllers, and test players."""
-    if not DB_AVAILABLE:
-        yield
-        return
+    """Load TestConfig. Seeds gm locally (DB-direct) if available, then
+    loads the scenario via admin UI — works against local or remote prod."""
+    if DB_AVAILABLE:
+        load_minimal_data()
 
-    # Seed gm, config, power_types, mechanics via the minimalData replay
-    load_minimal_data()
-
-    # Load TestConfig via admin UI
     context = browser.new_context()
     page = context.new_page()
     page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
@@ -58,15 +54,7 @@ def load_test_config_with_players(browser):
     page.wait_for_load_state("load", timeout=90000)
     context.close()
 
-    # All test data (factions, controllers, players, player_controller)
-    # is now loaded from CSVs by the admin reset above.
     yield
-
-
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
 
 
 @pytest.fixture
@@ -80,7 +68,6 @@ def gm_page(page: Page, base_url):
 # Admin controller tests (gm with multiple controllers)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestControllerAdmin:
     """Admin user (gm) with multiple controllers."""
 
@@ -119,7 +106,6 @@ class TestControllerAdmin:
 # Single-controller player tests
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestControllerSinglePlayer:
     """Player with exactly one controller — no chooser dropdown."""
 
@@ -157,7 +143,6 @@ class TestControllerSinglePlayer:
 # Multi-controller non-admin player tests
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestControllerMultiPlayer:
     """Non-admin player with two controllers — should see chooser with only their own."""
 

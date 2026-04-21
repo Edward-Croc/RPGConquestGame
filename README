@@ -108,6 +108,9 @@ Testing :
  - Run all tests (local Docker): python3 -m pytest tests/ -v
  - Run unit tests only: python3 -m pytest tests/test_csv_load.py -v
  - Run Playwright E2E tests: python3 -m pytest tests/test_admin_csv_load_e2e.py -v
- - Run against production (browser-only, no DB checks):
-     PHP_BASE_URL="https://voix-eidolon.fr/RPGConquestGameDemo" python3 -m pytest tests/test_admin_csv_load_e2e.py -v -m "not db"
+ - Run against production (browser-only, no direct DB access):
+     PHP_BASE_URL="https://voix-eidolon.fr/RPGConquestGameDemo" \
+       UI_ONLY=1 python3 -m pytest tests/ -v
+   UI_ONLY=1 auto-skips any test marked @pytest.mark.db (tests that need
+   direct MySQL access). Requires gm/orga to exist on the target prefix.
  - Stop the test environment: docker compose down
