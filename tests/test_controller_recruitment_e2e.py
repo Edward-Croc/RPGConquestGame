@@ -50,24 +50,10 @@ from conftest import (
 )
 
 
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+from helpers import (
+    DB_AVAILABLE, get_db_connection as get_db,
+    get_controller_id as _controller_id, end_turn,
+)
 
 
 @pytest.fixture(scope="session")
@@ -84,18 +70,6 @@ def _require_db():
 # ---------------------------------------------------------------------------
 # DB lookup helpers
 # ---------------------------------------------------------------------------
-
-def _controller_id(lastname):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = %s",
-        (lastname,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
 
 def _zone_id(name):
     conn = get_db()
@@ -215,14 +189,6 @@ def _do_regular_recruit(page, controller_lastname):
     page.wait_for_load_state("load")
 
 
-def _end_turn(page):
-    """Trigger end-of-turn."""
-    ensure_gm_login(page, PHP_BASE_URL)
-    page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=90000)
-    html = page.content()
-    assert "<b>Warning</b>" not in html, "PHP warning during end turn"
-    assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
 
 
 # ---------------------------------------------------------------------------
@@ -321,7 +287,8 @@ def recruitment_scenario(browser):
     _snapshot['beta_recruit_form_html'] = page.content()
 
     # ---- END TURN 0 → 1 ----
-    _end_turn(page)
+    ensure_gm_login(page, PHP_BASE_URL)
+    end_turn(page)
 
     # ---- TURN 1 ----
 

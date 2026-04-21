@@ -29,6 +29,10 @@ from conftest import (
     MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
     PHP_BASE_URL, ensure_gm_login,
 )
+from helpers import (
+    DB_AVAILABLE, get_db_connection as get_db,
+    login_as, end_turn, load_scenario_via_admin,
+)
 
 
 # The secondary game lives at a sibling folder. If PHP_BASE_URL is overridden,
@@ -37,26 +41,6 @@ PHP_BASE_URL_SECONDARY = PHP_BASE_URL.rstrip('/').rsplit('/', 1)[0] + '/RPGConqu
 
 PRIMARY_PREFIX = "game_test_"
 SECONDARY_PREFIX = "game_test2_"
-
-
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
 
 
 @pytest.fixture(scope="session")
@@ -114,40 +98,12 @@ def _zone_names(prefix):
 # UI helpers
 # ---------------------------------------------------------------------------
 
-def _login_and_load_scenario(browser, url_base, scenario):
-    """Login as gm under the given URL base and load the given scenario."""
+def _end_turn_fresh_context(browser, url_base):
+    """End turn via a fresh browser context (used for parallel-games isolation)."""
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{url_base}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    page.goto(f"{url_base}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option(scenario)
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=120000)
-    context.close()
-
-
-def _end_turn(browser, url_base):
-    """Trigger end-of-turn via the given URL base."""
-    context = browser.new_context()
-    page = context.new_page()
-    page.goto(f"{url_base}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    page.goto(f"{url_base}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=120000)
-    html = page.content()
-    assert "<b>Warning</b>" not in html, "PHP warning during end turn"
-    assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
+    login_as(page, url_base, "gm", "orga")
+    end_turn(page, url_base)
     context.close()
 
 
@@ -183,14 +139,10 @@ def parallel_games_scenario(browser):
     conn.close()
 
     # Load Japon1555SQL into secondary (larger scenario — Shodoshima, 9 workers)
-    _login_and_load_scenario(
-        browser, PHP_BASE_URL_SECONDARY, 'Japon1555SQL'
-    )
+    load_scenario_via_admin(browser, PHP_BASE_URL_SECONDARY, 'Japon1555SQL')
 
     # Load TestConfig into primary (baseline test scenario — 26 workers)
-    _login_and_load_scenario(
-        browser, PHP_BASE_URL, 'TestConfig'
-    )
+    load_scenario_via_admin(browser, PHP_BASE_URL, 'TestConfig')
 
     # Snapshot state AFTER both loaded
     _snapshot['secondary_turn_before_endturn'] = _turncounter(SECONDARY_PREFIX)
@@ -199,7 +151,7 @@ def parallel_games_scenario(browser):
     _snapshot['primary_workers_before'] = _count(PRIMARY_PREFIX, 'workers')
 
     # End-turn ONLY in secondary — primary should be untouched
-    _end_turn(browser, PHP_BASE_URL_SECONDARY)
+    _end_turn_fresh_context(browser, PHP_BASE_URL_SECONDARY)
 
     # Snapshot state AFTER secondary end-turn
     _snapshot['secondary_turn_after'] = _turncounter(SECONDARY_PREFIX)

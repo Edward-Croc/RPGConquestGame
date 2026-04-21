@@ -15,38 +15,7 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db_connection():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
-
-
-def login_as(page: Page, base_url: str, username: str, password: str):
-    page.goto(f"{base_url}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill(username)
-    page.locator("input[name='passwd']").fill(password)
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-
-
-def logout(page: Page, base_url: str):
-    page.goto(f"{base_url}/connection/logout.php")
-    page.wait_for_load_state("networkidle")
+from helpers import DB_AVAILABLE, get_db_connection, login_as, logout
 
 
 @pytest.fixture(scope="session")

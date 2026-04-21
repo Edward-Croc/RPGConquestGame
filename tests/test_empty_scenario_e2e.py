@@ -16,24 +16,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db_connection():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+from helpers import DB_AVAILABLE, get_db_connection
 
 
 @pytest.fixture(scope="session")

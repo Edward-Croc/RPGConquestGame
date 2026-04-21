@@ -52,24 +52,11 @@ from conftest import (
 )
 
 
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+from helpers import (
+    DB_AVAILABLE, get_db_connection as get_db,
+    get_worker_id as _worker_id, get_controller_id as _controller_id,
+    end_turn,
+)
 
 
 @pytest.fixture(scope="session")
@@ -86,30 +73,6 @@ def _require_db():
 # ---------------------------------------------------------------------------
 # Helpers: DB lookups
 # ---------------------------------------------------------------------------
-
-def _worker_id(lastname):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = %s",
-        (lastname,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
-
-def _controller_id(lastname):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = %s",
-        (lastname,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
 
 def _worker_status(lastname, turn=1):
     """Return action_choice for a worker at a given turn."""
@@ -218,13 +181,6 @@ def _ui_claim(page, lastname, claim_controller_lastname):
     page.wait_for_load_state("load")
 
 
-def _end_turn(page):
-    """Trigger end-of-turn via the sidebar link."""
-    page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=90000)
-    html = page.content()
-    assert "<b>Warning</b>" not in html, "PHP warning during end turn"
-    assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +235,7 @@ def combat_scenario(browser):
     page.wait_for_load_state("load", timeout=90000)
 
     # End turn 0 → 1
-    _end_turn(page)
+    end_turn(page)
 
     # Set all combat actions via UI for turn 1
     # Chain: A→B, B→C, C→D, D→E, E→F, F→G
@@ -307,7 +263,7 @@ def combat_scenario(browser):
     _ui_claim(page, 'Claim_Def_2', 'Delta')
 
     # End turn 1 → 2 (combat resolves)
-    _end_turn(page)
+    end_turn(page)
 
     context.close()
     yield

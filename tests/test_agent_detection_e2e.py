@@ -28,24 +28,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-DB_AVAILABLE = False
-try:
-    _conn = pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
-    )
-    _conn.close()
-    DB_AVAILABLE = True
-except Exception:
-    pass
-
-
-def get_db_connection():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+from helpers import DB_AVAILABLE, get_db_connection, get_worker_id, get_controller_id
 
 
 @pytest.fixture(scope="session")
@@ -69,24 +52,6 @@ def get_worker_report(worker_lastname, turn=0):
     row = cursor.fetchone()
     conn.close()
     return str(row['report'] or '') if row else ''
-
-
-def get_worker_id(worker_lastname):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = %s", (worker_lastname,))
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
-
-def get_controller_id(controller_lastname):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = %s", (controller_lastname,))
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
 
 
 def get_detections_for_controller(controller_lastname):

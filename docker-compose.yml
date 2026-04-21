@@ -8,6 +8,7 @@ services:
       MYSQL_USER: rpg_user
       MYSQL_PASSWORD: rpg_pass
       GAME_PREFIX: game_test_
+      GAME_PREFIX_2: game_test2_
     ports:
       - "3307:3306"
     volumes:
