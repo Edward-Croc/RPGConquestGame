@@ -11,17 +11,15 @@ Run:
 import os
 import re
 import time
-import pymysql
 import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import (
-    GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
     PHP_BASE_URL, ensure_gm_login,
 )
 
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
+from helpers import DB_AVAILABLE, load_minimal_data
 
 
 @pytest.fixture(scope="session")
@@ -70,7 +68,6 @@ def load_test_config(browser):
 # Tests: Create Perfect Agent form
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestCreatePerfectAgentForm:
     """Verify the 'Create Perfect Agent' admin form is functional."""
 
@@ -189,37 +186,54 @@ class TestCreatePerfectAgentForm:
         )
 
     def test_create_worker_links_to_controller(self, page: Page, base_url):
-        """Created worker should be linked to the specified controller via controller_worker."""
+        """Created worker should be linked to the specified controller and visible in that
+        controller's faction view.
+
+        UI-first flow (mirrors the sibling test but targets Lord Beta):
+          1. admin.php → fill creation form for controller_id=2 (Beta) → Recruter et Affecter
+          2. controllers/action.php (Ma Faction) → select Lord Beta → Choisir
+          3. workers/viewAll.php → assert new worker's name appears in Beta's agents view
+        """
         ensure_gm_login(page, base_url)
 
-        # Create a worker for controller 2 (Beta)
-        page.goto(
-            f"{base_url}/workers/action.php?creation=true&controller_id=2"
-            f"&origin_id=2&firstname=un&lastname=deux"
-            f"&power_hobby_id=1&power_metier_id=&zone_id=2&chosir=Recruter+et+Affecter"
-        )
+        firstname_val = "Watcher"
+        lastname_val = "Patrol"
+        target_controller_id = "2"  # Lord Beta
+
+        # --- Fill the worker-creation form on admin.php ---
+        page.goto(f"{base_url}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+        form = page.locator("form[action*='workers/action.php']")
+        form.locator("select#controllerSelect").select_option(target_controller_id)
+        form.locator("select#origin_id").select_option("1")
+        form.locator("select#firstname").select_option(firstname_val)
+        form.locator("select#lastname").select_option(lastname_val)
+        form.locator("select#power_hobby_id").select_option(index=1)
+        form.locator("select#zoneSelect").select_option(index=1)
+        form.locator("input[name='chosir'][value='Recruter et Affecter']").click()
         page.wait_for_load_state("networkidle")
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT c.lastname FROM `{GAME_PREFIX}controller_worker` cw
-            JOIN `{GAME_PREFIX}controllers` c ON c.id = cw.controller_id
-            JOIN `{GAME_PREFIX}workers` w ON w.id = cw.worker_id
-            WHERE w.firstname = 'un' AND w.lastname = 'deux'
-        """)
-        result = cursor.fetchone()
-        conn.close()
-        assert result is not None, "Worker should be linked via controller_worker"
-        assert result['lastname'] == 'Beta', \
-            f"Worker should be linked to Beta controller, got {result['lastname']}"
+        # --- Switch gm's view to Lord Beta's faction (Ma Faction page) ---
+        page.goto(f"{base_url}/controllers/action.php")
+        page.wait_for_load_state("networkidle")
+        page.locator("form select#controllerSelect").select_option(target_controller_id)
+        page.locator("input[name='chosir'][value='Choisir']").click()
+        page.wait_for_load_state("networkidle")
+
+        # --- Assert the new worker is visible in Beta's agents view ---
+        page.goto(f"{base_url}/workers/viewAll.php")
+        page.wait_for_load_state("networkidle")
+        html = page.content()
+        assert firstname_val in html and lastname_val in html, (
+            f"Newly-created worker '{firstname_val} {lastname_val}' should appear "
+            f"in Lord Beta's agents view after faction switch (confirming controller linkage)"
+        )
 
 
 # ---------------------------------------------------------------------------
 # Tests: BDD Export
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestBDDExport:
     """Verify the BDD export functionality."""
 
