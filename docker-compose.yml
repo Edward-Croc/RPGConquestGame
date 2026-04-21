@@ -7,7 +7,7 @@ services:
       MYSQL_DATABASE: rpgconquestgame
       MYSQL_USER: rpg_user
       MYSQL_PASSWORD: rpg_pass
-      GAME_PREFIX: game2_
+      GAME_PREFIX: game_test_
     ports:
       - "3307:3306"
     volumes:
@@ -26,19 +26,19 @@ services:
     ports:
       - "8080:80"
     volumes:
-      # Game 2 (default) — URL: /RPGConquestGame, prefix: game2_
-      - .:/var/www/html/RPGConquestGame
-      # Game 1 — URL: /RPGConquestGame1, prefix: game1_ (same source, different config)
-      - .:/var/www/html/RPGConquestGame1
-      - ./docker/local_config_game1.ini:/var/www/html/RPGConquestGame1/var/local_config.ini:ro
+      # Primary test game — URL: /RPGConquestGameTest, prefix: game_test_
+      - .:/var/www/html/RPGConquestGameTest
+      # Secondary test game — URL: /RPGConquestGameTest2, prefix: game_test2_ (same source, different config)
+      - .:/var/www/html/RPGConquestGameTest2
+      - ./docker/local_config_game_test2.ini:/var/www/html/RPGConquestGameTest2/var/local_config.ini:ro
     environment:
       DB_HOST: mysql
       DB_NAME: rpgconquestgame
       DB_USER: rpg_user
       DB_PASS: rpg_pass
       DB_TYPE: mysql
-      FOLDER: RPGConquestGame
-      GAME_PREFIX: game2_
+      FOLDER: RPGConquestGameTest
+      GAME_PREFIX: game_test_
     depends_on:
       mysql:
         condition: service_healthy

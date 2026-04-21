@@ -1,22 +1,22 @@
 """E2E tests for two games running in parallel in the same MySQL database.
 
 The Docker stack mounts the project source at two paths:
-  - http://localhost:8080/RPGConquestGame  → prefix `game2_` (default)
-  - http://localhost:8080/RPGConquestGame1 → prefix `game1_` (overlay config)
+  - http://localhost:8080/RPGConquestGameTest  → prefix `game_test_`  (primary / default)
+  - http://localhost:8080/RPGConquestGameTest2 → prefix `game_test2_` (secondary / overlay config)
 
 Both share the same database (`rpgconquestgame`) but use distinct table
 prefixes, so their state is fully isolated.
 
 Fixture flow:
-  1. Load TestConfig into game2 via /RPGConquestGame/base/admin.php
-  2. Load Japon1555SQL into game1 via /RPGConquestGame1/base/admin.php
-  3. End-turn in game1 only (via /RPGConquestGame1/mechanics/endTurn.php)
+  1. Load TestConfig into the primary game via /RPGConquestGameTest/base/admin.php
+  2. Load Japon1555SQL into the secondary game via /RPGConquestGameTest2/base/admin.php
+  3. End-turn in the secondary game only (via /RPGConquestGameTest2/mechanics/endTurn.php)
 
 Tests verify:
   - Each game has its own prefixed tables populated with scenario data
-  - Cross-game isolation: game1 controllers are not in game2_ tables, etc.
-  - End-turn in game1 advances game1's turncounter but NOT game2's
-  - Shodoshima island zone loaded in game1 with its associated locations
+  - Cross-game isolation: secondary controllers are not in primary tables, etc.
+  - End-turn in secondary advances secondary's turncounter but NOT primary's
+  - Shodoshima island zone loaded in the secondary game with its associated locations
 
 Run:
     python3 -m pytest tests/test_parallel_games_e2e.py -v
@@ -31,12 +31,12 @@ from conftest import (
 )
 
 
-# The second game lives at a sibling folder. If PHP_BASE_URL is overridden,
+# The secondary game lives at a sibling folder. If PHP_BASE_URL is overridden,
 # preserve the host portion and swap the trailing folder.
-PHP_BASE_URL_GAME1 = PHP_BASE_URL.rstrip('/').rsplit('/', 1)[0] + '/RPGConquestGame1'
+PHP_BASE_URL_SECONDARY = PHP_BASE_URL.rstrip('/').rsplit('/', 1)[0] + '/RPGConquestGameTest2'
 
-GAME2_PREFIX = "game2_"
-GAME1_PREFIX = "game1_"
+PRIMARY_PREFIX = "game_test_"
+SECONDARY_PREFIX = "game_test2_"
 
 
 DB_AVAILABLE = False
@@ -152,7 +152,7 @@ def _end_turn(browser, url_base):
 
 
 # ---------------------------------------------------------------------------
-# Module fixture: load both games + advance only game1
+# Module fixture: load both games + advance only the secondary
 # ---------------------------------------------------------------------------
 
 _snapshot = {}
@@ -160,7 +160,7 @@ _snapshot = {}
 
 @pytest.fixture(scope="module", autouse=True)
 def parallel_games_scenario(browser):
-    """Load different scenarios into game1 and game2, then end-turn in game1 only."""
+    """Load different scenarios into primary and secondary, then end-turn in secondary only."""
     if not DB_AVAILABLE:
         yield
         return
@@ -170,7 +170,7 @@ def parallel_games_scenario(browser):
     # (via the `clean_tables` fixture in conftest.py) before this test runs.
     conn = get_db()
     cursor = conn.cursor()
-    for prefix in (GAME1_PREFIX, GAME2_PREFIX):
+    for prefix in (SECONDARY_PREFIX, PRIMARY_PREFIX):
         cursor.execute(
             f"INSERT IGNORE INTO `{prefix}players` "
             f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
@@ -182,28 +182,28 @@ def parallel_games_scenario(browser):
     conn.commit()
     conn.close()
 
-    # Load Japon1555SQL into game1 (larger scenario — Shodoshima, 9 workers)
+    # Load Japon1555SQL into secondary (larger scenario — Shodoshima, 9 workers)
     _login_and_load_scenario(
-        browser, PHP_BASE_URL_GAME1, 'Japon1555SQL'
+        browser, PHP_BASE_URL_SECONDARY, 'Japon1555SQL'
     )
 
-    # Load TestConfig into game2 (baseline test scenario — 26 workers)
+    # Load TestConfig into primary (baseline test scenario — 26 workers)
     _login_and_load_scenario(
         browser, PHP_BASE_URL, 'TestConfig'
     )
 
     # Snapshot state AFTER both loaded
-    _snapshot['game1_turn_before_endturn'] = _turncounter(GAME1_PREFIX)
-    _snapshot['game2_turn_before_endturn'] = _turncounter(GAME2_PREFIX)
-    _snapshot['game1_workers_before'] = _count(GAME1_PREFIX, 'workers')
-    _snapshot['game2_workers_before'] = _count(GAME2_PREFIX, 'workers')
+    _snapshot['secondary_turn_before_endturn'] = _turncounter(SECONDARY_PREFIX)
+    _snapshot['primary_turn_before_endturn'] = _turncounter(PRIMARY_PREFIX)
+    _snapshot['secondary_workers_before'] = _count(SECONDARY_PREFIX, 'workers')
+    _snapshot['primary_workers_before'] = _count(PRIMARY_PREFIX, 'workers')
 
-    # End-turn ONLY in game1 — game2 should be untouched
-    _end_turn(browser, PHP_BASE_URL_GAME1)
+    # End-turn ONLY in secondary — primary should be untouched
+    _end_turn(browser, PHP_BASE_URL_SECONDARY)
 
-    # Snapshot state AFTER game1 end-turn
-    _snapshot['game1_turn_after'] = _turncounter(GAME1_PREFIX)
-    _snapshot['game2_turn_after'] = _turncounter(GAME2_PREFIX)
+    # Snapshot state AFTER secondary end-turn
+    _snapshot['secondary_turn_after'] = _turncounter(SECONDARY_PREFIX)
+    _snapshot['primary_turn_after'] = _turncounter(PRIMARY_PREFIX)
 
     yield
 
@@ -216,49 +216,49 @@ def parallel_games_scenario(browser):
 class TestBothGamesLoaded:
     """Each game's prefix has its own tables populated."""
 
-    def test_game1_has_workers(self):
-        """Japon1555SQL in game1 loaded 9 workers (Shikoku advanced scenario)."""
-        assert _count(GAME1_PREFIX, 'workers') == 9, \
-            f"Expected 9 Shikoku workers, got {_count(GAME1_PREFIX, 'workers')}"
+    def test_secondary_has_workers(self):
+        """Japon1555SQL in secondary loaded 9 workers (Shikoku advanced scenario)."""
+        assert _count(SECONDARY_PREFIX, 'workers') == 9, \
+            f"Expected 9 Shikoku workers, got {_count(SECONDARY_PREFIX, 'workers')}"
 
-    def test_game2_has_workers(self):
-        """TestConfig in game2 loaded 26 workers (detection + combat + recruitment)."""
-        assert _count(GAME2_PREFIX, 'workers') == 26, \
-            f"Expected 26 TestConfig workers, got {_count(GAME2_PREFIX, 'workers')}"
+    def test_primary_has_workers(self):
+        """TestConfig in primary loaded 26 workers (detection + combat + recruitment)."""
+        assert _count(PRIMARY_PREFIX, 'workers') == 26, \
+            f"Expected 26 TestConfig workers, got {_count(PRIMARY_PREFIX, 'workers')}"
 
-    def test_game1_has_shikoku_zones(self):
-        """game1 has Shikoku zones (11 total)."""
-        assert _count(GAME1_PREFIX, 'zones') == 11, \
-            f"Expected 11 Shikoku zones, got {_count(GAME1_PREFIX, 'zones')}"
+    def test_secondary_has_shikoku_zones(self):
+        """Secondary has Shikoku zones (11 total)."""
+        assert _count(SECONDARY_PREFIX, 'zones') == 11, \
+            f"Expected 11 Shikoku zones, got {_count(SECONDARY_PREFIX, 'zones')}"
 
-    def test_game2_has_testconfig_zones(self):
-        """game2 has the 7 TestConfig zones (harmonized Greek names)."""
-        assert _count(GAME2_PREFIX, 'zones') == 7, \
-            f"Expected 7 TestConfig zones, got {_count(GAME2_PREFIX, 'zones')}"
+    def test_primary_has_testconfig_zones(self):
+        """Primary has the 7 TestConfig zones (harmonized Greek names)."""
+        assert _count(PRIMARY_PREFIX, 'zones') == 7, \
+            f"Expected 7 TestConfig zones, got {_count(PRIMARY_PREFIX, 'zones')}"
 
 
 @pytest.mark.db
-class TestShodoshimaInGame1:
+class TestShodoshimaInSecondary:
     """Specific Shikoku feature: Shodoshima island zone and locations exist."""
 
     def test_shodoshima_zone_exists(self):
-        zones = _zone_names(GAME1_PREFIX)
+        zones = _zone_names(SECONDARY_PREFIX)
         assert 'Ile de Shōdoshima' in zones, \
-            f"Shodoshima zone missing from game1, got zones: {zones}"
+            f"Shodoshima zone missing from secondary game, got zones: {zones}"
 
-    def test_shodoshima_not_in_game2(self):
-        """game2 should NOT have Shodoshima — proves isolation."""
-        zones = _zone_names(GAME2_PREFIX)
+    def test_shodoshima_not_in_primary(self):
+        """Primary should NOT have Shodoshima — proves isolation."""
+        zones = _zone_names(PRIMARY_PREFIX)
         assert 'Ile de Shōdoshima' not in zones, \
-            "Shodoshima leaked into game2 (isolation broken)"
+            "Shodoshima leaked into primary (isolation broken)"
 
     def test_shodoshima_has_locations(self):
         """At least 1 location should be tagged to Shodoshima."""
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(f"""
-            SELECT COUNT(*) AS c FROM `{GAME1_PREFIX}locations` l
-            JOIN `{GAME1_PREFIX}zones` z ON z.id = l.zone_id
+            SELECT COUNT(*) AS c FROM `{SECONDARY_PREFIX}locations` l
+            JOIN `{SECONDARY_PREFIX}zones` z ON z.id = l.zone_id
             WHERE z.name = 'Ile de Shōdoshima'
         """)
         n = cursor.fetchone()['c']
@@ -274,86 +274,86 @@ class TestShodoshimaInGame1:
 class TestGameIsolation:
     """Verify that each game's data is isolated in its own prefixed tables."""
 
-    def test_game1_controllers_not_in_game2(self):
-        """Shikoku controllers (e.g. 'Shikoku (四国)') should not appear in game2."""
-        g1 = set(_controller_lastnames(GAME1_PREFIX))
-        g2 = set(_controller_lastnames(GAME2_PREFIX))
-        assert g1 & g2 == set(), \
-            f"Controllers leaked between games: intersection={g1 & g2}"
+    def test_secondary_controllers_not_in_primary(self):
+        """Shikoku controllers (e.g. 'Shikoku (四国)') should not appear in primary."""
+        secondary = set(_controller_lastnames(SECONDARY_PREFIX))
+        primary = set(_controller_lastnames(PRIMARY_PREFIX))
+        assert secondary & primary == set(), \
+            f"Controllers leaked between games: intersection={secondary & primary}"
 
-    def test_game2_controllers_not_in_game1(self):
-        """TestConfig controllers (Alpha..Golf) should not appear in game1."""
-        g1 = set(_controller_lastnames(GAME1_PREFIX))
-        g2 = set(_controller_lastnames(GAME2_PREFIX))
+    def test_primary_controllers_not_in_secondary(self):
+        """TestConfig controllers (Alpha..Golf) should not appear in secondary."""
+        secondary = set(_controller_lastnames(SECONDARY_PREFIX))
+        primary = set(_controller_lastnames(PRIMARY_PREFIX))
         nato = {'Alpha', 'Beta', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf'}
-        assert not (nato & g1), \
-            f"TestConfig NATO controllers leaked into game1: {nato & g1}"
-        assert nato <= g2, \
-            f"game2 should have all NATO controllers: missing {nato - g2}"
+        assert not (nato & secondary), \
+            f"TestConfig NATO controllers leaked into secondary: {nato & secondary}"
+        assert nato <= primary, \
+            f"Primary should have all NATO controllers: missing {nato - primary}"
 
-    def test_game1_has_shikoku_controller(self):
-        """Shikoku controller must be in game1."""
-        g1 = _controller_lastnames(GAME1_PREFIX)
-        assert 'Shikoku (四国)' in g1, \
-            f"Shikoku controller not found in game1: {g1}"
+    def test_secondary_has_shikoku_controller(self):
+        """Shikoku controller must be in secondary."""
+        secondary = _controller_lastnames(SECONDARY_PREFIX)
+        assert 'Shikoku (四国)' in secondary, \
+            f"Shikoku controller not found in secondary: {secondary}"
 
     def test_zone_names_disjoint(self):
         """Zone name sets should be disjoint — each scenario uses distinct names."""
-        z1 = set(_zone_names(GAME1_PREFIX))
-        z2 = set(_zone_names(GAME2_PREFIX))
-        assert z1 & z2 == set(), \
-            f"Zone names leaked between games: intersection={z1 & z2}"
+        z_secondary = set(_zone_names(SECONDARY_PREFIX))
+        z_primary = set(_zone_names(PRIMARY_PREFIX))
+        assert z_secondary & z_primary == set(), \
+            f"Zone names leaked between games: intersection={z_secondary & z_primary}"
 
 
 # ---------------------------------------------------------------------------
-# Tests: end-turn in game1 does not affect game2
+# Tests: end-turn in secondary does not affect primary
 # ---------------------------------------------------------------------------
 
 @pytest.mark.db
 class TestEndTurnIsolation:
     """End-turn in one game must not change the other game's state."""
 
-    def test_game1_turn_advanced(self):
-        """After /RPGConquestGame1/mechanics/endTurn.php, game1 turncounter == 1."""
-        before = _snapshot['game1_turn_before_endturn']
-        after = _snapshot['game1_turn_after']
-        assert before == 0, f"game1 pre-endturn should be 0, got {before}"
-        assert after == 1, f"game1 post-endturn should be 1, got {after}"
+    def test_secondary_turn_advanced(self):
+        """After /RPGConquestGameTest2/mechanics/endTurn.php, secondary turncounter == 1."""
+        before = _snapshot['secondary_turn_before_endturn']
+        after = _snapshot['secondary_turn_after']
+        assert before == 0, f"Secondary pre-endturn should be 0, got {before}"
+        assert after == 1, f"Secondary post-endturn should be 1, got {after}"
 
-    def test_game2_turn_unchanged(self):
-        """game2 turncounter should NOT change when game1 ends turn."""
-        before = _snapshot['game2_turn_before_endturn']
-        after = _snapshot['game2_turn_after']
+    def test_primary_turn_unchanged(self):
+        """Primary turncounter should NOT change when secondary ends turn."""
+        before = _snapshot['primary_turn_before_endturn']
+        after = _snapshot['primary_turn_after']
         assert before == after, \
-            f"game2 turncounter changed: before={before}, after={after} (isolation broken)"
+            f"Primary turncounter changed: before={before}, after={after} (isolation broken)"
 
-    def test_game2_worker_count_unchanged(self):
-        """game2 workers count should not change."""
-        before = _snapshot['game2_workers_before']
-        after = _count(GAME2_PREFIX, 'workers')
+    def test_primary_worker_count_unchanged(self):
+        """Primary workers count should not change."""
+        before = _snapshot['primary_workers_before']
+        after = _count(PRIMARY_PREFIX, 'workers')
         assert before == after, \
-            f"game2 worker count changed: before={before}, after={after}"
+            f"Primary worker count changed: before={before}, after={after}"
 
-    def test_game1_new_turn_actions_created(self):
-        """After game1 end-turn, new worker_actions rows for turn 1 exist in game1."""
+    def test_secondary_new_turn_actions_created(self):
+        """After secondary end-turn, new worker_actions rows for turn 1 exist in secondary."""
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            f"SELECT COUNT(*) AS c FROM `{GAME1_PREFIX}worker_actions` "
+            f"SELECT COUNT(*) AS c FROM `{SECONDARY_PREFIX}worker_actions` "
             f"WHERE turn_number = 1"
         )
         n = cursor.fetchone()['c']
         conn.close()
-        assert n >= 1, f"Expected turn-1 actions in game1, got {n}"
+        assert n >= 1, f"Expected turn-1 actions in secondary, got {n}"
 
-    def test_game2_has_no_turn_1_actions(self):
-        """game2 should have no turn-1 rows (its end-turn was never called)."""
+    def test_primary_has_no_turn_1_actions(self):
+        """Primary should have no turn-1 rows (its end-turn was never called)."""
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            f"SELECT COUNT(*) AS c FROM `{GAME2_PREFIX}worker_actions` "
+            f"SELECT COUNT(*) AS c FROM `{PRIMARY_PREFIX}worker_actions` "
             f"WHERE turn_number = 1"
         )
         n = cursor.fetchone()['c']
         conn.close()
-        assert n == 0, f"game2 should have no turn-1 actions, got {n}"
+        assert n == 0, f"Primary should have no turn-1 actions, got {n}"

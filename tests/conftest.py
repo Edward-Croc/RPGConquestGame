@@ -9,7 +9,7 @@ MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3307"))
 MYSQL_USER = os.environ.get("MYSQL_USER", "rpg_user")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "rpg_pass")
 MYSQL_DB = os.environ.get("MYSQL_DB", "rpgconquestgame")
-GAME_PREFIX = "game2_"
+GAME_PREFIX = "game_test_"
 
 # Path to project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,7 +17,7 @@ CSV_DIR = os.path.join(PROJECT_ROOT, "var", "csv")
 SQL_DIR = os.path.join(PROJECT_ROOT, "var", "mysql")
 
 # PHP app URL (Docker)
-PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquestGame")
+PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquestGameTest")
 
 
 def ensure_gm_login(page, base_url=None):

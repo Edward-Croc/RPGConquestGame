@@ -4,7 +4,7 @@
 # automatically on first container start (when the data volume is empty).
 #
 # It replaces {prefix} placeholders in the SQL file before execution.
-# Set GAME_PREFIX environment variable to use table prefixes (e.g. "game2_").
+# Set GAME_PREFIX environment variable to use table prefixes (e.g. "game_test_").
 
 PREFIX="${GAME_PREFIX:-}"
 SQL_FILE="/tmp/setupBDD.sql"

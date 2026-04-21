@@ -142,8 +142,8 @@ class TestSchemaIntegrity:
             f"{GAME_PREFIX}ressources_config", f"{GAME_PREFIX}controller_ressources",
         }
         # Subset check: the DB may also contain tables from other game
-        # prefixes (e.g. game1_*) when the parallel games test runs in the
-        # same session. All expected GAME_PREFIX tables must be present.
+        # prefixes (e.g. game_test2_*) when the parallel games test runs in
+        # the same session. All expected GAME_PREFIX tables must be present.
         missing = expected - tables
         assert missing == set(), f"Missing expected tables: {missing}"
 

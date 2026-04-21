@@ -23,7 +23,7 @@ docker compose up -d --build >/dev/null
 
 echo "-> Waiting for PHP to answer on http://localhost:8080 ..."
 ATTEMPTS=0
-until curl -sf http://localhost:8080/RPGConquestGame/connection/loginForm.php >/dev/null 2>&1; do
+until curl -sf http://localhost:8080/RPGConquestGameTest/connection/loginForm.php >/dev/null 2>&1; do
     ATTEMPTS=$((ATTEMPTS + 1))
     if [ "$ATTEMPTS" -gt 60 ]; then
         echo "FAIL: PHP did not respond within 3 minutes"
@@ -35,7 +35,7 @@ done
 echo "   PHP is up after ${ATTEMPTS} attempts."
 
 echo "-> Checking login page renders..."
-BODY=$(curl -s http://localhost:8080/RPGConquestGame/connection/loginForm.php)
+BODY=$(curl -s http://localhost:8080/RPGConquestGameTest/connection/loginForm.php)
 if ! echo "$BODY" | grep -q "name=\"username\""; then
     echo "FAIL: login form not found in response"
     echo "$BODY" | head -20
@@ -45,7 +45,7 @@ echo "   Login form present."
 
 echo "-> Checking gm user exists in DB..."
 GM_COUNT=$(docker exec rpg_mysql mysql -u rpg_user -prpg_pass rpgconquestgame \
-    -sN -e "SELECT COUNT(*) FROM game2_players WHERE username='gm'" 2>/dev/null || echo "0")
+    -sN -e "SELECT COUNT(*) FROM game_test_players WHERE username='gm'" 2>/dev/null || echo "0")
 if [ "$GM_COUNT" != "1" ]; then
     echo "FAIL: gm user not found (got count=${GM_COUNT})"
     exit 1
@@ -63,5 +63,5 @@ echo "   ${TABLE_COUNT} tables created."
 
 echo ""
 echo "=== PASS: Docker setup is healthy ==="
-echo "You can now browse: http://localhost:8080/RPGConquestGame/"
+echo "You can now browse: http://localhost:8080/RPGConquestGameTest/"
 echo "Login: gm / orga"
