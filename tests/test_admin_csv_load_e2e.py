@@ -21,7 +21,7 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
 
 
 def table_row_count(table_name):
@@ -49,24 +49,7 @@ def ensure_base_data():
     if not DB_AVAILABLE:
         yield
         return
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}players` WHERE username = 'gm'"
-    )
-    if cursor.fetchone() is None:
-        cursor.execute(
-            f"INSERT INTO `{GAME_PREFIX}players` (username, passwd, is_privileged) "
-            f"VALUES ('gm', 'orga', 1)"
-        )
-    cursor.execute(f"SELECT id FROM `{GAME_PREFIX}mechanics` LIMIT 1")
-    if cursor.fetchone() is None:
-        cursor.execute(
-            f"INSERT INTO `{GAME_PREFIX}mechanics` (turncounter, gamestate) "
-            f"VALUES (0, 0)"
-        )
-    conn.commit()
-    conn.close()
+    load_minimal_data()
     yield
 
 

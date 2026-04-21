@@ -5,16 +5,19 @@ Extracts exact-copy duplicated functions from individual test modules:
   - Login / logout page navigation
   - End-turn trigger (caller handles login)
   - Scenario load via admin UI (uses a fresh browser context)
+  - Minimal-data replay (seeds gm, config rows, power_types, mechanics)
 
 The DB_AVAILABLE flag is computed once at import time so test modules
 can use it for `pytest.skip` guards without repeating the probe.
 """
+import os
+import re
 import pymysql
 from playwright.sync_api import Page
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL,
+    PHP_BASE_URL, SQL_DIR,
 )
 
 
@@ -71,6 +74,38 @@ def get_controller_id(lastname):
     row = cursor.fetchone()
     conn.close()
     return row['id'] if row else None
+
+
+def load_minimal_data(prefix=None):
+    """Replay var/mysql/minimalData.sql against the DB to reinstate the
+    minimal invariants (gm user, default config rows, starting mechanics
+    row, fixed power types). Safe to call anytime — all statements are
+    idempotent via INSERT IGNORE / WHERE NOT EXISTS.
+
+    Returns True on success, False if the DB is unreachable.
+    """
+    prefix = prefix or GAME_PREFIX
+    minimal_path = os.path.join(SQL_DIR, "minimalData.sql")
+    if not os.path.exists(minimal_path):
+        return False
+    try:
+        sql = open(minimal_path, encoding="utf-8").read().replace("{prefix}", prefix)
+        # Strip line comments (-- ...) so they don't confuse statement splitting
+        sql = re.sub(r"--[^\n]*\n", "\n", sql)
+        conn = pymysql.connect(
+            host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
+            password=MYSQL_PASSWORD, database=MYSQL_DB,
+            charset="utf8mb4", autocommit=True,
+        )
+        cursor = conn.cursor()
+        for stmt in sql.split(";"):
+            stmt = stmt.strip()
+            if stmt:
+                cursor.execute(stmt)
+        conn.close()
+        return True
+    except pymysql.err.OperationalError:
+        return False
 
 
 # ---------------------------------------------------------------------------

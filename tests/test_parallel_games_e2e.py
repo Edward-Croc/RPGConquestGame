@@ -31,7 +31,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
-    login_as, end_turn, load_scenario_via_admin,
+    login_as, end_turn, load_scenario_via_admin, load_minimal_data,
 )
 
 
@@ -121,22 +121,11 @@ def parallel_games_scenario(browser):
         yield
         return
 
-    # Ensure gm exists in BOTH prefixes so login works on either URL base.
+    # Seed minimal data in BOTH prefixes so login + scenario load work on either URL base.
     # Other test modules may have truncated the players table mid-session
     # (via the `clean_tables` fixture in conftest.py) before this test runs.
-    conn = get_db()
-    cursor = conn.cursor()
     for prefix in (SECONDARY_PREFIX, PRIMARY_PREFIX):
-        cursor.execute(
-            f"INSERT IGNORE INTO `{prefix}players` "
-            f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
-        )
-        cursor.execute(
-            f"INSERT IGNORE INTO `{prefix}mechanics` "
-            f"(turncounter, gamestate) VALUES (0, 0)"
-        )
-    conn.commit()
-    conn.close()
+        load_minimal_data(prefix)
 
     # Load Japon1555SQL into secondary (larger scenario — Shodoshima, 9 workers)
     load_scenario_via_admin(browser, PHP_BASE_URL_SECONDARY, 'Japon1555SQL')

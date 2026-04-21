@@ -16,7 +16,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
 
 
 @pytest.fixture(scope="session")
@@ -42,18 +42,7 @@ def load_empty_scenario(browser):
         yield
         return
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"INSERT IGNORE INTO `{GAME_PREFIX}players` "
-        f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
-    )
-    cursor.execute(
-        f"INSERT IGNORE INTO `{GAME_PREFIX}mechanics` "
-        f"(turncounter, gamestate) VALUES (0, 0)"
-    )
-    conn.commit()
-    conn.close()
+    load_minimal_data()
 
     # Load TestConfig via admin UI
     context = browser.new_context()

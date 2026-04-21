@@ -1,6 +1,5 @@
 """Shared fixtures for RPGConquestGame tests."""
 import os
-import re
 import pymysql
 import pytest
 
@@ -34,38 +33,6 @@ def ensure_gm_login(page, base_url=None):
         page.wait_for_load_state("networkidle")
 
 
-def _load_minimal_data(prefix=None):
-    """Replay var/mysql/minimalData.sql against the DB to reinstate the
-    minimal invariants (gm user, default config rows, starting mechanics
-    row, fixed power types). Safe to call anytime — all statements are
-    idempotent via INSERT IGNORE / WHERE NOT EXISTS.
-
-    Returns True on success, False if the DB is unreachable.
-    """
-    prefix = prefix or GAME_PREFIX
-    minimal_path = os.path.join(SQL_DIR, "minimalData.sql")
-    if not os.path.exists(minimal_path):
-        return False
-    try:
-        sql = open(minimal_path, encoding="utf-8").read().replace("{prefix}", prefix)
-        # Strip line comments (-- ...) so they don't confuse statement splitting
-        sql = re.sub(r"--[^\n]*\n", "\n", sql)
-        conn = pymysql.connect(
-            host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-            password=MYSQL_PASSWORD, database=MYSQL_DB,
-            charset="utf8mb4", autocommit=True,
-        )
-        cursor = conn.cursor()
-        for stmt in sql.split(";"):
-            stmt = stmt.strip()
-            if stmt:
-                cursor.execute(stmt)
-        conn.close()
-        return True
-    except pymysql.err.OperationalError:
-        return False
-
-
 @pytest.fixture(scope="session", autouse=True)
 def ensure_db_usable_after_tests(browser):
     """Session teardown: replay minimalData.sql, then assert gm can still log in.
@@ -73,8 +40,9 @@ def ensure_db_usable_after_tests(browser):
     Any test that accidentally wipes minimal rows gets them back here,
     and any breakage of the gm-login flow fails the whole session.
     """
+    from helpers import load_minimal_data
     yield
-    if not _load_minimal_data():
+    if not load_minimal_data():
         return  # DB unreachable — skip the login assertion too
 
     # Verify gm can actually log in via the HTTP flow.

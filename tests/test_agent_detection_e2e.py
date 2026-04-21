@@ -28,7 +28,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, get_worker_id, get_controller_id
+from helpers import DB_AVAILABLE, get_db_connection, get_worker_id, get_controller_id, load_minimal_data
 
 
 @pytest.fixture(scope="session")
@@ -114,18 +114,7 @@ def load_and_end_turn(browser):
         yield
         return
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"INSERT IGNORE INTO `{GAME_PREFIX}players` "
-        f"(username, passwd, is_privileged) VALUES ('gm', 'orga', 1)"
-    )
-    cursor.execute(
-        f"INSERT IGNORE INTO `{GAME_PREFIX}mechanics` "
-        f"(turncounter, gamestate) VALUES (0, 0)"
-    )
-    conn.commit()
-    conn.close()
+    load_minimal_data()
 
     context = browser.new_context()
     page = context.new_page()
