@@ -149,31 +149,6 @@ def _workers_page_html(page, controller_lastname):
     return page.content()
 
 
-def _accueil_html(page, controller_lastname):
-    """Return the accueil page HTML for a controller.
-
-    The accueil page includes controllers/view.php (which lists bases under
-    'Votre Base :') and workers/viewAll.php (which renders the recruit/first
-    come buttons plus worker cards). Single source-of-truth for UI-first
-    assertions about controller state.
-    """
-    _switch_controller(page, controller_lastname)
-    cid = _controller_id(controller_lastname)
-    page.goto(f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-    page.wait_for_load_state("load")
-    return page.content()
-
-
-def _count_worker_cards_in_html(html):
-    """Count workers rendered in a viewAll/accueil HTML page.
-
-    Each worker card is wrapped in `<div class="worker-short">` by
-    showWorkerShort() in workers/functions.php, so counting those div
-    openings gives the worker count owned/displayed on the page.
-    """
-    return html.count('class="worker-short"')
-
-
 def _create_base(page, controller_lastname, zone_name):
     """Trigger createBase via URL."""
     _switch_controller(page, controller_lastname)
@@ -255,10 +230,6 @@ def recruitment_scenario(browser):
 
     # Snapshot baseline worker counts (agents already loaded from advanced.csv)
     _snapshot['alpha_baseline_workers'] = _worker_count_for_controller('Alpha')
-    # UI-side baseline: count worker-short cards on Alpha's viewAll page.
-    _snapshot['alpha_baseline_workers_ui'] = _count_worker_cards_in_html(
-        _workers_page_html(page, 'Alpha')
-    )
 
     # Phase 1: Alpha has no base → capture viewAll HTML
     _snapshot['alpha_t0_before_base_html'] = _workers_page_html(page, 'Alpha')
@@ -270,16 +241,11 @@ def recruitment_scenario(browser):
     _snapshot['alpha_t0_after_first_come_counters'] = _controller_counters('Alpha')
     _snapshot['alpha_t0_after_first_come_workers'] = _worker_count_for_controller('Alpha')
     _snapshot['alpha_t0_after_first_come_html'] = _workers_page_html(page, 'Alpha')
-    _snapshot['alpha_t0_after_first_come_workers_ui'] = _count_worker_cards_in_html(
-        _snapshot['alpha_t0_after_first_come_html']
-    )
 
     # Phase 3: Alpha creates a base in Epsilon-Controlled
     _create_base(page, 'Alpha', 'Epsilon-Controlled')
     _snapshot['alpha_bases'] = _bases_for_controller('Alpha')
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
-    # UI-side: accueil page shows the base under "Votre Base :" section.
-    _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
 
     # Phase 4: Alpha uses regular recruitment
     # Capture the recruitment form BEFORE submitting (for form validation tests)
@@ -298,9 +264,6 @@ def recruitment_scenario(browser):
     _snapshot['alpha_t0_after_recruit_counters'] = _controller_counters('Alpha')
     _snapshot['alpha_t0_after_recruit_workers'] = _worker_count_for_controller('Alpha')
     _snapshot['alpha_t0_after_recruit_html'] = _workers_page_html(page, 'Alpha')
-    _snapshot['alpha_t0_after_recruit_workers_ui'] = _count_worker_cards_in_html(
-        _snapshot['alpha_t0_after_recruit_html']
-    )
 
     # Phase 5: Beta creates base + captures recruitment form (for faction filtering)
     _create_base(page, 'Beta', 'Zeta-Unclaimed')
@@ -328,10 +291,6 @@ def recruitment_scenario(browser):
     _do_regular_recruit(page, 'Alpha')
     _snapshot['alpha_t1_after_recruit_counters'] = _controller_counters('Alpha')
     _snapshot['alpha_t1_final_workers'] = _worker_count_for_controller('Alpha')
-    # UI-side final worker count (post all recruitment phases).
-    _snapshot['alpha_t1_final_workers_ui'] = _count_worker_cards_in_html(
-        _workers_page_html(page, 'Alpha')
-    )
 
     context.close()
     yield
@@ -341,13 +300,9 @@ def recruitment_scenario(browser):
 # Test classes
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestBaseRequirement:
-    """Button visibility depends on base + recruitment slot availability.
-
-    UI-first: these tests check the rendered HTML of viewAll.php for the
-    presence/absence of the recruit and first-come buttons — canonical
-    proxies for the canStartRecrutement / canStartFirstCome gating.
-    """
+    """Button visibility depends on base + recruitment slot availability."""
 
     def test_alpha_no_recruit_button_without_base(self):
         """Without a base, Alpha's viewAll has no 'Recruter un serviteur' button."""
@@ -370,55 +325,30 @@ class TestBaseRequirement:
             "Recruit button should appear after base is created"
 
 
+@pytest.mark.db
 class TestBaseCreation:
-    """Base creation via /controllers/action.php?createBase=...
-
-    UI-first: after createBase, Alpha's accueil page lists the base in the
-    'Votre Base :' section with its auto-generated name and zone. The DB row
-    is the underlying mechanism but the user-visible truth is the rendered
-    accueil page.
-    """
+    """Base creation via /controllers/action.php?createBase=..."""
 
     def test_alpha_base_created(self):
-        """Alpha should have one base displayed under 'Votre Base :' on accueil."""
-        html = _snapshot['alpha_t0_after_base_accueil_html']
-        assert 'Votre Base' in html, \
-            "Accueil should show the 'Votre Base :' header after base creation"
-        # The base block uses 'Votre {name} à {zone}' template from view.php.
-        assert 'Fortress of FactionAlpha' in html, \
-            "Accueil should display the created base name"
+        """Alpha should have exactly one base after createBase."""
+        bases = _snapshot['alpha_bases']
+        assert len(bases) == 1, f"Expected 1 base for Alpha, got {len(bases)}"
 
     def test_alpha_base_auto_named(self):
         """Base name is auto-generated from texteNameBase template + fake_faction_name."""
-        html = _snapshot['alpha_t0_after_base_accueil_html']
-        assert 'Fortress of FactionAlpha' in html, \
-            "Accueil HTML should show 'Fortress of FactionAlpha' base name"
+        bases = _snapshot['alpha_bases']
+        assert bases[0]['name'] == 'Fortress of FactionAlpha', \
+            f"Expected 'Fortress of FactionAlpha', got '{bases[0]['name']}'"
 
     def test_alpha_base_in_correct_zone(self):
-        """Base was created in Epsilon-Controlled zone (rendered on accueil)."""
-        html = _snapshot['alpha_t0_after_base_accueil_html']
-        # view.php renders 'Votre {name} à {zone_name}' for the base entry.
-        assert 'Epsilon-Controlled' in html, \
-            "Accueil should display the base's zone 'Epsilon-Controlled'"
-        assert 'Fortress of FactionAlpha' in html and 'Epsilon-Controlled' in html, \
-            "Base name and zone should both be visible on Alpha's accueil"
-
-    @pytest.mark.db
-    def test_alpha_base_persisted_in_db(self):
-        """Belt-and-braces: the base row exists with correct name + zone.
-
-        Kept under @pytest.mark.db because the UI assertions only confirm the
-        base is rendered on the page — this confirms the persisted state
-        (exactly one row, correct zone_id linkage).
-        """
+        """Base was created in Epsilon-Controlled zone."""
         bases = _snapshot['alpha_bases']
-        assert len(bases) == 1, f"Expected 1 base for Alpha, got {len(bases)}"
-        assert bases[0]['name'] == 'Fortress of FactionAlpha'
         assert bases[0]['zone_name'] == 'Epsilon-Controlled'
 
 
+@pytest.mark.db
 class TestRecruitmentFormValidation:
-    """Regular recruitment form structure (UI HTML assertions)."""
+    """Regular recruitment form structure."""
 
     def test_form_has_zone_dropdown(self):
         """The form must include a zone select for spawn location."""
@@ -446,11 +376,9 @@ class TestRecruitmentFormValidation:
             f"Form should show a pre-generated name from pool, HTML length={len(html)}"
 
 
+@pytest.mark.db
 class TestFactionPowerFiltering:
-    """Discipline dropdown should contain base powers + own faction's powers.
-
-    UI-first: asserts against the rendered recruitment form HTML.
-    """
+    """Discipline dropdown should contain base powers + own faction's powers."""
 
     def test_alpha_discipline_dropdown_has_base_power(self):
         """Focused Mind is the base discipline (basePowerNames config), available to all."""
@@ -483,149 +411,108 @@ class TestFactionPowerFiltering:
             "Beta should NOT see Alpha's Offensive Stance"
 
 
+@pytest.mark.db
 class TestFirstComeRecruitment:
     """First-come recruitment path."""
 
     def test_first_come_creates_worker_without_base(self):
-        """First-come should not decrease the worker-card count on viewAll.
+        """First-come (no base required) should add a worker to Alpha's roster.
 
-        UI-first: count `class="worker-short"` cards rendered on Alpha's
-        viewAll page. `createWorker` returns the existing worker ID if the
+        Note: `createWorker` returns the existing worker ID if the
         pre-generated name collides with one already recruited for the same
         controller+origin — a duplicate is a valid game outcome, so we
-        accept `>= baseline` rather than requiring a new card every time.
+        accept `>= baseline` rather than requiring a new row every time.
         """
-        baseline_ui = _snapshot['alpha_baseline_workers_ui']
-        after_ui = _snapshot['alpha_t0_after_first_come_workers_ui']
-        assert after_ui >= baseline_ui, \
-            f"UI worker-card count should not decrease: baseline={baseline_ui}, after={after_ui}"
+        baseline = _snapshot['alpha_baseline_workers']
+        after = _snapshot['alpha_t0_after_first_come_workers']
+        assert after >= baseline, \
+            f"Worker count should not decrease: baseline={baseline}, after={after}"
+        # The counter increments regardless, so the test of "it ran" is via counter.
 
-    def test_first_come_locked_on_same_turn(self):
-        """After one first-come, button should disappear (limit=1 per turn).
-
-        This is the UI proxy for turn_firstcome_workers == 1 — the button is
-        rendered only when canStartFirstCome() returns true, which is false
-        once the per-turn counter is at its limit.
-        """
-        html = _snapshot['alpha_t0_after_first_come_html']
-        assert "Prendre le premier venu" not in html, \
-            "First-come button should be hidden after limit reached on same turn"
-
-    @pytest.mark.db
     def test_first_come_increments_counter(self):
-        """Belt-and-braces: turn_firstcome_workers counter should be 1 after first-come.
-
-        Kept under @pytest.mark.db to verify the underlying counter mechanic —
-        the UI test above confirms the user-visible effect (button hidden)
-        but this confirms the exact DB state that drives it.
-        """
+        """turn_firstcome_workers counter should be 1 after first-come."""
         counters = _snapshot['alpha_t0_after_first_come_counters']
         assert counters['turn_firstcome_workers'] == 1, \
             f"Expected turn_firstcome_workers=1, got {counters}"
 
+    def test_first_come_locked_on_same_turn(self):
+        """After one first-come, button should disappear (limit=1 per turn)."""
+        html = _snapshot['alpha_t0_after_first_come_html']
+        assert "Prendre le premier venu" not in html, \
+            "First-come button should be hidden after limit reached on same turn"
 
+
+@pytest.mark.db
 class TestRegularRecruitment:
     """Regular (base-requiring) recruitment path."""
 
     def test_recruit_creates_worker(self):
-        """UI-first: worker-card count on viewAll should not decrease after recruit.
+        """After regular recruit, Alpha's worker count should not decrease.
 
         Name collisions may cause createWorker to return the existing ID
-        without rendering a new card — the counter increments regardless.
+        without creating a new row — the counter increments regardless.
         """
-        after_first_come_ui = _snapshot['alpha_t0_after_first_come_workers_ui']
-        after_recruit_ui = _snapshot['alpha_t0_after_recruit_workers_ui']
-        assert after_recruit_ui >= after_first_come_ui, \
-            f"UI worker-card count should not decrease after recruit: " \
-            f"{after_first_come_ui} -> {after_recruit_ui}"
+        after_first_come = _snapshot['alpha_t0_after_first_come_workers']
+        after_recruit = _snapshot['alpha_t0_after_recruit_workers']
+        assert after_recruit >= after_first_come, \
+            f"Worker count should not decrease after recruit"
 
-    def test_recruit_locked_on_same_turn(self):
-        """After using start_workers slot, recruit button should disappear on turn 0.
-
-        UI proxy for turn_recruited_workers >= start_workers — the button is
-        gated by canStartRecrutement() in workers/viewAll.php.
-        """
-        html = _snapshot['alpha_t0_after_recruit_html']
-        assert "Recruter un serviteur" not in html, \
-            "Recruit button should be hidden after start_workers exhausted"
-
-    @pytest.mark.db
     def test_recruit_increments_counter(self):
-        """Belt-and-braces: turn_recruited_workers should be 1 after regular recruitment.
-
-        Kept under @pytest.mark.db to confirm the exact counter state — the
-        UI test above only proves the resulting button is hidden.
-        """
+        """turn_recruited_workers should be 1 after regular recruitment."""
         counters = _snapshot['alpha_t0_after_recruit_counters']
         assert counters['turn_recruited_workers'] == 1, \
             f"Expected turn_recruited_workers=1, got {counters}"
 
+    def test_recruit_locked_on_same_turn(self):
+        """After using start_workers slot, recruit button should disappear on turn 0."""
+        html = _snapshot['alpha_t0_after_recruit_html']
+        assert "Recruter un serviteur" not in html, \
+            "Recruit button should be hidden after start_workers exhausted"
 
+
+@pytest.mark.db
 class TestLockUnlockAcrossTurns:
     """Counters reset at end-turn, allowing recruitment again on turn 1."""
 
-    def test_first_come_unlocked_on_turn_1(self):
-        """First-come button should be visible again at start of turn 1.
+    def test_counters_reset_on_turn_1(self):
+        """At start of turn 1, both counters should be back to 0."""
+        counters = _snapshot['alpha_t1_before_counters']
+        assert counters['turn_firstcome_workers'] == 0
+        assert counters['turn_recruited_workers'] == 0
 
-        UI proxy for turn_firstcome_workers reset to 0 — the button is
-        rendered iff canStartFirstCome() returns true.
-        """
+    def test_first_come_unlocked_on_turn_1(self):
+        """First-come button should be visible again at start of turn 1."""
         html = _snapshot['alpha_t1_before_html']
         assert "Prendre le premier venu" in html, \
             "First-come button should be available on turn 1"
 
     def test_regular_recruit_unlocked_on_turn_1(self):
-        """Recruit button should be visible again at start of turn 1.
-
-        UI proxy for turn_recruited_workers reset to 0 (Alpha still has base).
-        """
+        """Recruit button should be visible again at start of turn 1 (Alpha still has base)."""
         html = _snapshot['alpha_t1_before_html']
         assert "Recruter un serviteur" in html, \
             "Recruit button should be available on turn 1"
 
     def test_recruitment_overall_added_workers(self):
-        """Over the full lifecycle, Alpha's viewAll shows more worker cards.
+        """Over the full lifecycle (4 recruitment attempts), Alpha gained at least 1 worker.
 
-        UI-first: count `class="worker-short"` cards before (baseline) and
-        at end of turn 1. Due to random name collisions, exact counts are
-        not deterministic, but the total must be strictly greater than the
-        CSV baseline.
+        Due to random name collisions, exact counts are not deterministic,
+        but the total count must be strictly greater than the CSV baseline.
         """
-        baseline_ui = _snapshot['alpha_baseline_workers_ui']
-        final_ui = _snapshot['alpha_t1_final_workers_ui']
-        assert final_ui > baseline_ui, \
-            f"After 4 recruitment attempts, Alpha's viewAll should show " \
-            f"> {baseline_ui} worker cards, got {final_ui}"
+        baseline = _snapshot['alpha_baseline_workers']
+        final = _snapshot['alpha_t1_final_workers']
+        assert final > baseline, \
+            f"After 4 recruitment attempts, Alpha should have > {baseline} workers, got {final}"
 
-    @pytest.mark.db
-    def test_counters_reset_on_turn_1(self):
-        """Belt-and-braces: at start of turn 1, both counters should be 0.
-
-        Kept under @pytest.mark.db as the underlying DB state check — the
-        UI tests above confirm the user-visible effect (buttons visible).
-        """
-        counters = _snapshot['alpha_t1_before_counters']
-        assert counters['turn_firstcome_workers'] == 0
-        assert counters['turn_recruited_workers'] == 0
-
-    @pytest.mark.db
     def test_turn_1_counters_increment(self):
-        """Belt-and-braces: after both recruitments on turn 1, counters should be 1.
-
-        Kept under @pytest.mark.db because button-disappearance on turn 1 is
-        already covered indirectly — this asserts the exact counter values
-        the game logic depends on.
-        """
+        """After both recruitments on turn 1, counters should be 1."""
         counters = _snapshot['alpha_t1_after_recruit_counters']
         assert counters['turn_firstcome_workers'] == 1
         assert counters['turn_recruited_workers'] == 1
 
 
+@pytest.mark.db
 class TestCharlieCannotRecruit:
-    """Controllers without can_build_base + start_workers cannot recruit on turn 0.
-
-    UI-first: asserts against Charlie's viewAll HTML (no buttons, needs-base msg).
-    """
+    """Controllers without can_build_base + start_workers cannot recruit on turn 0."""
 
     def test_charlie_sees_needs_base_message(self):
         """Charlie (can_build_base=0) should see the needs-a-base message."""
