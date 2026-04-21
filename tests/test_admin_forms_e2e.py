@@ -155,42 +155,49 @@ class TestCreatePerfectAgentForm:
         assert any("Veteran Tactician" in t for t in options_text), \
             f"Metier dropdown should include Veteran Tactician"
 
-    def test_create_worker_via_form_inserts_into_db(self, page: Page, base_url):
-        """Submitting the form should create a worker row in the DB."""
+    def test_create_worker_via_form_appears_in_faction_view(self, page: Page, base_url):
+        """End-to-end: fill the form on admin.php, then verify the new worker
+        appears in the target controller's agents view via the faction page.
+
+        Flow mirrors what a gm does in the UI:
+          1. admin.php → fill creation form → click Recruter et Affecter
+          2. controllers/action.php (Ma Faction) → select Lord Alpha → Choisir
+          3. workers/viewAll.php → assert new worker's name is listed
+        """
         ensure_gm_login(page, base_url)
 
-        # Snapshot worker count before
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}workers`")
-        before_count = cursor.fetchone()['c']
-        conn.close()
+        firstname_val = "Sentinel"
+        lastname_val = "Vanguard"
+        target_controller_id = "1"  # Lord Alpha
 
-        # Submit form with valid data
-        # Use the URL directly (form is GET) — this avoids dropdown selection complexity
-        page.goto(
-            f"{base_url}/workers/action.php?creation=true&controller_id=1"
-            f"&origin_id=1&firstname=one&lastname=two&power_hobby_id=1"
-            f"&power_metier_id=&zone_id=1&chosir=Recruter+et+Affecter"
-        )
+        # --- Fill the worker-creation form on admin.php ---
+        page.goto(f"{base_url}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+        form = page.locator("form[action*='workers/action.php']")
+        form.locator("select#controllerSelect").select_option(target_controller_id)
+        form.locator("select#origin_id").select_option("1")
+        form.locator("select#firstname").select_option(firstname_val)
+        form.locator("select#lastname").select_option(lastname_val)
+        form.locator("select#power_hobby_id").select_option(index=1)
+        form.locator("select#zoneSelect").select_option(index=1)
+        form.locator("input[name='chosir'][value='Recruter et Affecter']").click()
         page.wait_for_load_state("networkidle")
 
-        # Check worker was created
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}workers`")
-        after_count = cursor.fetchone()['c']
+        # --- Switch gm's view to Lord Alpha's faction (Ma Faction page) ---
+        page.goto(f"{base_url}/controllers/action.php")
+        page.wait_for_load_state("networkidle")
+        page.locator("form select#controllerSelect").select_option(target_controller_id)
+        page.locator("input[name='chosir'][value='Choisir']").click()
+        page.wait_for_load_state("networkidle")
 
-        cursor.execute(
-            f"SELECT firstname, lastname FROM `{GAME_PREFIX}workers` ORDER BY id DESC LIMIT 1"
+        # --- Assert the new worker is visible in Alpha's agents view ---
+        page.goto(f"{base_url}/workers/viewAll.php")
+        page.wait_for_load_state("networkidle")
+        html = page.content()
+        assert firstname_val in html and lastname_val in html, (
+            f"Newly-created worker '{firstname_val} {lastname_val}' should appear "
+            f"in Lord Alpha's agents view after faction switch"
         )
-        latest = cursor.fetchone()
-        conn.close()
-
-        assert after_count == before_count + 1, \
-            f"Expected {before_count + 1} workers, got {after_count}"
-        assert latest['firstname'] == 'one' and latest['lastname'] == 'two', \
-            f"Latest worker should be 'one two', got {latest}"
 
     def test_create_worker_links_to_controller(self, page: Page, base_url):
         """Created worker should be linked to the specified controller via controller_worker."""
