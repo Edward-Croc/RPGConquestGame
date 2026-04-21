@@ -119,6 +119,7 @@ def load_csv_updates(conn, csv_file, prefix=GAME_PREFIX):
 # Tests: Schema Integrity
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestSchemaIntegrity:
     """Verify the MySQL schema was correctly set up with prefixed tables."""
 
@@ -182,6 +183,7 @@ class TestSchemaIntegrity:
 # Tests: loadCSVFile
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestLoadCSVFile:
     """Tests for the CSV insert loader."""
 
@@ -317,6 +319,7 @@ class TestLoadCSVFile:
 # Tests: loadCSVUpdates
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestLoadCSVUpdates:
     """Tests for the CSV update loader."""
 
@@ -366,6 +369,7 @@ class TestLoadCSVUpdates:
 # Tests: Full TestConfig scenario loading
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestFullScenarioLoad:
     """Integration test: load the full TestConfig scenario."""
 
