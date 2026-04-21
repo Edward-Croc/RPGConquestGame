@@ -34,10 +34,15 @@ def ensure_gm_login(page, base_url=None):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def ensure_db_usable_after_tests():
-    """Ensure gm/orga and mechanics exist after all tests complete."""
+def ensure_db_usable_after_tests(browser):
+    """Session teardown: restore gm/mechanics rows, then assert gm can still log in.
+
+    This is the single post-suite "gm invariant" check. Any test that
+    accidentally wipes or locks gm will fail the session at teardown,
+    regardless of individual test outcomes.
+    """
     yield
-    # Session teardown: ensure gm login works for manual browsing
+    # Phase 1: non-destructive restore so manual browsing works after a run.
     try:
         conn = pymysql.connect(
             host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
@@ -55,7 +60,24 @@ def ensure_db_usable_after_tests():
         )
         conn.close()
     except Exception:
-        pass  # DB might not be available
+        # DB unreachable — skip the login assertion too
+        return
+
+    # Phase 2: verify gm can actually log in via the HTTP flow.
+    context = browser.new_context()
+    page = context.new_page()
+    try:
+        page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+        page.wait_for_load_state("networkidle")
+        page.locator("input[name='username']").fill("gm")
+        page.locator("input[name='passwd']").fill("orga")
+        page.locator("input[type='submit']").first.click()
+        page.wait_for_load_state("networkidle")
+        assert "accueil.php" in page.url, (
+            f"Post-suite gm login failed: expected redirect to accueil.php, got {page.url}"
+        )
+    finally:
+        context.close()
 
 
 @pytest.fixture

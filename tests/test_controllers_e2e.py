@@ -207,16 +207,3 @@ class TestControllerMultiPlayer:
             f"Multi-controller player should see exactly 2 controllers, got {len(option_texts)}: {option_texts}"
 
 
-# ---------------------------------------------------------------------------
-# Verify gm can still log in after all tests
-# ---------------------------------------------------------------------------
-
-@pytest.mark.db
-class TestPostTestCleanup:
-    """Verify the gm account still works after all controller tests."""
-
-    def test_gm_can_login(self, page: Page, base_url):
-        login_as(page, base_url, "gm", "orga")
-        assert "accueil.php" in page.url, \
-            f"gm login should redirect to accueil, got: {page.url}"
-        logout(page, base_url)

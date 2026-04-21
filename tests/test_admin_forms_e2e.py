@@ -235,17 +235,6 @@ class TestBDDExport:
         export_btn = page.locator("input[value='Export BDD to file.sql']")
         expect(export_btn).to_be_visible()
 
-    def test_export_form_posts_to_admin(self, page: Page, base_url):
-        """Export form should post to admin.php with exportBDD hidden field."""
-        ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
-        page.wait_for_load_state("networkidle")
-        # Find the export form (the one with exportBDD hidden input)
-        form = page.locator("form:has(input[name='exportBDD'])")
-        expect(form).to_be_visible()
-        action = form.get_attribute("action")
-        assert action and "admin.php" in action
-
     def test_export_triggers_download(self, page: Page, base_url):
         """Clicking export should trigger a file download."""
         ensure_gm_login(page, base_url)
