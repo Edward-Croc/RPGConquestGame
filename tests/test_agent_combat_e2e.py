@@ -113,14 +113,20 @@ def _ensure_controller_session(page):
 
 
 def _worker_controller_id(lastname):
-    """Return the primary controller_id for a worker."""
+    """Return the primary controller_id for the ORIGINAL worker (lowest id).
+
+    After capture, a trace worker with the same lastname exists under the
+    original controller; the original record meanwhile moves to the captor.
+    We want the original record's current controller (= captor if captured).
+    """
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(f"""
         SELECT cw.controller_id FROM `{GAME_PREFIX}controller_worker` cw
         JOIN `{GAME_PREFIX}workers` w ON w.id = cw.worker_id
         WHERE w.lastname = %s AND cw.is_primary_controller = 1
-    """, (lastname,))
+          AND w.id = (SELECT MIN(id) FROM `{GAME_PREFIX}workers` WHERE lastname = %s)
+    """, (lastname, lastname))
     row = cursor.fetchone()
     conn.close()
     return row['controller_id'] if row else None
@@ -272,15 +278,21 @@ def combat_scenario(browser):
 # what the old DB `action_choice` queries checked.
 
 def _ui_worker_is_downed(page, lastname):
-    """True if the worker's action.php view shows them as dead/captured.
+    """True if the worker's action.php view shows them as dead, captured,
+    or a prisoner under a new controller.
 
-    Matches the UI rendering for INACTIVE_ACTIONS: txt_ps_dead/txt_ps_captured
-    resolves to "a disparu" under TestConfig, ucfirst'd to "A disparu". The
-    action form is also absent for inactive workers, so `name="attack"` input
-    is not rendered.
+    After captureWorker(), a captured worker is MOVED to the captor's
+    controller and its action becomes 'prisoner' (text: "est un.e agent
+    ... prisonnier.e"). The original controller sees a trace worker
+    whose action is 'captured' / 'dead' (text: "A disparu"). Both paths
+    count as "downed" from the attacker-test perspective.
+
+    The action form is absent for both inactive actions and prisoner
+    views, so `name="attack"` input is not rendered.
     """
     html = _worker_report_html(page, lastname)
-    return 'A disparu' in html and 'name="attack"' not in html
+    is_disparu_or_prisoner = 'A disparu' in html or 'prisonnier' in html
+    return is_disparu_or_prisoner and 'name="attack"' not in html
 
 
 def _ui_worker_is_passive(page, lastname):
@@ -437,7 +449,11 @@ class TestChainAttack:
             "Chain_G view should show 'A disparu' (dead)"
 
     def test_chain_reports_in_ui(self, page: Page, base_url):
-        """Spot-check chain attack reports via worker pages."""
+        """Spot-check chain attack reports via worker pages.
+
+        Chain_B was queued to attack Chain_C but got captured first by
+        Chain_A. The "didn't-attack" check is DB-only (see
+        test_chain_b_did_not_attack below); this test stays pure-UI."""
         html_a = _worker_report_html(page, 'Chain_A')
         assert 'Captured' in html_a and 'Chain_B' in html_a
 
@@ -447,9 +463,18 @@ class TestChainAttack:
         html_e = _worker_report_html(page, 'Chain_E')
         assert 'succeeded' in html_e and 'Chain_F' in html_e
 
-        html_b = _worker_report_html(page, 'Chain_B')
-        assert 'Chain_C' not in html_b or 'not found' in html_b, \
-            "Chain_B was captured before attacking Chain_C"
+    @pytest.mark.db
+    def test_chain_b_did_not_attack(self):
+        """Chain_B's DB report must be empty/missing attack section because
+        it was captured before its attack-phase turn.
+
+        Reliably scoping this check in rendered HTML is fragile (the
+        worker page mentions other workers in contextual history),
+        so the assertion targets the stored JSON report directly.
+        """
+        report = _worker_report_db('Chain_B', turn=1)
+        assert '"attack_report"' not in report or report.count('Chain_C') == 0, \
+            f"Chain_B should have no attack_report vs Chain_C, got: {report[:200]}"
 
 
 # ---------------------------------------------------------------------------
