@@ -754,6 +754,15 @@ function gameReady() {
                     $pdo->exec($sqlQueries);
                     echo "SQL file executed successfully.<br />";
                 }
+                // Load minimal data (gm user, core config, starting mechanics row, fixed power types).
+                // Kept separate from setupBDD.sql so it can be re-run at any time without recreating tables.
+                $minimalFile = sprintf('%s/var/%s/minimalData.sql', $path, $_SESSION['DBTYPE']);
+                if (file_exists($minimalFile)) {
+                    $minimalQueries = file_get_contents($minimalFile);
+                    $minimalQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $minimalQueries);
+                    $pdo->exec($minimalQueries);
+                    echo "Minimal data loaded.<br />";
+                }
                 echo 'END <br />';
 
                 if ( isset($_POST['config_name']) ) {

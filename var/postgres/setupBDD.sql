@@ -2,6 +2,9 @@
 -- DROP DATABASE IF EXISTS RPGConquestGame;
 -- CREATE DATABASE RPGConquestGame OWNER php_gamedev;
 -- CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Minimal data seed rows (gm user, default config keys, starting mechanics
+-- row, fixed power type ids) live in minimalData.sql and are loaded by the
+-- same code path immediately after this file.
 
 CREATE TABLE {prefix}mechanics (
     id SERIAL PRIMARY KEY,
@@ -10,8 +13,6 @@ CREATE TABLE {prefix}mechanics (
     end_step TEXT DEFAULT ''
 );
 
-INSERT INTO {prefix}mechanics (turncounter, gamestate)
-VALUES (0, 0);
 
 -- create configuration table
 CREATE TABLE {prefix}config (
@@ -21,135 +22,7 @@ CREATE TABLE {prefix}config (
     description text -- explain configuration usage
 );
 
-INSERT INTO {prefix}config (name, value, description)
-VALUES
-    -- Debugs vals
-    ('DEBUG', 'FALSE', 'Activates the Debugging texts'),
-    ('DEBUG_REPORT', 'FALSE', 'Activates the Debugging texts for the investigation report'),
-    ('DEBUG_ATTACK', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
-    ('DEBUG_TRANSFORM', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
-    ('ACTIVATE_TESTS', 'TRUE', 'Activates the insertion of tests values'),
-    ('TITLE', '', 'Name of game'),
-    ('PRESENTATION', '', 'Presentation text'),
-    ('IntrigueOrga', '', 'Organisation info'),
-    ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
-    -- worker creation
-    ('turn_recrutable_workers', '1', 'Number of workers recrutable per turn'),
-    ('turn_firstcome_workers', '1', 'Number of worker recrutable by firstcome pick per turn'),
-    ('first_come_nb_choices', '1', 'Number of worker options presented for 1st come recrutment'),
-    ('first_come_origin_list', 'rand', 'Origins used for worker generation'),
-    ('recrutement_nb_choices', '3', 'Number of choices presented for recrutment'),
-    ('recrutement_origin_list', '1,2,3,4,5', 'Origins used for worker generation'),
-    ('local_origin_list', '1', 'Spécific list of local origins for investigations texts'),
-    -- ('recrutement_hobby', '1', 'Number of hobbies added on generation'),
-    -- ('recrutement_metier', '1', 'Number of jobs added on generation'),
-    ('recrutement_disciplines', '1', 'Number of disciplines allowed on recrutment'),
-    ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
-    -- Worker experience
-    -- ('age_hobby', 'FALSE', ' If hobbys can be gained with AGE'),
-    -- ('age_metier', 'FALSE', 'If jobs can be gained with AGE'),
-    ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
-    ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
-    -- worker rolls
-    ('MINROLL', 1, 'Minimum Roll for an active worker'),
-    ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
-    ('PASSIVEVAL', 3, 'Value for passive actions'),
-    ('ENQUETE_ZONE_BONUS', 0, 'Bonus à la valeur enquete si le worker est dans une zone contrôlée'),
-    ('ATTACK_ZONE_BONUS', 0, 'Bonus à la valeur attaque si le worker est dans une zone contrôlée'),
-    ('DEFENCE_ZONE_BONUS', 1, 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
-    ('HIDE_ENQUETE_FLAT_BONUS', 4, 'Bonus to the investigate value if the worker is using hide'),
-    ('HIDE_DEFENCE_FLAT_BONUS', 1, 'Bonus to the investigate value if the worker is using hide'),
-    -- passive, investigate, attack, claim, captured, dead
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
-    ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
-    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active defense actions'),
-    -- Diff vals for investigation results 
-    ('REPORTDIFF0', -1, 'Value for Level 0 information'),
-    ('REPORTDIFF1', 1, 'Value for Level 1 information'),
-    ('REPORTDIFF2', 2, 'Value for Level 2 information'),
-    ('REPORTDIFF3', 4, 'Value for Level 3 information'),
-    ('LOCATIONNAMEDIFF', 0, 'Value for Location Name'),
-    ('LOCATIONINFORMATIONDIFF', 1, 'Value for Location Information'),
-    ('LOCATIONARTEFACTSDIFF', 2, 'Value for Location Artefact discovery'),
-    -- Attack choices
-    ('attackTimeWindow', 1, 'Number of turns a discovered worker is attackable after being lost'),
-    ('canAttackNetwork', 1, 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
-    -- Diff vals for attack results
-    ('LIMIT_ATTACK_BY_ZONE', 0, 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
-    ('ATTACKDIFF0', 1, 'Value for Attack Success'),
-    ('ATTACKDIFF1', 3, 'Value for Capture'),
-    ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
-    ('RIPOSTDIFF', 2, 'Value for Successful Ripost'),
-    -- Diff vals in claim results
-    ('DISCRETECLAIMDIFF', 2, 'Value for discrete claim'),
-    ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
-    -- action text in report config
-    ('txt_ps_passive', 'surveille', 'Text for passive action'),
-    ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
-    ('txt_ps_hide', 'se cache', 'Text for hide action'),
-    ('txt_ps_attack', 'attaque', 'Text for attack action'),
-    ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
-    ('txt_ps_captured', 'a disparu', 'Text for captured action'),
-    ('txt_ps_dead', 'a disparu', 'Text for dead action'),
-    ('txt_ps_prisoner', 'est un.e agent %s %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
-    ('txt_ps_double_agent', 'a infiltré le réseau %s %s ', 'Text for being infiltrator'),
-    ('txt_inf_passive', 'surveiller', 'Text for passive action'),
-    ('txt_inf_investigate', 'enquêter', 'Text for investigate action'),
-    ('txt_inf_hide', 'se cacher', 'Text for hide action'),
-    ('txt_inf_attack', 'attaquer', 'Text for attack action'),
-    ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
-    ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
-    ('txt_inf_dead', 'est mort', 'Text for dead action'),
-    -- Action End turn effects
-    ('continuing_investigate_action', FALSE, 'Does the investigate action stay active' ),
-    ('continuing_claimed_action', FALSE, 'Does the claim action stay active' )
-    -- Base information
-    ,('baseDiscoveryDiff', 3, 'Base discovery value for bases' )
-    ,('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' )
-    ,('baseDiscoveryDiffAddWorkers', 1, 'Base discovery value worker presence ponderation 0 for no' )
-    ,('baseDiscoveryDiffAddTurns', '0.5', 'Base discovery value base age presence ponderation 0 for no' )
-    ,('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' )
-    ,('maxBonusDiscoveryDiffWorkers', 4, 'Maximum bonus obtainable from worker presence' )
-    ,('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' )
-    ,('baseAttack', 0, 'Base attack value for bases' )
-    ,('baseAttackAddPowers', 1, 'Base attack value Power presence ponderation 0 for no' )
-    ,('baseAttackAddWorkers', 1, 'Base attack value worker presence ponderation 0 for no' )
-    ,('baseDefence', 0, 'Base defence value for bases' )
-    ,('baseDefenceAddPowers', 1, 'Base defence value Power presence ponderation 0 for no' )
-    ,('baseDefenceAddWorkers', 1, 'Base defence value worker presence ponderation 0 for no' )
-    ,('baseDefenceAddTurns', '0.5', 'Base defence value base age presence ponderation 0 for no' )
-    ,('noControllerDefenceBonus', 3, 'Base defence value for no controller' )
-    ,('maxBonusDefenceTurns', 3, 'Maximum bonus obtainable from age of base' )
-    ,('attackLocationDiff', 1, 'Difficulty to destroy a Location' )
-    ,('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir.', 'Text for location destroyed')
-    ,('textLocationPillaged', 'Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.', 'Text for location pillaged')
-    ,('textLocationNotDestroyed', 'Le lieu %s n’a pas été détruit, nos excuses.', 'Text for location not destroyed')
-    ,('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts')
-    -- Ressource management
-    ,('ressource_management', 'TRUE', 'Ressource management configuration')
-;
 
-INSERT INTO {prefix}config (name, value, description)
-VALUES
-    -- MAP INFO
-    ('map_file', 'shikoku.png', 'Map file to use'),
-    ('map_alt', 'Carte', 'Map alt')
-;
---  Text info
-INSERT INTO {prefix}config (name, value, description)
-VALUES
-    ('controllerNameDenominatorThe', '', 'Denominator ’the’ for the controler name'),
-    ('controllerNameDenominatorOf', 'de', 'Denominator ’of’ for the controler name'),
-    ('controllerLastNameDenominatorOf', 'de', 'Denominator ’of’ for the controler last name'),
-    ('textForZoneType', 'zone', 'Text for the type of zone'),
-    ('timeValue', 'Tour', 'Text for time span'),
-    ('timeDenominatorThis', 'ce', 'Denominator ’this’ for time text'),
-    ('timeDenominatorThe', 'le', 'Denominator ’the’ for time text'),
-    ('timeDenominatorOf', 'du', 'Denominator ’of’ for time text')
-;
 
 -- player tables
 CREATE TABLE {prefix}players (
@@ -160,9 +33,6 @@ CREATE TABLE {prefix}players (
     is_privileged BOOLEAN DEFAULT FALSE -- does player have god mode
 );
 
-INSERT INTO {prefix}players (username, passwd, is_privileged)
-VALUES
-    ('gm', 'orga', True);
 
 -- faction tables
 CREATE TABLE {prefix}factions (
@@ -349,14 +219,6 @@ CREATE TABLE {prefix}power_types (
     description text
 );
 
--- Fixed power types used by application code (hobbys/jobs linking logic).
--- ON CONFLICT so scenario-specific SQL files can supply their own extended set.
-INSERT INTO {prefix}power_types (id, name, description) VALUES
-    (1, 'Hobby', 'Objet fétiche'),
-    (2, 'Metier', 'Rôle'),
-    (3, 'Discipline', 'Maitrise des Arts'),
-    (4, 'Transformation', 'Equipements Rares')
-ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE {prefix}powers (
     id SERIAL PRIMARY KEY,

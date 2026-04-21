@@ -15,6 +15,7 @@ services:
       - rpg_mysql_data:/var/lib/mysql
       - ./docker/init_mysql.sh:/docker-entrypoint-initdb.d/init_mysql.sh
       - ./var/mysql/setupBDD.sql:/tmp/setupBDD.sql
+      - ./var/mysql/minimalData.sql:/tmp/minimalData.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 5s
