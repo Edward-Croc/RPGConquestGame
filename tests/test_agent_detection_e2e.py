@@ -41,7 +41,7 @@ def base_url():
 # ---------------------------------------------------------------------------
 
 def get_worker_report(worker_lastname, turn=0):
-    """Return the report JSON string for a worker at a given turn."""
+    """Return the report JSON string for a worker at a given turn. DB-direct."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
@@ -52,6 +52,39 @@ def get_worker_report(worker_lastname, turn=0):
     row = cursor.fetchone()
     conn.close()
     return str(row['report'] or '') if row else ''
+
+
+def _worker_controller_id(worker_lastname):
+    """Return the primary controller id for a worker by lastname."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT controller_id FROM `{GAME_PREFIX}workers`
+        WHERE lastname = %s
+    """, (worker_lastname,))
+    row = cursor.fetchone()
+    conn.close()
+    return row['controller_id'] if row else None
+
+
+def _worker_report_html(page, worker_lastname, base_url=None):
+    """UI counterpart of get_worker_report: navigate as gm, switch to the
+    worker's controller, then open the worker action page and return its HTML.
+
+    Inlined here (not in helpers.py) per task instructions — used only by this
+    file's UI-first detection/report assertions.
+    """
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = _worker_controller_id(worker_lastname)
+    assert ctrl_id, f"Worker {worker_lastname} has no controller"
+    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    page.wait_for_load_state("networkidle")
+    wid = get_worker_id(worker_lastname)
+    assert wid, f"Worker {worker_lastname} not found"
+    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    page.wait_for_load_state("load")
+    return page.content()
 
 
 def get_detections_for_controller(controller_lastname):
@@ -151,10 +184,15 @@ def _require_db():
 # Test: end turn completed correctly
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestEndTurn:
-    """Verify end turn completes without errors and advances game state."""
+    """Verify end turn completes without errors and advances game state.
 
+    Per-test markers: DB tests hit mechanics/worker_actions tables directly
+    (intermediate mechanic state; no user-facing rendering). The page-level
+    smoke check is pure UI and runs under UI_ONLY=1.
+    """
+
+    @pytest.mark.db
     def test_turn_counter_incremented(self):
         """After end turn, turncounter should be 1 (started at 0)."""
         conn = get_db_connection()
@@ -163,6 +201,7 @@ class TestEndTurn:
         assert cursor.fetchone()['turncounter'] == 1
         conn.close()
 
+    @pytest.mark.db
     def test_new_turn_actions_created(self):
         """New worker_action rows should exist for turn 1."""
         conn = get_db_connection()
@@ -177,7 +216,8 @@ class TestEndTurn:
 
     def test_end_turn_page_no_warnings(self, page: Page, base_url):
         """Re-visit end turn page and verify no PHP warnings.
-        Since turn already advanced, this tests the 'already done' path."""
+        Since turn already advanced, this tests the 'already done' path.
+        UI-only smoke check — runs under UI_ONLY=1."""
         ensure_gm_login(page, base_url)
         page.goto(f"{base_url}/mechanics/endTurn.php")
         page.wait_for_load_state("load", timeout=30000)
@@ -312,43 +352,52 @@ class TestAgentDetection:
         assert 'Finder_5' in detected, "Bystander_1 should detect Finder_5 (diff=-1)"
         assert 'Finder_1' not in detected, "Bystander_1 should NOT detect Finder_1 (diff=-4)"
 
-    # --- Report content: agent detection ---
+    # --- Report content: agent detection (UI-first via rendered worker page) ---
 
-    def test_agent1_report_full_details_for_agent7(self):
-        """Finder_1 vs Bystander_1: diff=4 >= REPORTDIFF3. Report has name, job, hobby, controller."""
-        report = get_worker_report('Finder_1')
-        assert 'Bystander_1' in report, "Finder_1 should see Bystander_1 name"
-        assert 'Dark Impulse' in report, "Finder_1 should see Bystander_1's hobby"
-        assert 'Patrol Warden' in report, "Finder_1 should see Bystander_1's job"
-        assert 'Lady Beta' in report, "Finder_1 at REPORTDIFF3 should see controller name"
+    def test_agent1_report_full_details_for_agent7(self, page: Page, base_url):
+        """Finder_1 vs Bystander_1: diff=4 >= REPORTDIFF3. Rendered worker page
+        shows name, job, hobby, and controller full name."""
+        html = _worker_report_html(page, 'Finder_1', base_url)
+        assert 'Bystander_1' in html, "Finder_1 page should render Bystander_1 name"
+        assert 'Dark Impulse' in html, "Finder_1 page should render Bystander_1's hobby"
+        assert 'Patrol Warden' in html, "Finder_1 page should render Bystander_1's job"
+        assert 'Lady Beta' in html, "Finder_1 at REPORTDIFF3 should render controller name"
 
-    def test_agent1_report_full_details_for_agent6(self):
-        """Finder_1 vs Searcher_1: diff=4 >= REPORTDIFF3. Should include controller."""
-        report = get_worker_report('Finder_1')
-        assert 'Searcher_1' in report
-        assert 'Lord Alpha' in report, "Finder_1 should see Alpha controller name"
+    def test_agent1_report_full_details_for_agent6(self, page: Page, base_url):
+        """Finder_1 vs Searcher_1: diff=4 >= REPORTDIFF3. Page includes controller."""
+        html = _worker_report_html(page, 'Finder_1', base_url)
+        assert 'Searcher_1' in html
+        assert 'Lord Alpha' in html, "Finder_1 page should render Alpha controller name"
 
-    def test_agent1_report_basic_for_agent2(self):
+    def test_agent1_report_basic_for_agent2(self, page: Page, base_url):
         """Finder_1 vs Finder_2: diff=0 >= REPORTDIFF0 but < REPORTDIFF1. Basic info only."""
-        report = get_worker_report('Finder_1')
-        assert 'Finder_2' in report, "Finder_1 should see Finder_2 in report"
+        html = _worker_report_html(page, 'Finder_1', base_url)
+        assert 'Finder_2' in html, "Finder_1 page should render Finder_2"
 
-    def test_agent4_report_excludes_agent1(self):
-        """Finder_4 vs Finder_1: diff=-2 < REPORTDIFF0. Not in report."""
-        report = get_worker_report('Finder_4')
-        assert 'Finder_1' not in report, "Finder_4 should NOT see Finder_1 (diff=-2)"
+    def test_agent4_report_excludes_agent1(self, page: Page, base_url):
+        """Finder_4 vs Finder_1: diff=-2 < REPORTDIFF0. Absent from rendered report section."""
+        html = _worker_report_html(page, 'Finder_4', base_url)
+        # Scope to the report/recherches section so navbar/menu items don't
+        # leak — mirrors TestWorkerViewPage split pattern.
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
+        assert 'Finder_1' not in report_section, \
+            "Finder_4 report section should NOT mention Finder_1 (diff=-2)"
 
-    def test_agent5_report_shows_agent4(self):
-        """Finder_5 vs Finder_4: diff=-1 >= REPORTDIFF0. Basic info."""
-        report = get_worker_report('Finder_5')
-        assert 'Finder_4' in report, "Finder_5 should see Finder_4"
+    def test_agent5_report_shows_agent4(self, page: Page, base_url):
+        """Finder_5 vs Finder_4: diff=-1 >= REPORTDIFF0. Basic info in rendered page."""
+        html = _worker_report_html(page, 'Finder_5', base_url)
+        assert 'Finder_4' in html, "Finder_5 page should render Finder_4"
 
-    def test_agent6_report_sees_agent7_not_agent1(self):
-        """Searcher_1: sees Bystander_1 (diff=0) and Finder_5 (diff=-1), not Finder_1 (diff=-4)."""
-        report = get_worker_report('Searcher_1')
-        assert 'Bystander_1' in report, "Searcher_1 should see Bystander_1"
-        assert 'Finder_1' not in report, "Searcher_1 should NOT see Finder_1"
-        assert 'Finder_2' not in report, "Searcher_1 should NOT see Finder_2"
+    def test_agent6_report_sees_agent7_not_agent1(self, page: Page, base_url):
+        """Searcher_1: page shows Bystander_1 (diff=0) and Finder_5 (diff=-1),
+        and NOT Finder_1/Finder_2 (diff=-4)."""
+        html = _worker_report_html(page, 'Searcher_1', base_url)
+        assert 'Bystander_1' in html, "Searcher_1 page should render Bystander_1"
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
+        assert 'Finder_1' not in report_section, \
+            "Searcher_1 report section should NOT mention Finder_1"
+        assert 'Finder_2' not in report_section, \
+            "Searcher_1 report section should NOT mention Finder_2"
 
 
 # ---------------------------------------------------------------------------
@@ -370,23 +419,27 @@ class TestLocationDetection:
 
     # --- Level -1: unfound (Searcher_1, enq=3, diff=-1) ---
 
-    def test_unfound_not_in_report(self):
-        """Searcher_1 (diff=-1): no location info in report."""
-        report = get_worker_report('Searcher_1')
-        assert 'Location A' not in report
+    def test_unfound_not_in_report(self, page: Page, base_url):
+        """Searcher_1 (diff=-1): rendered worker page's research section has no
+        location info (UI-first — assertion via rendered HTML, not DB)."""
+        html = _worker_report_html(page, 'Searcher_1', base_url)
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
+        assert 'Location A' not in report_section
 
     def test_unfound_not_in_known_locations(self):
-        """Searcher_1: not in controller_known_locations."""
+        """Searcher_1: not in controller_known_locations (DB structural check)."""
         locs = get_location_discoveries_for_controller('Alpha')
         assert not any(r['name'] == 'Location A' for r in locs)
 
     # --- Level 0: name only (Finder_5, enq=4, diff=0) ---
 
-    def test_name_only_in_report(self):
-        """Finder_5 (diff=0): location name in report, no description."""
-        report = get_worker_report('Finder_5')
-        assert 'Location A' in report
-        assert 'test location' not in report.lower(), "Should NOT see description"
+    def test_name_only_in_report(self, page: Page, base_url):
+        """Finder_5 (diff=0): rendered page shows location name, no description."""
+        html = _worker_report_html(page, 'Finder_5', base_url)
+        assert 'Location A' in html
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else ""
+        assert 'test location' not in report_section.lower(), \
+            "Report section should NOT render location description at level 0"
 
     def test_name_only_not_in_known_locations(self):
         """Finder_5: NOT in controller_known_locations (requires diff>=1)."""
@@ -404,12 +457,14 @@ class TestLocationDetection:
 
     # --- Level 1: description (Finder_4, enq=5, diff=1) ---
 
-    def test_desc_in_report(self):
-        """Finder_4 (diff=1): name + description in report, no secret."""
-        report = get_worker_report('Finder_4')
-        assert 'Location A' in report
-        assert 'test location' in report.lower(), "Should see description"
-        assert 'Secret details' not in report, "Should NOT see secret"
+    def test_desc_in_report(self, page: Page, base_url):
+        """Finder_4 (diff=1): rendered page shows name + description, no secret."""
+        html = _worker_report_html(page, 'Finder_4', base_url)
+        assert 'Location A' in html
+        assert 'test location' in html.lower(), "Page should render description"
+        report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
+        assert 'Secret details' not in report_section, \
+            "Report section should NOT render secret at level 1"
 
     def test_desc_in_known_locations_no_secret(self):
         """Finder_4: in controller_known_locations with found_secret=0."""
@@ -436,12 +491,12 @@ class TestLocationDetection:
 
     # --- Level 2: secret (Finder_1, enq=7, diff=3) ---
 
-    def test_secret_in_report(self):
-        """Finder_1 (diff=3): name + description + secret in report."""
-        report = get_worker_report('Finder_1')
-        assert 'Location A' in report
-        assert 'test location' in report.lower()
-        assert 'Secret details' in report, "Should see hidden_description"
+    def test_secret_in_report(self, page: Page, base_url):
+        """Finder_1 (diff=3): rendered page shows name + description + secret."""
+        html = _worker_report_html(page, 'Finder_1', base_url)
+        assert 'Location A' in html
+        assert 'test location' in html.lower()
+        assert 'Secret details' in html, "Page should render hidden_description"
 
     def test_secret_in_known_locations_with_flag(self):
         """Finder_1: in controller_known_locations with found_secret=1."""
