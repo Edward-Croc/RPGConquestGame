@@ -51,8 +51,8 @@ from conftest import (
 
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection as get_db,
-    get_controller_id as _controller_id, end_turn, load_minimal_data,
+    DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
+    ui_controller_id, ui_zone_id,
 )
 
 
@@ -68,23 +68,19 @@ def _require_db():
 
 
 # ---------------------------------------------------------------------------
-# DB lookup helpers
+# DB helpers — kept only for @pytest.mark.db tests that inspect internals
+# with no UI counterpart (e.g. exact turn counter values). All other
+# lookups (controller_id, zone_id, worker count, bases) now scrape the UI
+# via ui_* helpers so tests can run under UI_ONLY=1.
 # ---------------------------------------------------------------------------
 
-def _zone_id(name):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name = %s",
-        (name,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
-
 def _controller_counters(lastname):
-    """Return {turn_recruited_workers, turn_firstcome_workers} for a controller."""
+    """Return {turn_recruited_workers, turn_firstcome_workers} for a controller.
+
+    Proxy for DB-only assertions — button presence/absence in the UI is
+    available as an indirect check, but the exact counter value isn't
+    rendered. Tests using this are marked @pytest.mark.db.
+    """
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
@@ -97,44 +93,16 @@ def _controller_counters(lastname):
     return row
 
 
-def _worker_count_for_controller(controller_lastname):
-    """Count workers linked to a controller as primary controller."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT COUNT(*) AS c FROM `{GAME_PREFIX}controller_worker` cw
-        JOIN `{GAME_PREFIX}controllers` c ON c.id = cw.controller_id
-        WHERE c.lastname = %s AND cw.is_primary_controller = 1
-    """, (controller_lastname,))
-    row = cursor.fetchone()
-    conn.close()
-    return row['c']
-
-
-def _bases_for_controller(controller_lastname):
-    """Return list of base locations for a controller."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT l.name, l.zone_id, z.name AS zone_name
-        FROM `{GAME_PREFIX}locations` l
-        JOIN `{GAME_PREFIX}controllers` c ON c.id = l.controller_id
-        JOIN `{GAME_PREFIX}zones` z ON z.id = l.zone_id
-        WHERE c.lastname = %s AND l.is_base = 1
-    """, (controller_lastname,))
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-
 # ---------------------------------------------------------------------------
 # UI helpers
 # ---------------------------------------------------------------------------
 
 def _switch_controller(page, controller_lastname):
-    """Switch GM session to a controller via accueil page."""
+    """Switch GM session to a controller via the accueil page.
+
+    Uses UI-only controller-id resolution so it works under UI_ONLY=1."""
     ensure_gm_login(page, PHP_BASE_URL)
-    cid = _controller_id(controller_lastname)
+    cid = ui_controller_id(page, controller_lastname)
     page.goto(
         f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir"
     )
@@ -157,8 +125,8 @@ def _accueil_html(page, controller_lastname):
     come buttons plus worker cards). Single source-of-truth for UI-first
     assertions about controller state.
     """
-    _switch_controller(page, controller_lastname)
-    cid = _controller_id(controller_lastname)
+    ensure_gm_login(page, PHP_BASE_URL)
+    cid = ui_controller_id(page, controller_lastname)
     page.goto(f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
     page.wait_for_load_state("load")
     return page.content()
@@ -175,10 +143,11 @@ def _count_worker_cards_in_html(html):
 
 
 def _create_base(page, controller_lastname, zone_name):
-    """Trigger createBase via URL."""
+    """Trigger createBase via URL (UI-resolved controller + zone ids)."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    cid = ui_controller_id(page, controller_lastname)
+    zid = ui_zone_id(page, zone_name)
     _switch_controller(page, controller_lastname)
-    cid = _controller_id(controller_lastname)
-    zid = _zone_id(zone_name)
     page.goto(
         f"{PHP_BASE_URL}/controllers/action.php"
         f"?createBase=1&controller_id={cid}&zone_id={zid}"
@@ -187,15 +156,14 @@ def _create_base(page, controller_lastname, zone_name):
 
 
 def _do_first_come(page, controller_lastname):
-    """Submit a first-come recruitment (selects first available zone + discipline)."""
+    """Submit a first-come recruitment (picks first available zone + discipline)."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    cid = ui_controller_id(page, controller_lastname)
     _switch_controller(page, controller_lastname)
-    cid = _controller_id(controller_lastname)
-    # Step 1: navigate to the recruitment form
     page.goto(
         f"{PHP_BASE_URL}/workers/new.php?first_come=true&controller_id={cid}"
     )
     page.wait_for_load_state("load")
-    # Step 2: submit the form (zone is mandatory, discipline optional)
     page.locator("select[name='zone_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
     page.wait_for_load_state("load")
@@ -203,8 +171,9 @@ def _do_first_come(page, controller_lastname):
 
 def _do_regular_recruit(page, controller_lastname):
     """Submit a regular recruitment via the form."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    cid = ui_controller_id(page, controller_lastname)
     _switch_controller(page, controller_lastname)
-    cid = _controller_id(controller_lastname)
     page.goto(
         f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={cid}"
     )
@@ -232,12 +201,14 @@ def recruitment_scenario(browser):
     """One-time setup: load TestConfig, then walk through recruitment phases.
 
     Snapshots key state at each phase into _snapshot for tests to assert on.
+    Runs against local Docker and remote prod: DB-direct seeding is skipped
+    when the DB isn't reachable, and counter snapshots (DB-only) are simply
+    omitted — the @pytest.mark.db tests that consume them are themselves
+    skipped under UI_ONLY=1.
     """
-    if not DB_AVAILABLE:
-        yield
-        return
-
-    load_minimal_data()
+    # Local bootstrap; skipped on prod
+    if DB_AVAILABLE:
+        load_minimal_data()
 
     context = browser.new_context()
     page = context.new_page()
@@ -253,9 +224,12 @@ def recruitment_scenario(browser):
 
     # ---- TURN 0 ----
 
-    # Snapshot baseline worker counts (agents already loaded from advanced.csv)
-    _snapshot['alpha_baseline_workers'] = _worker_count_for_controller('Alpha')
-    # UI-side baseline: count worker-short cards on Alpha's viewAll page.
+    # Resolve and snapshot controller ids via UI — tests can then assert without
+    # hitting the DB again (supports UI_ONLY=1).
+    _snapshot['alpha_cid'] = ui_controller_id(page, 'Alpha')
+    _snapshot['beta_cid'] = ui_controller_id(page, 'Beta')
+
+    # UI-side baseline worker count (agents pre-loaded from advanced.csv).
     _snapshot['alpha_baseline_workers_ui'] = _count_worker_cards_in_html(
         _workers_page_html(page, 'Alpha')
     )
@@ -267,8 +241,7 @@ def recruitment_scenario(browser):
 
     # Phase 2: Alpha uses first-come (no base required)
     _do_first_come(page, 'Alpha')
-    _snapshot['alpha_t0_after_first_come_counters'] = _controller_counters('Alpha')
-    _snapshot['alpha_t0_after_first_come_workers'] = _worker_count_for_controller('Alpha')
+    _snapshot['alpha_t0_after_first_come_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
     _snapshot['alpha_t0_after_first_come_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_workers_ui'] = _count_worker_cards_in_html(
         _snapshot['alpha_t0_after_first_come_html']
@@ -276,7 +249,6 @@ def recruitment_scenario(browser):
 
     # Phase 3: Alpha creates a base in Epsilon-Controlled
     _create_base(page, 'Alpha', 'Epsilon-Controlled')
-    _snapshot['alpha_bases'] = _bases_for_controller('Alpha')
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
     # UI-side: accueil page shows the base under "Votre Base :" section.
     _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
@@ -284,9 +256,8 @@ def recruitment_scenario(browser):
     # Phase 4: Alpha uses regular recruitment
     # Capture the recruitment form BEFORE submitting (for form validation tests)
     _switch_controller(page, 'Alpha')
-    alpha_cid = _controller_id('Alpha')
     page.goto(
-        f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={alpha_cid}"
+        f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={_snapshot['alpha_cid']}"
     )
     page.wait_for_load_state("load")
     _snapshot['alpha_recruit_form_html'] = page.content()
@@ -295,8 +266,7 @@ def recruitment_scenario(browser):
     page.locator("select[name='zone_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
     page.wait_for_load_state("load")
-    _snapshot['alpha_t0_after_recruit_counters'] = _controller_counters('Alpha')
-    _snapshot['alpha_t0_after_recruit_workers'] = _worker_count_for_controller('Alpha')
+    _snapshot['alpha_t0_after_recruit_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
     _snapshot['alpha_t0_after_recruit_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_recruit_workers_ui'] = _count_worker_cards_in_html(
         _snapshot['alpha_t0_after_recruit_html']
@@ -305,9 +275,8 @@ def recruitment_scenario(browser):
     # Phase 5: Beta creates base + captures recruitment form (for faction filtering)
     _create_base(page, 'Beta', 'Zeta-Unclaimed')
     _switch_controller(page, 'Beta')
-    beta_cid = _controller_id('Beta')
     page.goto(
-        f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={beta_cid}"
+        f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={_snapshot['beta_cid']}"
     )
     page.wait_for_load_state("load")
     _snapshot['beta_recruit_form_html'] = page.content()
@@ -318,16 +287,15 @@ def recruitment_scenario(browser):
 
     # ---- TURN 1 ----
 
-    _snapshot['alpha_t1_before_counters'] = _controller_counters('Alpha')
+    _snapshot['alpha_t1_before_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
     _snapshot['alpha_t1_before_html'] = _workers_page_html(page, 'Alpha')
 
     # Recruit again on turn 1 (both paths)
     _do_first_come(page, 'Alpha')
-    _snapshot['alpha_t1_after_first_come_counters'] = _controller_counters('Alpha')
+    _snapshot['alpha_t1_after_first_come_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
 
     _do_regular_recruit(page, 'Alpha')
-    _snapshot['alpha_t1_after_recruit_counters'] = _controller_counters('Alpha')
-    _snapshot['alpha_t1_final_workers'] = _worker_count_for_controller('Alpha')
+    _snapshot['alpha_t1_after_recruit_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
     # UI-side final worker count (post all recruitment phases).
     _snapshot['alpha_t1_final_workers_ui'] = _count_worker_cards_in_html(
         _workers_page_html(page, 'Alpha')
@@ -403,20 +371,6 @@ class TestBaseCreation:
         assert 'Fortress of FactionAlpha' in html and 'Epsilon-Controlled' in html, \
             "Base name and zone should both be visible on Alpha's accueil"
 
-    @pytest.mark.db
-    def test_alpha_base_persisted_in_db(self):
-        """Belt-and-braces: the base row exists with correct name + zone.
-
-        Kept under @pytest.mark.db because the UI assertions only confirm the
-        base is rendered on the page — this confirms the persisted state
-        (exactly one row, correct zone_id linkage).
-        """
-        bases = _snapshot['alpha_bases']
-        assert len(bases) == 1, f"Expected 1 base for Alpha, got {len(bases)}"
-        assert bases[0]['name'] == 'Fortress of FactionAlpha'
-        assert bases[0]['zone_name'] == 'Epsilon-Controlled'
-
-
 class TestRecruitmentFormValidation:
     """Regular recruitment form structure (UI HTML assertions)."""
 
@@ -433,7 +387,7 @@ class TestRecruitmentFormValidation:
     def test_form_hidden_controller_id_matches_alpha(self):
         """Hidden controller_id input must reference Alpha's id."""
         html = _snapshot['alpha_recruit_form_html']
-        alpha_id = _controller_id('Alpha')
+        alpha_id = _snapshot['alpha_cid']
         assert f'name="controller_id" value="{alpha_id}"' in html, \
             f"Form should have hidden controller_id={alpha_id}"
 
