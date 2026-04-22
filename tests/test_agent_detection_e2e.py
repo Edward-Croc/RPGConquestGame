@@ -55,13 +55,21 @@ def get_worker_report(worker_lastname, turn=0):
 
 
 def _worker_controller_id(worker_lastname):
-    """Return the primary controller id for a worker by lastname."""
+    """Return the primary controller id for the ORIGINAL worker (lowest id).
+
+    `workers` has no controller_id column — linkage is in controller_worker.
+    After capture, a trace worker with the same lastname may exist; we
+    target the original record via (SELECT MIN(id) ...) for stable
+    lookups regardless of capture state.
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"""
-        SELECT controller_id FROM `{GAME_PREFIX}workers`
-        WHERE lastname = %s
-    """, (worker_lastname,))
+        SELECT cw.controller_id FROM `{GAME_PREFIX}controller_worker` cw
+        JOIN `{GAME_PREFIX}workers` w ON w.id = cw.worker_id
+        WHERE w.lastname = %s AND cw.is_primary_controller = 1
+          AND w.id = (SELECT MIN(id) FROM `{GAME_PREFIX}workers` WHERE lastname = %s)
+    """, (worker_lastname, worker_lastname))
     row = cursor.fetchone()
     conn.close()
     return row['controller_id'] if row else None
