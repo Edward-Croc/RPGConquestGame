@@ -50,37 +50,6 @@ def get_db_connection():
     )
 
 
-def get_worker_id(lastname):
-    """Return the id of the ORIGINAL worker by lastname, or None if not found.
-
-    After combat captureWorker(), a trace worker is auto-created with the
-    same lastname but a higher id. Tests typically want the original
-    (lower id) so they can verify state on the captured/original record.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = %s ORDER BY id LIMIT 1",
-        (lastname,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
-
-def get_controller_id(lastname):
-    """Return the id of a controller by lastname, or None if not found."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = %s",
-        (lastname,),
-    )
-    row = cursor.fetchone()
-    conn.close()
-    return row['id'] if row else None
-
-
 def load_minimal_data(prefix=None):
     """Replay var/mysql/minimalData.sql against the DB to reinstate the
     minimal invariants (gm user, default config rows, starting mechanics
