@@ -54,20 +54,40 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
-    get_worker_id as _worker_id, get_controller_id as _controller_id,
     end_turn, load_minimal_data,
+    ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
 )
+
+
+# ---------------------------------------------------------------------------
+# ID caches populated by the module fixture from UI scrapes.
+#
+# Worker ids never change post-creation, so we snapshot them once at fixture
+# start (before combat resolves). Controller ids are dynamic for captured
+# workers (move to captor), so those lookups are fresh via the UI helper.
+# ---------------------------------------------------------------------------
+
+_wid_cache = {}
+_cid_cache = {}
+
+
+def _cached_wid(page, lastname):
+    """Return the ORIGINAL worker_id for `lastname`, scraping once per lastname."""
+    if lastname not in _wid_cache:
+        _wid_cache[lastname] = ui_worker_id(page, lastname)
+    return _wid_cache[lastname]
+
+
+def _cached_cid(page, lastname):
+    """Return the controller_id for `lastname`, scraping once per lastname."""
+    if lastname not in _cid_cache:
+        _cid_cache[lastname] = ui_controller_id(page, lastname)
+    return _cid_cache[lastname]
 
 
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
-
-
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
 
 
 # ---------------------------------------------------------------------------
@@ -112,37 +132,21 @@ def _ensure_controller_session(page):
     page.wait_for_load_state("networkidle")
 
 
-def _worker_controller_id(lastname):
-    """Return the primary controller_id for the ORIGINAL worker (lowest id).
-
-    After capture, a trace worker with the same lastname exists under the
-    original controller; the original record meanwhile moves to the captor.
-    We want the original record's current controller (= captor if captured).
-    """
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT cw.controller_id FROM `{GAME_PREFIX}controller_worker` cw
-        JOIN `{GAME_PREFIX}workers` w ON w.id = cw.worker_id
-        WHERE w.lastname = %s AND cw.is_primary_controller = 1
-          AND w.id = (SELECT MIN(id) FROM `{GAME_PREFIX}workers` WHERE lastname = %s)
-    """, (lastname, lastname))
-    row = cursor.fetchone()
-    conn.close()
-    return row['controller_id'] if row else None
-
-
 def _worker_report_html(page, lastname):
     """Navigate to a worker's page and return the HTML content.
-    Switches the gm session to the worker's controller first."""
+
+    Switches the gm session to the worker's CURRENT controller first
+    (may be the captor if the worker was captured). Uses the fresh
+    UI scrape for controller_id so the post-capture state is correct;
+    worker_id is cached because the original record's id doesn't change."""
     ensure_gm_login(page, PHP_BASE_URL)
-    ctrl_id = _worker_controller_id(lastname)
+    ctrl_id = ui_worker_controller_id(page, lastname)
     page.goto(
         f"{PHP_BASE_URL}/base/accueil.php"
         f"?controller_id={ctrl_id}&chosir=Choisir"
     )
     page.wait_for_load_state("networkidle")
-    wid = _worker_id(lastname)
+    wid = _cached_wid(page, lastname)
     assert wid, f"Worker {lastname} not found"
     page.goto(f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
@@ -155,8 +159,8 @@ def _worker_report_html(page, lastname):
 
 def _ui_attack(page, attacker_lastname, target_lastname):
     """Set attack via workers/action.php URL endpoint."""
-    atk_id = _worker_id(attacker_lastname)
-    tgt_id = _worker_id(target_lastname)
+    atk_id = _cached_wid(page, attacker_lastname)
+    tgt_id = _cached_wid(page, target_lastname)
     page.goto(
         f"{PHP_BASE_URL}/workers/action.php"
         f"?worker_id={atk_id}"
@@ -168,7 +172,7 @@ def _ui_attack(page, attacker_lastname, target_lastname):
 
 def _ui_investigate(page, lastname):
     """Set investigate via workers/action.php URL endpoint."""
-    wid = _worker_id(lastname)
+    wid = _cached_wid(page, lastname)
     page.goto(
         f"{PHP_BASE_URL}/workers/action.php"
         f"?worker_id={wid}&investigate=1"
@@ -178,8 +182,8 @@ def _ui_investigate(page, lastname):
 
 def _ui_claim(page, lastname, claim_controller_lastname):
     """Set claim via workers/action.php URL endpoint."""
-    wid = _worker_id(lastname)
-    cid = _controller_id(claim_controller_lastname)
+    wid = _cached_wid(page, lastname)
+    cid = _cached_cid(page, claim_controller_lastname)
     page.goto(
         f"{PHP_BASE_URL}/workers/action.php"
         f"?worker_id={wid}&claim_controller_id={cid}&claim=1"
@@ -211,11 +215,9 @@ def combat_scenario(browser):
 
     Turn 1 → 2: attack mechanic resolves all combats by enquete_val DESC.
     """
-    if not DB_AVAILABLE:
-        yield
-        return
-
-    load_minimal_data()
+    # Local bootstrap — skipped on prod where MySQL isn't reachable
+    if DB_AVAILABLE:
+        load_minimal_data()
 
     context = browser.new_context()
     page = context.new_page()
@@ -228,6 +230,12 @@ def combat_scenario(browser):
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
+
+    # Reset module-level id caches for this fixture run. Tests that run
+    # against different deployments should each get fresh ids scraped
+    # from the current page state.
+    _wid_cache.clear()
+    _cid_cache.clear()
 
     # End turn 0 → 1
     end_turn(page)

@@ -61,12 +61,6 @@ def base_url():
     return PHP_BASE_URL
 
 
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
-
-
 # ---------------------------------------------------------------------------
 # DB helpers — kept only for @pytest.mark.db tests that inspect internals
 # with no UI counterpart (e.g. exact turn counter values). All other
