@@ -28,7 +28,10 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, get_worker_id, get_controller_id, load_minimal_data
+from helpers import (
+    DB_AVAILABLE, get_db_connection, load_minimal_data,
+    ui_controller_id, ui_worker_id, ui_worker_controller_id,
+)
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +40,31 @@ def base_url():
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# ID caches — populated lazily via UI scrapes, so tests don't need DB
+# ---------------------------------------------------------------------------
+
+_wid_cache = {}
+_cid_cache = {}
+
+
+def _cached_wid(page, lastname):
+    """Return the ORIGINAL worker_id for `lastname`, scraping once per lastname."""
+    if lastname not in _wid_cache:
+        _wid_cache[lastname] = ui_worker_id(page, lastname)
+    return _wid_cache[lastname]
+
+
+def _cached_cid(page, lastname):
+    """Return the controller_id for `lastname`, scraping once per lastname."""
+    if lastname not in _cid_cache:
+        _cid_cache[lastname] = ui_controller_id(page, lastname)
+    return _cid_cache[lastname]
+
+
+# ---------------------------------------------------------------------------
+# DB-direct helpers — kept ONLY for @pytest.mark.db tests that inspect
+# internals with no UI counterpart (raw enquete_val, known_enemies rows,
+# JSON fields of worker_actions.report).
 # ---------------------------------------------------------------------------
 
 def get_worker_report(worker_lastname, turn=0):
@@ -54,41 +81,20 @@ def get_worker_report(worker_lastname, turn=0):
     return str(row['report'] or '') if row else ''
 
 
-def _worker_controller_id(worker_lastname):
-    """Return the primary controller id for the ORIGINAL worker (lowest id).
-
-    `workers` has no controller_id column — linkage is in controller_worker.
-    After capture, a trace worker with the same lastname may exist; we
-    target the original record via (SELECT MIN(id) ...) for stable
-    lookups regardless of capture state.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT cw.controller_id FROM `{GAME_PREFIX}controller_worker` cw
-        JOIN `{GAME_PREFIX}workers` w ON w.id = cw.worker_id
-        WHERE w.lastname = %s AND cw.is_primary_controller = 1
-          AND w.id = (SELECT MIN(id) FROM `{GAME_PREFIX}workers` WHERE lastname = %s)
-    """, (worker_lastname, worker_lastname))
-    row = cursor.fetchone()
-    conn.close()
-    return row['controller_id'] if row else None
-
-
 def _worker_report_html(page, worker_lastname, base_url=None):
     """UI counterpart of get_worker_report: navigate as gm, switch to the
-    worker's controller, then open the worker action page and return its HTML.
+    worker's CURRENT controller (may differ post-capture), then open the
+    worker action page and return its HTML.
 
-    Inlined here (not in helpers.py) per task instructions — used only by this
-    file's UI-first detection/report assertions.
-    """
+    Uses UI-scraped ids (ui_worker_controller_id + cached worker_id) so
+    the call works against a remote deployment without DB access."""
     url = base_url or PHP_BASE_URL
     ensure_gm_login(page, url)
-    ctrl_id = _worker_controller_id(worker_lastname)
+    ctrl_id = ui_worker_controller_id(page, worker_lastname, base_url=url)
     assert ctrl_id, f"Worker {worker_lastname} has no controller"
     page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
     page.wait_for_load_state("networkidle")
-    wid = get_worker_id(worker_lastname)
+    wid = _cached_wid(page, worker_lastname)
     assert wid, f"Worker {worker_lastname} not found"
     page.goto(f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
@@ -150,12 +156,18 @@ def get_calculated_values(turn=0):
 
 @pytest.fixture(scope="module", autouse=True)
 def load_and_end_turn(browser):
-    """Load TestConfig, then trigger end turn to execute mechanics."""
-    if not DB_AVAILABLE:
-        yield
-        return
+    """Load TestConfig, then trigger end turn to execute mechanics.
 
-    load_minimal_data()
+    Runs against local Docker and remote prod: local DB-direct seeding is
+    skipped when MySQL isn't reachable; the admin-UI scenario load works
+    over HTTP regardless.
+    """
+    if DB_AVAILABLE:
+        load_minimal_data()
+
+    # Reset id caches so each module run re-scrapes against the current target.
+    _wid_cache.clear()
+    _cid_cache.clear()
 
     context = browser.new_context()
     page = context.new_page()
@@ -180,12 +192,6 @@ def load_and_end_turn(browser):
 
     context.close()
     yield
-
-
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +244,6 @@ class TestEndTurn:
 # Test: agent detection (calculated values + DB detection + report content)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestAgentDetection:
     """Verify investigation mechanic: calculated values, who detects whom,
     and that agent reports contain correct detection info.
@@ -255,6 +260,7 @@ class TestAgentDetection:
 
     # --- Calculated values ---
 
+    @pytest.mark.db
     def test_agent1_calculated_values(self):
         """Finder_1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6."""
         vals = get_calculated_values()
@@ -262,6 +268,7 @@ class TestAgentDetection:
         assert vals['Finder_1']['attack_val'] == 6
         assert vals['Finder_1']['defence_val'] == 6
 
+    @pytest.mark.db
     def test_agent2_calculated_values(self):
         """Finder_2: identical to Finder_1 (same powers)."""
         vals = get_calculated_values()
@@ -269,6 +276,7 @@ class TestAgentDetection:
         assert vals['Finder_2']['attack_val'] == 6
         assert vals['Finder_2']['defence_val'] == 6
 
+    @pytest.mark.db
     def test_agent3_calculated_values(self):
         """Finder_3: passive(3) + power(3,0,2) = enq=6, atk=3, def=5."""
         vals = get_calculated_values()
@@ -276,6 +284,7 @@ class TestAgentDetection:
         assert vals['Finder_3']['attack_val'] == 3
         assert vals['Finder_3']['defence_val'] == 5
 
+    @pytest.mark.db
     def test_agent4_calculated_values(self):
         """Finder_4: passive(3) + power(2,0,0) = enq=5, atk=3, def=3."""
         vals = get_calculated_values()
@@ -283,6 +292,7 @@ class TestAgentDetection:
         assert vals['Finder_4']['attack_val'] == 3
         assert vals['Finder_4']['defence_val'] == 3
 
+    @pytest.mark.db
     def test_agent5_calculated_values(self):
         """Finder_5: passive(3) + power(1,5,3) = enq=4, atk=8, def=6."""
         vals = get_calculated_values()
@@ -290,6 +300,7 @@ class TestAgentDetection:
         assert vals['Finder_5']['attack_val'] == 8
         assert vals['Finder_5']['defence_val'] == 6
 
+    @pytest.mark.db
     def test_agent6_calculated_values(self):
         """Searcher_1: investigate roll(3) + power(0,0,0) = enq=3, atk=3, def=3."""
         vals = get_calculated_values()
@@ -297,6 +308,7 @@ class TestAgentDetection:
         assert vals['Searcher_1']['attack_val'] == 3
         assert vals['Searcher_1']['defence_val'] == 3
 
+    @pytest.mark.db
     def test_agent7_negative_defence(self):
         """Bystander_1: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2."""
         vals = get_calculated_values()
@@ -306,6 +318,7 @@ class TestAgentDetection:
 
     # --- DB-level detection: who detects whom ---
 
+    @pytest.mark.db
     def test_agent1_detects_all_others(self):
         """Finder_1 (enq=7) detects all other agents on different controllers."""
         detected = get_detections_for_controller('Charlie')
@@ -313,6 +326,7 @@ class TestAgentDetection:
             assert agent in detected, \
                 f"Finder_1 (Charlie, enq=7) should detect {agent}"
 
+    @pytest.mark.db
     def test_agent2_detects_all_others(self):
         """Finder_2 (enq=7) symmetric with Finder_1 — detects all others."""
         detected = get_detections_for_controller('Delta')
@@ -320,6 +334,7 @@ class TestAgentDetection:
             assert agent in detected, \
                 f"Finder_2 (Delta, enq=7) should detect {agent}"
 
+    @pytest.mark.db
     def test_agent3_detects_all_within_threshold(self):
         """Finder_3 (enq=6): diff >= -1 for Finder_1(7) and Finder_2(7)."""
         detected = get_detections_for_controller('Echo')
@@ -328,6 +343,7 @@ class TestAgentDetection:
         assert 'Finder_4' in detected
         assert 'Finder_5' in detected
 
+    @pytest.mark.db
     def test_agent4_cannot_detect_much_stronger(self):
         """Finder_4 (enq=5): cannot detect Finder_1/2 (diff=-2 < -1)."""
         detected = get_detections_for_controller('Foxtrot')
@@ -337,6 +353,7 @@ class TestAgentDetection:
         assert 'Finder_1' not in detected, "Finder_4 should NOT detect Finder_1 (diff=-2)"
         assert 'Finder_2' not in detected, "Finder_4 should NOT detect Finder_2 (diff=-2)"
 
+    @pytest.mark.db
     def test_agent5_detects_weaker_only(self):
         """Finder_5 (enq=4): only detects Finder_4(5), Searcher_1(3), Bystander_1(3)."""
         detected = get_detections_for_controller('Golf')
@@ -346,6 +363,7 @@ class TestAgentDetection:
         assert 'Finder_2' not in detected, "Finder_5 should NOT detect Finder_2 (diff=-3)"
         assert 'Finder_3' not in detected, "Finder_5 should NOT detect Finder_3 (diff=-2)"
 
+    @pytest.mark.db
     def test_agent6_detects_equal_and_weaker(self):
         """Searcher_1 (enq=3, Alpha): detects Bystander_1(3) and Finder_5(4)."""
         detected = get_detections_for_controller('Alpha')
@@ -353,6 +371,7 @@ class TestAgentDetection:
         assert 'Finder_5' in detected, "Searcher_1 should detect Finder_5 (diff=-1)"
         assert 'Finder_1' not in detected, "Searcher_1 should NOT detect Finder_1 (diff=-4)"
 
+    @pytest.mark.db
     def test_agent7_detects_equal_and_weaker(self):
         """Bystander_1 (enq=3, Beta): detects Searcher_1(3) and Finder_5(4)."""
         detected = get_detections_for_controller('Beta')
@@ -412,7 +431,6 @@ class TestAgentDetection:
 # Test: location detection (4 levels + page visibility)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestLocationDetection:
     """Verify location discovery at all 4 levels, in DB, reports, and pages.
 
@@ -434,6 +452,7 @@ class TestLocationDetection:
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert 'Location A' not in report_section
 
+    @pytest.mark.db
     def test_unfound_not_in_known_locations(self):
         """Searcher_1: not in controller_known_locations (DB structural check)."""
         locs = get_location_discoveries_for_controller('Alpha')
@@ -449,6 +468,7 @@ class TestLocationDetection:
         assert 'test location' not in report_section.lower(), \
             "Report section should NOT render location description at level 0"
 
+    @pytest.mark.db
     def test_name_only_not_in_known_locations(self):
         """Finder_5: NOT in controller_known_locations (requires diff>=1)."""
         locs = get_location_discoveries_for_controller('Golf')
@@ -457,7 +477,7 @@ class TestLocationDetection:
     def test_name_only_not_on_zones_page(self, page: Page, base_url):
         """Golf (name-only) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={get_controller_id('Golf')}")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Golf')}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
@@ -474,6 +494,7 @@ class TestLocationDetection:
         assert 'Secret details' not in report_section, \
             "Report section should NOT render secret at level 1"
 
+    @pytest.mark.db
     def test_desc_in_known_locations_no_secret(self):
         """Finder_4: in controller_known_locations with found_secret=0."""
         locs = get_location_discoveries_for_controller('Foxtrot')
@@ -484,7 +505,7 @@ class TestLocationDetection:
     def test_desc_on_zones_page(self, page: Page, base_url):
         """Foxtrot should see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={get_controller_id('Foxtrot')}")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
@@ -493,7 +514,7 @@ class TestLocationDetection:
     def test_desc_on_controller_page(self, page: Page, base_url):
         """Foxtrot should see Location A on controller/accueil page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={get_controller_id('Foxtrot')}")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
         page.wait_for_load_state("networkidle")
         assert "Location A" in page.inner_text("body") or "Location A" in page.content()
 
@@ -506,6 +527,7 @@ class TestLocationDetection:
         assert 'test location' in html.lower()
         assert 'Secret details' in html, "Page should render hidden_description"
 
+    @pytest.mark.db
     def test_secret_in_known_locations_with_flag(self):
         """Finder_1: in controller_known_locations with found_secret=1."""
         locs = get_location_discoveries_for_controller('Charlie')
@@ -516,7 +538,7 @@ class TestLocationDetection:
     def test_secret_on_zones_page(self, page: Page, base_url):
         """Charlie should see Location A on zones page (in hidden description div)."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={get_controller_id('Charlie')}")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Charlie')}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
@@ -525,7 +547,7 @@ class TestLocationDetection:
     def test_undiscovered_not_on_zones_page(self, page: Page, base_url):
         """Alpha (unfound) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={get_controller_id('Alpha')}")
+        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Alpha')}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
@@ -536,15 +558,14 @@ class TestLocationDetection:
 # Test: worker view page renders report correctly
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestWorkerViewPage:
     """Verify worker view pages render reports correctly for each detection level."""
 
     def _go_to_worker(self, page, base_url, controller_lastname, worker_lastname):
         """Login if needed, select controller, navigate to worker page."""
         ensure_gm_login(page, base_url)
-        ctrl_id = get_controller_id(controller_lastname)
-        worker_id = get_worker_id(worker_lastname)
+        ctrl_id = _cached_cid(page, controller_lastname)
+        worker_id = _cached_wid(page, worker_lastname)
         page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
         page.wait_for_load_state("networkidle")
         page.goto(f"{base_url}/workers/action.php?worker_id={worker_id}")
