@@ -16,7 +16,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, ui_turn_counter
 
 
 @pytest.fixture(scope="session")
@@ -119,13 +119,10 @@ class TestEmptyDetectionResults:
 class TestEndTurnCompletesWithEmptyResults:
     """End turn should complete successfully even with nothing to find."""
 
-    def test_turn_counter_incremented(self):
-        """Turn counter should still advance."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics`")
-        turn = cursor.fetchone()['turncounter']
-        conn.close()
+    def test_turn_counter_incremented(self, page: Page, base_url):
+        """Turn counter should still advance. Scraped from page header."""
+        ensure_gm_login(page, base_url)
+        turn = ui_turn_counter(page, base_url=base_url)
         assert turn >= 1, f"Turn counter should be >= 1, got {turn}"
 
     def test_new_turn_actions_created(self):

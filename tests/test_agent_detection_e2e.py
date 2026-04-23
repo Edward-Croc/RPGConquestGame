@@ -33,6 +33,7 @@ from helpers import (
     ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
+    ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
 )
 
 
@@ -208,14 +209,13 @@ class TestEndTurn:
     smoke check is pure UI and runs under UI_ONLY=1.
     """
 
-    @pytest.mark.db
-    def test_turn_counter_incremented(self):
-        """After end turn, turncounter should be 1 (started at 0)."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics`")
-        assert cursor.fetchone()['turncounter'] == 1
-        conn.close()
+    def test_turn_counter_incremented(self, page: Page, base_url):
+        """After end turn, turncounter should be 1 (started at 0).
+
+        Reads the page header which shows `{game} : Tour N` — UI-runnable.
+        """
+        ensure_gm_login(page, base_url)
+        assert ui_turn_counter(page, base_url=base_url) == 1
 
     @pytest.mark.db
     def test_new_turn_actions_created(self):
@@ -260,126 +260,123 @@ class TestAgentDetection:
         3 (4):  + controller full name
     """
 
-    # --- Calculated values ---
+    # --- Calculated values — scraped from workers/action.php "Changements :" ---
 
-    @pytest.mark.db
-    def test_agent1_calculated_values(self):
+    def test_agent1_calculated_values(self, page: Page, base_url):
         """Finder_1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6."""
-        vals = get_calculated_values()
-        assert vals['Finder_1']['enquete_val'] == 7
-        assert vals['Finder_1']['attack_val'] == 6
-        assert vals['Finder_1']['defence_val'] == 6
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Finder_1', base_url=base_url)
+        assert vals == {'enquete_val': 7, 'attack_val': 6, 'defence_val': 6}, \
+            f"Finder_1 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent2_calculated_values(self):
+    def test_agent2_calculated_values(self, page: Page, base_url):
         """Finder_2: identical to Finder_1 (same powers)."""
-        vals = get_calculated_values()
-        assert vals['Finder_2']['enquete_val'] == 7
-        assert vals['Finder_2']['attack_val'] == 6
-        assert vals['Finder_2']['defence_val'] == 6
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Finder_2', base_url=base_url)
+        assert vals == {'enquete_val': 7, 'attack_val': 6, 'defence_val': 6}, \
+            f"Finder_2 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent3_calculated_values(self):
+    def test_agent3_calculated_values(self, page: Page, base_url):
         """Finder_3: passive(3) + power(3,0,2) = enq=6, atk=3, def=5."""
-        vals = get_calculated_values()
-        assert vals['Finder_3']['enquete_val'] == 6
-        assert vals['Finder_3']['attack_val'] == 3
-        assert vals['Finder_3']['defence_val'] == 5
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Finder_3', base_url=base_url)
+        assert vals == {'enquete_val': 6, 'attack_val': 3, 'defence_val': 5}, \
+            f"Finder_3 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent4_calculated_values(self):
+    def test_agent4_calculated_values(self, page: Page, base_url):
         """Finder_4: passive(3) + power(2,0,0) = enq=5, atk=3, def=3."""
-        vals = get_calculated_values()
-        assert vals['Finder_4']['enquete_val'] == 5
-        assert vals['Finder_4']['attack_val'] == 3
-        assert vals['Finder_4']['defence_val'] == 3
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Finder_4', base_url=base_url)
+        assert vals == {'enquete_val': 5, 'attack_val': 3, 'defence_val': 3}, \
+            f"Finder_4 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent5_calculated_values(self):
+    def test_agent5_calculated_values(self, page: Page, base_url):
         """Finder_5: passive(3) + power(1,5,3) = enq=4, atk=8, def=6."""
-        vals = get_calculated_values()
-        assert vals['Finder_5']['enquete_val'] == 4
-        assert vals['Finder_5']['attack_val'] == 8
-        assert vals['Finder_5']['defence_val'] == 6
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Finder_5', base_url=base_url)
+        assert vals == {'enquete_val': 4, 'attack_val': 8, 'defence_val': 6}, \
+            f"Finder_5 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent6_calculated_values(self):
+    def test_agent6_calculated_values(self, page: Page, base_url):
         """Searcher_1: investigate roll(3) + power(0,0,0) = enq=3, atk=3, def=3."""
-        vals = get_calculated_values()
-        assert vals['Searcher_1']['enquete_val'] == 3
-        assert vals['Searcher_1']['attack_val'] == 3
-        assert vals['Searcher_1']['defence_val'] == 3
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Searcher_1', base_url=base_url)
+        assert vals == {'enquete_val': 3, 'attack_val': 3, 'defence_val': 3}, \
+            f"Searcher_1 stats mismatch: {vals}"
 
-    @pytest.mark.db
-    def test_agent7_negative_defence(self):
+    def test_agent7_negative_defence(self, page: Page, base_url):
         """Bystander_1: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2."""
-        vals = get_calculated_values()
-        assert vals['Bystander_1']['enquete_val'] == 3
-        assert vals['Bystander_1']['attack_val'] == 4
-        assert vals['Bystander_1']['defence_val'] == 2
+        ensure_gm_login(page, base_url)
+        vals = ui_worker_stats(page, 'Bystander_1', base_url=base_url)
+        assert vals == {'enquete_val': 3, 'attack_val': 4, 'defence_val': 2}, \
+            f"Bystander_1 stats mismatch: {vals}"
 
     # --- DB-level detection: who detects whom ---
 
     @pytest.mark.db
     def test_agent1_detects_all_others(self):
-        """Finder_1 (enq=7) detects all other agents on different controllers."""
-        detected = get_detections_for_controller('Charlie')
+        """Finder_1 (enq=7) detects all other agents on different controllers.
+
+        Scraped from `select#enemyWorkersSelect` on the worker action page —
+        the UI exposure of controllers_known_enemies filtered by zone."""
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Finder_1', base_url=base_url)
         for agent in ['Finder_2', 'Finder_3', 'Finder_4', 'Finder_5', 'Searcher_1', 'Bystander_1']:
             assert agent in detected, \
-                f"Finder_1 (Charlie, enq=7) should detect {agent}"
+                f"Finder_1 (Charlie, enq=7) should detect {agent}; detected={detected}"
 
-    @pytest.mark.db
-    def test_agent2_detects_all_others(self):
+    def test_agent2_detects_all_others(self, page: Page, base_url):
         """Finder_2 (enq=7) symmetric with Finder_1 — detects all others."""
-        detected = get_detections_for_controller('Delta')
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Finder_2', base_url=base_url)
         for agent in ['Finder_1', 'Finder_3', 'Finder_4', 'Finder_5', 'Searcher_1', 'Bystander_1']:
             assert agent in detected, \
-                f"Finder_2 (Delta, enq=7) should detect {agent}"
+                f"Finder_2 (Delta, enq=7) should detect {agent}; detected={detected}"
 
-    @pytest.mark.db
-    def test_agent3_detects_all_within_threshold(self):
+    def test_agent3_detects_all_within_threshold(self, page: Page, base_url):
         """Finder_3 (enq=6): diff >= -1 for Finder_1(7) and Finder_2(7)."""
-        detected = get_detections_for_controller('Echo')
-        assert 'Finder_1' in detected, "Finder_3 should detect Finder_1 (diff=-1 >= -1)"
-        assert 'Finder_2' in detected, "Finder_3 should detect Finder_2 (diff=-1 >= -1)"
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Finder_3', base_url=base_url)
+        assert 'Finder_1' in detected, f"Finder_3 should detect Finder_1 (diff=-1); detected={detected}"
+        assert 'Finder_2' in detected, f"Finder_3 should detect Finder_2 (diff=-1); detected={detected}"
         assert 'Finder_4' in detected
         assert 'Finder_5' in detected
 
-    @pytest.mark.db
-    def test_agent4_cannot_detect_much_stronger(self):
+    def test_agent4_cannot_detect_much_stronger(self, page: Page, base_url):
         """Finder_4 (enq=5): cannot detect Finder_1/2 (diff=-2 < -1)."""
-        detected = get_detections_for_controller('Foxtrot')
-        assert 'Finder_3' in detected, "Finder_4 should detect Finder_3 (diff=-1)"
-        assert 'Finder_5' in detected, "Finder_4 should detect Finder_5 (diff=1)"
-        assert 'Searcher_1' in detected, "Finder_4 should detect Searcher_1 (diff=2)"
-        assert 'Finder_1' not in detected, "Finder_4 should NOT detect Finder_1 (diff=-2)"
-        assert 'Finder_2' not in detected, "Finder_4 should NOT detect Finder_2 (diff=-2)"
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Finder_4', base_url=base_url)
+        assert 'Finder_3' in detected, f"Finder_4 should detect Finder_3; detected={detected}"
+        assert 'Finder_5' in detected, f"Finder_4 should detect Finder_5; detected={detected}"
+        assert 'Searcher_1' in detected, f"Finder_4 should detect Searcher_1; detected={detected}"
+        assert 'Finder_1' not in detected, f"Finder_4 should NOT detect Finder_1 (diff=-2); detected={detected}"
+        assert 'Finder_2' not in detected, f"Finder_4 should NOT detect Finder_2 (diff=-2); detected={detected}"
 
-    @pytest.mark.db
-    def test_agent5_detects_weaker_only(self):
+    def test_agent5_detects_weaker_only(self, page: Page, base_url):
         """Finder_5 (enq=4): only detects Finder_4(5), Searcher_1(3), Bystander_1(3)."""
-        detected = get_detections_for_controller('Golf')
-        assert 'Finder_4' in detected, "Finder_5 should detect Finder_4 (diff=-1)"
-        assert 'Searcher_1' in detected, "Finder_5 should detect Searcher_1 (diff=1)"
-        assert 'Finder_1' not in detected, "Finder_5 should NOT detect Finder_1 (diff=-3)"
-        assert 'Finder_2' not in detected, "Finder_5 should NOT detect Finder_2 (diff=-3)"
-        assert 'Finder_3' not in detected, "Finder_5 should NOT detect Finder_3 (diff=-2)"
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Finder_5', base_url=base_url)
+        assert 'Finder_4' in detected, f"Finder_5 should detect Finder_4; detected={detected}"
+        assert 'Searcher_1' in detected, f"Finder_5 should detect Searcher_1; detected={detected}"
+        assert 'Finder_1' not in detected, f"Finder_5 should NOT detect Finder_1; detected={detected}"
+        assert 'Finder_2' not in detected, f"Finder_5 should NOT detect Finder_2; detected={detected}"
+        assert 'Finder_3' not in detected, f"Finder_5 should NOT detect Finder_3; detected={detected}"
 
-    @pytest.mark.db
-    def test_agent6_detects_equal_and_weaker(self):
+    def test_agent6_detects_equal_and_weaker(self, page: Page, base_url):
         """Searcher_1 (enq=3, Alpha): detects Bystander_1(3) and Finder_5(4)."""
-        detected = get_detections_for_controller('Alpha')
-        assert 'Bystander_1' in detected, "Searcher_1 should detect Bystander_1 (diff=0)"
-        assert 'Finder_5' in detected, "Searcher_1 should detect Finder_5 (diff=-1)"
-        assert 'Finder_1' not in detected, "Searcher_1 should NOT detect Finder_1 (diff=-4)"
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Searcher_1', base_url=base_url)
+        assert 'Bystander_1' in detected, f"Searcher_1 should detect Bystander_1; detected={detected}"
+        assert 'Finder_5' in detected, f"Searcher_1 should detect Finder_5; detected={detected}"
+        assert 'Finder_1' not in detected, f"Searcher_1 should NOT detect Finder_1; detected={detected}"
 
-    @pytest.mark.db
-    def test_agent7_detects_equal_and_weaker(self):
+    def test_agent7_detects_equal_and_weaker(self, page: Page, base_url):
         """Bystander_1 (enq=3, Beta): detects Searcher_1(3) and Finder_5(4)."""
-        detected = get_detections_for_controller('Beta')
-        assert 'Searcher_1' in detected, "Bystander_1 should detect Searcher_1 (diff=0)"
-        assert 'Finder_5' in detected, "Bystander_1 should detect Finder_5 (diff=-1)"
-        assert 'Finder_1' not in detected, "Bystander_1 should NOT detect Finder_1 (diff=-4)"
+        ensure_gm_login(page, base_url)
+        detected = ui_detected_enemies_of(page, 'Bystander_1', base_url=base_url)
+        assert 'Searcher_1' in detected, f"Bystander_1 should detect Searcher_1; detected={detected}"
+        assert 'Finder_5' in detected, f"Bystander_1 should detect Finder_5; detected={detected}"
+        assert 'Finder_1' not in detected, f"Bystander_1 should NOT detect Finder_1; detected={detected}"
 
     # --- Report content: agent detection (UI-first via rendered worker page) ---
 

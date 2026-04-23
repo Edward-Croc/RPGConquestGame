@@ -32,6 +32,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     login_as, end_turn, load_scenario_via_admin, load_minimal_data,
+    ui_worker_count, ui_zone_names,
 )
 
 
@@ -153,46 +154,59 @@ def parallel_games_scenario(browser):
 # Tests: both games loaded with distinct scenarios
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestBothGamesLoaded:
     """Each game's prefix has its own tables populated."""
 
-    def test_secondary_has_workers(self):
-        """Japon1555SQL in secondary loaded 9 workers (Shikoku advanced scenario)."""
-        assert _count(SECONDARY_PREFIX, 'workers') == 9, \
-            f"Expected 9 Shikoku workers, got {_count(SECONDARY_PREFIX, 'workers')}"
+    def test_secondary_has_workers(self, page: Page, base_url):
+        """Japon1555SQL in secondary loaded 9 workers (Shikoku advanced scenario).
 
-    def test_primary_has_workers(self):
-        """TestConfig in primary loaded 26 workers (detection + combat + recruitment)."""
-        assert _count(PRIMARY_PREFIX, 'workers') == 26, \
-            f"Expected 26 TestConfig workers, got {_count(PRIMARY_PREFIX, 'workers')}"
+        Counts rows on /workers/managment_workers.php served by the
+        secondary URL — UI-runnable, no direct DB access required.
+        """
+        login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
+        count = ui_worker_count(page, base_url=PHP_BASE_URL_SECONDARY)
+        assert count == 9, f"Expected 9 Shikoku workers, got {count}"
 
+    def test_primary_has_workers(self, page: Page, base_url):
+        """TestConfig in primary loaded 26 workers (detection + combat + recruitment).
+
+        Counts rows on /workers/managment_workers.php on the primary URL.
+        """
+        login_as(page, base_url, "gm", "orga")
+        count = ui_worker_count(page, base_url=base_url)
+        assert count == 26, f"Expected 26 TestConfig workers, got {count}"
+
+    @pytest.mark.db
     def test_secondary_has_shikoku_zones(self):
         """Secondary has Shikoku zones (11 total)."""
         assert _count(SECONDARY_PREFIX, 'zones') == 11, \
             f"Expected 11 Shikoku zones, got {_count(SECONDARY_PREFIX, 'zones')}"
 
+    @pytest.mark.db
     def test_primary_has_testconfig_zones(self):
         """Primary has the 7 TestConfig zones (harmonized Greek names)."""
         assert _count(PRIMARY_PREFIX, 'zones') == 7, \
             f"Expected 7 TestConfig zones, got {_count(PRIMARY_PREFIX, 'zones')}"
 
 
-@pytest.mark.db
 class TestShodoshimaInSecondary:
     """Specific Shikoku feature: Shodoshima island zone and locations exist."""
 
-    def test_shodoshima_zone_exists(self):
-        zones = _zone_names(SECONDARY_PREFIX)
+    def test_shodoshima_zone_exists(self, page: Page, base_url):
+        """Shodoshima zone rendered on secondary game's managment_zones page."""
+        login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
+        zones = ui_zone_names(page, base_url=PHP_BASE_URL_SECONDARY)
         assert 'Ile de Shōdoshima' in zones, \
             f"Shodoshima zone missing from secondary game, got zones: {zones}"
 
+    @pytest.mark.db
     def test_shodoshima_not_in_primary(self):
         """Primary should NOT have Shodoshima — proves isolation."""
         zones = _zone_names(PRIMARY_PREFIX)
         assert 'Ile de Shōdoshima' not in zones, \
             "Shodoshima leaked into primary (isolation broken)"
 
+    @pytest.mark.db
     def test_shodoshima_has_locations(self):
         """At least 1 location should be tagged to Shodoshima."""
         conn = get_db()

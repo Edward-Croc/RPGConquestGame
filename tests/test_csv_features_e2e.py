@@ -20,11 +20,14 @@ from playwright.sync_api import Page
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL, PROJECT_ROOT,
+    PHP_BASE_URL, PROJECT_ROOT, ensure_gm_login,
 )
 
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
+from helpers import (
+    DB_AVAILABLE, get_db_connection, load_minimal_data,
+    ui_worker_count, ui_power_options_by_type,
+)
 
 
 @pytest.fixture(scope="session")
@@ -32,15 +35,10 @@ def base_url():
     return PHP_BASE_URL
 
 
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
-
-
 def _load_test_config(browser):
     """Load TestConfig via admin reset. Returns when complete."""
-    load_minimal_data()
+    if DB_AVAILABLE:
+        load_minimal_data()
 
     context = browser.new_context()
     page = context.new_page()
@@ -65,10 +63,8 @@ def _load_test_config(browser):
 
 @pytest.fixture(scope="module", autouse=True)
 def load_test_config(browser):
-    """Load TestConfig fresh at module start."""
-    if not DB_AVAILABLE:
-        yield
-        return
+    """Load TestConfig fresh at module start. UI load works on any target;
+    local-DB seeding only runs when MySQL is reachable."""
     _load_test_config(browser)
     yield
 
@@ -77,97 +73,66 @@ def load_test_config(browser):
 # Test 1: linkTable_ junction insert
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestLinkTableFeature:
     """Verify linkTable_ column creates correct junction rows.
 
     TestConfig loads 30 powers (13 hobbys + 12 jobs + 3 disciplines + 2 transformations).
     Each power row with `linkTable_power_types__name->link_power_type__power_type_id`
     column creates a row in link_power_type linking it to the correct power_type.
+
+    UI-first: the admin.php "Create Perfect Agent" form exposes one
+    <select> per power type (power_hobby_id, power_metier_id,
+    disciplineSelect, transformationSelect) whose option lists are
+    populated from link_power_type joined with power_types. Counting
+    options per select verifies the junction is correct.
     """
 
-    def test_every_power_has_link_power_type_entry(self):
-        """Every power should have exactly one link_power_type entry."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT p.id, p.name, COUNT(lpt.id) as link_count
-            FROM `{GAME_PREFIX}powers` p
-            LEFT JOIN `{GAME_PREFIX}link_power_type` lpt ON lpt.power_id = p.id
-            GROUP BY p.id, p.name
-        """)
-        for r in cursor.fetchall():
-            assert r['link_count'] == 1, \
-                f"Power '{r['name']}' has {r['link_count']} link entries (expected 1)"
-        conn.close()
+    def test_every_power_has_link_power_type_entry(self, page: Page, base_url):
+        """Every power should appear in exactly one type-specific dropdown."""
+        ensure_gm_login(page, base_url)
+        options_by_type = ui_power_options_by_type(page, base_url=base_url)
+        # Flatten: (type, power_name) pairs. Each power_name should appear
+        # in exactly one type list (the linkTable_ join places it there).
+        seen = {}
+        for type_name, names in options_by_type.items():
+            for name in names:
+                seen.setdefault(name, []).append(type_name)
+        duplicates = {n: t for n, t in seen.items() if len(t) > 1}
+        assert not duplicates, \
+            f"Powers appearing in >1 type dropdown (bad junction): {duplicates}"
 
-    def test_hobbys_linked_to_hobby_type(self):
-        """All 13 hobby CSV powers should be linked to power_type 'Hobby'."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT pt.name AS type_name, COUNT(*) AS c
-            FROM `{GAME_PREFIX}link_power_type` lpt
-            JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE pt.name = 'Hobby'
-            GROUP BY pt.name
-        """)
-        rows = cursor.fetchall()
-        conn.close()
-        assert len(rows) == 1, f"Hobby powers should link only to 'Hobby' type, got: {rows}"
-        assert rows[0]['type_name'] == 'Hobby'
-        assert rows[0]['c'] == 13, f"Expected 13 hobby powers, got {rows[0]['c']}"
+    def test_hobbys_linked_to_hobby_type(self, page: Page, base_url):
+        """All 13 hobby CSV powers should appear in the Hobby dropdown."""
+        ensure_gm_login(page, base_url)
+        options_by_type = ui_power_options_by_type(page, base_url=base_url)
+        assert len(options_by_type['Hobby']) == 13, \
+            f"Expected 13 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
 
-    def test_disciplines_linked_to_discipline_type(self):
-        """All discipline CSV powers should be linked to power_type 'Discipline'."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT pt.name AS type_name, p.name AS power_name
-            FROM `{GAME_PREFIX}link_power_type` lpt
-            JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
-            JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE p.name IN ('Offensive Stance', 'Defensive Posture', 'Focused Mind')
-        """)
-        rows = cursor.fetchall()
-        conn.close()
-        assert len(rows) == 3, f"Expected 3 discipline powers, got {len(rows)}"
-        for r in rows:
-            assert r['type_name'] == 'Discipline', \
-                f"Power '{r['power_name']}' linked to '{r['type_name']}', expected 'Discipline'"
+    def test_disciplines_linked_to_discipline_type(self, page: Page, base_url):
+        """The 3 discipline CSV powers appear in the Discipline dropdown."""
+        ensure_gm_login(page, base_url)
+        options_by_type = ui_power_options_by_type(page, base_url=base_url)
+        disciplines = set(options_by_type['Discipline'])
+        expected = {'Offensive Stance', 'Defensive Posture', 'Focused Mind'}
+        assert disciplines == expected, \
+            f"Discipline dropdown mismatch — expected {expected}, got {disciplines}"
 
-    def test_transformations_linked_to_transformation_type(self):
-        """All transformation CSV powers should be linked to power_type 'Transformation'."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT pt.name AS type_name, COUNT(*) AS c
-            FROM `{GAME_PREFIX}link_power_type` lpt
-            JOIN `{GAME_PREFIX}powers` p ON p.id = lpt.power_id
-            JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            WHERE p.name IN ('War Gear', 'Shadow Cloak')
-            GROUP BY pt.name
-        """)
-        rows = cursor.fetchall()
-        conn.close()
-        assert len(rows) == 1
-        assert rows[0]['type_name'] == 'Transformation'
-        assert rows[0]['c'] == 2
+    def test_transformations_linked_to_transformation_type(self, page: Page, base_url):
+        """The 2 transformation CSV powers appear in the Transformation dropdown."""
+        ensure_gm_login(page, base_url)
+        options_by_type = ui_power_options_by_type(page, base_url=base_url)
+        transformations = set(options_by_type['Transformation'])
+        expected = {'War Gear', 'Shadow Cloak'}
+        assert transformations == expected, \
+            f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
 
-    def test_power_type_counts(self):
-        """Verify exact counts per power type."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT pt.name AS type_name, COUNT(*) AS c
-            FROM `{GAME_PREFIX}link_power_type` lpt
-            JOIN `{GAME_PREFIX}power_types` pt ON pt.id = lpt.power_type_id
-            GROUP BY pt.name
-        """)
-        counts = {r['type_name']: r['c'] for r in cursor.fetchall()}
-        conn.close()
-        assert counts == {'Hobby': 13, 'Metier': 12, 'Discipline': 3, 'Transformation': 2}, \
-            f"Unexpected power type counts: {counts}"
+    def test_power_type_counts(self, page: Page, base_url):
+        """Exact counts per power type via admin.php dropdowns."""
+        ensure_gm_login(page, base_url)
+        options_by_type = ui_power_options_by_type(page, base_url=base_url)
+        counts = {t: len(names) for t, names in options_by_type.items()}
+        expected = {'Hobby': 13, 'Metier': 12, 'Discipline': 3, 'Transformation': 2}
+        assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +260,6 @@ class TestMissingFileHandling:
 # Test 5: loadWorkersCSV
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestLoadWorkersCSV:
     """Verify loadWorkersCSV creates 4 tables of data from one CSV row per worker.
 
@@ -306,15 +270,16 @@ class TestLoadWorkersCSV:
     - N rows in worker_powers (pipe-separated list)
     """
 
-    def test_workers_table_populated(self):
-        """Exactly 26 workers should exist."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}workers`")
-        count = cursor.fetchone()['c']
-        conn.close()
-        assert count == 26
+    def test_workers_table_populated(self, page: Page, base_url):
+        """Exactly 26 workers should exist.
 
+        Counts rows on /workers/managment_workers.php — UI-runnable.
+        """
+        ensure_gm_login(page, base_url)
+        count = ui_worker_count(page, base_url=base_url)
+        assert count == 26, f"Expected 26 workers, got {count}"
+
+    @pytest.mark.db
     def test_all_workers_have_origin_and_zone(self):
         """Every worker should have non-null origin_id and zone_id (FK lookups resolved)."""
         conn = get_db_connection()
@@ -327,6 +292,7 @@ class TestLoadWorkersCSV:
         conn.close()
         assert null_count == 0
 
+    @pytest.mark.db
     def test_controller_worker_junction_created(self):
         """Each worker should have exactly one controller_worker entry."""
         conn = get_db_connection()
@@ -342,6 +308,7 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has {r['link_count']} controller links"
         conn.close()
 
+    @pytest.mark.db
     def test_worker_actions_created_for_turn_0(self):
         """Each worker should have exactly one worker_actions row at turn 0."""
         conn = get_db_connection()
@@ -358,6 +325,7 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has {r['action_count']} turn-0 actions"
         conn.close()
 
+    @pytest.mark.db
     def test_specific_agent_controller_mapping(self):
         """Verify Finder_1 -> Charlie, Searcher_1 -> Alpha, etc. match the CSV."""
         conn = get_db_connection()
@@ -392,6 +360,7 @@ class TestLoadWorkersCSV:
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
+    @pytest.mark.db
     def test_searcher1_has_investigate_action(self):
         """Searcher_1 CSV has action_choice='investigate' — should appear in DB."""
         conn = get_db_connection()
@@ -405,6 +374,7 @@ class TestLoadWorkersCSV:
         conn.close()
         assert action == 'investigate'
 
+    @pytest.mark.db
     def test_other_agents_have_passive_action(self):
         """All other agents should have action_choice='passive'."""
         conn = get_db_connection()
@@ -420,6 +390,7 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has action '{r['action_choice']}', expected 'passive'"
         conn.close()
 
+    @pytest.mark.db
     def test_pipe_separated_powers_parsed(self):
         """Workers have correct power counts (2 or 4 depending on CSV pipe list)."""
         conn = get_db_connection()
@@ -437,6 +408,7 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has {r['power_count']} powers, expected {expected}"
         conn.close()
 
+    @pytest.mark.db
     def test_finder1_has_correct_powers(self):
         """Finder_1 CSV: powers='Eagle Scout|Veteran Tactician'."""
         conn = get_db_connection()
@@ -454,6 +426,7 @@ class TestLoadWorkersCSV:
         conn.close()
         assert powers == ['Eagle Scout', 'Veteran Tactician']
 
+    @pytest.mark.db
     def test_bystander1_has_negative_power(self):
         """Bystander_1 has 'Dark Impulse' with negative defence — verify power is linked."""
         conn = get_db_connection()

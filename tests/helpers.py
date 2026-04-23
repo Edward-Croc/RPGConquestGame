@@ -344,6 +344,149 @@ def ui_known_secret_locations_for_controller(page: Page, controller_lastname: st
     }
 
 
+_STATS_RE = re.compile(
+    r"j'ai\s*<strong>\s*(-?\d+)\s*</strong>\s*en\s*investigation\s*"
+    r"et\s*<strong>\s*(-?\d+)/(-?\d+)\s*</strong>\s*en\s*attaque",
+    re.IGNORECASE,
+)
+
+
+def ui_worker_stats(page: Page, lastname: str, base_url: str = None):
+    """Scrape the worker's action.php page and return calculated combat stats.
+
+    Reads the `life_report` string that mechanics/endTurn.php writes onto
+    each worker_actions.report:
+        "Ce tour j'ai <strong>3</strong> en investigation
+         et <strong>3/3</strong> en attaque/défense."
+    workers/view.php renders it under "Changements :" heading. We regex-
+    extract (enquete_val, attack_val, defence_val).
+
+    Raises AssertionError if the pattern isn't found (worker might be
+    dead/captured — life_report only written for active agents).
+    """
+    url = base_url or PHP_BASE_URL
+    # Switch session to the worker's controller so the page shows the report
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    page.wait_for_load_state("networkidle")
+    wid = ui_worker_id(page, lastname, base_url=url)
+    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    page.wait_for_load_state("load")
+    html = page.content()
+    m = _STATS_RE.search(html)
+    if not m:
+        raise AssertionError(
+            f"Worker '{lastname}' life_report stats not rendered on "
+            f"workers/action.php (pattern not found)"
+        )
+    return {
+        "enquete_val": int(m.group(1)),
+        "attack_val": int(m.group(2)),
+        "defence_val": int(m.group(3)),
+    }
+
+
+def ui_worker_count(page: Page, base_url: str = None):
+    """Return total worker count via /workers/managment_workers.php row count."""
+    return len(ui_all_workers(page, base_url))
+
+
+_TURN_RE = re.compile(r'(\d+)')
+
+
+def ui_turn_counter(page: Page, base_url: str = None):
+    """Return the current turncounter by scraping the page header.
+
+    baseHTML renders `<div class="header">{gameTitle} : {timeValue} {turncounter} <br>...`.
+    The first digit group in the header text is the turncounter (any
+    subsequent digits belong to the optional controller info suffix).
+    """
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/base/accueil.php")
+    page.wait_for_load_state("networkidle")
+    text = (page.locator("div.header").first.inner_text() or "").strip()
+    m = _TURN_RE.search(text)
+    if not m:
+        raise AssertionError(f"No digits in header — could not parse turncounter from: {text!r}")
+    return int(m.group(1))
+
+
+def ui_zone_names(page: Page, base_url: str = None):
+    """Return the set of all zone names via /zones/managment_zones.php."""
+    return {z["name"] for z in ui_all_zones(page, base_url)}
+
+
+def ui_detected_enemies_of(page: Page, searcher_lastname: str, base_url: str = None):
+    """Return the set of enemy worker lastnames that `searcher_lastname` has
+    detected in its zone (from this controller's perspective).
+
+    Scrapes `select#enemyWorkersSelect` on /workers/action.php?worker_id=N
+    after switching the gm session to the searcher's current controller.
+    The select is the UI exposure of controllers_known_enemies filtered by
+    the worker's zone and the viewing controller.
+
+    Option text from PHP is `'- %s '` where %s is the enemy's firstname+lastname.
+    We take the last whitespace-separated token as lastname (works because
+    TestConfig lastnames are single-word tokens like Finder_1, Bystander_1).
+
+    Returns an empty set if the worker is not active (select not rendered)
+    or has detected no enemies.
+    """
+    url = base_url or PHP_BASE_URL
+    ctrl_id = ui_worker_controller_id(page, searcher_lastname, base_url=url)
+    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    page.wait_for_load_state("networkidle")
+    wid = ui_worker_id(page, searcher_lastname, base_url=url)
+    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    page.wait_for_load_state("load")
+    detected = set()
+    options = page.locator("select#enemyWorkersSelect option").all()
+    for opt in options:
+        value = opt.get_attribute("value") or ""
+        if not value.startswith("worker_"):
+            continue  # skip network_N group labels
+        text = (opt.inner_text() or "").strip().lstrip("-").strip()
+        if not text:
+            continue
+        lastname = text.split()[-1]  # "firstname lastname" → lastname
+        detected.add(lastname)
+    return detected
+
+
+def ui_power_options_by_type(page: Page, base_url: str = None):
+    """Scrape admin.php's Create Perfect Agent form dropdowns and return
+    a dict mapping power type to list of option labels (placeholder
+    excluded).
+
+    Keys match the power_types.name values: 'Hobby', 'Metier',
+    'Discipline', 'Transformation'. The four <select> elements on the
+    admin page are the authoritative UI enumeration of all powers
+    linked to each type (via the link_power_type junction)."""
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/base/admin.php")
+    page.wait_for_load_state("networkidle")
+    type_map = {
+        "Hobby": "select#power_hobby_id",
+        "Metier": "select#power_metier_id",
+        "Discipline": "select#disciplineSelect",
+        "Transformation": "select#transformationSelect",
+    }
+    result = {}
+    for type_name, selector in type_map.items():
+        options = page.locator(f"{selector} option").all()
+        labels = []
+        for opt in options:
+            value = opt.get_attribute("value") or ""
+            if not value or not value.strip():
+                continue  # skip placeholder (empty value)
+            text = (opt.inner_text() or "").strip()
+            # option text is like "Keen Eye (1, 0/0)" — strip the " (...)" suffix
+            name = text.split(" (")[0].strip()
+            labels.append(name)
+        result[type_name] = labels
+    return result
+
+
 def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
     """Scrape /controllers/managment.php for one controller's counters.
 
