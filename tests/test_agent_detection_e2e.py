@@ -313,8 +313,7 @@ class TestAgentDetection:
 
     # --- DB-level detection: who detects whom ---
 
-    @pytest.mark.db
-    def test_agent1_detects_all_others(self):
+    def test_agent1_detects_all_others(self, page: Page, base_url):
         """Finder_1 (enq=7) detects all other agents on different controllers.
 
         Scraped from `select#enemyWorkersSelect` on the worker action page —
