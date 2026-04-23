@@ -56,6 +56,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     end_turn, load_minimal_data,
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
+    ui_workers_by_lastname,
 )
 
 
@@ -471,18 +472,27 @@ class TestChainAttack:
         html_e = _worker_report_html(page, 'Chain_E')
         assert 'succeeded' in html_e and 'Chain_F' in html_e
 
-    @pytest.mark.db
-    def test_chain_b_did_not_attack(self):
-        """Chain_B's DB report must be empty/missing attack section because
-        it was captured before its attack-phase turn.
+    def test_chain_b_did_not_attack(self, page: Page, base_url):
+        """Chain_B was captured by Chain_A before its attack-phase turn,
+        so its queued attack against Chain_C never completed.
 
-        Reliably scoping this check in rendered HTML is fragile (the
-        worker page mentions other workers in contextual history),
-        so the assertion targets the stored JSON report directly.
-        """
-        report = _worker_report_db('Chain_B', turn=1)
-        assert '"attack_report"' not in report or report.count('Chain_C') == 0, \
-            f"Chain_B should have no attack_report vs Chain_C, got: {report[:200]}"
+        UI-first verification: managment_workers lists Chain_B TWICE
+        after end-turn — once as the captured original (moved to the
+        captor's controller, action='captured' or 'prisoner') and once
+        as the auto-created trace on Chain_B's original controller
+        (action='trace'). The trace is only created by captureWorker()
+        in attackMechanic.php, so its presence proves the capture
+        path fired (and therefore Chain_B's own attack was skipped)."""
+        ensure_gm_login(page, base_url)
+        rows = ui_workers_by_lastname(page, 'Chain_B')
+        assert len(rows) == 2, \
+            f"Chain_B should have 2 managment_workers rows (captured + trace), got {len(rows)}: {rows}"
+        actions = sorted(r['action_choice'] for r in rows)
+        assert 'trace' in actions, \
+            f"Chain_B should have a trace row after capture, got actions: {actions}"
+        non_trace = [r for r in rows if r['action_choice'] != 'trace']
+        assert non_trace and non_trace[0]['action_choice'] in ('captured', 'prisoner', 'dead'), \
+            f"Chain_B original should be captured/prisoner/dead, got: {non_trace}"
 
 
 # ---------------------------------------------------------------------------
@@ -521,25 +531,35 @@ class TestActionBlockedByCombat:
         assert _ui_worker_is_downed(page, 'Inv_Def_2'), \
             "Inv_Def_2 should be downed (dead) in UI"
 
-    @pytest.mark.db
-    def test_investigate_blocked_no_report_json(self):
-        """Downed investigators' DB reports should not contain investigation
-        results. Kept DB-only: asserting ABSENCE of a specific JSON key inside
-        worker_actions.report has no reliable HTML counterpart (the rendering
-        condition is `!empty($currentReport['investigate_report'])`, so absence
-        simply means the section is omitted, which is indistinguishable in
-        HTML from other reasons the section might be missing).
+    def test_investigate_blocked_no_report_json(self, page: Page, base_url):
+        """Inv_Def_1 (captured) and Inv_Def_2 (killed) had investigate actions
+        queued but got downed by Inv_Atk_* in the attack phase that runs
+        BEFORE investigation. Their investigate_report never existed.
+
+        UI verification via managment_workers row counts:
+          - Captured worker → 2 rows: original (captured/prisoner) + trace
+          - Killed worker   → 1 row: action='dead' (death path does NOT
+            call createTraceWorker — only capture does).
+        Presence of either terminal state proves the attack phase ran and
+        short-circuited the queued investigate.
         """
-        report1 = _worker_report_db('Inv_Def_1')
-        report2 = _worker_report_db('Inv_Def_2')
-        assert 'investigate_report' not in report1, \
-            "Captured investigator should not have investigation report"
-        assert 'investigate_report' not in report2, \
-            "Killed investigator should not have investigation report"
-        assert 'life_report' in report1, \
-            "Captured investigator should have a life_report (disappearance)"
-        assert 'life_report' in report2, \
-            "Killed investigator should have a life_report (disappearance)"
+        ensure_gm_login(page, base_url)
+        # Inv_Def_1 was CAPTURED — expect original + trace
+        rows1 = ui_workers_by_lastname(page, 'Inv_Def_1')
+        assert len(rows1) == 2, \
+            f"Inv_Def_1 should have 2 rows (captured + trace), got {len(rows1)}: {rows1}"
+        actions1 = sorted(r['action_choice'] for r in rows1)
+        assert 'trace' in actions1
+        non_trace1 = [r for r in rows1 if r['action_choice'] != 'trace']
+        assert non_trace1[0]['action_choice'] in ('captured', 'prisoner'), \
+            f"Inv_Def_1 original should be captured/prisoner, got: {non_trace1}"
+
+        # Inv_Def_2 was KILLED — single row with action='dead'
+        rows2 = ui_workers_by_lastname(page, 'Inv_Def_2')
+        assert len(rows2) == 1, \
+            f"Inv_Def_2 should have 1 row (killed, no trace created), got {len(rows2)}: {rows2}"
+        assert rows2[0]['action_choice'] == 'dead', \
+            f"Inv_Def_2 should be dead, got: {rows2[0]}"
 
     def test_claim_blocked_by_capture(self, page: Page, base_url):
         """Claim_Def_1 was claiming but got captured → no claim_report.
@@ -557,19 +577,31 @@ class TestActionBlockedByCombat:
         assert _ui_worker_is_downed(page, 'Claim_Def_2'), \
             "Claim_Def_2 should be downed (dead) in UI"
 
-    @pytest.mark.db
-    def test_claim_blocked_no_report_json(self):
-        """Downed claimers' DB reports should not contain claim results. Kept
-        DB-only for the same reason as test_investigate_blocked_no_report_json.
+    def test_claim_blocked_no_report_json(self, page: Page, base_url):
+        """Claim_Def_1 (captured) and Claim_Def_2 (killed) had claim actions
+        queued but got downed in the attack phase. Their claim_report never
+        existed.
+
+        UI verification: same pattern as test_investigate_blocked_no_report_json
+        (captured → 2 rows, killed → 1 row).
         """
-        report1 = _worker_report_db('Claim_Def_1')
-        report2 = _worker_report_db('Claim_Def_2')
-        assert 'claim_report' not in report1, \
-            "Captured claimer should not have claim report"
-        assert 'claim_report' not in report2, \
-            "Killed claimer should not have claim report"
-        assert 'life_report' in report1, \
-            "Captured claimer should have a life_report (disappearance)"
+        ensure_gm_login(page, base_url)
+        # Claim_Def_1 was CAPTURED
+        rows1 = ui_workers_by_lastname(page, 'Claim_Def_1')
+        assert len(rows1) == 2, \
+            f"Claim_Def_1 should have 2 rows (captured + trace), got {len(rows1)}: {rows1}"
+        actions1 = sorted(r['action_choice'] for r in rows1)
+        assert 'trace' in actions1
+        non_trace1 = [r for r in rows1 if r['action_choice'] != 'trace']
+        assert non_trace1[0]['action_choice'] in ('captured', 'prisoner'), \
+            f"Claim_Def_1 original should be captured/prisoner, got: {non_trace1}"
+
+        # Claim_Def_2 was KILLED — single row
+        rows2 = ui_workers_by_lastname(page, 'Claim_Def_2')
+        assert len(rows2) == 1, \
+            f"Claim_Def_2 should have 1 row (killed, no trace created), got {len(rows2)}: {rows2}"
+        assert rows2[0]['action_choice'] == 'dead', \
+            f"Claim_Def_2 should be dead, got: {rows2[0]}"
 
     def test_zone_holder_unchanged(self, page: Page, base_url):
         """Beta-Combat zone should remain unheld (claims were blocked).

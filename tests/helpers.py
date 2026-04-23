@@ -416,6 +416,16 @@ def ui_zone_names(page: Page, base_url: str = None):
     return {z["name"] for z in ui_all_zones(page, base_url)}
 
 
+def ui_workers_by_lastname(page: Page, lastname: str, base_url: str = None):
+    """Return ALL managment_workers rows matching `lastname`.
+
+    Useful for verifying that a captured worker appears twice (the
+    original row moved to the captor's controller with action='captured'
+    or 'prisoner', and the auto-created trace row on the original
+    controller with action='trace')."""
+    return [w for w in ui_all_workers(page, base_url) if w["lastname"] == lastname]
+
+
 def ui_detected_enemies_of(page: Page, searcher_lastname: str, base_url: str = None):
     """Return the set of enemy worker lastnames that `searcher_lastname` has
     detected in its zone (from this controller's perspective).
