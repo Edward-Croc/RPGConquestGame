@@ -52,7 +52,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
-    ui_controller_id, ui_zone_id,
+    ui_controller_id, ui_zone_id, ui_controller_counters,
 )
 
 
@@ -235,7 +235,7 @@ def recruitment_scenario(browser):
 
     # Phase 2: Alpha uses first-come (no base required)
     _do_first_come(page, 'Alpha')
-    _snapshot['alpha_t0_after_first_come_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
+    _snapshot['alpha_t0_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_workers_ui'] = _count_worker_cards_in_html(
         _snapshot['alpha_t0_after_first_come_html']
@@ -260,7 +260,7 @@ def recruitment_scenario(browser):
     page.locator("select[name='zone_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
     page.wait_for_load_state("load")
-    _snapshot['alpha_t0_after_recruit_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
+    _snapshot['alpha_t0_after_recruit_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t0_after_recruit_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_recruit_workers_ui'] = _count_worker_cards_in_html(
         _snapshot['alpha_t0_after_recruit_html']
@@ -281,15 +281,15 @@ def recruitment_scenario(browser):
 
     # ---- TURN 1 ----
 
-    _snapshot['alpha_t1_before_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
+    _snapshot['alpha_t1_before_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t1_before_html'] = _workers_page_html(page, 'Alpha')
 
     # Recruit again on turn 1 (both paths)
     _do_first_come(page, 'Alpha')
-    _snapshot['alpha_t1_after_first_come_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
+    _snapshot['alpha_t1_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
 
     _do_regular_recruit(page, 'Alpha')
-    _snapshot['alpha_t1_after_recruit_counters'] = (_controller_counters('Alpha') if DB_AVAILABLE else None)
+    _snapshot['alpha_t1_after_recruit_counters'] = ui_controller_counters(page, 'Alpha')
     # UI-side final worker count (post all recruitment phases).
     _snapshot['alpha_t1_final_workers_ui'] = _count_worker_cards_in_html(
         _workers_page_html(page, 'Alpha')
@@ -459,13 +459,11 @@ class TestFirstComeRecruitment:
         assert "Prendre le premier venu" not in html, \
             "First-come button should be hidden after limit reached on same turn"
 
-    @pytest.mark.db
     def test_first_come_increments_counter(self):
-        """Belt-and-braces: turn_firstcome_workers counter should be 1 after first-come.
+        """turn_firstcome_workers counter should be 1 after first-come.
 
-        Kept under @pytest.mark.db to verify the underlying counter mechanic —
-        the UI test above confirms the user-visible effect (button hidden)
-        but this confirms the exact DB state that drives it.
+        Scraped from /controllers/managment.php (admin table, Turn Recruited
+        Firstcome Workers column) so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t0_after_first_come_counters']
         assert counters['turn_firstcome_workers'] == 1, \
@@ -497,12 +495,10 @@ class TestRegularRecruitment:
         assert "Recruter un serviteur" not in html, \
             "Recruit button should be hidden after start_workers exhausted"
 
-    @pytest.mark.db
     def test_recruit_increments_counter(self):
-        """Belt-and-braces: turn_recruited_workers should be 1 after regular recruitment.
+        """turn_recruited_workers should be 1 after regular recruitment.
 
-        Kept under @pytest.mark.db to confirm the exact counter state — the
-        UI test above only proves the resulting button is hidden.
+        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t0_after_recruit_counters']
         assert counters['turn_recruited_workers'] == 1, \
@@ -545,24 +541,19 @@ class TestLockUnlockAcrossTurns:
             f"After 4 recruitment attempts, Alpha's viewAll should show " \
             f"> {baseline_ui} worker cards, got {final_ui}"
 
-    @pytest.mark.db
     def test_counters_reset_on_turn_1(self):
-        """Belt-and-braces: at start of turn 1, both counters should be 0.
+        """At start of turn 1, both counters should be 0.
 
-        Kept under @pytest.mark.db as the underlying DB state check — the
-        UI tests above confirm the user-visible effect (buttons visible).
+        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t1_before_counters']
         assert counters['turn_firstcome_workers'] == 0
         assert counters['turn_recruited_workers'] == 0
 
-    @pytest.mark.db
     def test_turn_1_counters_increment(self):
-        """Belt-and-braces: after both recruitments on turn 1, counters should be 1.
+        """After both recruitments on turn 1, counters should be 1.
 
-        Kept under @pytest.mark.db because button-disappearance on turn 1 is
-        already covered indirectly — this asserts the exact counter values
-        the game logic depends on.
+        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t1_after_recruit_counters']
         assert counters['turn_firstcome_workers'] == 1

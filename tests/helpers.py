@@ -285,3 +285,95 @@ def ui_zone_id(page: Page, zone_name: str, base_url: str = None):
     raise AssertionError(
         f"Zone with name '{zone_name}' not found in managment_zones view"
     )
+
+
+def _scrape_location_discovery_flags(page: Page, base_url: str = None):
+    """Scrape /zones/managment_locations.php into a nested dict:
+      {location_name: {controller_lastname: {known: bool, secret: bool}}}
+
+    The admin page renders one block per location with
+    <li class="controller-discovery-flag"
+        data-controller-name="X" data-known="true|false" data-secret="true|false">
+    per controller. Stable attributes — no emoji/text matching needed.
+    """
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/zones/managment_locations.php")
+    page.wait_for_load_state("load")
+    result = {}
+    blocks = page.locator("div.managment div[style*='border']").all()
+    if not blocks:
+        raise AssertionError("No location blocks rendered on managment_locations.php")
+    for block in blocks:
+        h3s = block.locator("h3").all()
+        if not h3s:
+            continue
+        name = (h3s[0].inner_text() or "").split(" (discovery")[0].strip()
+        flags = block.locator("li.controller-discovery-flag").all()
+        for li in flags:
+            ctrl = li.get_attribute("data-controller-name") or ""
+            if not ctrl:
+                continue
+            result.setdefault(name, {})[ctrl] = {
+                "known": li.get_attribute("data-known") == "true",
+                "secret": li.get_attribute("data-secret") == "true",
+            }
+    return result
+
+
+def ui_known_locations_for_controller(page: Page, controller_lastname: str, base_url: str = None):
+    """Return the set of location names known by a controller.
+
+    Reads data-known="true" from the structured li.controller-discovery-flag
+    elements on /zones/managment_locations.php."""
+    data = _scrape_location_discovery_flags(page, base_url)
+    return {
+        loc for loc, ctrls in data.items()
+        if ctrls.get(controller_lastname, {}).get("known")
+    }
+
+
+def ui_known_secret_locations_for_controller(page: Page, controller_lastname: str, base_url: str = None):
+    """Return the set of location names for which this controller has
+    discovered the SECRET (found_secret=1 in controller_known_locations).
+
+    Reads data-secret="true" from li.controller-discovery-flag."""
+    data = _scrape_location_discovery_flags(page, base_url)
+    return {
+        loc for loc, ctrls in data.items()
+        if ctrls.get(controller_lastname, {}).get("secret")
+    }
+
+
+def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
+    """Scrape /controllers/managment.php for one controller's counters.
+
+    Returns a dict matching the DB helper's keys:
+      {turn_recruited_workers: int, turn_firstcome_workers: int,
+       recruited_workers: int, can_build_base: bool, secret_controller: bool}
+
+    Locator uses tr.controller-row[data-controller-name=X] and per-cell
+    td[data-field=Y] — stable against text/emoji changes.
+    Raises AssertionError if lastname not found."""
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/controllers/managment.php")
+    page.wait_for_load_state("load")
+    row = page.locator(f'tr.controller-row[data-controller-name="{lastname}"]')
+    if row.count() == 0:
+        raise AssertionError(
+            f"Controller '{lastname}' not found in controllers/managment.php"
+        )
+    def _cell(field):
+        return (row.locator(f'td[data-field="{field}"]').inner_text() or "").strip()
+    def _as_int(s):
+        try:
+            return int(s)
+        except (ValueError, TypeError):
+            return 0
+    return {
+        "lastname": lastname,
+        "secret_controller": "✔" in _cell("secret_controller"),
+        "can_build_base": "✔" in _cell("can_build_base"),
+        "recruited_workers": _as_int(_cell("recruited_workers")),
+        "turn_recruited_workers": _as_int(_cell("turn_recruited_workers")),
+        "turn_firstcome_workers": _as_int(_cell("turn_firstcome_workers")),
+    }

@@ -160,15 +160,15 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
             $players->execute(['controller_id' => $controller['id']]);
             $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
 
-            echo sprintf('<tr>
-                <td>%2$s</td>
-                <td>%3$s</td>
-                <td>%4$s</td>
-                <td>%5$s</td>
-                <td>%6$s</td>
-                <td>%7$s</td>
-                <td>%8$s</td>
-                <td>
+            echo sprintf('<tr class="controller-row" data-controller-id="%1$s" data-controller-name="%2$s">
+                <td data-field="lastname">%2$s</td>
+                <td data-field="secret_controller">%3$s</td>
+                <td data-field="can_build_base">%4$s</td>
+                <td data-field="recruited_workers">%5$s</td>
+                <td data-field="turn_recruited_workers">%6$s</td>
+                <td data-field="turn_firstcome_workers">%7$s</td>
+                <td data-field="players">%8$s</td>
+                <td data-field="actions">
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="toggle_base_controller_id" value="%1$s"/>
                     <button type="submit" name="toggle_base">Change Can Build Base status</button>

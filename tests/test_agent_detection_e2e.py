@@ -31,6 +31,8 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data,
     ui_controller_id, ui_worker_id, ui_worker_controller_id,
+    ui_known_locations_for_controller,
+    ui_known_secret_locations_for_controller,
 )
 
 
@@ -452,11 +454,16 @@ class TestLocationDetection:
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert 'Location A' not in report_section
 
-    @pytest.mark.db
-    def test_unfound_not_in_known_locations(self):
-        """Searcher_1: not in controller_known_locations (DB structural check)."""
-        locs = get_location_discoveries_for_controller('Alpha')
-        assert not any(r['name'] == 'Location A' for r in locs)
+    def test_unfound_not_in_known_locations(self, page: Page, base_url):
+        """Searcher_1 (Alpha): Location A is NOT in Alpha's known-locations set.
+
+        Scraped from /zones/managment_locations.php (admin "Discovered by"
+        list). UI-runnable under UI_ONLY=1.
+        """
+        ensure_gm_login(page, base_url)
+        known = ui_known_locations_for_controller(page, 'Alpha')
+        assert 'Location A' not in known, \
+            f"Alpha should not know Location A, known: {known}"
 
     # --- Level 0: name only (Finder_5, enq=4, diff=0) ---
 
@@ -468,11 +475,14 @@ class TestLocationDetection:
         assert 'test location' not in report_section.lower(), \
             "Report section should NOT render location description at level 0"
 
-    @pytest.mark.db
-    def test_name_only_not_in_known_locations(self):
-        """Finder_5: NOT in controller_known_locations (requires diff>=1)."""
-        locs = get_location_discoveries_for_controller('Golf')
-        assert not any(r['name'] == 'Location A' for r in locs)
+    def test_name_only_not_in_known_locations(self, page: Page, base_url):
+        """Finder_5 (Golf): NOT in Golf's known-locations set (requires diff>=1).
+
+        Scraped from /zones/managment_locations.php — UI-runnable."""
+        ensure_gm_login(page, base_url)
+        known = ui_known_locations_for_controller(page, 'Golf')
+        assert 'Location A' not in known, \
+            f"Golf should not know Location A at diff=0, known: {known}"
 
     def test_name_only_not_on_zones_page(self, page: Page, base_url):
         """Golf (name-only) should NOT see Location A on zones page."""
@@ -494,13 +504,19 @@ class TestLocationDetection:
         assert 'Secret details' not in report_section, \
             "Report section should NOT render secret at level 1"
 
-    @pytest.mark.db
-    def test_desc_in_known_locations_no_secret(self):
-        """Finder_4: in controller_known_locations with found_secret=0."""
-        locs = get_location_discoveries_for_controller('Foxtrot')
-        match = [r for r in locs if r['name'] == 'Location A']
-        assert len(match) == 1, "Foxtrot should have Location A in known_locations"
-        assert match[0]['found_secret'] == 0, "found_secret should be 0 at level 1"
+    def test_desc_in_known_locations_no_secret(self, page: Page, base_url):
+        """Finder_4 (Foxtrot) at diff=1: knows Location A but NOT the secret.
+
+        Both flags scraped from /zones/managment_locations.php via
+        data-known / data-secret attributes — UI-runnable.
+        """
+        ensure_gm_login(page, base_url)
+        known = ui_known_locations_for_controller(page, 'Foxtrot')
+        assert 'Location A' in known, \
+            f"Foxtrot should know Location A at diff=1, known: {known}"
+        known_secret = ui_known_secret_locations_for_controller(page, 'Foxtrot')
+        assert 'Location A' not in known_secret, \
+            f"Foxtrot at diff=1 should NOT have the secret, secret_known: {known_secret}"
 
     def test_desc_on_zones_page(self, page: Page, base_url):
         """Foxtrot should see Location A on zones page."""
@@ -527,13 +543,19 @@ class TestLocationDetection:
         assert 'test location' in html.lower()
         assert 'Secret details' in html, "Page should render hidden_description"
 
-    @pytest.mark.db
-    def test_secret_in_known_locations_with_flag(self):
-        """Finder_1: in controller_known_locations with found_secret=1."""
-        locs = get_location_discoveries_for_controller('Charlie')
-        match = [r for r in locs if r['name'] == 'Location A']
-        assert len(match) == 1
-        assert match[0]['found_secret'] == 1, "found_secret should be 1 at level 2"
+    def test_secret_in_known_locations_with_flag(self, page: Page, base_url):
+        """Finder_1 (Charlie) at diff=2: knows Location A AND has the secret.
+
+        Both flags scraped from /zones/managment_locations.php via
+        data-known / data-secret attributes — UI-runnable.
+        """
+        ensure_gm_login(page, base_url)
+        known = ui_known_locations_for_controller(page, 'Charlie')
+        assert 'Location A' in known, \
+            f"Charlie should know Location A at diff=2, known: {known}"
+        known_secret = ui_known_secret_locations_for_controller(page, 'Charlie')
+        assert 'Location A' in known_secret, \
+            f"Charlie at diff=2 should have the secret, secret_known: {known_secret}"
 
     def test_secret_on_zones_page(self, page: Page, base_url):
         """Charlie should see Location A on zones page (in hidden description div)."""
