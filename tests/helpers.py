@@ -497,6 +497,24 @@ def ui_power_options_by_type(page: Page, base_url: str = None):
     return result
 
 
+def ui_all_controllers(page: Page, base_url: str = None):
+    """Return the set of all controller lastnames via
+    /controllers/managment.php.
+
+    Reads tr.controller-row elements from the Controller Details admin
+    table; each row carries data-controller-name=LastName.
+    """
+    url = base_url or PHP_BASE_URL
+    page.goto(f"{url}/controllers/managment.php")
+    page.wait_for_load_state("load")
+    rows = page.locator("tr.controller-row").all()
+    return {
+        (row.get_attribute("data-controller-name") or "").strip()
+        for row in rows
+        if (row.get_attribute("data-controller-name") or "").strip()
+    }
+
+
 def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
     """Scrape /controllers/managment.php for one controller's counters.
 

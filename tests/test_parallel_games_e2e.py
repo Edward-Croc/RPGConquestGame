@@ -32,7 +32,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     login_as, end_turn, load_scenario_via_admin, load_minimal_data,
-    ui_worker_count, ui_zone_names,
+    ui_worker_count, ui_zone_names, ui_all_controllers,
 )
 
 
@@ -245,30 +245,47 @@ class TestShodoshimaInSecondary:
 # Tests: cross-game isolation
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestGameIsolation:
-    """Verify that each game's data is isolated in its own prefixed tables."""
+    """Verify that each game's data is isolated in its own prefixed tables.
 
-    def test_secondary_controllers_not_in_primary(self):
+    Controller lastname membership scraped from each game's
+    /controllers/managment.php admin table (tr.controller-row
+    data-controller-name). Uses isolated browser contexts so the two
+    games' sessions don't interfere.
+    """
+
+    def _scrape_both(self, browser, base_url):
+        """Return (primary_controllers, secondary_controllers) sets."""
+        ctx1 = browser.new_context()
+        p1 = ctx1.new_page()
+        login_as(p1, base_url, "gm", "orga")
+        primary = ui_all_controllers(p1, base_url=base_url)
+        ctx1.close()
+        ctx2 = browser.new_context()
+        p2 = ctx2.new_page()
+        login_as(p2, PHP_BASE_URL_SECONDARY, "gm", "orga")
+        secondary = ui_all_controllers(p2, base_url=PHP_BASE_URL_SECONDARY)
+        ctx2.close()
+        return primary, secondary
+
+    def test_secondary_controllers_not_in_primary(self, browser, base_url):
         """Shikoku controllers (e.g. 'Shikoku (四国)') should not appear in primary."""
-        secondary = set(_controller_lastnames(SECONDARY_PREFIX))
-        primary = set(_controller_lastnames(PRIMARY_PREFIX))
+        primary, secondary = self._scrape_both(browser, base_url)
         assert secondary & primary == set(), \
             f"Controllers leaked between games: intersection={secondary & primary}"
 
-    def test_primary_controllers_not_in_secondary(self):
+    def test_primary_controllers_not_in_secondary(self, browser, base_url):
         """TestConfig controllers (Alpha..Golf) should not appear in secondary."""
-        secondary = set(_controller_lastnames(SECONDARY_PREFIX))
-        primary = set(_controller_lastnames(PRIMARY_PREFIX))
+        primary, secondary = self._scrape_both(browser, base_url)
         nato = {'Alpha', 'Beta', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf'}
         assert not (nato & secondary), \
             f"TestConfig NATO controllers leaked into secondary: {nato & secondary}"
         assert nato <= primary, \
             f"Primary should have all NATO controllers: missing {nato - primary}"
 
-    def test_secondary_has_shikoku_controller(self):
+    def test_secondary_has_shikoku_controller(self, browser, base_url):
         """Shikoku controller must be in secondary."""
-        secondary = _controller_lastnames(SECONDARY_PREFIX)
+        _, secondary = self._scrape_both(browser, base_url)
         assert 'Shikoku (四国)' in secondary, \
             f"Shikoku controller not found in secondary: {secondary}"
 
