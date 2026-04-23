@@ -273,7 +273,6 @@ class TestBDDExport:
 # Tests: BDD Import
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestBDDImport:
     """Verify the BDD import form is present and accepts files."""
 
