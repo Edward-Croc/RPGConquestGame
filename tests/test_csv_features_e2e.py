@@ -26,7 +26,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data,
-    ui_worker_count, ui_power_options_by_type,
+    ui_worker_count, ui_power_options_by_type, ui_all_workers,
 )
 
 
@@ -325,20 +325,28 @@ class TestLoadWorkersCSV:
                 f"Worker '{r['lastname']}' has {r['action_count']} turn-0 actions"
         conn.close()
 
-    @pytest.mark.db
-    def test_specific_agent_controller_mapping(self):
-        """Verify Finder_1 -> Charlie, Searcher_1 -> Alpha, etc. match the CSV."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT w.lastname AS worker, c.lastname AS controller
-            FROM `{GAME_PREFIX}workers` w
-            JOIN `{GAME_PREFIX}controller_worker` cw ON cw.worker_id = w.id
-            JOIN `{GAME_PREFIX}controllers` c ON c.id = cw.controller_id
-            ORDER BY w.lastname
-        """)
-        mapping = {r['worker']: r['controller'] for r in cursor.fetchall()}
-        conn.close()
+    def test_specific_agent_controller_mapping(self, page: Page, base_url):
+        """Verify Finder_1 -> Charlie, Searcher_1 -> Alpha, etc. match the CSV.
+
+        Cross-references `/workers/managment_workers.php` (worker →
+        controller_id) with `select#controllerSelect` on accueil.php
+        (controller_id → lastname) to build the same mapping the DB
+        query produced. UI-runnable.
+        """
+        ensure_gm_login(page, base_url)
+        # Build controller_id → lastname map from accueil's controllerSelect
+        page.goto(f"{base_url}/base/accueil.php")
+        page.wait_for_load_state("networkidle")
+        id_to_lastname = {}
+        for opt in page.locator("select#controllerSelect option").all():
+            val = opt.get_attribute("value") or ""
+            text = (opt.inner_text() or "").strip()
+            if val and text:
+                id_to_lastname[int(val)] = text.split()[-1]  # "Lord Alpha" → "Alpha"
+
+        # Build worker → controller lastname map via managment_workers
+        workers = ui_all_workers(page, base_url=base_url)
+        mapping = {w['lastname']: id_to_lastname.get(w['controller_id']) for w in workers}
 
         expected = {
             # Detection agents (Alpha-Investigation zone)
@@ -360,35 +368,23 @@ class TestLoadWorkersCSV:
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
-    @pytest.mark.db
-    def test_searcher1_has_investigate_action(self):
-        """Searcher_1 CSV has action_choice='investigate' — should appear in DB."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT wa.action_choice FROM `{GAME_PREFIX}worker_actions` wa
-            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE w.lastname = 'Searcher_1' AND wa.turn_number = 0
-        """)
-        action = cursor.fetchone()['action_choice']
-        conn.close()
-        assert action == 'investigate'
+    def test_searcher1_has_investigate_action(self, page: Page, base_url):
+        """Searcher_1 CSV has action_choice='investigate' — managment_workers
+        'Ongoing action' column surfaces the current-turn action_choice."""
+        ensure_gm_login(page, base_url)
+        workers = {w['lastname']: w for w in ui_all_workers(page, base_url=base_url)}
+        assert 'Searcher_1' in workers, f"Searcher_1 not in managment_workers: {list(workers)[:5]}..."
+        assert workers['Searcher_1']['action_choice'] == 'investigate', \
+            f"Searcher_1 action_choice should be 'investigate', got {workers['Searcher_1']}"
 
-    @pytest.mark.db
-    def test_other_agents_have_passive_action(self):
-        """All other agents should have action_choice='passive'."""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT w.lastname, wa.action_choice
-            FROM `{GAME_PREFIX}worker_actions` wa
-            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE wa.turn_number = 0 AND w.lastname != 'Searcher_1'
-        """)
-        for r in cursor.fetchall():
-            assert r['action_choice'] == 'passive', \
-                f"Worker '{r['lastname']}' has action '{r['action_choice']}', expected 'passive'"
-        conn.close()
+    def test_other_agents_have_passive_action(self, page: Page, base_url):
+        """All other agents should have action_choice='passive' at turn 0."""
+        ensure_gm_login(page, base_url)
+        for w in ui_all_workers(page, base_url=base_url):
+            if w['lastname'] == 'Searcher_1':
+                continue
+            assert w['action_choice'] == 'passive', \
+                f"Worker '{w['lastname']}' has action '{w['action_choice']}', expected 'passive'"
 
     @pytest.mark.db
     def test_pipe_separated_powers_parsed(self):

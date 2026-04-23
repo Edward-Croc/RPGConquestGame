@@ -44,15 +44,33 @@ PRIMARY_PREFIX = "game_test_"
 SECONDARY_PREFIX = "game_test2_"
 
 
+# Probe the secondary URL at module load. If it doesn't serve a login page,
+# skip the whole module — the parallel-games setup requires both URLs, and a
+# target like the production demo typically only hosts one game path.
+def _secondary_reachable():
+    import urllib.request
+    try:
+        with urllib.request.urlopen(
+            f"{PHP_BASE_URL_SECONDARY}/connection/loginForm.php", timeout=5
+        ) as r:
+            body = r.read().decode("utf-8", "replace")
+            return 'name="username"' in body
+    except Exception:
+        return False
+
+
+if not _secondary_reachable():
+    pytest.skip(
+        f"Parallel-games setup unavailable: {PHP_BASE_URL_SECONDARY} "
+        f"does not serve a login form. These tests require a dual-mount "
+        f"Docker Compose setup (local). Skipping module.",
+        allow_module_level=True,
+    )
+
+
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
-
-
-@pytest.fixture(autouse=True)
-def _require_db():
-    if not DB_AVAILABLE:
-        pytest.skip("No local MySQL available")
 
 
 # ---------------------------------------------------------------------------
@@ -176,17 +194,19 @@ class TestBothGamesLoaded:
         count = ui_worker_count(page, base_url=base_url)
         assert count == 26, f"Expected 26 TestConfig workers, got {count}"
 
-    @pytest.mark.db
-    def test_secondary_has_shikoku_zones(self):
-        """Secondary has Shikoku zones (11 total)."""
-        assert _count(SECONDARY_PREFIX, 'zones') == 11, \
-            f"Expected 11 Shikoku zones, got {_count(SECONDARY_PREFIX, 'zones')}"
+    def test_secondary_has_shikoku_zones(self, page: Page, base_url):
+        """Secondary has Shikoku zones (11 total). Counted via managment_zones."""
+        login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
+        zones = ui_zone_names(page, base_url=PHP_BASE_URL_SECONDARY)
+        assert len(zones) == 11, \
+            f"Expected 11 Shikoku zones, got {len(zones)}: {zones}"
 
-    @pytest.mark.db
-    def test_primary_has_testconfig_zones(self):
-        """Primary has the 7 TestConfig zones (harmonized Greek names)."""
-        assert _count(PRIMARY_PREFIX, 'zones') == 7, \
-            f"Expected 7 TestConfig zones, got {_count(PRIMARY_PREFIX, 'zones')}"
+    def test_primary_has_testconfig_zones(self, page: Page, base_url):
+        """Primary has the 7 TestConfig zones. Counted via managment_zones."""
+        login_as(page, base_url, "gm", "orga")
+        zones = ui_zone_names(page, base_url=base_url)
+        assert len(zones) == 7, \
+            f"Expected 7 TestConfig zones, got {len(zones)}: {zones}"
 
 
 class TestShodoshimaInSecondary:
@@ -199,12 +219,12 @@ class TestShodoshimaInSecondary:
         assert 'Ile de Shōdoshima' in zones, \
             f"Shodoshima zone missing from secondary game, got zones: {zones}"
 
-    @pytest.mark.db
-    def test_shodoshima_not_in_primary(self):
-        """Primary should NOT have Shodoshima — proves isolation."""
-        zones = _zone_names(PRIMARY_PREFIX)
+    def test_shodoshima_not_in_primary(self, page: Page, base_url):
+        """Primary should NOT have Shodoshima — proves isolation (via managment_zones)."""
+        login_as(page, base_url, "gm", "orga")
+        zones = ui_zone_names(page, base_url=base_url)
         assert 'Ile de Shōdoshima' not in zones, \
-            "Shodoshima leaked into primary (isolation broken)"
+            f"Shodoshima leaked into primary (isolation broken): zones={zones}"
 
     @pytest.mark.db
     def test_shodoshima_has_locations(self):
@@ -252,10 +272,24 @@ class TestGameIsolation:
         assert 'Shikoku (四国)' in secondary, \
             f"Shikoku controller not found in secondary: {secondary}"
 
-    def test_zone_names_disjoint(self):
-        """Zone name sets should be disjoint — each scenario uses distinct names."""
-        z_secondary = set(_zone_names(SECONDARY_PREFIX))
-        z_primary = set(_zone_names(PRIMARY_PREFIX))
+    def test_zone_names_disjoint(self, browser, base_url):
+        """Zone name sets should be disjoint — each scenario uses distinct names.
+
+        Scrapes managment_zones on both URLs via isolated browser contexts
+        so session switching for each login stays isolated.
+        """
+        ctx1 = browser.new_context()
+        p1 = ctx1.new_page()
+        login_as(p1, base_url, "gm", "orga")
+        z_primary = ui_zone_names(p1, base_url=base_url)
+        ctx1.close()
+
+        ctx2 = browser.new_context()
+        p2 = ctx2.new_page()
+        login_as(p2, PHP_BASE_URL_SECONDARY, "gm", "orga")
+        z_secondary = ui_zone_names(p2, base_url=PHP_BASE_URL_SECONDARY)
+        ctx2.close()
+
         assert z_secondary & z_primary == set(), \
             f"Zone names leaked between games: intersection={z_secondary & z_primary}"
 
