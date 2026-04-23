@@ -1,0 +1,2 @@
+ressource_name,presentation,stored_text,is_rollable,is_stored,base_building_cost,base_moving_cost,location_repaire_cost
+Gold,Gold resource for testing,Stored gold,0,1,10,5,3

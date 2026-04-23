@@ -15,8 +15,9 @@ function updateRessources($pdo, $mechanics) {
      *    - If ressource_config.is_rollable is FALSE, set amount to 0
      *    - Add end_turn_gain to amount
     */
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Get all controllers from controllers table
-    $sql = "SELECT * FROM controllers";
+    $sql = "SELECT * FROM {$prefix}controllers";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -36,8 +37,9 @@ function updateRessources($pdo, $mechanics) {
             }
             //    - Add end_turn_gain to amount
             $controllerRessource['amount'] += $controllerRessource['end_turn_gain'];
+            $prefix = $_SESSION['GAME_PREFIX'];
             // Update the ressources_controller table
-            $sql = "UPDATE controller_ressources SET amount = :amount, amount_stored = :amount_stored WHERE id = :id";
+            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount, amount_stored = :amount_stored WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':amount_stored' => $controllerRessource['amount_stored'], ':id' => $controllerRessource['rc_id']]);
             if (!$stmt->rowCount()) {
@@ -58,9 +60,10 @@ function updateRessources($pdo, $mechanics) {
  * 
  */
 function getRessources($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "SELECT rc.id as rc_id, rc.*, r.id as ressource_id, r.*
-        FROM controller_ressources rc
-        JOIN ressources_config r ON rc.ressource_id = r.id
+        FROM {$prefix}controller_ressources rc
+        JOIN {$prefix}ressources_config r ON rc.ressource_id = r.id
         WHERE rc.controller_id = :controller_id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':controller_id' => $controller_id]);
@@ -104,7 +107,8 @@ function spendRessourcesToBuildBase($pdo, $controller_id) {
             if ($controllerRessource['base_building_cost'] > 0) {
                 $controllerRessource['amount'] -= $controllerRessource['base_building_cost'];
             }
-            $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
             if (!$stmt->rowCount()) {
@@ -171,12 +175,13 @@ function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
  */
 function spendRessourcesToMoveBase($pdo, $controller_id) {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
+        $prefix = $_SESSION['GAME_PREFIX'];
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
             if ($controllerRessource['base_moving_cost'] > 0) {
                 $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
             }
-            $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
             if (!$stmt->rowCount()) {
@@ -249,7 +254,8 @@ function spendRessourcesToRepairLocation($pdo, $controller_id) {
             if ($controllerRessource['location_repaire_cost'] > 0) {
                 $controllerRessource['amount'] -= $controllerRessource['location_repaire_cost'];
             }
-            $sql = "UPDATE controller_ressources SET amount = :amount WHERE id = :id";
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
             if (!$stmt->rowCount()) {

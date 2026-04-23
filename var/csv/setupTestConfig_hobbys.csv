@@ -1,0 +1,14 @@
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+"Keen Eye"," perceptive investigator",1,0,0,,Hobby
+"Sharp Instinct"," intuitive investigator",1,0,0,,Hobby
+"Sixth Sense"," master investigator, fragile",2,0,-1,,Hobby
+"Steady Arm"," balanced fighter",0,1,1,,Hobby
+"Combat Drill"," trained fighter",0,1,1,,Hobby
+"Iron Wall"," tank, low awareness",-1,2,1,,Hobby
+"Reckless Strike"," glass cannon",1,1,-1,,Hobby
+"Eagle Scout"," enquete-focused, versatile",2,1,1,,Hobby
+"Careful Watch"," cautious observer",1,0,1,,Hobby
+"Basic Awareness"," minimal perception",1,0,0,,Hobby
+"Brute Force"," raw combat power",0,3,2,,Hobby
+"Blank Slate"," no aptitude",0,0,0,,Hobby
+"Dark Impulse"," reckless, fragile",-1,1,-1,,Hobby

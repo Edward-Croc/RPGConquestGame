@@ -1,0 +1,27 @@
+firstname,lastname,worker_origins__name->origin_id,zones__name->zone_id,controllers__lastname->controller_id,action_choice,action_params,powers
+detection,Finder_1,origine Accessible,Alpha-Investigation,Charlie,passive,{},Eagle Scout|Veteran Tactician
+detection,Finder_2,origine Accessible,Alpha-Investigation,Delta,passive,{},Eagle Scout|Veteran Tactician
+detection,Finder_3,origine Limitée,Alpha-Investigation,Echo,passive,{},Careful Watch|Scout Runner
+detection,Finder_4,origine Limitée,Alpha-Investigation,Foxtrot,passive,{},Basic Awareness|Patrol Warden
+detection,Finder_5,origine Commune,Alpha-Investigation,Golf,passive,{},Brute Force|War Drummer
+detection,Searcher_1,origine Commune,Alpha-Investigation,Alpha,investigate,{},Blank Slate|Common Folk
+detection,Bystander_1,origine Commune,Alpha-Investigation,Beta,passive,{},Dark Impulse|Patrol Warden
+combat,Chain_A,origine Accessible,Beta-Combat,Alpha,passive,{},Eagle Scout|Veteran Tactician|Focused Mind|War Gear
+combat,Chain_B,origine Accessible,Beta-Combat,Beta,passive,{},Eagle Scout|Scout Runner
+combat,Chain_C,origine Accessible,Beta-Combat,Charlie,passive,{},Eagle Scout|Patrol Warden
+combat,Chain_D,origine Accessible,Beta-Combat,Delta,passive,{},Blank Slate|Common Folk
+combat,Chain_E,origine Accessible,Beta-Combat,Echo,passive,{},Brute Force|Patrol Warden
+combat,Chain_F,origine Accessible,Beta-Combat,Foxtrot,passive,{},Careful Watch|Patrol Warden
+combat,Chain_G,origine Accessible,Beta-Combat,Golf,passive,{},Dark Impulse|Common Folk
+combat,Even_Atk,origine Accessible,Beta-Combat,Alpha,passive,{},Blank Slate|Common Folk
+combat,Even_Def,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Common Folk
+combat,Counter_Atk,origine Accessible,Beta-Combat,Golf,passive,{},Dark Impulse|Common Folk
+combat,Counter_Def,origine Accessible,Beta-Combat,Foxtrot,passive,{},Brute Force|Common Folk
+combat,Inv_Atk_1,origine Accessible,Beta-Combat,Alpha,passive,{},Eagle Scout|Veteran Tactician|Offensive Stance|War Gear
+combat,Inv_Def_1,origine Accessible,Beta-Combat,Beta,passive,{},Dark Impulse|Common Folk
+combat,Inv_Atk_2,origine Accessible,Beta-Combat,Charlie,passive,{},Eagle Scout|Patrol Warden
+combat,Inv_Def_2,origine Accessible,Beta-Combat,Delta,passive,{},Blank Slate|Common Folk
+combat,Claim_Atk_1,origine Accessible,Beta-Combat,Echo,passive,{},Eagle Scout|Veteran Tactician|Offensive Stance|War Gear
+combat,Claim_Def_1,origine Accessible,Beta-Combat,Beta,passive,{},Dark Impulse|Common Folk
+combat,Claim_Atk_2,origine Accessible,Beta-Combat,Charlie,passive,{},Eagle Scout|Patrol Warden
+combat,Claim_Def_2,origine Accessible,Beta-Combat,Delta,passive,{},Blank Slate|Common Folk

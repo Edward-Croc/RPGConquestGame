@@ -1,4 +1,5 @@
 <?php
+ob_start(); // Buffer output so header() redirects work even when warnings are emitted
 if ( !isset($_SESSION['DEBUG']) ){
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
@@ -25,9 +26,10 @@ require_once '../zones/functions.php';
  * @return string|null $value 
  */
 function getConfig($pdo, $configName) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
-            FROM config
+            FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
@@ -46,15 +48,16 @@ function getConfig($pdo, $configName) {
  * @return array|null : $mechanics
  */
 function getMechanics($pdo) {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
-        $stmt = $pdo->query("SELECT * FROM mechanics");
+        $stmt = $pdo->query("SELECT * FROM {$prefix}mechanics");
         $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if ($_SESSION['DEBUG'] == true){
             echo "mechanics :  <br />";
             print_r ($mechanics);
             echo "<br />";
         }
-        return $mechanics[0];
+        return $mechanics[0] ?? NULL;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): failed: " . $e->getMessage()."<br />";
         return NULL;

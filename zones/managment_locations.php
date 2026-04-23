@@ -3,14 +3,16 @@ require_once '../base/basePHP.php';
 $pageName = 'admin_locations_discovery';
 
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete_id'])) {
-        $stmt = $gameReady->prepare("DELETE FROM locations WHERE id = ?");
+        $stmt = $gameReady->prepare("DELETE FROM {$prefix}locations WHERE id = ?");
         $stmt->execute([$_POST['delete_id']]);
     }
 }
 if (isset($_POST['toggle_destruction'])) {
-    $stmt = $gameReady->prepare("SELECT * FROM locations WHERE id = ?");
+    $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
     $stmt->execute([$_POST['toggle_destruction']]);
     $location = $stmt->fetch(PDO::FETCH_ASSOC);
     $activate_json = json_decode($location['activate_json'], true);
@@ -20,19 +22,19 @@ if (isset($_POST['toggle_destruction'])) {
 // Get all locations
 $locations = $gameReady->query("
     SELECT l.id, l.name, l.discovery_diff, l.description, l.activate_json, z.name AS zone_name
-    FROM locations AS l
-    LEFT JOIN zones AS z ON l.zone_id = z.id
+    FROM {$prefix}locations AS l
+    LEFT JOIN {$prefix}zones AS z ON l.zone_id = z.id
     ORDER BY l.id, z.id
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get all controllers
-$controllers = $gameReady->query("SELECT id, lastname FROM controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
+$controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get known locations mapping
-$knownStmt = $gameReady->query("SELECT controller_id, location_id FROM controller_known_locations");
+// Get known locations mapping: location_id => [controller_id => bool found_secret]
+$knownStmt = $gameReady->query("SELECT controller_id, location_id, found_secret FROM {$prefix}controller_known_locations");
 $knownMap = [];
 while ($row = $knownStmt->fetch(PDO::FETCH_ASSOC)) {
-    $knownMap[$row['location_id']][] = $row['controller_id'];
+    $knownMap[$row['location_id']][$row['controller_id']] = (bool) $row['found_secret'];
 }
 
 require_once '../base/baseHTML.php';
@@ -90,13 +92,19 @@ echo '
             $loc['zone_name']
         );
         foreach ($controllers as $ctrl):
-            $isKnown = isset($knownMap[$loc['id']]) && in_array($ctrl['id'], $knownMap[$loc['id']]);
-            $label = $ctrl['lastname'];
+            $isKnown = isset($knownMap[$loc['id']][$ctrl['id']]);
+            $hasSecret = $isKnown && $knownMap[$loc['id']][$ctrl['id']];
             $content .= sprintf(
-                '<li style="color: %s">%s %s </li>', 
+                '<li class="controller-discovery-flag" data-controller-id="%1$d" data-controller-name="%2$s" data-known="%3$s" data-secret="%4$s" style="color: %5$s">'
+                . '%2$s : known <span class="known-indicator">%6$s</span> · secret <span class="secret-indicator">%7$s</span>'
+                . '</li>',
+                (int) $ctrl['id'],
+                htmlspecialchars($ctrl['lastname']),
+                $isKnown ? 'true' : 'false',
+                $hasSecret ? 'true' : 'false',
                 $isKnown ? 'green' : 'gray',
-                $isKnown ? "✔️" : "❌",
-                $label
+                $isKnown ? '✔️' : '❌',
+                $hasSecret ? '✔️' : '❌'
             );
         endforeach;
         $content .= "</ul></div>";

@@ -1,0 +1,13 @@
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+"Field Analyst"," investigative profession",1,0,0,,Metier
+"Data Miner"," information specialist",1,0,0,,Metier
+"Code Breaker"," master analyst, fragile",2,0,-1,,Metier
+"Sword Bearer"," professional soldier",0,1,1,,Metier
+"Shield Guard"," defensive specialist",0,1,1,,Metier
+"Siege Engine"," heavy assault, tunnel vision",-1,2,1,,Metier
+"Powder Keg"," explosive but exposed",1,1,-1,,Metier
+"Veteran Tactician"," seasoned strategist",2,2,2,,Metier
+"Scout Runner"," mobile reconnaissance",2,0,1,,Metier
+"Patrol Warden"," basic watchman",1,0,0,,Metier
+"War Drummer"," combat inspiration",1,2,1,,Metier
+"Common Folk"," untrained civilian",0,0,0,,Metier

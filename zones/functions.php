@@ -8,8 +8,9 @@
  *
  */
 function getZoneName($pdo, $zone_id){
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
-        $sql = "SELECT name FROM zones AS z WHERE id=$zone_id";
+        $sql = "SELECT name FROM {$prefix}zones AS z WHERE id=$zone_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
@@ -32,6 +33,7 @@ function getZoneName($pdo, $zone_id){
  */
 function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null, $zone_id = null) {
     $zonesArray = array();
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
 
@@ -54,9 +56,9 @@ function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null
                 c.firstname as claimer_firstname,
                 h.lastname as holder_lastname,
                 h.firstname as holder_firstname
-            FROM zones AS z
-            LEFT JOIN controllers AS c ON c.id = z.claimer_controller_id
-            LEFT JOIN controllers AS h ON h.id = z.holder_controller_id
+            FROM {$prefix}zones AS z
+            LEFT JOIN {$prefix}controllers AS c ON c.id = z.claimer_controller_id
+            LEFT JOIN {$prefix}controllers AS h ON h.id = z.holder_controller_id
             %s %s
             ORDER BY z.id ASC",
             (!empty($zone_id))? "WHERE z.id = :zone_id" : "",
@@ -140,11 +142,12 @@ function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false
 */
 function getLocationsArray($pdo) {
     $locationsArray = array();
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
         $sql = "SELECT l.id AS id, z.id AS zone_id, z.name AS zone_name, l.*
-            FROM locations AS l
-            JOIN zones AS z ON l.zone_id = z.id
+            FROM {$prefix}locations AS l
+            JOIN {$prefix}zones AS z ON l.zone_id = z.id
             ORDER BY z.id, l.id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
@@ -173,9 +176,10 @@ function getLocationsArray($pdo) {
  */
 function recalculateBaseDefence($pdo) {
     echo "<div><h3>Recalculating base defence</h3><br />";
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     // Get all bases with their controller and zone
-    $sql = "SELECT id, controller_id, zone_id FROM locations WHERE is_base = True";
+    $sql = "SELECT id, controller_id, zone_id FROM {$prefix}locations WHERE is_base = True";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -190,7 +194,7 @@ function recalculateBaseDefence($pdo) {
         try {
             // Update base with new difficulty
             $update_sql = "
-                UPDATE locations
+                UPDATE {$prefix}locations
                 SET discovery_diff = :new_diff
                 WHERE id = :id
             ";
@@ -226,6 +230,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     # $debug = true;
     $value = 0;
+    $prefix = $_SESSION['GAME_PREFIX'];
 
     if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
 
@@ -237,7 +242,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     // Add +1 if controller owns or claims the zone
     $zoneStmt = $pdo->prepare("
         SELECT holder_controller_id, claimer_controller_id 
-        FROM zones 
+        FROM {$prefix}zones 
         WHERE id = :zone_id
     ");
     $zoneStmt->execute([':zone_id' => $zone_id]);
@@ -292,9 +297,9 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
             $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
             $sql = "
                 SELECT COUNT(w.id) AS worker_count
-                FROM workers w
-                JOIN controller_worker cw ON cw.worker_id = w.id
-                JOIN worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                FROM {$prefix}workers w
+                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE cw.controller_id = :controller_id
                 AND w.zone_id = :zone_id
                 AND wa.action_choice IN (%s)
@@ -331,7 +336,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
 
         $sql = "
             SELECT setup_turn
-            FROM locations
+            FROM {$prefix}locations
             WHERE id = :location_id
             LIMIT 1
         ";
@@ -408,10 +413,11 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
  */
 function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id): string {
     $returnText = '';
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Bases owned by this controller in the zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description
-        FROM locations l
+        FROM {$prefix}locations l
         WHERE l.controller_id = :controller_id
         AND l.zone_id = :zone_id
     ";
@@ -435,7 +441,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
             // Fetch artefacts for this location
             $stmtArt = $pdo->prepare("
             SELECT name, description, full_description 
-            FROM artefacts 
+            FROM {$prefix}artefacts 
             WHERE location_id = :location_id
             ");
             $stmtArt->execute([':location_id' => $base['id']]);
@@ -460,8 +466,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     // Known enemy bases in the zone
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description, ckl.found_secret
-        FROM controller_known_locations ckl
-        JOIN locations l ON ckl.location_id = l.id
+        FROM {$prefix}controller_known_locations ckl
+        JOIN {$prefix}locations l ON ckl.location_id = l.id
         WHERE ckl.controller_id = :controller_id
         AND l.zone_id = :zone_id
     ";
@@ -523,6 +529,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *  ]
  */
 function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false): array|null {
+    $prefix = $_SESSION['GAME_PREFIX'];
     $sql = sprintf("
         SELECT
             z.id AS zone_id,
@@ -534,9 +541,9 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
             l.hidden_description AS location_hidden_description,
             ckl.found_secret AS location_found_secret,
             l.can_be_destroyed AS location_can_be_destroyed 
-        FROM controller_known_locations ckl
-        JOIN locations l ON ckl.location_id = l.id
-        JOIN zones z ON l.zone_id = z.id
+        FROM {$prefix}controller_known_locations ckl
+        JOIN {$prefix}locations l ON ckl.location_id = l.id
+        JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE ckl.controller_id = :controller_id
         %s%s
         ORDER BY z.id, l.id;
@@ -583,6 +590,7 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
  * @return array|null array of controllers know locations
  */
 function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array|null {
+    $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "
         SELECT
             z.id AS zone_id,
@@ -593,8 +601,8 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
             l.description AS location_description,
             l.hidden_description AS location_hidden_description,
             l.can_be_destroyed AS location_can_be_destroyed 
-        FROM locations l
-        JOIN zones z ON l.zone_id = z.id
+        FROM {$prefix}locations l
+        JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE l.controller_id = :controller_id
         ORDER BY z.id, l.id;
     ";
@@ -621,7 +629,7 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
         // Fetch artefacts for this location
         $artefactStmt = $gameReady->prepare("
             SELECT name, description, full_description 
-            FROM artefacts 
+            FROM {$prefix}artefacts 
             WHERE location_id = :location_id
         ");
         $artefactStmt->execute(['location_id' => $row['location_id']]);
@@ -701,10 +709,11 @@ function updateLocation($pdo, $location, $activate_json) {
     }
     // Add the activate_json to the set clauses
     $set_clauses[] = "activate_json = :activate_json";
+    $prefix = $_SESSION['GAME_PREFIX'];
     // Update the location
     try{
         if (!empty($set_clauses)) {
-            $sql = "UPDATE locations SET " . implode(', ', $set_clauses) . " WHERE id = :id";
+            $sql = "UPDATE {$prefix}locations SET " . implode(', ', $set_clauses) . " WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             // Bind parameters with correct types
             foreach ($fields_to_update as $field => $param_type) {

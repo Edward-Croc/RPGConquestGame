@@ -1,0 +1,123 @@
+firstname,lastname,worker_origins__name->origin_id
+Haruki,Takahashi,Shikoku - Iyo
+Yui,Nakamura,Shikoku - Iyo
+Ren,Sato,Shikoku - Iyo
+Kaito,Yamamoto,Shikoku - Iyo
+Aiko,Fujimoto,Shikoku - Iyo
+Souta,Ishikawa,Shikoku - Iyo
+Hina,Kobayashi,Shikoku - Iyo
+Daichi,Tanaka,Shikoku - Iyo
+Mei,Arai,Shikoku - Iyo
+Takumi,Inoue,Shikoku - Iyo
+Yuto,Matsuda,Shikoku - Tosa
+Sakura,Hoshino,Shikoku - Tosa
+Kenta,Murakami,Shikoku - Tosa
+Riko,Shimizu,Shikoku - Tosa
+Tsubasa,Ueda,Shikoku - Tosa
+Miyu,Sakamoto,Shikoku - Tosa
+Hinata,Endo,Shikoku - Tosa
+Riku,Fukuda,Shikoku - Tosa
+Yuna,Hirano,Shikoku - Tosa
+Sho,Sanuki,Shikoku - Tosa
+Ayaka,Terasaki,Shikoku - Awa
+Tomo,Sugimoto,Shikoku - Awa
+Rio,Kaneko,Shikoku - Awa
+Shun,Okada,Shikoku - Awa
+Airi,Noguchi,Shikoku - Awa
+Mao,Hirano,Shikoku - Awa
+Sena,Kawaguchi,Shikoku - Awa
+Yuma,Tachibana,Shikoku - Awa
+Kawashima,Noriyasu,Shikoku - Awa
+Shigekatsu,Fujii,Shikoku - Awa
+Rina,Yoshikawa,Shikoku - Sanuki
+Takashi,Kuroda,Shikoku - Sanuki
+Saki,Amano,Shikoku - Sanuki
+Itsuki,Hayashi,Shikoku - Sanuki
+Mai,Onishi,Shikoku - Sanuki
+Ryota,Mizuno,Shikoku - Sanuki
+Shiori,Ichikawa,Shikoku - Sanuki
+Hinako,Sakai,Shikoku - Sanuki
+Yuto,Kiriyama,Shikoku - Sanuki
+Kazuya,Fujikawa,Shikoku - Sanuki
+Keita,Nagano,Shikoku - Awaji
+Emi,Morita,Shikoku - Awaji
+Kazuki,Yamaguchi,Shikoku - Awaji
+Sayaka,Gōno,Shikoku - Awaji
+Miki,Kubota,Shikoku - Awaji
+Taiga,Koga,Shikoku - Awaji
+Haruna,Tani,Shikoku - Awaji
+Koji,Arakawa,Shikoku - Awaji
+Nanami,Iguchi,Shikoku - Awaji
+Masatsune,Miyaji,Shikoku - Awaji
+Nao,Miyamoto,Shikoku - Shōdoshima
+Koki,Maruyama,Shikoku - Shōdoshima
+Ren,Takada,Shikoku - Shōdoshima
+Naoki,Sano,Shikoku - Shōdoshima
+Riko,Himura,Shikoku - Shōdoshima
+Kanon,Matsumoto,Shikoku - Shōdoshima
+Rina,Nobunaga,Shikoku - Shōdoshima
+Kaori,Uchiha,Shikoku - Shōdoshima
+Natsuki,Nanami,Shikoku - Shōdoshima
+Soutaro,Kawaï,Shikoku - Shōdoshima
+Masaru,Yoshida,Honshu - Kyoto
+Aya,Fukuda,Honshu - Kyoto
+Shiro,Morimoto,Honshu - Kyoto
+Jiro,Tominaga,Honshu - Kyoto
+Hiroki,Noma,Honshu - Kyoto
+Misaki,Kamiyama,Honshu - Kyoto
+Kenji,Narita,Honshu - Kyoto
+Ayumi,Tateishi,Honshu - Kyoto
+Shinji,Tsukamoto,Honshu - Kansai
+Mariko,Ogawa,Honshu - Kansai
+Yusuke,Okamoto,Honshu - Kansai
+Nozomi,Ichinose,Honshu - Kansai
+Rei,Furukawa,Honshu - Kansai
+Tomoya,Suda,Honshu - Kansai
+Takuto,Saeki,Honshu - Kansai
+Minami,Kurata,Honshu - Kansai
+Sosuke,Muraoka,Honshu - Kansai
+Atsushi,Higashiyama,Honshu - Okayama
+Mami,Seto,Honshu - Okayama
+Yuto,Ono,Honshu - Okayama
+Kaho,Mochizuki,Honshu - Okayama
+Naoya,Kurihara,Honshu - Okayama
+Arisa,Komatsu,Honshu - Okayama
+Soma,Morikawa,Honshu - Okayama
+Yuri,Inaba,Honshu - Okayama
+Ryunosuke,Takemoto,Honshu - Okayama
+Shunpei,Hamamoto,Honshu - Hiroshima
+Sayuri,Kawano,Honshu - Hiroshima
+Takao,Oshiro,Honshu - Hiroshima
+Keisuke,Asano,Honshu - Hiroshima
+Chihiro,Nomura,Honshu - Hiroshima
+Haruto,Iwamoto,Honshu - Hiroshima
+Mizuki,Kudo,Honshu - Hiroshima
+Tetsuya,Ogino,Honshu - Hiroshima
+Hikari,Yokoyama,Honshu - Hiroshima
+Masaki,Tajima,Kyushu - Öita
+Naomi,Ebina,Kyushu - Öita
+Rena,Furuya,Kyushu - Öita
+Takahiro,Nishimoto,Kyushu - Öita
+Kana,Tachikawa,Kyushu - Öita
+Yuto,Baba,Kyushu - Öita
+Misao,Tokuda,Kyushu - Öita
+Hikaru,Shimoda,Kyushu - Öita
+Ami,Naruse,Kyushu - Öita
+Amerigo,Attilio,Portugal
+Marco,Martino,Portugal
+Luciana,Marsala,Portugal
+Michelangelo,Belluchi,Portugal
+Umberto,Venezio,Portugal
+Venturo,Dio,Portugal
+Gino,Giancarlo,Portugal
+Hortensio,Honorius,Portugal
+Bianca,Abriana,Portugal
+Paolo,Pisano,Portugal
+Jean,Martin,France
+Pierre,Dubois,France
+Jacques,Thomas,France
+Michel,Robert,France
+Claude,Richard,France
+Nicolas,Petit,France
+Thomas,Durand,France
+Bernard,Leroy,France

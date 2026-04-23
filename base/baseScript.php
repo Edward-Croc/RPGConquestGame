@@ -14,15 +14,6 @@
         }
     }
 
-    function toggleInfo(id) {
-        const info = document.getElementById('info-' + id);
-        if (info.style.display === 'none') {
-            info.style.display = 'block';
-        } else {
-            info.style.display = 'none';
-        }
-    }
-
     function toggleActions(id) {
         const actions = document.getElementById('actions-' + id);
         if (actions.style.display === 'none') {

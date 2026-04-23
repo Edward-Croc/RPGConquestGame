@@ -1,0 +1,26 @@
+name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+Sōjutsu (槍術) – Art de la lance (Yari),", l’utilisation du yari à pied ou à cheval",0,1,1,,Discipline
+Kyūjutsu (弓術) – Art du tir à l’arc,", ancien kyūdō)",0,2,0,,Discipline
+Shodō (書道) – Calligraphie,", le maniement du pinceau, reflet de l’esprit",1,1,0,,Discipline
+Kadō / Ikebana (華道 / 生け花) – Art floral,", pratiqué pour l’harmonie intérieure",1,0,1,,Discipline
+Kenjutsu (剣術) – Art du sabre,", la pratique du katana en combat",0,2,1,,Discipline
+Heihō (兵法) – Stratégie militaire,", l’étude de la tactique, souvent influencée par les textes chinois comme L’Art de la Guerre de Sun Tzu",1,1,1,,Discipline
+Waka (和歌) – Poésie classique,", plus ancienne que le haïku, utilisée dans les échanges lettrés et parfois politiques",2,0,0,,Discipline
+Hōjutsu (砲術) – Art des armes à feu (teppō),", développé après l’introduction des mousquets portugais vers 1543",-1,2,2,,Discipline
+Bajutsu (馬術) – Art de l’équitation militaire,", inclut la cavalerie et le tir à l’arc monté",1,1,1,,Discipline
+Gagaku (雅楽) – Musique de cour,", peu courante chez les samouraïs de terrain, mais appréciée dans les cercles aristocratiques ou les familles cultivées",2,0,0,,Discipline
+Iaijutsu (居合術) – Art du sabre, de dégainer et frapper en un mouvement,0,2,1,,Discipline
+Bugaku (舞楽) – Danse de cour,", parfois pratiquée dans le cadre de cérémonies religieuses ou impériales",1,1,1,,Discipline
+Chadō (茶道) – Voie du thé,", cérémonie du thé comme forme de discipline spirituelle et esthétique",2,-1,1,,Discipline
+Jūjutsu (柔術) – Techniques de lutte à mains nues,", techniques de projection, immobilisation, étranglement ou désarmement",0,1,2,,Discipline
+Ninjutsu (忍術) – Techniques d’espionnage et de guérilla,"moins honorable, mais parfois utilisé par certains samouraïs ou leurs agents",2,1,-1,,Discipline
+Reiki / Kujikiri (霊気 / 九字切り) – Pratiques ésotériques,,1,0,2,,Discipline
+Yawara (和) – Ancienne forme de techniques de soumission,", liée au jūjutsu",0,2,1,,Discipline
+Naginatajutsu (薙刀術) – Art de la hallebarde,,0,1,2,,Discipline
+Haikai / Haiku (俳諧 / 俳句) – Poésie courte,", forme brève, souvent liée à la nature et à la spiritualité zen",2,0,0,,Discipline
+Tantōjutsu (短刀術) – Combat au couteau,", surtout utilisé en combat rapproché ou en cas de désarmement",0,2,1,,Discipline
+Shigin (詩吟) – Chant poétique,", récitation chantée de poèmes chinois ou japonais, souvent associé à une posture noble et une pratique méditative",2,0,0,,Discipline
+Tessenjutsu (鉄扇術) – L’art du combat à l’éventail de fer,", pratiqué par les samouraïs, notamment lorsqu’ils étaient désarmés, en visite à la cour ou dans des lieux où le port du sabre était interdit",0,1,2,,Discipline
+Kōdō (香道) – Voie de l’encens,", art de « sentir » et d’apprécier les parfums rares dans des rituels très codifiés",2,0,0,,Discipline
+Kagenkō (影言講) – L’art de la parole de l’ombre,", art oratoire utilisé par les yōkai pour semer la confusion ou manipuler les humains en jouant avec les doubles sens, les murmures et les voix venues des ténèbres",1,1,1,,Discipline
+Kagekui-ryū (影喰流) – École du Mange-Ombre,", art martial occulte / discipline hybride entre ninjutsu et pratiques yōkai",0,2,2,,Discipline

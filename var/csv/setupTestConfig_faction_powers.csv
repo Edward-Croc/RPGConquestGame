@@ -1,0 +1,9 @@
+factions__name->faction_id,powers__name->link_power_type__power_id
+FactionAlpha,Keen Eye
+FactionAlpha,Sword Bearer
+FactionAlpha,Offensive Stance
+FactionBeta,Steady Arm
+FactionBeta,Field Analyst
+FactionBeta,Defensive Posture
+FactionCharlie,Eagle Scout
+FactionDelta,Eagle Scout

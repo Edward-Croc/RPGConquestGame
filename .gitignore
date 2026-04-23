@@ -1,4 +1,7 @@
 *.ini
 .vscode/settings.json
+.claude/
 DevPersoCommandes.txt
 infinitybasefiles
+__pycache__/
+.pytest_cache/

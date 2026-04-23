@@ -32,11 +32,12 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
     $valsResult = true;
     $valsResult = calculateVals($gameReady, $mechanics);
     if ($valsResult) {
+        $prefix = $_SESSION['GAME_PREFIX'];
         $inactive_actions = "'".implode("','", INACTIVE_ACTIONS)."'";
         // Add calculated values to worker report
         $sql = sprintf("SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val
-            FROM workers w
-            JOIN worker_actions wa ON wa.worker_id = w.id AND turn_number = :turn_number
+            FROM {$prefix}workers w
+            JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND turn_number = :turn_number
             WHERE wa.action_choice NOT IN (%s)
             ", $inactive_actions
         );
@@ -157,9 +158,10 @@ if ($mechanics['end_step'] == 'createNewTurnLines') {
 }
 
 if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
+    $prefix = $_SESSION['GAME_PREFIX'];
     try{
         // SQL query to select username from the players table
-        $sql = "UPDATE mechanics set turncounter = :turncounter, end_step = '' WHERE id = :id";
+        $sql = "UPDATE {$prefix}mechanics set turncounter = :turncounter, end_step = '' WHERE id = :id";
         // Prepare and execute SQL query
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id'] ]);

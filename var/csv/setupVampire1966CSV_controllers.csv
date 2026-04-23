@@ -1,0 +1,14 @@
+firstname,lastname,ia_type,secret_controller,url,story,can_build_base,start_workers,turn_recruited_workers,turn_firstcome_workers,factions__name->faction_id,factions__name->fake_faction_id
+Dame,Calabreze,,0,https://docs.google.com/document/d/18jehVwD4Rc_DsYsnNlkK1CVQumtGd_kWLBqyY9RxKBY/edit?usp=drive_link,,1,0,0,0,Malkavien,Malkavien
+Sir Antonio,Mazzino,,0,https://docs.google.com/document/d/12uoZS1sgh239qgQJbXJC6U10X6dLyacn1SmaAC3CZbg/edit?usp=drive_link,,1,1,1,0,Brujah,Brujah
+Duca Gaston,da Firenze,,0,https://docs.google.com/document/d/178ANZbiAYiGG_WS_oIgTrhLa_sdTCYPxRgBizo4WThE/edit?usp=drive_link,,1,10,0,0,Giovanni,Giovanni
+Sir Hassan,Ben Hasan,passive,0,,,1,1,0,0,Disciple,Disciple
+Frère,Lorenzo,passive,0,,,1,1,0,0,Eglise,Humains
+Sir Dimonio,Ricci,searching,0,https://docs.google.com/document/d/1A-vcnW5WVOUa6S50_lV5La-MaQAV_Cc-OQCRgnqIgjk/edit?usp=drive_link,,1,1,0,0,Démon,Lasombra
+Signore Arno,Cacciatore,violent,0,https://docs.google.com/document/d/1NcyL1QF_0X5EWBV_nbe8hNuSUXnleUrhK9giu0B0uQ8,,1,1,1,1,Garou,Humains
+Dame Elisa,Bonapart,,0,https://docs.google.com/document/d/1kQ2ruscLDPvETlAGL-id785l_0xmcel2_VnBl44YiLU/edit?usp=drive_link,,1,1,0,0,Toréador,Toréador
+Sir Gaetano,Trentini,,0,https://docs.google.com/document/d/1vmIYbHd5O3LXZSkE8docd1H7pI9KhpkJYLAzJD6cBkE/edit?usp=drive_link,,1,1,0,0,Tremere,Tremere
+Duca Amandin,Franco,,0,https://docs.google.com/document/d/1QfAoI26FiLsdN_Y_kBSTrv0RTMw0TVAGIJNufkEWnn8/edit?usp=drive_link,,1,1,0,0,Ventrue,Ventrue
+Dame Albane,Vizirof,,0,https://docs.google.com/document/d/1U4L314OJOc7DURplY9v-AW7uKmQnISksz7kztQp_PEk/edit?usp=drive_link,,1,1,0,0,Assamites,Tremere
+Sir Adamo,de Toscane,,0,https://docs.google.com/document/d/1nUIgcB_eX625z5wgARcZlKJ29jua8svUHTBc0hm_ZPs/edit?usp=drive_link,,1,1,0,0,Nosfératu,Nosfératu
+Sir Wilhem,Der Swartz,,0,https://docs.google.com/document/d/1EMs8YyV3WDSEAZ_xp_gjqwrQp8Sq76ox7-QePdeovKY/edit?usp=drive_link,,1,1,0,0,Tzimisce,Gangrel

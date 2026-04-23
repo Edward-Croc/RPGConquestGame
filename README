@@ -16,10 +16,75 @@ Code :
  - Database maintenance is done for postgresql and mysql.
  - Front is simple HTML and Javascript.
 
-Installation : 
+Installation (Docker — recommended):
+ - Prerequisites: Docker and Docker Compose.
+   Windows users: install Docker Desktop and enable the WSL2 backend.
+ - Clone the repository:
+     git clone git@github.com:Edward-Croc/RPGConquestGame.git
+ - Start the application:
+     cd RPGConquestGame
+     docker compose up -d
+ - First start builds the PHP image and initializes the database (may take 1-2 minutes).
+ - The application is available at: http://localhost:8080/RPGConquestGame/
+ - MySQL is accessible at localhost:3307 (user: rpg_user / rpg_pass, database: rpgconquestgame).
+ - The base game is set up with a user: gm; pwd: orga.
+ - Stop the application:
+     docker compose down
+ - To reset the database (destroy data volume):
+     docker compose down -v
+
+ Environment variable overrides (in docker-compose.yml under php > environment):
+   DB_HOST       — database hostname (default: mysql)
+   DB_NAME       — database name (default: rpgconquestgame)
+   DB_USER       — database user (default: rpg_user)
+   DB_PASS       — database password (default: rpg_pass)
+   DB_TYPE       — mysql or postgres (default: mysql)
+   GAME_PREFIX   — table prefix for multi-game setups (default: empty)
+   FOLDER        — URL folder name (default: RPGConquestGame)
+
+ Security notice — DEV USE ONLY:
+   The shipped docker-compose.yml uses hardcoded weak credentials
+   (MYSQL_ROOT_PASSWORD=root, rpg_user / rpg_pass). This is intended
+   for local development only. For any production / public-facing
+   deployment, change all passwords and remove the MYSQL_ROOT_PASSWORD
+   from the compose file (inject via a secrets store or a .env file
+   that is not committed).
+
+ Smoke test (optional, verifies a fresh Docker boot end-to-end):
+     ./docker/smoke_test.sh
+   Resets volumes, rebuilds the image, waits for the app, checks the
+   login page and that the schema + gm user loaded. Leaves containers
+   running on success.
+
+Troubleshooting:
+ - Port 8080 already in use: another service is using the port. Either
+   stop that service or change the host port in docker-compose.yml
+   (php > ports: "NEW:80").
+ - Port 3307 already in use: change the host port for MySQL in
+   docker-compose.yml (mysql > ports: "NEW:3306"). The tests default
+   to 3307 — set MYSQL_PORT env var when running pytest to match.
+ - "Connection failed: Access denied" after changing credentials:
+   the container caches config in var/local_config.ini. The entrypoint
+   regenerates it on every container start, so `docker compose restart php`
+   will pick up new env vars.
+ - "The game is not ready" page: MySQL may not have finished initial
+   schema load. Check `docker compose logs mysql` for errors; retry
+   after ~15 seconds on first boot.
+ - Shell script line endings on Windows: the repo uses .gitattributes
+   to force LF on docker/*.sh. If you see "bash: bad interpreter"
+   errors, run `git config core.autocrlf false` before cloning.
+ - WSL2 on Windows: Docker Desktop must be configured to use the
+   WSL2 backend. File mount performance is much better when the
+   repo is inside the WSL2 filesystem, not a Windows drive (C:\...).
+ - Tests fail with "No local MySQL available": pytest connects to
+   127.0.0.1:3307 with rpg_user/rpg_pass. Verify the mysql container
+   is healthy: `docker compose ps` should show "(healthy)".
+ - Windows-specific setup: see README_setup_windows.md.
+
+Installation (manual):
  - Create a folder called RPGConquestGame and pull the sources to it.
  - Create a config.ini file in the VAR folder and add the parent folder name to it.
- - Setup a database, and add the conneciton info to the ./var/config.ini file and execute the ./var/setupBDD.sql file
+ - Setup a database, and add the connection info to the ./var/config.ini file and execute the ./var/setupBDD.sql file.
  - The base game is set up with a user: gm; pwd: orga.
 
 Preparing a game :
@@ -35,3 +100,17 @@ Preparing a game :
    - Updates for players usage and quality will be added.
 
 A demo is built here : https://voix-eidolon.fr/RPGConquestGameDemo/base/systemPresentation.php
+
+Testing :
+ - A Docker Compose setup provides a local MySQL 8.0 test environment.
+ - Start the test environment: docker compose up -d
+ - Tests use pytest (unit tests) and Playwright (browser E2E tests).
+ - Run all tests (local Docker): python3 -m pytest tests/ -v
+ - Run unit tests only: python3 -m pytest tests/test_csv_load.py -v
+ - Run Playwright E2E tests: python3 -m pytest tests/test_admin_csv_load_e2e.py -v
+ - Run against production (browser-only, no direct DB access):
+     PHP_BASE_URL="https://voix-eidolon.fr/RPGConquestGameDemo" \
+       UI_ONLY=1 python3 -m pytest tests/ -v
+   UI_ONLY=1 auto-skips any test marked @pytest.mark.db (tests that need
+   direct MySQL access). Requires gm/orga to exist on the target prefix.
+ - Stop the test environment: docker compose down

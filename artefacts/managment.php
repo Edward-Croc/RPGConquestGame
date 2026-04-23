@@ -4,25 +4,27 @@ require_once '../base/basePHP.php';
 
 $pageName = 'artefacts_admin';
 
+$prefix = $_SESSION['GAME_PREFIX'];
+
 // Handle delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete_id'])) {
-        $stmt = $gameReady->prepare("DELETE FROM artefacts WHERE id = ?");
+        $stmt = $gameReady->prepare("DELETE FROM {$prefix}artefacts WHERE id = ?");
         $stmt->execute([$_POST['delete_id']]);
     }
 
     if (isset($_POST['update_location'])) {
-        $stmt = $gameReady->prepare("UPDATE artefacts SET location_id = ? WHERE id = ?");
+        $stmt = $gameReady->prepare("UPDATE {$prefix}artefacts SET location_id = ? WHERE id = ?");
         $stmt->execute([$_POST['new_location_id'], $_POST['artefact_id']]);
     }
 
     if (isset($_POST['add_artefact'])) {
-        $stmt = $gameReady->prepare("INSERT INTO artefacts (name, description, full_description, location_id) VALUES (?, ?, ?, ?)");
+        $stmt = $gameReady->prepare("INSERT INTO {$prefix}artefacts (name, description, full_description, location_id) VALUES (?, ?, ?, ?)");
         $stmt->execute([$_POST['artefact_name'], $_POST['artefact_description'], $_POST['artefact_full_description'], $_POST['location_id']]);
     }
 
     if (isset($_POST['update_description'])) {
-        $stmt = $gameReady->prepare("UPDATE artefacts SET description = ?, full_description = ? WHERE id = ?");
+        $stmt = $gameReady->prepare("UPDATE {$prefix}artefacts SET description = ?, full_description = ? WHERE id = ?");
         $stmt->execute([
             $_POST['description'],
             $_POST['full_description'],
@@ -36,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $artefacts = $gameReady->query("
     SELECT a.id, a.name, a.location_id, a.description, a.full_description,
            CONCAT(l.name, ' - ', z.name) AS location_name
-    FROM artefacts a
-    LEFT JOIN locations l ON a.location_id = l.id
-    LEFT JOIN zones z ON z.id = l.zone_id
+    FROM {$prefix}artefacts a
+    LEFT JOIN {$prefix}locations l ON a.location_id = l.id
+    LEFT JOIN {$prefix}zones z ON z.id = l.zone_id
     ORDER BY a.id
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$locations = $gameReady->query("SELECT id, name FROM locations ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+$locations = $gameReady->query("SELECT id, name FROM {$prefix}locations ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 

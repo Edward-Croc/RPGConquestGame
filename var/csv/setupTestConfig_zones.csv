@@ -1,0 +1,8 @@
+name,description,hide_turn_zero,controllers__lastname->claimer_controller_id,controllers__lastname->holder_controller_id
+Alpha-Investigation,"zone for investigation and detection tests",0,,
+Beta-Combat,"zone for combat tests",0,,
+Gamma-Claims,"zone control tests: claimed and held by Alpha",0,Alpha,Alpha
+Delta-Disputed,"claim tests: claimed by Beta, not held",0,Beta,
+Epsilon-Controlled,"reserve zone for future tests",0,,
+Zeta-Unclaimed,"unclaimed reserve zone",0,,
+Eta-Hidden,"hidden zone at turn zero",1,,

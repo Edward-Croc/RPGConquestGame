@@ -1,0 +1,9 @@
+firstname,lastname,worker_origins__name->origin_id
+Sentinel,Vanguard,origine Accessible
+Watcher,Patrol,origine Accessible
+Scout,Tracker,origine Accessible
+Runner,Swift,origine Accessible
+Shadow,Whisper,origine Limitée
+Phantom,Drift,origine Limitée
+Ghost,Veil,origine Limitée
+Recruit,Steadfast,origine Commune

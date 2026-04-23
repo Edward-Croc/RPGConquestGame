@@ -24,11 +24,11 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $textActionUpdated = getConfig($gameReady,'txt_ps_'.$currentAction['action_choice']);
             // change action text if prisoner or double agent
             if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
-
+                $prefix = $_SESSION['GAME_PREFIX'];
                 // for double agent get name of infiltrated network
                 if ($workerStatus == 'double_agent') {
                     $sql = "SELECT cw.controller_id
-                    FROM controller_worker AS cw
+                    FROM {$prefix}controller_worker AS cw
                     WHERE cw.worker_id = :worker_id
                     AND cw.is_primary_controller = :is_primary_controller
                     LIMIT 1";
