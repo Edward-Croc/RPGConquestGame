@@ -1,0 +1,4 @@
+pytest
+pymysql
+pytest-playwright
+playwright

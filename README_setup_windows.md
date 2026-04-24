@@ -79,7 +79,7 @@ On success prints `=== PASS: Docker setup is healthy ===`.
 Install Python dependencies (one-time):
 
 ```bash
-python3 -m pip install --user pytest pymysql pytest-playwright playwright
+python3 -m pip install --user -r requirements.txt
 playwright install chromium
 ```
 
