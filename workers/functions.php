@@ -60,9 +60,13 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
     if (!empty($actionChoice)) {
         $updates[] = "action_choice = '$actionChoice'";
     }
-    if (!empty($jsonArray)) {
+    // $jsonArray: null → don't touch action_params; array (incl. empty) →
+    // set action_params. Force object-form encoding so an empty array
+    // serializes as '{}' (project convention, cf. investigateMechanic.php
+    // which compares action_params against '{}') rather than '[]'.
+    if ($jsonArray !== null) {
         $updates[] = "action_params = :json";
-        $params['json'] = json_encode($jsonArray);
+        $params['json'] = empty($jsonArray) ? '{}' : json_encode($jsonArray);
         if (json_last_error() !== JSON_ERROR_NONE) {
             echo  __FUNCTION__."(): Failed to encode JSON: " . json_last_error_msg()."<br />";
             return false;
@@ -876,7 +880,9 @@ function moveWorker($pdo, $workerId, $zoneId) {
 
     $mechanics = getMechanics($pdo);
     $zone_name = getZoneName($pdo, $zoneId);
-    updateWorkerAction($pdo, $workerId, $mechanics['turncounter'], 'passive', ['life_report' => "J'ai déménagé vers <strong>$zone_name</strong>. <br/>"], json_encode([]));
+    // Reset action_params — moveWorker clears any queued action's data.
+    // updateWorkerAction now accepts empty arrays (emitted as '{}').
+    updateWorkerAction($pdo, $workerId, $mechanics['turncounter'], 'passive', ['life_report' => "J'ai déménagé vers <strong>$zone_name</strong>. <br/>"], array());
 
     try{
         // UPDATE worker_actions values
