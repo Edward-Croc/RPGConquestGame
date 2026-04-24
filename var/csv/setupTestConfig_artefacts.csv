@@ -1,0 +1,2 @@
+name,description,full_description,locations__name->location_id
+Artefact Alpha,Ancient relic concealed in Location A,Full lore about Artefact Alpha revealed only to the controller of the location,Location A
