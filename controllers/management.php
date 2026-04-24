@@ -1,6 +1,4 @@
 <?php
-session_start();
-
 $pageName = 'Controller Management';
 
 require_once '../base/basePHP.php';
