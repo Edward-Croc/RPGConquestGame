@@ -257,6 +257,12 @@ def combat_scenario(browser):
     _ui_move(page, 'Runner_Cross', 'Delta-Disputed')
     _ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
 
+    # Move-clears-action-params: Mover_Test queues an attack THEN moves.
+    # moveWorker must clobber the action to 'passive' AND reset
+    # action_params to '{}' — no residual attack target data.
+    _ui_attack(page, 'Mover_Test', 'Chain_A')
+    _ui_move(page, 'Mover_Test', 'Delta-Disputed')
+
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
 
@@ -298,11 +304,14 @@ def _ui_worker_is_downed(page, lastname):
 def _ui_worker_is_passive(page, lastname):
     """True if the worker's action.php view shows them as still passive.
 
-    txt_ps_passive => "surveille", ucfirst => "Surveille". The action form
-    must still be rendered (worker is active).
+    txt_ps_passive => "surveille", ucfirst => "Surveille". Checks for the
+    `name="passive"` submit button (rendered for every active worker
+    regardless of zone) rather than `name="attack"` (rendered only when
+    the controller has known alive enemies in the worker's current zone,
+    which breaks down for workers who moved to a zone with no targets).
     """
     html = _worker_report_html(page, lastname)
-    return 'Surveille' in html and 'name="attack"' in html
+    return 'Surveille' in html and 'name="passive"' in html
 
 
 def _ui_worker_is_attacking(page, lastname, target_lastname):
@@ -701,3 +710,57 @@ class TestCrossZoneAttack:
         html = _worker_report_html(page, 'Hunter_Cross')
         assert 'Runner_Cross' in html, \
             "Hunter_Cross's page should reference Runner_Cross in the attack report"
+
+
+# ---------------------------------------------------------------------------
+# Tests: moveWorker clears action_params on a previously-attacking worker
+# ---------------------------------------------------------------------------
+
+class TestMoveClearsActionParams:
+    """Regression guard: when a worker queues an attack and then moves
+    in the same turn, moveWorker() must reset the worker's
+    action_choice to 'passive' AND action_params to '{}'. The test
+    verifies both the UI rendering and the DB row directly.
+
+    Setup (combat_scenario fixture):
+      - Mover_Test (Alpha, Beta-Combat, passive on turn 0).
+      - Between turns: _ui_attack(Mover_Test, Chain_A), then
+        _ui_move(Mover_Test, 'Delta-Disputed').
+      - End turn 1 → 2.
+
+    If the clear works: Mover_Test survives (passive, moved).
+    If the clear fails: Mover_Test's attack fires (atk=3 vs Chain_A
+      def=7, diff=-4 → miss) and Chain_A's riposte lands (atk=8 vs
+      def=3, diff=5 ≥ RIPOSTDIFF=2 → Mover_Test dies).
+    """
+
+    def test_mover_action_is_passive_no_target_in_view(self, page: Page, base_url):
+        """Mover_Test's own view page should show passive + move text,
+        with no reference to the cancelled attack target (Chain_A)."""
+        html = _worker_report_html(page, 'Mover_Test')
+        assert 'Chain_A' not in html, \
+            "Mover_Test's view must not reference the cancelled attack target Chain_A"
+        assert _ui_worker_is_passive(page, 'Mover_Test'), \
+            "Mover_Test should be passive (survived via cleared attack)"
+
+    @pytest.mark.db
+    def test_mover_action_params_is_empty_json(self):
+        """Direct DB check: worker_actions.action_params must be the
+        literal string '{}'. moveWorker passes json_encode([]) = '{}'
+        as the last argument to updateWorkerAction, so this value is
+        contractually guaranteed — this test locks that contract."""
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.action_choice, wa.action_params
+            FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Mover_Test' AND wa.turn_number = 1
+        """)
+        row = cursor.fetchone()
+        conn.close()
+        assert row is not None, "Mover_Test must have a turn-1 worker_actions row"
+        assert row['action_choice'] == 'passive', \
+            f"After move-after-attack, action_choice should be 'passive', got {row['action_choice']!r}"
+        assert row['action_params'] == '{}', \
+            f"action_params should be empty JSON '{{}}' after move, got {row['action_params']!r}"
