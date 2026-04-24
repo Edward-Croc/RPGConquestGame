@@ -462,7 +462,7 @@ class TestFirstComeRecruitment:
     def test_first_come_increments_counter(self):
         """turn_firstcome_workers counter should be 1 after first-come.
 
-        Scraped from /controllers/managment.php (admin table, Turn Recruited
+        Scraped from /controllers/management.php (admin table, Turn Recruited
         Firstcome Workers column) so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t0_after_first_come_counters']
@@ -498,7 +498,7 @@ class TestRegularRecruitment:
     def test_recruit_increments_counter(self):
         """turn_recruited_workers should be 1 after regular recruitment.
 
-        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
+        Scraped from /controllers/management.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t0_after_recruit_counters']
         assert counters['turn_recruited_workers'] == 1, \
@@ -544,7 +544,7 @@ class TestLockUnlockAcrossTurns:
     def test_counters_reset_on_turn_1(self):
         """At start of turn 1, both counters should be 0.
 
-        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
+        Scraped from /controllers/management.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t1_before_counters']
         assert counters['turn_firstcome_workers'] == 0
@@ -553,7 +553,7 @@ class TestLockUnlockAcrossTurns:
     def test_turn_1_counters_increment(self):
         """After both recruitments on turn 1, counters should be 1.
 
-        Scraped from /controllers/managment.php so runs under UI_ONLY=1.
+        Scraped from /controllers/management.php so runs under UI_ONLY=1.
         """
         counters = _snapshot['alpha_t1_after_recruit_counters']
         assert counters['turn_firstcome_workers'] == 1

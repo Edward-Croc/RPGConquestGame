@@ -178,7 +178,7 @@ class TestBothGamesLoaded:
     def test_secondary_has_workers(self, page: Page, base_url):
         """Japon1555SQL in secondary loaded 9 workers (Shikoku advanced scenario).
 
-        Counts rows on /workers/managment_workers.php served by the
+        Counts rows on /workers/management_workers.php served by the
         secondary URL — UI-runnable, no direct DB access required.
         """
         login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
@@ -188,21 +188,21 @@ class TestBothGamesLoaded:
     def test_primary_has_workers(self, page: Page, base_url):
         """TestConfig in primary loaded 26 workers (detection + combat + recruitment).
 
-        Counts rows on /workers/managment_workers.php on the primary URL.
+        Counts rows on /workers/management_workers.php on the primary URL.
         """
         login_as(page, base_url, "gm", "orga")
         count = ui_worker_count(page, base_url=base_url)
         assert count == 26, f"Expected 26 TestConfig workers, got {count}"
 
     def test_secondary_has_shikoku_zones(self, page: Page, base_url):
-        """Secondary has Shikoku zones (11 total). Counted via managment_zones."""
+        """Secondary has Shikoku zones (11 total). Counted via management_zones."""
         login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
         zones = ui_zone_names(page, base_url=PHP_BASE_URL_SECONDARY)
         assert len(zones) == 11, \
             f"Expected 11 Shikoku zones, got {len(zones)}: {zones}"
 
     def test_primary_has_testconfig_zones(self, page: Page, base_url):
-        """Primary has the 7 TestConfig zones. Counted via managment_zones."""
+        """Primary has the 7 TestConfig zones. Counted via management_zones."""
         login_as(page, base_url, "gm", "orga")
         zones = ui_zone_names(page, base_url=base_url)
         assert len(zones) == 7, \
@@ -213,14 +213,14 @@ class TestShodoshimaInSecondary:
     """Specific Shikoku feature: Shodoshima island zone and locations exist."""
 
     def test_shodoshima_zone_exists(self, page: Page, base_url):
-        """Shodoshima zone rendered on secondary game's managment_zones page."""
+        """Shodoshima zone rendered on secondary game's management_zones page."""
         login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
         zones = ui_zone_names(page, base_url=PHP_BASE_URL_SECONDARY)
         assert 'Ile de Shōdoshima' in zones, \
             f"Shodoshima zone missing from secondary game, got zones: {zones}"
 
     def test_shodoshima_not_in_primary(self, page: Page, base_url):
-        """Primary should NOT have Shodoshima — proves isolation (via managment_zones)."""
+        """Primary should NOT have Shodoshima — proves isolation (via management_zones)."""
         login_as(page, base_url, "gm", "orga")
         zones = ui_zone_names(page, base_url=base_url)
         assert 'Ile de Shōdoshima' not in zones, \
@@ -249,7 +249,7 @@ class TestGameIsolation:
     """Verify that each game's data is isolated in its own prefixed tables.
 
     Controller lastname membership scraped from each game's
-    /controllers/managment.php admin table (tr.controller-row
+    /controllers/management.php admin table (tr.controller-row
     data-controller-name). Uses isolated browser contexts so the two
     games' sessions don't interfere.
     """
@@ -292,7 +292,7 @@ class TestGameIsolation:
     def test_zone_names_disjoint(self, browser, base_url):
         """Zone name sets should be disjoint — each scenario uses distinct names.
 
-        Scrapes managment_zones on both URLs via isolated browser contexts
+        Scrapes management_zones on both URLs via isolated browser contexts
         so session switching for each login stays isolated.
         """
         ctx1 = browser.new_context()

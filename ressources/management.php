@@ -2,6 +2,12 @@
 
 require_once '../base/basePHP.php';
 
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 $pageName = 'ressources_admin';
 
 $prefix = $_SESSION['GAME_PREFIX'];
@@ -42,7 +48,7 @@ require_once '../base/baseHTML.php';
   */
   $ressourcesConfig = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
   ?> 
-  <div class="managment">
+  <div class="management">
         <h1>Ressources Config</h1>
         <table border="1" cellpadding="5">
             <tr>
@@ -70,7 +76,7 @@ require_once '../base/baseHTML.php';
             <td>%10$s</td>
             <td>%11$s</td>
             <td></td>',
-            $ressourceConfig['rc_id'],
+            $ressourceConfig['id'],
             $ressourceConfig['ressource_name'],
             $ressourceConfig['presentation'],
             $ressourceConfig['stored_text'],
@@ -87,7 +93,7 @@ require_once '../base/baseHTML.php';
     </table>
 </div>
 
-<div class='managment'>
+<div class='management'>
     <h1>Ressources Management</h1>
     <table border="1" cellpadding="5">
         <tr>
@@ -136,7 +142,7 @@ require_once '../base/baseHTML.php';
  $ressources = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
  $controllers = $gameReady->query("SELECT * FROM {$prefix}controllers ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
  ?>
- <div class='managment'>
+ <div class='management'>
     <h1>Add Ressource to Controller</h1>
     <form method="POST">
         <p>

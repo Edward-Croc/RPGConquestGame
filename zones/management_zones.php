@@ -1,8 +1,17 @@
 <?php
 require_once '../base/basePHP.php'; // Set up $pdo and session
+
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 $pageName = 'admin_zones';
 
 $prefix = $_SESSION['GAME_PREFIX'];
+
+$update_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $zoneId = $_POST['zone_id'];
@@ -37,7 +46,7 @@ $zones = $zoneStmt->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 ?>
-<div class='managment'>
+<div class='management'>
     <h1>ZONES — Contrôle & Revendication</h1>
     <?php echo $update_msg; ?>
     <table border="1" cellpadding="5">

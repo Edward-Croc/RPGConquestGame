@@ -476,7 +476,7 @@ class TestChainAttack:
         """Chain_B was captured by Chain_A before its attack-phase turn,
         so its queued attack against Chain_C never completed.
 
-        UI-first verification: managment_workers lists Chain_B TWICE
+        UI-first verification: management_workers lists Chain_B TWICE
         after end-turn — once as the captured original (moved to the
         captor's controller, action='captured' or 'prisoner') and once
         as the auto-created trace on Chain_B's original controller
@@ -486,7 +486,7 @@ class TestChainAttack:
         ensure_gm_login(page, base_url)
         rows = ui_workers_by_lastname(page, 'Chain_B')
         assert len(rows) == 2, \
-            f"Chain_B should have 2 managment_workers rows (captured + trace), got {len(rows)}: {rows}"
+            f"Chain_B should have 2 management_workers rows (captured + trace), got {len(rows)}: {rows}"
         actions = sorted(r['action_choice'] for r in rows)
         assert 'trace' in actions, \
             f"Chain_B should have a trace row after capture, got actions: {actions}"
@@ -536,7 +536,7 @@ class TestActionBlockedByCombat:
         queued but got downed by Inv_Atk_* in the attack phase that runs
         BEFORE investigation. Their investigate_report never existed.
 
-        UI verification via managment_workers row counts:
+        UI verification via management_workers row counts:
           - Captured worker → 2 rows: original (captured/prisoner) + trace
           - Killed worker   → 1 row: action='dead' (death path does NOT
             call createTraceWorker — only capture does).
@@ -614,7 +614,7 @@ class TestActionBlockedByCombat:
         """
         ensure_gm_login(page, PHP_BASE_URL)
         _ensure_controller_session(page)
-        page.goto(f"{PHP_BASE_URL}/zones/managment_zones.php")
+        page.goto(f"{PHP_BASE_URL}/zones/management_zones.php")
         page.wait_for_load_state("networkidle")
         # Beta-Combat row's holder <select>: the currently-selected option
         # must be the empty "-- Aucun --" one (value="").

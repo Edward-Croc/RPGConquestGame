@@ -1,5 +1,12 @@
 <?php
 require_once '../base/basePHP.php';
+
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 $pageName = 'admin_locations_discovery';
 
 
@@ -39,7 +46,7 @@ while ($row = $knownStmt->fetch(PDO::FETCH_ASSOC)) {
 
 require_once '../base/baseHTML.php';
 echo '
-    <div class="managment">
+    <div class="management">
     <h1>Location Discovery Administration</h1>
     <div class="content"><div class="flex">';
     $iteration = 0;

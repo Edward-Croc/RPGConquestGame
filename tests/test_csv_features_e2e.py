@@ -273,7 +273,7 @@ class TestLoadWorkersCSV:
     def test_workers_table_populated(self, page: Page, base_url):
         """Exactly 26 workers should exist.
 
-        Counts rows on /workers/managment_workers.php — UI-runnable.
+        Counts rows on /workers/management_workers.php — UI-runnable.
         """
         ensure_gm_login(page, base_url)
         count = ui_worker_count(page, base_url=base_url)
@@ -328,7 +328,7 @@ class TestLoadWorkersCSV:
     def test_specific_agent_controller_mapping(self, page: Page, base_url):
         """Verify Finder_1 -> Charlie, Searcher_1 -> Alpha, etc. match the CSV.
 
-        Cross-references `/workers/managment_workers.php` (worker →
+        Cross-references `/workers/management_workers.php` (worker →
         controller_id) with `select#controllerSelect` on accueil.php
         (controller_id → lastname) to build the same mapping the DB
         query produced. UI-runnable.
@@ -344,7 +344,7 @@ class TestLoadWorkersCSV:
             if val and text:
                 id_to_lastname[int(val)] = text.split()[-1]  # "Lord Alpha" → "Alpha"
 
-        # Build worker → controller lastname map via managment_workers
+        # Build worker → controller lastname map via management_workers
         workers = ui_all_workers(page, base_url=base_url)
         mapping = {w['lastname']: id_to_lastname.get(w['controller_id']) for w in workers}
 
@@ -369,11 +369,11 @@ class TestLoadWorkersCSV:
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
     def test_searcher1_has_investigate_action(self, page: Page, base_url):
-        """Searcher_1 CSV has action_choice='investigate' — managment_workers
+        """Searcher_1 CSV has action_choice='investigate' — management_workers
         'Ongoing action' column surfaces the current-turn action_choice."""
         ensure_gm_login(page, base_url)
         workers = {w['lastname']: w for w in ui_all_workers(page, base_url=base_url)}
-        assert 'Searcher_1' in workers, f"Searcher_1 not in managment_workers: {list(workers)[:5]}..."
+        assert 'Searcher_1' in workers, f"Searcher_1 not in management_workers: {list(workers)[:5]}..."
         assert workers['Searcher_1']['action_choice'] == 'investigate', \
             f"Searcher_1 action_choice should be 'investigate', got {workers['Searcher_1']}"
 

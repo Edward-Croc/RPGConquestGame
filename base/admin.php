@@ -69,9 +69,9 @@ require_once '../base/baseHTML.php';
                 <h1>Management</h1>
                 <?php echo sprintf( '
                 <p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>
-                <p> <a href="/%1$s/artefacts/managment.php">Artefacts</a> </p>
-                <p> <a href="/%1$s/controllers/managment.php">Player-Controllers</a> </p>
-                <p> <a href="/%1$s/ressources/managment.php">Ressources</a> </p>',
+                <p> <a href="/%1$s/artefacts/management.php">Artefacts</a> </p>
+                <p> <a href="/%1$s/controllers/management.php">Player-Controllers</a> </p>
+                <p> <a href="/%1$s/ressources/management.php">Ressources</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
@@ -80,14 +80,14 @@ require_once '../base/baseHTML.php';
         <div class="config">
                 <h1>List</h1>
                 <?php echo sprintf( '
-                <p> <a href="/%1$s/zones/managment_zones.php">Zone control list</a> </p>
-                <p> <a href="/%1$s/zones/managment_locations.php">Discovered location list</a> </p>
-                <p> <a href="/%1$s/zones/managment_bases.php">Attack on player base list</a> </p>',
+                <p> <a href="/%1$s/zones/management_zones.php">Zone control list</a> </p>
+                <p> <a href="/%1$s/zones/management_locations.php">Discovered location list</a> </p>
+                <p> <a href="/%1$s/zones/management_bases.php">Attack on player base list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
         <div class="config">
-                <h1>BDD managment : </h1>
+                <h1>BDD management : </h1>
                 <?php
                     // Add button to extract BDD to file.sql or .sql
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
@@ -110,7 +110,7 @@ require_once '../base/baseHTML.php';
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="config">
             <h1>Workers</h1>
-            <?php echo sprintf( '<p> <a href="/%1$s/workers/managment_workers.php">Worker list</a> </p>',
+            <?php echo sprintf( '<p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
         </div>

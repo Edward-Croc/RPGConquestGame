@@ -2,6 +2,12 @@
 
 require_once '../base/basePHP.php';
 
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 $pageName = 'artefacts_admin';
 
 $prefix = $_SESSION['GAME_PREFIX'];
@@ -49,7 +55,7 @@ $locations = $gameReady->query("SELECT id, name FROM {$prefix}locations ORDER BY
 require_once '../base/baseHTML.php';
 
 ?>
-<div class='managment'>
+<div class='management'>
     <h1>Artefacts List</h1>
     <table border="1" cellpadding="5">
         <tr>

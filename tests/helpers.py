@@ -160,7 +160,7 @@ def ui_controller_id(page: Page, lastname: str, base_url: str = None):
 
 
 def ui_all_workers(page: Page, base_url: str = None):
-    """Scrape /workers/managment_workers.php and return a list of dicts:
+    """Scrape /workers/management_workers.php and return a list of dicts:
       [{id, controller_id, firstname, lastname, zone_name, action_choice}, ...]
 
     This is the single authoritative UI source for worker state — it lists
@@ -168,9 +168,9 @@ def ui_all_workers(page: Page, base_url: str = None):
     controller_id and action_choice, which is what we need to disambiguate
     captured/original vs trace rows."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/workers/managment_workers.php")
+    page.goto(f"{url}/workers/management_workers.php")
     page.wait_for_load_state("load")
-    rows = page.locator("div.managment table tr").all()
+    rows = page.locator("div.management table tr").all()
     workers = []
     for row in rows[1:]:  # skip the header row
         cells = row.locator("td").all_inner_texts()
@@ -204,14 +204,14 @@ def ui_all_workers(page: Page, base_url: str = None):
 
 def ui_worker_id(page: Page, lastname: str, base_url: str = None,
                   prefer_non_trace: bool = True):
-    """Return the worker id matching `lastname` via managment_workers.php.
+    """Return the worker id matching `lastname` via management_workers.php.
 
     When multiple workers share a lastname (post-capture: original +
     trace), prefer the one whose action_choice is NOT 'trace' unless
     prefer_non_trace is False. Raises AssertionError if none found."""
     matches = [w for w in ui_all_workers(page, base_url) if w["lastname"] == lastname]
     if not matches:
-        raise AssertionError(f"No worker with lastname '{lastname}' found in managment_workers view")
+        raise AssertionError(f"No worker with lastname '{lastname}' found in management_workers view")
     if prefer_non_trace:
         non_trace = [w for w in matches if w["action_choice"] != "trace"]
         if non_trace:
@@ -225,7 +225,7 @@ def ui_worker_controller_id(page: Page, lastname: str, base_url: str = None,
     (non-trace preferred)."""
     matches = [w for w in ui_all_workers(page, base_url) if w["lastname"] == lastname]
     if not matches:
-        raise AssertionError(f"No worker with lastname '{lastname}' found in managment_workers view")
+        raise AssertionError(f"No worker with lastname '{lastname}' found in management_workers view")
     if prefer_non_trace:
         non_trace = [w for w in matches if w["action_choice"] != "trace"]
         if non_trace:
@@ -234,7 +234,7 @@ def ui_worker_controller_id(page: Page, lastname: str, base_url: str = None,
 
 
 def ui_all_zones(page: Page, base_url: str = None):
-    """Scrape /zones/managment_zones.php and return a list of dicts:
+    """Scrape /zones/management_zones.php and return a list of dicts:
       [{id, name, claimer_name, holder_name}, ...]
 
     More stable than the zoneSelect dropdown on admin.php because this
@@ -243,9 +243,9 @@ def ui_all_zones(page: Page, base_url: str = None):
     also extract the current controller names.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/zones/managment_zones.php")
+    page.goto(f"{url}/zones/management_zones.php")
     page.wait_for_load_state("load")
-    rows = page.locator("div.managment table tr").all()
+    rows = page.locator("div.management table tr").all()
     zones = []
     for row in rows[1:]:  # skip header
         cells = row.locator("td").all()
@@ -276,19 +276,19 @@ def ui_all_zones(page: Page, base_url: str = None):
 
 def ui_zone_id(page: Page, zone_name: str, base_url: str = None):
     """Return the zone id matching `zone_name` by scraping the admin
-    zones management table at /zones/managment_zones.php.
+    zones management table at /zones/management_zones.php.
 
     Raises AssertionError if not found."""
     for zone in ui_all_zones(page, base_url):
         if zone["name"] == zone_name:
             return zone["id"]
     raise AssertionError(
-        f"Zone with name '{zone_name}' not found in managment_zones view"
+        f"Zone with name '{zone_name}' not found in management_zones view"
     )
 
 
 def _scrape_location_discovery_flags(page: Page, base_url: str = None):
-    """Scrape /zones/managment_locations.php into a nested dict:
+    """Scrape /zones/management_locations.php into a nested dict:
       {location_name: {controller_lastname: {known: bool, secret: bool}}}
 
     The admin page renders one block per location with
@@ -297,12 +297,12 @@ def _scrape_location_discovery_flags(page: Page, base_url: str = None):
     per controller. Stable attributes — no emoji/text matching needed.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/zones/managment_locations.php")
+    page.goto(f"{url}/zones/management_locations.php")
     page.wait_for_load_state("load")
     result = {}
-    blocks = page.locator("div.managment div[style*='border']").all()
+    blocks = page.locator("div.management div[style*='border']").all()
     if not blocks:
-        raise AssertionError("No location blocks rendered on managment_locations.php")
+        raise AssertionError("No location blocks rendered on management_locations.php")
     for block in blocks:
         h3s = block.locator("h3").all()
         if not h3s:
@@ -324,7 +324,7 @@ def ui_known_locations_for_controller(page: Page, controller_lastname: str, base
     """Return the set of location names known by a controller.
 
     Reads data-known="true" from the structured li.controller-discovery-flag
-    elements on /zones/managment_locations.php."""
+    elements on /zones/management_locations.php."""
     data = _scrape_location_discovery_flags(page, base_url)
     return {
         loc for loc, ctrls in data.items()
@@ -387,7 +387,7 @@ def ui_worker_stats(page: Page, lastname: str, base_url: str = None):
 
 
 def ui_worker_count(page: Page, base_url: str = None):
-    """Return total worker count via /workers/managment_workers.php row count."""
+    """Return total worker count via /workers/management_workers.php row count."""
     return len(ui_all_workers(page, base_url))
 
 
@@ -412,12 +412,12 @@ def ui_turn_counter(page: Page, base_url: str = None):
 
 
 def ui_zone_names(page: Page, base_url: str = None):
-    """Return the set of all zone names via /zones/managment_zones.php."""
+    """Return the set of all zone names via /zones/management_zones.php."""
     return {z["name"] for z in ui_all_zones(page, base_url)}
 
 
 def ui_workers_by_lastname(page: Page, lastname: str, base_url: str = None):
-    """Return ALL managment_workers rows matching `lastname`.
+    """Return ALL management_workers rows matching `lastname`.
 
     Useful for verifying that a captured worker appears twice (the
     original row moved to the captor's controller with action='captured'
@@ -499,13 +499,13 @@ def ui_power_options_by_type(page: Page, base_url: str = None):
 
 def ui_all_controllers(page: Page, base_url: str = None):
     """Return the set of all controller lastnames via
-    /controllers/managment.php.
+    /controllers/management.php.
 
     Reads tr.controller-row elements from the Controller Details admin
     table; each row carries data-controller-name=LastName.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/controllers/managment.php")
+    page.goto(f"{url}/controllers/management.php")
     page.wait_for_load_state("load")
     rows = page.locator("tr.controller-row").all()
     return {
@@ -516,7 +516,7 @@ def ui_all_controllers(page: Page, base_url: str = None):
 
 
 def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
-    """Scrape /controllers/managment.php for one controller's counters.
+    """Scrape /controllers/management.php for one controller's counters.
 
     Returns a dict matching the DB helper's keys:
       {turn_recruited_workers: int, turn_firstcome_workers: int,
@@ -526,12 +526,12 @@ def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
     td[data-field=Y] — stable against text/emoji changes.
     Raises AssertionError if lastname not found."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/controllers/managment.php")
+    page.goto(f"{url}/controllers/management.php")
     page.wait_for_load_state("load")
     row = page.locator(f'tr.controller-row[data-controller-name="{lastname}"]')
     if row.count() == 0:
         raise AssertionError(
-            f"Controller '{lastname}' not found in controllers/managment.php"
+            f"Controller '{lastname}' not found in controllers/management.php"
         )
     def _cell(field):
         return (row.locator(f'td[data-field="{field}"]').inner_text() or "").strip()
