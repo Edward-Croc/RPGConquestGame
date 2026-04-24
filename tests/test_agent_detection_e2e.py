@@ -571,6 +571,37 @@ class TestLocationDetection:
         page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
+    # --- Artefact visibility (requires enquete_difference >= LOCATIONARTEFACTSDIFF=2) ---
+
+    def test_artefact_visible_at_secret_level(self, page: Page, base_url):
+        """Finder_1 (Charlie, enq=7, diff=3) has enquete_difference >=
+        LOCATIONARTEFACTSDIFF (2), so their secrets_report lists the
+        artefact linked to Location A (Artefact Alpha, loaded from
+        setupTestConfig_artefacts.csv)."""
+        html = _worker_report_html(page, 'Finder_1', base_url)
+        assert 'Location A' in html, "Prerequisite: Finder_1 must see Location A"
+        assert 'Artefact Alpha' in html, \
+            "Finder_1 at enquete_difference=3 should see the artefact name in report"
+
+    def test_artefact_not_visible_at_desc_level(self, page: Page, base_url):
+        """Finder_4 (Foxtrot, enq=5, diff=1) sees NAME + DESCRIPTION but
+        enquete_difference=1 < LOCATIONARTEFACTSDIFF (2), so the
+        artefact name must NOT appear in their report."""
+        html = _worker_report_html(page, 'Finder_4', base_url)
+        assert 'Location A' in html, "Prerequisite: Finder_4 must still see Location A"
+        assert 'test location' in html.lower(), \
+            "Prerequisite: Finder_4 must see the description"
+        assert 'Artefact Alpha' not in html, \
+            "Finder_4 at enquete_difference=1 must NOT see the artefact"
+
+    def test_artefact_not_visible_at_name_only_level(self, page: Page, base_url):
+        """Finder_5 (Golf, enq=4, diff=0) sees only the location NAME;
+        artefact visibility requires enquete_difference >= 2 so it must
+        not appear."""
+        html = _worker_report_html(page, 'Finder_5', base_url)
+        assert 'Artefact Alpha' not in html, \
+            "Finder_5 at enquete_difference=0 must NOT see the artefact"
+
 
 # ---------------------------------------------------------------------------
 # Test: worker view page renders report correctly

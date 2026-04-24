@@ -271,13 +271,13 @@ class TestLoadWorkersCSV:
     """
 
     def test_workers_table_populated(self, page: Page, base_url):
-        """Exactly 26 workers should exist.
+        """Exactly 28 workers should exist (7 detection + 19 combat + 2 cross).
 
         Counts rows on /workers/management_workers.php — UI-runnable.
         """
         ensure_gm_login(page, base_url)
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 26, f"Expected 26 workers, got {count}"
+        assert count == 28, f"Expected 28 workers, got {count}"
 
     @pytest.mark.db
     def test_all_workers_have_origin_and_zone(self):
@@ -365,6 +365,8 @@ class TestLoadWorkersCSV:
             # Blocked claim (Beta-Combat zone)
             'Claim_Atk_1': 'Echo', 'Claim_Def_1': 'Beta',
             'Claim_Atk_2': 'Charlie', 'Claim_Def_2': 'Delta',
+            # Cross-zone attack (Beta-Combat → Delta-Disputed)
+            'Hunter_Cross': 'Alpha', 'Runner_Cross': 'Beta',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
@@ -378,10 +380,16 @@ class TestLoadWorkersCSV:
             f"Searcher_1 action_choice should be 'investigate', got {workers['Searcher_1']}"
 
     def test_other_agents_have_passive_action(self, page: Page, base_url):
-        """All other agents should have action_choice='passive' at turn 0."""
+        """All other agents should have action_choice='passive' at turn 0.
+
+        Exceptions (CSV-seeded with a non-passive action):
+          - Searcher_1 (detection): action='investigate'
+          - Hunter_Cross (cross-zone scenario): action='investigate'
+        """
         ensure_gm_login(page, base_url)
+        investigate_agents = {'Searcher_1', 'Hunter_Cross'}
         for w in ui_all_workers(page, base_url=base_url):
-            if w['lastname'] == 'Searcher_1':
+            if w['lastname'] in investigate_agents:
                 continue
             assert w['action_choice'] == 'passive', \
                 f"Worker '{w['lastname']}' has action '{w['action_choice']}', expected 'passive'"
