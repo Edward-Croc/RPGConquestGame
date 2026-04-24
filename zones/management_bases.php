@@ -26,7 +26,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 ?>
-<div class='managment'>
+<div class='management'>
     <h1>Historique des attaques de bases</h1>
 
     <table border="1" cellpadding="5">

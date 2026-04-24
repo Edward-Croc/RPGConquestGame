@@ -453,7 +453,7 @@ class TestLocationDetection:
     def test_unfound_not_in_known_locations(self, page: Page, base_url):
         """Searcher_1 (Alpha): Location A is NOT in Alpha's known-locations set.
 
-        Scraped from /zones/managment_locations.php (admin "Discovered by"
+        Scraped from /zones/management_locations.php (admin "Discovered by"
         list). UI-runnable under UI_ONLY=1.
         """
         ensure_gm_login(page, base_url)
@@ -474,7 +474,7 @@ class TestLocationDetection:
     def test_name_only_not_in_known_locations(self, page: Page, base_url):
         """Finder_5 (Golf): NOT in Golf's known-locations set (requires diff>=1).
 
-        Scraped from /zones/managment_locations.php — UI-runnable."""
+        Scraped from /zones/management_locations.php — UI-runnable."""
         ensure_gm_login(page, base_url)
         known = ui_known_locations_for_controller(page, 'Golf')
         assert 'Location A' not in known, \
@@ -503,7 +503,7 @@ class TestLocationDetection:
     def test_desc_in_known_locations_no_secret(self, page: Page, base_url):
         """Finder_4 (Foxtrot) at diff=1: knows Location A but NOT the secret.
 
-        Both flags scraped from /zones/managment_locations.php via
+        Both flags scraped from /zones/management_locations.php via
         data-known / data-secret attributes — UI-runnable.
         """
         ensure_gm_login(page, base_url)
@@ -542,7 +542,7 @@ class TestLocationDetection:
     def test_secret_in_known_locations_with_flag(self, page: Page, base_url):
         """Finder_1 (Charlie) at diff=2: knows Location A AND has the secret.
 
-        Both flags scraped from /zones/managment_locations.php via
+        Both flags scraped from /zones/management_locations.php via
         data-known / data-secret attributes — UI-runnable.
         """
         ensure_gm_login(page, base_url)

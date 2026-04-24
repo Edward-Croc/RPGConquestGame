@@ -37,7 +37,7 @@ $zones = $zoneStmt->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 ?>
-<div class='managment'>
+<div class='management'>
     <h1>ZONES — Contrôle & Revendication</h1>
     <?php echo $update_msg; ?>
     <table border="1" cellpadding="5">

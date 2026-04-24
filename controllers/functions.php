@@ -911,7 +911,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
 
     $returnLink = '/controllers/action.php';
     if ($origin == 'admin') 
-        $returnLink = '/controllers/managment.php';
+        $returnLink = '/controllers/management.php';
 
 
     $zones = getZonesArray($pdo);

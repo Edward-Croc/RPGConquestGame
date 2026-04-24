@@ -15,7 +15,7 @@ $powerTransformationArray = getPowersByType($gameReady,'4', null, false);
 
 require_once '../base/baseHTML.php';
 ?>
-<div class='managment'>
+<div class='management'>
     <h1>Liste des Agents</h1>
     <table border="1" cellpadding="5">
         <tr>

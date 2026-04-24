@@ -39,7 +39,7 @@ while ($row = $knownStmt->fetch(PDO::FETCH_ASSOC)) {
 
 require_once '../base/baseHTML.php';
 echo '
-    <div class="managment">
+    <div class="management">
     <h1>Location Discovery Administration</h1>
     <div class="content"><div class="flex">';
     $iteration = 0;
