@@ -76,7 +76,7 @@ require_once '../base/baseHTML.php';
             <td>%10$s</td>
             <td>%11$s</td>
             <td></td>',
-            $ressourceConfig['rc_id'],
+            $ressourceConfig['id'],
             $ressourceConfig['ressource_name'],
             $ressourceConfig['presentation'],
             $ressourceConfig['stored_text'],
