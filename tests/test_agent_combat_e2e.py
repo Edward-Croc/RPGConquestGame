@@ -57,33 +57,9 @@ from helpers import (
     end_turn, load_minimal_data,
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
+    clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
+    worker_report_html,
 )
-
-
-# ---------------------------------------------------------------------------
-# ID caches populated by the module fixture from UI scrapes.
-#
-# Worker ids never change post-creation, so we snapshot them once at fixture
-# start (before combat resolves). Controller ids are dynamic for captured
-# workers (move to captor), so those lookups are fresh via the UI helper.
-# ---------------------------------------------------------------------------
-
-_wid_cache = {}
-_cid_cache = {}
-
-
-def _cached_wid(page, lastname):
-    """Return the ORIGINAL worker_id for `lastname`, scraping once per lastname."""
-    if lastname not in _wid_cache:
-        _wid_cache[lastname] = ui_worker_id(page, lastname)
-    return _wid_cache[lastname]
-
-
-def _cached_cid(page, lastname):
-    """Return the controller_id for `lastname`, scraping once per lastname."""
-    if lastname not in _cid_cache:
-        _cid_cache[lastname] = ui_controller_id(page, lastname)
-    return _cid_cache[lastname]
 
 
 @pytest.fixture(scope="session")
@@ -99,81 +75,6 @@ def _ensure_controller_session(page):
     page.locator("select[name='controller_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
     page.wait_for_load_state("networkidle")
-
-
-def _worker_report_html(page, lastname):
-    """Navigate to a worker's page and return the HTML content.
-
-    Switches the gm session to the worker's CURRENT controller first
-    (may be the captor if the worker was captured). Uses the fresh
-    UI scrape for controller_id so the post-capture state is correct;
-    worker_id is cached because the original record's id doesn't change."""
-    ensure_gm_login(page, PHP_BASE_URL)
-    ctrl_id = ui_worker_controller_id(page, lastname)
-    page.goto(
-        f"{PHP_BASE_URL}/base/accueil.php"
-        f"?controller_id={ctrl_id}&chosir=Choisir"
-    )
-    page.wait_for_load_state("networkidle")
-    wid = _cached_wid(page, lastname)
-    assert wid, f"Worker {lastname} not found"
-    page.goto(f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
-    page.wait_for_load_state("load")
-    return page.content()
-
-
-# ---------------------------------------------------------------------------
-# Helpers: UI action endpoints
-# ---------------------------------------------------------------------------
-
-def _ui_attack(page, attacker_lastname, target_lastname):
-    """Set attack via workers/action.php URL endpoint."""
-    atk_id = _cached_wid(page, attacker_lastname)
-    tgt_id = _cached_wid(page, target_lastname)
-    page.goto(
-        f"{PHP_BASE_URL}/workers/action.php"
-        f"?worker_id={atk_id}"
-        f"&enemy_worker_id[]=worker_{tgt_id}"
-        f"&attack=Attaquer"
-    )
-    page.wait_for_load_state("load")
-
-
-def _ui_investigate(page, lastname):
-    """Set investigate via workers/action.php URL endpoint."""
-    wid = _cached_wid(page, lastname)
-    page.goto(
-        f"{PHP_BASE_URL}/workers/action.php"
-        f"?worker_id={wid}&investigate=1"
-    )
-    page.wait_for_load_state("load")
-
-
-def _ui_claim(page, lastname, claim_controller_lastname):
-    """Set claim via workers/action.php URL endpoint."""
-    wid = _cached_wid(page, lastname)
-    cid = _cached_cid(page, claim_controller_lastname)
-    page.goto(
-        f"{PHP_BASE_URL}/workers/action.php"
-        f"?worker_id={wid}&claim_controller_id={cid}&claim=1"
-    )
-    page.wait_for_load_state("load")
-
-
-def _ui_move(page, lastname, zone_name):
-    """Move worker to another zone via workers/action.php URL endpoint.
-
-    moveWorker (workers/functions.php) is IMMEDIATE: it updates
-    workers.zone_id right away AND forcibly changes the current turn's
-    action_choice to 'passive' (replacing whatever was queued).
-    """
-    wid = _cached_wid(page, lastname)
-    zid = ui_zone_id(page, zone_name)
-    page.goto(
-        f"{PHP_BASE_URL}/workers/action.php"
-        f"?worker_id={wid}&zone_id={zid}&move=1"
-    )
-    page.wait_for_load_state("load")
 
 
 
@@ -219,49 +120,48 @@ def combat_scenario(browser):
     # Reset module-level id caches for this fixture run. Tests that run
     # against different deployments should each get fresh ids scraped
     # from the current page state.
-    _wid_cache.clear()
-    _cid_cache.clear()
+    clear_ui_caches()
 
     # End turn 0 → 1
     end_turn(page)
 
     # Set all combat actions via UI for turn 1
     # Chain: A→B, B→C, C→D, D→E, E→F, F→G
-    _ui_attack(page, 'Chain_A', 'Chain_B')
-    _ui_attack(page, 'Chain_B', 'Chain_C')
-    _ui_attack(page, 'Chain_C', 'Chain_D')
-    _ui_attack(page, 'Chain_D', 'Chain_E')
-    _ui_attack(page, 'Chain_E', 'Chain_F')
-    _ui_attack(page, 'Chain_F', 'Chain_G')
+    ui_attack(page, 'Chain_A', 'Chain_B')
+    ui_attack(page, 'Chain_B', 'Chain_C')
+    ui_attack(page, 'Chain_C', 'Chain_D')
+    ui_attack(page, 'Chain_D', 'Chain_E')
+    ui_attack(page, 'Chain_E', 'Chain_F')
+    ui_attack(page, 'Chain_F', 'Chain_G')
 
     # Base: equal match + counter
-    _ui_attack(page, 'Even_Atk', 'Even_Def')
-    _ui_attack(page, 'Counter_Atk', 'Counter_Def')
+    ui_attack(page, 'Even_Atk', 'Even_Def')
+    ui_attack(page, 'Counter_Atk', 'Counter_Def')
 
     # Blocked investigate: attackers attack, defenders investigate
-    _ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
-    _ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-    _ui_investigate(page, 'Inv_Def_1')
-    _ui_investigate(page, 'Inv_Def_2')
+    ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
+    ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
+    ui_investigate(page, 'Inv_Def_1')
+    ui_investigate(page, 'Inv_Def_2')
 
     # Blocked claim: attackers attack, defenders claim their own controller
-    _ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
-    _ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-    _ui_claim(page, 'Claim_Def_1', 'Beta')
-    _ui_claim(page, 'Claim_Def_2', 'Delta')
+    ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
+    ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
+    ui_claim(page, 'Claim_Def_1', 'Beta')
+    ui_claim(page, 'Claim_Def_2', 'Delta')
 
     # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
     # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
     # default) the attack-pair SQL has no zone filter. moveWorker()
     # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
-    _ui_move(page, 'Runner_Cross', 'Delta-Disputed')
-    _ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
+    ui_move(page, 'Runner_Cross', 'Delta-Disputed')
+    ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
 
     # Move-clears-action-params: Mover_Test queues an attack THEN moves.
     # moveWorker must clobber the action to 'passive' AND reset
     # action_params to '{}' — no residual attack target data.
-    _ui_attack(page, 'Mover_Test', 'Chain_A')
-    _ui_move(page, 'Mover_Test', 'Delta-Disputed')
+    ui_attack(page, 'Mover_Test', 'Chain_A')
+    ui_move(page, 'Mover_Test', 'Delta-Disputed')
 
     # Keep-action-params-on-miss: Keep_Def queues claim for Alpha;
     # Keep_Atk attacks Keep_Def. Equal 3/3/3 stats → attack_difference=0
@@ -269,8 +169,8 @@ def combat_scenario(browser):
     # (claim target) must survive the defender-branch of attackMechanic
     # without being wiped to '{}' — regression guard for the
     # updateWorkerAction gate change (see TestAttackKeepsDefenderParams).
-    _ui_claim(page, 'Keep_Def', 'Alpha')
-    _ui_attack(page, 'Keep_Atk', 'Keep_Def')
+    ui_claim(page, 'Keep_Def', 'Alpha')
+    ui_attack(page, 'Keep_Atk', 'Keep_Def')
 
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
@@ -305,7 +205,7 @@ def _ui_worker_is_downed(page, lastname):
     The action form is absent for both inactive actions and prisoner
     views, so `name="attack"` input is not rendered.
     """
-    html = _worker_report_html(page, lastname)
+    html = worker_report_html(page, lastname)
     is_disparu_or_prisoner = 'A disparu' in html or 'prisonnier' in html
     return is_disparu_or_prisoner and 'name="attack"' not in html
 
@@ -319,7 +219,7 @@ def _ui_worker_is_passive(page, lastname):
     the controller has known alive enemies in the worker's current zone,
     which breaks down for workers who moved to a zone with no targets).
     """
-    html = _worker_report_html(page, lastname)
+    html = worker_report_html(page, lastname)
     return 'Surveille' in html and 'name="passive"' in html
 
 
@@ -330,7 +230,7 @@ def _ui_worker_is_attacking(page, lastname, target_lastname):
     <lastname>" when action_choice == 'attack'. Firstname is 'combat' for all
     combat agents.
     """
-    html = _worker_report_html(page, lastname)
+    html = worker_report_html(page, lastname)
     return 'Attaque' in html and target_lastname in html
 
 
@@ -351,7 +251,7 @@ class TestBaseCombat:
         UI: attacker report contains 'Captured ... Inv_Def_1'; defender's own
         view shows 'A disparu' (txt_ps_captured) and no action form.
         """
-        html = _worker_report_html(page, 'Inv_Atk_1')
+        html = worker_report_html(page, 'Inv_Atk_1')
         assert 'Captured' in html and 'Inv_Def_1' in html, \
             "Attacker report should mention capture of Inv_Def_1"
         assert _ui_worker_is_downed(page, 'Inv_Def_1'), \
@@ -363,7 +263,7 @@ class TestBaseCombat:
         UI: attacker report contains 'succeeded ... Inv_Def_2'; defender's own
         view shows 'A disparu' (txt_ps_dead) and no action form.
         """
-        html = _worker_report_html(page, 'Inv_Atk_2')
+        html = worker_report_html(page, 'Inv_Atk_2')
         assert 'succeeded' in html and 'Inv_Def_2' in html, \
             "Attacker report should mention successful attack on Inv_Def_2"
         assert _ui_worker_is_downed(page, 'Inv_Def_2'), \
@@ -376,7 +276,7 @@ class TestBaseCombat:
         UI: attacker report contains 'failed ... Even_Def'; defender's view
         still shows 'Surveille' (txt_ps_passive) and the action form.
         """
-        html = _worker_report_html(page, 'Even_Atk')
+        html = worker_report_html(page, 'Even_Atk')
         assert 'failed' in html and 'Even_Def' in html, \
             "Attacker report should mention failed attack on Even_Def"
         assert _ui_worker_is_passive(page, 'Even_Def'), \
@@ -390,7 +290,7 @@ class TestBaseCombat:
         UI: attacker report contains 'countered ... Counter_Def'; attacker's
         view shows 'A disparu' (dead); defender stays 'Surveille' (passive).
         """
-        html = _worker_report_html(page, 'Counter_Atk')
+        html = worker_report_html(page, 'Counter_Atk')
         assert 'countered' in html and 'Counter_Def' in html, \
             "Attacker report should mention counter-attack from Counter_Def"
         assert _ui_worker_is_downed(page, 'Counter_Atk'), \
@@ -440,7 +340,7 @@ class TestChainAttack:
 
     def test_chain_a_captures_b(self, page: Page, base_url):
         """A captures B. Verified via attacker report + defender view."""
-        html_a = _worker_report_html(page, 'Chain_A')
+        html_a = worker_report_html(page, 'Chain_A')
         assert 'Captured' in html_a and 'Chain_B' in html_a, \
             "Chain_A report should mention capture of Chain_B"
         assert _ui_worker_is_downed(page, 'Chain_B'), \
@@ -448,7 +348,7 @@ class TestChainAttack:
 
     def test_chain_c_kills_d_and_survives(self, page: Page, base_url):
         """C kills D. D's pending attack is skipped (D inactive before its turn)."""
-        html_c = _worker_report_html(page, 'Chain_C')
+        html_c = worker_report_html(page, 'Chain_C')
         assert 'succeeded' in html_c and 'Chain_D' in html_c, \
             "Chain_C report should mention successful attack on Chain_D"
         assert _ui_worker_is_downed(page, 'Chain_D'), \
@@ -458,7 +358,7 @@ class TestChainAttack:
         """F (enquete=5) acts before E (enquete=4), so F kills G first; then E
         kills F. Both F and G end up downed; E survives and still shows attack.
         """
-        html_e = _worker_report_html(page, 'Chain_E')
+        html_e = worker_report_html(page, 'Chain_E')
         assert 'succeeded' in html_e and 'Chain_F' in html_e, \
             "Chain_E report should mention successful attack on Chain_F"
         assert _ui_worker_is_downed(page, 'Chain_F'), \
@@ -472,13 +372,13 @@ class TestChainAttack:
         Chain_B was queued to attack Chain_C but got captured first by
         Chain_A. The "didn't-attack" check is DB-only (see
         test_chain_b_did_not_attack below); this test stays pure-UI."""
-        html_a = _worker_report_html(page, 'Chain_A')
+        html_a = worker_report_html(page, 'Chain_A')
         assert 'Captured' in html_a and 'Chain_B' in html_a
 
-        html_c = _worker_report_html(page, 'Chain_C')
+        html_c = worker_report_html(page, 'Chain_C')
         assert 'succeeded' in html_c and 'Chain_D' in html_c
 
-        html_e = _worker_report_html(page, 'Chain_E')
+        html_e = worker_report_html(page, 'Chain_E')
         assert 'succeeded' in html_e and 'Chain_F' in html_e
 
     def test_chain_b_did_not_attack(self, page: Page, base_url):
@@ -716,7 +616,7 @@ class TestCrossZoneAttack:
         either 'succeeded' (kill text) or 'Captured' depending on the
         exact attack_difference. We only assert the target is named,
         keeping the assertion robust to template wording."""
-        html = _worker_report_html(page, 'Hunter_Cross')
+        html = worker_report_html(page, 'Hunter_Cross')
         assert 'Runner_Cross' in html, \
             "Hunter_Cross's page should reference Runner_Cross in the attack report"
 
@@ -733,8 +633,8 @@ class TestMoveClearsActionParams:
 
     Setup (combat_scenario fixture):
       - Mover_Test (Alpha, Beta-Combat, passive on turn 0).
-      - Between turns: _ui_attack(Mover_Test, Chain_A), then
-        _ui_move(Mover_Test, 'Delta-Disputed').
+      - Between turns: ui_attack(Mover_Test, Chain_A), then
+        ui_move(Mover_Test, 'Delta-Disputed').
       - End turn 1 → 2.
 
     If the clear works: Mover_Test survives (passive, moved).
@@ -746,7 +646,7 @@ class TestMoveClearsActionParams:
     def test_mover_action_is_passive_no_target_in_view(self, page: Page, base_url):
         """Mover_Test's own view page should show passive + move text,
         with no reference to the cancelled attack target (Chain_A)."""
-        html = _worker_report_html(page, 'Mover_Test')
+        html = worker_report_html(page, 'Mover_Test')
         assert 'Chain_A' not in html, \
             "Mover_Test's view must not reference the cancelled attack target Chain_A"
         assert _ui_worker_is_passive(page, 'Mover_Test'), \
