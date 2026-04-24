@@ -56,7 +56,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     end_turn, load_minimal_data,
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
-    ui_workers_by_lastname, ui_faction_sections,
+    ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
 )
 
 
@@ -192,6 +192,22 @@ def _ui_claim(page, lastname, claim_controller_lastname):
     page.wait_for_load_state("load")
 
 
+def _ui_move(page, lastname, zone_name):
+    """Move worker to another zone via workers/action.php URL endpoint.
+
+    moveWorker (workers/functions.php) is IMMEDIATE: it updates
+    workers.zone_id right away AND forcibly changes the current turn's
+    action_choice to 'passive' (replacing whatever was queued).
+    """
+    wid = _cached_wid(page, lastname)
+    zid = ui_zone_id(page, zone_name)
+    page.goto(
+        f"{PHP_BASE_URL}/workers/action.php"
+        f"?worker_id={wid}&zone_id={zid}&move=1"
+    )
+    page.wait_for_load_state("load")
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +281,13 @@ def combat_scenario(browser):
     _ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
     _ui_claim(page, 'Claim_Def_1', 'Beta')
     _ui_claim(page, 'Claim_Def_2', 'Delta')
+
+    # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
+    # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
+    # default) the attack-pair SQL has no zone filter. moveWorker()
+    # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
+    _ui_move(page, 'Runner_Cross', 'Delta-Disputed')
+    _ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
 
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
@@ -656,3 +679,57 @@ class TestActionBlockedByCombat:
             f"Beta-Combat should remain unclaimed in zones management UI, "
             f"but holder_id select has value={selected_value!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Tests: cross-zone attack (LIMIT_ATTACK_BY_ZONE=0 default behavior)
+# ---------------------------------------------------------------------------
+
+class TestCrossZoneAttack:
+    """Issue #2: 'Agent attack of another agent that has moved'.
+
+    Setup (combat_scenario fixture):
+      - Hunter_Cross (Alpha, Beta-Combat) action=investigate on turn 0.
+        Powers: Eagle Scout|Patrol Warden → enq=6, atk=4, def=4.
+      - Runner_Cross (Beta, Beta-Combat)  action=passive     on turn 0.
+        Powers: Blank Slate|Common Folk → enq=3, atk=3, def=3.
+      - End turn 0 → 1: Hunter detects Runner (adds a known_enemies row).
+      - Between turns 1 and 2:
+          * Runner moves to Delta-Disputed (moveWorker forces Runner's
+            current-turn action to 'passive' and updates workers.zone_id).
+          * Hunter queues worker-scope attack on Runner.
+      - End turn 1 → 2: attack resolves. With LIMIT_ATTACK_BY_ZONE=0
+        (TestConfig inherits the default from minimalData.sql) the
+        attack-pair SQL has no zone filter, so the attack lands
+        cross-zone. Hunter atk=4 vs Runner def=3 → attack_difference=1
+        → ATTACKDIFF0 met, ATTACKDIFF1 not met → KILL (not capture).
+    """
+
+    def test_runner_moved_to_delta(self, page: Page, base_url):
+        """Runner_Cross's moveWorker call updated workers.zone_id to
+        Delta-Disputed — verified via /workers/management_workers.php
+        (which renders each worker's current zone_name).
+        """
+        ensure_gm_login(page, base_url)
+        workers = ui_all_workers(page, base_url=base_url)
+        runner = next((w for w in workers if w['lastname'] == 'Runner_Cross'), None)
+        assert runner is not None, "Runner_Cross should exist in workers list"
+        assert runner['zone_name'] == 'Delta-Disputed', \
+            f"Runner_Cross should be in Delta-Disputed after move, got {runner['zone_name']!r}"
+
+    def test_runner_is_dead(self, page: Page, base_url):
+        """Runner_Cross should be dead after the cross-zone kill.
+
+        UI: Runner's own view.php page shows 'A disparu' (txt_ps_dead)
+        and no action form."""
+        assert _ui_worker_is_downed(page, 'Runner_Cross'), \
+            "Runner_Cross should be dead after cross-zone attack from Hunter_Cross"
+
+    def test_hunter_report_mentions_kill(self, page: Page, base_url):
+        """Hunter's worker-view report should reference Runner by name —
+        either 'succeeded' (kill text) or 'Captured' depending on the
+        exact attack_difference. We only assert the target is named,
+        keeping the assertion robust to template wording."""
+        html = _worker_report_html(page, 'Hunter_Cross')
+        assert 'Runner_Cross' in html, \
+            "Hunter_Cross's page should reference Runner_Cross in the attack report"

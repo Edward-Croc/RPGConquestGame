@@ -25,3 +25,5 @@ combat,Claim_Atk_1,origine Accessible,Beta-Combat,Echo,passive,{},Eagle Scout|Ve
 combat,Claim_Def_1,origine Accessible,Beta-Combat,Beta,passive,{},Dark Impulse|Common Folk
 combat,Claim_Atk_2,origine Accessible,Beta-Combat,Charlie,passive,{},Eagle Scout|Patrol Warden
 combat,Claim_Def_2,origine Accessible,Beta-Combat,Delta,passive,{},Blank Slate|Common Folk
+cross,Hunter_Cross,origine Accessible,Beta-Combat,Alpha,investigate,{},Eagle Scout|Patrol Warden
+cross,Runner_Cross,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Common Folk
