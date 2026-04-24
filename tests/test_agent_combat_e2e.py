@@ -263,6 +263,15 @@ def combat_scenario(browser):
     _ui_attack(page, 'Mover_Test', 'Chain_A')
     _ui_move(page, 'Mover_Test', 'Delta-Disputed')
 
+    # Keep-action-params-on-miss: Keep_Def queues claim for Alpha;
+    # Keep_Atk attacks Keep_Def. Equal 3/3/3 stats → attack_difference=0
+    # < ATTACKDIFF0=1 → miss. Both survive. Keep_Def's action_params
+    # (claim target) must survive the defender-branch of attackMechanic
+    # without being wiped to '{}' — regression guard for the
+    # updateWorkerAction gate change (see TestAttackKeepsDefenderParams).
+    _ui_claim(page, 'Keep_Def', 'Alpha')
+    _ui_attack(page, 'Keep_Atk', 'Keep_Def')
+
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
 
@@ -764,3 +773,57 @@ class TestMoveClearsActionParams:
             f"After move-after-attack, action_choice should be 'passive', got {row['action_choice']!r}"
         assert row['action_params'] == '{}', \
             f"action_params should be empty JSON '{{}}' after move, got {row['action_params']!r}"
+
+
+# ---------------------------------------------------------------------------
+# Tests: attackMechanic preserves surviving defender's action_params
+# ---------------------------------------------------------------------------
+
+class TestAttackKeepsDefenderParams:
+    """Regression guard for the `$defender_json = null` initialization in
+    attackMechanic.php (vs the earlier `array()`).
+
+    Context: the updateWorkerAction gate was tightened from
+    `!empty($jsonArray)` to `$jsonArray !== null` so moveWorker could reset
+    action_params to '{}'. That silently introduced a behaviour change
+    at attackMechanic.php:449 where non-capture defender paths
+    (kill / miss / escape / riposte) pass $defender_json to
+    updateWorkerAction. The loop initializes $defender_json per iteration
+    and only populates it inside the capture branch, so miss-path
+    defenders would previously have passed `array()` and had their
+    action_params wiped to '{}'. Fix: initialize to null instead.
+
+    Setup (combat_scenario fixture):
+      - Keep_Def (Beta, Beta-Combat, Blank Slate|Common Folk → 3/3/3)
+        queues `claim` for Alpha on turn 1 — populates action_params
+        with {"claim_controller_id": Alpha_id}.
+      - Keep_Atk (Foxtrot, same powers → 3/3/3) queues attack on
+        Keep_Def. attack_difference = 3-3 = 0 < ATTACKDIFF0=1 → miss.
+        riposte_difference = 0 < RIPOSTDIFF=2 → no counter. Both
+        survive.
+      - End turn 1 → 2.
+
+    If the fix works, Keep_Def's turn-1 action_params still contain the
+    claim target. If not (pre-fix `array()` init), params are wiped to
+    '{}' during the defender loop.
+    """
+
+    @pytest.mark.db
+    def test_keep_def_preserves_claim_params_after_survived_miss(self):
+        """Keep_Def survives Keep_Atk's miss; its turn-1 action_params
+        must still contain the queued claim_controller_id."""
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT wa.action_choice, wa.action_params
+            FROM `{GAME_PREFIX}worker_actions` wa
+            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
+            WHERE w.lastname = 'Keep_Def' AND wa.turn_number = 1
+        """)
+        row = cursor.fetchone()
+        conn.close()
+        assert row is not None, "Keep_Def must have a turn-1 worker_actions row"
+        assert row['action_choice'] == 'claim', \
+            f"Keep_Def should still have action_choice='claim' after surviving miss, got {row['action_choice']!r}"
+        assert 'claim_controller_id' in (row['action_params'] or ''), \
+            f"Keep_Def's action_params must preserve claim_controller_id after surviving miss — regression guard for attackMechanic.php:306 init. Got: {row['action_params']!r}"

@@ -271,13 +271,13 @@ class TestLoadWorkersCSV:
     """
 
     def test_workers_table_populated(self, page: Page, base_url):
-        """Exactly 29 workers should exist (7 detection + 19 combat + 3 cross).
+        """Exactly 31 workers should exist (7 detection + 19 combat + 5 cross).
 
         Counts rows on /workers/management_workers.php — UI-runnable.
         """
         ensure_gm_login(page, base_url)
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 29, f"Expected 29 workers, got {count}"
+        assert count == 31, f"Expected 31 workers, got {count}"
 
     @pytest.mark.db
     def test_all_workers_have_origin_and_zone(self):
@@ -368,6 +368,8 @@ class TestLoadWorkersCSV:
             # Cross-zone attack (Beta-Combat → Delta-Disputed)
             'Hunter_Cross': 'Alpha', 'Runner_Cross': 'Beta',
             'Mover_Test': 'Echo',
+            # Defender-params-preserved regression (Beta-Combat miss)
+            'Keep_Def': 'Beta', 'Keep_Atk': 'Foxtrot',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
