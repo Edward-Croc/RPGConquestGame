@@ -548,3 +548,53 @@ def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
         "turn_recruited_workers": _as_int(_cell("turn_recruited_workers")),
         "turn_firstcome_workers": _as_int(_cell("turn_firstcome_workers")),
     }
+
+
+def ui_faction_sections(page: Page, controller_lastname: str, base_url: str = None):
+    """Return the 4 workers/viewAll.php sections for a given controller.
+
+    Switches session to the controller via
+    base/accueil.php?controller_id=X&chosir=Choisir, then loads
+    workers/viewAll.php and classifies each rendered worker-short card
+    by the h3 heading of its parent box:
+
+      'live'      — "Nos Agents :"          (active, we primarily control)
+      'doubles'   — "Nos Agents doubles :"  (active, we don't primarily control)
+      'prisoners' — "Nos Prisonniers :"     (captured by us)
+      'ancients'  — "Nos Anciens agents :"  (dead / our captured-by-others / traces)
+
+    Returns {section_key: set(lastname, ...)} for all 4 keys (empty sets
+    if a section has no workers or is not rendered).
+
+    Lastname is extracted from the anchor text inside div.worker-short,
+    which renders as "{firstname} {lastname}" (see showWorkerShort in
+    workers/functions.php).
+    """
+    url = base_url or PHP_BASE_URL
+    ctrl_id = ui_controller_id(page, controller_lastname, base_url=url)
+    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    page.wait_for_load_state("networkidle")
+    page.goto(f"{url}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+
+    heading_to_key = {
+        'Nos Agents :': 'live',
+        'Nos Agents doubles :': 'doubles',
+        'Nos Prisonniers :': 'prisoners',
+        'Nos Anciens agents :': 'ancients',
+    }
+    result = {'live': set(), 'doubles': set(), 'prisoners': set(), 'ancients': set()}
+    for box in page.locator('div.box').all():
+        h3_texts = box.locator('h3').all_inner_texts()
+        key = None
+        for ht in h3_texts:
+            if ht.strip() in heading_to_key:
+                key = heading_to_key[ht.strip()]
+                break
+        if key is None:
+            continue
+        for a in box.locator('div.worker-short a.has-text-weight-semibold').all():
+            parts = (a.inner_text() or '').strip().split()
+            if parts:
+                result[key].add(parts[-1])
+    return result

@@ -56,7 +56,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     end_turn, load_minimal_data,
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
-    ui_workers_by_lastname,
+    ui_workers_by_lastname, ui_faction_sections,
 )
 
 
@@ -493,6 +493,36 @@ class TestChainAttack:
         non_trace = [r for r in rows if r['action_choice'] != 'trace']
         assert non_trace and non_trace[0]['action_choice'] in ('captured', 'prisoner', 'dead'), \
             f"Chain_B original should be captured/prisoner/dead, got: {non_trace}"
+
+    def test_captor_faction_view_has_chain_b_as_prisoner(self, page: Page, base_url):
+        """Captor Alpha's faction view (workers/viewAll.php) should show
+        Chain_B in 'Nos Prisonniers' (captured worker's row has
+        controller_id=Alpha, action='captured', is_primary_controller=1).
+
+        Chain_B must NOT appear in 'Nos Agents' (that section is for
+        active workers the controller primarily owns)."""
+        ensure_gm_login(page, base_url)
+        sections = ui_faction_sections(page, 'Alpha', base_url=base_url)
+        assert 'Chain_B' in sections['prisoners'], \
+            f"Alpha should see Chain_B in Nos Prisonniers; got {sections}"
+        assert 'Chain_B' not in sections['live'], \
+            f"Alpha should NOT see Chain_B in Nos Agents; got live={sections['live']}"
+
+    def test_origin_faction_view_has_chain_b_trace_as_ancient(self, page: Page, base_url):
+        """Original owner Beta's faction view should show Chain_B as a
+        trace in 'Nos Anciens agents' (the trace row has controller_id=
+        Beta, action='trace', is_primary_controller=1 — action 'trace'
+        is in INACTIVE_ACTIONS but not 'captured', so workers/viewAll.php
+        puts it in the 'ancients' section).
+
+        Chain_B must NOT appear in 'Nos Agents' — the original (now
+        captured) row was moved to Alpha."""
+        ensure_gm_login(page, base_url)
+        sections = ui_faction_sections(page, 'Beta', base_url=base_url)
+        assert 'Chain_B' in sections['ancients'], \
+            f"Beta should see Chain_B trace in Nos Anciens agents; got {sections}"
+        assert 'Chain_B' not in sections['live'], \
+            f"Beta should NOT see Chain_B in Nos Agents; got live={sections['live']}"
 
 
 # ---------------------------------------------------------------------------
