@@ -91,38 +91,6 @@ def base_url():
     return PHP_BASE_URL
 
 
-# ---------------------------------------------------------------------------
-# Helpers: DB lookups
-# ---------------------------------------------------------------------------
-
-def _worker_status(lastname, turn=1):
-    """Return action_choice for a worker at a given turn."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT wa.action_choice FROM `{GAME_PREFIX}worker_actions` wa
-        JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-        WHERE w.lastname = %s AND wa.turn_number = %s
-    """, (lastname, turn))
-    row = cursor.fetchone()
-    conn.close()
-    return row['action_choice'] if row else None
-
-
-def _worker_report_db(lastname, turn=1):
-    """Return the report JSON string for a worker at a given turn."""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT wa.report FROM `{GAME_PREFIX}worker_actions` wa
-        JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-        WHERE w.lastname = %s AND wa.turn_number = %s
-    """, (lastname, turn))
-    row = cursor.fetchone()
-    conn.close()
-    return str(row['report'] or '') if row else ''
-
-
 def _ensure_controller_session(page):
     """Ensure the gm is logged in and has a controller selected."""
     ensure_gm_login(page, PHP_BASE_URL)
