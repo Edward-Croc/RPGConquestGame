@@ -1,5 +1,12 @@
 <?php
 require_once '../base/basePHP.php'; // Set up $pdo and session
+
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 $pageName = 'admin_workers';
 
 $prefix = $_SESSION['GAME_PREFIX'];
