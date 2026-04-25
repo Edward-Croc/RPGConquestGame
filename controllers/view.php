@@ -1,4 +1,10 @@
 <?php
+// Include-only partial — block direct HTTP access. The supported URL is
+// /controllers/action.php which require_once's this file.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
 
     $zonesArray = getZonesArray($gameReady);
 

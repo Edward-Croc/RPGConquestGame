@@ -1,4 +1,11 @@
 <?php
+// Include-only partial — block direct HTTP access. The supported URL is
+// /workers/action.php?worker_id=N which require_once's this file.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
+
 if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
 
 if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {

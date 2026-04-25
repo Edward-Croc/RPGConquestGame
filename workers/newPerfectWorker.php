@@ -1,4 +1,11 @@
 <?php
+// Include-only partial — block direct HTTP access. Reached via the
+// admin link that require_once's this file from a bootstrapped page.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
+
     $title = 'Admin - Create Perfect Agent';
 
     // Build form and call workers/action.php
