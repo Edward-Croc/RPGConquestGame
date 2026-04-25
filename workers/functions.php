@@ -199,8 +199,7 @@ function getWorkers($pdo, $workerIds) {
     $workerActionsById = [];
     foreach ($worker_actions as $action) {
         $action_worker_id = $action['worker_id'];
-        if (empty($workerActionsById[$action_worker_id][$action['turn_number']])) $workerActionsById[$worker_id][$action['turn_number']] = [];
-        $workerActionsById[$action_worker_id][$action['turn_number']] =  $action;
+        $workerActionsById[$action_worker_id][$action['turn_number']] = $action;
     }
 
     foreach ($workersArray as $key => $worker) {
