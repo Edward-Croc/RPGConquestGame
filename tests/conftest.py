@@ -38,15 +38,29 @@ PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquest
 
 def ensure_gm_login(page, base_url=None):
     """Login as gm if not already logged in. Skip login if session is active."""
-    from playwright.sync_api import Page
+    from helpers import safe_goto
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
+    safe_goto(page, f"{url}/base/accueil.php", wait_state="networkidle")
     if "loginForm.php" in page.url:
         page.locator("input[name='username']").fill("gm")
         page.locator("input[name='passwd']").fill("orga")
         page.locator("input[type='submit']").first.click()
         page.wait_for_load_state("networkidle")
+
+
+@pytest.fixture(autouse=True)
+def _php_error_guard(request):
+    """Belt-and-buckle PHP error detection: register a response listener
+    on the page fixture (if the test uses one) and assert no errors at
+    teardown. Catches click-driven navigations that bypass safe_goto."""
+    if 'page' not in request.fixturenames:
+        yield
+        return
+    from helpers import register_php_error_listener, assert_no_collected_php_errors
+    page = request.getfixturevalue('page')
+    register_php_error_listener(page)
+    yield
+    assert_no_collected_php_errors(page)
 
 
 @pytest.fixture(scope="session", autouse=True)

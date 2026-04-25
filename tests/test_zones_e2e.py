@@ -15,7 +15,10 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, login_as, logout
+from helpers import (
+    DB_AVAILABLE, get_db_connection, load_minimal_data, login_as, logout, safe_goto,
+    register_php_error_listener, assert_no_collected_php_errors,
+)
 
 
 @pytest.fixture(scope="session")
@@ -39,18 +42,20 @@ def load_test_config_with_controllers(browser):
     # Load TestConfig via admin UI (works everywhere)
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+    register_php_error_listener(page)
+    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
+    assert_no_collected_php_errors(page)
     context.close()
 
     yield
@@ -67,24 +72,11 @@ def gm_page(page: Page, base_url):
 # Zones page tests
 # ---------------------------------------------------------------------------
 
-class TestZonesPageNoWarnings:
-    """Zones page should load without PHP warnings or errors."""
-
-    def test_zones_page_no_php_warnings(self, gm_page: Page, base_url):
-        gm_page.goto(f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
-        page_html = gm_page.content()
-        assert "<b>Warning</b>" not in page_html, \
-            "PHP warnings on zones page"
-        assert "<b>Fatal error</b>" not in page_html, \
-            "PHP fatal error on zones page"
-
-
 class TestZonesPageStructure:
     """Zones page displays zone section with correct content."""
 
     def test_zones_section_visible(self, gm_page: Page, base_url):
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         zones_section = gm_page.locator("div.section.zones")
         expect(zones_section).to_be_visible()
@@ -92,7 +84,7 @@ class TestZonesPageStructure:
 
     def test_all_test_config_zones_listed(self, gm_page: Page, base_url):
         """All 7 TestConfig zones should appear on the page."""
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
 
@@ -102,7 +94,7 @@ class TestZonesPageStructure:
 
     def test_zones_have_description_divs(self, gm_page: Page, base_url):
         """Each zone should have a hidden description div."""
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         description_divs = gm_page.locator("div[id^='description-']")
         count = description_divs.count()
@@ -116,7 +108,7 @@ class TestZonesPageControllers:
 
     def test_claimed_zones_show_banner(self, gm_page: Page, base_url):
         """Gamma-Claims and Delta-Disputed were claimed — they should have banner tags."""
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         banner_tags = gm_page.locator("span.tag.is-warning")
         assert banner_tags.count() >= 2, \
@@ -124,7 +116,7 @@ class TestZonesPageControllers:
 
     def test_banner_shows_controller_name(self, gm_page: Page, base_url):
         """Banner tags should contain the controller lastname."""
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
         assert "Alpha" in page_text, \
@@ -135,9 +127,9 @@ class TestZonesPageControllers:
     def test_own_zone_shows_control_tag(self, gm_page: Page, base_url):
         """Zones held by the player's controller should show 'our control' tag."""
         # gm is linked to controller Alpha who claims Gamma-Claims
-        gm_page.goto(f"{base_url}/base/accueil.php?controller_id=1")
+        safe_goto(gm_page, f"{base_url}/base/accueil.php?controller_id=1")
         gm_page.wait_for_load_state("networkidle")
-        gm_page.goto(f"{base_url}/zones/action.php")
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         danger_tags = gm_page.locator("span.tag.is-danger")
         assert danger_tags.count() >= 1, \

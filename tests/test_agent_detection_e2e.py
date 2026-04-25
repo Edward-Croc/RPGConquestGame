@@ -34,6 +34,7 @@ from helpers import (
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
+    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -95,11 +96,11 @@ def _worker_report_html(page, worker_lastname, base_url=None):
     ensure_gm_login(page, url)
     ctrl_id = ui_worker_controller_id(page, worker_lastname, base_url=url)
     assert ctrl_id, f"Worker {worker_lastname} has no controller"
-    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
     page.wait_for_load_state("networkidle")
     wid = _cached_wid(page, worker_lastname)
     assert wid, f"Worker {worker_lastname} not found"
-    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
     return page.content()
 
@@ -174,15 +175,16 @@ def load_and_end_turn(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
 
-    page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
 
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
@@ -190,9 +192,10 @@ def load_and_end_turn(browser):
     page.wait_for_load_state("load", timeout=90000)
 
     # Trigger end turn and capture page for warning check
-    page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
+    safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
 
+    assert_no_collected_php_errors(page)
     context.close()
     yield
 
@@ -230,16 +233,6 @@ class TestEndTurn:
         assert count >= 26, \
             f"Expected at least 26 action rows for turn 1, got {count}"
 
-    def test_end_turn_page_no_warnings(self, page: Page, base_url):
-        """Re-visit end turn page and verify no PHP warnings.
-        Since turn already advanced, this tests the 'already done' path.
-        UI-only smoke check — runs under UI_ONLY=1."""
-        ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/mechanics/endTurn.php")
-        page.wait_for_load_state("load", timeout=30000)
-        html = page.content()
-        assert "<b>Warning</b>" not in html, "PHP warnings on end turn page"
-        assert "<b>Fatal error</b>" not in html, "PHP fatal error on end turn page"
 
 
 # ---------------------------------------------------------------------------
@@ -483,9 +476,9 @@ class TestLocationDetection:
     def test_name_only_not_on_zones_page(self, page: Page, base_url):
         """Golf (name-only) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Golf')}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Golf')}")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/zones/action.php")
+        safe_goto(page, f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
@@ -517,16 +510,16 @@ class TestLocationDetection:
     def test_desc_on_zones_page(self, page: Page, base_url):
         """Foxtrot should see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/zones/action.php")
+        safe_goto(page, f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         assert "Location A" in page.content()
 
     def test_desc_on_controller_page(self, page: Page, base_url):
         """Foxtrot should see Location A on controller/accueil page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
         page.wait_for_load_state("networkidle")
         assert "Location A" in page.inner_text("body") or "Location A" in page.content()
 
@@ -556,18 +549,18 @@ class TestLocationDetection:
     def test_secret_on_zones_page(self, page: Page, base_url):
         """Charlie should see Location A on zones page (in hidden description div)."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Charlie')}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Charlie')}")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/zones/action.php")
+        safe_goto(page, f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         assert "Location A" in page.content()
 
     def test_undiscovered_not_on_zones_page(self, page: Page, base_url):
         """Alpha (unfound) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Alpha')}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Alpha')}")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/zones/action.php")
+        safe_goto(page, f"{base_url}/zones/action.php")
         page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
@@ -615,17 +608,10 @@ class TestWorkerViewPage:
         ensure_gm_login(page, base_url)
         ctrl_id = _cached_cid(page, controller_lastname)
         worker_id = _cached_wid(page, worker_lastname)
-        page.goto(f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/workers/action.php?worker_id={worker_id}")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("networkidle")
-
-    def test_agent1_page_no_warnings(self, page: Page, base_url):
-        """Finder_1 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
-        html = page.content()
-        assert "<b>Warning</b>" not in html
-        assert "<b>Fatal error</b>" not in html
 
     def test_agent1_page_has_report(self, page: Page, base_url):
         """Finder_1 page has Rapport section with Tour 0."""
@@ -666,9 +652,3 @@ class TestWorkerViewPage:
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Location A" not in report_section
 
-    def test_agent4_page_no_warnings(self, page: Page, base_url):
-        """Finder_4 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Foxtrot', 'Finder_4')
-        html = page.content()
-        assert "<b>Warning</b>" not in html
-        assert "<b>Fatal error</b>" not in html

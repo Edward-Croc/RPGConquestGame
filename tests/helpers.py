@@ -88,7 +88,7 @@ def load_minimal_data(prefix=None):
 
 def login_as(page: Page, base_url: str, username: str, password: str):
     """Navigate to the login form and submit the given credentials."""
-    page.goto(f"{base_url}/connection/loginForm.php")
+    safe_goto(page, f"{base_url}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill(username)
     page.locator("input[name='passwd']").fill(password)
@@ -98,7 +98,7 @@ def login_as(page: Page, base_url: str, username: str, password: str):
 
 def logout(page: Page, base_url: str):
     """Navigate to the logout endpoint."""
-    page.goto(f"{base_url}/connection/logout.php")
+    safe_goto(page, f"{base_url}/connection/logout.php")
     page.wait_for_load_state("networkidle")
 
 
@@ -108,7 +108,7 @@ def end_turn(page: Page, base_url: str = None):
     Asserts no PHP warning or fatal error in the rendered response.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/mechanics/endTurn.php")
+    safe_goto(page, f"{url}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=120000)
     html = page.content()
     assert "<b>Warning</b>" not in html, "PHP warning during end turn"
@@ -123,7 +123,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     context = browser.new_context()
     page = context.new_page()
     login_as(page, base_url, "gm", "orga")
-    page.goto(f"{base_url}/base/admin.php")
+    safe_goto(page, f"{base_url}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option(scenario_name)
     page.locator("input[name='submit'][value='Submit']").click()
@@ -146,7 +146,7 @@ def ui_controller_id(page: Page, lastname: str, base_url: str = None):
 
     Raises AssertionError if not found."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/base/accueil.php")
+    safe_goto(page, f"{url}/base/accueil.php")
     page.wait_for_load_state("networkidle")
     options = page.locator("select#controllerSelect option").all()
     for opt in options:
@@ -168,7 +168,7 @@ def ui_all_workers(page: Page, base_url: str = None):
     controller_id and action_choice, which is what we need to disambiguate
     captured/original vs trace rows."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/workers/management_workers.php")
+    safe_goto(page, f"{url}/workers/management_workers.php")
     page.wait_for_load_state("load")
     rows = page.locator("div.management table tr").all()
     workers = []
@@ -243,7 +243,7 @@ def ui_all_zones(page: Page, base_url: str = None):
     also extract the current controller names.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/zones/management_zones.php")
+    safe_goto(page, f"{url}/zones/management_zones.php")
     page.wait_for_load_state("load")
     rows = page.locator("div.management table tr").all()
     zones = []
@@ -297,7 +297,7 @@ def _scrape_location_discovery_flags(page: Page, base_url: str = None):
     per controller. Stable attributes — no emoji/text matching needed.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/zones/management_locations.php")
+    safe_goto(page, f"{url}/zones/management_locations.php")
     page.wait_for_load_state("load")
     result = {}
     blocks = page.locator("div.management div[style*='border']").all()
@@ -367,10 +367,10 @@ def ui_worker_stats(page: Page, lastname: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     # Switch session to the worker's controller so the page shows the report
     ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
-    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
     page.wait_for_load_state("networkidle")
     wid = ui_worker_id(page, lastname, base_url=url)
-    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
     html = page.content()
     m = _STATS_RE.search(html)
@@ -402,7 +402,7 @@ def ui_turn_counter(page: Page, base_url: str = None):
     subsequent digits belong to the optional controller info suffix).
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/base/accueil.php")
+    safe_goto(page, f"{url}/base/accueil.php")
     page.wait_for_load_state("networkidle")
     text = (page.locator("div.header").first.inner_text() or "").strip()
     m = _TURN_RE.search(text)
@@ -444,10 +444,10 @@ def ui_detected_enemies_of(page: Page, searcher_lastname: str, base_url: str = N
     """
     url = base_url or PHP_BASE_URL
     ctrl_id = ui_worker_controller_id(page, searcher_lastname, base_url=url)
-    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
     page.wait_for_load_state("networkidle")
     wid = ui_worker_id(page, searcher_lastname, base_url=url)
-    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
     detected = set()
     options = page.locator("select#enemyWorkersSelect option").all()
@@ -473,7 +473,7 @@ def ui_power_options_by_type(page: Page, base_url: str = None):
     admin page are the authoritative UI enumeration of all powers
     linked to each type (via the link_power_type junction)."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/base/admin.php")
+    safe_goto(page, f"{url}/base/admin.php")
     page.wait_for_load_state("networkidle")
     type_map = {
         "Hobby": "select#power_hobby_id",
@@ -505,7 +505,7 @@ def ui_all_controllers(page: Page, base_url: str = None):
     table; each row carries data-controller-name=LastName.
     """
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/controllers/management.php")
+    safe_goto(page, f"{url}/controllers/management.php")
     page.wait_for_load_state("load")
     rows = page.locator("tr.controller-row").all()
     return {
@@ -526,7 +526,7 @@ def ui_controller_counters(page: Page, lastname: str, base_url: str = None):
     td[data-field=Y] — stable against text/emoji changes.
     Raises AssertionError if lastname not found."""
     url = base_url or PHP_BASE_URL
-    page.goto(f"{url}/controllers/management.php")
+    safe_goto(page, f"{url}/controllers/management.php")
     page.wait_for_load_state("load")
     row = page.locator(f'tr.controller-row[data-controller-name="{lastname}"]')
     if row.count() == 0:
@@ -572,9 +572,9 @@ def ui_faction_sections(page: Page, controller_lastname: str, base_url: str = No
     """
     url = base_url or PHP_BASE_URL
     ctrl_id = ui_controller_id(page, controller_lastname, base_url=url)
-    page.goto(f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
     page.wait_for_load_state("networkidle")
-    page.goto(f"{url}/workers/viewAll.php")
+    safe_goto(page, f"{url}/workers/viewAll.php")
     page.wait_for_load_state("load")
 
     heading_to_key = {
@@ -659,7 +659,7 @@ def ui_attack(page: Page, attacker_lastname: str, target_lastname: str,
     url = base_url or PHP_BASE_URL
     atk_id = _cached_wid(page, attacker_lastname, base_url)
     tgt_id = _cached_wid(page, target_lastname, base_url)
-    page.goto(
+    safe_goto(page, 
         f"{url}/workers/action.php"
         f"?worker_id={atk_id}"
         f"&enemy_worker_id[]=worker_{tgt_id}"
@@ -672,7 +672,7 @@ def ui_investigate(page: Page, lastname: str, base_url: str = None):
     """Queue an investigate action via workers/action.php URL endpoint."""
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
-    page.goto(
+    safe_goto(page, 
         f"{url}/workers/action.php"
         f"?worker_id={wid}&investigate=1"
     )
@@ -685,7 +685,7 @@ def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
     cid = _cached_cid(page, claim_controller_lastname, base_url)
-    page.goto(
+    safe_goto(page, 
         f"{url}/workers/action.php"
         f"?worker_id={wid}&claim_controller_id={cid}&claim=1"
     )
@@ -702,7 +702,7 @@ def ui_move(page: Page, lastname: str, zone_name: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
     zid = ui_zone_id(page, zone_name, base_url)
-    page.goto(
+    safe_goto(page, 
         f"{url}/workers/action.php"
         f"?worker_id={wid}&zone_id={zid}&move=1"
     )
@@ -721,14 +721,14 @@ def worker_report_html(page: Page, lastname: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     ensure_gm_login(page, url)
     ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
-    page.goto(
+    safe_goto(page, 
         f"{url}/base/accueil.php"
         f"?controller_id={ctrl_id}&chosir=Choisir"
     )
     page.wait_for_load_state("networkidle")
     wid = _cached_wid(page, lastname, base_url)
     assert wid, f"Worker {lastname} not found"
-    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
     return page.content()
 
@@ -768,3 +768,70 @@ def ui_worker_action_state(page: Page, lastname: str, base_url: str = None):
         'action_params': locator.get_attribute('data-action-params') or '{}',
         'worker_status': locator.get_attribute('data-worker-status') or '',
     }
+
+
+# ---------------------------------------------------------------------------
+# PHP error guard — belt-and-buckle: explicit safe_goto + response listener
+# ---------------------------------------------------------------------------
+
+PHP_ERROR_MARKERS = ('<b>Warning</b>', '<b>Fatal error</b>', '<b>Parse error</b>')
+
+
+def assert_no_php_errors(page, context=None):
+    """Assert that page.content() contains no PHP error markers
+    (Warning / Fatal error / Parse error, as PHP renders them with
+    default html_errors=On)."""
+    html = page.content()
+    found = [m for m in PHP_ERROR_MARKERS if m in html]
+    if found:
+        suffix = f" ({context})" if context else ""
+        raise AssertionError(
+            f"PHP error(s) {found} on {page.url}{suffix}"
+        )
+
+
+def safe_goto(page: Page, url: str, wait_state: str = "load", timeout: int = 30000):
+    """page.goto + wait_for_load_state + assert_no_php_errors.
+    Drop-in replacement for page.goto in tests against the game's UI."""
+    page.goto(url, timeout=timeout)
+    page.wait_for_load_state(wait_state, timeout=timeout)
+    assert_no_php_errors(page)
+
+
+def register_php_error_listener(page: Page):
+    """Attach an HTML-only response listener that flags PHP error
+    markers on every response. Findings accumulate on
+    page._php_errors_seen for later assertion via
+    assert_no_collected_php_errors(). Belt-and-buckle for safe_goto
+    — catches click-driven navigations that bypassed the wrapper.
+    Filtered to text/html responses to keep overhead negligible."""
+    page._php_errors_seen = []
+
+    def _on_response(response):
+        try:
+            ctype = (response.headers.get('content-type') or '').lower()
+            if 'text/html' not in ctype:
+                return
+            body = response.text()
+            for marker in PHP_ERROR_MARKERS:
+                if marker in body:
+                    page._php_errors_seen.append((response.url, marker))
+                    break
+        except Exception:
+            # Listener must never throw — would wedge Playwright internals.
+            pass
+
+    page.on("response", _on_response)
+
+
+def assert_no_collected_php_errors(page: Page):
+    """Check the list populated by register_php_error_listener and
+    fail if any PHP error marker was seen during the page's lifetime."""
+    errors = getattr(page, '_php_errors_seen', None) or []
+    if errors:
+        first_url, first_marker = errors[0]
+        raise AssertionError(
+            f"PHP error '{first_marker}' detected by response listener "
+            f"on {first_url}"
+            + (f" (and {len(errors)-1} other(s))" if len(errors) > 1 else "")
+        )

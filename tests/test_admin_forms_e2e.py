@@ -19,7 +19,10 @@ from conftest import (
 )
 
 
-from helpers import DB_AVAILABLE, load_minimal_data
+from helpers import (
+    DB_AVAILABLE, load_minimal_data, safe_goto,
+    register_php_error_listener, assert_no_collected_php_errors,
+)
 
 
 @pytest.fixture(scope="session")
@@ -48,18 +51,20 @@ def load_test_config(browser):
 
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+    register_php_error_listener(page)
+    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
+    assert_no_collected_php_errors(page)
     context.close()
     yield
 
@@ -74,7 +79,7 @@ class TestCreatePerfectAgentForm:
     def test_form_present_on_admin_page(self, page: Page, base_url):
         """The Recruter et Affecter button should be visible on admin page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         submit_btn = page.locator("input[name='chosir'][value='Recruter et Affecter']")
         expect(submit_btn).to_be_visible()
@@ -82,7 +87,7 @@ class TestCreatePerfectAgentForm:
     def test_form_dropdowns_populated(self, page: Page, base_url):
         """All required dropdowns should have options."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
 
         # Use the second controllerSelect (the one inside the worker form)
@@ -102,7 +107,7 @@ class TestCreatePerfectAgentForm:
     def test_origin_dropdown_has_test_data(self, page: Page, base_url):
         """Origin dropdown should contain TestConfig origins."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#origin_id option").all_inner_texts()
@@ -114,7 +119,7 @@ class TestCreatePerfectAgentForm:
     def test_zone_dropdown_has_test_data(self, page: Page, base_url):
         """Zone dropdown should contain TestConfig zones."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#zoneSelect option").all_inner_texts()
@@ -124,7 +129,7 @@ class TestCreatePerfectAgentForm:
     def test_hobby_dropdown_includes_test_powers(self, page: Page, base_url):
         """Hobby dropdown should have Eagle Scout loaded from TestConfig CSV."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_hobby_id option").all_inner_texts()
@@ -134,7 +139,7 @@ class TestCreatePerfectAgentForm:
     def test_metier_dropdown_includes_test_powers(self, page: Page, base_url):
         """Metier dropdown should have Veteran Tactician from TestConfig CSV."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_metier_id option").all_inner_texts()
@@ -157,7 +162,7 @@ class TestCreatePerfectAgentForm:
         target_controller_id = "1"  # Lord Alpha
 
         # --- Fill the worker-creation form on admin.php ---
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         form.locator("select#controllerSelect").select_option(target_controller_id)
@@ -170,14 +175,14 @@ class TestCreatePerfectAgentForm:
         page.wait_for_load_state("networkidle")
 
         # --- Switch gm's view to Lord Alpha's faction (Ma Faction page) ---
-        page.goto(f"{base_url}/controllers/action.php")
+        safe_goto(page, f"{base_url}/controllers/action.php")
         page.wait_for_load_state("networkidle")
         page.locator("form select#controllerSelect").select_option(target_controller_id)
         page.locator("input[name='chosir'][value='Choisir']").click()
         page.wait_for_load_state("networkidle")
 
         # --- Assert the new worker is visible in Alpha's agents view ---
-        page.goto(f"{base_url}/workers/viewAll.php")
+        safe_goto(page, f"{base_url}/workers/viewAll.php")
         page.wait_for_load_state("networkidle")
         html = page.content()
         assert firstname_val in html and lastname_val in html, (
@@ -201,7 +206,7 @@ class TestCreatePerfectAgentForm:
         target_controller_id = "2"  # Lord Beta
 
         # --- Fill the worker-creation form on admin.php ---
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form[action*='workers/action.php']")
         form.locator("select#controllerSelect").select_option(target_controller_id)
@@ -214,14 +219,14 @@ class TestCreatePerfectAgentForm:
         page.wait_for_load_state("networkidle")
 
         # --- Switch gm's view to Lord Beta's faction (Ma Faction page) ---
-        page.goto(f"{base_url}/controllers/action.php")
+        safe_goto(page, f"{base_url}/controllers/action.php")
         page.wait_for_load_state("networkidle")
         page.locator("form select#controllerSelect").select_option(target_controller_id)
         page.locator("input[name='chosir'][value='Choisir']").click()
         page.wait_for_load_state("networkidle")
 
         # --- Assert the new worker is visible in Beta's agents view ---
-        page.goto(f"{base_url}/workers/viewAll.php")
+        safe_goto(page, f"{base_url}/workers/viewAll.php")
         page.wait_for_load_state("networkidle")
         html = page.content()
         assert firstname_val in html and lastname_val in html, (
@@ -251,7 +256,7 @@ class TestPerfectWorkerValidation:
         loop, not by 5 separate tests (avoids test-suite bloat for a
         non-critical admin form)."""
         ensure_gm_login(page, base_url)
-        page.goto(
+        safe_goto(page,
             f"{base_url}/workers/action.php"
             f"?creation=true"
             f"&firstname=Sentinel"
@@ -284,7 +289,7 @@ class TestPerfectWorkerValidation:
         """
         ensure_gm_login(page, base_url)
 
-        page.goto(
+        safe_goto(page,
             f"{base_url}/workers/action.php"
             f"?creation=true"
             f"&firstname=Zero"
@@ -301,9 +306,9 @@ class TestPerfectWorkerValidation:
         assert "<b>Fatal error</b>" not in body_creation, \
             "PHP Fatal error on action.php after 0-powers creation"
 
-        page.goto(f"{base_url}/base/accueil.php?controller_id=1&chosir=Choisir")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id=1&chosir=Choisir")
         page.wait_for_load_state("networkidle")
-        page.goto(f"{base_url}/workers/viewAll.php")
+        safe_goto(page, f"{base_url}/workers/viewAll.php")
         page.wait_for_load_state("load")
         body_viewall = page.content()
         assert "<b>Warning</b>" not in body_viewall, \
@@ -322,7 +327,7 @@ class TestBDDExport:
     def test_export_button_visible(self, page: Page, base_url):
         """Export BDD button should be visible on admin page."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         export_btn = page.locator("input[value='Export BDD to file.sql']")
         expect(export_btn).to_be_visible()
@@ -330,7 +335,7 @@ class TestBDDExport:
     def test_export_triggers_download(self, page: Page, base_url):
         """Clicking export should trigger a file download."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
 
         # Set up download listener
@@ -361,7 +366,7 @@ class TestBDDImport:
     def test_import_form_visible(self, page: Page, base_url):
         """Import form with file input and submit button should be visible."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         file_input = page.locator("input[type='file'][name='bddFile']")
         expect(file_input).to_be_visible()
@@ -371,7 +376,7 @@ class TestBDDImport:
     def test_import_form_uses_multipart(self, page: Page, base_url):
         """Import form must be enctype='multipart/form-data' for file upload."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         form = page.locator("form:has(input[name='importBDD'])")
         expect(form).to_be_visible()
@@ -382,7 +387,7 @@ class TestBDDImport:
     def test_import_form_has_importBDD_hidden_field(self, page: Page, base_url):
         """Import form should have the importBDD hidden input."""
         ensure_gm_login(page, base_url)
-        page.goto(f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/base/admin.php")
         page.wait_for_load_state("networkidle")
         hidden = page.locator("input[type='hidden'][name='importBDD']")
         assert hidden.count() >= 1, "importBDD hidden input should exist"
