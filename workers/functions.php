@@ -374,7 +374,13 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
     }
 
     $return = sprintf(
-        '<div class="worker-short">
+        '<div class="worker-short" 
+            data-worker-id="%1$s"
+            data-worker-lastname="%3$s"
+            data-action-choice="%9$s"
+            data-action-params="%10$s"
+            data-worker-status="%11$s"
+        >
             %8$s
             <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold is-size-5" role="button" style="text-decoration:none;">
                 %2$s %3$s
@@ -395,6 +401,9 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
         ) // %6$s
         , $_SESSION['FOLDER'] // %7$s
         , ($showCheckBox ? sprintf('<input type="checkbox" name="worker_ids[]" value="%s" class="mr-2">', $worker['id']) : '') // %8$s
+        , htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES) // %9$s
+        , htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES) // %10$s
+        , htmlspecialchars($workerStatus, ENT_QUOTES) // %11$s
     );
 
     return $return;

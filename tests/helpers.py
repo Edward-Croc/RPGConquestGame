@@ -731,3 +731,40 @@ def worker_report_html(page: Page, lastname: str, base_url: str = None):
     page.goto(f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
     return page.content()
+
+
+def ui_worker_action_state(page: Page, lastname: str, base_url: str = None):
+    """Return the worker's current-turn action state by scraping the
+    'worker-action-state' marker emitted by workers/view.php.
+
+    Replaces direct DB access for action_choice / action_params checks
+    so tests can run under UI_ONLY=1 against prod. Reuses
+    worker_report_html's controller-switch + navigation, then reads
+    data-* attributes off the marker div.
+
+    Returns dict:
+      {
+        'worker_id': int,
+        'lastname': str,
+        'action_choice': str,
+        'action_params': str,   # raw JSON string as stored in the DB
+        'worker_status': str,   # 'alive' / 'dead' / 'captured' / 'double_agent' / 'prisoner' / 'unfound'
+      }
+
+    Raises AssertionError if the marker for `lastname` isn't found.
+    """
+    worker_report_html(page, lastname, base_url=base_url)
+    locator = page.locator(
+        f'[data-worker-lastname="{lastname}"][data-action-choice]'
+    ).first
+    if locator.count() == 0:
+        raise AssertionError(
+            f"No worker-action-state marker found for lastname='{lastname}'"
+        )
+    return {
+        'worker_id': int(locator.get_attribute('data-worker-id') or 0),
+        'lastname': locator.get_attribute('data-worker-lastname') or '',
+        'action_choice': locator.get_attribute('data-action-choice') or '',
+        'action_params': locator.get_attribute('data-action-params') or '{}',
+        'worker_status': locator.get_attribute('data-worker-status') or '',
+    }
