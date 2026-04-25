@@ -261,7 +261,7 @@ class TestLoadCSVFile:
              "controllers__lastname->holder_controller_id"]
         )
         # All zones should be loaded (empty lookups resolve to NULL)
-        assert count == 7
+        assert count == 8
 
         cursor = conn.cursor()
         cursor.execute(f"SELECT claimer_controller_id, holder_controller_id FROM `{GAME_PREFIX}zones`")
@@ -409,7 +409,7 @@ class TestFullScenarioLoad:
         assert cursor.fetchone()["c"] == 3
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}zones`")
-        assert cursor.fetchone()["c"] == 7
+        assert cursor.fetchone()["c"] == 8
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}worker_names`")
         assert cursor.fetchone()["c"] == 8

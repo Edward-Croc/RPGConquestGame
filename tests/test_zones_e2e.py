@@ -83,12 +83,12 @@ class TestZonesPageStructure:
         expect(zones_section.locator("h2")).to_contain_text("Zones")
 
     def test_all_test_config_zones_listed(self, gm_page: Page, base_url):
-        """All 7 TestConfig zones should appear on the page."""
+        """All 8 TestConfig zones should appear on the page."""
         safe_goto(gm_page, f"{base_url}/zones/action.php")
         gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
 
-        for zone_name in ["Alpha-Investigation", "Beta-Combat", "Gamma-Claims", "Delta-Disputed", "Epsilon-Controlled", "Zeta-Unclaimed", "Eta-Hidden"]:
+        for zone_name in ["Alpha-Investigation", "Beta-Combat", "Gamma-Claims", "Delta-Disputed", "Epsilon-Controlled", "Zeta-Unclaimed", "Eta-Hidden", "Theta-Artefacts"]:
             assert zone_name in page_text, \
                 f"Zone '{zone_name}' not found on zones page"
 

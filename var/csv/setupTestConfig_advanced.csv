@@ -30,3 +30,5 @@ cross,Runner_Cross,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Co
 cross,Mover_Test,origine Accessible,Beta-Combat,Echo,passive,{},Blank Slate|Common Folk
 cross,Keep_Def,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Common Folk
 cross,Keep_Atk,origine Accessible,Beta-Combat,Foxtrot,passive,{},Blank Slate|Common Folk
+artefact,Artefact_Searcher_Echo,origine Accessible,Theta-Artefacts,Echo,investigate,{},Eagle Scout|Veteran Tactician
+artefact,Artefact_Worker_Foxtrot,origine Accessible,Theta-Artefacts,Foxtrot,passive,{},Blank Slate|Common Folk

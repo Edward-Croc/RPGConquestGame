@@ -150,8 +150,8 @@ class TestCSVLoadViaAdmin:
             "Expected worker_origins CSV to load 3 rows"
         assert "setupTestConfig_worker_names.csv loaded successfully (8 rows)" in page_html, \
             "Expected worker_names CSV to load 8 rows"
-        assert "setupTestConfig_zones.csv loaded successfully (7 rows)" in page_html, \
-            "Expected zones CSV to load 7 rows"
+        assert "setupTestConfig_zones.csv loaded successfully (8 rows)" in page_html, \
+            "Expected zones CSV to load 8 rows"
         assert "setupTestConfig_hobbys.csv loaded successfully (13 rows)" in page_html, \
             "Expected hobbys CSV to load 13 rows"
 
