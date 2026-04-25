@@ -274,13 +274,13 @@ class TestLoadWorkersCSV:
     """
 
     def test_workers_table_populated(self, page: Page, base_url):
-        """Exactly 31 workers should exist (7 detection + 19 combat + 5 cross).
+        """Exactly 33 workers should exist (7 detection + 19 combat + 5 cross + 2 artefact).
 
         Counts rows on /workers/management_workers.php — UI-runnable.
         """
         ensure_gm_login(page, base_url)
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 31, f"Expected 31 workers, got {count}"
+        assert count == 33, f"Expected 33 workers, got {count}"
 
     @pytest.mark.db
     def test_all_workers_have_origin_and_zone(self):
@@ -373,6 +373,8 @@ class TestLoadWorkersCSV:
             'Mover_Test': 'Echo',
             # Defender-params-preserved regression (Beta-Combat miss)
             'Keep_Def': 'Beta', 'Keep_Atk': 'Foxtrot',
+            # Artefact visibility tests (Theta-Artefacts zone)
+            'Artefact_Searcher_Echo': 'Echo', 'Artefact_Worker_Foxtrot': 'Foxtrot',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
@@ -393,7 +395,7 @@ class TestLoadWorkersCSV:
           - Hunter_Cross (cross-zone scenario): action='investigate'
         """
         ensure_gm_login(page, base_url)
-        investigate_agents = {'Searcher_1', 'Hunter_Cross'}
+        investigate_agents = {'Searcher_1', 'Hunter_Cross', 'Artefact_Searcher_Echo'}
         for w in ui_all_workers(page, base_url=base_url):
             if w['lastname'] in investigate_agents:
                 continue

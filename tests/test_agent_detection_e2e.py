@@ -576,6 +576,14 @@ class TestLocationDetection:
         assert 'Artefact Alpha' in html, \
             "Finder_1 at enquete_difference=3 should see the artefact name in report"
 
+    def test_artefact_visible_at_threshold(self, page: Page, base_url):
+        """Finder_3 (Echo, enq=6, diff=2) is at exactly LOCATIONARTEFACTSDIFF (2),
+        the inclusive threshold — the artefact MUST be visible."""
+        html = _worker_report_html(page, 'Finder_3', base_url)
+        assert 'Location A' in html, "Prerequisite: Finder_3 must see Location A"
+        assert 'Artefact Alpha' in html, \
+            "Finder_3 at enquete_difference=2 (== LOCATIONARTEFACTSDIFF) should see the artefact"
+
     def test_artefact_not_visible_at_desc_level(self, page: Page, base_url):
         """Finder_4 (Foxtrot, enq=5, diff=1) sees NAME + DESCRIPTION but
         enquete_difference=1 < LOCATIONARTEFACTSDIFF (2), so the

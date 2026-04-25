@@ -1,2 +1,4 @@
 name,description,full_description,locations__name->location_id
 Artefact Alpha,Ancient relic concealed in Location A,Full lore about Artefact Alpha revealed only to the controller of the location,Location A
+Echo-Base Relic,A treasure at Echo-Base,Lore visible only to Echo as owner,Echo-Base
+Foxtrot-Outpost Cipher,A coded artefact at Foxtrot-Outpost,Lore visible only to Foxtrot as owner,Foxtrot-Outpost

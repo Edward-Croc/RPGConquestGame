@@ -1,2 +1,5 @@
 "name","description","hidden_description","discovery_diff","zones__name->zone_id","controllers__lastname->controller_id","is_base","can_be_destroyed","can_be_repaired","activate_json"
 "Location A","A test location for discovery testing","Secret details of Location A visible at high investigation",4,"Alpha-Investigation","",0,0,0,""
+"Echo-Base","Echo's secret base","Hidden tactical details only owner sees",0,"Theta-Artefacts","Echo",1,1,0,""
+"Foxtrot-Outpost","Foxtrot's forward outpost","Hidden tactical details only owner sees",0,"Theta-Artefacts","Foxtrot",1,1,0,""
+"Civic-Site","Public civic structure","No hidden info",0,"Theta-Artefacts","",0,0,0,""
