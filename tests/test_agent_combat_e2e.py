@@ -58,7 +58,7 @@ from helpers import (
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
     clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
-    worker_report_html,
+    worker_report_html, cached_faction_sections,
 )
 
 
@@ -298,6 +298,46 @@ class TestBaseCombat:
         assert _ui_worker_is_passive(page, 'Counter_Def'), \
             "Counter_Def should remain passive (Surveille) after countering"
 
+    # --- B2 belt-and-buckle: faction-section views post-combat ---
+
+    def test_capture_faction_views(self, page: Page, base_url):
+        """Inv_Atk_1 captures Inv_Def_1: captor Alpha sees Inv_Def_1 in
+        prisoners; origin Beta sees the trace in ancients and NOT in live."""
+        ensure_gm_login(page, base_url)
+        alpha = cached_faction_sections(page, 'Alpha', base_url=base_url)
+        beta = cached_faction_sections(page, 'Beta', base_url=base_url)
+        assert 'Inv_Def_1' in alpha['prisoners'], \
+            f"Alpha should see Inv_Def_1 in prisoners; got {alpha}"
+        assert 'Inv_Def_1' in beta['ancients'], \
+            f"Beta should see Inv_Def_1 trace in ancients; got {beta}"
+        assert 'Inv_Def_1' not in beta['live'], \
+            f"Beta should NOT see Inv_Def_1 in live; got live={beta['live']}"
+
+    def test_kill_faction_views(self, page: Page, base_url):
+        """Inv_Atk_2 kills Inv_Def_2: Delta sees Inv_Def_2 in ancients
+        (action='dead' — kill path doesn't create a trace); Charlie
+        (the killer's controller) never gains it in any section."""
+        ensure_gm_login(page, base_url)
+        delta = cached_faction_sections(page, 'Delta', base_url=base_url)
+        charlie = cached_faction_sections(page, 'Charlie', base_url=base_url)
+        assert 'Inv_Def_2' in delta['ancients'], \
+            f"Delta should see Inv_Def_2 in ancients (kill, no trace); got {delta}"
+        for k in ('live', 'doubles', 'prisoners', 'ancients'):
+            assert 'Inv_Def_2' not in charlie[k], \
+                f"Charlie should never see Inv_Def_2; found in {k}={charlie[k]}"
+
+    def test_counter_attacker_dies_faction_views(self, page: Page, base_url):
+        """Counter_Atk (Golf) attacks Counter_Def (Foxtrot) but dies
+        from riposte. Golf sees Counter_Atk in ancients; Foxtrot still
+        has Counter_Def in live."""
+        ensure_gm_login(page, base_url)
+        golf = cached_faction_sections(page, 'Golf', base_url=base_url)
+        foxtrot = cached_faction_sections(page, 'Foxtrot', base_url=base_url)
+        assert 'Counter_Atk' in golf['ancients'], \
+            f"Golf should see dead Counter_Atk in ancients; got {golf}"
+        assert 'Counter_Def' in foxtrot['live'], \
+            f"Foxtrot's Counter_Def should still be live post-riposte; got {foxtrot}"
+
 
 # ---------------------------------------------------------------------------
 # Test: chain attack ordered by enquete_val
@@ -411,7 +451,7 @@ class TestChainAttack:
         Chain_B must NOT appear in 'Nos Agents' (that section is for
         active workers the controller primarily owns)."""
         ensure_gm_login(page, base_url)
-        sections = ui_faction_sections(page, 'Alpha', base_url=base_url)
+        sections = cached_faction_sections(page, 'Alpha', base_url=base_url)
         assert 'Chain_B' in sections['prisoners'], \
             f"Alpha should see Chain_B in Nos Prisonniers; got {sections}"
         assert 'Chain_B' not in sections['live'], \
@@ -427,11 +467,33 @@ class TestChainAttack:
         Chain_B must NOT appear in 'Nos Agents' — the original (now
         captured) row was moved to Alpha."""
         ensure_gm_login(page, base_url)
-        sections = ui_faction_sections(page, 'Beta', base_url=base_url)
+        sections = cached_faction_sections(page, 'Beta', base_url=base_url)
         assert 'Chain_B' in sections['ancients'], \
             f"Beta should see Chain_B trace in Nos Anciens agents; got {sections}"
         assert 'Chain_B' not in sections['live'], \
             f"Beta should NOT see Chain_B in Nos Agents; got live={sections['live']}"
+
+    # --- B2 belt-and-buckle: faction-section views for kill branches ---
+
+    def test_chain_c_kills_d_faction_views(self, page: Page, base_url):
+        """Chain_C (Charlie) kills Chain_D (Delta). Delta sees Chain_D
+        in ancients; Charlie never gains Chain_D."""
+        ensure_gm_login(page, base_url)
+        delta = cached_faction_sections(page, 'Delta', base_url=base_url)
+        charlie = cached_faction_sections(page, 'Charlie', base_url=base_url)
+        assert 'Chain_D' in delta['ancients'], \
+            f"Delta missing Chain_D in ancients; got {delta}"
+        for k in ('live', 'doubles', 'prisoners', 'ancients'):
+            assert 'Chain_D' not in charlie[k], \
+                f"Charlie should never see Chain_D; found in {k}"
+
+    def test_chain_f_kills_g_faction_views(self, page: Page, base_url):
+        """Chain_F kills Chain_G before Chain_F itself dies. Golf sees
+        Chain_G in ancients."""
+        ensure_gm_login(page, base_url)
+        golf = cached_faction_sections(page, 'Golf', base_url=base_url)
+        assert 'Chain_G' in golf['ancients'], \
+            f"Golf missing Chain_G in ancients; got {golf}"
 
 
 # ---------------------------------------------------------------------------
@@ -566,6 +628,30 @@ class TestActionBlockedByCombat:
             f"but holder_id select has value={selected_value!r}"
         )
 
+    # --- B2 belt-and-buckle: faction-section views for blocked-by-capture ---
+
+    def test_inv_def_1_capture_faction_views(self, page: Page, base_url):
+        """Inv_Def_1's investigate was blocked by capture — Alpha gains
+        Inv_Def_1 as prisoner, Beta has the trace in ancients."""
+        ensure_gm_login(page, base_url)
+        alpha = cached_faction_sections(page, 'Alpha', base_url=base_url)
+        beta = cached_faction_sections(page, 'Beta', base_url=base_url)
+        assert 'Inv_Def_1' in alpha['prisoners'], \
+            f"Alpha missing captured Inv_Def_1; got {alpha}"
+        assert 'Inv_Def_1' in beta['ancients'], \
+            f"Beta missing Inv_Def_1 trace; got {beta}"
+
+    def test_claim_def_1_capture_faction_views(self, page: Page, base_url):
+        """Claim_Def_1's claim was blocked by capture — Echo gains
+        Claim_Def_1 as prisoner, Beta has the trace."""
+        ensure_gm_login(page, base_url)
+        echo = cached_faction_sections(page, 'Echo', base_url=base_url)
+        beta = cached_faction_sections(page, 'Beta', base_url=base_url)
+        assert 'Claim_Def_1' in echo['prisoners'], \
+            f"Echo missing captured Claim_Def_1; got {echo}"
+        assert 'Claim_Def_1' in beta['ancients'], \
+            f"Beta missing Claim_Def_1 trace; got {beta}"
+
 
 # ---------------------------------------------------------------------------
 # Tests: cross-zone attack (LIMIT_ATTACK_BY_ZONE=0 default behavior)
@@ -619,6 +705,20 @@ class TestCrossZoneAttack:
         html = worker_report_html(page, 'Hunter_Cross')
         assert 'Runner_Cross' in html, \
             "Hunter_Cross's page should reference Runner_Cross in the attack report"
+
+    def test_runner_in_beta_ancients_after_cross_zone_kill(self, page: Page, base_url):
+        """Belt-and-buckle: Runner_Cross was killed by Hunter_Cross
+        cross-zone. Beta (Runner's original controller) should have
+        Runner_Cross in ancients (dead, no trace for kill). Alpha
+        (Hunter's controller) never gains Runner_Cross."""
+        ensure_gm_login(page, base_url)
+        beta = cached_faction_sections(page, 'Beta', base_url=base_url)
+        alpha = cached_faction_sections(page, 'Alpha', base_url=base_url)
+        assert 'Runner_Cross' in beta['ancients'], \
+            f"Beta should see Runner_Cross in ancients; got {beta}"
+        for k in ('live', 'doubles', 'prisoners', 'ancients'):
+            assert 'Runner_Cross' not in alpha[k], \
+                f"Alpha should never see Runner_Cross; found in {k}"
 
 
 # ---------------------------------------------------------------------------
