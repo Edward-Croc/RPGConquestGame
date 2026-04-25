@@ -19,7 +19,7 @@ from conftest import (
 from helpers import DB_AVAILABLE
 
 
-from helpers import get_db_connection, load_minimal_data, login_as, logout
+from helpers import get_db_connection, load_minimal_data, login_as, logout, safe_goto
 
 
 @pytest.fixture(scope="session")
@@ -40,13 +40,13 @@ def load_test_config_with_players(browser):
 
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
@@ -72,7 +72,7 @@ class TestControllerAdmin:
     """Admin user (gm) with multiple controllers."""
 
     def test_accueil_no_warnings(self, gm_page: Page, base_url):
-        gm_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(gm_page, f"{base_url}/base/accueil.php")
         gm_page.wait_for_load_state("networkidle")
         page_html = gm_page.content()
         assert "<b>Warning</b>" not in page_html
@@ -80,13 +80,13 @@ class TestControllerAdmin:
 
     def test_admin_sees_controller_dropdown(self, gm_page: Page, base_url):
         """Admin with multiple controllers should see a selection dropdown."""
-        gm_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(gm_page, f"{base_url}/base/accueil.php")
         gm_page.wait_for_load_state("networkidle")
         select = gm_page.locator("select#controllerSelect[name='controller_id']")
         expect(select).to_be_visible()
 
     def test_admin_dropdown_lists_both_controllers(self, gm_page: Page, base_url):
-        gm_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(gm_page, f"{base_url}/base/accueil.php")
         gm_page.wait_for_load_state("networkidle")
         select = gm_page.locator("select#controllerSelect[name='controller_id']")
         options = select.locator("option").all()
@@ -97,7 +97,7 @@ class TestControllerAdmin:
             f"Beta not in dropdown: {option_texts}"
 
     def test_admin_choose_button_visible(self, gm_page: Page, base_url):
-        gm_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(gm_page, f"{base_url}/base/accueil.php")
         gm_page.wait_for_load_state("networkidle")
         expect(gm_page.locator("input[value='Choisir']")).to_be_visible()
 
@@ -116,7 +116,7 @@ class TestControllerSinglePlayer:
         logout(page, base_url)
 
     def test_no_warnings(self, single_page: Page, base_url):
-        single_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(single_page, f"{base_url}/base/accueil.php")
         single_page.wait_for_load_state("networkidle")
         page_html = single_page.content()
         assert "<b>Warning</b>" not in page_html
@@ -124,7 +124,7 @@ class TestControllerSinglePlayer:
 
     def test_no_controller_chooser(self, single_page: Page, base_url):
         """Single-controller player should NOT see the controller_id dropdown."""
-        single_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(single_page, f"{base_url}/base/accueil.php")
         single_page.wait_for_load_state("networkidle")
         chooser = single_page.locator("select#controllerSelect[name='controller_id']")
         assert chooser.count() == 0, \
@@ -132,7 +132,7 @@ class TestControllerSinglePlayer:
 
     def test_sees_faction_directly(self, single_page: Page, base_url):
         """Single-controller player should see their faction info immediately."""
-        single_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(single_page, f"{base_url}/base/accueil.php")
         single_page.wait_for_load_state("networkidle")
         page_text = single_page.inner_text("body")
         assert "Alpha" in page_text, \
@@ -153,21 +153,21 @@ class TestControllerMultiPlayer:
         logout(page, base_url)
 
     def test_no_warnings(self, multi_page: Page, base_url):
-        multi_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(multi_page, f"{base_url}/base/accueil.php")
         multi_page.wait_for_load_state("networkidle")
         page_html = multi_page.content()
         assert "<b>Warning</b>" not in page_html
         assert "<b>Fatal error</b>" not in page_html
 
     def test_sees_controller_dropdown(self, multi_page: Page, base_url):
-        multi_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(multi_page, f"{base_url}/base/accueil.php")
         multi_page.wait_for_load_state("networkidle")
         select = multi_page.locator("select#controllerSelect[name='controller_id']")
         expect(select).to_be_visible()
 
     def test_sees_only_own_controllers(self, multi_page: Page, base_url):
         """Should see Alpha and Beta (their own), not any hidden controllers."""
-        multi_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(multi_page, f"{base_url}/base/accueil.php")
         multi_page.wait_for_load_state("networkidle")
         select = multi_page.locator("select#controllerSelect[name='controller_id']")
         options = select.locator("option").all()

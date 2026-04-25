@@ -53,6 +53,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
     ui_controller_id, ui_zone_id, ui_controller_counters,
+    safe_goto,
 )
 
 
@@ -97,7 +98,7 @@ def _switch_controller(page, controller_lastname):
     Uses UI-only controller-id resolution so it works under UI_ONLY=1."""
     ensure_gm_login(page, PHP_BASE_URL)
     cid = ui_controller_id(page, controller_lastname)
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir"
     )
     page.wait_for_load_state("networkidle")
@@ -106,7 +107,7 @@ def _switch_controller(page, controller_lastname):
 def _workers_page_html(page, controller_lastname):
     """Return the viewAll workers page HTML for a controller."""
     _switch_controller(page, controller_lastname)
-    page.goto(f"{PHP_BASE_URL}/workers/viewAll.php")
+    safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
     page.wait_for_load_state("load")
     return page.content()
 
@@ -121,7 +122,7 @@ def _accueil_html(page, controller_lastname):
     """
     ensure_gm_login(page, PHP_BASE_URL)
     cid = ui_controller_id(page, controller_lastname)
-    page.goto(f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
     page.wait_for_load_state("load")
     return page.content()
 
@@ -142,7 +143,7 @@ def _create_base(page, controller_lastname, zone_name):
     cid = ui_controller_id(page, controller_lastname)
     zid = ui_zone_id(page, zone_name)
     _switch_controller(page, controller_lastname)
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/controllers/action.php"
         f"?createBase=1&controller_id={cid}&zone_id={zid}"
     )
@@ -154,7 +155,7 @@ def _do_first_come(page, controller_lastname):
     ensure_gm_login(page, PHP_BASE_URL)
     cid = ui_controller_id(page, controller_lastname)
     _switch_controller(page, controller_lastname)
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/workers/new.php?first_come=true&controller_id={cid}"
     )
     page.wait_for_load_state("load")
@@ -168,7 +169,7 @@ def _do_regular_recruit(page, controller_lastname):
     ensure_gm_login(page, PHP_BASE_URL)
     cid = ui_controller_id(page, controller_lastname)
     _switch_controller(page, controller_lastname)
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={cid}"
     )
     page.wait_for_load_state("load")
@@ -209,7 +210,7 @@ def recruitment_scenario(browser):
 
     # Login + load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
@@ -250,7 +251,7 @@ def recruitment_scenario(browser):
     # Phase 4: Alpha uses regular recruitment
     # Capture the recruitment form BEFORE submitting (for form validation tests)
     _switch_controller(page, 'Alpha')
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={_snapshot['alpha_cid']}"
     )
     page.wait_for_load_state("load")
@@ -269,7 +270,7 @@ def recruitment_scenario(browser):
     # Phase 5: Beta creates base + captures recruitment form (for faction filtering)
     _create_base(page, 'Beta', 'Zeta-Unclaimed')
     _switch_controller(page, 'Beta')
-    page.goto(
+    safe_goto(page,
         f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={_snapshot['beta_cid']}"
     )
     page.wait_for_load_state("load")

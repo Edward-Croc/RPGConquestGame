@@ -59,6 +59,7 @@ from helpers import (
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
     clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
+    safe_goto,
 )
 
 
@@ -70,7 +71,7 @@ def base_url():
 def _ensure_controller_session(page):
     """Ensure the gm is logged in and has a controller selected."""
     ensure_gm_login(page, PHP_BASE_URL)
-    page.goto(f"{PHP_BASE_URL}/base/accueil.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='controller_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
@@ -110,7 +111,7 @@ def combat_scenario(browser):
 
     # Login and load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
@@ -612,7 +613,7 @@ class TestActionBlockedByCombat:
         """
         ensure_gm_login(page, PHP_BASE_URL)
         _ensure_controller_session(page)
-        page.goto(f"{PHP_BASE_URL}/zones/management_zones.php")
+        safe_goto(page, f"{PHP_BASE_URL}/zones/management_zones.php")
         page.wait_for_load_state("networkidle")
         # Beta-Combat row's holder <select>: the currently-selected option
         # must be the empty "-- Aucun --" one (value="").

@@ -21,7 +21,7 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto
 
 
 def table_row_count(table_name):
@@ -56,7 +56,7 @@ def ensure_base_data():
 @pytest.fixture
 def logged_in_page(page: Page, base_url):
     """Login as game master (gm/orga) and return the page."""
-    page.goto(f"{base_url}/connection/loginForm.php")
+    safe_goto(page, f"{base_url}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
 
     page.locator("input[name='username']").fill("gm")
@@ -76,7 +76,7 @@ class TestLoginFlow:
 
     def test_login_page_loads(self, page: Page, base_url):
         """Login page should be accessible."""
-        page.goto(f"{base_url}/connection/loginForm.php")
+        safe_goto(page, f"{base_url}/connection/loginForm.php")
         expect(page).to_have_title(re.compile(".*", re.IGNORECASE))
         expect(page.locator("input[type='password']")).to_be_visible()
 
@@ -88,7 +88,7 @@ class TestLoginFlow:
             f"Login redirect failed — still on loginForm.php: {logged_in_page.url}"
         assert "accueil.php" in logged_in_page.url, \
             f"Expected redirect to accueil.php, got: {logged_in_page.url}"
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
@@ -98,13 +98,13 @@ class TestAdminPanel:
 
     def test_admin_page_loads(self, logged_in_page: Page, base_url):
         """Admin page should be accessible after login."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
     def test_config_options_available(self, logged_in_page: Page, base_url):
         """Config dropdown should have the expected scenarios."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
         select = logged_in_page.locator("select[name='config_name']")
         options = select.locator("option").all()
@@ -131,7 +131,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_test_config(self, logged_in_page: Page, base_url):
         """Trigger a full reset with TestConfig and verify DB is populated."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("TestConfig")
@@ -166,7 +166,7 @@ class TestCSVLoadViaAdmin:
             "TestConfig should load hobbys into powers"
 
         # Verify page title and header reflect the loaded scenario
-        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
         logged_in_page.wait_for_load_state("networkidle")
         header_text = logged_in_page.locator("div.header").inner_text()
         assert "Tour" in header_text, \
@@ -174,7 +174,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_japon1555_sql(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555SQL and verify larger dataset."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
@@ -207,7 +207,7 @@ class TestCSVLoadViaAdmin:
             "Japon1555 should load 50+ worker names"
 
         # Verify page title and header reflect Japon1555 scenario
-        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
         logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
@@ -218,7 +218,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_japon1555_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555CSV and verify CSV-loaded dataset."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
@@ -266,7 +266,7 @@ class TestCSVLoadViaAdmin:
             "Japon1555CSV advanced should create exactly 9 workers"
 
         # Verify page header reflects Japon1555 scenario
-        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
         logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
@@ -277,7 +277,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_vampire1966_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Vampire1966CSV and verify CSV-loaded dataset."""
-        logged_in_page.goto(f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
@@ -325,7 +325,7 @@ class TestCSVLoadViaAdmin:
             "Vampire1966CSV advanced should create exactly 3 workers"
 
         # Verify page header reflects Vampire1966 scenario
-        logged_in_page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
         logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \

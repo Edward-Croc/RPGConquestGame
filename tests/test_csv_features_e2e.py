@@ -25,7 +25,7 @@ from conftest import (
 
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection, load_minimal_data,
+    DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto,
     ui_worker_count, ui_power_options_by_type, ui_all_workers,
 )
 
@@ -42,13 +42,13 @@ def _load_test_config(browser):
 
     context = browser.new_context()
     page = context.new_page()
-    page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
+    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
     page.wait_for_load_state("networkidle")
-    page.goto(f"{PHP_BASE_URL}/base/admin.php")
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("networkidle")
     page.locator("select[name='config_name']").select_option("TestConfig")
     page.locator("input[name='submit'][value='Submit']").click()
@@ -335,7 +335,7 @@ class TestLoadWorkersCSV:
         """
         ensure_gm_login(page, base_url)
         # Build controller_id → lastname map from accueil's controllerSelect
-        page.goto(f"{base_url}/base/accueil.php")
+        safe_goto(page, f"{base_url}/base/accueil.php")
         page.wait_for_load_state("networkidle")
         id_to_lastname = {}
         for opt in page.locator("select#controllerSelect option").all():
