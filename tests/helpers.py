@@ -612,16 +612,18 @@ def ui_faction_sections(page: Page, controller_lastname: str, base_url: str = No
 
 _wid_cache = {}
 _cid_cache = {}
+_faction_sections_cache = {}
 
 
 def clear_ui_caches():
-    """Reset the worker and controller ID scrape caches.
+    """Reset the worker, controller, and faction-sections scrape caches.
 
     Call from module-scoped fixtures before each scenario so cached
-    IDs reflect the current (post-reload) data.
+    state reflects the current (post-reload) data.
     """
     _wid_cache.clear()
     _cid_cache.clear()
+    _faction_sections_cache.clear()
 
 
 def _cached_wid(page: Page, lastname: str, base_url: str = None):
@@ -636,6 +638,19 @@ def _cached_cid(page: Page, lastname: str, base_url: str = None):
     if lastname not in _cid_cache:
         _cid_cache[lastname] = ui_controller_id(page, lastname, base_url)
     return _cid_cache[lastname]
+
+
+def cached_faction_sections(page: Page, controller_lastname: str,
+                            base_url: str = None):
+    """Return ui_faction_sections() result for a controller, scraping
+    once per module. Calls share the cache so tests asserting
+    multiple workers' presence/absence across the same controller's
+    view don't re-scrape. Cache is cleared by clear_ui_caches()."""
+    if controller_lastname not in _faction_sections_cache:
+        _faction_sections_cache[controller_lastname] = ui_faction_sections(
+            page, controller_lastname, base_url=base_url
+        )
+    return _faction_sections_cache[controller_lastname]
 
 
 def ui_attack(page: Page, attacker_lastname: str, target_lastname: str,
