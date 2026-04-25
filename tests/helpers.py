@@ -17,7 +17,7 @@ from playwright.sync_api import Page
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL, SQL_DIR,
+    PHP_BASE_URL, SQL_DIR, ensure_gm_login,
 )
 
 
@@ -598,3 +598,121 @@ def ui_faction_sections(page: Page, controller_lastname: str, base_url: str = No
             if parts:
                 result[key].add(parts[-1])
     return result
+
+
+# ---------------------------------------------------------------------------
+# UI action endpoints — URL-based action queuing with cached id scraping
+#
+# Turn-action setters that map onto workers/action.php GET endpoints.
+# Each caches worker / controller IDs across calls so the same test
+# module only pays the scrape cost once. Callers MUST invoke
+# clear_ui_caches() from their module-scoped fixture before each
+# scenario so cached IDs reflect freshly-loaded data.
+# ---------------------------------------------------------------------------
+
+_wid_cache = {}
+_cid_cache = {}
+
+
+def clear_ui_caches():
+    """Reset the worker and controller ID scrape caches.
+
+    Call from module-scoped fixtures before each scenario so cached
+    IDs reflect the current (post-reload) data.
+    """
+    _wid_cache.clear()
+    _cid_cache.clear()
+
+
+def _cached_wid(page: Page, lastname: str, base_url: str = None):
+    """Return the worker_id for `lastname`, scraping once per module."""
+    if lastname not in _wid_cache:
+        _wid_cache[lastname] = ui_worker_id(page, lastname, base_url)
+    return _wid_cache[lastname]
+
+
+def _cached_cid(page: Page, lastname: str, base_url: str = None):
+    """Return the controller_id for `lastname`, scraping once per module."""
+    if lastname not in _cid_cache:
+        _cid_cache[lastname] = ui_controller_id(page, lastname, base_url)
+    return _cid_cache[lastname]
+
+
+def ui_attack(page: Page, attacker_lastname: str, target_lastname: str,
+              base_url: str = None):
+    """Queue a worker-scope attack via workers/action.php URL endpoint."""
+    url = base_url or PHP_BASE_URL
+    atk_id = _cached_wid(page, attacker_lastname, base_url)
+    tgt_id = _cached_wid(page, target_lastname, base_url)
+    page.goto(
+        f"{url}/workers/action.php"
+        f"?worker_id={atk_id}"
+        f"&enemy_worker_id[]=worker_{tgt_id}"
+        f"&attack=Attaquer"
+    )
+    page.wait_for_load_state("load")
+
+
+def ui_investigate(page: Page, lastname: str, base_url: str = None):
+    """Queue an investigate action via workers/action.php URL endpoint."""
+    url = base_url or PHP_BASE_URL
+    wid = _cached_wid(page, lastname, base_url)
+    page.goto(
+        f"{url}/workers/action.php"
+        f"?worker_id={wid}&investigate=1"
+    )
+    page.wait_for_load_state("load")
+
+
+def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
+             base_url: str = None):
+    """Queue a claim action targeting `claim_controller_lastname`."""
+    url = base_url or PHP_BASE_URL
+    wid = _cached_wid(page, lastname, base_url)
+    cid = _cached_cid(page, claim_controller_lastname, base_url)
+    page.goto(
+        f"{url}/workers/action.php"
+        f"?worker_id={wid}&claim_controller_id={cid}&claim=1"
+    )
+    page.wait_for_load_state("load")
+
+
+def ui_move(page: Page, lastname: str, zone_name: str, base_url: str = None):
+    """Move worker to another zone via workers/action.php URL endpoint.
+
+    moveWorker (workers/functions.php) is IMMEDIATE: it updates
+    workers.zone_id right away AND forcibly changes the current turn's
+    action_choice to 'passive' (replacing whatever was queued).
+    """
+    url = base_url or PHP_BASE_URL
+    wid = _cached_wid(page, lastname, base_url)
+    zid = ui_zone_id(page, zone_name, base_url)
+    page.goto(
+        f"{url}/workers/action.php"
+        f"?worker_id={wid}&zone_id={zid}&move=1"
+    )
+    page.wait_for_load_state("load")
+
+
+def worker_report_html(page: Page, lastname: str, base_url: str = None):
+    """Navigate to a worker's action.php page and return the HTML content.
+
+    Switches the gm session to the worker's CURRENT controller first
+    (may be the captor if the worker was captured). Uses the fresh UI
+    scrape for controller_id so post-capture state is correct; the
+    worker_id is cached because the original record's id doesn't
+    change.
+    """
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    page.goto(
+        f"{url}/base/accueil.php"
+        f"?controller_id={ctrl_id}&chosir=Choisir"
+    )
+    page.wait_for_load_state("networkidle")
+    wid = _cached_wid(page, lastname, base_url)
+    assert wid, f"Worker {lastname} not found"
+    page.goto(f"{url}/workers/action.php?worker_id={wid}")
+    page.wait_for_load_state("load")
+    return page.content()
