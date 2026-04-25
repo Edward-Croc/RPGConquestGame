@@ -16,6 +16,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ( !empty($_GET['enemy_worker_id']) ) $enemy_worker_id = $_GET['enemy_worker_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "enemy_worker_id: ".var_export($enemy_worker_id, true)."<br /><br />";
 
+    $controller_id = NULL;
+    if ( !empty($_GET['controller_id']) ) $controller_id = $_GET['controller_id'];
+    if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
+
     $claim_controller_id = NULL;
     if ( !empty($_GET['claim_controller_id']) ) $claim_controller_id = $_GET['claim_controller_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "claim_controller_id: ".var_export($claim_controller_id, true)."<br /><br />";

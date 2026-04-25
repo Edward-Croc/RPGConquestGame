@@ -231,6 +231,48 @@ class TestCreatePerfectAgentForm:
 
 
 # ---------------------------------------------------------------------------
+# Tests: perfect-worker form validation (A1)
+# ---------------------------------------------------------------------------
+
+class TestPerfectWorkerValidation:
+    """A1: createWorker now emits a French error per missing required
+    field instead of failing silently. The 5 required fields per
+    workers/functions.php createWorker() are: firstname, lastname,
+    origin_id, controller_id, zone_id. The happy path is already
+    covered by TestCreatePerfectAgentForm.test_create_worker_via_form
+    so we only test the negative case here.
+    """
+
+    def test_missing_required_field_shows_error(self, page: Page, base_url):
+        """Submit creation URL with `lastname` cleared while every other
+        required field is set → response shows the French error pattern
+        ('Champ obligatoire manquant : nom'). Symmetry across the 5
+        required fields is asserted by code review of createWorker's
+        loop, not by 5 separate tests (avoids test-suite bloat for a
+        non-critical admin form)."""
+        ensure_gm_login(page, base_url)
+        page.goto(
+            f"{base_url}/workers/action.php"
+            f"?creation=true"
+            f"&firstname=Sentinel"
+            f"&lastname="                      # cleared
+            f"&origin_id=1"
+            f"&controller_id=1"
+            f"&zone_id=1"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.wait_for_load_state("load")
+        body = page.content()
+        assert "Champ obligatoire manquant" in body, (
+            "createWorker should emit the French missing-field pattern "
+            "when a required field is empty"
+        )
+        assert "nom" in body, (
+            "Cleared field's French label ('nom') should be named in the error"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Tests: BDD Export
 # ---------------------------------------------------------------------------
 

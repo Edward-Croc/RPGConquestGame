@@ -52,7 +52,7 @@
     $showOriginSelect = sprintf('
             <div class="control for-select">
                 <div class="select is-fullwidth">
-                    <select id="origin_id" name="origin_id">
+                    <select id="origin_id" name="origin_id" required>
                         <option value="">Sélectionner %s</option>
                         %s
                     </select>
@@ -65,7 +65,7 @@
     $showFirstnameSelect = sprintf('
             <div class="control for-select">
                 <div class="select is-fullwidth">
-                    <select id="firstname" name="firstname">
+                    <select id="firstname" name="firstname" required>
                         <option value="">Sélectionner %s</option>
                         %s
                     </select>
@@ -78,7 +78,7 @@
     $showLastnameSelect = sprintf('
             <div class="control for-select">
                 <div class="select is-fullwidth">
-                    <select id="lastname" name="lastname">
+                    <select id="lastname" name="lastname" required>
                         <option value="">Sélectionner %s</option>
                         %s
                     </select>
