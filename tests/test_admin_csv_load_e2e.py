@@ -21,7 +21,7 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, csv_row_count
 
 
 def table_row_count(table_name):
@@ -146,14 +146,19 @@ class TestCSVLoadViaAdmin:
             "PHP warnings found on page after TestConfig reset"
 
         # Verify CSV load success messages with correct row counts
-        assert "setupTestConfig_worker_origins.csv loaded successfully (3 rows)" in page_html, \
-            "Expected worker_origins CSV to load 3 rows"
-        assert "setupTestConfig_worker_names.csv loaded successfully (8 rows)" in page_html, \
-            "Expected worker_names CSV to load 8 rows"
-        assert "setupTestConfig_zones.csv loaded successfully (8 rows)" in page_html, \
-            "Expected zones CSV to load 8 rows"
-        assert "setupTestConfig_hobbys.csv loaded successfully (13 rows)" in page_html, \
-            "Expected hobbys CSV to load 13 rows"
+        # (counts read live from the CSVs so adding rows doesn't break the test)
+        wo_n = csv_row_count("setupTestConfig_worker_origins.csv")
+        wn_n = csv_row_count("setupTestConfig_worker_names.csv")
+        zones_n = csv_row_count("setupTestConfig_zones.csv")
+        hobbys_n = csv_row_count("setupTestConfig_hobbys.csv")
+        assert f"setupTestConfig_worker_origins.csv loaded successfully ({wo_n} rows)" in page_html, \
+            f"Expected worker_origins CSV to load {wo_n} rows"
+        assert f"setupTestConfig_worker_names.csv loaded successfully ({wn_n} rows)" in page_html, \
+            f"Expected worker_names CSV to load {wn_n} rows"
+        assert f"setupTestConfig_zones.csv loaded successfully ({zones_n} rows)" in page_html, \
+            f"Expected zones CSV to load {zones_n} rows"
+        assert f"setupTestConfig_hobbys.csv loaded successfully ({hobbys_n} rows)" in page_html, \
+            f"Expected hobbys CSV to load {hobbys_n} rows"
 
         # Verify DB row counts
         assert table_row_count("worker_origins") >= 3, \

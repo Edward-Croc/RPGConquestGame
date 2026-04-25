@@ -28,6 +28,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto,
     ui_worker_count, ui_power_options_by_type, ui_all_workers,
     register_php_error_listener, assert_no_collected_php_errors,
+    csv_row_count,
 )
 
 
@@ -274,13 +275,17 @@ class TestLoadWorkersCSV:
     """
 
     def test_workers_table_populated(self, page: Page, base_url):
-        """Exactly 33 workers should exist (7 detection + 19 combat + 5 cross + 2 artefact).
+        """Worker count must match setupTestConfig_advanced.csv data rows.
 
         Counts rows on /workers/management_workers.php — UI-runnable.
+        Compares against csv_row_count() so adding a worker to the CSV
+        doesn't require updating the assertion here.
         """
         ensure_gm_login(page, base_url)
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 33, f"Expected 33 workers, got {count}"
+        expected = csv_row_count("setupTestConfig_advanced.csv")
+        assert count == expected, \
+            f"Expected {expected} workers (per setupTestConfig_advanced.csv), got {count}"
 
     @pytest.mark.db
     def test_all_workers_have_origin_and_zone(self):
