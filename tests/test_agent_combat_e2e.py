@@ -58,7 +58,7 @@ from helpers import (
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
     clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
-    worker_report_html, cached_faction_sections,
+    worker_report_html, cached_faction_sections, ui_worker_action_state,
 )
 
 
@@ -193,34 +193,21 @@ def combat_scenario(browser):
 # what the old DB `action_choice` queries checked.
 
 def _ui_worker_is_downed(page, lastname):
-    """True if the worker's action.php view shows them as dead, captured,
-    or a prisoner under a new controller.
+    """True if the worker is dead, captured, or a prisoner.
 
-    After captureWorker(), a captured worker is MOVED to the captor's
-    controller and its action becomes 'prisoner' (text: "est un.e agent
-    ... prisonnier.e"). The original controller sees a trace worker
-    whose action is 'captured' / 'dead' (text: "A disparu"). Both paths
-    count as "downed" from the attacker-test perspective.
-
-    The action form is absent for both inactive actions and prisoner
-    views, so `name="attack"` input is not rendered.
+    Reads data-worker-status from workers/view.php's card-header.
     """
-    html = worker_report_html(page, lastname)
-    is_disparu_or_prisoner = 'A disparu' in html or 'prisonnier' in html
-    return is_disparu_or_prisoner and 'name="attack"' not in html
+    state = ui_worker_action_state(page, lastname)
+    return state['worker_status'] in ('dead', 'captured', 'prisoner')
 
 
 def _ui_worker_is_passive(page, lastname):
-    """True if the worker's action.php view shows them as still passive.
-
-    txt_ps_passive => "surveille", ucfirst => "Surveille". Checks for the
-    `name="passive"` submit button (rendered for every active worker
-    regardless of zone) rather than `name="attack"` (rendered only when
-    the controller has known alive enemies in the worker's current zone,
-    which breaks down for workers who moved to a zone with no targets).
-    """
-    html = worker_report_html(page, lastname)
-    return 'Surveille' in html and 'name="passive"' in html
+    """True if the worker's current-turn action_choice is 'passive' AND
+    they're still alive (not downed). Reads data-* attributes from
+    workers/view.php's card-header."""
+    state = ui_worker_action_state(page, lastname)
+    return (state['action_choice'] == 'passive'
+            and state['worker_status'] == 'alive')
 
 
 def _ui_worker_is_attacking(page, lastname, target_lastname):
@@ -297,6 +284,16 @@ class TestBaseCombat:
             "Counter_Atk should be dead (A disparu) after being countered"
         assert _ui_worker_is_passive(page, 'Counter_Def'), \
             "Counter_Def should remain passive (Surveille) after countering"
+
+    def test_passive_worker_view_renders_french_text(self, page: Page, base_url):
+        """Smoke test for the txt_ps_passive config + ucfirst rendering chain.
+        Even_Def survived as passive on turn 1, so their action.php page
+        must render 'Surveille' in the worker action text. Guards against
+        config / template / ucfirst regressions that the data-* attribute
+        helpers (which read action_choice directly) would not catch."""
+        html = worker_report_html(page, 'Even_Def')
+        assert 'Surveille' in html, \
+            "passive worker view must render the French txt_ps_passive 'Surveille'"
 
     # --- B2 belt-and-buckle: faction-section views post-combat ---
 
@@ -752,27 +749,21 @@ class TestMoveClearsActionParams:
         assert _ui_worker_is_passive(page, 'Mover_Test'), \
             "Mover_Test should be passive (survived via cleared attack)"
 
-    @pytest.mark.db
-    def test_mover_action_params_is_empty_json(self):
-        """Direct DB check: worker_actions.action_params must be the
-        literal string '{}'. moveWorker passes json_encode([]) = '{}'
-        as the last argument to updateWorkerAction, so this value is
-        contractually guaranteed — this test locks that contract."""
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT wa.action_choice, wa.action_params
-            FROM `{GAME_PREFIX}worker_actions` wa
-            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE w.lastname = 'Mover_Test' AND wa.turn_number = 1
-        """)
-        row = cursor.fetchone()
-        conn.close()
-        assert row is not None, "Mover_Test must have a turn-1 worker_actions row"
-        assert row['action_choice'] == 'passive', \
-            f"After move-after-attack, action_choice should be 'passive', got {row['action_choice']!r}"
-        assert row['action_params'] == '{}', \
-            f"action_params should be empty JSON '{{}}' after move, got {row['action_params']!r}"
+    def test_mover_action_params_is_empty_json(self, page: Page, base_url):
+        """worker_actions.action_params must be the literal string '{}'.
+        updateWorkerAction emits '{}' for empty arrays per the project
+        convention; this test locks that contract.
+
+        Reads the worker-action-state marker emitted by workers/view.php
+        (data-action-params attribute) — UI-only, runs under UI_ONLY=1.
+        Note: turn-2's row inherits action_params from turn-1 via
+        createNewTurnLines, so scraping the current-turn rendering
+        verifies the turn-1 value was preserved correctly."""
+        state = ui_worker_action_state(page, 'Mover_Test', base_url=base_url)
+        assert state['action_choice'] == 'passive', \
+            f"After move-after-attack, action_choice should be 'passive', got {state['action_choice']!r}"
+        assert state['action_params'] == '{}', \
+            f"action_params should be empty JSON '{{}}' after move, got {state['action_params']!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -808,22 +799,17 @@ class TestAttackKeepsDefenderParams:
     '{}' during the defender loop.
     """
 
-    @pytest.mark.db
-    def test_keep_def_preserves_claim_params_after_survived_miss(self):
+    def test_keep_def_preserves_claim_params_after_survived_miss(self, page: Page, base_url):
         """Keep_Def survives Keep_Atk's miss; its turn-1 action_params
-        must still contain the queued claim_controller_id."""
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT wa.action_choice, wa.action_params
-            FROM `{GAME_PREFIX}worker_actions` wa
-            JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id
-            WHERE w.lastname = 'Keep_Def' AND wa.turn_number = 1
-        """)
-        row = cursor.fetchone()
-        conn.close()
-        assert row is not None, "Keep_Def must have a turn-1 worker_actions row"
-        assert row['action_choice'] == 'claim', \
-            f"Keep_Def should still have action_choice='claim' after surviving miss, got {row['action_choice']!r}"
-        assert 'claim_controller_id' in (row['action_params'] or ''), \
-            f"Keep_Def's action_params must preserve claim_controller_id after surviving miss — regression guard for attackMechanic.php:306 init. Got: {row['action_params']!r}"
+        must still contain the queued claim_controller_id.
+
+        Reads the worker-action-state marker emitted by workers/view.php
+        (data-* attributes) — UI-only, runs under UI_ONLY=1.
+        Turn-2's row inherits action_params from turn-1 via
+        createNewTurnLines, so scraping the current-turn rendering
+        verifies the turn-1 value was preserved correctly."""
+        state = ui_worker_action_state(page, 'Keep_Def', base_url=base_url)
+        assert state['action_choice'] == 'claim', \
+            f"Keep_Def should still have action_choice='claim' after surviving miss, got {state['action_choice']!r}"
+        assert 'claim_controller_id' in state['action_params'], \
+            f"Keep_Def's action_params must preserve claim_controller_id after surviving miss — regression guard for attackMechanic.php:306 init. Got: {state['action_params']!r}"

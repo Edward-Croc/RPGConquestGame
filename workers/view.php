@@ -424,7 +424,14 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
             $viewHTML = sprintf(
                 '<div class="card">
-                    <header class="card-header">
+                    <header 
+                        class="card-header"
+                        data-worker-id="%1$s"
+                        data-worker-lastname="%3$s"
+                        data-action-choice="%12$s"
+                        data-action-params="%13$s"
+                        data-worker-status="%14$s"
+                    >
                         <p class="card-header-title">
                             Agent %2$s %3$s
                         </p>
@@ -442,7 +449,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         %11$s
                     </div>
                 </div>',
-                $worker['id'], // %1$s
+                (int)$worker['id'], // %1$s
                 $worker['firstname'], // %2$s
                 $worker['lastname'], // %3$s
                 $workerActionText, // %4$s
@@ -452,7 +459,10 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $worker['total_defence'], // %8$s
                 $viewHistoryHTML, // %9$s
                 $actionHTML, // %10$s
-                $upgradeHTML // %11$s
+                $upgradeHTML, // %11$s
+                htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %12$s
+                htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %13$s
+                htmlspecialchars($workerStatus, ENT_QUOTES) // %14$s
             );
             echo $viewHTML;
 
