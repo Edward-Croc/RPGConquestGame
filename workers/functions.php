@@ -539,9 +539,14 @@ function randomWorkerName($pdo, $newWorker) {
 
     // Fetch the results
     $worker_names = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // Store worker_origins in the array
-    $newWorker['firstname'] = $worker_names[0]['firstname'];
-    $newWorker['lastname'] = $worker_names[1]['lastname'];
+    // Store worker_origins in the array. SQL is LIMIT 2 but small
+    // worker_names pools may return only 1 row — fall back to the
+    // first row so we don't access an undefined index. The 0-rows
+    // case is tracked as audit N2 (proper rollback + UX error).
+    $first_row  = $worker_names[0] ?? null;
+    $second_row = $worker_names[1] ?? $first_row;
+    $newWorker['firstname'] = $first_row['firstname']  ?? '';
+    $newWorker['lastname']  = $second_row['lastname']  ?? '';
     return $newWorker;
 }
 
