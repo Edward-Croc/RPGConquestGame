@@ -563,7 +563,6 @@ function createWorker($pdo, $array) {
 
     // If a necessary element of data is missing
     $requiredFields = [
-        'firstname'     => 'prénom',
         'lastname'      => 'nom',
         'origin_id'     => 'origine',
         'controller_id' => 'controller',

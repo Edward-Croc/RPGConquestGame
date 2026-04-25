@@ -65,7 +65,7 @@
     $showFirstnameSelect = sprintf('
             <div class="control for-select">
                 <div class="select is-fullwidth">
-                    <select id="firstname" name="firstname" required>
+                    <select id="firstname" name="firstname">
                         <option value="">Sélectionner %s</option>
                         %s
                     </select>
@@ -170,11 +170,19 @@
         $showHobbySelect,
         showDisciplineSelect($gameReady, $powerDisciplineArray, false),
         showTransformationSelect($gameReady, $powerTransformationArray, false),
-        showZoneSelect($gameReady, $zonesArray),
+        str_replace(
+            '<select id="zoneSelect" name="zone_id">',
+            '<select id="zoneSelect" name="zone_id" required>',
+            showZoneSelect($gameReady, $zonesArray)
+        ),
         $showOriginSelect,
         $showFirstnameSelect,
         $showLastnameSelect,
-        showControllerSelect($controllerValues)
+        str_replace(
+            '<select id="controllerSelect" name="controller_id">',
+            '<select id="controllerSelect" name="controller_id" required>',
+            showControllerSelect($controllerValues)
+        )
     );
     echo $html;
 ?>
