@@ -231,6 +231,88 @@ class TestCreatePerfectAgentForm:
 
 
 # ---------------------------------------------------------------------------
+# Tests: perfect-worker form validation (A1)
+# ---------------------------------------------------------------------------
+
+class TestPerfectWorkerValidation:
+    """A1: createWorker now emits a French error per missing required
+    field instead of failing silently. The 5 required fields per
+    workers/functions.php createWorker() are: firstname, lastname,
+    origin_id, controller_id, zone_id. The happy path is already
+    covered by TestCreatePerfectAgentForm.test_create_worker_via_form
+    so we only test the negative case here.
+    """
+
+    def test_missing_required_field_shows_error(self, page: Page, base_url):
+        """Submit creation URL with `lastname` cleared while every other
+        required field is set → response shows the French error pattern
+        ('Champ obligatoire manquant : nom'). Symmetry across the 5
+        required fields is asserted by code review of createWorker's
+        loop, not by 5 separate tests (avoids test-suite bloat for a
+        non-critical admin form)."""
+        ensure_gm_login(page, base_url)
+        page.goto(
+            f"{base_url}/workers/action.php"
+            f"?creation=true"
+            f"&firstname=Sentinel"
+            f"&lastname="                      # cleared
+            f"&origin_id=1"
+            f"&controller_id=1"
+            f"&zone_id=1"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.wait_for_load_state("load")
+        body = page.content()
+        assert "Champ obligatoire manquant" in body, (
+            "createWorker should emit the French missing-field pattern "
+            "when a required field is empty"
+        )
+        assert "nom" in body, (
+            "Cleared field's French label ('nom') should be named in the error"
+        )
+
+    def test_create_worker_with_zero_powers_no_php_warnings(self, page: Page, base_url):
+        """Regression test for workers/functions.php:202 typo that
+        triggered 'Warning: Undefined variable $worker_id' when a worker
+        was created with 0 powers (all 4 power-type fields empty).
+
+        Reproduces by submitting the perfect-worker URL with all
+        required fields populated but every optional power field empty,
+        then asserts no PHP Warning / Fatal error on the post-creation
+        worker view (action.php?worker_id=X) AND on the controller's
+        faction-roster page (workers/viewAll.php under Lord Alpha).
+        """
+        ensure_gm_login(page, base_url)
+
+        page.goto(
+            f"{base_url}/workers/action.php"
+            f"?creation=true"
+            f"&firstname=Zero"
+            f"&lastname=NoPowers_Test"
+            f"&origin_id=1"
+            f"&controller_id=1"  # Lord Alpha
+            f"&zone_id=1"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.wait_for_load_state("load")
+        body_creation = page.content()
+        assert "<b>Warning</b>" not in body_creation, \
+            "PHP Warning on action.php after 0-powers creation"
+        assert "<b>Fatal error</b>" not in body_creation, \
+            "PHP Fatal error on action.php after 0-powers creation"
+
+        page.goto(f"{base_url}/base/accueil.php?controller_id=1&chosir=Choisir")
+        page.wait_for_load_state("networkidle")
+        page.goto(f"{base_url}/workers/viewAll.php")
+        page.wait_for_load_state("load")
+        body_viewall = page.content()
+        assert "<b>Warning</b>" not in body_viewall, \
+            "PHP Warning on workers/viewAll.php with 0-powers worker visible"
+        assert "<b>Fatal error</b>" not in body_viewall, \
+            "PHP Fatal error on workers/viewAll.php"
+
+
+# ---------------------------------------------------------------------------
 # Tests: BDD Export
 # ---------------------------------------------------------------------------
 

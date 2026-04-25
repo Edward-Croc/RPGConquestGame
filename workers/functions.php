@@ -199,8 +199,7 @@ function getWorkers($pdo, $workerIds) {
     $workerActionsById = [];
     foreach ($worker_actions as $action) {
         $action_worker_id = $action['worker_id'];
-        if (empty($workerActionsById[$action_worker_id][$action['turn_number']])) $workerActionsById[$worker_id][$action['turn_number']] = [];
-        $workerActionsById[$action_worker_id][$action['turn_number']] =  $action;
+        $workerActionsById[$action_worker_id][$action['turn_number']] = $action;
     }
 
     foreach ($workersArray as $key => $worker) {
@@ -562,14 +561,23 @@ function createWorker($pdo, $array) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     // If a necessary element of data is missing
-    if (
-        empty($array['firstname'])
-        || empty($array['lastname'])
-        || empty($array['origin_id'])
-        || empty($array['controller_id'])
-        || empty($array['zone_id'])
-    ) {
-        if ($debug) echo sprintf( "%s() => Unfound necessary element <br>",  __FUNCTION__ );
+    $requiredFields = [
+        'lastname'      => 'nom',
+        'origin_id'     => 'origine',
+        'controller_id' => 'controller',
+        'zone_id'       => 'zone',
+    ];
+    $missing = [];
+    foreach ($requiredFields as $field => $label) {
+        if (empty($array[$field])) {
+            $missing[] = $label;
+        }
+    }
+    if (!empty($missing)) {
+        foreach ($missing as $label) {
+            echo sprintf("Champ obligatoire manquant : %s<br />", $label);
+        }
+        if ($debug) echo sprintf("%s() => Unfound necessary element <br>", __FUNCTION__);
         return false;
     }
 
