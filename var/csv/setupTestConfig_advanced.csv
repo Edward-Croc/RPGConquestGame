@@ -27,3 +27,6 @@ combat,Claim_Atk_2,origine Accessible,Beta-Combat,Charlie,passive,{},Eagle Scout
 combat,Claim_Def_2,origine Accessible,Beta-Combat,Delta,passive,{},Blank Slate|Common Folk
 cross,Hunter_Cross,origine Accessible,Beta-Combat,Alpha,investigate,{},Eagle Scout|Patrol Warden
 cross,Runner_Cross,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Common Folk
+cross,Mover_Test,origine Accessible,Beta-Combat,Echo,passive,{},Blank Slate|Common Folk
+cross,Keep_Def,origine Accessible,Beta-Combat,Beta,passive,{},Blank Slate|Common Folk
+cross,Keep_Atk,origine Accessible,Beta-Combat,Foxtrot,passive,{},Blank Slate|Common Folk

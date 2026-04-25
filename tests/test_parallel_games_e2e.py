@@ -186,13 +186,13 @@ class TestBothGamesLoaded:
         assert count == 9, f"Expected 9 Shikoku workers, got {count}"
 
     def test_primary_has_workers(self, page: Page, base_url):
-        """TestConfig in primary loaded 28 workers (7 detection + 19 combat + 2 cross).
+        """TestConfig in primary loaded 31 workers (7 detection + 19 combat + 5 cross).
 
         Counts rows on /workers/management_workers.php on the primary URL.
         """
         login_as(page, base_url, "gm", "orga")
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 28, f"Expected 28 TestConfig workers, got {count}"
+        assert count == 31, f"Expected 31 TestConfig workers, got {count}"
 
     def test_secondary_has_shikoku_zones(self, page: Page, base_url):
         """Secondary has Shikoku zones (11 total). Counted via management_zones."""

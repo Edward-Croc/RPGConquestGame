@@ -303,7 +303,7 @@ function attackMechanic($pdo, $mechanics){
             $attackerReport= array();
             $defenderReport= array();
             $defender_status = NULL;
-            $defender_json = array();
+            $defender_json = null;
             $attacker_status = NULL;
             $survived = true;
 
