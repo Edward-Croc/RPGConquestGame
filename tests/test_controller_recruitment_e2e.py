@@ -53,7 +53,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
     ui_controller_id, ui_zone_id, ui_controller_counters,
-    safe_goto,
+    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -207,6 +207,7 @@ def recruitment_scenario(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
 
     # Login + load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
@@ -296,6 +297,7 @@ def recruitment_scenario(browser):
         _workers_page_html(page, 'Alpha')
     )
 
+    assert_no_collected_php_errors(page)
     context.close()
     yield
 

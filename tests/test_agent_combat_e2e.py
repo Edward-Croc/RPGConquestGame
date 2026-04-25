@@ -59,7 +59,7 @@ from helpers import (
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
     clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
-    safe_goto,
+    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -108,6 +108,7 @@ def combat_scenario(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
 
     # Login and load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
@@ -176,6 +177,7 @@ def combat_scenario(browser):
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
 
+    assert_no_collected_php_errors(page)
     context.close()
     yield
 

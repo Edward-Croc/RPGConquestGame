@@ -33,6 +33,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     login_as, end_turn, load_scenario_via_admin, load_minimal_data,
     ui_worker_count, ui_zone_names, ui_all_controllers,
+    register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -121,8 +122,10 @@ def _end_turn_fresh_context(browser, url_base):
     """End turn via a fresh browser context (used for parallel-games isolation)."""
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
     login_as(page, url_base, "gm", "orga")
     end_turn(page, url_base)
+    assert_no_collected_php_errors(page)
     context.close()
 
 

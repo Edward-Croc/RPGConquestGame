@@ -19,7 +19,10 @@ from conftest import (
 from helpers import DB_AVAILABLE
 
 
-from helpers import get_db_connection, load_minimal_data, login_as, logout, safe_goto
+from helpers import (
+    get_db_connection, load_minimal_data, login_as, logout, safe_goto,
+    register_php_error_listener, assert_no_collected_php_errors,
+)
 
 
 @pytest.fixture(scope="session")
@@ -40,6 +43,7 @@ def load_test_config_with_players(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
     safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
@@ -52,6 +56,7 @@ def load_test_config_with_players(browser):
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
+    assert_no_collected_php_errors(page)
     context.close()
 
     yield
@@ -70,13 +75,6 @@ def gm_page(page: Page, base_url):
 
 class TestControllerAdmin:
     """Admin user (gm) with multiple controllers."""
-
-    def test_accueil_no_warnings(self, gm_page: Page, base_url):
-        safe_goto(gm_page, f"{base_url}/base/accueil.php")
-        gm_page.wait_for_load_state("networkidle")
-        page_html = gm_page.content()
-        assert "<b>Warning</b>" not in page_html
-        assert "<b>Fatal error</b>" not in page_html
 
     def test_admin_sees_controller_dropdown(self, gm_page: Page, base_url):
         """Admin with multiple controllers should see a selection dropdown."""
@@ -115,13 +113,6 @@ class TestControllerSinglePlayer:
         yield page
         logout(page, base_url)
 
-    def test_no_warnings(self, single_page: Page, base_url):
-        safe_goto(single_page, f"{base_url}/base/accueil.php")
-        single_page.wait_for_load_state("networkidle")
-        page_html = single_page.content()
-        assert "<b>Warning</b>" not in page_html
-        assert "<b>Fatal error</b>" not in page_html
-
     def test_no_controller_chooser(self, single_page: Page, base_url):
         """Single-controller player should NOT see the controller_id dropdown."""
         safe_goto(single_page, f"{base_url}/base/accueil.php")
@@ -151,13 +142,6 @@ class TestControllerMultiPlayer:
         login_as(page, base_url, "multi_player", "test")
         yield page
         logout(page, base_url)
-
-    def test_no_warnings(self, multi_page: Page, base_url):
-        safe_goto(multi_page, f"{base_url}/base/accueil.php")
-        multi_page.wait_for_load_state("networkidle")
-        page_html = multi_page.content()
-        assert "<b>Warning</b>" not in page_html
-        assert "<b>Fatal error</b>" not in page_html
 
     def test_sees_controller_dropdown(self, multi_page: Page, base_url):
         safe_goto(multi_page, f"{base_url}/base/accueil.php")

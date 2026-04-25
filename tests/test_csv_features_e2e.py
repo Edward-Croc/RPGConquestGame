@@ -27,6 +27,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto,
     ui_worker_count, ui_power_options_by_type, ui_all_workers,
+    register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -42,6 +43,7 @@ def _load_test_config(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
     safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
     page.locator("input[name='username']").fill("gm")
@@ -54,6 +56,7 @@ def _load_test_config(browser):
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
+    assert_no_collected_php_errors(page)
     context.close()
 
 

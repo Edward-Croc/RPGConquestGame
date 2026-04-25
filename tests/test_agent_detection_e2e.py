@@ -34,7 +34,7 @@ from helpers import (
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
-    safe_goto,
+    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -175,6 +175,7 @@ def load_and_end_turn(browser):
 
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
 
     safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
     page.wait_for_load_state("networkidle")
@@ -194,6 +195,7 @@ def load_and_end_turn(browser):
     safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
 
+    assert_no_collected_php_errors(page)
     context.close()
     yield
 
@@ -231,16 +233,6 @@ class TestEndTurn:
         assert count >= 26, \
             f"Expected at least 26 action rows for turn 1, got {count}"
 
-    def test_end_turn_page_no_warnings(self, page: Page, base_url):
-        """Re-visit end turn page and verify no PHP warnings.
-        Since turn already advanced, this tests the 'already done' path.
-        UI-only smoke check — runs under UI_ONLY=1."""
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/mechanics/endTurn.php")
-        page.wait_for_load_state("load", timeout=30000)
-        html = page.content()
-        assert "<b>Warning</b>" not in html, "PHP warnings on end turn page"
-        assert "<b>Fatal error</b>" not in html, "PHP fatal error on end turn page"
 
 
 # ---------------------------------------------------------------------------
@@ -621,13 +613,6 @@ class TestWorkerViewPage:
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("networkidle")
 
-    def test_agent1_page_no_warnings(self, page: Page, base_url):
-        """Finder_1 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
-        html = page.content()
-        assert "<b>Warning</b>" not in html
-        assert "<b>Fatal error</b>" not in html
-
     def test_agent1_page_has_report(self, page: Page, base_url):
         """Finder_1 page has Rapport section with Tour 0."""
         self._go_to_worker(page, base_url, 'Charlie', 'Finder_1')
@@ -667,9 +652,3 @@ class TestWorkerViewPage:
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Location A" not in report_section
 
-    def test_agent4_page_no_warnings(self, page: Page, base_url):
-        """Finder_4 worker page loads without PHP warnings."""
-        self._go_to_worker(page, base_url, 'Foxtrot', 'Finder_4')
-        html = page.content()
-        assert "<b>Warning</b>" not in html
-        assert "<b>Fatal error</b>" not in html
