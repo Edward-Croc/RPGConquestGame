@@ -239,7 +239,7 @@ class TestArtefactCreateViaAdmin:
         add_form.locator("input[name='artefact_name']").fill("Citadelle Crown of Echo")
         add_form.locator("input[name='artefact_description']").fill("Carved circlet of the Echo citadel")
         add_form.locator("input[name='artefact_full_description']").fill("Forged in Echo's old stronghold; details lost to history")
-        add_form.locator("select[name='location_id']").select_option(label="Echo-Base")
+        add_form.locator("select[name='location_id']").select_option(label="Echo - Echo-Base")
         add_form.locator("button[name='add_artefact']").click()
         gm_page.wait_for_load_state("networkidle")
 
@@ -253,6 +253,52 @@ class TestArtefactCreateViaAdmin:
         ctrl_html = _controllers_page_text(gm_page, base_url)
         assert "Citadelle Crown of Echo" in ctrl_html, \
             "Newly-created artefact should appear on Echo's /controllers/action.php"
+
+
+class TestArtefactManagementDropdown:
+    """/artefacts/management.php location dropdown must:
+      (a) hide locations with can_be_destroyed=0 (artefacts can only live
+          on attackable locations);
+      (b) display each option as 'Controller - Location' so fortresses
+          sharing names across factions stay distinguishable;
+      (c) sort by controller name (unowned bucketed last).
+
+    Asserts against the 'Add New Artefact' dropdown (the simplest surface
+    — same query feeds both the per-row Change Location dropdown and
+    this one)."""
+
+    def _add_form_option_labels(self, page, base_url):
+        safe_goto(page, f"{base_url}/artefacts/management.php")
+        page.wait_for_load_state("networkidle")
+        add_form = page.locator("form:has(input[name='artefact_name'])")
+        return [
+            (opt.inner_text() or "").strip()
+            for opt in add_form.locator("select[name='location_id'] option").all()
+        ]
+
+    def test_civic_site_excluded_from_dropdown(self, gm_page: Page, base_url):
+        """Civic-Site has can_be_destroyed=0 — must NOT appear as an option."""
+        labels = self._add_form_option_labels(gm_page, base_url)
+        for label in labels:
+            assert "Civic-Site" not in label, \
+                f"Civic-Site (can_be_destroyed=0) leaked into dropdown: {labels}"
+
+    def test_options_use_controller_location_format(self, gm_page: Page, base_url):
+        """Each option must be 'Controller - Location' (or '(unowned) - X')."""
+        labels = self._add_form_option_labels(gm_page, base_url)
+        assert "Echo - Echo-Base" in labels, \
+            f"Expected 'Echo - Echo-Base' in dropdown labels: {labels}"
+        assert "Foxtrot - Foxtrot-Outpost" in labels, \
+            f"Expected 'Foxtrot - Foxtrot-Outpost' in dropdown labels: {labels}"
+
+    def test_options_sorted_by_controller_then_location(self, gm_page: Page, base_url):
+        """Echo-owned options must appear before Foxtrot-owned options
+        (alphabetical by controller lastname)."""
+        labels = self._add_form_option_labels(gm_page, base_url)
+        echo_idx = next(i for i, l in enumerate(labels) if l.startswith("Echo - "))
+        foxtrot_idx = next(i for i, l in enumerate(labels) if l.startswith("Foxtrot - "))
+        assert echo_idx < foxtrot_idx, \
+            f"Echo entries should precede Foxtrot entries; got order: {labels}"
 
 
 class TestArtefactMoveViaAdmin:
@@ -279,7 +325,7 @@ class TestArtefactMoveViaAdmin:
         # in the same row. Locate the row by name, then the form within.
         relic_row = gm_page.locator("tr").filter(has_text="Echo-Base Relic").first
         change_form = relic_row.locator("form:has(select[name='new_location_id'])")
-        change_form.locator("select[name='new_location_id']").select_option(label="Foxtrot-Outpost")
+        change_form.locator("select[name='new_location_id']").select_option(label="Foxtrot - Foxtrot-Outpost")
         change_form.locator("button[name='update_location']").click()
         gm_page.wait_for_load_state("networkidle")
 

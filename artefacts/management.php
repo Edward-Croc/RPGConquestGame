@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
 }
 
-// Fetch artefacts and locations
+// Fetch artefacts
 $artefacts = $gameReady->query("
     SELECT a.id, a.name, a.location_id, a.description, a.full_description,
            CONCAT(l.name, ' - ', z.name) AS location_name
@@ -50,7 +50,15 @@ $artefacts = $gameReady->query("
     ORDER BY a.id
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$locations = $gameReady->query("SELECT id, name FROM {$prefix}locations ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Fetch locations
+$locations = $gameReady->query("
+    SELECT l.id,
+           CONCAT(COALESCE(c.lastname, '(unowned)'), ' - ', l.name) AS display_name
+    FROM {$prefix}locations l
+    LEFT JOIN {$prefix}controllers c ON c.id = l.controller_id
+    WHERE l.can_be_destroyed = 1
+    ORDER BY c.lastname IS NULL, c.lastname, l.name
+")->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 
@@ -72,7 +80,7 @@ require_once '../base/baseHTML.php';
                     '<option value="%1$s" %2$s>%3$s</option>',
                     $loc['id'],
                     $loc['id'] == $art['location_id'] ? 'selected' : '',
-                    $loc['name']
+                    $loc['display_name']
                 );
             endforeach;
             echo sprintf('<tr>
@@ -129,7 +137,7 @@ require_once '../base/baseHTML.php';
         <label>Location:
             <select name="location_id" required>
                 <?php foreach ($locations as $loc): ?>
-                    <option value="<?= $loc['id'] ?>"><?= $loc['name'] ?></option>
+                    <option value="<?= $loc['id'] ?>"><?= $loc['display_name'] ?></option>
                 <?php endforeach; ?>
             </select>
         </label>
