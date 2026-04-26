@@ -34,6 +34,7 @@ from helpers import (
     login_as, end_turn, load_scenario_via_admin, load_minimal_data,
     ui_worker_count, ui_zone_names, ui_all_controllers,
     register_php_error_listener, assert_no_collected_php_errors,
+    csv_row_count,
 )
 
 
@@ -189,13 +190,17 @@ class TestBothGamesLoaded:
         assert count == 9, f"Expected 9 Shikoku workers, got {count}"
 
     def test_primary_has_workers(self, page: Page, base_url):
-        """TestConfig in primary loaded 33 workers (7 detection + 19 combat + 5 cross + 2 artefact).
+        """TestConfig in primary loaded the workers from setupTestConfig_advanced.csv.
 
         Counts rows on /workers/management_workers.php on the primary URL.
+        Compared dynamically against the CSV row count so CSV growth
+        doesn't require a test-side bump.
         """
         login_as(page, base_url, "gm", "orga")
         count = ui_worker_count(page, base_url=base_url)
-        assert count == 33, f"Expected 33 TestConfig workers, got {count}"
+        expected = csv_row_count("setupTestConfig_advanced.csv")
+        assert count == expected, \
+            f"Expected {expected} TestConfig workers (per setupTestConfig_advanced.csv), got {count}"
 
     def test_secondary_has_shikoku_zones(self, page: Page, base_url):
         """Secondary has Shikoku zones (11 total). Counted via management_zones."""
@@ -205,11 +210,12 @@ class TestBothGamesLoaded:
             f"Expected 11 Shikoku zones, got {len(zones)}: {zones}"
 
     def test_primary_has_testconfig_zones(self, page: Page, base_url):
-        """Primary has the 8 TestConfig zones. Counted via management_zones."""
+        """Primary has the TestConfig zones from setupTestConfig_zones.csv. Counted via management_zones."""
         login_as(page, base_url, "gm", "orga")
         zones = ui_zone_names(page, base_url=base_url)
-        assert len(zones) == 8, \
-            f"Expected 8 TestConfig zones, got {len(zones)}: {zones}"
+        expected = csv_row_count("setupTestConfig_zones.csv")
+        assert len(zones) == expected, \
+            f"Expected {expected} TestConfig zones (per setupTestConfig_zones.csv), got {len(zones)}: {zones}"
 
 
 class TestShodoshimaInSecondary:

@@ -13,6 +13,7 @@ import pymysql
 import pytest
 
 from conftest import GAME_PREFIX, CSV_DIR, SQL_DIR, MYSQL_DB
+from helpers import csv_row_count
 
 
 # ---------------------------------------------------------------------------
@@ -261,7 +262,7 @@ class TestLoadCSVFile:
              "controllers__lastname->holder_controller_id"]
         )
         # All zones should be loaded (empty lookups resolve to NULL)
-        assert count == 8
+        assert count == csv_row_count("setupTestConfig_zones.csv")
 
         cursor = conn.cursor()
         cursor.execute(f"SELECT claimer_controller_id, holder_controller_id FROM `{GAME_PREFIX}zones`")
@@ -404,18 +405,21 @@ class TestFullScenarioLoad:
 
         cursor = conn.cursor()
 
-        # Verify counts
+        # Verify counts (dynamic — read from the source CSVs)
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}worker_origins`")
-        assert cursor.fetchone()["c"] == 3
+        assert cursor.fetchone()["c"] == csv_row_count("setupTestConfig_worker_origins.csv")
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}zones`")
-        assert cursor.fetchone()["c"] == 8
+        assert cursor.fetchone()["c"] == csv_row_count("setupTestConfig_zones.csv")
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}worker_names`")
-        assert cursor.fetchone()["c"] == 8
+        assert cursor.fetchone()["c"] == csv_row_count("setupTestConfig_worker_names.csv")
 
         cursor.execute(f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}powers`")
-        assert cursor.fetchone()["c"] == 25  # 13 hobbys + 12 jobs
+        assert cursor.fetchone()["c"] == (
+            csv_row_count("setupTestConfig_hobbys.csv")
+            + csv_row_count("setupTestConfig_jobs.csv")
+        )
 
         # Verify FK integrity: all worker_names have valid origin_ids
         cursor.execute(f"""

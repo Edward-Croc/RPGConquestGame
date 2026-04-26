@@ -10,8 +10,11 @@ Extracts exact-copy duplicated functions from individual test modules:
 The DB_AVAILABLE flag is computed once at import time so test modules
 can use it for `pytest.skip` guards without repeating the probe.
 """
+import csv
 import os
 import re
+from pathlib import Path
+
 import pymysql
 from playwright.sync_api import Page
 
@@ -19,6 +22,20 @@ from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
     PHP_BASE_URL, SQL_DIR, ensure_gm_login,
 )
+
+
+# ---------------------------------------------------------------------------
+# CSV helpers
+# ---------------------------------------------------------------------------
+
+CSV_DIR = Path(__file__).parent.parent / "var" / "csv"
+
+
+def csv_row_count(csv_filename):
+    """Number of data rows in a CSV (header excluded). Used to keep test
+    count assertions in lockstep with CSV content."""
+    with open(CSV_DIR / csv_filename) as f:
+        return sum(1 for _ in csv.reader(f)) - 1
 
 
 # ---------------------------------------------------------------------------
