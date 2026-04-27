@@ -1,12 +1,13 @@
 <?php
-// Include-only partial — block direct HTTP access. The supported URL is
-// /zones/action.php which require_once's this file.
+// Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
     exit();
 }
 
+    // Get Zones information
     $zones = getZonesArray($gameReady);
+    // Extract map file
     $map_file = getConfig($gameReady, 'map_file');
 
     $imgString = '';

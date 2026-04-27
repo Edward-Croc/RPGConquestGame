@@ -1,17 +1,18 @@
 <?php
-// Include-only partial — block direct HTTP access. The supported URL is
-// /controllers/action.php which require_once's this file.
+// Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
     exit();
 }
 
+    // Get zones information
     $zonesArray = getZonesArray($gameReady);
 
     $controllersArray = array();
     $playerURL = null;
     $prefix = $_SESSION['GAME_PREFIX'];
 
+    // get player information
     if (isset( $_SESSION['user_id'])) {
         try{
             $sqlPlayers = sprintf("SELECT p.*
@@ -28,6 +29,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         $playerURL = $players[0]['url'];
     }
 
+    // Get Controllers information
     $controllers = getControllers($gameReady, $_SESSION['user_id'], null, false);
     $debug = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') $debug = true;
