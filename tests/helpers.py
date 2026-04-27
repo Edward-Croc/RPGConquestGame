@@ -119,6 +119,22 @@ def logout(page: Page, base_url: str):
     page.wait_for_load_state("networkidle")
 
 
+def as_controller(page: Page, lastname: str, base_url: str = None):
+    """Select the named controller via the accueil flow.
+
+    Assumes the page already has a logged-in session (gm or any non-privileged
+    player linked to this controller). Sets $_SESSION['controller'] so
+    subsequent /workers/action.php and /controllers/action.php calls pass the
+    M2 ownership guard for non-privileged users. Privileged users (gm) bypass
+    the guard regardless, but selecting still affects view.php's
+    controller-scoped rendering.
+    """
+    url = base_url or PHP_BASE_URL
+    cid = ui_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    page.wait_for_load_state("networkidle")
+
+
 def end_turn(page: Page, base_url: str = None):
     """Trigger end-of-turn. Page must already be logged in.
 
