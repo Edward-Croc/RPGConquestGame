@@ -380,6 +380,8 @@ class TestLoadWorkersCSV:
             'Keep_Def': 'Beta', 'Keep_Atk': 'Foxtrot',
             # Artefact visibility tests (Theta-Artefacts zone)
             'Artefact_Searcher_Echo': 'Echo', 'Artefact_Worker_Foxtrot': 'Foxtrot',
+            # Gift tests (Theta-Artefacts zone)
+            'Gift_Source_Foxtrot': 'Foxtrot',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 

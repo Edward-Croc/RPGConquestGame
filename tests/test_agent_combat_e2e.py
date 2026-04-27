@@ -340,6 +340,38 @@ class TestBaseCombat:
 
 
 # ---------------------------------------------------------------------------
+# Form-rendering smoke for the attack action surface
+# ---------------------------------------------------------------------------
+
+class TestAttackFormRender:
+    """Smoke: when an Alpha investigator has detected enemies, the attack form
+    on /workers/action.php must render the 'Attaquer' submit + a populated
+    enemyWorkersSelect. Guards against silent regressions of the attack UI
+    surface (template/config/dropdown breakage that data-* helpers wouldn't
+    catch)."""
+
+    def test_attack_form_renders_with_detected_enemies(self, page: Page, base_url):
+        ensure_gm_login(page, base_url)
+        cid = ui_controller_id(page, "Alpha", base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+        page.wait_for_load_state("networkidle")
+
+        wid = ui_worker_id(page, "Searcher_1", base_url=base_url)
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
+        page.wait_for_load_state("load")
+
+        attack_button = page.locator("input[name='attack'][value='Attaquer']")
+        assert attack_button.count() >= 1, \
+            "'Attaquer' button should render when worker has detected enemies in zone"
+
+        enemy_select = page.locator("select#enemyWorkersSelect")
+        assert enemy_select.count() >= 1, "enemyWorkersSelect dropdown should render"
+        opt_count = enemy_select.locator("option").count()
+        assert opt_count >= 1, \
+            f"enemyWorkersSelect should have at least one detected-enemy option; got {opt_count}"
+
+
+# ---------------------------------------------------------------------------
 # Test: chain attack ordered by enquete_val
 # ---------------------------------------------------------------------------
 
