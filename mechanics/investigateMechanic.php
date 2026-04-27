@@ -1,4 +1,9 @@
 <?php
+// Include-only page — block direct HTTP access.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
 
 /**
  *  Remove curly braces and quotes and Split the string by commas into an array
