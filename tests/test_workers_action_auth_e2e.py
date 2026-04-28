@@ -11,10 +11,14 @@ Test users (TestConfig):
   - gm / orga              — privileged, linked to all 7 controllers
   - single_player / test   — not privileged, linked to Alpha only
                              (auto-selected on login, loginForm.php:95-97)
+  - delta_player / test    — not privileged, linked to Delta only;
+                             added to seed a dead-worker scenario for the
+                             trace/dead state-mutation block.
 
 Test workers (TestConfig):
   - Searcher_1   — Alpha, Alpha-Investigation, passive
   - Bystander_1  — Beta,  Alpha-Investigation, passive
+  - Inv_Def_2    — Delta, Beta-Combat — killed by Inv_Atk_2 after end-turn
 
 UI-only / prod-DEMO-runnable.
 
@@ -28,6 +32,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, safe_goto,
     ui_worker_id, ui_workers_by_lastname,
+    ui_attack, end_turn,
 )
 
 
@@ -190,3 +195,70 @@ def test_anonymous_attack_does_not_mutate_state(browser, base_url):
         f"403'd attack must NOT mutate state; action_choice "
         f"changed from '{pre_action}' to '{post_action}'"
     )
+
+
+# ---------------------------------------------------------------------------
+# Inactive-state block
+#
+# After ownership passes, workers/action.php blocks mutating actions on
+# 'trace' and 'dead' workers. Carve-out: 'transform' is allowed on dead
+# (vampire resurrect / ghost path). The dead+transform branch is the most
+# likely to silently regress (a typo in `!isset($_GET['transform'])` or a
+# refactor that drops the carve-out), so it gets the regression test.
+# Trace-block has no carve-out — single condition, code-review covers it.
+# ---------------------------------------------------------------------------
+
+class TestInactiveStateBlock:
+    """Belt-and-buckle for the dead-worker carve-out: attack on a dead worker
+    must 403, but transform on the same dead worker must pass through (vampire
+    resurrect path)."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def kill_inv_def_2(self, browser, base_url):
+        """Seed: Inv_Atk_2 (Charlie) attacks Inv_Def_2 (Delta), end-turn → kill.
+        Mirrors the existing combat-fixture pattern from test_agent_combat_e2e."""
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        ensure_gm_login(page, base_url)
+        ui_attack(page, "Inv_Atk_2", "Inv_Def_2", base_url=base_url)
+        end_turn(page, base_url=base_url)
+        ctx.close()
+        yield
+
+    def test_dead_worker_blocks_attack_allows_transform(self, browser, base_url):
+        """Same dead Inv_Def_2 — attack 403s, transform passes through (200).
+        Logged in as delta_player (non-privileged, owns Delta) so the M2.1
+        block actually runs (privileged users bypass)."""
+        wid = _resolve_worker_id(browser, base_url, "Inv_Def_2")
+
+        # 1. Mutating-action that is NOT transform → must 403.
+        ctx_attack = browser.new_context()
+        page_attack = ctx_attack.new_page()
+        login_as(page_attack, base_url, "delta_player", "test")
+        attack_url = (
+            f"{base_url}/workers/action.php?worker_id={wid}&attack=Attaquer"
+            f"&enemy_worker_id=worker_1"
+        )
+        response = page_attack.goto(attack_url)
+        assert response is not None
+        assert response.status == 403, (
+            f"Mutating non-transform action on a dead worker must 403; "
+            f"got {response.status}"
+        )
+        ctx_attack.close()
+
+        # 2. Same dead worker, transform action — must pass the block.
+        # The downstream upgradeWorker call may itself fail (no real
+        # transformation power supplied), but that happens AFTER the block;
+        # for the block-regression assertion, status != 403 is enough.
+        ctx_xform = browser.new_context()
+        page_xform = ctx_xform.new_page()
+        login_as(page_xform, base_url, "delta_player", "test")
+        transform_url = f"{base_url}/workers/action.php?worker_id={wid}&transform=1"
+        response = page_xform.goto(transform_url)
+        assert response is not None
+        assert response.status != 403, (
+            f"Transform on a dead worker must pass the block (vampire "
+            f"resurrect carve-out); got 403"
+        )
+        ctx_xform.close()

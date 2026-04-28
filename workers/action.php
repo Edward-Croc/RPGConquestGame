@@ -53,6 +53,38 @@ if (empty($_SESSION['is_privileged'])) {
     }
 }
 
+// Blocking trace and dead workers from changing action illogicaly
+$MUTATING_ACTIONS = [ 'move', 'attack', 'hide', 'passive', 'investigate',
+    'claim', 'gift', 'recallDoubleAgent', 'returnPrisoner',
+    'teach_discipline', 'transform'
+];
+$is_mutating = false;
+foreach ($MUTATING_ACTIONS as $k) {
+    if (isset($_GET[$k])) { $is_mutating = true; break; }
+}
+if ($is_mutating && empty($_SESSION['is_privileged']) && $worker_id) {
+        $prefix = $_SESSION['GAME_PREFIX'];
+        $stmt = $gameReady->prepare(
+            "SELECT action_choice FROM {$prefix}worker_actions
+             WHERE worker_id = :wid AND turn_number = :turn LIMIT 1"
+        );
+        $stmt->execute([
+            ':wid' => $worker_id,
+            ':turn' => $mechanics['turncounter'],
+        ]);
+        $current_choice = $stmt->fetchColumn();
+
+        if (
+            // trace worker should never change action
+            $current_choice === 'trace'
+            // dead worker sould only be able to transform
+            || ($current_choice === 'dead' && !isset($_GET['transform']))
+        ) {
+            http_response_code(403);
+            exit();
+        }
+}
+
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
 
