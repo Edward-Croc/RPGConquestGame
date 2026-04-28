@@ -1,6 +1,6 @@
-"""Playwright E2E tests for /workers/action.php auth + ownership guard (audit M2).
+"""Playwright E2E tests for /workers/action.php auth + ownership guard.
 
-Guard at the top of workers/action.php (added 2026-04-27):
+Guard at the top of workers/action.php:
   - Must be logged in (session.logged_in + session.user_id)
   - Privileged users (gm) bypass ownership entirely
   - Non-privileged: session.controller.id must own the target worker_id (any
@@ -227,8 +227,8 @@ class TestInactiveStateBlock:
 
     def test_dead_worker_blocks_attack_allows_transform(self, browser, base_url):
         """Same dead Inv_Def_2 — attack 403s, transform passes through (200).
-        Logged in as delta_player (non-privileged, owns Delta) so the M2.1
-        block actually runs (privileged users bypass)."""
+        Logged in as delta_player (non-privileged, owns Delta) so the
+        inactive-state block actually runs (privileged users bypass)."""
         wid = _resolve_worker_id(browser, base_url, "Inv_Def_2")
 
         # 1. Mutating-action that is NOT transform → must 403.

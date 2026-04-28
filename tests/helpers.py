@@ -125,7 +125,7 @@ def as_controller(page: Page, lastname: str, base_url: str = None):
     Assumes the page already has a logged-in session (gm or any non-privileged
     player linked to this controller). Sets $_SESSION['controller'] so
     subsequent /workers/action.php and /controllers/action.php calls pass the
-    M2 ownership guard for non-privileged users. Privileged users (gm) bypass
+    ownership guard for non-privileged users. Privileged users (gm) bypass
     the guard regardless, but selecting still affects view.php's
     controller-scoped rendering.
     """
