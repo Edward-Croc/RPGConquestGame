@@ -482,3 +482,79 @@ class TestUntestedInvestigateResults:
             f"(LIVE row is same-controller; TRACE row is inactive). "
             f"Got: {detected}"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestUntestedAttackResults — inactive-defender skip path in attackMechanic
+#
+# attackMechanic.php:318-322 short-circuits when the defender's
+# action_choice is in INACTIVE_ACTIONS:
+#     - attacker gets an "unfound" attack_report
+#     - defender state is NOT mutated (no second-kill / un-capture / etc.)
+#
+# Existing TestBaseCombat / TestChainAttack cover successful combat on
+# LIVE defenders. The inactive-defender skip-path was previously
+# untested; this class locks it in with the smallest possible scenario.
+#
+# Out of scope (deferred to dedicated work):
+#   - double-agent death trace-count semantics (attackMechanic.php:346-380),
+#   - riposte exact-threshold behaviour (attackMechanic.php:405-419).
+# ---------------------------------------------------------------------------
+
+class TestUntestedAttackResults:
+    """Lock the inactive-defender skip-path in attackMechanic. Round 1
+    kills Inv_Def_2; round 2 queues another attack on the now-dead
+    Inv_Def_2 from a fresh attacker (Counter_Atk) — the mechanic must
+    leave the dead defender alone and produce an 'unfound' report for
+    the attacker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def kill_then_attack_dead(self, browser):
+        """Round 1: Inv_Atk_2 (Charlie) kills Inv_Def_2 (Delta) via end-turn.
+        Round 2: Counter_Atk (Golf) attacks the now-dead Inv_Def_2 via
+        another end-turn. Both attackers + defender share Beta-Combat."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Round 1: kill Inv_Def_2.
+        ui_attack(page, "Inv_Atk_2", "Inv_Def_2")
+        end_turn(page)
+
+        # Round 2: queue a fresh attack on the now-dead Inv_Def_2.
+        ui_attack(page, "Counter_Atk", "Inv_Def_2")
+        end_turn(page)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_dead_defender_state_unchanged_after_second_attack(self, gm_page: Page, base_url):
+        """attackMechanic.php:318-322: defender already in INACTIVE_ACTIONS
+        is skipped — no state mutation. Inv_Def_2 must still be 'dead'
+        after Counter_Atk's round 2 attack."""
+        rows = ui_workers_by_lastname(gm_page, "Inv_Def_2", base_url=base_url)
+        non_trace = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(non_trace) == 1, (
+            f"Inv_Def_2 should have one non-trace row; got {len(non_trace)}: {non_trace}"
+        )
+        assert non_trace[0]["action_choice"] == "dead", (
+            f"Attacking a dead defender must NOT change its action_choice; "
+            f"expected 'dead', got '{non_trace[0]['action_choice']}'"
+        )
+
+    def test_attacker_on_dead_defender_did_not_die(self, gm_page: Page, base_url):
+        """Counter_Atk attacked a dead defender (unfound path) — must NOT
+        be killed by a phantom riposte. Locks the early-skip branch
+        before the riposte block fires."""
+        rows = ui_workers_by_lastname(gm_page, "Counter_Atk", base_url=base_url)
+        non_trace = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(non_trace) == 1, (
+            f"Counter_Atk should have one non-trace row; got {len(non_trace)}: {non_trace}"
+        )
+        assert non_trace[0]["action_choice"] != "dead", (
+            f"Counter_Atk attacked a dead defender — must not be 'dead' "
+            f"itself (no riposte from a dead defender). "
+            f"Got: '{non_trace[0]['action_choice']}'"
+        )
