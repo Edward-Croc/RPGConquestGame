@@ -4,6 +4,44 @@ require_once '../base/basePHP.php';
 $pageName = 'controllers_action';
 $debug = strtolower($_SESSION['DEBUG']) === 'true';
 
+// Check if the user is logged in
+if (
+    (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true)
+) {
+    // Redirect the user to the login page if not logged in
+    header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
+    exit();
+}
+
+// Resolve controller_id from URL (may be empty for bare-GET view flows
+// where the active controller is held in $_SESSION['controller'])
+$controller_id = NULL;
+if ( !empty($_GET['controller_id']) ) $controller_id = $_GET['controller_id'];
+if ($debug) echo "controller_id (guard): ".var_export($controller_id, true)."<br /><br />";
+
+// Ownership guard fires only on mutating actions; bare GET passes through
+// to view.php so foreign-controller intel views keep working.
+$MUTATING_ACTIONS = [
+    'createBase', 'moveBase', 'attackLocation', 'repairLocation',
+    'giftInformationAgent', 'giftInformationLocation',
+];
+$is_mutating = false;
+foreach ($MUTATING_ACTIONS as $k) {
+    if (isset($_GET[$k])) { $is_mutating = true; break; }
+}
+
+if ($is_mutating && empty($_SESSION['is_privileged'])) {
+    $session_controller_id = $_SESSION['controller']['id'] ?? null;
+    if (empty($session_controller_id) || empty($controller_id)) {
+        http_response_code(403);
+        exit();
+    }
+    if ((int)$session_controller_id !== (int)$controller_id) {
+        http_response_code(403);
+        exit();
+    }
+}
+
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($debug) echo "_GET:".var_export($_GET, true)." <br /> <br />";
     $prefix = $_SESSION['GAME_PREFIX'];

@@ -1,6 +1,5 @@
 <?php
-// Include-only partial — block direct HTTP access. The supported URL is
-// /workers/action.php?worker_id=N which require_once's this file.
+// Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
     exit();
@@ -13,6 +12,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
+    // Get workers information
     $workersArray = getWorkers($gameReady, [$worker_id]);
 
     echo "<div class='workers section'>";

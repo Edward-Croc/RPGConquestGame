@@ -1,5 +1,9 @@
 <?php
-
+// Include-only page — block direct HTTP access.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
 
 /**
  * gets the comparaison table between the workers on search/investigate and there possible targets locations

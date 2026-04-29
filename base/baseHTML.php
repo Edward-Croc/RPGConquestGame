@@ -1,5 +1,12 @@
 <?php
 
+// Include-only page — block direct HTTP access.
+// Requires a run of base/basePHP.php and set $gameTitle / $mechanics / $_SESSION.
+if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
+    http_response_code(403);
+    exit();
+}
+
 // Check if the user is logged in
 if (
     (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true)

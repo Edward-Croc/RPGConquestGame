@@ -1,6 +1,5 @@
 <?php
-// Include-only partial — block direct HTTP access. Reached via the
-// admin link that require_once's this file from a bootstrapped page.
+// Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
     exit();
@@ -8,7 +7,6 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
     $title = 'Admin - Create Perfect Agent';
 
-    // Build form and call workers/action.php
     // Select a controller from controllers
     $controllerValues = getControllers($gameReady, NULL, NULL, FALSE);
 
