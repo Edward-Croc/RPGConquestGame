@@ -31,7 +31,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
-    ui_attack, ui_claim, ui_gift, end_turn,
+    ui_attack, ui_claim, ui_gift, ui_zone_id, end_turn,
 )
 
 
@@ -557,4 +557,162 @@ class TestUntestedAttackResults:
             f"Counter_Atk attacked a dead defender — must not be 'dead' "
             f"itself (no riposte from a dead defender). "
             f"Got: '{non_trace[0]['action_choice']}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestDoubleAgentCapture — capture trace count for double-agent workers
+#
+# Test data:
+#   - Test_Job_GoTraitor_Echo (jobs.csv) — go_traitor on_recrutment effect
+#     with controller_lastname=Echo. Workers recruited with this job get
+#     a non-primary controller_worker row pointing to Echo.
+#   - DA_Captor_Alpha / DA_Captor_Echo (advanced.csv) — calibrated
+#     capture-strength workers in Beta-Combat (atk=8).
+#
+# Double-agent workers (DA_Capture_W, DA_SelfCapture_W) are NOT seeded by
+# the CSV loader, because BDD/db_connector.php::loadWorkersCSV does direct
+# INSERTs that bypass createWorker / applyPowerObtentionEffect, so
+# go_traitor never fires for CSV-seeded workers. Instead, the class
+# fixture recruits them via /workers/action.php?creation=true (the URL
+# the perfect-worker admin form submits to) — that path runs createWorker
+# which calls upgradeWorker(...,$isRecrutment=true) which fires
+# applyPowerObtentionEffect → go_traitor → secondary controller_worker row.
+#
+# Locks two trace-count invariants from the design spec:
+#   - capture by third party → 2 traces (one per controller, primary +
+#     secondary), live worker moves to attacker (decision 1, option B);
+#   - capture by secondary controller → 1 trace (at primary; secondary's
+#     just-created trace is destroyed by attackMechanic.php:400 cleanup),
+#     live worker becomes secondary's primary (decision 2 — re-claiming
+#     voids your trace).
+# ---------------------------------------------------------------------------
+
+class TestDoubleAgentCapture:
+    """Trace count after capture of a double-agent worker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_double_agent_captures(self, browser):
+        """Recruit two double-agent workers via the perfect-worker form
+        URL (the only path that fires applyPowerObtentionEffect and thus
+        the go_traitor effect that creates the secondary controller_worker
+        row). Then queue captures and end-turn.
+          - DA_Captor_Alpha attacks DA_Capture_W      → third-party capture
+          - DA_Captor_Echo  attacks DA_SelfCapture_W  → secondary self-capture
+        Both attackers have atk=8 (Brute Force|Veteran Tactician); both
+        defenders have def=3 (Blank Slate|Test_Job_GoTraitor_Echo, both
+        zero-stat) → attack_diff=5 ≥ ATTACKDIFF1=3 → CAPTURE."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # The perfect-worker admin form is included by /base/admin.php.
+        # Scrape link_power_type_ids and origin_id from its dropdowns so
+        # the recruitment URL is valid even if seed-order changes the ids.
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        charlie_id = _controller_ids["Charlie"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        # Recruit both double-agent workers via the creation URL.
+        for da_lastname in ("DA_Capture_W", "DA_SelfCapture_W"):
+            url = (
+                f"{PHP_BASE_URL}/workers/action.php"
+                f"?creation=true"
+                f"&controller_id={charlie_id}"
+                f"&zone_id={beta_combat_id}"
+                f"&origin_id={origin_id}"
+                f"&firstname=combat"
+                f"&lastname={da_lastname}"
+                f"&power_hobby_id={blank_slate_id}"
+                f"&power_metier_id={go_traitor_id}"
+                f"&chosir=Recruter+et+Affecter"
+            )
+            page.goto(url)
+            page.wait_for_load_state("load")
+
+        # Queue captures.
+        ui_attack(page, "DA_Captor_Alpha", "DA_Capture_W")
+        ui_attack(page, "DA_Captor_Echo", "DA_SelfCapture_W")
+        end_turn(page)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_third_party_capture_creates_two_traces_one_per_controller(self, gm_page: Page, base_url):
+        """Decision 1 (option B locked): a third party capturing a double-
+        agent leaves 2 trace rows — one at the PRIMARY controller (Charlie)
+        and one at the SECONDARY (Echo). Live worker moves to attacker (Alpha)."""
+        rows = ui_workers_by_lastname(gm_page, "DA_Capture_W", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 2, (
+            f"Third-party capture of a double-agent must produce 2 traces; "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        trace_controllers = {r["controller_id"] for r in trace_rows}
+        assert _controller_ids["Charlie"] in trace_controllers, (
+            f"Expected a trace at primary controller Charlie "
+            f"({_controller_ids['Charlie']}); got controllers={trace_controllers}"
+        )
+        assert _controller_ids["Echo"] in trace_controllers, (
+            f"Expected a trace at secondary controller Echo "
+            f"({_controller_ids['Echo']}); got controllers={trace_controllers}"
+        )
+        # Live worker now belongs to attacker Alpha.
+        live_rows = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live_rows) == 1, f"Expected 1 live row, got {live_rows}"
+        assert live_rows[0]["controller_id"] == _controller_ids["Alpha"], (
+            f"Captured worker should belong to Alpha "
+            f"({_controller_ids['Alpha']}); got {live_rows[0]['controller_id']}"
+        )
+        assert live_rows[0]["action_choice"] == "captured", (
+            f"Captured worker action_choice should be 'captured'; "
+            f"got {live_rows[0]['action_choice']!r}"
+        )
+
+    def test_secondary_self_capture_voids_own_trace(self, gm_page: Page, base_url):
+        """Decision 2 (locked spec — re-claiming voids your trace): when
+        the SECONDARY controller (Echo) captures their own double-agent,
+        the secondary's trace is just-created at attackMechanic.php:363
+        then destroyed by destroyTraceWorker at line 400. Net: 1 trace
+        at the PRIMARY only (Charlie). Live worker becomes Echo's primary."""
+        rows = ui_workers_by_lastname(gm_page, "DA_SelfCapture_W", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 1, (
+            f"Secondary self-capture must leave 1 trace (at primary only); "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        assert trace_rows[0]["controller_id"] == _controller_ids["Charlie"], (
+            f"Remaining trace must be at primary Charlie "
+            f"({_controller_ids['Charlie']}); got {trace_rows[0]['controller_id']}"
+        )
+        # Live worker now belongs to attacker Echo (= former secondary).
+        live_rows = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live_rows) == 1, f"Expected 1 live row, got {live_rows}"
+        assert live_rows[0]["controller_id"] == _controller_ids["Echo"], (
+            f"After secondary self-capture, live worker should belong to "
+            f"Echo ({_controller_ids['Echo']}); got {live_rows[0]['controller_id']}"
+        )
+        assert live_rows[0]["action_choice"] == "captured", (
+            f"Captured worker action_choice should be 'captured'; "
+            f"got {live_rows[0]['action_choice']!r}"
         )
