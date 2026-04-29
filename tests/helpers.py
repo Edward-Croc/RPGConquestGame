@@ -718,9 +718,26 @@ def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
     cid = _cached_cid(page, claim_controller_lastname, base_url)
-    safe_goto(page, 
+    safe_goto(page,
         f"{url}/workers/action.php"
         f"?worker_id={wid}&claim_controller_id={cid}&claim=1"
+    )
+    page.wait_for_load_state("load")
+
+
+def ui_gift(page: Page, lastname: str, target_controller_lastname: str,
+            base_url: str = None):
+    """Gift `lastname` to `target_controller_lastname` via the
+    workers/action.php URL endpoint (mirrors workers/view.php's
+    'Donner' form). Drives the gift case at workers/functions.php:1020;
+    state effects (live-row swap, trace at old owner, life_report) are
+    asserted by callers."""
+    url = base_url or PHP_BASE_URL
+    wid = _cached_wid(page, lastname, base_url)
+    target_cid = _cached_cid(page, target_controller_lastname, base_url)
+    safe_goto(page,
+        f"{url}/workers/action.php"
+        f"?worker_id={wid}&gift_controller_id={target_cid}&gift=Donner"
     )
     page.wait_for_load_state("load")
 
