@@ -30,7 +30,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_worker_id, ui_workers_by_lastname,
+    ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_claim, ui_gift, end_turn,
 )
 
@@ -423,4 +423,62 @@ class TestTraceImmutability:
             "Trace's life_report should NOT contain the end-turn calc "
             "line ('en investigation et X/Y en attaque/défense'); "
             "INACTIVE_ACTIONS exclusion in endTurn.php appears broken."
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestUntestedInvestigateResults — filter invariants on investigateMechanic
+#
+# Complements TestAgentDetection (the existing 7-agent threshold suite),
+# which proves the comparative-roll math but does not lock the SQL-level
+# exclusion filters. This class targets three filters that, if broken,
+# would silently leak state across faction or zone boundaries:
+#   - searcher self-exclusion (s.searcher_id != wa.worker_id)
+#   - cross-zone isolation (s.zone_id = wa.zone_id)
+#   - inactive-target exclusion (action_choice IN ('passive', 'investigate'))
+#
+# Runs after the prior classes' end-turn fixtures so investigateMechanic
+# has had at least one turn-resolution pass to populate CKE rows.
+# ---------------------------------------------------------------------------
+
+class TestUntestedInvestigateResults:
+    """Lock filter invariants on investigateMechanic.php that aren't
+    exercised by TestAgentDetection's threshold scenarios."""
+
+    def test_searcher_does_not_detect_self(self, gm_page: Page, base_url):
+        """investigateMechanic.php SQL filter `s.searcher_id != wa.worker_id`
+        must keep a searcher out of its own detection list."""
+        detected = ui_detected_enemies_of(gm_page, "Searcher_1", base_url=base_url)
+        assert "Searcher_1" not in detected, (
+            f"Searcher_1's detection list must not include itself; "
+            f"got: {detected}"
+        )
+
+    def test_cross_zone_workers_not_detected(self, gm_page: Page, base_url):
+        """SQL filter `s.zone_id = wa.zone_id` must isolate detections to
+        the searcher's zone. Searcher_1 lives in Alpha-Investigation;
+        Inv_Atk_2 / Inv_Def_2 live in Beta-Combat. None of the latter
+        should appear in Searcher_1's detection list."""
+        detected = ui_detected_enemies_of(gm_page, "Searcher_1", base_url=base_url)
+        for foreign_zone_worker in ("Inv_Atk_2", "Inv_Def_2"):
+            assert foreign_zone_worker not in detected, (
+                f"Searcher_1 (Alpha-Investigation) must not detect "
+                f"{foreign_zone_worker} (Beta-Combat); got: {detected}"
+            )
+
+    def test_trace_excluded_from_detection_target(self, gm_page: Page, base_url):
+        """Target filter `action_choice IN ('passive', 'investigate')` must
+        exclude trace workers. After TestGiftWorker's gift, a trace of
+        Gift_Source_Foxtrot lives at Foxtrot/Theta-Artefacts.
+        Artefact_Searcher_Echo (also in Theta-Artefacts, on a different
+        controller) must NOT see Gift_Source_Foxtrot in its detection
+        list — the live row is filtered as same-controller (now Echo's),
+        and the trace row is filtered as inactive."""
+        detected = ui_detected_enemies_of(
+            gm_page, "Artefact_Searcher_Echo", base_url=base_url
+        )
+        assert "Gift_Source_Foxtrot" not in detected, (
+            f"Artefact_Searcher_Echo must not detect Gift_Source_Foxtrot "
+            f"(LIVE row is same-controller; TRACE row is inactive). "
+            f"Got: {detected}"
         )
