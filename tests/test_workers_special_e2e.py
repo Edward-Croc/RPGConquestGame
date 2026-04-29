@@ -292,3 +292,135 @@ class TestGiftPrisoner:
             f"After release, Claim_Def_1 should belong back to Beta, got controller_id={live[0]['controller_id']}"
         assert live[0]["action_choice"] != "captured", \
             f"After release, Claim_Def_1 should no longer be 'captured', got '{live[0]['action_choice']}'"
+
+
+# ---------------------------------------------------------------------------
+# TestTraceImmutability — invariants on trace workers post-gift
+#
+# Depends on TestGiftWorker having gifted Gift_Source_Foxtrot (Foxtrot → Echo)
+# earlier in this module, which seeds a Foxtrot trace row.
+#
+# The class-scoped fixture runs an end-turn so cross-turn invariants
+# (persistence + endTurn calc-report exclusion) can be asserted.
+# Declared AFTER TestGiftPrisoner so its end-turn doesn't ripple into
+# the prisoner setup.
+# ---------------------------------------------------------------------------
+
+class TestTraceImmutability:
+    """Lock invariants on the Foxtrot trace of Gift_Source_Foxtrot:
+      - the inactive-state guard at /workers/action.php 403s mutating
+        actions on the trace, even for the trace's owner;
+      - createNewTurnLines (mechanics/functions.php:304) carries the
+        trace forward across end-turns;
+      - INACTIVE_ACTIONS exclusion in endTurn.php skips traces from
+        the calculate-vals report append.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def advance_one_turn(self, browser):
+        """End-turn so persistence + endTurn-side-effect tests can read
+        post-turn state. Mirrors TestGiftPrisoner's class-fixture pattern."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        end_turn(page)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_trace_endpoint_blocks_mutation(self, browser, base_url):
+        """The inactive-state guard at workers/action.php must 403 mutating
+        actions on a trace worker even for the trace's controller-owner.
+        Logs in as foxtrot_player (non-privileged, owns Foxtrot) so the
+        block actually runs (privileged users bypass)."""
+        # Resolve the trace worker_id via gm context (management_workers
+        # is a gm-only view).
+        gm_ctx = browser.new_context()
+        gm_page = gm_ctx.new_page()
+        ensure_gm_login(gm_page, base_url)
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+        gm_ctx.close()
+
+        # Mutating action on the trace as foxtrot_player must 403.
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "foxtrot_player", "test")
+        response = page.goto(
+            f"{base_url}/workers/action.php?worker_id={trace_id}"
+            f"&attack=Attaquer&enemy_worker_id=worker_1"
+        )
+        assert response is not None
+        assert response.status == 403, (
+            f"Mutation on a trace worker by its owner must 403; "
+            f"got {response.status}"
+        )
+        ctx.close()
+
+    def test_owner_can_view_own_trace(self, browser, base_url):
+        """Bare GET on a trace owned by the caller must render (200) — the
+        owner needs to see the trace's report. Only mutating action keys
+        trigger the inactive-state block; a worker_id-only URL must always
+        render for the owner."""
+        # Resolve the trace worker_id via gm context.
+        gm_ctx = browser.new_context()
+        gm_page = gm_ctx.new_page()
+        ensure_gm_login(gm_page, base_url)
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+        gm_ctx.close()
+
+        # Bare GET as foxtrot_player (the trace's owner) — must render.
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "foxtrot_player", "test")
+        response = page.goto(f"{base_url}/workers/action.php?worker_id={trace_id}")
+        assert response is not None
+        assert response.status == 200, (
+            f"Owner viewing their own trace via bare GET must render; "
+            f"got {response.status}"
+        )
+        ctx.close()
+
+    def test_trace_persists_across_end_turn(self, gm_page: Page, base_url):
+        """createNewTurnLines must carry action_choice='trace' forward, so
+        the Foxtrot trace row still exists after the end-turn fixture."""
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 1, (
+            f"Trace must persist across end-turn; got {len(trace_rows)} "
+            f"trace rows for Gift_Source_Foxtrot: {trace_rows}"
+        )
+        assert trace_rows[0]["controller_id"] == _controller_ids["Foxtrot"], (
+            f"Trace must remain at Foxtrot ({_controller_ids['Foxtrot']}); "
+            f"got controller_id={trace_rows[0]['controller_id']}"
+        )
+
+    def test_trace_does_not_get_endturn_calc_report(self, gm_page: Page, base_url):
+        """endTurn.php's calculateVals query excludes INACTIVE_ACTIONS, so
+        the trace's life_report must NOT contain the per-turn calc line
+        ('j'ai N en investigation et N/N en attaque/défense').
+
+        Navigates to the TRACE's worker_id directly (ui_worker_id defaults
+        to prefer_non_trace=True and would return the live row at Echo)."""
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+
+        # gm bypasses the ownership guard, so direct nav to the trace
+        # worker's action page renders without 403.
+        safe_goto(gm_page, f"{base_url}/workers/action.php?worker_id={trace_id}")
+        gm_page.wait_for_load_state("load")
+        html = gm_page.content()
+
+        # The calc line is appended by endTurn.php:60-63. Match a stable
+        # substring rather than the full template (the report is HTML-
+        # escaped and may interleave other report lines).
+        assert "en investigation" not in html, (
+            "Trace's life_report should NOT contain the end-turn calc "
+            "line ('en investigation et X/Y en attaque/défense'); "
+            "INACTIVE_ACTIONS exclusion in endTurn.php appears broken."
+        )
