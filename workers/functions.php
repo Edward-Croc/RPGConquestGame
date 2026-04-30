@@ -1171,6 +1171,10 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                 echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
             if ( !empty($extraVal['double_controller_id']) ) {
+                // Clean the secondary controllers' capture-trace 
+                if (destroyTraceWorker($pdo, $workerId, $extraVal['double_controller_id']) === false) {
+                    echo __FUNCTION__." (): Failed to destroy secondary capture-trace ! <br />";
+                }
                 try {
                     // Add non primary controller for the worker
                     $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
