@@ -30,8 +30,8 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_worker_id, ui_workers_by_lastname,
-    ui_attack, ui_claim, ui_gift, end_turn,
+    ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
+    ui_attack, ui_claim, ui_gift, ui_zone_id, end_turn,
 )
 
 
@@ -292,3 +292,427 @@ class TestGiftPrisoner:
             f"After release, Claim_Def_1 should belong back to Beta, got controller_id={live[0]['controller_id']}"
         assert live[0]["action_choice"] != "captured", \
             f"After release, Claim_Def_1 should no longer be 'captured', got '{live[0]['action_choice']}'"
+
+
+# ---------------------------------------------------------------------------
+# TestTraceImmutability — invariants on trace workers post-gift
+#
+# Depends on TestGiftWorker having gifted Gift_Source_Foxtrot (Foxtrot → Echo)
+# earlier in this module, which seeds a Foxtrot trace row.
+#
+# The class-scoped fixture runs an end-turn so cross-turn invariants
+# (persistence + endTurn calc-report exclusion) can be asserted.
+# Declared AFTER TestGiftPrisoner so its end-turn doesn't ripple into
+# the prisoner setup.
+# ---------------------------------------------------------------------------
+
+class TestTraceImmutability:
+    """Lock invariants on the Foxtrot trace of Gift_Source_Foxtrot:
+      - the inactive-state guard at /workers/action.php 403s mutating
+        actions on the trace, even for the trace's owner;
+      - createNewTurnLines (mechanics/functions.php:304) carries the
+        trace forward across end-turns;
+      - INACTIVE_ACTIONS exclusion in endTurn.php skips traces from
+        the calculate-vals report append.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def advance_one_turn(self, browser):
+        """End-turn so persistence + endTurn-side-effect tests can read
+        post-turn state. Mirrors TestGiftPrisoner's class-fixture pattern."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        end_turn(page)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_trace_endpoint_blocks_mutation(self, browser, base_url):
+        """The inactive-state guard at workers/action.php must 403 mutating
+        actions on a trace worker even for the trace's controller-owner.
+        Logs in as foxtrot_player (non-privileged, owns Foxtrot) so the
+        block actually runs (privileged users bypass)."""
+        # Resolve the trace worker_id via gm context (management_workers
+        # is a gm-only view).
+        gm_ctx = browser.new_context()
+        gm_page = gm_ctx.new_page()
+        ensure_gm_login(gm_page, base_url)
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+        gm_ctx.close()
+
+        # Mutating action on the trace as foxtrot_player must 403.
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "foxtrot_player", "test")
+        response = page.goto(
+            f"{base_url}/workers/action.php?worker_id={trace_id}"
+            f"&attack=Attaquer&enemy_worker_id=worker_1"
+        )
+        assert response is not None
+        assert response.status == 403, (
+            f"Mutation on a trace worker by its owner must 403; "
+            f"got {response.status}"
+        )
+        ctx.close()
+
+    def test_owner_can_view_own_trace(self, browser, base_url):
+        """Bare GET on a trace owned by the caller must render (200) — the
+        owner needs to see the trace's report. Only mutating action keys
+        trigger the inactive-state block; a worker_id-only URL must always
+        render for the owner."""
+        # Resolve the trace worker_id via gm context.
+        gm_ctx = browser.new_context()
+        gm_page = gm_ctx.new_page()
+        ensure_gm_login(gm_page, base_url)
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+        gm_ctx.close()
+
+        # Bare GET as foxtrot_player (the trace's owner) — must render.
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "foxtrot_player", "test")
+        response = page.goto(f"{base_url}/workers/action.php?worker_id={trace_id}")
+        assert response is not None
+        assert response.status == 200, (
+            f"Owner viewing their own trace via bare GET must render; "
+            f"got {response.status}"
+        )
+        ctx.close()
+
+    def test_trace_persists_across_end_turn(self, gm_page: Page, base_url):
+        """createNewTurnLines must carry action_choice='trace' forward, so
+        the Foxtrot trace row still exists after the end-turn fixture."""
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 1, (
+            f"Trace must persist across end-turn; got {len(trace_rows)} "
+            f"trace rows for Gift_Source_Foxtrot: {trace_rows}"
+        )
+        assert trace_rows[0]["controller_id"] == _controller_ids["Foxtrot"], (
+            f"Trace must remain at Foxtrot ({_controller_ids['Foxtrot']}); "
+            f"got controller_id={trace_rows[0]['controller_id']}"
+        )
+
+    def test_trace_does_not_get_endturn_calc_report(self, gm_page: Page, base_url):
+        """endTurn.php's calculateVals query excludes INACTIVE_ACTIONS, so
+        the trace's life_report must NOT contain the per-turn calc line
+        ('j'ai N en investigation et N/N en attaque/défense').
+
+        Navigates to the TRACE's worker_id directly (ui_worker_id defaults
+        to prefer_non_trace=True and would return the live row at Echo)."""
+        rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        trace_row = next(r for r in rows if r["action_choice"] == "trace")
+        trace_id = trace_row["id"]
+
+        # gm bypasses the ownership guard, so direct nav to the trace
+        # worker's action page renders without 403.
+        safe_goto(gm_page, f"{base_url}/workers/action.php?worker_id={trace_id}")
+        gm_page.wait_for_load_state("load")
+        html = gm_page.content()
+
+        # The calc line is appended by endTurn.php:60-63. Match a stable
+        # substring rather than the full template (the report is HTML-
+        # escaped and may interleave other report lines).
+        assert "en investigation" not in html, (
+            "Trace's life_report should NOT contain the end-turn calc "
+            "line ('en investigation et X/Y en attaque/défense'); "
+            "INACTIVE_ACTIONS exclusion in endTurn.php appears broken."
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestUntestedInvestigateResults — filter invariants on investigateMechanic
+#
+# Complements TestAgentDetection (the existing 7-agent threshold suite),
+# which proves the comparative-roll math but does not lock the SQL-level
+# exclusion filters. This class targets three filters that, if broken,
+# would silently leak state across faction or zone boundaries:
+#   - searcher self-exclusion (s.searcher_id != wa.worker_id)
+#   - cross-zone isolation (s.zone_id = wa.zone_id)
+#   - inactive-target exclusion (action_choice IN ('passive', 'investigate'))
+#
+# Runs after the prior classes' end-turn fixtures so investigateMechanic
+# has had at least one turn-resolution pass to populate CKE rows.
+# ---------------------------------------------------------------------------
+
+class TestUntestedInvestigateResults:
+    """Lock filter invariants on investigateMechanic.php that aren't
+    exercised by TestAgentDetection's threshold scenarios."""
+
+    def test_searcher_does_not_detect_self(self, gm_page: Page, base_url):
+        """investigateMechanic.php SQL filter `s.searcher_id != wa.worker_id`
+        must keep a searcher out of its own detection list."""
+        detected = ui_detected_enemies_of(gm_page, "Searcher_1", base_url=base_url)
+        assert "Searcher_1" not in detected, (
+            f"Searcher_1's detection list must not include itself; "
+            f"got: {detected}"
+        )
+
+    def test_cross_zone_workers_not_detected(self, gm_page: Page, base_url):
+        """SQL filter `s.zone_id = wa.zone_id` must isolate detections to
+        the searcher's zone. Searcher_1 lives in Alpha-Investigation;
+        Inv_Atk_2 / Inv_Def_2 live in Beta-Combat. None of the latter
+        should appear in Searcher_1's detection list."""
+        detected = ui_detected_enemies_of(gm_page, "Searcher_1", base_url=base_url)
+        for foreign_zone_worker in ("Inv_Atk_2", "Inv_Def_2"):
+            assert foreign_zone_worker not in detected, (
+                f"Searcher_1 (Alpha-Investigation) must not detect "
+                f"{foreign_zone_worker} (Beta-Combat); got: {detected}"
+            )
+
+    def test_trace_excluded_from_detection_target(self, gm_page: Page, base_url):
+        """Target filter `action_choice IN ('passive', 'investigate')` must
+        exclude trace workers. After TestGiftWorker's gift, a trace of
+        Gift_Source_Foxtrot lives at Foxtrot/Theta-Artefacts.
+        Artefact_Searcher_Echo (also in Theta-Artefacts, on a different
+        controller) must NOT see Gift_Source_Foxtrot in its detection
+        list — the live row is filtered as same-controller (now Echo's),
+        and the trace row is filtered as inactive."""
+        detected = ui_detected_enemies_of(
+            gm_page, "Artefact_Searcher_Echo", base_url=base_url
+        )
+        assert "Gift_Source_Foxtrot" not in detected, (
+            f"Artefact_Searcher_Echo must not detect Gift_Source_Foxtrot "
+            f"(LIVE row is same-controller; TRACE row is inactive). "
+            f"Got: {detected}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestUntestedAttackResults — inactive-defender skip path in attackMechanic
+#
+# attackMechanic.php:318-322 short-circuits when the defender's
+# action_choice is in INACTIVE_ACTIONS:
+#     - attacker gets an "unfound" attack_report
+#     - defender state is NOT mutated (no second-kill / un-capture / etc.)
+#
+# Existing TestBaseCombat / TestChainAttack cover successful combat on
+# LIVE defenders. The inactive-defender skip-path was previously
+# untested; this class locks it in with the smallest possible scenario.
+#
+# Out of scope (deferred to dedicated work):
+#   - double-agent death trace-count semantics (attackMechanic.php:346-380),
+#   - riposte exact-threshold behaviour (attackMechanic.php:405-419).
+# ---------------------------------------------------------------------------
+
+class TestUntestedAttackResults:
+    """Lock the inactive-defender skip-path in attackMechanic. Round 1
+    kills Inv_Def_2; round 2 queues another attack on the now-dead
+    Inv_Def_2 from a fresh attacker (Counter_Atk) — the mechanic must
+    leave the dead defender alone and produce an 'unfound' report for
+    the attacker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def kill_then_attack_dead(self, browser):
+        """Round 1: Inv_Atk_2 (Charlie) kills Inv_Def_2 (Delta) via end-turn.
+        Round 2: Counter_Atk (Golf) attacks the now-dead Inv_Def_2 via
+        another end-turn. Both attackers + defender share Beta-Combat."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Round 1: kill Inv_Def_2.
+        ui_attack(page, "Inv_Atk_2", "Inv_Def_2")
+        end_turn(page)
+
+        # Round 2: queue a fresh attack on the now-dead Inv_Def_2.
+        ui_attack(page, "Counter_Atk", "Inv_Def_2")
+        end_turn(page)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_dead_defender_state_unchanged_after_second_attack(self, gm_page: Page, base_url):
+        """attackMechanic.php:318-322: defender already in INACTIVE_ACTIONS
+        is skipped — no state mutation. Inv_Def_2 must still be 'dead'
+        after Counter_Atk's round 2 attack."""
+        rows = ui_workers_by_lastname(gm_page, "Inv_Def_2", base_url=base_url)
+        non_trace = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(non_trace) == 1, (
+            f"Inv_Def_2 should have one non-trace row; got {len(non_trace)}: {non_trace}"
+        )
+        assert non_trace[0]["action_choice"] == "dead", (
+            f"Attacking a dead defender must NOT change its action_choice; "
+            f"expected 'dead', got '{non_trace[0]['action_choice']}'"
+        )
+
+    def test_attacker_on_dead_defender_did_not_die(self, gm_page: Page, base_url):
+        """Counter_Atk attacked a dead defender (unfound path) — must NOT
+        be killed by a phantom riposte. Locks the early-skip branch
+        before the riposte block fires."""
+        rows = ui_workers_by_lastname(gm_page, "Counter_Atk", base_url=base_url)
+        non_trace = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(non_trace) == 1, (
+            f"Counter_Atk should have one non-trace row; got {len(non_trace)}: {non_trace}"
+        )
+        assert non_trace[0]["action_choice"] != "dead", (
+            f"Counter_Atk attacked a dead defender — must not be 'dead' "
+            f"itself (no riposte from a dead defender). "
+            f"Got: '{non_trace[0]['action_choice']}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestDoubleAgentCapture — capture trace count for double-agent workers
+#
+# Test data:
+#   - Test_Job_GoTraitor_Echo (jobs.csv) — go_traitor on_recrutment effect
+#     with controller_lastname=Echo. Workers recruited with this job get
+#     a non-primary controller_worker row pointing to Echo.
+#   - DA_Captor_Alpha / DA_Captor_Echo (advanced.csv) — calibrated
+#     capture-strength workers in Beta-Combat (atk=8).
+#
+# Double-agent workers (DA_Capture_W, DA_SelfCapture_W) are NOT seeded by
+# the CSV loader, because BDD/db_connector.php::loadWorkersCSV does direct
+# INSERTs that bypass createWorker / applyPowerObtentionEffect, so
+# go_traitor never fires for CSV-seeded workers. Instead, the class
+# fixture recruits them via /workers/action.php?creation=true (the URL
+# the perfect-worker admin form submits to) — that path runs createWorker
+# which calls upgradeWorker(...,$isRecrutment=true) which fires
+# applyPowerObtentionEffect → go_traitor → secondary controller_worker row.
+#
+# Locks two trace-count invariants from the design spec:
+#   - capture by third party → 2 traces (one per controller, primary +
+#     secondary), live worker moves to attacker (decision 1, option B);
+#   - capture by secondary controller → 1 trace (at primary; secondary's
+#     just-created trace is destroyed by attackMechanic.php:400 cleanup),
+#     live worker becomes secondary's primary (decision 2 — re-claiming
+#     voids your trace).
+# ---------------------------------------------------------------------------
+
+class TestDoubleAgentCapture:
+    """Trace count after capture of a double-agent worker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_double_agent_captures(self, browser):
+        """Recruit two double-agent workers via the perfect-worker form
+        URL (the only path that fires applyPowerObtentionEffect and thus
+        the go_traitor effect that creates the secondary controller_worker
+        row). Then queue captures and end-turn.
+          - DA_Captor_Alpha attacks DA_Capture_W      → third-party capture
+          - DA_Captor_Echo  attacks DA_SelfCapture_W  → secondary self-capture
+        Both attackers have atk=8 (Brute Force|Veteran Tactician); both
+        defenders have def=3 (Blank Slate|Test_Job_GoTraitor_Echo, both
+        zero-stat) → attack_diff=5 ≥ ATTACKDIFF1=3 → CAPTURE."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # The perfect-worker admin form is included by /base/admin.php.
+        # Scrape link_power_type_ids and origin_id from its dropdowns so
+        # the recruitment URL is valid even if seed-order changes the ids.
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        charlie_id = _controller_ids["Charlie"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        # Recruit both double-agent workers via the creation URL.
+        for da_lastname in ("DA_Capture_W", "DA_SelfCapture_W"):
+            url = (
+                f"{PHP_BASE_URL}/workers/action.php"
+                f"?creation=true"
+                f"&controller_id={charlie_id}"
+                f"&zone_id={beta_combat_id}"
+                f"&origin_id={origin_id}"
+                f"&firstname=combat"
+                f"&lastname={da_lastname}"
+                f"&power_hobby_id={blank_slate_id}"
+                f"&power_metier_id={go_traitor_id}"
+                f"&chosir=Recruter+et+Affecter"
+            )
+            page.goto(url)
+            page.wait_for_load_state("load")
+
+        # Queue captures.
+        ui_attack(page, "DA_Captor_Alpha", "DA_Capture_W")
+        ui_attack(page, "DA_Captor_Echo", "DA_SelfCapture_W")
+        end_turn(page)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_third_party_capture_creates_two_traces_one_per_controller(self, gm_page: Page, base_url):
+        """Decision 1 (option B locked): a third party capturing a double-
+        agent leaves 2 trace rows — one at the PRIMARY controller (Charlie)
+        and one at the SECONDARY (Echo). Live worker moves to attacker (Alpha)."""
+        rows = ui_workers_by_lastname(gm_page, "DA_Capture_W", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 2, (
+            f"Third-party capture of a double-agent must produce 2 traces; "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        trace_controllers = {r["controller_id"] for r in trace_rows}
+        assert _controller_ids["Charlie"] in trace_controllers, (
+            f"Expected a trace at primary controller Charlie "
+            f"({_controller_ids['Charlie']}); got controllers={trace_controllers}"
+        )
+        assert _controller_ids["Echo"] in trace_controllers, (
+            f"Expected a trace at secondary controller Echo "
+            f"({_controller_ids['Echo']}); got controllers={trace_controllers}"
+        )
+        # Live worker now belongs to attacker Alpha.
+        live_rows = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live_rows) == 1, f"Expected 1 live row, got {live_rows}"
+        assert live_rows[0]["controller_id"] == _controller_ids["Alpha"], (
+            f"Captured worker should belong to Alpha "
+            f"({_controller_ids['Alpha']}); got {live_rows[0]['controller_id']}"
+        )
+        assert live_rows[0]["action_choice"] == "captured", (
+            f"Captured worker action_choice should be 'captured'; "
+            f"got {live_rows[0]['action_choice']!r}"
+        )
+
+    def test_secondary_self_capture_voids_own_trace(self, gm_page: Page, base_url):
+        """Decision 2 (locked spec — re-claiming voids your trace): when
+        the SECONDARY controller (Echo) captures their own double-agent,
+        the secondary's trace is just-created at attackMechanic.php:363
+        then destroyed by destroyTraceWorker at line 400. Net: 1 trace
+        at the PRIMARY only (Charlie). Live worker becomes Echo's primary."""
+        rows = ui_workers_by_lastname(gm_page, "DA_SelfCapture_W", base_url=base_url)
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 1, (
+            f"Secondary self-capture must leave 1 trace (at primary only); "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        assert trace_rows[0]["controller_id"] == _controller_ids["Charlie"], (
+            f"Remaining trace must be at primary Charlie "
+            f"({_controller_ids['Charlie']}); got {trace_rows[0]['controller_id']}"
+        )
+        # Live worker now belongs to attacker Echo (= former secondary).
+        live_rows = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live_rows) == 1, f"Expected 1 live row, got {live_rows}"
+        assert live_rows[0]["controller_id"] == _controller_ids["Echo"], (
+            f"After secondary self-capture, live worker should belong to "
+            f"Echo ({_controller_ids['Echo']}); got {live_rows[0]['controller_id']}"
+        )
+        assert live_rows[0]["action_choice"] == "captured", (
+            f"Captured worker action_choice should be 'captured'; "
+            f"got {live_rows[0]['action_choice']!r}"
+        )

@@ -11,3 +11,4 @@ name,description,enquete,attack,defence,other,linkTable_power_types__name->link_
 "Patrol Warden"," basic watchman",1,0,0,,Metier
 "War Drummer"," combat inspiration",1,2,1,,Metier
 "Common Folk"," untrained civilian",0,0,0,,Metier
+"Test_Job_GoTraitor_Echo"," go_traitor recruitment effect (test data only — secondary controller = Echo)",0,0,0,"{""on_recrutment"":{""action"":{""type"":""go_traitor"",""controller_lastname"":""Echo""}}}",Metier

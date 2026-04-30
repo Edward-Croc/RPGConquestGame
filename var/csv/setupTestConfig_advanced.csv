@@ -33,3 +33,11 @@ cross,Keep_Atk,origine Accessible,Beta-Combat,Foxtrot,passive,{},Blank Slate|Com
 artefact,Artefact_Searcher_Echo,origine Accessible,Theta-Artefacts,Echo,investigate,{},Eagle Scout|Veteran Tactician
 artefact,Artefact_Worker_Foxtrot,origine Accessible,Theta-Artefacts,Foxtrot,passive,{},Blank Slate|Common Folk
 gift,Gift_Source_Foxtrot,origine Accessible,Theta-Artefacts,Foxtrot,passive,{},Blank Slate|Common Folk
+combat,Riposte_R2_A,origine Accessible,Beta-Combat,Alpha,passive,{},Blank Slate|Common Folk
+combat,Riposte_R2_B,origine Accessible,Beta-Combat,Beta,passive,{},Brute Force|Common Folk
+combat,Riposte_R2_C,origine Accessible,Beta-Combat,Charlie,passive,{},Blank Slate|Common Folk
+combat,Riposte_R3_A,origine Accessible,Beta-Combat,Delta,passive,{},Eagle Scout|Common Folk
+combat,Riposte_R3_B,origine Accessible,Beta-Combat,Echo,passive,{},Eagle Scout|Common Folk
+combat,Riposte_R3_C,origine Accessible,Beta-Combat,Foxtrot,passive,{},Blank Slate|Common Folk
+combat,DA_Captor_Alpha,origine Accessible,Beta-Combat,Alpha,passive,{},Brute Force|Veteran Tactician
+combat,DA_Captor_Echo,origine Accessible,Beta-Combat,Echo,passive,{},Brute Force|Veteran Tactician

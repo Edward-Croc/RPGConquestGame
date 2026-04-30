@@ -135,7 +135,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 13, 'Metier': 12, 'Discipline': 3, 'Transformation': 2}
+        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 3, 'Transformation': 2}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
@@ -382,6 +382,14 @@ class TestLoadWorkersCSV:
             'Artefact_Searcher_Echo': 'Echo', 'Artefact_Worker_Foxtrot': 'Foxtrot',
             # Gift tests (Theta-Artefacts zone)
             'Gift_Source_Foxtrot': 'Foxtrot',
+            # Riposte+chain tests (Beta-Combat zone) — A→B→C trios
+            'Riposte_R2_A': 'Alpha', 'Riposte_R2_B': 'Beta', 'Riposte_R2_C': 'Charlie',
+            'Riposte_R3_A': 'Delta', 'Riposte_R3_B': 'Echo', 'Riposte_R3_C': 'Foxtrot',
+            # Double-agent capture tests (Beta-Combat zone) — captors only;
+            # the actual double-agent workers are recruited at test-fixture
+            # time via /workers/action.php?creation=true (perfect-worker form
+            # path), not by the CSV loader.
+            'DA_Captor_Alpha': 'Alpha', 'DA_Captor_Echo': 'Echo',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 

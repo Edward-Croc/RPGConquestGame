@@ -2,3 +2,4 @@ username,passwd,is_privileged
 single_player,test,0
 multi_player,test,0
 delta_player,test,0
+foxtrot_player,test,0

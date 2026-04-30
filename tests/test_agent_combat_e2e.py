@@ -174,6 +174,26 @@ def combat_scenario(browser):
     ui_claim(page, 'Keep_Def', 'Alpha')
     ui_attack(page, 'Keep_Atk', 'Keep_Def')
 
+    # Riposte+chain R2: A's failed attack triggers riposte on A;
+    # B then still attacks C in the same turn.
+    #   Riposte_R2_A (atk=3, def=3) → Riposte_R2_B (atk=6, def=5):
+    #     attack_diff = 3-5 = -2 < 1 → fail
+    #     riposte_diff = 6-3 = 3 ≥ 2 → riposte fires, R2_A dies
+    #   Riposte_R2_B → Riposte_R2_C (atk=3, def=3):
+    #     attack_diff = 6-3 = 3 ≥ 3 → captures C
+    ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
+    ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
+
+    # Riposte+chain R3: A's failed attack does NOT riposte;
+    # B then still attacks C in the same turn.
+    #   Riposte_R3_A (atk=4, def=4) → Riposte_R3_B (atk=4, def=4):
+    #     attack_diff = 4-4 = 0 < 1 → fail
+    #     riposte_diff = 4-4 = 0 < 2 → no riposte, R3_A survives
+    #   Riposte_R3_B → Riposte_R3_C (atk=3, def=3):
+    #     attack_diff = 4-3 = 1 → kills C
+    ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
+    ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
+
     # End turn 1 → 2 (combat resolves)
     end_turn(page)
 
@@ -848,3 +868,60 @@ class TestAttackKeepsDefenderParams:
             f"Keep_Def should still have action_choice='claim' after surviving miss, got {state['action_choice']!r}"
         assert 'claim_controller_id' in state['action_params'], \
             f"Keep_Def's action_params must preserve claim_controller_id after surviving miss — regression guard for attackMechanic.php:306 init. Got: {state['action_params']!r}"
+
+
+# ---------------------------------------------------------------------------
+# TestRiposteChain — riposte interaction with downstream chain attacks
+#
+# When attacker A's attack on B fails:
+#   - if riposte_difference >= RIPOSTDIFF, A dies (riposte fires).
+#   - either way, B's own queued attack on C must still resolve (B survived
+#     the failed attack on themselves; B's iteration in attackMechanic runs
+#     after A's, sees B still alive, processes B's attack normally).
+#
+# Existing TestChainAttack covers the "A succeeds → B skipped downstream"
+# branch (test_chain_b_did_not_attack). The fail-branch (with and without
+# riposte) is the gap this class fills.
+# ---------------------------------------------------------------------------
+
+class TestRiposteChain:
+    """A→B→C chain where A's attack fails; B's downstream attack on C must
+    still resolve regardless of whether B's riposte against A fires."""
+
+    def test_riposte_fires_attacker_dies_chain_continues(self, page: Page, base_url):
+        """R2: Riposte_R2_A's attack on Riposte_R2_B fails (atk_diff=-2).
+        Riposte_R2_B's riposte hits (riposte_diff=3 ≥ RIPOSTDIFF=2),
+        killing Riposte_R2_A. Riposte_R2_B then still resolves its
+        queued attack on Riposte_R2_C (atk_diff=3 → CAPTURE)."""
+        ensure_gm_login(page, base_url)
+        # A died from riposte
+        assert _ui_worker_is_downed(page, 'Riposte_R2_A'), \
+            "Riposte_R2_A should be downed (dead) after R2_B's riposte"
+        # B survived (no further attack landed on B in this turn)
+        assert not _ui_worker_is_downed(page, 'Riposte_R2_B'), \
+            "Riposte_R2_B should remain alive after the failed attack + riposte"
+        # B's downstream attack on C still landed: C captured
+        assert _ui_worker_is_downed(page, 'Riposte_R2_C'), \
+            "Riposte_R2_C should be downed (captured) — B's chain attack must still resolve"
+        html_b = worker_report_html(page, 'Riposte_R2_B')
+        assert 'Captured' in html_b and 'Riposte_R2_C' in html_b, \
+            f"Riposte_R2_B's attack_report should mention capturing R2_C; got: {html_b!r}"
+
+    def test_no_riposte_attacker_survives_chain_continues(self, page: Page, base_url):
+        """R3: Riposte_R3_A's attack on Riposte_R3_B fails (atk_diff=0).
+        riposte_diff=0 < RIPOSTDIFF=2 → no riposte; A survives.
+        Riposte_R3_B's queued attack on Riposte_R3_C still resolves
+        (atk_diff=1 → KILL)."""
+        ensure_gm_login(page, base_url)
+        # A survived (no riposte hit)
+        assert not _ui_worker_is_downed(page, 'Riposte_R3_A'), \
+            "Riposte_R3_A should remain alive (no riposte fired)"
+        # B survived
+        assert not _ui_worker_is_downed(page, 'Riposte_R3_B'), \
+            "Riposte_R3_B should remain alive after the failed attack"
+        # C killed by B's chain attack
+        assert _ui_worker_is_downed(page, 'Riposte_R3_C'), \
+            "Riposte_R3_C should be downed (killed) — B's chain attack must still resolve"
+        html_b = worker_report_html(page, 'Riposte_R3_B')
+        assert 'succeeded' in html_b and 'Riposte_R3_C' in html_b, \
+            f"Riposte_R3_B's attack_report should mention successful attack on R3_C; got: {html_b!r}"
