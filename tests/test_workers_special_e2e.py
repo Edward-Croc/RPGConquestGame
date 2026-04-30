@@ -1064,3 +1064,152 @@ class TestGoTraitorSelfRecruitCollision:
         )
 
         ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# TestReturnPrisonerReinstatesSecondary — reinstate + capture-trace cleanup
+#
+# When a double-agent worker is captured (third party deletes both
+# controller_worker rows, INSERTs primary at attacker — see
+# attackMechanic.php:382-398) then released back to the original primary
+# via returnPrisoner, the secondary controller_worker link must be
+# reinstated AND the capture-trace at the secondary controller must be
+# destroyed (mirror of the existing primary-side destroyTraceWorker
+# call at workers/functions.php:1135).
+#
+# Spec (link + trace cleanup):
+#   - secondary controller_worker(secondary, W, primary=false) reinstated
+#     so the secondary's faction view shows the worker in 'doubles';
+#   - capture-trace row in workers_trace_links at the secondary destroyed
+#     so the secondary's faction view does NOT show the worker in
+#     'ancients' (no double-listing — same worker in both 'doubles'
+#     and 'ancients' would be a confusing UX).
+
+# ---------------------------------------------------------------------------
+
+class TestReturnPrisonerReinstatesSecondary:
+    """returnPrisoner of a captured double-agent must reinstate the
+    secondary controller_worker link and clean up the secondary's
+    capture-trace."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_capture_then_return(self, browser):
+        """Recruit DA_ReturnPrisoner_W as a double-agent (primary=Charlie,
+        secondary=Echo via Test_Job_GoTraitor_Echo). DA_Captor_Alpha
+        (atk=8) captures the worker (def=3 → atk_diff=5 → CAPTURE).
+        Then returnPrisoner from Alpha back to Charlie via URL. Two
+        end-turns: first to populate detection so ui_attack finds the
+        new target, second to resolve the queued capture."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Scrape link_power_type_ids and origin_id from the perfect-worker
+        # form (mirrors prior classes' pattern).
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        charlie_id = _controller_ids["Charlie"]
+        alpha_id = _controller_ids["Alpha"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        # Recruit the double-agent.
+        url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?creation=true"
+            f"&controller_id={charlie_id}"
+            f"&zone_id={beta_combat_id}"
+            f"&origin_id={origin_id}"
+            f"&firstname=combat"
+            f"&lastname=DA_ReturnPrisoner_W"
+            f"&power_hobby_id={blank_slate_id}"
+            f"&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+
+        # End-turn so DA_Captor_Alpha (Beta-Combat, passive) detects
+        # DA_ReturnPrisoner_W in time for the queued capture.
+        end_turn(page)
+
+        # Capture: DA_Captor_Alpha attacks DA_ReturnPrisoner_W. atk=8,
+        # def=3 → attack_diff=5 ≥ ATTACKDIFF1=3 → CAPTURE.
+        ui_attack(page, "DA_Captor_Alpha", "DA_ReturnPrisoner_W")
+        end_turn(page)
+
+        # returnPrisoner from Alpha back to Charlie. URL form fields are
+        # the same ones the prisoner-release form posts (see
+        # workers/action.php:149-157). PHP only checks isset() on
+        # returnPrisoner, so any non-empty value works.
+        target_wid = ui_worker_id(
+            page, "DA_ReturnPrisoner_W", base_url=PHP_BASE_URL,
+            prefer_non_trace=True,
+        )
+        echo_id = _controller_ids["Echo"]
+        return_url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={target_wid}"
+            f"&returnPrisoner=Relacher"
+            f"&recall_controller_id={alpha_id}"
+            f"&return_controller_id={charlie_id}"
+            f"&double_controller_id={echo_id}"
+        )
+        page.goto(return_url)
+        page.wait_for_load_state("load")
+
+        clear_ui_caches()
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_primary_link_back_at_original_owner(self, gm_page: Page, base_url):
+        """After returnPrisoner, Charlie (the original primary) sees the
+        worker in 'live' again — primary link moved back from Alpha to
+        Charlie."""
+        charlie = cached_faction_sections(gm_page, "Charlie", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" in charlie["live"], (
+            f"Charlie should see DA_ReturnPrisoner_W in 'live' after "
+            f"return; got live={charlie['live']}"
+        )
+
+    def test_secondary_link_reinstated_at_secondary_controller(self, gm_page: Page, base_url):
+        """The fix's primary assertion: secondary's controller_worker
+        row, deleted at capture, must be reinstated by returnPrisoner.
+        Echo's 'doubles' must contain the worker again."""
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" in echo["doubles"], (
+            f"Echo should see DA_ReturnPrisoner_W in 'doubles' after "
+            f"return — secondary controller_worker link must be reinstated; "
+            f"got doubles={echo['doubles']}"
+        )
+
+    def test_secondary_capture_trace_destroyed(self, gm_page: Page, base_url):
+        """6b cleanup: the capture-trace at the secondary (Echo) must be
+        destroyed by returnPrisoner. Mirrors the existing primary-side
+        destroyTraceWorker call. Without this, Echo would see the worker
+        in BOTH 'doubles' (active double-agent) AND 'ancients' (stale
+        capture-trace) — confusing dual-listing."""
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" not in echo["ancients"], (
+            f"Echo's capture-trace of DA_ReturnPrisoner_W must be "
+            f"destroyed by returnPrisoner (6b spec); got "
+            f"ancients={echo['ancients']}"
+        )
