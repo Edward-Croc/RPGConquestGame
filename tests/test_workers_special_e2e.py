@@ -963,3 +963,104 @@ class TestDoubleAgentLifecycle:
             f"(controller_worker link survives pure-death); "
             f"got {echo['ancients']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestGoTraitorSelfRecruitCollision — issue #12 regression
+#
+# When a controller recruits a worker whose go_traitor power points to
+# the SAME controller (e.g., Echo recruits with Test_Job_GoTraitor_Echo,
+# whose target controller_lastname='Echo'), the naive go_traitor INSERT
+# at workers/functions.php:759-763 collides with the unique constraint
+# (controller_id, worker_id) — a primary controller_worker row at Echo
+# already exists from createWorker.
+#
+# Spec'd fix (locked 2026-04-29): the go_traitor branch must skip the
+# INSERT idempotently when the target controller already has a
+# controller_worker row for this worker. The recruited worker remains
+# a normal primary-only employee of the recruiting controller.
+#
+# Reference: https://github.com/Edward-Croc/RPGConquestGame/issues/12
+# ---------------------------------------------------------------------------
+
+class TestGoTraitorSelfRecruitCollision:
+    """Issue #12 regression: self-targeting go_traitor at recruitment must
+    be idempotent — no SQL constraint error, no second controller_worker row."""
+
+    def test_self_target_recruit_idempotent_no_constraint_error(self, browser, base_url):
+        """Recruit DA_Issue12_Selftarget as Echo with Test_Job_GoTraitor_Echo
+        (whose go_traitor target is also Echo). After the fix:
+          - the recruitment response must NOT contain the
+            'INSERT controller_worker Failed' error message echoed
+            from applyPowerObtentionEffect's catch block,
+          - management_workers must show exactly 1 controller_worker row
+            for the new worker (primary at Echo only)."""
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+
+        # Scrape link_power_type_ids and origin_id from the perfect-worker
+        # form (mirrors prior classes' pattern).
+        safe_goto(page, f"{base_url}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        echo_id = _controller_ids["Echo"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=base_url)
+
+        # Recruit with controller_id == Echo AND go_traitor target == Echo
+        # — the self-targeting case that triggers issue #12.
+        url = (
+            f"{base_url}/workers/action.php"
+            f"?creation=true"
+            f"&controller_id={echo_id}"
+            f"&zone_id={beta_combat_id}"
+            f"&origin_id={origin_id}"
+            f"&firstname=combat"
+            f"&lastname=DA_Issue12_Selftarget"
+            f"&power_hobby_id={blank_slate_id}"
+            f"&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+        recruit_html = page.content()
+
+        # Assertion 1: no constraint-violation error echoed.
+        assert "INSERT controller_worker Failed" not in recruit_html, (
+            "Recruitment with self-targeting go_traitor must NOT emit the "
+            "'INSERT controller_worker Failed' constraint error from "
+            "applyPowerObtentionEffect's catch block. Issue #12."
+        )
+
+        # Assertion 2: exactly one controller_worker row (primary at Echo).
+        rows = ui_workers_by_lastname(
+            page, "DA_Issue12_Selftarget", base_url=base_url
+        )
+        assert len(rows) == 1, (
+            f"Self-target recruitment should produce 1 controller_worker "
+            f"row (primary at Echo only — go_traitor's secondary INSERT "
+            f"must be skipped); got {len(rows)}: {rows}"
+        )
+        assert rows[0]["controller_id"] == _controller_ids["Echo"], (
+            f"Sole controller_worker link must be at Echo; "
+            f"got controller_id={rows[0]['controller_id']}"
+        )
+
+        ctx.close()
