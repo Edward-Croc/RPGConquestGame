@@ -32,6 +32,7 @@ from helpers import (
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_claim, ui_gift, ui_zone_id, end_turn,
+    cached_faction_sections, clear_ui_caches,
 )
 
 
@@ -715,4 +716,500 @@ class TestDoubleAgentCapture:
         assert live_rows[0]["action_choice"] == "captured", (
             f"Captured worker action_choice should be 'captured'; "
             f"got {live_rows[0]['action_choice']!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestDoubleAgentLifecycle — recruitment, faction visibility, recall, death
+#
+# Scope (locked spec, per user 2026-04-29):
+#   - Recruitment via the perfect-worker form with Test_Job_GoTraitor_Echo
+#     creates 2 controller_worker rows (primary + secondary).
+#   - Both controllers see the worker — primary in "Nos Agents" (live),
+#     secondary in "Nos Agents doubles".
+#   - recallDoubleAgent (URL action via /workers/action.php?recallDoubleAgent
+#     =Rappeler&recall_controller_id=<secondary>): creates a trace at the
+#     OLD primary, swaps the worker's primary controller to the secondary,
+#     appends "rappelé" line to life_report.
+#   - Death of a double-agent (kill via combat): 0 traces created;
+#     both primary and secondary faction views show the worker in their
+#     "Nos Anciens agents" / disappeared section.
+#
+# Issue #12 (go_traitor self-recruit collision) is covered separately
+# in TestGoTraitorSelfRecruitCollision below.
+# ---------------------------------------------------------------------------
+
+class TestDoubleAgentLifecycle:
+    """Lifecycle invariants on double-agent workers (recruitment, view, recall, death)."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_lifecycle_workers(self, browser):
+        """Recruit three double-agent workers (all primary=Charlie,
+        secondary=Echo via Test_Job_GoTraitor_Echo). Then:
+          - DA_Lifecycle_View: untouched (tests recruitment + visibility).
+          - DA_Lifecycle_Recall: recalled via URL (instant action).
+          - DA_Lifecycle_Death: queued for combat-kill by DA_Killer; resolves
+            on end-turn. Uses a calibrated kill-strength attacker
+            (Eagle Scout|Common Folk → atk=4 vs def=3 → diff=1 → KILL,
+            not capture).
+
+        Two end-turns in this fixture: the first lets investigateMechanic
+        populate DA_Killer's CKE so ui_attack can find the new target;
+        the second resolves the queued kill.
+        """
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Scrape link_power_type_ids and origin_id from the perfect-worker
+        # form (mirrors TestDoubleAgentCapture's pattern).
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        charlie_id = _controller_ids["Charlie"]
+        echo_id = _controller_ids["Echo"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        for da_lastname in (
+            "DA_Lifecycle_View",
+            "DA_Lifecycle_Recall",
+            "DA_Lifecycle_Death",
+        ):
+            url = (
+                f"{PHP_BASE_URL}/workers/action.php"
+                f"?creation=true"
+                f"&controller_id={charlie_id}"
+                f"&zone_id={beta_combat_id}"
+                f"&origin_id={origin_id}"
+                f"&firstname=combat"
+                f"&lastname={da_lastname}"
+                f"&power_hobby_id={blank_slate_id}"
+                f"&power_metier_id={go_traitor_id}"
+                f"&chosir=Recruter+et+Affecter"
+            )
+            page.goto(url)
+            page.wait_for_load_state("load")
+
+        # End-turn so DA_Killer (Foxtrot, passive) detects the new
+        # double-agent workers in Beta-Combat — needed for ui_attack to
+        # find DA_Lifecycle_Death in the enemy dropdown.
+        end_turn(page)
+
+        # Recall DA_Lifecycle_Recall to its secondary (Echo). Instant
+        # URL action; advances trace creation + primary swap immediately.
+        recall_wid = ui_worker_id(page, "DA_Lifecycle_Recall", base_url=PHP_BASE_URL)
+        recall_url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={recall_wid}"
+            f"&recallDoubleAgent=Rappeler"
+            f"&recall_controller_id={echo_id}"
+        )
+        page.goto(recall_url)
+        page.wait_for_load_state("load")
+
+        # Queue the kill on DA_Lifecycle_Death and resolve at end-turn.
+        ui_attack(page, "DA_Killer", "DA_Lifecycle_Death")
+        end_turn(page)
+
+        # Module-level faction-sections cache may have been populated by
+        # earlier test files in the same pytest session (test_agent_combat
+        # touches Alpha/Beta/etc. faction views). Clear it so this class's
+        # tests see post-recruitment + post-recall + post-kill state.
+        clear_ui_caches()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_recruitment_creates_secondary_controller_worker_row(self, gm_page: Page, base_url):
+        """The go_traitor on_recrutment effect must INSERT a non-primary
+        controller_worker row pointing to Echo. Verified via faction
+        views: DA_Lifecycle_View is in Charlie's 'live' section AND in
+        Echo's 'doubles' section — which only renders rows where
+        is_primary_controller is false."""
+        charlie = cached_faction_sections(gm_page, "Charlie", base_url=base_url)
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_Lifecycle_View" in charlie["live"], (
+            f"DA_Lifecycle_View should appear in Charlie's 'Nos Agents'; "
+            f"got live={charlie['live']}"
+        )
+        assert "DA_Lifecycle_View" in echo["doubles"], (
+            f"DA_Lifecycle_View should appear in Echo's 'Nos Agents doubles' "
+            f"(secondary controller link); got doubles={echo['doubles']}"
+        )
+
+    def test_recruitment_does_not_leak_to_unrelated_controllers(self, gm_page: Page, base_url):
+        """A double-agent must not surface in any other controller's
+        faction view. Spot-check Alpha and Beta — neither owns the worker
+        as primary or secondary."""
+        alpha = cached_faction_sections(gm_page, "Alpha", base_url=base_url)
+        beta = cached_faction_sections(gm_page, "Beta", base_url=base_url)
+        for section_name, sections in (("Alpha", alpha), ("Beta", beta)):
+            for k in ("live", "doubles", "prisoners", "ancients"):
+                assert "DA_Lifecycle_View" not in sections[k], (
+                    f"{section_name} must not see DA_Lifecycle_View in {k}; "
+                    f"got {sections[k]}"
+                )
+
+    def test_recall_creates_trace_at_old_primary_and_swaps_owner(self, gm_page: Page, base_url):
+        """recallDoubleAgent spec (locked 2026-04-29):
+          - trace at OLD primary (Charlie),
+          - live worker becomes primary at OLD secondary (Echo),
+          - life_report on the live row mentions 'rappelé'.
+        The trace at Charlie surfaces in Charlie's 'ancients'; the live
+        row surfaces in Echo's 'live' (now Echo's primary)."""
+        rows = ui_workers_by_lastname(gm_page, "DA_Lifecycle_Recall", base_url=base_url)
+
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 1, (
+            f"Recall must create exactly 1 trace at the old primary; "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        assert trace_rows[0]["controller_id"] == _controller_ids["Charlie"], (
+            f"Recall trace should be at Charlie (old primary); "
+            f"got {trace_rows[0]['controller_id']}"
+        )
+
+        live_rows = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live_rows) == 1, f"Expected 1 live row, got {live_rows}"
+        assert live_rows[0]["controller_id"] == _controller_ids["Echo"], (
+            f"Recalled worker should belong to Echo (former secondary); "
+            f"got controller_id={live_rows[0]['controller_id']}"
+        )
+
+        # Faction views: Charlie sees the trace in 'ancients'; Echo's
+        # 'live' contains the worker (now Echo's primary). Echo's
+        # 'doubles' should NOT contain it any more — secondary link gone.
+        charlie = cached_faction_sections(gm_page, "Charlie", base_url=base_url)
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_Lifecycle_Recall" in charlie["ancients"], (
+            f"Charlie should see DA_Lifecycle_Recall trace in 'ancients'; "
+            f"got {charlie['ancients']}"
+        )
+        assert "DA_Lifecycle_Recall" in echo["live"], (
+            f"Echo should see DA_Lifecycle_Recall in 'live' after recall; "
+            f"got {echo['live']}"
+        )
+        assert "DA_Lifecycle_Recall" not in echo["doubles"], (
+            f"DA_Lifecycle_Recall should no longer be in Echo's 'doubles' "
+            f"after recall (secondary link removed); got {echo['doubles']}"
+        )
+
+    def test_double_agent_death_no_trace_visible_to_both_controllers(self, gm_page: Page, base_url):
+        """Death of a double-agent (kill via combat, attack_diff in
+        [ATTACKDIFF0, ATTACKDIFF1) range) creates 0 traces. Both
+        controllers (primary + secondary) still see the worker via their
+        respective faction views — primary in 'ancients', secondary
+        also in 'ancients' (the secondary's controller_worker link
+        survived the death; only capture deletes those rows)."""
+        rows = ui_workers_by_lastname(gm_page, "DA_Lifecycle_Death", base_url=base_url)
+        # Pure-death branch in attackMechanic creates no trace; capture
+        # would have created at least one. management_workers joins
+        # controller_worker, so a double-agent appears twice (one row
+        # per controller link, primary + secondary). Death does NOT
+        # delete those links — only capture does.
+        trace_rows = [r for r in rows if r["action_choice"] == "trace"]
+        assert len(trace_rows) == 0, (
+            f"Death of double-agent must NOT create traces (per spec); "
+            f"got {len(trace_rows)}: {trace_rows}"
+        )
+        non_trace = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(non_trace) == 2, (
+            f"DA_Lifecycle_Death should appear twice in management_workers "
+            f"(primary + secondary controller_worker rows survive death); "
+            f"got {len(non_trace)}: {non_trace}"
+        )
+        for r in non_trace:
+            assert r["action_choice"] == "dead", (
+                f"All controller-views of DA_Lifecycle_Death must show "
+                f"action='dead'; got {r}"
+            )
+        controller_ids_seen = {r["controller_id"] for r in non_trace}
+        assert _controller_ids["Charlie"] in controller_ids_seen, (
+            f"Primary Charlie's link must survive; got {controller_ids_seen}"
+        )
+        assert _controller_ids["Echo"] in controller_ids_seen, (
+            f"Secondary Echo's link must survive; got {controller_ids_seen}"
+        )
+
+        # Both controllers must see the dead worker in their 'ancients'
+        # section. Tests the spec that "both primary and secondary view
+        # the dead worker in their dead/disappeared section."
+        charlie = cached_faction_sections(gm_page, "Charlie", base_url=base_url)
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_Lifecycle_Death" in charlie["ancients"], (
+            f"Primary Charlie must see DA_Lifecycle_Death in 'ancients'; "
+            f"got {charlie['ancients']}"
+        )
+        assert "DA_Lifecycle_Death" in echo["ancients"], (
+            f"Secondary Echo must also see DA_Lifecycle_Death in 'ancients' "
+            f"(controller_worker link survives pure-death); "
+            f"got {echo['ancients']}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestGoTraitorSelfRecruitCollision — issue #12 regression
+#
+# When a controller recruits a worker whose go_traitor power points to
+# the SAME controller (e.g., Echo recruits with Test_Job_GoTraitor_Echo,
+# whose target controller_lastname='Echo'), the naive go_traitor INSERT
+# at workers/functions.php:759-763 collides with the unique constraint
+# (controller_id, worker_id) — a primary controller_worker row at Echo
+# already exists from createWorker.
+#
+# Spec'd fix (locked 2026-04-29): the go_traitor branch must skip the
+# INSERT idempotently when the target controller already has a
+# controller_worker row for this worker. The recruited worker remains
+# a normal primary-only employee of the recruiting controller.
+#
+# Reference: https://github.com/Edward-Croc/RPGConquestGame/issues/12
+# ---------------------------------------------------------------------------
+
+class TestGoTraitorSelfRecruitCollision:
+    """Issue #12 regression: self-targeting go_traitor at recruitment must
+    be idempotent — no SQL constraint error, no second controller_worker row."""
+
+    def test_self_target_recruit_idempotent_no_constraint_error(self, browser, base_url):
+        """Recruit DA_Issue12_Selftarget as Echo with Test_Job_GoTraitor_Echo
+        (whose go_traitor target is also Echo). After the fix:
+          - the recruitment response must NOT contain the
+            'INSERT controller_worker Failed' error message echoed
+            from applyPowerObtentionEffect's catch block,
+          - management_workers must show exactly 1 controller_worker row
+            for the new worker (primary at Echo only)."""
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+
+        # Scrape link_power_type_ids and origin_id from the perfect-worker
+        # form (mirrors prior classes' pattern).
+        safe_goto(page, f"{base_url}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        echo_id = _controller_ids["Echo"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=base_url)
+
+        # Recruit with controller_id == Echo AND go_traitor target == Echo
+        # — the self-targeting case that triggers issue #12.
+        url = (
+            f"{base_url}/workers/action.php"
+            f"?creation=true"
+            f"&controller_id={echo_id}"
+            f"&zone_id={beta_combat_id}"
+            f"&origin_id={origin_id}"
+            f"&firstname=combat"
+            f"&lastname=DA_Issue12_Selftarget"
+            f"&power_hobby_id={blank_slate_id}"
+            f"&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+        recruit_html = page.content()
+
+        # Assertion 1: no constraint-violation error echoed.
+        assert "INSERT controller_worker Failed" not in recruit_html, (
+            "Recruitment with self-targeting go_traitor must NOT emit the "
+            "'INSERT controller_worker Failed' constraint error from "
+            "applyPowerObtentionEffect's catch block. Issue #12."
+        )
+
+        # Assertion 2: exactly one controller_worker row (primary at Echo).
+        rows = ui_workers_by_lastname(
+            page, "DA_Issue12_Selftarget", base_url=base_url
+        )
+        assert len(rows) == 1, (
+            f"Self-target recruitment should produce 1 controller_worker "
+            f"row (primary at Echo only — go_traitor's secondary INSERT "
+            f"must be skipped); got {len(rows)}: {rows}"
+        )
+        assert rows[0]["controller_id"] == _controller_ids["Echo"], (
+            f"Sole controller_worker link must be at Echo; "
+            f"got controller_id={rows[0]['controller_id']}"
+        )
+
+        ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# TestReturnPrisonerReinstatesSecondary — reinstate + capture-trace cleanup
+#
+# When a double-agent worker is captured (third party deletes both
+# controller_worker rows, INSERTs primary at attacker — see
+# attackMechanic.php:382-398) then released back to the original primary
+# via returnPrisoner, the secondary controller_worker link must be
+# reinstated AND the capture-trace at the secondary controller must be
+# destroyed (mirror of the existing primary-side destroyTraceWorker
+# call at workers/functions.php:1135).
+#
+# Spec (link + trace cleanup):
+#   - secondary controller_worker(secondary, W, primary=false) reinstated
+#     so the secondary's faction view shows the worker in 'doubles';
+#   - capture-trace row in workers_trace_links at the secondary destroyed
+#     so the secondary's faction view does NOT show the worker in
+#     'ancients' (no double-listing — same worker in both 'doubles'
+#     and 'ancients' would be a confusing UX).
+
+# ---------------------------------------------------------------------------
+
+class TestReturnPrisonerReinstatesSecondary:
+    """returnPrisoner of a captured double-agent must reinstate the
+    secondary controller_worker link and clean up the secondary's
+    capture-trace."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_capture_then_return(self, browser):
+        """Recruit DA_ReturnPrisoner_W as a double-agent (primary=Charlie,
+        secondary=Echo via Test_Job_GoTraitor_Echo). DA_Captor_Alpha
+        (atk=8) captures the worker (def=3 → atk_diff=5 → CAPTURE).
+        Then returnPrisoner from Alpha back to Charlie via URL. Two
+        end-turns: first to populate detection so ui_attack finds the
+        new target, second to resolve the queued capture."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Scrape link_power_type_ids and origin_id from the perfect-worker
+        # form (mirrors prior classes' pattern).
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape_option_value(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape_option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape_option_value(
+            "select#power_metier_id", "Test_Job_GoTraitor_Echo"
+        )
+        origin_id = _scrape_option_value("select#origin_id", "origine Accessible")
+
+        charlie_id = _controller_ids["Charlie"]
+        alpha_id = _controller_ids["Alpha"]
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        # Recruit the double-agent.
+        url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?creation=true"
+            f"&controller_id={charlie_id}"
+            f"&zone_id={beta_combat_id}"
+            f"&origin_id={origin_id}"
+            f"&firstname=combat"
+            f"&lastname=DA_ReturnPrisoner_W"
+            f"&power_hobby_id={blank_slate_id}"
+            f"&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+
+        # End-turn so DA_Captor_Alpha (Beta-Combat, passive) detects
+        # DA_ReturnPrisoner_W in time for the queued capture.
+        end_turn(page)
+
+        # Capture: DA_Captor_Alpha attacks DA_ReturnPrisoner_W. atk=8,
+        # def=3 → attack_diff=5 ≥ ATTACKDIFF1=3 → CAPTURE.
+        ui_attack(page, "DA_Captor_Alpha", "DA_ReturnPrisoner_W")
+        end_turn(page)
+
+        # returnPrisoner from Alpha back to Charlie. URL form fields are
+        # the same ones the prisoner-release form posts (see
+        # workers/action.php:149-157). PHP only checks isset() on
+        # returnPrisoner, so any non-empty value works.
+        target_wid = ui_worker_id(
+            page, "DA_ReturnPrisoner_W", base_url=PHP_BASE_URL,
+            prefer_non_trace=True,
+        )
+        echo_id = _controller_ids["Echo"]
+        return_url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={target_wid}"
+            f"&returnPrisoner=Relacher"
+            f"&recall_controller_id={alpha_id}"
+            f"&return_controller_id={charlie_id}"
+            f"&double_controller_id={echo_id}"
+        )
+        page.goto(return_url)
+        page.wait_for_load_state("load")
+
+        clear_ui_caches()
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_primary_link_back_at_original_owner(self, gm_page: Page, base_url):
+        """After returnPrisoner, Charlie (the original primary) sees the
+        worker in 'live' again — primary link moved back from Alpha to
+        Charlie."""
+        charlie = cached_faction_sections(gm_page, "Charlie", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" in charlie["live"], (
+            f"Charlie should see DA_ReturnPrisoner_W in 'live' after "
+            f"return; got live={charlie['live']}"
+        )
+
+    def test_secondary_link_reinstated_at_secondary_controller(self, gm_page: Page, base_url):
+        """The fix's primary assertion: secondary's controller_worker
+        row, deleted at capture, must be reinstated by returnPrisoner.
+        Echo's 'doubles' must contain the worker again."""
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" in echo["doubles"], (
+            f"Echo should see DA_ReturnPrisoner_W in 'doubles' after "
+            f"return — secondary controller_worker link must be reinstated; "
+            f"got doubles={echo['doubles']}"
+        )
+
+    def test_secondary_capture_trace_destroyed(self, gm_page: Page, base_url):
+        """6b cleanup: the capture-trace at the secondary (Echo) must be
+        destroyed by returnPrisoner. Mirrors the existing primary-side
+        destroyTraceWorker call. Without this, Echo would see the worker
+        in BOTH 'doubles' (active double-agent) AND 'ancients' (stale
+        capture-trace) — confusing dual-listing."""
+        echo = cached_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "DA_ReturnPrisoner_W" not in echo["ancients"], (
+            f"Echo's capture-trace of DA_ReturnPrisoner_W must be "
+            f"destroyed by returnPrisoner (6b spec); got "
+            f"ancients={echo['ancients']}"
         )

@@ -390,6 +390,7 @@ class TestLoadWorkersCSV:
             # time via /workers/action.php?creation=true (perfect-worker form
             # path), not by the CSV loader.
             'DA_Captor_Alpha': 'Alpha', 'DA_Captor_Echo': 'Echo',
+            'DA_Killer': 'Foxtrot',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
