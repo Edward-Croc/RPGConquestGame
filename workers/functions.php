@@ -755,12 +755,22 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                 // go_traitor add the listed controler as a non primary controler
                 if ( $element['type'] == 'go_traitor' && !empty($element['controller_lastname']) ){
                     try {
-                        // Add non primary controller for the worker
-                        $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
-                                VALUES ( (SELECT id FROM {$prefix}controllers WHERE lastname = :lastname), :worker_id, False)";
-                        if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
-                        $stmt = $pdo->prepare($sql);
-                        $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                        // Skip when the go_traitor target is already a controller for this worker 
+                        $sqlExists = "SELECT 1 FROM {$prefix}controller_worker cw
+                            JOIN {$prefix}controllers c ON c.id = cw.controller_id
+                            WHERE c.lastname = :lastname AND cw.worker_id = :worker_id LIMIT 1";
+                        $stmtExists = $pdo->prepare($sqlExists);
+                        $stmtExists->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                        if ($stmtExists->fetchColumn() !== false) {
+                            if ($debug) echo __FUNCTION__ . "(): go_traitor skipped — target controller already linked to worker.<br />";
+                        } else {
+                            // Add non primary controller for the worker
+                            $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
+                                    VALUES ( (SELECT id FROM {$prefix}controllers WHERE lastname = :lastname), :worker_id, False)";
+                            if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
+                            $stmt = $pdo->prepare($sql);
+                            $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                        }
                     } catch (PDOException $e) {
                         echo __FUNCTION__."(): go_traitor => INSERT controller_worker Failed: " . $e->getMessage()."<br />";
                     }
@@ -1161,6 +1171,10 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                 echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
             }
             if ( !empty($extraVal['double_controller_id']) ) {
+                // Clean the secondary controllers' capture-trace 
+                if (destroyTraceWorker($pdo, $workerId, $extraVal['double_controller_id']) === false) {
+                    echo __FUNCTION__." (): Failed to destroy secondary capture-trace ! <br />";
+                }
                 try {
                     // Add non primary controller for the worker
                     $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
