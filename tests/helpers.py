@@ -103,20 +103,32 @@ def load_minimal_data(prefix=None):
 # Page navigation helpers
 # ---------------------------------------------------------------------------
 
+def _wait_loaded(page: Page, ready_selector: str = None, timeout: int = 30000):
+    """Wait for `load` + (optionally) a specific element. Replaces
+    `wait_for_load_state('networkidle')`, which waits for 500ms of zero
+    network activity and is unreliable under suite load (long-tail asset
+    fetches keep the page from reaching idle within the default 30s).
+    `load` fires once the document and subresources finish; `ready_selector`
+    is the actual readiness signal the caller cares about."""
+    page.wait_for_load_state("load", timeout=timeout)
+    if ready_selector:
+        page.locator(ready_selector).first.wait_for(state="visible", timeout=timeout)
+
+
 def login_as(page: Page, base_url: str, username: str, password: str):
     """Navigate to the login form and submit the given credentials."""
     safe_goto(page, f"{base_url}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "input[name='username']")
     page.locator("input[name='username']").fill(username)
     page.locator("input[name='passwd']").fill(password)
     page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "a.logout-btn")
 
 
 def logout(page: Page, base_url: str):
     """Navigate to the logout endpoint."""
     safe_goto(page, f"{base_url}/connection/logout.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "input[name='username']")
 
 
 def as_controller(page: Page, lastname: str, base_url: str = None):
@@ -132,7 +144,7 @@ def as_controller(page: Page, lastname: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     cid = ui_controller_id(page, lastname, base_url=url)
     safe_goto(page, f"{url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
 
 
 def end_turn(page: Page, base_url: str = None):
@@ -157,7 +169,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     page = context.new_page()
     login_as(page, base_url, "gm", "orga")
     safe_goto(page, f"{base_url}/base/admin.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "select[name='config_name']")
     page.locator("select[name='config_name']").select_option(scenario_name)
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
@@ -180,7 +192,7 @@ def ui_controller_id(page: Page, lastname: str, base_url: str = None):
     Raises AssertionError if not found."""
     url = base_url or PHP_BASE_URL
     safe_goto(page, f"{url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "select#controllerSelect")
     options = page.locator("select#controllerSelect option").all()
     for opt in options:
         if lastname in (opt.inner_text() or ""):
@@ -401,7 +413,7 @@ def ui_worker_stats(page: Page, lastname: str, base_url: str = None):
     # Switch session to the worker's controller so the page shows the report
     ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
     safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
     wid = ui_worker_id(page, lastname, base_url=url)
     safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
@@ -436,7 +448,7 @@ def ui_turn_counter(page: Page, base_url: str = None):
     """
     url = base_url or PHP_BASE_URL
     safe_goto(page, f"{url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
     text = (page.locator("div.header").first.inner_text() or "").strip()
     m = _TURN_RE.search(text)
     if not m:
@@ -478,7 +490,7 @@ def ui_detected_enemies_of(page: Page, searcher_lastname: str, base_url: str = N
     url = base_url or PHP_BASE_URL
     ctrl_id = ui_worker_controller_id(page, searcher_lastname, base_url=url)
     safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
     wid = ui_worker_id(page, searcher_lastname, base_url=url)
     safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
@@ -507,7 +519,7 @@ def ui_power_options_by_type(page: Page, base_url: str = None):
     linked to each type (via the link_power_type junction)."""
     url = base_url or PHP_BASE_URL
     safe_goto(page, f"{url}/base/admin.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "select#power_hobby_id")
     type_map = {
         "Hobby": "select#power_hobby_id",
         "Metier": "select#power_metier_id",
@@ -606,7 +618,7 @@ def ui_faction_sections(page: Page, controller_lastname: str, base_url: str = No
     url = base_url or PHP_BASE_URL
     ctrl_id = ui_controller_id(page, controller_lastname, base_url=url)
     safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
     safe_goto(page, f"{url}/workers/viewAll.php")
     page.wait_for_load_state("load")
 
@@ -771,11 +783,11 @@ def worker_report_html(page: Page, lastname: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     ensure_gm_login(page, url)
     ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
-    safe_goto(page, 
+    safe_goto(page,
         f"{url}/base/accueil.php"
         f"?controller_id={ctrl_id}&chosir=Choisir"
     )
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "div.header")
     wid = _cached_wid(page, lastname, base_url)
     assert wid, f"Worker {lastname} not found"
     safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
