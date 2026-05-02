@@ -57,7 +57,7 @@ from helpers import (
     end_turn, load_minimal_data,
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
-    clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
+    clear_ui_caches, ui_attack, ui_attack_click, ui_investigate, ui_claim, ui_move,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -129,7 +129,9 @@ def combat_scenario(browser):
 
     # Set all combat actions via UI for turn 1
     # Chain: A→B, B→C, C→D, D→E, E→F, F→G
-    ui_attack(page, 'Chain_A', 'Chain_B')
+    # First attack in this file → exercised via the UI 'Attaquer' button
+    # (per once-per-file rule); subsequent attacks reuse the URL-driver.
+    ui_attack_click(page, 'Chain_A', 'Chain_B')
     ui_attack(page, 'Chain_B', 'Chain_C')
     ui_attack(page, 'Chain_C', 'Chain_D')
     ui_attack(page, 'Chain_D', 'Chain_E')

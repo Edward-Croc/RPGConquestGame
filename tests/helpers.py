@@ -704,12 +704,35 @@ def ui_attack(page: Page, attacker_lastname: str, target_lastname: str,
     url = base_url or PHP_BASE_URL
     atk_id = _cached_wid(page, attacker_lastname, base_url)
     tgt_id = _cached_wid(page, target_lastname, base_url)
-    safe_goto(page, 
+    safe_goto(page,
         f"{url}/workers/action.php"
         f"?worker_id={atk_id}"
         f"&enemy_worker_id[]=worker_{tgt_id}"
         f"&attack=Attaquer"
     )
+    page.wait_for_load_state("load")
+
+
+def ui_attack_click(page: Page, attacker_lastname: str, target_lastname: str,
+                    base_url: str = None):
+    """UI-button-click variant of ui_attack. Switches to the attacker's
+    owner, opens /workers/action.php, selects the target in the
+    enemyWorkersSelect dropdown, and clicks the rendered 'Attaquer' button.
+    Requires that the attacker has already detected the target — otherwise
+    the attack form does not render. Use on the FIRST attack call in each
+    test file (per audit's once-per-file rule); subsequent calls can use
+    the URL-driver ui_attack."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, attacker_lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    atk_id = _cached_wid(page, attacker_lastname, base_url)
+    tgt_id = _cached_wid(page, target_lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={atk_id}")
+    _wait_loaded(page, "input[name='attack']")
+    page.locator("select#enemyWorkersSelect").select_option(value=f"worker_{tgt_id}")
+    page.locator("input[name='attack']").click()
     page.wait_for_load_state("load")
 
 
