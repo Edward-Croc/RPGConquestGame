@@ -737,20 +737,24 @@ def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
     page.wait_for_load_state("load")
 
 
-def ui_gift(page: Page, lastname: str, target_controller_lastname: str,
-            base_url: str = None):
-    """Gift `lastname` to `target_controller_lastname` via the
-    workers/action.php URL endpoint (mirrors workers/view.php's
-    'Donner' form). Drives the gift case at workers/functions.php:1020;
-    state effects (live-row swap, trace at old owner, life_report) are
-    asserted by callers."""
+def ui_gift_click(page: Page, lastname: str, target_controller_lastname: str,
+                  base_url: str = None):
+    """UI-button-click variant of ui_gift. Switches to the worker's owner,
+    opens /workers/action.php, selects the target in the gift_controller_id
+    dropdown, and clicks the rendered 'Donner' button. Use on the FIRST
+    gift call in each test file (per audit's once-per-file rule); subsequent
+    calls can use the URL-driver ui_gift."""
     url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
     wid = _cached_wid(page, lastname, base_url)
     target_cid = _cached_cid(page, target_controller_lastname, base_url)
-    safe_goto(page,
-        f"{url}/workers/action.php"
-        f"?worker_id={wid}&gift_controller_id={target_cid}&gift=Donner"
-    )
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='gift']")
+    page.locator("select[name='gift_controller_id']").select_option(value=str(target_cid))
+    page.locator("input[name='gift']").click()
     page.wait_for_load_state("load")
 
 
