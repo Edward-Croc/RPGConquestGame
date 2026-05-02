@@ -134,3 +134,32 @@ class TestZonesPageControllers:
         danger_tags = gm_page.locator("span.tag.is-danger")
         assert danger_tags.count() >= 1, \
             "Expected at least 1 'our control' tag for controller Alpha's zone"
+
+
+class TestZoneToggleClicks:
+    """toggleDescription(id) flips inline `display` on collapsible sections.
+    PHP renders the description divs with style='display:none;'; clicking the
+    header should set display:block, clicking again should set display:none."""
+
+    def test_carte_header_toggles_map(self, gm_page: Page, base_url):
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
+        carte = gm_page.locator("#description-carte")
+        assert carte.evaluate("el => el.style.display") == "none"
+        gm_page.locator("h4[onclick=\"toggleDescription('carte')\"]").click()
+        assert carte.evaluate("el => el.style.display") == "block"
+        gm_page.locator("h4[onclick=\"toggleDescription('carte')\"]").click()
+        assert carte.evaluate("el => el.style.display") == "none"
+
+    def test_zone_header_toggles_description(self, gm_page: Page, base_url):
+        safe_goto(gm_page, f"{base_url}/zones/action.php")
+        first_desc = gm_page.locator(
+            "div[id^='description-']:not([id='description-carte'])"
+        ).first
+        zone_id = (first_desc.get_attribute("id") or "").replace("description-", "")
+        assert zone_id, "Could not extract zone_id from first description div"
+        assert first_desc.evaluate("el => el.style.display") == "none"
+        header = gm_page.locator(
+            f"h3[onclick=\"toggleDescription('{zone_id}')\"]"
+        )
+        header.click()
+        assert first_desc.evaluate("el => el.style.display") == "block"
