@@ -778,6 +778,27 @@ def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
     page.wait_for_load_state("load")
 
 
+def ui_claim_click(page: Page, lastname: str, claim_controller_lastname: str,
+                   base_url: str = None):
+    """UI-button-click variant of ui_claim. Switches to the worker's owner,
+    opens /workers/action.php, selects the target controller in the
+    claim_controller_id dropdown, and clicks the rendered claim submit
+    button. Use on the FIRST claim call in each test file (per audit's
+    once-per-file rule); subsequent calls can use the URL-driver ui_claim."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    target_cid = _cached_cid(page, claim_controller_lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='claim']")
+    page.locator("select[name='claim_controller_id']").select_option(value=str(target_cid))
+    page.locator("input[name='claim']").click()
+    page.wait_for_load_state("load")
+
+
 def ui_gift_click(page: Page, lastname: str, target_controller_lastname: str,
                   base_url: str = None):
     """UI-button-click variant of ui_gift. Switches to the worker's owner,

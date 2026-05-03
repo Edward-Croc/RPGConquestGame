@@ -58,7 +58,8 @@ from helpers import (
     ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
     ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
     clear_ui_caches, ui_attack, ui_attack_click,
-    ui_investigate, ui_investigate_click, ui_claim, ui_move,
+    ui_investigate, ui_investigate_click,
+    ui_claim, ui_claim_click, ui_move,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -154,7 +155,9 @@ def combat_scenario(browser):
     # Blocked claim: attackers attack, defenders claim their own controller
     ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
     ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-    ui_claim(page, 'Claim_Def_1', 'Beta')
+    # First claim in this file → exercised via the UI button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    ui_claim_click(page, 'Claim_Def_1', 'Beta')
     ui_claim(page, 'Claim_Def_2', 'Delta')
 
     # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
