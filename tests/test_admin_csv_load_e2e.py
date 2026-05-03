@@ -57,12 +57,14 @@ def ensure_base_data():
 def logged_in_page(page: Page, base_url):
     """Login as game master (gm/orga) and return the page."""
     safe_goto(page, f"{base_url}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("load")
+    page.locator("input[name='username']").wait_for(state="visible", timeout=30000)
 
     page.locator("input[name='username']").fill("gm")
     page.locator("input[name='passwd']").fill("orga")
     page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("load")
+    page.locator("a.logout-btn").wait_for(state="visible", timeout=30000)
 
     return page
 

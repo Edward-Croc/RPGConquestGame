@@ -31,7 +31,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
-    ui_attack, ui_claim, ui_gift, ui_zone_id, end_turn,
+    ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, clear_ui_caches,
 )
 
@@ -127,7 +127,7 @@ class TestGiftWorker:
         dropdown must be present on a passive worker's action page, and
         the dropdown must include the intended gift target.
 
-        Locks in the UI surface that the URL-only `ui_gift` driver
+        Locks in the UI surface that the URL-only `ui_gift_click` driver
         bypasses — guards against the form silently disappearing or
         the target option being filtered out by future changes.
 
@@ -167,8 +167,12 @@ class TestGiftWorker:
 
     def test_gift_creates_two_rows_live_and_trace(self, gm_page: Page, base_url):
         """After gift, lastname 'Gift_Source_Foxtrot' has 2 rows: live (Echo,
-        passive) + trace (Foxtrot, trace)."""
-        ui_gift(gm_page, "Gift_Source_Foxtrot", "Echo", base_url=base_url)
+        passive) + trace (Foxtrot, trace).
+
+        First gift call in this file → exercised via the UI 'Donner' button
+        (per once-per-file rule). Subsequent gift tests reuse the URL-driver
+        ui_gift_click since the click contract is now covered."""
+        ui_gift_click(gm_page, "Gift_Source_Foxtrot", "Echo", base_url=base_url)
         rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
         assert len(rows) == 2, \
             f"Gift should produce 2 Gift_Source_Foxtrot rows (live + trace), got {len(rows)}: {rows}"
@@ -825,7 +829,12 @@ class TestDoubleAgentLifecycle:
         page.wait_for_load_state("load")
 
         # Queue the kill on DA_Lifecycle_Death and resolve at end-turn.
-        ui_attack(page, "DA_Killer", "DA_Lifecycle_Death")
+        # First UI-click attack in this file (per once-per-file rule). This
+        # is the FIRST ui_attack call after detection has fired — earlier
+        # ui_attack calls in TestGiftPrisoner / TestUntestedAttackResults
+        # run pre-detection where the attack form does not render, so they
+        # must keep the URL-driver.
+        ui_attack_click(page, "DA_Killer", "DA_Lifecycle_Death")
         end_turn(page)
 
         # Module-level faction-sections cache may have been populated by

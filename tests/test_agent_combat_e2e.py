@@ -55,9 +55,12 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     end_turn, load_minimal_data,
-    ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
-    ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
-    clear_ui_caches, ui_attack, ui_investigate, ui_claim, ui_move,
+    ui_all_workers, ui_controller_id, ui_worker_id,
+    ui_workers_by_lastname,
+    clear_ui_caches, ui_attack, ui_attack_click,
+    ui_investigate, ui_investigate_click,
+    ui_claim, ui_claim_click,
+    ui_move, ui_move_click,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -129,7 +132,9 @@ def combat_scenario(browser):
 
     # Set all combat actions via UI for turn 1
     # Chain: A→B, B→C, C→D, D→E, E→F, F→G
-    ui_attack(page, 'Chain_A', 'Chain_B')
+    # First attack in this file → exercised via the UI 'Attaquer' button
+    # (per once-per-file rule); subsequent attacks reuse the URL-driver.
+    ui_attack_click(page, 'Chain_A', 'Chain_B')
     ui_attack(page, 'Chain_B', 'Chain_C')
     ui_attack(page, 'Chain_C', 'Chain_D')
     ui_attack(page, 'Chain_D', 'Chain_E')
@@ -143,20 +148,26 @@ def combat_scenario(browser):
     # Blocked investigate: attackers attack, defenders investigate
     ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
     ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-    ui_investigate(page, 'Inv_Def_1')
+    # First investigate in this file → exercised via the UI button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    ui_investigate_click(page, 'Inv_Def_1')
     ui_investigate(page, 'Inv_Def_2')
 
     # Blocked claim: attackers attack, defenders claim their own controller
     ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
     ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-    ui_claim(page, 'Claim_Def_1', 'Beta')
+    # First claim in this file → exercised via the UI button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    ui_claim_click(page, 'Claim_Def_1', 'Beta')
     ui_claim(page, 'Claim_Def_2', 'Delta')
 
     # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
     # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
     # default) the attack-pair SQL has no zone filter. moveWorker()
     # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
-    ui_move(page, 'Runner_Cross', 'Delta-Disputed')
+    # First move in this file → exercised via the UI 'Déménager' button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
     ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
 
     # Move-clears-action-params: Mover_Test queues an attack THEN moves.
