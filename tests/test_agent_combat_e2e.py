@@ -55,11 +55,12 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
     end_turn, load_minimal_data,
-    ui_all_workers, ui_controller_id, ui_worker_id, ui_worker_controller_id,
-    ui_workers_by_lastname, ui_faction_sections, ui_zone_id,
+    ui_all_workers, ui_controller_id, ui_worker_id,
+    ui_workers_by_lastname,
     clear_ui_caches, ui_attack, ui_attack_click,
     ui_investigate, ui_investigate_click,
-    ui_claim, ui_claim_click, ui_move,
+    ui_claim, ui_claim_click,
+    ui_move, ui_move_click,
     worker_report_html, cached_faction_sections, ui_worker_action_state,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -164,7 +165,9 @@ def combat_scenario(browser):
     # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
     # default) the attack-pair SQL has no zone filter. moveWorker()
     # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
-    ui_move(page, 'Runner_Cross', 'Delta-Disputed')
+    # First move in this file → exercised via the UI 'Déménager' button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
     ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
 
     # Move-clears-action-params: Mover_Test queues an attack THEN moves.

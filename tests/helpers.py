@@ -830,10 +830,31 @@ def ui_move(page: Page, lastname: str, zone_name: str, base_url: str = None):
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
     zid = ui_zone_id(page, zone_name, base_url)
-    safe_goto(page, 
+    safe_goto(page,
         f"{url}/workers/action.php"
         f"?worker_id={wid}&zone_id={zid}&move=1"
     )
+    page.wait_for_load_state("load")
+
+
+def ui_move_click(page: Page, lastname: str, zone_name: str,
+                  base_url: str = None):
+    """UI-button-click variant of ui_move. Switches to the worker's owner,
+    opens /workers/action.php, selects the target zone in the zone_id
+    dropdown, and clicks the rendered 'Déménager' button. Use on the
+    FIRST move call in each test file (per audit's once-per-file rule);
+    subsequent calls can use the URL-driver ui_move."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    zid = ui_zone_id(page, zone_name, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='move']")
+    page.locator("select[name='zone_id']").first.select_option(value=str(zid))
+    page.locator("input[name='move']").click()
     page.wait_for_load_state("load")
 
 
