@@ -31,7 +31,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
-    ui_attack, ui_claim, ui_gift_click, ui_zone_id, end_turn,
+    ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, clear_ui_caches,
 )
 
@@ -829,7 +829,12 @@ class TestDoubleAgentLifecycle:
         page.wait_for_load_state("load")
 
         # Queue the kill on DA_Lifecycle_Death and resolve at end-turn.
-        ui_attack(page, "DA_Killer", "DA_Lifecycle_Death")
+        # First UI-click attack in this file (per once-per-file rule). This
+        # is the FIRST ui_attack call after detection has fired — earlier
+        # ui_attack calls in TestGiftPrisoner / TestUntestedAttackResults
+        # run pre-detection where the attack form does not render, so they
+        # must keep the URL-driver.
+        ui_attack_click(page, "DA_Killer", "DA_Lifecycle_Death")
         end_turn(page)
 
         # Module-level faction-sections cache may have been populated by
