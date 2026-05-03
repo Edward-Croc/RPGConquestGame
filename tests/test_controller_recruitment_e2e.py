@@ -150,6 +150,23 @@ def _create_base(page, controller_lastname, zone_name):
     page.wait_for_load_state("load")
 
 
+def _create_base_click(page, controller_lastname, zone_name):
+    """UI-button-click variant of _create_base. Navigates to the
+    controller's faction page, selects the zone in the zone_id dropdown,
+    and clicks the rendered 'Créer' button. Use on the FIRST createBase
+    call in this file (per audit's once-per-file rule); subsequent calls
+    can use the URL-driver _create_base."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    zid = ui_zone_id(page, zone_name)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='createBase']").wait_for(state="visible", timeout=30000)
+    page.locator("select[name='zone_id']").first.select_option(value=str(zid))
+    page.locator("input[name='createBase']").click()
+    page.wait_for_load_state("load")
+
+
 def _do_first_come(page, controller_lastname):
     """Submit a first-come recruitment (picks first available zone + discipline)."""
     ensure_gm_login(page, PHP_BASE_URL)
@@ -243,8 +260,10 @@ def recruitment_scenario(browser):
         _snapshot['alpha_t0_after_first_come_html']
     )
 
-    # Phase 3: Alpha creates a base in Epsilon-Controlled
-    _create_base(page, 'Alpha', 'Epsilon-Controlled')
+    # Phase 3: Alpha creates a base in Epsilon-Controlled.
+    # First createBase in this file → exercised via the UI 'Créer' button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    _create_base_click(page, 'Alpha', 'Epsilon-Controlled')
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
     # UI-side: accueil page shows the base under "Votre Base :" section.
     _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
