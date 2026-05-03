@@ -740,10 +740,28 @@ def ui_investigate(page: Page, lastname: str, base_url: str = None):
     """Queue an investigate action via workers/action.php URL endpoint."""
     url = base_url or PHP_BASE_URL
     wid = _cached_wid(page, lastname, base_url)
-    safe_goto(page, 
+    safe_goto(page,
         f"{url}/workers/action.php"
         f"?worker_id={wid}&investigate=1"
     )
+    page.wait_for_load_state("load")
+
+
+def ui_investigate_click(page: Page, lastname: str, base_url: str = None):
+    """UI-button-click variant of ui_investigate. Switches to the worker's
+    owner, opens /workers/action.php, and clicks the rendered 'Investigate'
+    button (input[name='investigate']). Use on the FIRST investigate call
+    in each test file (per audit's once-per-file rule); subsequent calls
+    can use the URL-driver ui_investigate."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='investigate']")
+    page.locator("input[name='investigate']").click()
     page.wait_for_load_state("load")
 
 
