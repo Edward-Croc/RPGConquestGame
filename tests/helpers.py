@@ -765,6 +765,40 @@ def ui_investigate_click(page: Page, lastname: str, base_url: str = None):
     page.wait_for_load_state("load")
 
 
+def ui_passive_click(page: Page, lastname: str, base_url: str = None):
+    """UI-button-click for the 'Surveiller' (passive) action button on
+    workers/view.php. Switches to the worker's owner, opens the action
+    page, clicks input[name='passive']. No URL-driver counterpart exists
+    for passive (it's the default state); this helper is the way to
+    exercise the button."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='passive']")
+    page.locator("input[name='passive']").click()
+    page.wait_for_load_state("load")
+
+
+def ui_hide_click(page: Page, lastname: str, base_url: str = None):
+    """UI-button-click for the 'Se cacher' (hide) action button on
+    workers/view.php. Same flow as ui_passive_click; clicks
+    input[name='hide']. No URL-driver counterpart."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    _wait_loaded(page, "input[name='hide']")
+    page.locator("input[name='hide']").click()
+    page.wait_for_load_state("load")
+
+
 def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
              base_url: str = None):
     """Queue a claim action targeting `claim_controller_lastname`."""
