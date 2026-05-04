@@ -195,6 +195,41 @@ def _do_regular_recruit(page, controller_lastname):
     page.wait_for_load_state("load")
 
 
+def _do_first_come_via_viewAll(page, controller_lastname):
+    """UI-button-click variant of _do_first_come. Navigates to
+    /workers/viewAll.php and clicks the rendered 'Prendre le premier
+    venu' button (input[name='first_come']) — covering the viewAll
+    button rendering + form-action contract — then completes the
+    workers/new.php form submission. Use on the FIRST first-come call
+    in this file (per once-per-file rule); subsequent calls can use
+    the URL-driver _do_first_come."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='first_come']").click()
+    page.wait_for_load_state("load")
+    page.locator("select[name='zone_id']").first.select_option(index=0)
+    page.locator("input[name='chosir']").first.click()
+    page.wait_for_load_state("load")
+
+
+def _do_regular_recruit_via_viewAll(page, controller_lastname):
+    """UI-button-click variant of _do_regular_recruit. Same flow as
+    _do_first_come_via_viewAll but clicks 'Recruter un serviteur'
+    (input[name='recrutement']). Use on the FIRST regular-recruit call
+    in this file."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='recrutement']").click()
+    page.wait_for_load_state("load")
+    page.locator("select[name='zone_id']").first.select_option(index=0)
+    page.locator("input[name='chosir']").first.click()
+    page.wait_for_load_state("load")
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -252,8 +287,11 @@ def recruitment_scenario(browser):
     # Charlie has no base and no start_workers
     _snapshot['charlie_t0_html'] = _workers_page_html(page, 'Charlie')
 
-    # Phase 2: Alpha uses first-come (no base required)
-    _do_first_come(page, 'Alpha')
+    # Phase 2: Alpha uses first-come (no base required).
+    # First first-come in this file → exercised via the UI button on
+    # /workers/viewAll.php (per once-per-file rule); the turn-1 call below
+    # keeps using the URL-driver _do_first_come.
+    _do_first_come_via_viewAll(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_workers_ui'] = _count_worker_cards_in_html(
@@ -309,7 +347,10 @@ def recruitment_scenario(browser):
     _do_first_come(page, 'Alpha')
     _snapshot['alpha_t1_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
 
-    _do_regular_recruit(page, 'Alpha')
+    # First regular-recruit in this file → exercised via the UI button
+    # on /workers/viewAll.php (per once-per-file rule); subsequent calls
+    # would use the URL-driver _do_regular_recruit.
+    _do_regular_recruit_via_viewAll(page, 'Alpha')
     _snapshot['alpha_t1_after_recruit_counters'] = ui_controller_counters(page, 'Alpha')
     # UI-side final worker count (post all recruitment phases).
     _snapshot['alpha_t1_final_workers_ui'] = _count_worker_cards_in_html(
