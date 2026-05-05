@@ -33,6 +33,7 @@ from helpers import (
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, clear_ui_caches,
+    ui_mass_move_click, ui_all_workers,
 )
 
 
@@ -1219,4 +1220,77 @@ class TestReturnPrisonerReinstatesSecondary:
             f"Echo's capture-trace of DA_ReturnPrisoner_W must be "
             f"destroyed by returnPrisoner (6b spec); got "
             f"ancients={echo['ancients']}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestMassMoveBetaCombatWorkers — workers/viewAll.php Mass Move +
+# workers/massAction.php handler.
+#
+# Slice 15 audit gap: massAction.php was completely untested. Handler
+# reads worker_ids[] (checkbox array) + zone_id + mass_move flag, loops
+# moveWorker() per worker (massAction.php:16-20).
+#
+# Subjects: Beta's three combat-row workers (Chain_B, Inv_Def_1,
+# Keep_Def) all start in Beta-Combat. Mass-move them in a single submit
+# to Delta-Disputed (Beta-claimed) and assert each ended up there.
+# ---------------------------------------------------------------------------
+
+_MASS_MOVE_BETA_WORKERS = ["Chain_B", "Inv_Def_1", "Keep_Def"]
+_MASS_MOVE_TARGET_ZONE = "Delta-Disputed"
+
+
+class TestMassMoveBetaCombatWorkers:
+    """Mass move 3 Beta combat-row workers from Beta-Combat to
+    Delta-Disputed in a single form submit; massAction.php loops over
+    worker_ids[] and calls moveWorker() per worker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def mass_move_state(self, browser):
+        """Capture pre-move zones, click mass-move (3 workers selected
+        → Delta-Disputed), capture post-move zones."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        pre = {w["lastname"]: w["zone_name"]
+               for w in ui_all_workers(page)
+               if w["lastname"] in _MASS_MOVE_BETA_WORKERS}
+
+        ui_mass_move_click(page, "Beta", _MASS_MOVE_BETA_WORKERS,
+                           _MASS_MOVE_TARGET_ZONE)
+
+        post = {w["lastname"]: w["zone_name"]
+                for w in ui_all_workers(page)
+                if w["lastname"] in _MASS_MOVE_BETA_WORKERS}
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._pre = pre
+        type(self)._post = post
+        yield
+
+    def test_pre_move_all_in_beta_combat(self):
+        for w in _MASS_MOVE_BETA_WORKERS:
+            assert self._pre[w] == "Beta-Combat", (
+                f"{w} should start in Beta-Combat; got {self._pre[w]}"
+            )
+
+    def test_chain_b_moved_to_delta_disputed(self):
+        assert self._post["Chain_B"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Chain_B should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Chain_B']}"
+        )
+
+    def test_inv_def_1_moved_to_delta_disputed(self):
+        assert self._post["Inv_Def_1"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Inv_Def_1 should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Inv_Def_1']}"
+        )
+
+    def test_keep_def_moved_to_delta_disputed(self):
+        assert self._post["Keep_Def"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Keep_Def should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Keep_Def']}"
         )
