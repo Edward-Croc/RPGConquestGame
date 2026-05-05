@@ -167,6 +167,40 @@ def _create_base_click(page, controller_lastname, zone_name):
     page.wait_for_load_state("load")
 
 
+def _move_base_click(page, controller_lastname, target_zone_name):
+    """UI-button-click for the Move Base form on controllers/view.php.
+    Switches to the controller and clicks the rendered 'Déménager' button
+    after picking the target zone in the per-base zone select. Pre-resolves
+    zone_id BEFORE the controllers/view.php navigation — same pattern as
+    ui_mass_move_click, since lookup helpers navigate to management
+    pages and would discard the populated form."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    target_zid = ui_zone_id(page, target_zone_name)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='moveBase']").wait_for(state="visible", timeout=30000)
+    # The form is rendered per base; for Alpha there's only one base, so
+    # `.first` is sufficient. The select shows the base's current zone
+    # pre-selected; we override to the target.
+    page.locator("select[name='zone_id']").first.select_option(value=str(target_zid))
+    page.locator("input[name='moveBase']").click()
+    page.wait_for_load_state("load")
+
+
+def _controller_base_zone_via_ui(page, controller_lastname):
+    """Read the controller's base zone via controllers/action.php
+    rendering of view.php (line 155: 'Votre <basename> à <zone_name>').
+    Returns the zone name string, or None if no base section rendered."""
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    html = page.content()
+    import re
+    m = re.search(r"Votre\s+\S[^<]*?\s+à\s+([\w\-]+)", html)
+    return m.group(1) if m else None
+
+
 def _do_first_come(page, controller_lastname):
     """Submit a first-come recruitment (picks first available zone + discipline)."""
     ensure_gm_login(page, PHP_BASE_URL)
@@ -639,3 +673,92 @@ class TestCharlieCannotRecruit:
         """Charlie should not have the recruit button."""
         html = _snapshot['charlie_t0_html']
         assert "Recruter un serviteur" not in html
+
+
+# ---------------------------------------------------------------------------
+# TestMoveBase — controllers/view.php Move Base + controllers/action.php
+# moveBase handler.
+#
+# Slice 16 audit gap: moveBase was untested. Adds two tests:
+#  - positive: Alpha's base (created in Epsilon-Controlled by the module
+#    fixture's Phase 3) is moved via the rendered 'Déménager' button to
+#    Gamma-Claims; assert post-move zone via controllers/view.php
+#    re-render.
+#  - negative (resource gate): Echo (pre-seeded base at Theta-Artefacts;
+#    controller_ressources amount=4 < base_moving_cost=5) navigates to
+#    controllers/action.php; the move form is replaced by the 'ressources
+#    nécessaires' notification and no input[name='moveBase'] is rendered.
+#
+# CSV additions for this slice:
+#   textes:                   ressource_management = TRUE
+#   controller_ressources:    Echo,Gold,4,0,0
+# ---------------------------------------------------------------------------
+
+class TestMoveBase:
+    """Move Base UI click + resource-gate negative path."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_base_state(self, browser):
+        """Capture Alpha's base zone before + after the click-driven
+        move from Epsilon-Controlled to Gamma-Claims. Also capture
+        Echo's controllers/view.php HTML to verify the resource-gate
+        negative path renders the danger notification + omits the
+        moveBase submit."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Positive: Alpha's existing base (from module fixture phase 3)
+        # is currently in Epsilon-Controlled. Move it to Gamma-Claims.
+        pre_zone = _controller_base_zone_via_ui(page, 'Alpha')
+        _move_base_click(page, 'Alpha', 'Gamma-Claims')
+        post_zone = _controller_base_zone_via_ui(page, 'Alpha')
+
+        # Negative: Echo (pre-seeded Echo-Base at Theta-Artefacts,
+        # amount=4 < base_moving_cost=5).
+        _switch_controller(page, 'Echo')
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        echo_move_button_count = page.locator("input[name='moveBase']").count()
+        echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._pre_zone = pre_zone
+        type(self)._post_zone = post_zone
+        type(self)._echo_move_button_count = echo_move_button_count
+        type(self)._echo_html = echo_html
+        yield
+
+    def test_alpha_base_starts_in_epsilon_controlled(self):
+        """Sanity: module fixture left Alpha's base in Epsilon-Controlled."""
+        assert self._pre_zone == "Epsilon-Controlled", (
+            f"Alpha's base should start in Epsilon-Controlled (created by "
+            f"module fixture Phase 3); got {self._pre_zone!r}"
+        )
+
+    def test_alpha_base_zone_changes_after_move(self):
+        """After ui-click move, Alpha's base zone is Gamma-Claims."""
+        assert self._post_zone == "Gamma-Claims", (
+            f"Alpha's base should be in Gamma-Claims after _move_base_click; "
+            f"got {self._post_zone!r}"
+        )
+
+    def test_echo_move_button_hidden_when_drained(self):
+        """Echo (amount=4 < base_moving_cost=5) → resource gate fails →
+        the move form is replaced by the danger notification, so no
+        moveBase submit is rendered."""
+        assert self._echo_move_button_count == 0, (
+            f"Echo's controllers/view should NOT render the moveBase button "
+            f"when ressources are insufficient; found {self._echo_move_button_count}"
+        )
+
+    def test_echo_resource_warning_rendered(self):
+        """Resource-gate UI message is the user-visible signal that the
+        move is blocked. Asserts the French text present in the danger
+        notification (controllers/view.php:146)."""
+        assert "ressources nécessaires" in self._echo_html, (
+            "Echo's controllers/view should render the 'ressources "
+            "nécessaires' danger notification when the move is blocked"
+        )
