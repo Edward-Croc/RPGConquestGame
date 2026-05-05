@@ -1164,24 +1164,21 @@ class TestReturnPrisonerReinstatesSecondary:
         ui_attack(page, "DA_Captor_Alpha", "DA_ReturnPrisoner_W")
         end_turn(page)
 
-        # returnPrisoner from Alpha back to Charlie. URL form fields are
-        # the same ones the prisoner-release form posts (see
-        # workers/action.php:149-157). PHP only checks isset() on
-        # returnPrisoner, so any non-empty value works.
+        # returnPrisoner from Alpha back to Charlie via the rendered
+        # release-to-original-owner button. When the prisoner has a
+        # double_agent_controller_id in action_params (this case, where
+        # the worker was a Charlie/Echo double-agent), the FIRST
+        # returnPrisoner form (workers/view.php:295-301) injects a hidden
+        # double_controller_id={Echo} input — clicking it triggers the
+        # secondary-link reinstate branch at workers/functions.php:1163-1173.
         target_wid = ui_worker_id(
             page, "DA_ReturnPrisoner_W", base_url=PHP_BASE_URL,
             prefer_non_trace=True,
         )
-        echo_id = _controller_ids["Echo"]
-        return_url = (
-            f"{PHP_BASE_URL}/workers/action.php"
-            f"?worker_id={target_wid}"
-            f"&returnPrisoner=Relacher"
-            f"&recall_controller_id={alpha_id}"
-            f"&return_controller_id={charlie_id}"
-            f"&double_controller_id={echo_id}"
-        )
-        page.goto(return_url)
+        _select_controller(page, PHP_BASE_URL, "Alpha")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={target_wid}")
+        page.wait_for_load_state("load")
+        page.locator("input[name='returnPrisoner']").first.click()
         page.wait_for_load_state("load")
 
         clear_ui_caches()
