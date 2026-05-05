@@ -799,6 +799,98 @@ def ui_hide_click(page: Page, lastname: str, base_url: str = None):
     page.wait_for_load_state("load")
 
 
+def _open_worker_action_page(page: Page, lastname: str, base_url: str = None):
+    """Switch session to the worker's controller, navigate to
+    workers/action.php, return the worker_id."""
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    ctrl_id = ui_worker_controller_id(page, lastname, base_url=url)
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    wid = _cached_wid(page, lastname, base_url)
+    safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
+    page.wait_for_load_state("load")
+    return wid
+
+
+def ui_teach_button_visible(page: Page, lastname: str, base_url: str = None) -> bool:
+    """True if the teach_discipline submit button is rendered on
+    workers/view.php (within /workers/action.php) for this worker."""
+    _open_worker_action_page(page, lastname, base_url)
+    return page.locator("input[name='teach_discipline']").count() > 0
+
+
+def _power_name_from_option_text(text: str) -> str:
+    """Power option labels are rendered as 'Name (e, a/d)' by
+    `getSQLPowerText` (powers/functions.php:33). Strip the stat suffix."""
+    return (text or "").strip().split(" (")[0].strip()
+
+
+def _select_option_value_by_power_name(page: Page, select_selector: str,
+                                       power_name: str):
+    """Select an option whose label starts with `power_name + ' ('` and
+    select it by its value attribute (label-based select_option fails
+    because Playwright doesn't substring-match labels)."""
+    options = page.locator(f"{select_selector} option").all()
+    for opt in options:
+        text = (opt.inner_text() or "").strip()
+        if _power_name_from_option_text(text) == power_name:
+            value = opt.get_attribute("value") or ""
+            if value:
+                page.locator(select_selector).select_option(value=value)
+                return value
+    raise AssertionError(
+        f"Power '{power_name}' not in {select_selector} options"
+    )
+
+
+def ui_teach_discipline_options(page: Page, lastname: str, base_url: str = None) -> list:
+    """Return the discipline names (suffix stripped) from the rendered
+    teach select on workers/view.php. Empty list when the select is
+    absent (worker not eligible)."""
+    _open_worker_action_page(page, lastname, base_url)
+    if page.locator("select#disciplineSelect").count() == 0:
+        return []
+    options = page.locator("select#disciplineSelect option").all()
+    return [_power_name_from_option_text(o.inner_text()) for o in options
+            if (o.get_attribute("value") or "")]
+
+
+def ui_transform_options(page: Page, lastname: str, base_url: str = None) -> list:
+    """Return the transformation names (suffix stripped) from the
+    rendered transformation select on workers/view.php. Empty list when
+    the select is absent (transform UI not rendered)."""
+    _open_worker_action_page(page, lastname, base_url)
+    if page.locator("select#transformationSelect").count() == 0:
+        return []
+    options = page.locator("select#transformationSelect option").all()
+    return [_power_name_from_option_text(o.inner_text()) for o in options
+            if (o.get_attribute("value") or "")]
+
+
+def ui_teach_discipline_click(page: Page, lastname: str, discipline_name: str,
+                              base_url: str = None):
+    """Click the 'Enseigner' button after selecting `discipline_name` from
+    the discipline dropdown. Worker must be age-eligible (teach button
+    visible) before calling."""
+    _open_worker_action_page(page, lastname, base_url)
+    _wait_loaded(page, "input[name='teach_discipline']")
+    _select_option_value_by_power_name(page, "select#disciplineSelect", discipline_name)
+    page.locator("input[name='teach_discipline']").click()
+    page.wait_for_load_state("load")
+
+
+def ui_transform_click(page: Page, lastname: str, transformation_name: str,
+                       base_url: str = None):
+    """Click the 'Ajouter' transformation button after selecting
+    `transformation_name` from the transformation dropdown."""
+    _open_worker_action_page(page, lastname, base_url)
+    _wait_loaded(page, "input[name='transform']")
+    _select_option_value_by_power_name(page, "select#transformationSelect", transformation_name)
+    page.locator("input[name='transform']").click()
+    page.wait_for_load_state("load")
+
+
 def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
              base_url: str = None):
     """Queue a claim action targeting `claim_controller_lastname`."""

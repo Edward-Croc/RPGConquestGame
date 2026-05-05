@@ -122,11 +122,11 @@ class TestLinkTableFeature:
             f"Discipline dropdown mismatch — expected {expected}, got {disciplines}"
 
     def test_transformations_linked_to_transformation_type(self, page: Page, base_url):
-        """The 2 transformation CSV powers appear in the Transformation dropdown."""
+        """The 3 transformation CSV powers appear in the Transformation dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         transformations = set(options_by_type['Transformation'])
-        expected = {'War Gear', 'Shadow Cloak'}
+        expected = {'War Gear', 'Shadow Cloak', 'Combat Vest'}
         assert transformations == expected, \
             f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
 
@@ -135,7 +135,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 3, 'Transformation': 2}
+        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 3, 'Transformation': 3}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
@@ -391,6 +391,8 @@ class TestLoadWorkersCSV:
             # path), not by the CSV loader.
             'DA_Captor_Alpha': 'Alpha', 'DA_Captor_Echo': 'Echo',
             'DA_Killer': 'Foxtrot',
+            # Slice 14 — discipline/transform Evolutions tests subject
+            'Transform_Subject': 'Alpha',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
