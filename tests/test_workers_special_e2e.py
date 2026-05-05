@@ -816,16 +816,17 @@ class TestDoubleAgentLifecycle:
         # find DA_Lifecycle_Death in the enemy dropdown.
         end_turn(page)
 
-        # Recall DA_Lifecycle_Recall to its secondary (Echo). Instant
-        # URL action; advances trace creation + primary swap immediately.
+        # Recall DA_Lifecycle_Recall to its secondary (Echo) via the
+        # rendered 'Le rappeler a notre service !' button on workers/view.php.
+        # The button's hidden recall_controller_id is the session
+        # controller's id — so we must view as Echo (the secondary) to
+        # send recall_controller_id=Echo. Echo's view of the worker shows
+        # workerStatus='double_agent' and renders the recall button.
         recall_wid = ui_worker_id(page, "DA_Lifecycle_Recall", base_url=PHP_BASE_URL)
-        recall_url = (
-            f"{PHP_BASE_URL}/workers/action.php"
-            f"?worker_id={recall_wid}"
-            f"&recallDoubleAgent=Rappeler"
-            f"&recall_controller_id={echo_id}"
-        )
-        page.goto(recall_url)
+        _select_controller(page, PHP_BASE_URL, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={recall_wid}")
+        page.wait_for_load_state("load")
+        page.locator("input[name='recallDoubleAgent']").click()
         page.wait_for_load_state("load")
 
         # Queue the kill on DA_Lifecycle_Death and resolve at end-turn.
