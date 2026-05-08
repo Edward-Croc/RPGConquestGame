@@ -226,11 +226,13 @@ function recalculateBaseDefence($pdo) {
  * @return int $value
  */
 function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
-    # $debug = $_SESSION['DEBUG'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
-    # $debug = true;
+
     $value = 0;
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
 
     if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
 
@@ -295,16 +297,17 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
         if ($workerMultiplier !== 0) {
             $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-            $sql = "
+            $sql = sprintf('
                 SELECT COUNT(w.id) AS worker_count
-                FROM {$prefix}workers w
-                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
-                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                FROM %1$sworkers w
+                JOIN %1$scontroller_worker cw ON cw.worker_id = w.id
+                JOIN %1$sworker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE cw.controller_id = :controller_id
                 AND w.zone_id = :zone_id
-                AND wa.action_choice IN (%s)
-            ";
-            $stmt = $pdo->prepare(sprintf($sql, $active_actions));
+                AND wa.action_choice IN (%2$s)
+            ', $prefix, $active_actions);
+            if ($debug) echo sprintf("worker_count sql : %s<br> controller_id: %s, zone_id: %s, turn_number: %s, ", $sql, $controller_id, $zone_id, $turn_number);
+            $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
             $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
