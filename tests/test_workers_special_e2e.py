@@ -31,8 +31,9 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
-    ui_attack, ui_claim, ui_gift, ui_zone_id, end_turn,
+    ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, clear_ui_caches,
+    ui_mass_move_click, ui_all_workers,
 )
 
 
@@ -127,7 +128,7 @@ class TestGiftWorker:
         dropdown must be present on a passive worker's action page, and
         the dropdown must include the intended gift target.
 
-        Locks in the UI surface that the URL-only `ui_gift` driver
+        Locks in the UI surface that the URL-only `ui_gift_click` driver
         bypasses — guards against the form silently disappearing or
         the target option being filtered out by future changes.
 
@@ -167,8 +168,12 @@ class TestGiftWorker:
 
     def test_gift_creates_two_rows_live_and_trace(self, gm_page: Page, base_url):
         """After gift, lastname 'Gift_Source_Foxtrot' has 2 rows: live (Echo,
-        passive) + trace (Foxtrot, trace)."""
-        ui_gift(gm_page, "Gift_Source_Foxtrot", "Echo", base_url=base_url)
+        passive) + trace (Foxtrot, trace).
+
+        First gift call in this file → exercised via the UI 'Donner' button
+        (per once-per-file rule). Subsequent gift tests reuse the URL-driver
+        ui_gift_click since the click contract is now covered."""
+        ui_gift_click(gm_page, "Gift_Source_Foxtrot", "Echo", base_url=base_url)
         rows = ui_workers_by_lastname(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
         assert len(rows) == 2, \
             f"Gift should produce 2 Gift_Source_Foxtrot rows (live + trace), got {len(rows)}: {rows}"
@@ -812,20 +817,26 @@ class TestDoubleAgentLifecycle:
         # find DA_Lifecycle_Death in the enemy dropdown.
         end_turn(page)
 
-        # Recall DA_Lifecycle_Recall to its secondary (Echo). Instant
-        # URL action; advances trace creation + primary swap immediately.
+        # Recall DA_Lifecycle_Recall to its secondary (Echo) via the
+        # rendered 'Le rappeler a notre service !' button on workers/view.php.
+        # The button's hidden recall_controller_id is the session
+        # controller's id — so we must view as Echo (the secondary) to
+        # send recall_controller_id=Echo. Echo's view of the worker shows
+        # workerStatus='double_agent' and renders the recall button.
         recall_wid = ui_worker_id(page, "DA_Lifecycle_Recall", base_url=PHP_BASE_URL)
-        recall_url = (
-            f"{PHP_BASE_URL}/workers/action.php"
-            f"?worker_id={recall_wid}"
-            f"&recallDoubleAgent=Rappeler"
-            f"&recall_controller_id={echo_id}"
-        )
-        page.goto(recall_url)
+        _select_controller(page, PHP_BASE_URL, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={recall_wid}")
+        page.wait_for_load_state("load")
+        page.locator("input[name='recallDoubleAgent']").click()
         page.wait_for_load_state("load")
 
         # Queue the kill on DA_Lifecycle_Death and resolve at end-turn.
-        ui_attack(page, "DA_Killer", "DA_Lifecycle_Death")
+        # First UI-click attack in this file (per once-per-file rule). This
+        # is the FIRST ui_attack call after detection has fired — earlier
+        # ui_attack calls in TestGiftPrisoner / TestUntestedAttackResults
+        # run pre-detection where the attack form does not render, so they
+        # must keep the URL-driver.
+        ui_attack_click(page, "DA_Killer", "DA_Lifecycle_Death")
         end_turn(page)
 
         # Module-level faction-sections cache may have been populated by
@@ -1155,24 +1166,21 @@ class TestReturnPrisonerReinstatesSecondary:
         ui_attack(page, "DA_Captor_Alpha", "DA_ReturnPrisoner_W")
         end_turn(page)
 
-        # returnPrisoner from Alpha back to Charlie. URL form fields are
-        # the same ones the prisoner-release form posts (see
-        # workers/action.php:149-157). PHP only checks isset() on
-        # returnPrisoner, so any non-empty value works.
+        # returnPrisoner from Alpha back to Charlie via the rendered
+        # release-to-original-owner button. When the prisoner has a
+        # double_agent_controller_id in action_params (this case, where
+        # the worker was a Charlie/Echo double-agent), the FIRST
+        # returnPrisoner form (workers/view.php:295-301) injects a hidden
+        # double_controller_id={Echo} input — clicking it triggers the
+        # secondary-link reinstate branch at workers/functions.php:1163-1173.
         target_wid = ui_worker_id(
             page, "DA_ReturnPrisoner_W", base_url=PHP_BASE_URL,
             prefer_non_trace=True,
         )
-        echo_id = _controller_ids["Echo"]
-        return_url = (
-            f"{PHP_BASE_URL}/workers/action.php"
-            f"?worker_id={target_wid}"
-            f"&returnPrisoner=Relacher"
-            f"&recall_controller_id={alpha_id}"
-            f"&return_controller_id={charlie_id}"
-            f"&double_controller_id={echo_id}"
-        )
-        page.goto(return_url)
+        _select_controller(page, PHP_BASE_URL, "Alpha")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={target_wid}")
+        page.wait_for_load_state("load")
+        page.locator("input[name='returnPrisoner']").first.click()
         page.wait_for_load_state("load")
 
         clear_ui_caches()
@@ -1212,4 +1220,77 @@ class TestReturnPrisonerReinstatesSecondary:
             f"Echo's capture-trace of DA_ReturnPrisoner_W must be "
             f"destroyed by returnPrisoner (6b spec); got "
             f"ancients={echo['ancients']}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestMassMoveBetaCombatWorkers — workers/viewAll.php Mass Move +
+# workers/massAction.php handler.
+#
+# Slice 15 audit gap: massAction.php was completely untested. Handler
+# reads worker_ids[] (checkbox array) + zone_id + mass_move flag, loops
+# moveWorker() per worker (massAction.php:16-20).
+#
+# Subjects: Beta's three combat-row workers (Chain_B, Inv_Def_1,
+# Keep_Def) all start in Beta-Combat. Mass-move them in a single submit
+# to Delta-Disputed (Beta-claimed) and assert each ended up there.
+# ---------------------------------------------------------------------------
+
+_MASS_MOVE_BETA_WORKERS = ["Chain_B", "Inv_Def_1", "Keep_Def"]
+_MASS_MOVE_TARGET_ZONE = "Delta-Disputed"
+
+
+class TestMassMoveBetaCombatWorkers:
+    """Mass move 3 Beta combat-row workers from Beta-Combat to
+    Delta-Disputed in a single form submit; massAction.php loops over
+    worker_ids[] and calls moveWorker() per worker."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def mass_move_state(self, browser):
+        """Capture pre-move zones, click mass-move (3 workers selected
+        → Delta-Disputed), capture post-move zones."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        pre = {w["lastname"]: w["zone_name"]
+               for w in ui_all_workers(page)
+               if w["lastname"] in _MASS_MOVE_BETA_WORKERS}
+
+        ui_mass_move_click(page, "Beta", _MASS_MOVE_BETA_WORKERS,
+                           _MASS_MOVE_TARGET_ZONE)
+
+        post = {w["lastname"]: w["zone_name"]
+                for w in ui_all_workers(page)
+                if w["lastname"] in _MASS_MOVE_BETA_WORKERS}
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._pre = pre
+        type(self)._post = post
+        yield
+
+    def test_pre_move_all_in_beta_combat(self):
+        for w in _MASS_MOVE_BETA_WORKERS:
+            assert self._pre[w] == "Beta-Combat", (
+                f"{w} should start in Beta-Combat; got {self._pre[w]}"
+            )
+
+    def test_chain_b_moved_to_delta_disputed(self):
+        assert self._post["Chain_B"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Chain_B should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Chain_B']}"
+        )
+
+    def test_inv_def_1_moved_to_delta_disputed(self):
+        assert self._post["Inv_Def_1"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Inv_Def_1 should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Inv_Def_1']}"
+        )
+
+    def test_keep_def_moved_to_delta_disputed(self):
+        assert self._post["Keep_Def"] == _MASS_MOVE_TARGET_ZONE, (
+            f"Keep_Def should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
+            f"got {self._post['Keep_Def']}"
         )

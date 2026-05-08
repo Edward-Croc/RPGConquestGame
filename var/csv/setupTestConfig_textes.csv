@@ -46,3 +46,7 @@
 "TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL","[""Agent report: location attack fail.""]","Agent report location fail"
 "TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS","[""Defence report: location defended.""]","Defence report location success"
 "TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL","[""Defence report: location fell.""]","Defence report location fail"
+"age_discipline","{""age"": [""2""]}","Discipline teach gating: extra slot at age >= 2"
+"age_transformation","{""action"": ""check""}","Transform UI gate (must equal 'check' to render)"
+"recrutement_disciplines","0","Base discipline slot count granted at recruitment (0 forces age-based gating)"
+"ressource_management","TRUE","Activate resource accounting (createBase/moveBase costs, end_turn_gain accrual)"

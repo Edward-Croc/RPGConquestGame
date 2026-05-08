@@ -150,6 +150,139 @@ def _create_base(page, controller_lastname, zone_name):
     page.wait_for_load_state("load")
 
 
+def _create_base_click(page, controller_lastname, zone_name):
+    """UI-button-click variant of _create_base. Navigates to the
+    controller's faction page, selects the zone in the zone_id dropdown,
+    and clicks the rendered 'Créer' button. Use on the FIRST createBase
+    call in this file (per audit's once-per-file rule); subsequent calls
+    can use the URL-driver _create_base."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    zid = ui_zone_id(page, zone_name)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='createBase']").wait_for(state="visible", timeout=30000)
+    page.locator("select[name='zone_id']").first.select_option(value=str(zid))
+    page.locator("input[name='createBase']").click()
+    page.wait_for_load_state("load")
+
+
+def _location_id_via_management(page, location_name):
+    """Look up a location's id by scraping zones/management_locations.php.
+    The page renders one block per location with `<h3>NAME (discovery N)</h3>`
+    followed by a `toggle_destruction` form whose hidden input carries the id.
+    Returns int id, raises if not found."""
+    import re
+    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
+    page.wait_for_load_state("load")
+    html = page.content()
+    m = re.search(
+        rf'<h3>{re.escape(location_name)}\s+\(discovery[^<]+</h3>'
+        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
+        html,
+        re.DOTALL
+    )
+    if not m:
+        raise AssertionError(
+            f"toggle_destruction form for '{location_name}' not found on "
+            f"management_locations.php"
+        )
+    return int(m.group(1))
+
+
+def _seed_ckl_admin(page, controller_lastname, location_name):
+    """Seed `controller_known_locations` for a controller-location pair
+    via the admin `giftInformationLocation` flow (controllers/management.php:91-97).
+    Required because `createBase()` does NOT call `addLocationToCKL` and
+    CSV-seeded bases don't acquire a CKL row for their owner either — so
+    repair-eligibility (which joins CKL) never resolves without this seed.
+    See investigation TODO above TestRepairLocation."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    cid = ui_controller_id(page, controller_lastname)
+    location_id = _location_id_via_management(page, location_name)
+    safe_goto(
+        page,
+        f"{PHP_BASE_URL}/controllers/management.php"
+        f"?giftInformationLocation=1&target_controller_id={cid}&location_id={location_id}"
+    )
+    page.wait_for_load_state("load")
+
+
+def _toggle_destruction_admin(page, location_name):
+    """POST the management-page toggle_destruction form for the named
+    location. Toggles the location between repaired/destroyed states by
+    swapping the activate_json.update_location payload (zones/functions.php
+    updateLocation). Requires gm session (page is admin-only).
+
+    The toggle button lives inside a `<span style="display:none;">`
+    collapsed actions section. `display:none` elements have no box, so
+    even `click(force=True)` fails ("Element is not visible" → scroll-
+    into-view aborts). Instead, submit the form directly via JS — the
+    page navigation that follows is observed identically to a real click."""
+    location_id = _location_id_via_management(page, location_name)
+    # Already on management_locations.php from the lookup above.
+    page.evaluate(
+        f"""
+        const inp = document.querySelector(
+            'input[name="toggle_destruction"][value="{location_id}"]'
+        );
+        if (inp && inp.form) inp.form.submit();
+        """
+    )
+    page.wait_for_load_state("load")
+    return location_id
+
+
+def _repair_location_click(page, controller_lastname, target_location_name):
+    """UI-button-click for the Repair Location form on
+    controllers/view.php. Pre-resolves location_id BEFORE switching
+    controller (lookup helpers navigate to admin pages — interleaving
+    would clobber the controller's view.php form state, Slice 15 pattern)."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    location_id = _location_id_via_management(page, target_location_name)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='repairLocation']").wait_for(state="visible", timeout=30000)
+    page.locator("select#repairLocationSelect").select_option(value=str(location_id))
+    page.locator("input[name='repairLocation']").click()
+    page.wait_for_load_state("load")
+
+
+def _move_base_click(page, controller_lastname, target_zone_name):
+    """UI-button-click for the Move Base form on controllers/view.php.
+    Switches to the controller and clicks the rendered 'Déménager' button
+    after picking the target zone in the per-base zone select. Pre-resolves
+    zone_id BEFORE the controllers/view.php navigation — same pattern as
+    ui_mass_move_click, since lookup helpers navigate to management
+    pages and would discard the populated form."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    target_zid = ui_zone_id(page, target_zone_name)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='moveBase']").wait_for(state="visible", timeout=30000)
+    # The form is rendered per base; for Alpha there's only one base, so
+    # `.first` is sufficient. The select shows the base's current zone
+    # pre-selected; we override to the target.
+    page.locator("select[name='zone_id']").first.select_option(value=str(target_zid))
+    page.locator("input[name='moveBase']").click()
+    page.wait_for_load_state("load")
+
+
+def _controller_base_zone_via_ui(page, controller_lastname):
+    """Read the controller's base zone via controllers/action.php
+    rendering of view.php (line 155: 'Votre <basename> à <zone_name>').
+    Returns the zone name string, or None if no base section rendered."""
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    html = page.content()
+    import re
+    m = re.search(r"Votre\s+\S[^<]*?\s+à\s+([\w\-]+)", html)
+    return m.group(1) if m else None
+
+
 def _do_first_come(page, controller_lastname):
     """Submit a first-come recruitment (picks first available zone + discipline)."""
     ensure_gm_login(page, PHP_BASE_URL)
@@ -172,6 +305,41 @@ def _do_regular_recruit(page, controller_lastname):
     safe_goto(page,
         f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={cid}"
     )
+    page.wait_for_load_state("load")
+    page.locator("select[name='zone_id']").first.select_option(index=0)
+    page.locator("input[name='chosir']").first.click()
+    page.wait_for_load_state("load")
+
+
+def _do_first_come_via_viewAll(page, controller_lastname):
+    """UI-button-click variant of _do_first_come. Navigates to
+    /workers/viewAll.php and clicks the rendered 'Prendre le premier
+    venu' button (input[name='first_come']) — covering the viewAll
+    button rendering + form-action contract — then completes the
+    workers/new.php form submission. Use on the FIRST first-come call
+    in this file (per once-per-file rule); subsequent calls can use
+    the URL-driver _do_first_come."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='first_come']").click()
+    page.wait_for_load_state("load")
+    page.locator("select[name='zone_id']").first.select_option(index=0)
+    page.locator("input[name='chosir']").first.click()
+    page.wait_for_load_state("load")
+
+
+def _do_regular_recruit_via_viewAll(page, controller_lastname):
+    """UI-button-click variant of _do_regular_recruit. Same flow as
+    _do_first_come_via_viewAll but clicks 'Recruter un serviteur'
+    (input[name='recrutement']). Use on the FIRST regular-recruit call
+    in this file."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    page.locator("input[name='recrutement']").click()
     page.wait_for_load_state("load")
     page.locator("select[name='zone_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
@@ -235,16 +403,21 @@ def recruitment_scenario(browser):
     # Charlie has no base and no start_workers
     _snapshot['charlie_t0_html'] = _workers_page_html(page, 'Charlie')
 
-    # Phase 2: Alpha uses first-come (no base required)
-    _do_first_come(page, 'Alpha')
+    # Phase 2: Alpha uses first-come (no base required).
+    # First first-come in this file → exercised via the UI button on
+    # /workers/viewAll.php (per once-per-file rule); the turn-1 call below
+    # keeps using the URL-driver _do_first_come.
+    _do_first_come_via_viewAll(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_first_come_workers_ui'] = _count_worker_cards_in_html(
         _snapshot['alpha_t0_after_first_come_html']
     )
 
-    # Phase 3: Alpha creates a base in Epsilon-Controlled
-    _create_base(page, 'Alpha', 'Epsilon-Controlled')
+    # Phase 3: Alpha creates a base in Epsilon-Controlled.
+    # First createBase in this file → exercised via the UI 'Créer' button
+    # (per once-per-file rule); subsequent calls reuse the URL-driver.
+    _create_base_click(page, 'Alpha', 'Epsilon-Controlled')
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
     # UI-side: accueil page shows the base under "Votre Base :" section.
     _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
@@ -290,7 +463,10 @@ def recruitment_scenario(browser):
     _do_first_come(page, 'Alpha')
     _snapshot['alpha_t1_after_first_come_counters'] = ui_controller_counters(page, 'Alpha')
 
-    _do_regular_recruit(page, 'Alpha')
+    # First regular-recruit in this file → exercised via the UI button
+    # on /workers/viewAll.php (per once-per-file rule); subsequent calls
+    # would use the URL-driver _do_regular_recruit.
+    _do_regular_recruit_via_viewAll(page, 'Alpha')
     _snapshot['alpha_t1_after_recruit_counters'] = ui_controller_counters(page, 'Alpha')
     # UI-side final worker count (post all recruitment phases).
     _snapshot['alpha_t1_final_workers_ui'] = _count_worker_cards_in_html(
@@ -579,3 +755,217 @@ class TestCharlieCannotRecruit:
         """Charlie should not have the recruit button."""
         html = _snapshot['charlie_t0_html']
         assert "Recruter un serviteur" not in html
+
+
+# ---------------------------------------------------------------------------
+# TestMoveBase — controllers/view.php Move Base + controllers/action.php
+# moveBase handler.
+#
+# Slice 16 audit gap: moveBase was untested. Adds two tests:
+#  - positive: Alpha's base (created in Epsilon-Controlled by the module
+#    fixture's Phase 3) is moved via the rendered 'Déménager' button to
+#    Gamma-Claims; assert post-move zone via controllers/view.php
+#    re-render.
+#  - negative (resource gate): Echo (pre-seeded base at Theta-Artefacts;
+#    controller_ressources amount=4 < base_moving_cost=5) navigates to
+#    controllers/action.php; the move form is replaced by the 'ressources
+#    nécessaires' notification and no input[name='moveBase'] is rendered.
+#
+# CSV additions for this slice:
+#   textes:                   ressource_management = TRUE
+#   controller_ressources:    Echo,Gold,4,0,0
+# ---------------------------------------------------------------------------
+
+class TestMoveBase:
+    """Move Base UI click + resource-gate negative path."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_base_state(self, browser):
+        """Capture Alpha's base zone before + after the click-driven
+        move from Epsilon-Controlled to Gamma-Claims. Also capture
+        Echo's controllers/view.php HTML to verify the resource-gate
+        negative path renders the danger notification + omits the
+        moveBase submit."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Positive: Alpha's existing base (from module fixture phase 3)
+        # is currently in Epsilon-Controlled. Move it to Gamma-Claims.
+        pre_zone = _controller_base_zone_via_ui(page, 'Alpha')
+        _move_base_click(page, 'Alpha', 'Gamma-Claims')
+        post_zone = _controller_base_zone_via_ui(page, 'Alpha')
+
+        # Negative: Echo (pre-seeded Echo-Base at Theta-Artefacts,
+        # amount=4 < base_moving_cost=5).
+        _switch_controller(page, 'Echo')
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        echo_move_button_count = page.locator("input[name='moveBase']").count()
+        echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._pre_zone = pre_zone
+        type(self)._post_zone = post_zone
+        type(self)._echo_move_button_count = echo_move_button_count
+        type(self)._echo_html = echo_html
+        yield
+
+    def test_alpha_base_starts_in_epsilon_controlled(self):
+        """Sanity: module fixture left Alpha's base in Epsilon-Controlled."""
+        assert self._pre_zone == "Epsilon-Controlled", (
+            f"Alpha's base should start in Epsilon-Controlled (created by "
+            f"module fixture Phase 3); got {self._pre_zone!r}"
+        )
+
+    def test_alpha_base_zone_changes_after_move(self):
+        """After ui-click move, Alpha's base zone is Gamma-Claims."""
+        assert self._post_zone == "Gamma-Claims", (
+            f"Alpha's base should be in Gamma-Claims after _move_base_click; "
+            f"got {self._post_zone!r}"
+        )
+
+    def test_echo_move_button_hidden_when_drained(self):
+        """Echo (amount=4 < base_moving_cost=5) → resource gate fails →
+        the move form is replaced by the danger notification, so no
+        moveBase submit is rendered."""
+        assert self._echo_move_button_count == 0, (
+            f"Echo's controllers/view should NOT render the moveBase button "
+            f"when ressources are insufficient; found {self._echo_move_button_count}"
+        )
+
+    def test_echo_resource_warning_rendered(self):
+        """Resource-gate UI message is the user-visible signal that the
+        move is blocked. Asserts the French text present in the danger
+        notification (controllers/view.php:146)."""
+        assert "ressources nécessaires" in self._echo_html, (
+            "Echo's controllers/view should render the 'ressources "
+            "nécessaires' danger notification when the move is blocked"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TestRepairLocation — controllers/view.php Repair Location +
+# controllers/action.php repairLocation handler.
+#
+# Slice 17 audit gap: repairLocation was untested. Setup uses the admin
+# `zones/management_locations.php` toggle_destruction button to flip a
+# location into can_be_repaired=1 state via updateLocation's
+# activate_json.update_location swap (zones/functions.php:656).
+#
+# CSV additions for this slice:
+#   locations:               Foxtrot-Outpost & Echo-Base now carry an
+#                            activate_json.update_location swap-state.
+#   controller_ressources:   Echo amount lowered 4→2 (still fails Slice 16
+#                            move gate at cost=5; now also fails repair
+#                            gate at cost=3).
+#
+# TODO — CKL gap (β fallback (a) applied 2026-05-05): the fixture seeds
+# controller_known_locations via `_seed_ckl_admin` (admin
+# giftInformationLocation flow). createBase() does NOT call
+# addLocationToCKL, and there is no CSV for controller_known_locations,
+# so CSV-seeded bases (Foxtrot-Outpost, Echo-Base) don't acquire CKL
+# rows for their owners — owners therefore "don't know" about their own
+# bases until something triggers a seed. The repair UI joins CKL, so
+# repair-eligibility never resolves without it. To investigate as a
+# follow-up: should owned bases auto-seed CKL at load (probably yes —
+# owners ought to know about their own bases), or is the giftInformation
+# flow the intended path?
+# ---------------------------------------------------------------------------
+
+class TestRepairLocation:
+    """Repair Location UI click + resource-gate negative path."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def repair_state(self, browser):
+        """Toggle Foxtrot-Outpost + Echo-Base destruction via the admin
+        management page, then capture per-controller view.php state
+        before and after Foxtrot's repair click. Echo (drained) is
+        captured to verify the resource-gate negative path."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Admin: seed CKL so the controllers can "see" their own bases
+        # in the repair-eligibility join (CSV-seeded bases don't auto-
+        # populate CKL — see TODO above).
+        _seed_ckl_admin(page, "Foxtrot", "Foxtrot-Outpost")
+        _seed_ckl_admin(page, "Echo", "Echo-Base")
+
+        # Admin: toggle both bases into the destroyed/can_be_repaired=1 state.
+        _toggle_destruction_admin(page, "Foxtrot-Outpost")
+        _toggle_destruction_admin(page, "Echo-Base")
+
+        # Foxtrot pre-click: repair form should be visible.
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        foxtrot_button_count_before = page.locator("input[name='repairLocation']").count()
+
+        # Foxtrot clicks repair on the destroyed Foxtrot-Outpost.
+        _repair_location_click(page, "Foxtrot", "Foxtrot-Outpost")
+
+        # Foxtrot post-click: Foxtrot-Outpost was the only repairable
+        # known location, so the repair form is gone now.
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        foxtrot_button_count_after = page.locator("input[name='repairLocation']").count()
+
+        # Echo (amount=2 < cost=3) sees the danger notification only.
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        echo_button_count = page.locator("input[name='repairLocation']").count()
+        echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._foxtrot_button_count_before = foxtrot_button_count_before
+        type(self)._foxtrot_button_count_after = foxtrot_button_count_after
+        type(self)._echo_button_count = echo_button_count
+        type(self)._echo_html = echo_html
+        yield
+
+    def test_foxtrot_repair_button_visible_after_destruction_toggle(self):
+        """After admin toggles Foxtrot-Outpost destruction, Foxtrot's
+        controllers/view.php renders the repair form (input[name=
+        'repairLocation'] count == 1)."""
+        assert self._foxtrot_button_count_before == 1, (
+            f"Foxtrot should see exactly one repair button after "
+            f"Foxtrot-Outpost is toggled to the destroyed state; got "
+            f"count={self._foxtrot_button_count_before}"
+        )
+
+    def test_repair_click_undamages_foxtrot_outpost(self):
+        """After clicking 'Réparer' on Foxtrot-Outpost, the location's
+        can_be_repaired flips back to 0 (repair re-applies the
+        save_to_json swap). With no other repairable known location,
+        Foxtrot's view.php no longer renders the repair form."""
+        assert self._foxtrot_button_count_after == 0, (
+            f"After repair click, Foxtrot should no longer see a repair "
+            f"button (Foxtrot-Outpost is no longer can_be_repaired); got "
+            f"count={self._foxtrot_button_count_after}"
+        )
+
+    def test_echo_repair_button_hidden_when_drained(self):
+        """Echo (amount=2 < location_repaire_cost=3) → resource gate
+        fails → controllers/view.php renders the danger notification
+        instead of the repair form. No moveBase-style repair button."""
+        assert self._echo_button_count == 0, (
+            f"Echo's controllers/view should NOT render the repairLocation "
+            f"button when ressources are insufficient; found "
+            f"count={self._echo_button_count}"
+        )
+
+    def test_echo_resource_warning_rendered_for_repair(self):
+        """Resource-gate UI signal: the 'ressources nécessaires' danger
+        notification (controllers/view.php:266) appears for Echo when
+        repair is blocked."""
+        assert "ressources nécessaires" in self._echo_html, (
+            "Echo's controllers/view should render the 'ressources "
+            "nécessaires' danger notification when repair is blocked"
+        )
