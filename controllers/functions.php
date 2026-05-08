@@ -416,7 +416,8 @@ function showRepairableControllerKnownLocations($pdo, $controller_id) {
  * 
  */
 function attackLocation($pdo, $controller_id, $target_location_id) {
-    $debug = $_SESSION['DEBUG'];
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+
     $return = array('success' => false, 'message' => '');
 
     $prefix = $_SESSION['GAME_PREFIX'];
