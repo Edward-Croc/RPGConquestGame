@@ -286,10 +286,18 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->execute();
+        $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
         return false;
     }
+
+    // Owners must know their own base —
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
+    addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
+
     return true;
 }
 
@@ -323,12 +331,18 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         $deleteStmt = $pdo->prepare($deleteSQL);
         $deleteStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $deleteStmt->execute();
-
-        return true;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
         return false;
     }
+
+    // Re-seed the owner's CKL row at the new location.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
+    addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
+
+    return true;
 }
 
 /**

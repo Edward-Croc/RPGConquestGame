@@ -38,6 +38,7 @@ VALUES
     ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
     ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
     ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
+    ('owner_knows_own_base_secret', 'TRUE', 'On base creation / scenario load, seed controller_known_locations with found_secret=TRUE so owners auto-know their own base secrets. Set FALSE for fog-of-war setups where the owner must learn their own base secret separately.'),
     -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
