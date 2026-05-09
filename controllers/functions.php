@@ -292,7 +292,7 @@ function createBase($pdo, $controller_id, $zone_id) {
         return false;
     }
 
-    // Owners must know their own base —
+    // Owner must know own base — CKL-joined panels otherwise hide it.
     $mechanics = getMechanics($pdo);
     $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
     $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
@@ -355,8 +355,7 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  * 
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
-    // Exclude own owned locations: a controller should not be able to attack
-    // their own locations
+    // Exclude own — controller cannot attack own base.
     $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true);
     if (empty($locations)) return NULL;
 
@@ -1006,10 +1005,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
             $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $location['zone_name']);
         }
     } else {
-        // Exclude own locations from the CKL list — they're surfaced
-        // separately by listControllerLinkedLocations below. Without
-        // this filter, post-CKL-seed owners would see their own bases
-        // as duplicate options (one from CKL, one from linked).
+        // Exclude own from CKL — listControllerLinkedLocations adds them once.
         $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id, false, false, true);
         $controllerLinkedLocations = listControllerLinkedLocations($pdo, $controller_id);
         foreach ($zones as $zone) {

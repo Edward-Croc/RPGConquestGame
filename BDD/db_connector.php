@@ -993,8 +993,7 @@ function gameReady() {
                     }
                 }
 
-                // Post-load synthesis: every owned base needs a CKL row
-                // for its owner.
+                // Post-load CKL seed for owned bases (createBase covers runtime).
                 try {
                     $prefix = $_SESSION['GAME_PREFIX'];
                     $synthMechanics = getMechanics($pdo);

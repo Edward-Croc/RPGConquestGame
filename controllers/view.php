@@ -267,8 +267,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 }
             }
 
-            // Exclude own locations: own bases are surfaced separately in
-            // the "Vos lieux secrets" panel below via listControllerLinkedLocations.
+            // Exclude own — surfaced via listControllerLinkedLocations below.
             $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id'], false, false, true);
 
             if (!$controllerKnownLocations) {

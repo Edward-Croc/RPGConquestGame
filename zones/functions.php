@@ -463,9 +463,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         $returnText .=  "</p>";
     }
 
-    // Known enemy bases in the zone — exclude own bases (they were
-    // already rendered above under "Vos lieux secrets") to avoid
-    // double-listing now that owners auto-know their own bases.
+    // Known enemy bases in zone — exclude own (listed above as Vos lieux secrets).
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description, ckl.found_secret
         FROM {$prefix}controller_known_locations ckl
