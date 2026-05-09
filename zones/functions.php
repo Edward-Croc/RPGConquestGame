@@ -463,18 +463,22 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         $returnText .=  "</p>";
     }
 
-    // Known enemy bases in the zone
+    // Known enemy bases in the zone — exclude own bases (they were
+    // already rendered above under "Vos lieux secrets") to avoid
+    // double-listing now that owners auto-know their own bases.
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description, ckl.found_secret
         FROM {$prefix}controller_known_locations ckl
         JOIN {$prefix}locations l ON ckl.location_id = l.id
         WHERE ckl.controller_id = :controller_id
         AND l.zone_id = :zone_id
+        AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':controller_id' => $controller_id,
-        ':zone_id' => $zone_id
+        ':zone_id' => $zone_id,
+        ':controller_id_owner' => $controller_id,
     ]);
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -516,6 +520,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  * @param PDO $gameReady
  * @param int $controllerId
  * @param bool $limitByDestroyed
+ * @param bool $limitByReparable
+ * @param bool $excludeOwnLocations
  * 
  * If $limitByDestroyed is true, it will only return locations that can be destroyed.
  * If false, it will return all locations.
@@ -528,7 +534,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *      'can_be_destroyed' => bool
  *  ]
  */
-function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false): array|null {
+function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false, bool $excludeOwnLocations = false): array|null {
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = sprintf("
         SELECT
@@ -540,19 +546,24 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
             l.description AS location_description,
             l.hidden_description AS location_hidden_description,
             ckl.found_secret AS location_found_secret,
-            l.can_be_destroyed AS location_can_be_destroyed 
+            l.can_be_destroyed AS location_can_be_destroyed
         FROM {$prefix}controller_known_locations ckl
         JOIN {$prefix}locations l ON ckl.location_id = l.id
         JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE ckl.controller_id = :controller_id
-        %s%s
+        %s%s%s
         ORDER BY z.id, l.id;
     ",
-    $limitByDestroyed ? "AND l.can_be_destroyed = True" : "",
-    $limitByReparable ? "AND l.can_be_repaired = True" : ""
+    $limitByDestroyed ? " AND l.can_be_destroyed = True" : "",
+    $limitByReparable ? " AND l.can_be_repaired = True" : "",
+    $excludeOwnLocations ? " AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)" : ""
     );
     $stmt = $gameReady->prepare($sql);
-    $stmt->execute(['controller_id' => $controllerId]);
+    $params = ['controller_id' => $controllerId];
+    if ($excludeOwnLocations) {
+        $params['controller_id_owner'] = $controllerId;
+    }
+    $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$rows) {

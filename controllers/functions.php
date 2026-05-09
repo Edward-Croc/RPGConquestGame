@@ -355,7 +355,9 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  * 
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
-    $locations = listControllerKnownLocations($pdo, $controller_id, true);
+    // Exclude own owned locations: a controller should not be able to attack
+    // their own locations
+    $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true);
     if (empty($locations)) return NULL;
 
     $options = '';

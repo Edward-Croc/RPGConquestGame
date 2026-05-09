@@ -190,24 +190,6 @@ def _location_id_via_management(page, location_name):
     return int(m.group(1))
 
 
-def _seed_ckl_admin(page, controller_lastname, location_name):
-    """Seed `controller_known_locations` for a controller-location pair
-    via the admin `giftInformationLocation` flow (controllers/management.php:91-97).
-    Required because `createBase()` does NOT call `addLocationToCKL` and
-    CSV-seeded bases don't acquire a CKL row for their owner either — so
-    repair-eligibility (which joins CKL) never resolves without this seed.
-    See investigation TODO above TestRepairLocation."""
-    ensure_gm_login(page, PHP_BASE_URL)
-    cid = ui_controller_id(page, controller_lastname)
-    location_id = _location_id_via_management(page, location_name)
-    safe_goto(
-        page,
-        f"{PHP_BASE_URL}/controllers/management.php"
-        f"?giftInformationLocation=1&target_controller_id={cid}&location_id={location_id}"
-    )
-    page.wait_for_load_state("load")
-
-
 def _toggle_destruction_admin(page, location_name):
     """POST the management-page toggle_destruction form for the named
     location. Toggles the location between repaired/destroyed states by
@@ -862,17 +844,11 @@ class TestMoveBase:
 #                            move gate at cost=5; now also fails repair
 #                            gate at cost=3).
 #
-# TODO — CKL gap (β fallback (a) applied 2026-05-05): the fixture seeds
-# controller_known_locations via `_seed_ckl_admin` (admin
-# giftInformationLocation flow). createBase() does NOT call
-# addLocationToCKL, and there is no CSV for controller_known_locations,
-# so CSV-seeded bases (Foxtrot-Outpost, Echo-Base) don't acquire CKL
-# rows for their owners — owners therefore "don't know" about their own
-# bases until something triggers a seed. The repair UI joins CKL, so
-# repair-eligibility never resolves without it. To investigate as a
-# follow-up: should owned bases auto-seed CKL at load (probably yes —
-# owners ought to know about their own bases), or is the giftInformation
-# flow the intended path?
+# CKL fix shipped 2026-05-09 (this branch): createBase() now seeds CKL
+# for the owner, and BDD/db_connector.php synthesizes CKL rows for
+# every CSV/SQL-seeded owned base after scenario load. The Slice 17
+# band-aid `_seed_ckl_admin` calls in this fixture have been removed
+# since owners now know their own bases out of the box.
 # ---------------------------------------------------------------------------
 
 class TestRepairLocation:
@@ -888,12 +864,6 @@ class TestRepairLocation:
         page = context.new_page()
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
-
-        # Admin: seed CKL so the controllers can "see" their own bases
-        # in the repair-eligibility join (CSV-seeded bases don't auto-
-        # populate CKL — see TODO above).
-        _seed_ckl_admin(page, "Foxtrot", "Foxtrot-Outpost")
-        _seed_ckl_admin(page, "Echo", "Echo-Base")
 
         # Admin: toggle both bases into the destroyed/can_be_repaired=1 state.
         _toggle_destruction_admin(page, "Foxtrot-Outpost")
