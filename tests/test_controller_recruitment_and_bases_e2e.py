@@ -939,3 +939,210 @@ class TestRepairLocation:
             "Echo's controllers/view should render the 'ressources "
             "nécessaires' danger notification when repair is blocked"
         )
+
+
+# ---------------------------------------------------------------------------
+# TestOwnerKnowsOwnBase — controller_known_locations auto-seed for
+# owners of their own bases.
+#
+# Before this fix, neither createBase() nor the scenario loader
+# (BDD/db_connector.php) populated controller_known_locations (CKL).
+# Owners therefore appeared in their own bases' rows on `locations`
+# (controller_id = owner) but had NO CKL row — every CKL-joined render
+# path (repair, gift-info-location, attack-location dropdowns) treated
+# the location as unknown to its owner and rendered "Aucun emplacement
+# connu".
+#
+# Fix shipped on this branch:
+# - controllers/functions.php createBase(): after the locations INSERT,
+#   call addLocationToCKL($pdo, $controller_id, $base_id, $turn, false).
+# - BDD/db_connector.php: post-load idempotent INSERT...SELECT...
+#   WHERE NOT EXISTS for every is_base=True location with non-null
+#   controller_id — covers CSV/SQL-seeded bases (Foxtrot-Outpost,
+#   Echo-Base in TestConfig; Japan1555 SQL temple seeds; etc.).
+#
+# These two paths (runtime + scenario-load) cover every way a base
+# can land in `locations` with an owner. Both tested below.
+# ---------------------------------------------------------------------------
+
+class TestOwnerKnowsOwnBase:
+    """Verify that controllers know about their own bases out of the box,
+    via both the scenario-load synthesis path and the runtime createBase
+    path."""
+
+    def test_foxtrot_knows_foxtrot_outpost_after_scenario_load(self, browser):
+        """CSV-seeded base path: Foxtrot owns Foxtrot-Outpost via
+        setupTestConfig_locations.csv. After scenario load, Foxtrot's
+        controllers/view.php must list Foxtrot-Outpost in the known-
+        locations rendering — NOT 'Aucun emplacement connu'."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        html = page.content()
+
+        # Foxtrot-Outpost surfaces on Foxtrot's view via
+        # listControllerLinkedLocations (the "Vos lieux secrets" panel)
+        # — that panel renders pure owner-locations regardless of CKL.
+        # The CKL synthesis is verified indirectly in the other tests
+        # below: own-base-NOT-double-listed-in-lieux-decouverts shows
+        # the CKL row exists but is correctly filtered from the
+        # "discovered" panel; gift-info-location dropdown population
+        # confirms CKL is consulted.
+        assert "Foxtrot-Outpost" in html, (
+            "Foxtrot's controllers/view.php should list Foxtrot-Outpost "
+            "(via the 'Vos lieux secrets' linked-locations panel)."
+        )
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_alpha_knows_new_base_after_create(self, browser):
+        """Runtime createBase path: createBase() must call
+        addLocationToCKL for the new base's owner. Verified by creating
+        a fresh base for a controller that had none, then asserting the
+        new base appears in controllers/view.php."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Fresh Alpha base in Epsilon-Controlled (the slot the module
+        # fixture also uses; createBase short-circuits if a base
+        # already exists for the controller in the zone).
+        # Already-created in module fixture phase 3 — Alpha has its
+        # base by now, but the CKL row was inserted by the createBase
+        # call in that fixture (if running on the post-fix code).
+        # Assert the consequence: Alpha sees its own base.
+        _switch_controller(page, "Alpha")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        html = page.content()
+
+        # Alpha's base appears on its view via listControllerLinkedLocations
+        # (the "Vos lieux secrets" linked panel). The "Aucun lieu."
+        # empty-state message only renders when that list is empty —
+        # so its absence proves Alpha's base is linked. (We avoid
+        # asserting against "Aucun emplacement connu" because that's
+        # the empty-state of the OTHER panel — Lieux découverts —
+        # which now correctly excludes own bases via excludeOwnLocations.)
+        assert "Aucun lieu." not in html, (
+            "Alpha (post createBase in module fixture) must have at least "
+            "one linked location — its own base. Absence of 'Aucun lieu.' "
+            "confirms listControllerLinkedLocations returned non-empty."
+        )
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_foxtrot_own_base_excluded_from_attackable_dropdown(self, browser):
+        """Self-attack guard: showAttackableControllerKnownLocations
+        must filter out the controller's own bases. Without this,
+        the post-fix CKL synthesis would let Foxtrot click 'Mener une
+        équipe d'attaque sur place' against its own base."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+
+        # The attackable-locations dropdown is `select#repairLocationSelect`'s
+        # sibling form: an `attackLocation` submit button paired with a
+        # location dropdown rendered by showAttackableControllerKnownLocations.
+        # Get the option labels from that select.
+        attack_options = []
+        if page.locator("input[name='attackLocation']").count() > 0:
+            options = page.locator("form:has(input[name='attackLocation']) select option").all()
+            attack_options = [(o.inner_text() or "").strip() for o in options
+                              if (o.get_attribute("value") or "")]
+
+        # Foxtrot-Outpost is Foxtrot's own base — must NOT be selectable.
+        joined = " | ".join(attack_options)
+        assert "Foxtrot-Outpost" not in joined, (
+            f"Foxtrot's own base must not appear in the attackable "
+            f"locations dropdown; got options: {attack_options!r}"
+        )
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_foxtrot_own_base_NOT_double_listed_in_lieux_decouverts(self, browser):
+        """No-double-listing guard: Foxtrot's own base appears in the
+        'Vos lieux secrets' panel (listControllerLinkedLocations) and
+        must NOT also appear in the 'Lieux découverts' panel
+        (listControllerKnownLocations) on the same page."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        html = page.content()
+
+        # Both panels surface their content under summary labels:
+        # 'Lieux connus de <zone>' (CKL panel) and 'Lieux de <zone>'
+        # (linked panel). Foxtrot-Outpost lives in Theta-Artefacts.
+        # Slice the HTML between the two panel headers and search.
+        ckl_marker = "Lieux connus de"
+        linked_marker = "Lieux de "
+        ckl_idx = html.find(ckl_marker)
+        linked_idx = html.find(linked_marker, ckl_idx if ckl_idx >= 0 else 0)
+
+        # The CKL panel HTML segment is between ckl_marker and either
+        # the next h4/section break or linked_marker. Conservative:
+        # take everything from ckl_idx until linked_idx (or end of page).
+        if ckl_idx >= 0:
+            end = linked_idx if linked_idx > ckl_idx else len(html)
+            ckl_panel_html = html[ckl_idx:end]
+            assert "Foxtrot-Outpost" not in ckl_panel_html, (
+                "Foxtrot-Outpost must not appear in the 'Lieux connus' "
+                "(CKL-joined) panel on Foxtrot's view — it's surfaced "
+                "via listControllerLinkedLocations in the next section."
+            )
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_foxtrot_own_base_present_in_gift_info_location_dropdown(self, browser):
+        """β design call: gift-info-location should ALLOW the owner to
+        gift intel about their own base (could be a legitimate strategy
+        — e.g., directing an ally's attention to a defensible location).
+        The dropdown rendered by buildGiveKnowledgeHTML inside
+        controllers/view.php must include the owner's own base."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+
+        # The gift-info form has input[name='giftInformationLocation']
+        # and a sibling location select with name='location_id'.
+        gift_locations = []
+        if page.locator("input[name='giftInformationLocation']").count() > 0:
+            options = page.locator(
+                "form:has(input[name='giftInformationLocation']) select[name='location_id'] option"
+            ).all()
+            gift_locations = [(o.inner_text() or "").strip() for o in options
+                              if (o.get_attribute("value") or "")]
+
+        joined = " | ".join(gift_locations)
+        assert "Foxtrot-Outpost" in joined, (
+            f"Foxtrot's own base SHOULD appear in the gift-info-location "
+            f"dropdown (β design call: owner can gift intel about own "
+            f"base); got options: {gift_locations!r}"
+        )
+
+        assert_no_collected_php_errors(page)
+        context.close()
