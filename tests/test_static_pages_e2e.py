@@ -103,3 +103,35 @@ class TestSidebarToggle:
             f"Sidebar '.active' class should toggle on openbtn click "
             f"(before={had_active}, after={has_active})"
         )
+
+
+# ---------------------------------------------------------------------------
+# App-version footer — renders on every entry-point that includes
+# base/baseHTML.php (via register_shutdown_function) plus loginForm.php
+# (manually). The version string is the constant in base/version.php.
+# ---------------------------------------------------------------------------
+
+class TestAppVersionFooter:
+    def test_footer_visible_on_accueil(self, gm_page: Page, base_url):
+        """Authenticated page (accueil) renders the footer with a
+        non-empty version string."""
+        safe_goto(gm_page, f"{base_url}/base/accueil.php")
+        footer = gm_page.locator("footer.app-footer .app-version")
+        assert footer.count() == 1, "Expected exactly one .app-version in footer"
+        text = (footer.inner_text() or "").strip()
+        assert text.startswith("v"), f"Footer should show 'v<version>'; got {text!r}"
+        assert len(text) > 1, f"Footer version string should be non-empty after 'v'; got {text!r}"
+
+    def test_footer_visible_on_login_page(self, page: Page, base_url):
+        """Anonymous login page also renders the footer (loginForm.php
+        does not go through baseHTML; the version + footer are emitted
+        manually). This guards the parallel rendering path."""
+        safe_goto(page, f"{base_url}/connection/loginForm.php")
+        footer = page.locator("footer.app-footer .app-version")
+        assert footer.count() == 1, (
+            "Login page should render exactly one .app-version footer"
+        )
+        text = (footer.inner_text() or "").strip()
+        assert text.startswith("v") and len(text) > 1, (
+            f"Login footer should show 'v<version>'; got {text!r}"
+        )

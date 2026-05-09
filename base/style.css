@@ -2,6 +2,9 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .header {
@@ -11,8 +14,35 @@ body {
     padding: 12px 20px;
 }
 .content {
-    height: calc(100vh - 40px); /* Adjust based on header height */
-    background-color: #f2f2f2;
+    /* Body carries this class. The flex-column layout above makes the
+       section divs (.workers / .zones / etc., flex:1) fill the space
+       between header and footer; no fixed height needed. */
+}
+
+/* When `.content.flex` is used as a body-direct-child wrapper (e.g.
+   accueil holding zones + workers side-by-side), make it grow to fill
+   remaining vertical space and stretch its inner column wrappers
+   equally horizontally. Without these rules the wrapper sits at its
+   natural (children) height, leaving body background visible above
+   the footer. */
+.content.flex {
+    flex: 1;
+    align-items: stretch;
+}
+.content.flex > * {
+    flex: 1;
+}
+
+.app-footer {
+    margin-top: auto;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.85em;
+}
+.app-footer .app-version {
+    opacity: 0.85;
 }
 
 .intro {

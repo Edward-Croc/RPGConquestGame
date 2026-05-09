@@ -120,4 +120,3 @@ require_once '../base/baseHTML.php';
         ?>
     </div>
 </div>
-</body>
