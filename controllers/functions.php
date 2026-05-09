@@ -1006,7 +1006,11 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
             $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $location['zone_name']);
         }
     } else {
-        $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id);
+        // Exclude own locations from the CKL list — they're surfaced
+        // separately by listControllerLinkedLocations below. Without
+        // this filter, post-CKL-seed owners would see their own bases
+        // as duplicate options (one from CKL, one from linked).
+        $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id, false, false, true);
         $controllerLinkedLocations = listControllerLinkedLocations($pdo, $controller_id);
         foreach ($zones as $zone) {
             if (isset($controllerKnownLocations[$zone['id']])) {

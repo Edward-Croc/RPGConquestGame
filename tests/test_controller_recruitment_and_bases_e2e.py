@@ -1144,5 +1144,16 @@ class TestOwnerKnowsOwnBase:
             f"base); got options: {gift_locations!r}"
         )
 
+        # And exactly once — the dropdown is built from CKL + linked
+        # iterations; pre-fix the post-CKL-seed put own bases in both
+        # → duplicate options. The CKL caller now passes
+        # excludeOwnLocations=true so own bases come from linked only.
+        own_base_count = sum(1 for opt in gift_locations if "Foxtrot-Outpost" in opt)
+        assert own_base_count == 1, (
+            f"Foxtrot-Outpost should appear EXACTLY once in the "
+            f"gift-info-location dropdown; appeared {own_base_count} "
+            f"times: {gift_locations!r}"
+        )
+
         assert_no_collected_php_errors(page)
         context.close()
