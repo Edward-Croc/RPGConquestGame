@@ -102,6 +102,7 @@ VALUES
     ('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' ),
     ('maxBonusDiscoveryDiffWorkers', 4, 'Maximum bonus obtainable from worker presence' ),
     ('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' ),
+    ('controllerBaseAttack', 1, 'If 1 then controllers can attack bases' ),
     ('baseAttack', 0, 'Base attack value for bases' ),
     ('baseAttackAddPowers', 1, 'Base attack value Power presence ponderation 0 for no' ),
     ('baseAttackAddWorkers', 1, 'Base attack value worker presence ponderation 0 for no' ),
