@@ -266,3 +266,219 @@ class TestAttackLocationBaseline:
             f"Post-attack: Echo-Base.can_be_repaired should flip to 1; "
             f"got {self._post_flags['can_be_repaired']}"
         )
+
+
+@pytest.mark.db
+class TestAttackLogTabsRendering:
+    """Step 1b — `controllers/view.php` `Vos attaques ce <timeValue>` and
+    `Alerte ! Votre base a été attaquée ce <timeValue>` sections render as
+    Bulma tabs (one tab per turn that has logged attacks for the controller,
+    latest first, empty turns skipped). Tab labels follow the
+    `<ucfirst(timeValue)> N` format."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def attack_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        # Setup: seed Foxtrot's CKL for Echo-Base + perform one attack so
+        # location_attack_logs has a row to render in the tabs.
+        _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        if page.locator("input[name='attackLocation']").count() > 0:
+            attack_form = page.locator(
+                "form:has(input[name='attackLocation'])"
+            ).first
+            attack_form.locator("select[name='target_location_id']").select_option(
+                value=str(echo_base_id)
+            )
+            attack_form.locator("input[name='attackLocation']").click()
+            page.wait_for_load_state("load")
+
+        # Read time-value config + current turn (for tab-label assertion).
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT value FROM `{GAME_PREFIX}config` WHERE name = 'timeValue'"
+        )
+        time_word = (cur.fetchone() or {}).get('value', 'Tour')
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.close()
+        conn.close()
+
+        # Foxtrot's outgoing tabs (re-render now that there's a logged attack).
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        foxtrot_html = page.content()
+
+        # Echo's incoming tabs (target of the attack).
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._foxtrot_html = foxtrot_html
+        type(self)._echo_html = echo_html
+        type(self)._time_word = time_word
+        type(self)._turn = turn
+        yield
+
+    def test_outgoing_attacks_render_tab_with_timevalue_label(self):
+        """Foxtrot's `Vos attaques ce <timeValue>` panel renders a tab
+        labeled `<ucfirst(timeValue)> N` for the turn of the logged
+        attack."""
+        expected_label = f">{self._time_word[:1].upper()}{self._time_word[1:]} {self._turn}<"
+        assert 'data-tab-group="outgoing-attacks"' in self._foxtrot_html, (
+            "Foxtrot's view should render the outgoing-attacks tab group "
+            "(data-tab-group attribute on the tab bar)"
+        )
+        assert expected_label in self._foxtrot_html, (
+            f"Outgoing tab should carry label {expected_label!r} (the "
+            f"<timeValue> N format for the current turn); html slice "
+            f"omitted for brevity"
+        )
+
+    def test_incoming_alert_renders_tab_with_timevalue_label(self):
+        """Echo (target_controller of Foxtrot's attack) sees the alert
+        with the same tab structure for incoming attacks, labeled
+        `<ucfirst(timeValue)> N`."""
+        expected_label = f">{self._time_word[:1].upper()}{self._time_word[1:]} {self._turn}<"
+        assert 'data-tab-group="incoming-attacks"' in self._echo_html, (
+            "Echo's view should render the incoming-attacks tab group"
+        )
+        assert expected_label in self._echo_html, (
+            f"Incoming tab should carry label {expected_label!r}"
+        )
+
+
+@pytest.mark.db
+class TestAttackLogMultiTurnTabs:
+    """Multi-turn tab rendering: 2+ turns of attack logs produce 2+ tabs,
+    sorted latest-first, with the latest tab marked is-active.
+
+    Setup uses direct DB inserts of synthetic location_attack_logs rows
+    (attacker=Foxtrot, target=Echo) on turn 0 and turn 1 — bypasses the
+    actual attack mechanic to exercise the renderer's grouping/ordering
+    independently of attack-math state across turns."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def multi_turn_logs_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Foxtrot' LIMIT 1"
+        )
+        foxtrot_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Echo' LIMIT 1"
+        )
+        echo_id = cur.fetchone()['id']
+        for turn in [0, 1]:
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}location_attack_logs` "
+                f"(location_name, target_controller_id, attacker_id, attack_val, defence_val, "
+                f"turn, success, target_result_text, attacker_result_text) "
+                f"VALUES ('MultiTurnFakeBase', %s, %s, 5, 1, %s, 1, "
+                f"'multi-turn-target-text-t%s', 'multi-turn-attacker-text-t%s')",
+                (echo_id, foxtrot_id, turn, turn, turn),
+            )
+        conn.commit()
+
+        cur.execute(
+            f"SELECT value FROM `{GAME_PREFIX}config` WHERE name = 'timeValue'"
+        )
+        time_word = (cur.fetchone() or {}).get('value', 'Tour')
+        cur.close()
+        conn.close()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        foxtrot_html = page.content()
+
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._foxtrot_html = foxtrot_html
+        type(self)._echo_html = echo_html
+        type(self)._time_word = time_word
+        yield
+
+    def _label(self, turn):
+        return f">{self._time_word[:1].upper()}{self._time_word[1:]} {turn}<"
+
+    def test_outgoing_two_turns_latest_first_active(self):
+        """Foxtrot's outgoing tab bar shows Tour 1 before Tour 0 (latest
+        first), and Tour 1 is the active tab on initial render."""
+        html = self._foxtrot_html
+        pos_t1 = html.find(self._label(1))
+        pos_t0 = html.find(self._label(0))
+        assert pos_t1 > 0 and pos_t0 > 0, (
+            f"Both {self._label(1)!r} and {self._label(0)!r} should appear "
+            f"in Foxtrot's outgoing tabs"
+        )
+        assert pos_t1 < pos_t0, (
+            f"Latest turn ({self._label(1)!r}) should appear before "
+            f"earlier turn ({self._label(0)!r}); got positions "
+            f"{pos_t1} and {pos_t0}"
+        )
+        m = re.search(
+            r'<li class="is-active" data-tab-group="outgoing-attacks" '
+            r'data-tab-index="\d+"><a[^>]*>([^<]+)</a>',
+            html,
+        )
+        assert m, "Active outgoing tab should render with is-active class"
+        active_label = m.group(1).strip()
+        expected = f"{self._time_word[:1].upper()}{self._time_word[1:]} 1"
+        assert active_label == expected, (
+            f"Active outgoing tab should be {expected!r} (latest turn); "
+            f"got {active_label!r}"
+        )
+
+    def test_incoming_two_turns_latest_first_active(self):
+        """Echo's incoming tab bar shows Tour 1 before Tour 0 and marks
+        Tour 1 as active — same contract as outgoing."""
+        html = self._echo_html
+        pos_t1 = html.find(self._label(1))
+        pos_t0 = html.find(self._label(0))
+        assert pos_t1 > 0 and pos_t0 > 0, (
+            f"Both {self._label(1)!r} and {self._label(0)!r} should appear "
+            f"in Echo's incoming tabs"
+        )
+        assert pos_t1 < pos_t0, (
+            f"Latest turn ({self._label(1)!r}) should appear before "
+            f"earlier turn ({self._label(0)!r})"
+        )
+        m = re.search(
+            r'<li class="is-active" data-tab-group="incoming-attacks" '
+            r'data-tab-index="\d+"><a[^>]*>([^<]+)</a>',
+            html,
+        )
+        assert m, "Active incoming tab should render with is-active class"
+        active_label = m.group(1).strip()
+        expected = f"{self._time_word[:1].upper()}{self._time_word[1:]} 1"
+        assert active_label == expected, (
+            f"Active incoming tab should be {expected!r}; got {active_label!r}"
+        )
