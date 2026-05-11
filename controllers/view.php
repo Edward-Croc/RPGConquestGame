@@ -214,7 +214,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             echo $htmlBase;
 
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
-            if( hasBase($gameReady, $controllers['id'])) {
+            $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
+            if ($locationAttackMode !== 'worker' && hasBase($gameReady, $controllers['id'])) {
                 if($showAttackableControllerKnownLocations !== NULL) {
                     echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
                             <input type="hidden" name="controller_id" value="%1$s">

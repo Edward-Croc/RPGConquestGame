@@ -102,6 +102,17 @@ if ($mechanics['end_step'] == 'attackMechanic') {
 }
 
 if ($mechanics['end_step'] == 'recalculateBaseDefence') {
+    require_once 'locationAttackMechanic.php';
+    $locationAttackResult = locationAttackMechanic($gameReady, $mechanics['turncounter']);
+    if ( !$locationAttackResult){
+        echo __FUNCTION__."(): Failed to resolve queued location attacks: locationAttackMechanic <br />";
+        return false;
+    }
+    changeEndTurnState($gameReady, 'locationAttackMechanic', $mechanics);
+    $mechanics['end_step'] = 'locationAttackMechanic';
+}
+
+if ($mechanics['end_step'] == 'locationAttackMechanic') {
     // check claiming territory
     $claimResult = claimMechanic($gameReady, $mechanics);
     if ( !$claimResult){
