@@ -139,9 +139,15 @@ CREATE INDEX idx_controller_known_locations_controller_id ON {prefix}controller_
 CREATE INDEX idx_controller_known_locations_location_id ON {prefix}controller_known_locations (location_id);
 
 CREATE TABLE {prefix}controller_location_attacks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     location_id INT,
     attacker_controller_id INT,
-    success TINYINT(1),
+    queued_turn INT,
+    defence_val_snapshot INT,
+    success TINYINT(1) DEFAULT NULL,
+    attack_val_resolved INT DEFAULT NULL,
+    defence_val_resolved INT DEFAULT NULL,
+    resolved_turn INT DEFAULT NULL,
     FOREIGN KEY (location_id) REFERENCES {prefix}locations (id),
     FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id)
 );
