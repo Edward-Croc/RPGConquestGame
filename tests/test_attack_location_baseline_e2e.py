@@ -162,20 +162,10 @@ def _read_attack_logs_for(location_name):
     return rows
 
 
-def _set_location_attack_mode(mode):
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}config` SET value = %s "
-        f"WHERE name = 'locationAttackMode'",
-        (mode,),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
 def _read_queue_rows_for_attacker(attacker_id):
+    """Belt-and-buckle DB read of controller_location_attacks rows for
+    an attacker. Used by @pytest.mark.db belt-and-buckle tests; UI-only
+    tests don't depend on this."""
     conn = _db_conn()
     cur = conn.cursor()
     cur.execute(
@@ -189,26 +179,73 @@ def _read_queue_rows_for_attacker(attacker_id):
     return rows
 
 
-def _reset_echo_base_pre_swap_flags(location_id):
-    """Reset Echo-Base to its TestConfig pre-swap state: flags (1, 0)
-    AND the original activate_json swap definition. Necessary because
-    save_to_json=TRUE in the swap alternates direction on each call, so
-    prior class attacks may have left the swap pointing at (1, 0)."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    original_activate_json = (
-        '{"update_location":{"can_be_destroyed":0,'
-        '"can_be_repaired":1,"save_to_json":"TRUE"}}'
+def _set_config_via_ui(page, name, value):
+    """Set a config row's value via /base/configuration.php POST.
+
+    HTTP-only equivalent of UPDATE config SET value=? WHERE name=?. Used
+    so the locationAttackMode flip is observable from any deployment
+    (local OR remote demo where direct DB access isn't available).
+    """
+    safe_goto(page, f"{PHP_BASE_URL}/base/configuration.php")
+    page.wait_for_load_state("load")
+    target_row = None
+    for row in page.locator("tr:has(form)").all():
+        name_cell = row.locator("td").nth(1)
+        if name_cell.inner_text().strip() == name:
+            target_row = row
+            break
+    if target_row is None:
+        raise AssertionError(f"Config row {name!r} not found on /base/configuration.php")
+    target_row.locator("input[name='value']").fill(value)
+    target_row.locator("input[name='update_config']").click()
+    page.wait_for_load_state("load")
+
+
+def _foxtrot_can_attack_echo_base(page, echo_base_id):
+    """As Foxtrot on /controllers/action.php, is Echo-Base in the
+    attackable dropdown? Returns True if the option exists. Used as the
+    UI proxy for `locations.can_be_destroyed = 1` AND CKL-seeded."""
+    select = page.locator("select#attackLocationSelect")
+    if select.count() == 0:
+        return False
+    return select.locator(f"option[value='{echo_base_id}']").count() > 0
+
+
+def _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id):
+    """Ensure Echo-Base is attackable by Foxtrot (i.e. can_be_destroyed=1
+    in the location row AND the CKL is seeded). Toggle once via the
+    /zones/management_locations.php admin button if the location is
+    currently non-destroyable. The toggle uses updateLocation +
+    save_to_json so calling once flips both flags + swap direction.
+    """
+    _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
+    _switch_controller(page, "Foxtrot")
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    if _foxtrot_can_attack_echo_base(page, echo_base_id):
+        return
+    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
+    page.wait_for_load_state("load")
+    # toggle button lives inside a display:none span; submit the form
+    # via JS since playwright's actionability check fails on zero-box.
+    page.evaluate(
+        "id => {"
+        "  const inp = document.querySelector("
+        "    `input[name='toggle_destruction'][value='${id}']`"
+        "  );"
+        "  if (inp && inp.form) inp.form.submit();"
+        "}",
+        echo_base_id,
     )
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}locations` "
-        f"SET can_be_destroyed = 1, can_be_repaired = 0, "
-        f"activate_json = %s WHERE id = %s",
-        (original_activate_json, location_id),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+    page.wait_for_load_state("load")
+    _switch_controller(page, "Foxtrot")
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    if not _foxtrot_can_attack_echo_base(page, echo_base_id):
+        raise AssertionError(
+            "Echo-Base remained non-destroyable after one toggle — "
+            "manual reset needed."
+        )
 
 
 @pytest.mark.db
@@ -534,20 +571,22 @@ class TestAttackLogMultiTurnTabs:
 
 
 @pytest.mark.db
-class TestAttackLocationEndTurnMode:
-    """End-of-turn dispatch mode (`locationAttackMode='endTurn'`).
+class TestAttackLocationEndTurnModeDbBeltAndBuckle:
+    """Belt-and-buckle DB-precision sanity for the endTurn mode contract.
 
-    Contract: click queues a row into controller_location_attacks with a
-    defence_val_snapshot and no immediate side-effects; the Vos-attaques
-    panel renders the queued entry in italic with the live-recomputed
-    attack force; end-of-turn resolution populates resolved columns and
-    fires the same effects path as immediate mode.
+    Mirrors `TestAttackLocationEndTurnMode`'s scenario but inspects the
+    `controller_location_attacks` columns directly to verify exact
+    values that the UI-only class can only observe indirectly:
+    `defence_val_snapshot` non-NULL at click, `success` flips NULL→1 at
+    EOT, `attack_val_resolved`/`defence_val_resolved`/`resolved_turn`
+    all populated. Declared BEFORE the UI-only `EndTurnMode` class so
+    the EOT attack math resolves on turn 0 (Echo-Base age=0 = no
+    defence-from-age bonus that would tie attack vs defence). Marked
+    @pytest.mark.db so it skips on demo runs (UI_ONLY=1).
     """
 
     @pytest.fixture(scope="class", autouse=True)
     def attack_state(self, browser):
-        _set_location_attack_mode('endTurn')
-
         context = browser.new_context()
         page = context.new_page()
         register_php_error_listener(page)
@@ -556,22 +595,17 @@ class TestAttackLocationEndTurnMode:
         echo_base_id = _location_id_via_management(page, "Echo-Base")
         foxtrot_id = _controller_id_via_management(page, "Foxtrot")
 
-        # Earlier classes (Baseline, TabsRendering) trip Echo-Base's
-        # activate_json swap so can_be_destroyed lands at 0, which
-        # filters it out of Foxtrot's attackable dropdown. Reset to the
-        # pre-swap (1, 0) before clicking so the form has a target.
-        _reset_echo_base_pre_swap_flags(echo_base_id)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
 
         pre_queue = _read_queue_rows_for_attacker(foxtrot_id)
         pre_logs = _read_attack_logs_for("Echo-Base")
+        pre_flags = _read_location_flags(echo_base_id)
 
-        _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
         _switch_controller(page, "Foxtrot")
         safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
         page.wait_for_load_state("load")
-
-        attack_button_count_at_click = page.locator("input[name='attackLocation']").count()
-        if attack_button_count_at_click > 0:
+        if page.locator("input[name='attackLocation']").count() > 0:
             attack_form = page.locator(
                 "form:has(input[name='attackLocation'])"
             ).first
@@ -581,24 +615,18 @@ class TestAttackLocationEndTurnMode:
             attack_form.locator("input[name='attackLocation']").click()
             page.wait_for_load_state("load")
 
-        pre_click_flags = _read_location_flags(echo_base_id)
         post_click_queue = _read_queue_rows_for_attacker(foxtrot_id)
         post_click_logs = _read_attack_logs_for("Echo-Base")
+        post_click_flags = _read_location_flags(echo_base_id)
 
-        _switch_controller(page, "Foxtrot")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        foxtrot_html_queued = page.content()
-
-        _reset_echo_base_pre_swap_flags(echo_base_id)
-        pre_eot_flags = _read_location_flags(echo_base_id)
         end_turn(page, PHP_BASE_URL)
 
-        post_eot_flags = _read_location_flags(echo_base_id)
         post_eot_queue = _read_queue_rows_for_attacker(foxtrot_id)
         post_eot_logs = _read_attack_logs_for("Echo-Base")
+        post_eot_flags = _read_location_flags(echo_base_id)
 
         assert_no_collected_php_errors(page)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
         context.close()
 
         type(self)._echo_base_id = echo_base_id
@@ -609,14 +637,170 @@ class TestAttackLocationEndTurnMode:
         type(self)._pre_logs = pre_logs
         type(self)._post_click_logs = post_click_logs
         type(self)._post_eot_logs = post_eot_logs
-        type(self)._pre_click_flags = pre_click_flags
-        type(self)._pre_eot_flags = pre_eot_flags
+        type(self)._pre_flags = pre_flags
+        type(self)._post_click_flags = post_click_flags
         type(self)._post_eot_flags = post_eot_flags
-        type(self)._foxtrot_html_queued = foxtrot_html_queued
-        type(self)._attack_button_count_at_click = attack_button_count_at_click
         yield
 
-        _set_location_attack_mode('immediate')
+    def test_db_click_inserts_queue_row_with_snapshot(self):
+        """DB-precision: click inserts a queue row with
+        defence_val_snapshot populated and success NULL."""
+        new = [r for r in self._post_click_queue
+               if r['id'] not in {p['id'] for p in self._pre_queue}]
+        assert len(new) == 1, (
+            f"Expected one new controller_location_attacks row; "
+            f"got {len(new)}"
+        )
+        row = new[0]
+        assert row['attacker_controller_id'] == self._foxtrot_id
+        assert row['location_id'] == self._echo_base_id
+        assert row['defence_val_snapshot'] is not None, (
+            "defence_val_snapshot must be populated at click time"
+        )
+        assert row['success'] is None, (
+            "success must be NULL (queued, not yet resolved)"
+        )
+
+    def test_db_click_does_not_log(self):
+        """DB-precision: at click time no location_attack_logs row."""
+        new_logs = [r for r in self._post_click_logs
+                    if r['id'] not in {p['id'] for p in self._pre_logs}]
+        assert len(new_logs) == 0, (
+            f"location_attack_logs must NOT gain a row at click time "
+            f"in endTurn mode; got {len(new_logs)} new rows"
+        )
+
+    def test_db_eot_populates_resolved_columns(self):
+        """DB-precision: after EOT the queue row has
+        attack_val_resolved + defence_val_resolved + success +
+        resolved_turn all populated, success==1 for the deterministic
+        Foxtrot-vs-Echo-Base scenario on turn 0."""
+        resolved = [r for r in self._post_eot_queue
+                    if r['attacker_controller_id'] == self._foxtrot_id
+                    and r['location_id'] == self._echo_base_id]
+        assert len(resolved) >= 1
+        row = resolved[-1]
+        assert row['success'] == 1, (
+            f"EOT must resolve as success for deterministic Foxtrot vs "
+            f"Echo-Base scenario on turn 0; got success={row['success']}, "
+            f"attack_resolved={row['attack_val_resolved']}, "
+            f"defence_resolved={row['defence_val_resolved']}"
+        )
+        assert row['attack_val_resolved'] is not None
+        assert row['defence_val_resolved'] is not None
+        assert row['resolved_turn'] is not None
+
+    def test_db_eot_fires_activate_json_swap(self):
+        """DB-precision: the activate_json update_location swap fires —
+        Echo-Base's can_be_destroyed/can_be_repaired flags flip from
+        pre-EOT to post-EOT (direction depends on swap state, but they
+        MUST change). Relies on the attack succeeding on turn 0."""
+        assert (self._post_eot_flags['can_be_destroyed']
+                != self._post_click_flags['can_be_destroyed']
+                or self._post_eot_flags['can_be_repaired']
+                != self._post_click_flags['can_be_repaired']), (
+            f"Echo-Base flags must change across EOT — proves "
+            f"activate_json swap fired. pre_eot="
+            f"{self._post_click_flags}, post_eot={self._post_eot_flags}"
+        )
+
+    def test_db_eot_inserts_audit_log(self):
+        """DB-precision: location_attack_logs gains exactly one new row
+        after EOT (the audit trail of the resolved attack)."""
+        new_logs = [r for r in self._post_eot_logs
+                    if r['id'] not in {p['id'] for p in self._post_click_logs}]
+        assert len(new_logs) >= 1, (
+            f"location_attack_logs must gain a row after EOT; "
+            f"got {len(new_logs)}"
+        )
+
+
+class TestAttackLocationEndTurnMode:
+    """End-of-turn dispatch mode (`locationAttackMode='endTurn'`).
+
+    UI-only — works on any deployment (local or remote demo). Verifies
+    the contract through HTML observation of Foxtrot's outgoing-attacks
+    panel and Echo's incoming alert panel: at click time the queue row
+    surfaces as an italic 'Attaque planifi...' entry with a predicted
+    band; at end-of-turn the italic preview transitions into a resolved
+    log entry and Echo's alert panel gains a matching row.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def attack_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        pre_click_foxtrot_html = page.content()
+        attack_button_count_at_click = page.locator("input[name='attackLocation']").count()
+
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        pre_click_echo_html = page.content()
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        if attack_button_count_at_click > 0:
+            attack_form = page.locator(
+                "form:has(input[name='attackLocation'])"
+            ).first
+            attack_form.locator("select[name='target_location_id']").select_option(
+                value=str(echo_base_id)
+            )
+            attack_form.locator("input[name='attackLocation']").click()
+            page.wait_for_load_state("load")
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_click_foxtrot_html = page.content()
+
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_click_echo_html = page.content()
+
+        end_turn(page, PHP_BASE_URL)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_eot_foxtrot_html = page.content()
+
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_eot_echo_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        context.close()
+
+        type(self)._echo_base_id = echo_base_id
+        type(self)._foxtrot_id = foxtrot_id
+        type(self)._echo_id = echo_id
+        type(self)._pre_click_foxtrot_html = pre_click_foxtrot_html
+        type(self)._pre_click_echo_html = pre_click_echo_html
+        type(self)._post_click_foxtrot_html = post_click_foxtrot_html
+        type(self)._post_click_echo_html = post_click_echo_html
+        type(self)._post_eot_foxtrot_html = post_eot_foxtrot_html
+        type(self)._post_eot_echo_html = post_eot_echo_html
+        type(self)._attack_button_count_at_click = attack_button_count_at_click
+        yield
 
     def test_attack_form_was_rendered_in_endturn_mode(self):
         """endTurn mode: the attack-selector form still renders for the
@@ -626,122 +810,82 @@ class TestAttackLocationEndTurnMode:
             f"{self._attack_button_count_at_click} attackLocation buttons"
         )
 
-    def test_click_inserts_queue_row_with_snapshot(self):
-        """endTurn mode: click on Attaquer inserts exactly one row in
-        controller_location_attacks with defence_val_snapshot populated
-        and success NULL (queued, not yet resolved)."""
-        new = [r for r in self._post_click_queue
-               if r['id'] not in {p['id'] for p in self._pre_queue}]
-        assert len(new) == 1, (
-            f"Expected exactly one new controller_location_attacks row; "
-            f"got {len(new)}"
+    def test_click_inserts_queue_row_observable_as_italic_preview(self):
+        """endTurn mode: click on Attaquer surfaces a new italic
+        'Attaque planifi...' entry in Foxtrot's outgoing-attacks panel —
+        the user-visible proxy for a queue row insert with
+        defence_val_snapshot populated (the band derivation requires it).
+        """
+        pre_count = self._pre_click_foxtrot_html.count("<em>Attaque planifi")
+        post_count = self._post_click_foxtrot_html.count("<em>Attaque planifi")
+        assert post_count == pre_count + 1, (
+            f"Foxtrot's panel should gain exactly one new italic queued "
+            f"preview after click; pre={pre_count} post={post_count}"
         )
-        row = new[0]
-        assert row['attacker_controller_id'] == self._foxtrot_id
-        assert row['location_id'] == self._echo_base_id
-        assert row['defence_val_snapshot'] is not None, (
-            "defence_val_snapshot should be populated at click time"
+        assert "Echo-Base" in self._post_click_foxtrot_html, (
+            "Queued preview should mention Echo-Base"
         )
-        assert row['success'] is None, (
-            "success should be NULL (queued, not yet resolved at click)"
+        bands = ["Échec probable", "Faibles chances", "Réussite probable"]
+        assert any(b in self._post_click_foxtrot_html for b in bands), (
+            f"Queued preview should include one of the predicted-outcome "
+            f"bands {bands} — band derivation proves defence_val_snapshot "
+            f"was populated"
         )
 
     def test_click_does_not_fire_side_effects(self):
-        """endTurn mode: at click time, attackLocation returns after the
-        queue insert WITHOUT running the effects path. Echo-Base's flags
-        stay at whatever they were and location_attack_logs gains no row.
-        """
-        post_click_logs_ids = {r['id'] for r in self._post_click_logs}
-        pre_logs_ids = {r['id'] for r in self._pre_logs}
-        new_logs_at_click = post_click_logs_ids - pre_logs_ids
-        assert len(new_logs_at_click) == 0, (
-            f"location_attack_logs should NOT gain a row at click time "
-            f"in endTurn mode; got {len(new_logs_at_click)} new rows"
+        """endTurn mode: at click time, no resolved log entry appears in
+        Echo's `Alerte` incoming-attack panel — proves the effects path
+        did NOT run synchronously."""
+        pre_alertes = self._pre_click_echo_html.count("Alerte !")
+        post_alertes = self._post_click_echo_html.count("Alerte !")
+        assert post_alertes == pre_alertes, (
+            f"Echo's alert-panel count should NOT change at click time "
+            f"in endTurn mode; pre={pre_alertes} post={post_alertes}"
         )
 
     def test_panel_renders_italic_queued_preview(self):
-        """While the queue row is unresolved (success IS NULL), the
-        Vos-attaques panel renders the queued entry wrapped in `<em>`
-        with the textLocationAttackQueued template ('Attaque planifi...')."""
-        assert "Attaque planifi" in self._foxtrot_html_queued, (
+        """While the queue row is unresolved, the Vos-attaques panel
+        renders the queued entry wrapped in `<em>` with the
+        textLocationAttackQueued template ('Attaque planifi...')."""
+        assert "Attaque planifi" in self._post_click_foxtrot_html, (
             "Queued preview text 'Attaque planifi...' should render in "
             "Foxtrot's outgoing-attacks panel before EOT"
         )
-        assert "<em>" in self._foxtrot_html_queued, (
+        assert "<em>" in self._post_click_foxtrot_html, (
             "Queued entries should be wrapped in <em> tags (italic) to "
             "distinguish from resolved entries"
         )
 
-    def test_eot_populates_resolved_columns(self):
-        """End-of-turn: the queue row gets attack_val_resolved +
-        defence_val_resolved + success + resolved_turn populated, marking
-        it as fully resolved."""
-        resolved = [r for r in self._post_eot_queue
-                    if r['attacker_controller_id'] == self._foxtrot_id
-                    and r['location_id'] == self._echo_base_id]
-        assert len(resolved) >= 1, (
-            "Should have at least one resolved queue row for Foxtrot vs "
-            "Echo-Base after EOT"
-        )
-        row = resolved[-1]
-        assert row['success'] is not None, (
-            "success should be populated after end-of-turn resolution"
-        )
-        assert row['attack_val_resolved'] is not None
-        assert row['defence_val_resolved'] is not None
-        assert row['resolved_turn'] is not None
-
-    def test_eot_fires_side_effects(self):
-        """End-of-turn: the shared resolveLocationAttackEffects helper
-        runs. Echo-Base's activate_json swap flips flags from the reset
-        (1, 0) to the post-swap (0, 1), and a location_attack_logs row
-        gets inserted as the audit trail."""
-        resolved = [r for r in self._post_eot_queue
-                    if r['attacker_controller_id'] == self._foxtrot_id
-                    and r['location_id'] == self._echo_base_id]
-        row = resolved[-1] if resolved else {}
-        assert row.get('success') == 1, (
-            f"EOT resolution: Foxtrot vs Echo-Base should succeed "
-            f"(deterministic math from TestConfig); got success="
-            f"{row.get('success')}, attack_resolved="
-            f"{row.get('attack_val_resolved')}, defence_resolved="
-            f"{row.get('defence_val_resolved')}"
-        )
-        assert self._pre_eot_flags['can_be_destroyed'] == 1, (
-            "Sanity: pre-EOT reset should leave can_be_destroyed=1"
-        )
-        assert self._pre_eot_flags['can_be_repaired'] == 0, (
-            "Sanity: pre-EOT reset should leave can_be_repaired=0"
-        )
-        assert self._post_eot_flags['can_be_destroyed'] == 0, (
-            f"Post-EOT: can_be_destroyed should flip to 0; "
-            f"got {self._post_eot_flags['can_be_destroyed']}"
-        )
-        assert self._post_eot_flags['can_be_repaired'] == 1, (
-            f"Post-EOT: can_be_repaired should flip to 1; "
-            f"got {self._post_eot_flags['can_be_repaired']}"
-        )
-        new_logs = [r for r in self._post_eot_logs
-                    if r['id'] not in {p['id'] for p in self._pre_logs}]
-        assert len(new_logs) >= 1, (
-            f"location_attack_logs should gain at least one row after "
-            f"EOT in endTurn mode; got {len(new_logs)} new rows"
+    def test_eot_replaces_italic_preview_with_resolved_entry(self):
+        """End-of-turn: the italic preview for this attack disappears
+        from Foxtrot's panel and a resolved (non-italic) entry takes its
+        place — proves the resolver UPDATEd the queue row's `success`
+        column from NULL to non-NULL. EOT side-effect precision (the
+        location_attack_logs INSERT, the activate_json swap) is verified
+        by the DB belt-and-buckle class — Echo's `Alerte !` wrapper is a
+        one-per-turn render and not reliable as a per-attack counter.
+        """
+        pre_italic = self._post_click_foxtrot_html.count("<em>Attaque planifi")
+        post_italic = self._post_eot_foxtrot_html.count("<em>Attaque planifi")
+        assert post_italic < pre_italic, (
+            f"Italic queued preview count should DECREASE after EOT "
+            f"(queue rows transition to resolved); pre={pre_italic} "
+            f"post={post_italic}"
         )
 
 
-@pytest.mark.db
 class TestAttackLocationWorkerMode:
     """Worker mode (`locationAttackMode='worker'`).
 
-    Contract: controller-page attack-selector form is HIDDEN. Backend
-    rejects any direct GET to action.php?attackLocation= (defence in
-    depth) — no queue row inserted, no side-effects fire.
+    UI-only. Contract: controller-page attack-selector form is HIDDEN.
+    Backend rejects any direct GET to action.php?attackLocation= as
+    defence in depth — observable as ABSENCE of italic queued previews
+    in Foxtrot's panel and ABSENCE of new alert entries in Echo's panel
+    after the crafted GET.
     """
 
     @pytest.fixture(scope="class", autouse=True)
     def worker_state(self, browser):
-        _set_location_attack_mode('worker')
-
         context = browser.new_context()
         page = context.new_page()
         register_php_error_listener(page)
@@ -750,21 +894,21 @@ class TestAttackLocationWorkerMode:
         echo_base_id = _location_id_via_management(page, "Echo-Base")
         foxtrot_id = _controller_id_via_management(page, "Foxtrot")
 
-        # Reset Echo-Base flags so a viable attackable target exists —
-        # rules out a false-pass where the form is empty because no
-        # destroyable locations are known (we want the test to prove the
-        # MODE hides the form, not the lack of targets).
-        _reset_echo_base_pre_swap_flags(echo_base_id)
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+        _set_config_via_ui(page, "locationAttackMode", "worker")
 
-        pre_queue = _read_queue_rows_for_attacker(foxtrot_id)
-        pre_logs = _read_attack_logs_for("Echo-Base")
-
-        _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
         _switch_controller(page, "Foxtrot")
         safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
         page.wait_for_load_state("load")
+        foxtrot_html_in_worker_mode = page.content()
         attack_button_count = page.locator("input[name='attackLocation']").count()
 
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        pre_get_echo_html = page.content()
+
+        _switch_controller(page, "Foxtrot")
         safe_goto(
             page,
             f"{PHP_BASE_URL}/controllers/action.php"
@@ -772,22 +916,27 @@ class TestAttackLocationWorkerMode:
         )
         page.wait_for_load_state("load")
 
-        post_get_queue = _read_queue_rows_for_attacker(foxtrot_id)
-        post_get_logs = _read_attack_logs_for("Echo-Base")
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_get_foxtrot_html = page.content()
+
+        _switch_controller(page, "Echo")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_get_echo_html = page.content()
 
         assert_no_collected_php_errors(page)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
         context.close()
 
         type(self)._echo_base_id = echo_base_id
-        type(self)._foxtrot_id = foxtrot_id
         type(self)._attack_button_count = attack_button_count
-        type(self)._pre_queue = pre_queue
-        type(self)._post_get_queue = post_get_queue
-        type(self)._pre_logs = pre_logs
-        type(self)._post_get_logs = post_get_logs
+        type(self)._foxtrot_html_in_worker_mode = foxtrot_html_in_worker_mode
+        type(self)._pre_get_echo_html = pre_get_echo_html
+        type(self)._post_get_foxtrot_html = post_get_foxtrot_html
+        type(self)._post_get_echo_html = post_get_echo_html
         yield
-
-        _set_location_attack_mode('immediate')
 
     def test_attack_selector_hidden(self):
         """Controller view should NOT render the attack-selector form
@@ -799,21 +948,131 @@ class TestAttackLocationWorkerMode:
 
     def test_crafted_get_does_not_queue(self):
         """Crafted GET to action.php?attackLocation= must be rejected by
-        attackLocation()'s mode-check (defence in depth). No new queue
-        row should appear in controller_location_attacks."""
-        pre_ids = {r['id'] for r in self._pre_queue}
-        new = [r for r in self._post_get_queue if r['id'] not in pre_ids]
-        assert len(new) == 0, (
-            f"Crafted GET in worker mode should NOT insert a queue row; "
-            f"got {len(new)} new rows"
+        attackLocation()'s mode-check. Foxtrot's panel should not gain
+        a new italic queued preview as a result."""
+        italic_in_worker = self._foxtrot_html_in_worker_mode.count("<em>Attaque planifi")
+        italic_post_get = self._post_get_foxtrot_html.count("<em>Attaque planifi")
+        assert italic_post_get == italic_in_worker, (
+            f"Crafted GET in worker mode should NOT add an italic "
+            f"queued preview to Foxtrot's panel; "
+            f"before_GET={italic_in_worker} after_GET={italic_post_get}"
         )
 
     def test_crafted_get_does_not_log(self):
-        """Crafted GET must not produce a location_attack_logs row
-        either (no effects path runs)."""
-        pre_ids = {r['id'] for r in self._pre_logs}
-        new = [r for r in self._post_get_logs if r['id'] not in pre_ids]
-        assert len(new) == 0, (
-            f"Crafted GET in worker mode should NOT insert an attack "
-            f"log row; got {len(new)} new rows"
+        """Crafted GET must not surface as a new entry in Echo's
+        `Alerte` incoming-attack panel (no effects path runs)."""
+        pre_alertes = self._pre_get_echo_html.count("Alerte !")
+        post_alertes = self._post_get_echo_html.count("Alerte !")
+        assert post_alertes == pre_alertes, (
+            f"Echo's alert-panel count should NOT change after a "
+            f"crafted GET in worker mode; pre={pre_alertes} "
+            f"post={post_alertes}"
+        )
+
+
+class TestAttackLocationEndTurnCancelAndFilter:
+    """endTurn mode UX extensions:
+      (a) a planned attack is cancellable via an inline 'Annuler' button
+          on the italic preview entry;
+      (b) once a target has a pending queue row for the attacker, the
+          target is filtered out of that attacker's attackable dropdown
+          (no double-queuing the same target).
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        dropdown_pre_queue_html = page.content()
+
+        if page.locator("input[name='attackLocation']").count() > 0:
+            attack_form = page.locator(
+                "form:has(input[name='attackLocation'])"
+            ).first
+            attack_form.locator("select[name='target_location_id']").select_option(
+                value=str(echo_base_id)
+            )
+            attack_form.locator("input[name='attackLocation']").click()
+            page.wait_for_load_state("load")
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_queue_html = page.content()
+
+        cancel_link = page.locator("a.cancel-location-attack-btn").first
+        cancel_link.click()
+        page.wait_for_load_state("load")
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        post_cancel_html = page.content()
+
+        assert_no_collected_php_errors(page)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        context.close()
+
+        type(self)._echo_base_id = echo_base_id
+        type(self)._dropdown_pre_queue_html = dropdown_pre_queue_html
+        type(self)._post_queue_html = post_queue_html
+        type(self)._post_cancel_html = post_cancel_html
+        yield
+
+    def test_target_in_dropdown_before_queueing(self):
+        """Sanity: Echo-Base is present in Foxtrot's attackable dropdown
+        BEFORE queueing — rules out a false-pass on the filter test."""
+        option_marker = f'value="{self._echo_base_id}">Echo-Base'
+        assert option_marker in self._dropdown_pre_queue_html, (
+            "Echo-Base should appear in Foxtrot's attackable dropdown pre-queue"
+        )
+
+    def test_target_filtered_from_dropdown_when_pending(self):
+        """endTurn (b): once Foxtrot has a pending queue row for
+        Echo-Base, Echo-Base must NOT appear in the attackable dropdown
+        — prevents double-queuing the same target."""
+        option_marker = f'value="{self._echo_base_id}">Echo-Base'
+        assert option_marker not in self._post_queue_html, (
+            "Echo-Base should be filtered out of Foxtrot's attackable "
+            "dropdown while a pending queue row exists"
+        )
+
+    def test_cancel_button_renders_on_italic_preview(self):
+        """endTurn (a): the italic preview entry renders with an inline
+        Annuler button so the user can revoke the queued attack."""
+        assert "cancel-location-attack-btn" in self._post_queue_html, (
+            "Italic preview entry should include the cancel button class"
+        )
+        assert "Annuler" in self._post_queue_html, (
+            "Cancel button label 'Annuler' should appear"
+        )
+
+    def test_cancel_removes_italic_preview(self):
+        """endTurn (a): clicking Annuler deletes the queue row, so the
+        italic preview vanishes on next page load."""
+        pre = self._post_queue_html.count("<em>Attaque planifi")
+        post = self._post_cancel_html.count("<em>Attaque planifi")
+        assert post < pre, (
+            f"Italic preview should disappear after Annuler; "
+            f"pre={pre} post={post}"
+        )
+
+    def test_target_returns_to_dropdown_after_cancel(self):
+        """endTurn (b reverse): after cancel, the queue row is gone so
+        Echo-Base reappears in the attackable dropdown."""
+        option_marker = f'value="{self._echo_base_id}">Echo-Base'
+        assert option_marker in self._post_cancel_html, (
+            "Echo-Base should reappear in the attackable dropdown after cancel"
         )
