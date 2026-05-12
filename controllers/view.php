@@ -251,7 +251,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
 
             $queuedStmt = $gameReady->prepare("
-                SELECT cla.queued_turn, cla.defence_val_snapshot,
+                SELECT cla.id AS queue_row_id, cla.queued_turn, cla.defence_val_snapshot,
                        l.id AS location_id, l.name AS location_name, l.zone_id
                 FROM {$prefix}controller_location_attacks cla
                 JOIN {$prefix}locations l ON cla.location_id = l.id
@@ -275,7 +275,13 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 } else {
                     $bandKey = 'textLocationAttackOutcomeWeak';
                 }
-                $byTurn[(int)$q['queued_turn']][] = '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>';
+                $cancelLink = sprintf(
+                    '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
+                    $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
+                );
+                $byTurn[(int)$q['queued_turn']][] =
+                    '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
+                    . $cancelLink;
             }
 
             if (!empty($byTurn)) {
