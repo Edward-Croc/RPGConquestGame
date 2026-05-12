@@ -356,7 +356,8 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
     // Exclude own — controller cannot attack own base.
-    $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true);
+    $excludePending = (getConfig($pdo, 'locationAttackMode') === 'endTurn');
+    $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true, $excludePending);
     if (empty($locations)) return NULL;
 
     $options = '';
