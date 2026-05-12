@@ -249,10 +249,37 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             ");
             $outgoingStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
-            if (!empty($outgoingAttacks)) {
+
+            $queuedStmt = $gameReady->prepare("
+                SELECT cla.queued_turn, cla.defence_val_snapshot,
+                       l.id AS location_id, l.name AS location_name, l.zone_id
+                FROM {$prefix}controller_location_attacks cla
+                JOIN {$prefix}locations l ON cla.location_id = l.id
+                WHERE cla.attacker_controller_id = :controller_id AND cla.success IS NULL
+                ORDER BY cla.queued_turn DESC, cla.id DESC
+            ");
+            $queuedStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
+            $queuedAttacks = $queuedStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $byTurn = [];
+            foreach ($outgoingAttacks as $atk) { $byTurn[(int)$atk['turn']][] = $atk['attacker_result_text']; }
+            $bandwidth = (int) getConfig($gameReady, 'attackLocationOutcomeBandwidth');
+            $queuedTpl = getConfig($gameReady, 'textLocationAttackQueued');
+            foreach ($queuedAttacks as $q) {
+                $liveAttack = calculatecontrollerAttack($gameReady, $q['zone_id'], $_SESSION['controller']['id']);
+                $diff = $liveAttack - (int)$q['defence_val_snapshot'];
+                if ($diff > $bandwidth) {
+                    $bandKey = 'textLocationAttackOutcomeProbable';
+                } elseif ($diff < -$bandwidth) {
+                    $bandKey = 'textLocationAttackOutcomeFail';
+                } else {
+                    $bandKey = 'textLocationAttackOutcomeWeak';
+                }
+                $byTurn[(int)$q['queued_turn']][] = '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>';
+            }
+
+            if (!empty($byTurn)) {
                 $timeWord = (string)getConfig($gameReady, 'timeValue');
-                $byTurn = [];
-                foreach ($outgoingAttacks as $atk) { $byTurn[(int)$atk['turn']][] = $atk; }
                 krsort($byTurn);
                 $tabs = '<div class="tabs title"><ul>';
                 $panels = '';
@@ -264,7 +291,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                         $first ? ' class="is-active"' : '', $idx, $idx, ucfirst($timeWord), $turn
                     );
                     $items = '';
-                    foreach ($atks as $atk) { $items .= sprintf('<li>%s</li>', $atk['attacker_result_text']); }
+                    foreach ($atks as $text) { $items .= sprintf('<li>%s</li>', $text); }
                     $panels .= sprintf(
                         '<div class="tab-content"%s data-tab-group="outgoing-attacks" data-tab-index="%d"><ul>%s</ul></div>',
                         $first ? '' : ' style="display:none"', $idx, $items
