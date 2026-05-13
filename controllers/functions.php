@@ -469,10 +469,11 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     if ($mode === 'endTurn') {
         try {
             $insertSql = "INSERT INTO {$prefix}controller_location_attacks
-                (location_id, attacker_controller_id, queued_turn, defence_val_snapshot)
-                VALUES (:location_id, :attacker, :turn, :defence)";
+                (location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot)
+                VALUES (:location_id, :location_name, :attacker, :turn, :defence)";
             $stmt = $pdo->prepare($insertSql);
             $stmt->bindParam(':location_id', $target_location_id, PDO::PARAM_INT);
+            $stmt->bindParam(':location_name', $location[0]['name'], PDO::PARAM_STR);
             $stmt->bindParam(':attacker', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':turn', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':defence', $locationDefence, PDO::PARAM_INT);
@@ -552,7 +553,9 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
         $return['message'] .= $captureResult['message'];
         // IF location is destroyed and captureResult is success
         if ($destroy && $captureResult['success']) {
-            // Delete elements from players and location tables
+            // Delete elements from players and location tables. The
+            // controller_location_attacks FK uses ON DELETE SET NULL so
+            // resolved queue rows survive with their stored location_name.
             try {
                 $sql = "DELETE FROM {$prefix}controller_known_locations WHERE location_id = :id";
                 $stmt = $pdo->prepare($sql);
