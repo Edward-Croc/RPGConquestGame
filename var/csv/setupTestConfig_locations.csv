@@ -3,3 +3,4 @@
 "Echo-Base","Echo's secret base","Hidden tactical details only owner sees",0,"Theta-Artefacts","Echo",1,1,0,"{""update_location"":{""can_be_destroyed"":0,""can_be_repaired"":1,""save_to_json"":""TRUE""}}"
 "Foxtrot-Outpost","Foxtrot's forward outpost","Hidden tactical details only owner sees",0,"Theta-Artefacts","Foxtrot",1,1,0,"{""update_location"":{""can_be_destroyed"":0,""can_be_repaired"":1,""save_to_json"":""TRUE""}}"
 "Civic-Site","Public civic structure","No hidden info",0,"Theta-Artefacts","",0,0,0,""
+"Test-Future-Location","Unowned test location for save_to_json future_location toggle regression","",0,"Theta-Artefacts","",0,1,0,"{""update_location"":{""name"":""Test-Future-Location-Ruined"",""can_be_destroyed"":0,""can_be_repaired"":1,""future_location"":{""name"":""Test-Future-Location"",""can_be_destroyed"":1,""can_be_repaired"":0,""save_to_json"":""TRUE""}}}"

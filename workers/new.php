@@ -41,8 +41,7 @@ if ( !$recrutment_allowed ){
         echo " <div> <h2> $pageTitle </h2> </div>
         <div >
                 Le recrutement n'est pas permis !
-            </div>
-        </body>";
+            </div>";
         return 0;
 }
 
@@ -163,7 +162,6 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     echo $html;
 
 }
-echo "</div>
-</body>";
+echo "</div>";
 
 ?>

@@ -6,6 +6,7 @@ if ( !isset($_SESSION['DEBUG']) ){
     $_SESSION['DEBUG_REPORT'] = false;
 }
 
+require_once '../base/version.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 
@@ -132,3 +133,8 @@ if (
     <input type="submit" name="submit" value="Submit" />
     </form>
 </div>
+<footer class="app-footer">
+    <span class="app-version">v<?php echo htmlspecialchars(defined('APP_VERSION') ? APP_VERSION : '?'); ?></span>
+</footer>
+</body>
+</html>
