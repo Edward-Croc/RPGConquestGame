@@ -9,6 +9,7 @@ if ($_SESSION['DEBUG'] == true ){
     echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
+require_once '../base/version.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 require_once '../mechanics/functions.php';

@@ -22,13 +22,10 @@ echo sprintf("<div class='intro'> %s </div>", $intro);
 
 require_once '../controllers/view.php';
 ?>
-<div class="content flex">
-    <div>
-        <?php require_once '../zones/view.php'; ?>
-    </div> <div>
-        <?php require_once '../workers/viewAll.php'; ?>
-    </div>
-</div>
+<div class="content flex"><?php
+    require_once '../zones/view.php';
+    require_once '../workers/viewAll.php';
+?></div>
 
 <script>
     // Function to show controller details when a controller is selected from the list
@@ -50,5 +47,3 @@ require_once '../controllers/view.php';
     });
 </script>
 
-</body>
-</html>

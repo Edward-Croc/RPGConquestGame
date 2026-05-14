@@ -83,4 +83,26 @@ if (
         echo '<span class="openbtn" onclick="toggleSidebar()"> ☰ </span>';
 
     require_once '../base/baseScript.php';
+
+    // Register the footer emission for end-of-script — content rendered
+    // after this include lands inside <body>; the shutdown function then
+    // closes the document with the version footer. Skipped on redirect
+    // responses (where headers were already sent and we don't want HTML).
+    register_shutdown_function(function() {
+        if (!headers_sent()) {
+            $contentType = '';
+            foreach (headers_list() as $h) {
+                if (stripos($h, 'Content-Type:') === 0) {
+                    $contentType = $h;
+                    break;
+                }
+            }
+            // Default Content-Type is text/html when nothing was set; if
+            // anything non-HTML was set explicitly, skip the footer.
+            if ($contentType && stripos($contentType, 'text/html') === false) {
+                return;
+            }
+        }
+        require_once __DIR__ . '/baseHTMLFooter.php';
+    });
 ?>
