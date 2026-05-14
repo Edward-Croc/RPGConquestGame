@@ -664,8 +664,8 @@ function updateLocation($pdo, $location, $activate_json) {
     $new_activate_location = $activate_json;
     unset($new_activate_location['update_location']);
 
-    // If the old data must be saved to json, add it to the new activate_json
-    if ($update_location_data['save_to_json'] == "TRUE") {
+    // If the old data must be saved to json, add it to the new activate_json.
+    if (($update_location_data['save_to_json'] ?? '') == "TRUE") {
         // Prepare the old location data
         $update_location = array(
             'name' => $location['name'],
