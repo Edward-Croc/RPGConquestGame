@@ -22,7 +22,7 @@ if ($debug) echo "controller_id (guard): ".var_export($controller_id, true)."<br
 // Ownership guard fires only on mutating actions; bare GET passes through
 // to view.php so foreign-controller intel views keep working.
 $MUTATING_ACTIONS = [
-    'createBase', 'moveBase', 'attackLocation', 'repairLocation',
+    'createBase', 'moveBase', 'attackLocation', 'cancelLocationAttack', 'repairLocation',
     'giftInformationAgent', 'giftInformationLocation',
 ];
 $is_mutating = false;
@@ -74,6 +74,19 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
         if ($debug) echo sprintf('end %s %s<br/>', $attackLocationResult['success'], $attackLocationResult['message']);
+    }
+    if (isset($_GET['cancelLocationAttack'])){
+        $queue_row_id = (int) $_GET['cancelLocationAttack'];
+        try {
+            $sql = "DELETE FROM {$prefix}controller_location_attacks
+                WHERE id = :id AND attacker_controller_id = :cid AND success IS NULL";
+            $stmt = $gameReady->prepare($sql);
+            $stmt->bindParam(':id', $queue_row_id, PDO::PARAM_INT);
+            $stmt->bindParam(':cid', $controller_id, PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): DELETE controller_location_attacks Failed: " . $e->getMessage()."<br />";
+        }
     }
     if (isset($_GET['repairLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));

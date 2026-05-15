@@ -204,9 +204,10 @@ function destroyAllTables($pdo) {
             $tables = array(
                 'controller_ressources',
                 'ressources_config',
+                'controller_location_attacks',
                 'location_attack_logs',
                 'controllers_known_enemies',
-                'controller_known_locations', 
+                'controller_known_locations',
                 'controller_worker',
                 'worker_actions',
                 'worker_powers',

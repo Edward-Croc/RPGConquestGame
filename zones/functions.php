@@ -520,9 +520,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *
  * @param PDO $gameReady
  * @param int $controllerId
- * @param bool $limitByDestroyed
- * @param bool $limitByReparable
- * @param bool $excludeOwnLocations
+ * @param bool $limitByDestroyed = false
+ * @param bool $limitByReparable = false
+ * @param bool $excludeOwnLocations = false
+ * @param bool bool $excludePendingAttacks = false
  * 
  * If $limitByDestroyed is true, it will only return locations that can be destroyed.
  * If false, it will return all locations.
@@ -535,7 +536,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *      'can_be_destroyed' => bool
  *  ]
  */
-function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false, bool $excludeOwnLocations = false): array|null {
+function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false, bool $excludeOwnLocations = false, bool $excludePendingAttacks = false): array|null {
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = sprintf("
         SELECT
@@ -557,13 +558,15 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
     ",
     $limitByDestroyed ? " AND l.can_be_destroyed = True" : "",
     $limitByReparable ? " AND l.can_be_repaired = True" : "",
-    $excludeOwnLocations ? " AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)" : ""
+    $excludeOwnLocations ? " AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)" : "",
+    $excludePendingAttacks ? " AND NOT EXISTS (SELECT 1 FROM {$prefix}controller_location_attacks cla WHERE cla.location_id = l.id AND cla.attacker_controller_id = :cid_exclude AND cla.success IS NULL)" : ""
     );
     $stmt = $gameReady->prepare($sql);
     $params = ['controller_id' => $controllerId];
     if ($excludeOwnLocations) {
         $params['controller_id_owner'] = $controllerId;
     }
+    if ($excludePendingAttacks) $params['cid_exclude'] = $controllerId;
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
