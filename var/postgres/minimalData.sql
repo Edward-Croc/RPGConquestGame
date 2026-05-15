@@ -78,7 +78,7 @@ VALUES
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
-    ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
+    ('txt_inf_captured', 'a été capturé', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
     ('continuing_investigate_action', '1', 'Does the investigate action stay active'),
     ('continuing_claimed_action', '1', 'Does the claim action stay active'),
