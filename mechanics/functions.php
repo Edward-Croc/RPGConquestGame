@@ -227,64 +227,7 @@ function calculateVals($pdo, $mechanics){
         echo "DONE <br /></p>";
     }
 
-    echo '</div><div><p> <h3> Calculate zone defense values: </h3> ';
-    try {
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "UPDATE {$prefix}zones
-                SET calculated_defence_val = defence_val + subquery.worker_count
-                FROM (
-                    SELECT
-                        z.id AS zone_id,
-                        COALESCE(COUNT(w.id), 0) AS worker_count
-                    FROM
-                        {$prefix}zones z
-                    LEFT JOIN
-                        {$prefix}workers w ON w.zone_id = z.id
-                    LEFT JOIN 
-                        {$prefix}worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN
-                        {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
-                    WHERE
-                        z.holder_controller_id = cw.controller_id
-                        AND wa.action_choice IN (%s)
-                        AND wa.turn_number = :turn_number
-                    GROUP BY
-                        z.id
-                ) AS subquery
-                WHERE {$prefix}zones.id = subquery.zone_id
-            ";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "UPDATE {$prefix}zones z
-                JOIN (
-                    SELECT z.id AS zone_id, 
-                        COALESCE(COUNT(w.id), 0) AS worker_count 
-                    FROM {$prefix}zones z 
-                    LEFT JOIN {$prefix}workers w ON w.zone_id = z.id 
-                    LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
-                    WHERE z.holder_controller_id = cw.controller_id 
-                    AND wa.action_choice IN (%s)
-                    AND wa.turn_number = :turn_number
-                    GROUP BY z.id
-                ) AS subquery ON z.id = subquery.zone_id
-                SET z.calculated_defence_val = z.defence_val + subquery.worker_count
-            ";
-        }
-        // Prepare and execute SQL query
-        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-        $is_primary_controller = true;
-
-        $sql = sprintf($sql, $active_actions);
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
-        $stmt->bindParam(':is_primary_controller', $is_primary_controller, PDO::PARAM_BOOL);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
-        return false;
-    }
-    echo 'DONE </p></div>';
+    echo '</div>';
 
     changeEndTurnState($pdo, 'calculateVals', $mechanics);
     return true;
@@ -385,6 +328,10 @@ function createNewTurnLines($pdo, $turn_number){
  *
  */
 function claimMechanic($pdo, $mechanics) {
+    $mode = getConfig($pdo, 'claimMode');
+    if ($mode === 'worker_leader') return claimByWorkerLeaderMechanic($pdo, $mechanics);
+    // mode 'worker' (default) AND any unknown value fall through to the body below — preserves current behaviour.
+
     $turn_number = $mechanics['turncounter'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
@@ -433,7 +380,6 @@ function claimMechanic($pdo, $mechanics) {
     $arrayZoneInfo = array();
     $DISCRETECLAIMDIFF = (INT)getConfig($pdo, 'DISCRETECLAIMDIFF');
     $VIOLENTCLAIMDIFF = (INT)getConfig($pdo, 'VIOLENTCLAIMDIFF');
-    $CLAIMTYPEDIFF = $DISCRETECLAIMDIFF - $VIOLENTCLAIMDIFF;
 
     foreach( $claimerArray AS $key => $claimer ) {
         $worker_id = $claimer['claimer_id'];
@@ -604,6 +550,180 @@ function claimMechanic($pdo, $mechanics) {
 
     echo '<p>claimMechanic : DONE</p> </div>';
 
+    return true;
+}
+
+/**
+ * Deterministic claim resolver for the claim by a leader.
+ * 
+ * @param PDO $pdo : database connection
+ * @param array $mechanics : mechanics array
+ * 
+ *  Groups all worker by action_choice='claim' for this turn by (controller_id, zone_id),
+ *  Picks the lowest worker_id as the leader of each group and resolves the claim
+ *  via calculateControllerValue('Claim') vs calculateControllerValue('ZoneDefence').
+ *  Adds claimVisibleToRealBonus to the claim_val when the atacking controller already holds zones.claimer_controller_id
+ */
+function claimByWorkerLeaderMechanic($pdo, $mechanics) {
+
+    $turn_number = $mechanics['turncounter'];
+    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+    $prefix = $_SESSION['GAME_PREFIX'];
+
+    echo '<div> <h3>  claimMechanic_workerLeader : </h3> ';
+    echo "turn_number : $turn_number <br>";
+
+    // Get configs
+    $claimDiff = (int) getConfig($pdo, 'claimDiff');
+    $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
+
+    // Groups all worker by action_choice='claim' for this turn by (controller_id, zone_id),
+    // Picks the lowest worker_id as the leader of each group and resolves the claim
+    try {
+        $sql = "SELECT cw.controller_id, w.zone_id, MIN(w.id) AS leader_worker_id, z.name AS zone_name
+                FROM {$prefix}worker_actions wa
+                JOIN {$prefix}workers w ON w.id = wa.worker_id
+                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                JOIN {$prefix}zones z ON z.id = w.zone_id
+                WHERE wa.turn_number = :turn_number
+                  AND wa.action_choice = 'claim'
+                  AND cw.is_primary_controller = " . (($_SESSION['DBTYPE'] == 'mysql') ? '1' : 'true') . "
+                GROUP BY cw.controller_id, w.zone_id, z.name";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->execute();
+        $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT groups failed: ".$e->getMessage()."<br />";
+        return false;
+    }
+
+    foreach ($groups as $group) {
+        $zone_id = (int) $group['zone_id'];
+        $cid = (int) $group['controller_id'];
+        $leader_id = (int) $group['leader_worker_id'];
+
+        // Fetch each leader's action_params so we can honour claim_controller_id
+        $leaderParams = array();
+        try {
+            $pStmt = $pdo->prepare(
+                "SELECT action_params FROM {$prefix}worker_actions
+                 WHERE worker_id = :wid AND turn_number = :turn LIMIT 1"
+            );
+            $pStmt->bindParam(':wid', $leader_id, PDO::PARAM_INT);
+            $pStmt->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+            $pStmt->execute();
+            $row = $pStmt->fetch(PDO::FETCH_ASSOC);
+            $leaderParams = !empty($row['action_params']) ? json_decode($row['action_params'], true) : array();
+            if (json_last_error() !== JSON_ERROR_NONE) $params = array();
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT action_params failed: ".$e->getMessage()."<br />";
+            continue;
+        }
+
+        // Get zones informations for the calculated_defence_val
+        try {
+            $zStmt = $pdo->prepare("SELECT * FROM {$prefix}zones WHERE id = :zid");
+            $zStmt->bindParam(':zid', $zone_id, PDO::PARAM_INT);
+            $zStmt->execute();
+            $zone = $zStmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT zones failed: ".$e->getMessage()."<br />";
+            continue;
+        }
+        $calculated_defence_val = (int) $zone['calculated_defence_val'];
+
+        // Get the claime val
+        $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);
+        if ($zone['claimer_controller_id'] == $cid && $zone['holder_controller_id'] != $cid) {
+            $claimVal += $vrBonus;
+            if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+        }
+
+        $success = ($claimVal - $calculated_defence_val) >= $claimDiff;
+        if ($debug) echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d diff=%d => %s<br>",
+            $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $success ? 'WIN' : 'lose');
+
+        $leaderName = '';
+        try {
+            $nStmt = $pdo->prepare("SELECT CONCAT(firstname, ' ', lastname) AS n FROM {$prefix}workers WHERE id = :wid");
+            $nStmt->bindParam(':wid', $leader_id, PDO::PARAM_INT);
+            $nStmt->execute();
+            $leaderName = (string)($nStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? '');
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT name FROM workers failed: ".$e->getMessage()."<br />";
+        }
+
+        // Select other worker of the zone to add the claim to their report.
+        try {
+            $oStmt = $pdo->prepare("SELECT cw.worker_id, cw.controller_id
+                FROM {$prefix}workers w
+                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                WHERE w.zone_id = :zone_id
+                  AND cw.controller_id != :controller_id
+                  AND wa.action_choice IN (" . "'".implode("','", ACTIVE_ACTIONS)."'" . ")");
+            $oStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+            $oStmt->bindParam(':controller_id', $cid, PDO::PARAM_INT);
+            $oStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+            $oStmt->execute();
+            $others = $oStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT enemy workers failed: ".$e->getMessage()."<br />";
+            $others = [];
+        }
+
+        // Get the correct text config textesClaimFailViewArray / textesClaimSuccessViewArray
+        // (nom) - %1$s
+        // (zone) - %2$s
+        $textesView = json_decode(getConfig($pdo, $success ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray'), true) ?: [];
+        // Appen text to the report and add the claimers to the CKE table
+        foreach ($others as $otherWorker) {
+            if (!empty($textesView)) {
+                $tpl = $textesView[array_rand($textesView)];
+                $report = sprintf($tpl, $leaderName, $group['zone_name']).'<br/>';
+                updateWorkerAction($pdo, $otherWorker['worker_id'], $turn_number, NULL, ['claim_report' => $report]);
+            }
+            addWorkerToCKE($pdo, $otherWorker['controller_id'], $leader_id, $turn_number, $zone_id);
+        }
+
+        // Get the text for the report
+        // (nom) - %1$s
+        // (zone) - %2$s
+        $textesSelf = json_decode(getConfig($pdo, $success ? 'textesClaimSuccessArray' : 'textesClaimFailArray'), true) ?: [];
+        if (!empty($textesSelf)) {
+            $tpl = $textesSelf[array_rand($textesSelf)];
+            $report = sprintf($tpl, $leaderName, $group['zone_name']);
+            updateWorkerAction($pdo, $leader_id, $turn_number, NULL, ['claim_report' => $report]);
+        }
+
+        // On success update the zone
+        if ($success) {
+            // Holder = leader's controller. Claimer defaults to the same,
+            // but the leader's action_params.claim_controller_id can override
+            // (e.g. claim on behalf of another controller, or claim as
+            // unowned via the 'null' sentinel string). Parity with mode A.
+            $claimer_controller_id = $cid;
+            $params = $leaderParams[$leader_id] ?? array();
+            if (!empty($params['claim_controller_id'])) {
+                $claimer_controller_id = $params['claim_controller_id'];
+                if ($params['claim_controller_id'] === 'null') $claimer_controller_id = null;
+            }
+            try {
+                $uStmt = $pdo->prepare("UPDATE {$prefix}zones
+                    SET claimer_controller_id = :claimer, holder_controller_id = :holder
+                    WHERE id = :zid");
+                $uStmt->bindParam(':claimer', $claimer_controller_id, PDO::PARAM_INT);
+                $uStmt->bindParam(':holder', $cid, PDO::PARAM_INT);
+                $uStmt->bindParam(':zid', $zone_id, PDO::PARAM_INT);
+                $uStmt->execute();
+            } catch (PDOException $e) {
+                echo __FUNCTION__."(): UPDATE zones failed: ".$e->getMessage()."<br />";
+            }
+        }
+    }
+
+    echo '<p>claimMechanic_workerLeader : DONE</p> </div>';
     return true;
 }
 

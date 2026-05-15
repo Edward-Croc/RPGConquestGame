@@ -70,7 +70,7 @@ VALUES
     ('baseClaimAddOwnedLocations', '1', 'Per-owned-location multiplier for claim value (modes B+C)'),
     ('maxBonusClaimWorkers', '0', 'Cap on worker bonus for claim (0 = no cap)'),
     ('maxBonusClaimOwnedLocations', '0', 'Cap on owned-location bonus for claim (0 = no cap)'),
-    ('claimDiff', '0', 'Threshold. claim_val minus defence_val must clear this to succeed (modes B+C)'),
+    ('claimDiff', '1', 'Threshold. claim_val minus defence_val must clear this to succeed (modes B+C)'),
     ('claimVisibleToRealBonus', '1', 'claim_val bonus when attacker already holds claimer_controller_id but not holder_controller_id'),
     ('baseZoneDefence', '0', 'Base zone defence floor'),
     ('baseZoneDefenceAddWorkers', '1', 'Per-worker multiplier for zone defence (holder workers in zone)'),
