@@ -286,10 +286,18 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->execute();
+        $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {
         echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
         return false;
     }
+
+    // Owner must know own base — CKL-joined panels otherwise hide it.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
+    addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
+
     return true;
 }
 
@@ -323,12 +331,18 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         $deleteStmt = $pdo->prepare($deleteSQL);
         $deleteStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $deleteStmt->execute();
-
-        return true;
     } catch (PDOException $e) {
         echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
         return false;
     }
+
+    // Re-seed the owner's CKL row at the new location.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
+    addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
+
+    return true;
 }
 
 /**
@@ -341,7 +355,8 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  * 
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
-    $locations = listControllerKnownLocations($pdo, $controller_id, true);
+    // Exclude own — controller cannot attack own base.
+    $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true);
     if (empty($locations)) return NULL;
 
     $options = '';
@@ -991,7 +1006,8 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
             $knownLocationsOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $location['id'],  $location['name'], $location['zone_name']);
         }
     } else {
-        $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id);
+        // Exclude own from CKL — listControllerLinkedLocations adds them once.
+        $controllerKnownLocations = listControllerKnownLocations($pdo, $controller_id, false, false, true);
         $controllerLinkedLocations = listControllerLinkedLocations($pdo, $controller_id);
         foreach ($zones as $zone) {
             if (isset($controllerKnownLocations[$zone['id']])) {

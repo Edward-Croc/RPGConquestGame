@@ -267,7 +267,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 }
             }
 
-            $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id']);
+            // Exclude own — surfaced via listControllerLinkedLocations below.
+            $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id'], false, false, true);
 
             if (!$controllerKnownLocations) {
                 echo '<p class="notification is-warning">Aucun emplacement connu.</p>';

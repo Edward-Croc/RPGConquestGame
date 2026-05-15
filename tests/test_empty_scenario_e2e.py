@@ -65,10 +65,14 @@ def load_empty_scenario(browser):
     page.wait_for_load_state("load", timeout=90000)
 
     # Remove all locations so locationSearchMechanic finds nothing.
-    # Artefacts FK-reference locations, so delete them first.
+    # Artefacts AND controller_known_locations FK-reference locations,
+    # so delete those first. (CKL is auto-seeded for owned bases at
+    # scenario load; deleting locations directly would otherwise hit a
+    # FK constraint violation.)
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(f"DELETE FROM `{GAME_PREFIX}artefacts`")
+    cursor.execute(f"DELETE FROM `{GAME_PREFIX}controller_known_locations`")
     cursor.execute(f"DELETE FROM `{GAME_PREFIX}locations`")
     # Move all agents to the same controller so investigateMechanic finds no enemies
     # Must update both controller_worker AND worker_actions.controller_id
