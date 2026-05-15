@@ -20,6 +20,8 @@ VALUES
     ('DEBUG', 'FALSE', 'Activates the Debugging texts'),
     ('DEBUG_REPORT', 'FALSE', 'Activates the Debugging texts for the investigation report'),
     ('DEBUG_ATTACK', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
+    ('DEBUG_IA', 'FALSE', 'Activates the Debugging texts for the aiMechanic state machine'),
+    ('aiAggressionThreshold', 2, 'Min known-enemies count for searching → aggressive ai_type transition'),
     ('DEBUG_TRANSFORM', 'FALSE', 'Activates the Debugging texts for the attack report mechanics'),
     ('ACTIVATE_TESTS', 'FALSE', 'Activates the insertion of tests values'),
     ('TITLE', '', 'Name of game'),
