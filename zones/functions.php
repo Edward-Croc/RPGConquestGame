@@ -523,7 +523,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  * @param bool $limitByDestroyed = false
  * @param bool $limitByReparable = false
  * @param bool $excludeOwnLocations = false
- * @param bool bool $excludePendingAttacks = false
+ * @param bool $excludePendingAttacks = false
  * 
  * If $limitByDestroyed is true, it will only return locations that can be destroyed.
  * If false, it will return all locations.
@@ -553,7 +553,7 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
         JOIN {$prefix}locations l ON ckl.location_id = l.id
         JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE ckl.controller_id = :controller_id
-        %s%s%s
+        %s%s%s%s
         ORDER BY z.id, l.id;
     ",
     $limitByDestroyed ? " AND l.can_be_destroyed = True" : "",
