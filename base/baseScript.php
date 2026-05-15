@@ -31,4 +31,16 @@
         }
     }
 
+    function selectTab(group, index) {
+        document.querySelectorAll('[data-tab-group="' + group + '"]').forEach(function (el) {
+            const matches = el.dataset.tabIndex === String(index);
+            if (el.classList.contains('tab-content')) {
+                el.style.display = matches ? 'block' : 'none';
+            } else if (el.tagName === 'LI') {
+                if (matches) el.classList.add('is-active');
+                else el.classList.remove('is-active');
+            }
+        });
+    }
+
 </script>

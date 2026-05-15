@@ -174,29 +174,48 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 }
                 $htmlBase .= '</p>';
             }
-            // Incoming attacks this turn
+            // Incoming attacks across all turns — tabbed (latest first), empty turns skipped.
             $incomingStmt = $gameReady->prepare("
-                SELECT * FROM {$prefix}location_attack_logs 
-                WHERE target_controller_id = :controller_id 
-                AND turn = :turn
-                ORDER BY id DESC
+                SELECT * FROM {$prefix}location_attack_logs
+                WHERE target_controller_id = :controller_id
+                ORDER BY turn DESC, id DESC
             ");
-            $incomingStmt->execute([
-                'controller_id' => $_SESSION['controller']['id'],
-                'turn' => $mechanics['turncounter']
-            ]);
+            $incomingStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
             $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
             if (!empty($incomingAttacks)) {
-                $htmlBase .=  "<div class='notification is-danger'> <strong>Alerte !</strong> Votre base a été attaquée ce tour !<ul>";
-                foreach ($incomingAttacks as $attack) {
-                    $htmlBase .= sprintf( "<li> %s</li>", $attack['target_result_text']);
+                $timeWord = (string)getConfig($gameReady, 'timeValue');
+                $byTurn = [];
+                foreach ($incomingAttacks as $atk) { $byTurn[(int)$atk['turn']][] = $atk; }
+                krsort($byTurn);
+                $tabs = '<div class="tabs title"><ul>';
+                $panels = '';
+                $first = true;
+                $idx = 0;
+                foreach ($byTurn as $turn => $atks) {
+                    $tabs .= sprintf(
+                        '<li%s data-tab-group="incoming-attacks" data-tab-index="%d"><a onclick="selectTab(\'incoming-attacks\', %d)">%s %d</a></li>',
+                        $first ? ' class="is-active"' : '', $idx, $idx, ucfirst($timeWord), $turn
+                    );
+                    $items = '';
+                    foreach ($atks as $atk) { $items .= sprintf('<li>%s</li>', $atk['target_result_text']); }
+                    $panels .= sprintf(
+                        '<div class="tab-content"%s data-tab-group="incoming-attacks" data-tab-index="%d"><ul>%s</ul></div>',
+                        $first ? '' : ' style="display:none"', $idx, $items
+                    );
+                    $first = false;
+                    $idx++;
                 }
-                $htmlBase .= "</ul></div>";
+                $tabs .= '</ul></div>';
+                $htmlBase .= sprintf(
+                    "<div class='notification is-danger'><strong>Alerte !</strong> Votre base a été attaquée ce %s !%s%s</div>",
+                    strtolower($timeWord), $tabs, $panels
+                );
             }
             echo $htmlBase;
 
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
-            if( hasBase($gameReady, $controllers['id'])) {
+            $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
+            if ($locationAttackMode !== 'worker' && hasBase($gameReady, $controllers['id'])) {
                 if($showAttackableControllerKnownLocations !== NULL) {
                     echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
                             <input type="hidden" name="controller_id" value="%1$s">
@@ -222,25 +241,75 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 echo sprintf('<h4 class="title is-5 mt-5">%s</h4><p>%s</p>', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
 
         echo '<h4 class="title is-5 mt-5">Vos lieux découverts:</h4>';
-            // Outgoing attacks this turn
+            // Outgoing attacks across all turns — tabbed (latest first), empty turns skipped.
             $outgoingStmt = $gameReady->prepare("
-                SELECT * FROM {$prefix}location_attack_logs 
-                WHERE attacker_id = :controller_id 
-                AND turn = :turn
-                ORDER BY id DESC
+                SELECT * FROM {$prefix}location_attack_logs
+                WHERE attacker_id = :controller_id
+                ORDER BY turn DESC, id DESC
             ");
-            $outgoingStmt->execute([
-                'controller_id' =>  $_SESSION['controller']['id'],
-                'turn' => $mechanics['turncounter']
-            ]);
+            $outgoingStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
             $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
-            if (!empty($outgoingAttacks)) {
-                echo "<div class='notification is-warning'>";
-                echo "<strong>Vos attaques ce tour :</strong><ul>";
-                foreach ($outgoingAttacks as $attack) {
-                    echo "<li>". $attack['attacker_result_text'] . "</li>";
+
+            $queuedStmt = $gameReady->prepare("
+                SELECT cla.id AS queue_row_id, cla.queued_turn, cla.defence_val_snapshot,
+                       l.id AS location_id, l.name AS location_name, l.zone_id
+                FROM {$prefix}controller_location_attacks cla
+                JOIN {$prefix}locations l ON cla.location_id = l.id
+                WHERE cla.attacker_controller_id = :controller_id AND cla.success IS NULL
+                ORDER BY cla.queued_turn DESC, cla.id DESC
+            ");
+            $queuedStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
+            $queuedAttacks = $queuedStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $byTurn = [];
+            foreach ($outgoingAttacks as $atk) { $byTurn[(int)$atk['turn']][] = $atk['attacker_result_text']; }
+            $bandwidth = (int) getConfig($gameReady, 'attackLocationOutcomeBandwidth');
+            $queuedTpl = getConfig($gameReady, 'textLocationAttackQueued');
+            foreach ($queuedAttacks as $q) {
+                $liveAttack = calculatecontrollerAttack($gameReady, $q['zone_id'], $_SESSION['controller']['id']);
+                $diff = $liveAttack - (int)$q['defence_val_snapshot'];
+                if ($diff > $bandwidth) {
+                    $bandKey = 'textLocationAttackOutcomeProbable';
+                } elseif ($diff < -$bandwidth) {
+                    $bandKey = 'textLocationAttackOutcomeFail';
+                } else {
+                    $bandKey = 'textLocationAttackOutcomeWeak';
                 }
-                echo "</ul></div>";
+                $cancelLink = sprintf(
+                    '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
+                    $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
+                );
+                $byTurn[(int)$q['queued_turn']][] =
+                    '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
+                    . $cancelLink;
+            }
+
+            if (!empty($byTurn)) {
+                $timeWord = (string)getConfig($gameReady, 'timeValue');
+                krsort($byTurn);
+                $tabs = '<div class="tabs title"><ul>';
+                $panels = '';
+                $first = true;
+                $idx = 0;
+                foreach ($byTurn as $turn => $atks) {
+                    $tabs .= sprintf(
+                        '<li%s data-tab-group="outgoing-attacks" data-tab-index="%d"><a onclick="selectTab(\'outgoing-attacks\', %d)">%s %d</a></li>',
+                        $first ? ' class="is-active"' : '', $idx, $idx, ucfirst($timeWord), $turn
+                    );
+                    $items = '';
+                    foreach ($atks as $text) { $items .= sprintf('<li>%s</li>', $text); }
+                    $panels .= sprintf(
+                        '<div class="tab-content"%s data-tab-group="outgoing-attacks" data-tab-index="%d"><ul>%s</ul></div>',
+                        $first ? '' : ' style="display:none"', $idx, $items
+                    );
+                    $first = false;
+                    $idx++;
+                }
+                $tabs .= '</ul></div>';
+                echo sprintf(
+                    "<div class='notification is-warning'><strong>Vos attaques ce %s :</strong>%s%s</div>",
+                    strtolower($timeWord), $tabs, $panels
+                );
             }
             $showRepairableControllerKnownLocations = showRepairableControllerKnownLocations($gameReady, $controllers['id']);
             if($showRepairableControllerKnownLocations !== NULL) {
@@ -267,7 +336,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 }
             }
 
-            $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id']);
+            // Exclude own — surfaced via listControllerLinkedLocations below.
+            $controllerKnownLocations = listControllerKnownLocations($gameReady, $controllers['id'], false, false, true);
 
             if (!$controllerKnownLocations) {
                 echo '<p class="notification is-warning">Aucun emplacement connu.</p>';

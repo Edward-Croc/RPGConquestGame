@@ -226,11 +226,13 @@ function recalculateBaseDefence($pdo) {
  * @return int $value
  */
 function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
-    # $debug = $_SESSION['DEBUG'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
-    # $debug = true;
+
     $value = 0;
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
 
     if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
 
@@ -295,16 +297,17 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
         if ($workerMultiplier !== 0) {
             $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-            $sql = "
+            $sql = sprintf('
                 SELECT COUNT(w.id) AS worker_count
-                FROM {$prefix}workers w
-                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
-                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                FROM %1$sworkers w
+                JOIN %1$scontroller_worker cw ON cw.worker_id = w.id
+                JOIN %1$sworker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
                 WHERE cw.controller_id = :controller_id
                 AND w.zone_id = :zone_id
-                AND wa.action_choice IN (%s)
-            ";
-            $stmt = $pdo->prepare(sprintf($sql, $active_actions));
+                AND wa.action_choice IN (%2$s)
+            ', $prefix, $active_actions);
+            if ($debug) echo sprintf("worker_count sql : %s<br> controller_id: %s, zone_id: %s, turn_number: %s, ", $sql, $controller_id, $zone_id, $turn_number);
+            $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
             $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
@@ -463,18 +466,20 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
         $returnText .=  "</p>";
     }
 
-    // Known enemy bases in the zone
+    // Known enemy bases in zone — exclude own (listed above as Vos lieux secrets).
     $sql = "
         SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description, ckl.found_secret
         FROM {$prefix}controller_known_locations ckl
         JOIN {$prefix}locations l ON ckl.location_id = l.id
         WHERE ckl.controller_id = :controller_id
         AND l.zone_id = :zone_id
+        AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':controller_id' => $controller_id,
-        ':zone_id' => $zone_id
+        ':zone_id' => $zone_id,
+        ':controller_id_owner' => $controller_id,
     ]);
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -515,7 +520,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *
  * @param PDO $gameReady
  * @param int $controllerId
- * @param bool $limitByDestroyed
+ * @param bool $limitByDestroyed = false
+ * @param bool $limitByReparable = false
+ * @param bool $excludeOwnLocations = false
+ * @param bool $excludePendingAttacks = false
  * 
  * If $limitByDestroyed is true, it will only return locations that can be destroyed.
  * If false, it will return all locations.
@@ -528,7 +536,7 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *      'can_be_destroyed' => bool
  *  ]
  */
-function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false): array|null {
+function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false, bool $excludeOwnLocations = false, bool $excludePendingAttacks = false): array|null {
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = sprintf("
         SELECT
@@ -540,19 +548,26 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
             l.description AS location_description,
             l.hidden_description AS location_hidden_description,
             ckl.found_secret AS location_found_secret,
-            l.can_be_destroyed AS location_can_be_destroyed 
+            l.can_be_destroyed AS location_can_be_destroyed
         FROM {$prefix}controller_known_locations ckl
         JOIN {$prefix}locations l ON ckl.location_id = l.id
         JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE ckl.controller_id = :controller_id
-        %s%s
+        %s%s%s%s
         ORDER BY z.id, l.id;
     ",
-    $limitByDestroyed ? "AND l.can_be_destroyed = True" : "",
-    $limitByReparable ? "AND l.can_be_repaired = True" : ""
+    $limitByDestroyed ? " AND l.can_be_destroyed = True" : "",
+    $limitByReparable ? " AND l.can_be_repaired = True" : "",
+    $excludeOwnLocations ? " AND (l.controller_id IS NULL OR l.controller_id != :controller_id_owner)" : "",
+    $excludePendingAttacks ? " AND NOT EXISTS (SELECT 1 FROM {$prefix}controller_location_attacks cla WHERE cla.location_id = l.id AND cla.attacker_controller_id = :cid_exclude AND cla.success IS NULL)" : ""
     );
     $stmt = $gameReady->prepare($sql);
-    $stmt->execute(['controller_id' => $controllerId]);
+    $params = ['controller_id' => $controllerId];
+    if ($excludeOwnLocations) {
+        $params['controller_id_owner'] = $controllerId;
+    }
+    if ($excludePendingAttacks) $params['cid_exclude'] = $controllerId;
+    $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$rows) {

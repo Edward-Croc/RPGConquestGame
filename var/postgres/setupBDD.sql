@@ -136,6 +136,23 @@ CREATE TABLE {prefix}controller_known_locations (
 CREATE INDEX idx_controller_known_locations_controller_id ON {prefix}controller_known_locations (controller_id);
 CREATE INDEX idx_controller_known_locations_location_id ON {prefix}controller_known_locations (location_id);
 
+CREATE TABLE {prefix}controller_location_attacks (
+    id SERIAL PRIMARY KEY,
+    location_id INT,
+    location_name VARCHAR(255),
+    attacker_controller_id INT NOT NULL,
+    queued_turn INT,
+    defence_val_snapshot INT,
+    success BOOLEAN DEFAULT NULL,
+    attack_val_resolved INT DEFAULT NULL,
+    defence_val_resolved INT DEFAULT NULL,
+    resolved_turn INT DEFAULT NULL,
+    FOREIGN KEY (location_id) REFERENCES {prefix}locations (id) ON DELETE SET NULL,
+    FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id)
+);
+CREATE INDEX idx_controller_location_attacks_location_id ON {prefix}controller_location_attacks (location_id);
+CREATE INDEX idx_controller_location_attacks_attacker_controller_id ON {prefix}controller_location_attacks (attacker_controller_id);
+
 CREATE TABLE {prefix}location_attack_logs (
     id SERIAL PRIMARY KEY,
     location_name TEXT,

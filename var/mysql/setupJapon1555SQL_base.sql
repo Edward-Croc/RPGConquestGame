@@ -598,9 +598,9 @@ INSERT INTO {prefix}ressources_config (
     location_repaire_cost
 ) VALUES (
     'Koku', 
-        -- %$1s : amount, %$2s : ressource_name
+        -- %1$s : amount, %2$s : ressource_name
     'La production excédentaire de votre clan qui sera investie dans son développement si elle n’est pas dépensée est égale à <strong>%s %s</strong>.',
-    -- %$1s : amount_stored, %$2s : ressource_name
+    -- %1$s : amount_stored, %2$s : ressource_name
     '<strong>%s %s</strong> ont été investi dans le développement du clan depuis le printemps 1555.',
     FALSE,
     TRUE,

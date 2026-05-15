@@ -38,6 +38,7 @@ VALUES
     ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
     ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
     ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
+    ('owner_knows_own_base_secret', 'TRUE', 'On base creation / scenario load, seed controller_known_locations with found_secret=TRUE so owners auto-know their own base secrets. Set FALSE for fog-of-war setups where the owner must learn their own base secret separately.'),
     -- worker rolls
     ('MINROLL', 1, 'Minimum Roll for an active worker'),
     ('MAXROLL', 6, 'Maximum Roll for a an active worker'),
@@ -88,7 +89,7 @@ VALUES
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
-    ('txt_inf_captured', 'as été capturer', 'Text for captured action'),
+    ('txt_inf_captured', 'a été capturé', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
     -- Action End turn effects
     ('continuing_investigate_action', 1, 'Does the investigate action stay active' ),
@@ -101,6 +102,8 @@ VALUES
     ('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' ),
     ('maxBonusDiscoveryDiffWorkers', 4, 'Maximum bonus obtainable from worker presence' ),
     ('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' ),
+    ('locationAttackMode', 'immediate', 'Where/when controller location attacks resolve: immediate | endTurn | worker' ),
+    ('attackLocationOutcomeBandwidth', 2, 'Half-width of the faible-chances band for the queued-attack prediction' ),
     ('baseAttack', 0, 'Base attack value for bases' ),
     ('baseAttackAddPowers', 1, 'Base attack value Power presence ponderation 0 for no' ),
     ('baseAttackAddWorkers', 1, 'Base attack value worker presence ponderation 0 for no' ),
@@ -114,6 +117,11 @@ VALUES
     ('textLocationDestroyed', 'Le lieu %s a été détruit selon votre bon vouloir.', 'Text for location destroyed'),
     ('textLocationPillaged', 'Le lieu %s a été pillé, mais nous n''avons pas pu le détruire.', 'Text for location pillaged'),
     ('textLocationNotDestroyed', 'Le lieu %s n''a pas été détruit, nos excuses.', 'Text for location not destroyed'),
+    ('textLocationAttackQueued', 'Attaque planifiée contre %s. Force d''attaque actuelle : %d. Prédiction : %s.', 'Live-rendered queued-attack message. Placeholders. location name, current attack force, predicted outcome'),
+    ('textLocationAttackOutcomeFail', 'Échec probable.', 'Predicted-outcome band when current attack is well below snapshot defence'),
+    ('textLocationAttackOutcomeWeak', 'Faibles chances.', 'Predicted-outcome band when current attack is within bandwidth of snapshot defence'),
+    ('textLocationAttackOutcomeProbable', 'Réussite probable.', 'Predicted-outcome band when current attack is well above snapshot defence'),
+    ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')
