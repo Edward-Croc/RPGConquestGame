@@ -575,7 +575,6 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
 
     // Get configs
     $claimDiff = (int) getConfig($pdo, 'claimDiff');
-    $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
 
     // Groups all worker by action_choice='claim' for this turn by (controller_id, zone_id),
     // Picks the lowest worker_id as the leader of each group and resolves the claim
@@ -635,10 +634,6 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
 
         // Get the claime val
         $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);
-        if ($zone['claimer_controller_id'] == $cid && $zone['holder_controller_id'] != $cid) {
-            $claimVal += $vrBonus;
-            if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
-        }
 
         $success = ($claimVal - $calculated_defence_val) >= $claimDiff;
         if ($debug) echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d diff=%d => %s<br>",

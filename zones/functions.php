@@ -191,7 +191,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
             $zStmt->execute();
             $zones = $zStmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($zones as $zone) {
-                $holder = !empty($z['holder_controller_id']) ? (int)$zone['holder_controller_id'] : null;
+                $holder = !empty($zone['holder_controller_id']) ? (int)$zone['holder_controller_id'] : null;
                 $val = calculateControllerValue($pdo, 'ZoneDefence', (int)$zone['id'], $holder);
                 $uStmt = $pdo->prepare("UPDATE {$prefix}zones SET calculated_defence_val = :val WHERE id = :id");
                 $uStmt->bindParam(':val', $val, PDO::PARAM_INT);
@@ -351,9 +351,17 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($zone) {
-        if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
-            $value += 1;
-            if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+        if ($type === 'Claim') {
+            if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
+                $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
+                $value += $vrBonus;
+                if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+            }
+        } else {
+            if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
+                $value += 1;
+                if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+            }
         }
     }
 
