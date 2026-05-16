@@ -673,18 +673,42 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
             $others = [];
         }
 
+        // All claimer's workers with claim action in this zone get exposed
+        // to enemies, not just the leader.
+        try {
+            $cStmt = $pdo->prepare("SELECT w.id FROM {$prefix}workers w
+                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                WHERE cw.controller_id = :controller_id
+                  AND w.zone_id = :zone_id
+                  AND wa.action_choice = 'claim'");
+            $cStmt->bindParam(':controller_id', $cid, PDO::PARAM_INT);
+            $cStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+            $cStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+            $cStmt->execute();
+            $claimerWorkerIds = array_column($cStmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+        } catch (PDOException $e) {
+            $claimerWorkerIds = [$leader_id];
+        }
+
         // Get the correct text config textesClaimFailViewArray / textesClaimSuccessViewArray
         // (nom) - %1$s
         // (zone) - %2$s
         $textesView = json_decode(getConfig($pdo, $success ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray'), true) ?: [];
-        // Appen text to the report and add the claimers to the CKE table
+        // Per-worker claim_report write (one report per observing enemy worker).
         foreach ($others as $otherWorker) {
             if (!empty($textesView)) {
                 $tpl = $textesView[array_rand($textesView)];
                 $report = sprintf($tpl, $leaderName, $group['zone_name']).'<br/>';
                 updateWorkerAction($pdo, $otherWorker['worker_id'], $turn_number, NULL, ['claim_report' => $report]);
             }
-            addWorkerToCKE($pdo, $otherWorker['controller_id'], $leader_id, $turn_number, $zone_id);
+        }
+        // CKE entries — one per (distinct observing controller × claimer worker) pair.
+        $observerControllerIds = array_unique(array_column($others, 'controller_id'));
+        foreach ($observerControllerIds as $observerCid) {
+            foreach ($claimerWorkerIds as $cwid) {
+                addWorkerToCKE($pdo, (int)$observerCid, (int)$cwid, $turn_number, $zone_id);
+            }
         }
 
         // Get the text for the report
@@ -704,10 +728,9 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
             // (e.g. claim on behalf of another controller, or claim as
             // unowned via the 'null' sentinel string). Parity with mode A.
             $claimer_controller_id = $cid;
-            $params = $leaderParams[$leader_id] ?? array();
-            if (!empty($params['claim_controller_id'])) {
-                $claimer_controller_id = $params['claim_controller_id'];
-                if ($params['claim_controller_id'] === 'null') $claimer_controller_id = null;
+            if (!empty($leaderParams['claim_controller_id'])) {
+                $claimer_controller_id = $leaderParams['claim_controller_id'];
+                if ($leaderParams['claim_controller_id'] === 'null') $claimer_controller_id = null;
             }
             try {
                 $uStmt = $pdo->prepare("UPDATE {$prefix}zones
