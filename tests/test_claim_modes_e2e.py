@@ -21,7 +21,7 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 from helpers import (
-    end_turn, load_minimal_data, safe_goto, ui_claim_click,
+    end_turn, load_minimal_data, safe_goto, ui_claim, ui_claim_click,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -267,4 +267,212 @@ class TestClaimModeWorkerLeaderCrossController:
         assert self._post['claimer_controller_id'] == self._alpha_id, (
             f"claimer_controller_id should be Alpha (id={self._alpha_id}); "
             f"got {self._post['claimer_controller_id']}"
+        )
+
+
+@pytest.mark.db
+class TestClaimModeSupportingClaimersBonus:
+    """Mode B `baseClaimAddSupportingClaimers` term — adds
+    `max(0, COUNT(claim-action workers in zone for controller) - 1) × multiplier`
+    to the controller's claim_val.
+
+    Isolation: all other Claim terms are muted (baseClaim=0, AddWorkers=0,
+    AddOwnedLocations=0). With two Beta workers submitting `claim` for
+    Beta-Combat, supporters = max(0, 2-1) = 1, claim_val = 1 × 10 = 10.
+    Defence = noControllerZoneDefenceBonus(=3) since the zone is unowned.
+    10 - 3 = 7 >= claimDiff(=1) → WIN. The control class below uses one
+    claimer and asserts the inverse → proves the supporters term is what
+    flipped the outcome.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim','baseClaimAddWorkers',"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '0' WHERE name IN "
+            f"('baseClaim','baseClaimAddWorkers','baseClaimAddOwnedLocations')"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
+            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        current_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = (SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat') "
+            f"  AND wa.action_choice = 'claim'",
+            (current_turn,)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_B', 'Beta')
+        ui_claim(page, 'Even_Def', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE name = 'Beta-Combat'"
+        )
+        post = cur.fetchone()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Beta' LIMIT 1"
+        )
+        beta_id = cur.fetchone()['id']
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = %s",
+                (value, name),
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6 "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post = post
+        type(self)._beta_id = beta_id
+        yield
+
+    def test_holder_is_beta_with_two_claimers(self):
+        """Two Beta claim-actioners produce supporters=1 → claim_val=10 (all
+        other Claim terms muted by zero multipliers). claim_val(10) -
+        defence(3) = 7 >= claimDiff(1) → Beta becomes holder."""
+        assert self._post['holder_controller_id'] == self._beta_id, (
+            f"holder_controller_id should be Beta (id={self._beta_id}); "
+            f"got {self._post['holder_controller_id']}. Without "
+            f"baseClaimAddSupportingClaimers contributing, claim_val would be "
+            f"0 and Beta would not have won."
+        )
+
+    def test_claimer_is_beta_with_two_claimers(self):
+        """No action_params override given — claimer mirrors holder (Beta)."""
+        assert self._post['claimer_controller_id'] == self._beta_id
+
+
+@pytest.mark.db
+class TestClaimModeSupportingClaimersControl:
+    """Control case for `TestClaimModeSupportingClaimersBonus` — same muted
+    Claim-term config, but a single Beta claim-actioner makes supporters =
+    max(0, 1-1) = 0 → claim_val = 0. Defence = 3. 0 - 3 = -3 does not clear
+    claimDiff(=1) → claim fails → zone stays unowned. Together with the
+    bonus-active class, this isolates the supporting-claimers term as the
+    sole reason Beta won in the multi-claimer case.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim','baseClaimAddWorkers',"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '0' WHERE name IN "
+            f"('baseClaim','baseClaimAddWorkers','baseClaimAddOwnedLocations')"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
+            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        current_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = (SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat') "
+            f"  AND wa.action_choice = 'claim'",
+            (current_turn,)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_B', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE name = 'Beta-Combat'"
+        )
+        post = cur.fetchone()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = %s",
+                (value, name),
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6 "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post = post
+        yield
+
+    def test_zone_remains_unowned_with_single_claimer(self):
+        """Single Beta claimer → supporters = 0 → claim_val = 0 (other terms
+        muted). 0 - 3 = -3 fails claimDiff(=1) → zone stays unowned."""
+        assert self._post['holder_controller_id'] is None, (
+            f"holder should remain NULL with single claimer + muted Claim "
+            f"terms; got {self._post['holder_controller_id']}"
+        )
+        assert self._post['claimer_controller_id'] is None, (
+            f"claimer should remain NULL with single claimer + muted Claim "
+            f"terms; got {self._post['claimer_controller_id']}"
         )
