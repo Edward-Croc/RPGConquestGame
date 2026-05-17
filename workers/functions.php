@@ -1331,7 +1331,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
     $attackTimeWindow = getConfig($pdo, 'attackTimeWindow');
     if (empty($attackTimeWindow)) $attackTimeWindow = $turn_number;
     $canAttackNetwork = getConfig($pdo, 'canAttackNetwork');
-    if (empty($attackTimeWindow)) $attackTimeWindow = 0;
+    if (empty($canAttackNetwork)) $canAttackNetwork = 0;
 
     if (!empty($enemyWorkersArray['workers_without_controller'])){
         // Display select list of workers
