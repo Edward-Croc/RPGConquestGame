@@ -17,6 +17,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  */
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     $prefix = $_SESSION['GAME_PREFIX'];
+    $investigate_actions = getConfig($pdo, 'investigateActionsList');
+    if (empty($investigate_actions)) $investigate_actions = "'passive','investigate'";
     // Define the SQL query
     $sql = sprintf(
         "WITH searchers AS (
@@ -28,7 +30,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
             FROM
                 {$prefix}worker_actions wa
             WHERE
-                wa.action_choice IN ('passive', 'investigate')
+                wa.action_choice IN (%s)
                 AND turn_number = :turn_number
         )
         SELECT
@@ -58,6 +60,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         LEFT JOIN {$prefix}controllers lc ON l.controller_id = lc.id
         %s
         ORDER BY l.discovery_diff DESC, l.id DESC;",
+        $investigate_actions,
         (!empty($searcher_id)) ? " WHERE s.searcher_id = :searcher_id" : ''
     );
     try {

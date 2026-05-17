@@ -42,6 +42,7 @@ VALUES
     ('DEFENCE_ZONE_BONUS', '1', 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
     ('HIDE_ENQUETE_FLAT_BONUS', '4', 'Bonus to the investigate value if the worker is using hide'),
     ('HIDE_DEFENCE_FLAT_BONUS', '1', 'Bonus to the investigate value if the worker is using hide'),
+    ('investigateActionsList', '''passive'',''investigate''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
     ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
     ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),

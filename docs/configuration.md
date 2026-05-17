@@ -25,11 +25,11 @@ Cette section couvre les clés qui pilotent les calculs partagés entre tous les
 
 **`HIDE_ENQUETE_FLAT_BONUS`** (= 4), **`HIDE_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plats ajoutés à `enquete_val` et `defence_val` quand l'agent choisit l'action `hide`. L'action « se cacher » renforce la défense de l'agent et complique sa détection par les enquêtes ennemies (la valeur d'enquête sert alors de résistance, pas d'investigation), au prix de ne pas attaquer ce tour.
 
-### Listes d'actions actives et passives
+#### Listes d'actions actives et passives
 
 Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`, `attack_val` et `defence_val` de chaque agent en début de tour. Pour chaque axe (enquête, attaque, défense), l'`action_choice` choisi par l'agent détermine si la valeur correspondante est obtenue par un **jet de dé aléatoire** (action listée comme `active`) ou par la **valeur fixe `PASSIVEVAL`** (action listée comme `passive`). Une action absente des deux listes d'un axe donne `0` sur cet axe.
 
-> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres mécaniques. Par exemple, la recherche d'agents ennemis n'est exécutée que pour `action_choice IN ('passive', 'investigate')` (voir `mechanics/investigateMechanic.php`), indépendamment de ces listes.
+> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres clés. Par exemple, la recherche d'agents ennemis n'est exécutée que pour les `action_choice` listés dans **`investigateActionsList`** (= `'passive','investigate'`). Cette clé est indépendante des six listes ci-dessous.
 
 - **`passiveInvestigateActions`** (= `'passive','attack','captured','hide'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`.
 - **`activeInvestigateActions`** (= `'investigate','claim'`) — Actions dont la valeur d'enquête est tirée au D6.
@@ -46,19 +46,25 @@ Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses
 
 **`LOCATIONNAMEDIFF`** (= 0), **`LOCATIONINFORMATIONDIFF`** (= 1), **`LOCATIONARTEFACTSDIFF`** (= 2) — Seuils de différence `enquete_val − discovery_diff` pour les niveaux de découverte d'un lieu secret : nom du lieu, description / informations secrètes, présence d'artefacts récupérables. Augmenter ces seuils rend les enquêtes de zone moins rentables.
 
+> **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
+
 ### Combat entre agents
 
 **`ATTACKDIFF0`** (= 1), **`ATTACKDIFF1`** (= 3) — Seuils de différence `attack_val − defence_val` pour les résultats d'attaque. En-dessous de `ATTACKDIFF0` : échec (la cible apprend le nom de l'attaquant). À partir de `ATTACKDIFF0` : élimination de la cible. À partir de `ATTACKDIFF1` : capture vivante (le contrôleur obtient l'accès aux rapports). Augmenter `ATTACKDIFF1` rend les captures plus rares.
+
+**`attackTimeWindow`** (= 1) — Nombre de tours pendant lesquels un agent découvert reste attaquable après avoir perdu son couvert. Mettre à `0` désactive la fenêtre (aucune limite : tous les agents jamais découverts restent attaquables). Avec `1` (défaut), un agent reste attaquable au tour de sa découverte.
+
+**`canAttackNetwork`** (= 1) — Si `0`, seuls les agents individuels apparaissent dans la liste des cibles ; si `> 0`, les agents sont regroupés par réseau dès que `REPORTDIFF2` est atteint, et le contrôleur peut attaquer un réseau entier.
+
+#### Ripostes
 
 **`RIPOSTACTIVE`** (= 1) — Active la mécanique de riposte. Si `1`, une cible qui résiste peut éliminer l'attaquant ; si `0`, la riposte est désactivée.
 
 **`RIPOSTDIFF`** (= 2) — Seuil de différence `defence_val − attack_val` pour qu'une riposte réussisse. Plus élevé : ripostes rares ; plus bas : le défenseur dominant gagne souvent.
 
-**`attackTimeWindow`** (= 1) — Nombre de tours pendant lesquels un agent découvert reste attaquable après avoir perdu son couvert. Mettre à `0` désactive la fenêtre (attaque uniquement au tour de la découverte).
+#### Options obsolètes
 
-**`canAttackNetwork`** (= 1) — Si `0`, seuls les agents individuels apparaissent dans la liste des cibles ; si `> 0`, les agents sont regroupés par réseau dès que `REPORTDIFF2` est atteint, et le contrôleur peut attaquer un réseau entier.
-
-**`LIMIT_ATTACK_BY_ZONE`** (= 0) — Si `0`, une attaque enregistrée persiste même si la cible quitte la zone ; si `> 0`, l'attaque est annulée dès que la cible déménage.
+**`LIMIT_ATTACK_BY_ZONE`** (= 0) — Si `0`, une attaque enregistrée persiste même si la cible quitte la zone ; si `> 0`, l'attaque est annulée dès que la cible déménage. On déconseille cette option, car le déménagement étant immédiat les agents sont intouchables. Un développement futur ajoutera peut-être le déménagement en fin de tour, avec malus aux stats auquel cas cette option deviendra intéressante.
 
 ### Difficulté de découverte des places fortes
 
