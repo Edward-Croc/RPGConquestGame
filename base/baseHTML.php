@@ -48,6 +48,8 @@ if (
         $isPrivileged = $_SESSION['is_privileged'] ?? false;
 
         if (!$isLoggedIn && !empty($noConnection)) {
+            $sysClass = ($pageName === 'systemPresentation') ? ' class="select"' : '';
+            echo "<a href='/$folder/base/systemPresentation.php'$sysClass>Le Système</a>";
             echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
         } else {
             // Define main links
