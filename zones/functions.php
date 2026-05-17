@@ -185,6 +185,11 @@ function recalculateZoneDefence($pdo, $mechanics) {
 
     echo '<div> <p> <h3> Calculate zone defense values: </h3> ';
 
+    if (!in_array($mode, ['worker', 'worker_leader'], true)) {
+        echo "Mode '".htmlspecialchars((string)$mode)."' not supported, skipped</p></div>";
+        return true;
+    }
+
     if ($mode === 'worker_leader') {
         try {
             $zStmt = $pdo->prepare("SELECT id, holder_controller_id FROM {$prefix}zones");
@@ -206,7 +211,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
         return true;
     }
 
-    // Default mode 'worker' (and any unknown value)
+    // Default mode 'worker'
     try {
         $sql = '';
         if ($_SESSION['DBTYPE'] == 'postgres'){

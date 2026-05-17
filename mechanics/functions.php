@@ -329,9 +329,14 @@ function createNewTurnLines($pdo, $turn_number){
  */
 function claimMechanic($pdo, $mechanics) {
     $mode = getConfig($pdo, 'claimMode');
-    if ($mode === 'worker_leader') return claimByWorkerLeaderMechanic($pdo, $mechanics);
-    // mode 'worker' (default) AND any unknown value fall through to the body below — preserves current behaviour.
+    if (!in_array($mode, ['worker', 'worker_leader'], true)) {
+        echo "<div><h3>claimMechanic : mode '".htmlspecialchars((string)$mode)."' not supported, skipped</h3></div>";
+        return true;
+    }
 
+    if ($mode === 'worker_leader') return claimByWorkerLeaderMechanic($pdo, $mechanics);
+
+    // mode 'worker' function 
     $turn_number = $mechanics['turncounter'];
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 

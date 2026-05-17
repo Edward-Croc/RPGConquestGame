@@ -476,3 +476,106 @@ class TestClaimModeSupportingClaimersControl:
             f"claimer should remain NULL with single claimer + muted Claim "
             f"terms; got {self._post['claimer_controller_id']}"
         )
+
+
+@pytest.mark.db
+class TestClaimModeDisabled:
+    """When `claimMode` is set to a value outside the implemented whitelist
+    (`worker`, `worker_leader`) — e.g. `controller` (mode C, not yet built)
+    or any unknown string — every claim gate turns off:
+      - worker-page claim form not rendered (C1)
+      - `workers/action.php?claim=1` URL responds 403 (C2)
+      - `claimMechanic` EOT step echoes a skip warning + does nothing (C3)
+      - `recalculateZoneDefence` EOT step echoes a skip warning +
+        leaves `calculated_defence_val` untouched (C4)
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def disabled_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT value FROM `{GAME_PREFIX}config` WHERE name = 'claimMode'"
+        )
+        prev_mode = cur.fetchone()['value']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'controller' "
+            f"WHERE name = 'claimMode'"
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        cur.execute(
+            f"SELECT w.id FROM `{GAME_PREFIX}workers` w WHERE w.lastname = 'Chain_B' LIMIT 1"
+        )
+        worker_id = cur.fetchone()['id']
+
+        action_page_resp_status = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php?worker_id={worker_id}"
+        ).status
+        action_page_html = page.content()
+        claim_input_count = page.locator("input[name='claim']").count()
+
+        claim_url_resp_status = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php?worker_id={worker_id}&claim=1"
+        ).status
+
+        ensure_gm_login(page, PHP_BASE_URL)
+        page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
+        page.wait_for_load_state("load", timeout=120000)
+        eot_html = page.content()
+
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = 'claimMode'",
+            (prev_mode,)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._action_page_status = action_page_resp_status
+        type(self)._claim_input_count = claim_input_count
+        type(self)._claim_url_status = claim_url_resp_status
+        type(self)._eot_html = eot_html
+        yield
+
+    def test_claim_form_not_rendered(self):
+        """C1 — claim button absent when mode is outside whitelist. The page
+        itself still loads (200) so the gate is targeted at the claim form
+        only, not the whole worker page."""
+        assert self._action_page_status == 200, (
+            f"workers/action.php should still render (200); got "
+            f"{self._action_page_status}"
+        )
+        assert self._claim_input_count == 0, (
+            f"input[name='claim'] should be hidden when claimMode is "
+            f"outside whitelist; found {self._claim_input_count}"
+        )
+
+    def test_claim_url_returns_403(self):
+        """C2 — `?claim=1` URL handler hard-403s before activateWorker fires."""
+        assert self._claim_url_status == 403, (
+            f"claim URL should 403 when claimMode is outside whitelist; "
+            f"got {self._claim_url_status}"
+        )
+
+    def test_claim_mechanic_skipped_at_end_turn(self):
+        """C3 — claimMechanic prints the skip warning and does not fall
+        through to the legacy mode-A SQL path."""
+        assert "claimMechanic : mode 'controller' not supported, skipped" in self._eot_html, (
+            "EOT page should contain the claimMechanic skip-warning heading"
+        )
+
+    def test_recalculate_zone_defence_skipped_at_end_turn(self):
+        """C4 — recalculateZoneDefence prints the skip warning and does not
+        update calculated_defence_val for any zone."""
+        assert "Mode 'controller' not supported, skipped" in self._eot_html, (
+            "EOT page should contain the recalculateZoneDefence skip-warning"
+        )

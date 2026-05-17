@@ -137,6 +137,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'investigate');
     }
     if (isset($_GET['claim'])){
+        $claim_mode = getConfig($gameReady, 'claimMode');
+        if (!in_array($claim_mode, ['worker', 'worker_leader'], true)) {
+            http_response_code(403);
+            exit();
+        }
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])){
