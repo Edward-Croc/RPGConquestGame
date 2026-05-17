@@ -5,3 +5,8 @@ DevPersoCommandes.txt
 infinitybasefiles
 __pycache__/
 .pytest_cache/
+
+# Repo-local override: vendored libraries under lib/ are tracked
+# (some user-global excludesfile entries ignore `lib`).
+!lib/
+docker-compose.override.yml
