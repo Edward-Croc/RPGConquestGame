@@ -1,4 +1,12 @@
 "name","value","description"
+"map_file","Carte_Shikoku_1555.jpg","Map image file for Shikoku"
+"locationAttackMode","endTurn","Where/when controller location attacks resolve: immediate | endTurn | worker"
+"claimMode","worker_leader","Zone-claim resolver mode: worker (D6 per worker) | worker_leader (aggregate) | controller"
+"first_come_origin_list","1,2,3,4,5,6,7,8,9,10,11","Origins disponibles pour le recrutement premier-venu (Shikoku : 11 origines)"
+"recrutement_origin_list","1,2,3,4,5,6,7","Origins disponibles pour le recrutement avec choix (Shikoku : 7 origines)"
+"local_origin_list","1,2,3,4,5,6","Origins considérées comme locales pour les textes d'enquête"
+"age_discipline","{""age"": [""2"",""4"",""6""]}","Âges (tours) auxquels un agent peut gagner une discipline (Shikoku : 2, 4, 6)"
+"basePowerNames","'Sōjutsu (槍術) – Art de la lance (Yari)', 'Kyūjutsu (弓術) – Art du tir à l’arc', 'Shodō (書道) – Calligraphie', 'Kadō / Ikebana (華道 / 生け花) – Art floral'","Liste des pouvoirs accessibles à tous les agents (Shikoku)"
 "TITLE","Shikoku (四国) 1555","Name of game"
 "PRESENTATION","<p> En plein Sengoku Jidai(戦国時代), les turbulences sociales, intrigues politiques et conflits militaires divisent le Japon.
        Les guerres fratricides font rage sur l’archipel nippon, et le Shogunat Ashikaga(足利) fragilisé peine à rétablir la paix.
@@ -269,14 +277,7 @@
     ""Je peux témoigner que nous avons échoué à défendre %1$s contre les agents du réseau %3$s dans la région %2$s.<br/>"",
     ""%1$s a été attaqué par des hommes de %3$s, malgré ma présence dans la région %2$s nous n’avons pas pu repousser cette attaque.<br/>""
 ]","Phrases pour ajout au rapport des agents participant à la défense en cas d’échec de la défense"
-"map_file","Carte_Shikoku_1555.jpg","Map image file for Shikoku"
 "map_alt","Carte de Shikoku","Map alt text for Shikoku"
-"locationAttackMode","endTurn","Where/when controller location attacks resolve: immediate | endTurn | worker"
-"claimMode","worker_leader","Zone-claim resolver mode: worker (D6 per worker) | worker_leader (aggregate) | controller"
-"first_come_origin_list","1,2,3,4,5,6,7,8,9,10,11","Origins disponibles pour le recrutement premier-venu (Shikoku : 11 origines)"
-"recrutement_origin_list","1,2,3,4,5,6,7","Origins disponibles pour le recrutement avec choix (Shikoku : 7 origines)"
-"local_origin_list","1,2,3,4,5,6","Origins considérées comme locales pour les textes d'enquête"
-"age_discipline","{""age"": [""2"",""4"",""6""]}","Âges (tours) auxquels un agent peut gagner une discipline (Shikoku : 2, 4, 6)"
 "txt_ps_claim","revendique la province","Texte de l'action 'claim' à la 3e personne (Shikoku)"
 "txt_inf_claim","revendiquer la province","Texte de l'action 'claim' à l'infinitif (Shikoku)"
 "controllerNameDenominatorThe","le ","Article du nom du contrôleur (Shikoku)"
@@ -285,4 +286,3 @@
 "textForZoneType","territoire","Type de zone affiché (Shikoku : territoire)"
 "timeValue","Trimestre","Unité de temps (Shikoku : trimestre)"
 "textOwnedArtefacts","Vos protégé.es :","En-tête de la liste d'artefacts détenus (Shikoku)"
-"basePowerNames","'Sōjutsu (槍術) – Art de la lance (Yari)', 'Kyūjutsu (弓術) – Art du tir à l’arc', 'Shodō (書道) – Calligraphie', 'Kadō / Ikebana (華道 / 生け花) – Art floral'","Liste des pouvoirs accessibles à tous les agents (Shikoku)"
