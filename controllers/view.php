@@ -215,7 +215,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
-            if ($locationAttackMode !== 'worker' && hasBase($gameReady, $controllers['id'])) {
+            if (in_array($locationAttackMode, ['immediate', 'endTurn'], true) && hasBase($gameReady, $controllers['id'])) {
                 if($showAttackableControllerKnownLocations !== NULL) {
                     echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
                             <input type="hidden" name="controller_id" value="%1$s">
@@ -275,10 +275,13 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 } else {
                     $bandKey = 'textLocationAttackOutcomeWeak';
                 }
-                $cancelLink = sprintf(
-                    '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
-                    $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
-                );
+                $cancelLink = '';
+                if (in_array($locationAttackMode, ['endTurn'], true)) {
+                    $cancelLink = sprintf(
+                        '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
+                        $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
+                    );
+                }
                 $byTurn[(int)$q['queued_turn']][] =
                     '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
                     . $cancelLink;

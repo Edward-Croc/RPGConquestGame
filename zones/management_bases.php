@@ -33,7 +33,7 @@ $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
 $pending = [];
-if ($locationAttackMode === 'endTurn') {
+if (in_array($locationAttackMode, ['endTurn'], true)) {
     $pendingSql = "
         SELECT cla.id, cla.location_name, cla.queued_turn, cla.defence_val_snapshot,
                CONCAT(c.firstname, ' ', c.lastname) AS attacker_name,
@@ -51,7 +51,7 @@ if ($locationAttackMode === 'endTurn') {
 require_once '../base/baseHTML.php';
 ?>
 <div class='management'>
-    <?php if ($locationAttackMode === 'endTurn'): ?>
+    <?php if (in_array($locationAttackMode, ['endTurn'], true)): ?>
     <h1>Attaques de bases planifiées</h1>
     <?php if (empty($pending)): ?>
     <p>Aucune attaque planifiée.</p>

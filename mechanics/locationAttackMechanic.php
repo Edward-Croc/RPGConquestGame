@@ -10,7 +10,10 @@
 function locationAttackMechanic($pdo, $turn_number) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $mode = getConfig($pdo, 'locationAttackMode');
-    if ($mode !== 'endTurn') return true;
+    if (!in_array($mode, ['endTurn'], true)) {
+        echo "<div><h3>locationAttackMechanic : mode '".htmlspecialchars((string)$mode)."' not supported, skipped</h3></div>";
+        return true;
+    }
 
     try {
         $stmt = $pdo->prepare("SELECT id, location_id, attacker_controller_id
