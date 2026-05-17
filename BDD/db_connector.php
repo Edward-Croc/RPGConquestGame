@@ -650,59 +650,6 @@ function loadWorkersCSV($pdo, $csvFile) {
 }
 
 /**
- * Execute SQL UPDATE statements from CSV
- * CSV format: table_name,column_name,where_column,where_value,new_value
- *
- * @param PDO $pdo Database connection
- * @param string $csvFile Path to CSV file
- * @return bool Success status
- */
-function loadCSVUpdates($pdo, $csvFile) {
-    $prefix = $_SESSION['GAME_PREFIX'];
-    
-    if (!file_exists($csvFile)) {
-        echo "CSV file $csvFile not found.<br />";
-        return false;
-    }
-    
-    try {
-        $handle = fopen($csvFile, 'r');
-        if ($handle === false) {
-            echo "Failed to open CSV file $csvFile.<br />";
-            return false;
-        }
-        
-        // Skip header row
-        $header = fgetcsv($handle);
-        
-        $updateCount = 0;
-        while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 5) {
-                continue;
-            }
-            
-            $tableName = $prefix . trim($row[0]);
-            $columnName = trim($row[1]);
-            $whereColumn = trim($row[2]);
-            $whereValue = trim($row[3]);
-            $newValue = trim($row[4]);
-            
-            $sql = "UPDATE {$tableName} SET {$columnName} = ? WHERE {$whereColumn} = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$newValue, $whereValue]);
-            $updateCount++;
-        }
-        
-        fclose($handle);
-        echo "CSV updates from $csvFile executed successfully ($updateCount updates).<br />";
-        return true;
-    } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error loading CSV updates $csvFile: " . $e->getMessage()."<br />";
-        return false;
-    }
-}
-
-/**
  * Check that the game is ready:
  *  - databse is accessible
  *  - tables are loaded
@@ -779,7 +726,7 @@ function gameReady() {
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
-                        'textes' => ['name', 'value', 'description'],
+                        'config' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
                     ];
@@ -792,14 +739,8 @@ function gameReady() {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
                             
-                            // Handle specific file types
-                            // Map file names to actual table names where they differ
-                            $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
-                                $tableName = $tableNameMap[$fileName] ?? $fileName;
-                                loadCSVFile($pdo, $csvFile, $tableName, $columns);
-                            } elseif ($fileName === 'config') {
-                                loadCSVUpdates($pdo, $csvFile);
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'config', 'zones'])) {
+                                loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } else {
                                 // For base and zones, they contain complex SQL with subqueries
                                 // CSV support for these would require more complex handling
