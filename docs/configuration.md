@@ -11,8 +11,64 @@
 
 ## 2. Moteur de jeu (autres calculs)
 
-*Section à compléter dans un commit suivant.* Couvrira : `MINROLL`, `MAXROLL`, `PASSIVEVAL`, bonus de zone (`ENQUETE_ZONE_BONUS`, etc.), bonus plats de "hide", seuils de découverte de rapports (`REPORTDIFF*`, `LOCATION*DIFF`), listes d'actions actives/passives, formules de découverte de bases (`baseDiscoveryDiff*`), seuils d'attaque entre agents (`ATTACKDIFF*`, `RIPOST*`, `attackTimeWindow`, `canAttackNetwork`, `LIMIT_ATTACK_BY_ZONE`).
+Cette section couvre les clés qui pilotent les calculs partagés entre tous les modes : valeurs de base des actions d'agent, bonus contextuels, listes d'actions, seuils de découverte, combat entre agents et difficulté des places fortes. Ces clés s'appliquent quelles que soient les valeurs de `claimMode` et `locationAttackMode`.
 
+### Dés et valeurs d'action
+
+**`MINROLL`** (= 1) et **`MAXROLL`** (= 6) — Bornes inclusives du jet aléatoire utilisé pour calculer `enquete_val`, `attack_val` et `defence_val` des agents en action active. Le tirage est uniforme sur `[MINROLL, MAXROLL]`. Un intervalle plus large produit plus d'imprévisibilité ; plus étroit rend pouvoirs et bonus dominants.
+
+**`PASSIVEVAL`** (= 3) — Valeur fixe utilisée à la place du jet pour les actions passives. Un agent qui surveille (`passive`) ou se cache (`hide`) ne tire pas de dé ; il reçoit cette valeur sur les axes où son action est considérée comme passive. Régler `PASSIVEVAL` près de la moyenne des dés (`(MINROLL + MAXROLL) / 2`) garde les actions passives compétitives.
+
+### Bonus de contrôle de zone et bonus d'action
+
+**`ENQUETE_ZONE_BONUS`** (= 0), **`ATTACK_ZONE_BONUS`** (= 0), **`DEFENCE_ZONE_BONUS`** (= 1) — Bonus ajoutés à `enquete_val`, `attack_val` et `defence_val` d'un agent dont le contrôleur détient (holder) la zone où l'agent se trouve. Par défaut, seule la défense profite du contrôle de zone. Augmenter `ATTACK_ZONE_BONUS` rend la conquête plus stratégique.
+
+**`HIDE_ENQUETE_FLAT_BONUS`** (= 4), **`HIDE_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plats ajoutés à `enquete_val` et `defence_val` quand l'agent choisit l'action `hide`. L'action « se cacher » renforce la défense de l'agent et complique sa détection par les enquêtes ennemies (la valeur d'enquête sert alors de résistance, pas d'investigation), au prix de ne pas attaquer ce tour.
+
+### Listes d'actions actives et passives
+
+Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`, `attack_val` et `defence_val` de chaque agent en début de tour. Pour chaque axe (enquête, attaque, défense), l'`action_choice` choisi par l'agent détermine si la valeur correspondante est obtenue par un **jet de dé aléatoire** (action listée comme `active`) ou par la **valeur fixe `PASSIVEVAL`** (action listée comme `passive`). Une action absente des deux listes d'un axe donne `0` sur cet axe.
+
+> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres mécaniques. Par exemple, la recherche d'agents ennemis n'est exécutée que pour `action_choice IN ('passive', 'investigate')` (voir `mechanics/investigateMechanic.php`), indépendamment de ces listes.
+
+- **`passiveInvestigateActions`** (= `'passive','attack','captured','hide'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`.
+- **`activeInvestigateActions`** (= `'investigate','claim'`) — Actions dont la valeur d'enquête est tirée au D6.
+- **`passiveAttackActions`** (= `'passive','investigate','hide'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
+- **`activeAttackActions`** (= `'attack','claim'`) — Actions dont la valeur d'attaque est tirée au D6.
+- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide'`) — Actions dont la valeur de défense est `PASSIVEVAL`.
+- **`activeDefenceActions`** (= `''`, vide par défaut) — Actions dont la valeur de défense est tirée au D6. Vide signifie que toutes les valeurs de défense sont fixes.
+
+Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses. L'action `claim` apparaît dans les deux axes actifs (`enquete` et `attack`) — c'est volontaire : revendiquer génère un jet pour les deux valeurs, ce qui rend l'agent compétitif quand le `claimMode='worker'` les compare à la défense de la zone.
+
+### Seuils de découverte d'information
+
+**`REPORTDIFF0`** (= -1), **`REPORTDIFF1`** (= 1), **`REPORTDIFF2`** (= 2), **`REPORTDIFF3`** (= 4) — Seuils progressifs de différence `enquete_val − target_defence_val` pour révéler les niveaux d'information dans un rapport d'enquête sur un agent : nom et action (niveau 0, accessible dès `≥ REPORTDIFF0`), capacités aléatoires (niveau 1), capacités du contrôleur et numéro de réseau (niveau 2), nom du contrôleur dominant (niveau 3). Le niveau 0 négatif (-1) signifie que l'information passe même avec un léger déficit ; mettre `REPORTDIFF0 = 1` conditionnerait toute découverte à un avantage net.
+
+**`LOCATIONNAMEDIFF`** (= 0), **`LOCATIONINFORMATIONDIFF`** (= 1), **`LOCATIONARTEFACTSDIFF`** (= 2) — Seuils de différence `enquete_val − discovery_diff` pour les niveaux de découverte d'un lieu secret : nom du lieu, description / informations secrètes, présence d'artefacts récupérables. Augmenter ces seuils rend les enquêtes de zone moins rentables.
+
+### Combat entre agents
+
+**`ATTACKDIFF0`** (= 1), **`ATTACKDIFF1`** (= 3) — Seuils de différence `attack_val − defence_val` pour les résultats d'attaque. En-dessous de `ATTACKDIFF0` : échec (la cible apprend le nom de l'attaquant). À partir de `ATTACKDIFF0` : élimination de la cible. À partir de `ATTACKDIFF1` : capture vivante (le contrôleur obtient l'accès aux rapports). Augmenter `ATTACKDIFF1` rend les captures plus rares.
+
+**`RIPOSTACTIVE`** (= 1) — Active la mécanique de riposte. Si `1`, une cible qui résiste peut éliminer l'attaquant ; si `0`, la riposte est désactivée.
+
+**`RIPOSTDIFF`** (= 2) — Seuil de différence `defence_val − attack_val` pour qu'une riposte réussisse. Plus élevé : ripostes rares ; plus bas : le défenseur dominant gagne souvent.
+
+**`attackTimeWindow`** (= 1) — Nombre de tours pendant lesquels un agent découvert reste attaquable après avoir perdu son couvert. Mettre à `0` désactive la fenêtre (attaque uniquement au tour de la découverte).
+
+**`canAttackNetwork`** (= 1) — Si `0`, seuls les agents individuels apparaissent dans la liste des cibles ; si `> 0`, les agents sont regroupés par réseau dès que `REPORTDIFF2` est atteint, et le contrôleur peut attaquer un réseau entier.
+
+**`LIMIT_ATTACK_BY_ZONE`** (= 0) — Si `0`, une attaque enregistrée persiste même si la cible quitte la zone ; si `> 0`, l'attaque est annulée dès que la cible déménage.
+
+### Difficulté de découverte des places fortes
+
+**`baseDiscoveryDiff`** (= 3) — Plancher de la difficulté de découverte (`discovery_diff`) d'une place forte. Plus la valeur est haute, plus il faut une `enquete_val` élevée pour découvrir le lieu.
+
+**`baseDiscoveryDiffAddPowers`** (= 1), **`baseDiscoveryDiffAddWorkers`** (= 1), **`baseDiscoveryDiffAddTurns`** (= 0.5) — Multiplicateurs des composantes pondérées : pouvoirs du contrôleur défenseur, nombre de ses agents dans la zone, ancienneté de la base (en tours). Mettre un multiplicateur à `0` désactive complètement la composante.
+
+**`maxBonusDiscoveryDiffPowers`** (= 5), **`maxBonusDiscoveryDiffWorkers`** (= 4), **`maxBonusDiscoveryDiffTurns`** (= 3) — Plafonds par composante. Au-delà du plafond, la composante est tronquée. Mettre un plafond à `0` retire la limite (attention : peut produire des bases impossibles à découvrir).
+
+La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalculateBaseDefence` (`zones/functions.php`). La formule complète vit dans `calculateSecretLocationDiscoveryDiff`.
 
 ### Modes de résolution
 
