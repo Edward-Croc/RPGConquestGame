@@ -610,6 +610,13 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         return false;
     }
 
+    // Quick lookup from candidate worker_id → worker_name. Used to format
+    // the co-claimer name list (%3$s) in the view-side templates.
+    $nameByWorkerId = [];
+    foreach ($candidates as $c) {
+        $nameByWorkerId[(int)$c['worker_id']] = (string)$c['worker_name'];
+    }
+
     // Group by (controller_id, zone_id); leader = highest (attack, defence,
     // enquete, worker_id ASC) tiebreak. Leader's name is captured here so
     // the per-group loop doesn't need a separate SELECT.
@@ -737,15 +744,38 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         }
         if (empty($claimerWorkerIds)) $claimerWorkerIds = [$leader_id];
 
+        // Co-claimer name list (%3$s). Leader excluded; fallback when the
+        // leader claimed alone keeps "en compagnie de" grammatical.
+        $coClaimerIds = array_values(array_diff($claimerWorkerIds, [$leader_id]));
+        if (empty($coClaimerIds)) {
+            $coClaimerNames = "d'autres agents";
+        } else {
+            $coClaimerNames = implode(', ', array_map(
+                fn($wid) => (string)($nameByWorkerId[$wid] ?? "?"),
+                $coClaimerIds
+            ));
+        }
+
+        // claim_controller_id override target (%4$s, used by fail-view).
+        // 'null' sentinel = "remove visible claim" = "Personne (Sans bannière)".
+        $onBehalfId = $leaderParams['claim_controller_id'] ?? 'null';
+        if ($onBehalfId === 'null' || $onBehalfId === null || $onBehalfId === '') {
+            $onBehalfName = 'Personne (Sans bannière)';
+        } else {
+            $onBehalfName = (string) getControllerName($pdo, (int)$onBehalfId);
+        }
+
         // Get the correct text config textesClaimFailViewArray / textesClaimSuccessViewArray
         // (nom) - %1$s
         // (zone) - %2$s
+        // (co-claimer names or "d'autres agents") - %3$s
+        // (claim_controller_id target name or "Personne (Sans bannière)") - %4$s   (fail-view only)
         $textesView = json_decode(getConfig($pdo, $success ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray'), true) ?: [];
         // Per-worker claim_report write (one report per observing enemy worker).
         foreach ($others as $otherWorker) {
             if (!empty($textesView)) {
                 $tpl = $textesView[array_rand($textesView)];
-                $report = sprintf($tpl, $leaderName, $group['zone_name']).'<br/>';
+                $report = sprintf($tpl, $leaderName, $group['zone_name'], $coClaimerNames, $onBehalfName).'<br/>';
                 updateWorkerAction($pdo, $otherWorker['worker_id'], $turn_number, NULL, ['claim_report' => $report]);
             }
         }
