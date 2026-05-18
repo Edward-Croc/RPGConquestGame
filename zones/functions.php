@@ -355,22 +355,23 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $zoneStmt->execute([':zone_id' => $zone_id]);
     $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($zone) {
-        if ($type === 'Claim') {
-            if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
-                $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
-                $value += $vrBonus;
-                if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
-            }
-        } else {
-            if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
-                $value += 1;
-                if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+    if ($controller_id !== null) {
+        // Holders & Claimers 
+        if ($zone) {
+            if ($type === 'Claim') {
+                if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
+                    $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
+                    $value += $vrBonus;
+                    if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+                }
+            } else {
+                if ($controller_id != 0 && $zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
+                    $value += 1;
+                    if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+                }
             }
         }
-    }
-
-    if ($controller_id !== null) {
+    
         // Powers
         $powerMultiplier = floatval(getConfig($pdo, "base{$type}AddPowers"));
         if ($debug) echo sprintf("powerMultiplier : %f<br>", $powerMultiplier);
@@ -491,34 +492,36 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         $value += getConfig($pdo, "noController{$type}Bonus");
     }
 
-    // Turns / Age
-    $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
-    if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
-    $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
-    if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
-    if ($turnMultiplier !== 0 && $location_id !== NUll) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
+    // Turns / Age for locations 
+    if ($location_id !== NUll) {
+        $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
+        if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
+        if ($turnMultiplier !== 0) {
+            $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
+            if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
+            $mechanics = getMechanics($pdo);
+            $turn_number = $mechanics['turncounter'];
 
-        $sql = "
-            SELECT setup_turn
-            FROM {$prefix}locations
-            WHERE id = :location_id
-            LIMIT 1
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':location_id' => $location_id
-        ]);
-        $base = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($base) {
-            $setup_turn = (int)$base['setup_turn'];
-            $turnDiff = max(0, $turn_number - $setup_turn);
-            // round up to integer
-            $bonus = ceil($turnDiff * $turnMultiplier);
-            if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
-            $value += $bonus;
-            if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            $sql = "
+                SELECT setup_turn
+                FROM {$prefix}locations
+                WHERE id = :location_id
+                LIMIT 1
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':location_id' => $location_id
+            ]);
+            $base = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($base) {
+                $setup_turn = (int)$base['setup_turn'];
+                $turnDiff = max(0, $turn_number - $setup_turn);
+                // round up to integer
+                $bonus = ceil($turnDiff * $turnMultiplier);
+                if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
+                $value += $bonus;
+                if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            }
         }
     }
 

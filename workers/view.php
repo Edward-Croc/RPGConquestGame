@@ -204,7 +204,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $claimActionHTML = '';
                 if (in_array($claim_mode, ['worker', 'worker_leader'], true)) {
                     $showListClaimTargetsSelect = showControllerSelect($controllers, $controller_id, 'claim_controller_id', TRUE);
-                    $claim_label = ($zoneOwner) ? 'Protéger/Revendiquer' : 'Revendiquer';
+                    $claim_label = ($zoneOwner) ? 'Protéger' : 'Revendiquer';
                     $claimActionHTML = sprintf(
                         '<div class="field is-grouped is-grouped-multiline">
                             <div class="control">

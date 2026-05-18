@@ -575,7 +575,7 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    echo '<div> <h3>  claimMechanic_workerLeader : </h3> ';
+    echo '<div> <h3>  claimByWorkerLeaderMechanic : </h3> ';
     echo "turn_number : $turn_number <br>";
 
     // Get configs
@@ -641,7 +641,7 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);
 
         $success = ($claimVal - $calculated_defence_val) >= $claimDiff;
-        if ($debug) echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d diff=%d => %s<br>",
+        if ($debug) echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s<br>",
             $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $success ? 'WIN' : 'lose');
 
         $leaderName = '';
