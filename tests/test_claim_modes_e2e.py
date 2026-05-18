@@ -272,7 +272,7 @@ class TestClaimModeWorkerLeaderCrossController:
 
 @pytest.mark.db
 class TestClaimModeSupportingClaimersBonus:
-    """Mode B `baseClaimAddSupportingClaimers` term — adds
+    """Mode B `baseClaimAddSupporting` term — adds
     `max(0, COUNT(claim-action workers in zone for controller) - 1) × multiplier`
     to the controller's claim_val.
 
@@ -292,7 +292,7 @@ class TestClaimModeSupportingClaimersBonus:
         cur.execute(
             f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
             f"'claimMode','baseClaim','baseClaimAddWorkers',"
-            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
         )
         prev_config = {row['name']: row['value'] for row in cur.fetchall()}
         cur.execute(
@@ -305,7 +305,7 @@ class TestClaimModeSupportingClaimersBonus:
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
-            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+            f"WHERE name = 'baseClaimAddSupporting'"
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
@@ -372,7 +372,7 @@ class TestClaimModeSupportingClaimersBonus:
         assert self._post['holder_controller_id'] == self._beta_id, (
             f"holder_controller_id should be Beta (id={self._beta_id}); "
             f"got {self._post['holder_controller_id']}. Without "
-            f"baseClaimAddSupportingClaimers contributing, claim_val would be "
+            f"baseClaimAddSupporting contributing, claim_val would be "
             f"0 and Beta would not have won."
         )
 
@@ -398,7 +398,7 @@ class TestClaimModeSupportingClaimersControl:
         cur.execute(
             f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
             f"'claimMode','baseClaim','baseClaimAddWorkers',"
-            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
         )
         prev_config = {row['name']: row['value'] for row in cur.fetchall()}
         cur.execute(
@@ -411,7 +411,7 @@ class TestClaimModeSupportingClaimersControl:
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
-            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+            f"WHERE name = 'baseClaimAddSupporting'"
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "

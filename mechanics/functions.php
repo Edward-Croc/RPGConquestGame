@@ -746,7 +746,7 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         }
     }
 
-    echo '<p>claimMechanic_workerLeader : DONE</p> </div>';
+    echo '<p>claimByWorkerLeaderMechanic : DONE</p> </div>';
     return true;
 }
 
