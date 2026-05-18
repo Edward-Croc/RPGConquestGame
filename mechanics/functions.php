@@ -607,6 +607,22 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         $cid = (int) $group['controller_id'];
         $leader_id = (int) $group['leader_worker_id'];
 
+        // Get zones informations for the calculated_defence_val
+        try {
+            $zStmt = $pdo->prepare("SELECT * FROM {$prefix}zones WHERE id = :zid");
+            $zStmt->bindParam(':zid', $zone_id, PDO::PARAM_INT);
+            $zStmt->execute();
+            $zone = $zStmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT zones failed: ".$e->getMessage()."<br />";
+            continue;
+        }
+        if ((int)$zone['holder_controller_id'] === $cid) {
+            if ($debug) echo sprintf("zone %d c %d : holder == cid, claim path skipped (defender bonus already applied via recalculateZoneDefence supporting term)<br>", $zone_id, $cid);
+            continue;
+        }
+        $calculated_defence_val = (int) $zone['calculated_defence_val'];
+
         // Fetch each leader's action_params so we can honour claim_controller_id
         $leaderParams = array();
         try {
@@ -625,17 +641,6 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
             continue;
         }
 
-        // Get zones informations for the calculated_defence_val
-        try {
-            $zStmt = $pdo->prepare("SELECT * FROM {$prefix}zones WHERE id = :zid");
-            $zStmt->bindParam(':zid', $zone_id, PDO::PARAM_INT);
-            $zStmt->execute();
-            $zone = $zStmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT zones failed: ".$e->getMessage()."<br />";
-            continue;
-        }
-        $calculated_defence_val = (int) $zone['calculated_defence_val'];
 
         // Get the claime val
         $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);

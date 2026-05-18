@@ -579,3 +579,132 @@ class TestClaimModeDisabled:
         assert "Mode 'controller' not supported, skipped" in self._eot_html, (
             "EOT page should contain the recalculateZoneDefence skip-warning"
         )
+
+
+@pytest.mark.db
+class TestClaimModeHeldZoneSkip:
+    """Mode B — when a worker's `action_choice='claim'` targets a zone the
+    worker's own controller ALREADY holds, the claim path skips entirely
+    in `claimByWorkerLeaderMechanic`. The worker still counts as a
+    defence supporter via `recalculateZoneDefence`'s mode-B supporting
+    term, but produces no `claim_report`, no CKE leak, no zone-row
+    UPDATE.
+
+    Scenario: Beta-Combat is pre-set so holder == Beta. Chain_B (Beta's
+    worker) submits claim. EOT runs. Assertions:
+      - Zone holder/claimer unchanged.
+      - Chain_B has no `claim_report` for the post-EOT turn (its row
+        carried forward without one being written for the resolved turn).
+      - No CKE entries for Chain_B with `last_discovery_turn == claim_turn`
+        (no enemy observer learned of the worker via the claim path).
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def held_zone_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Beta' LIMIT 1"
+        )
+        beta_id = cur.fetchone()['id']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = %s, holder_controller_id = %s "
+            f"WHERE name = 'Beta-Combat'",
+            (beta_id, beta_id)
+        )
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name = 'Beta-Combat' LIMIT 1"
+        )
+        beta_combat_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = 'Chain_B' LIMIT 1"
+        )
+        chain_b_id = cur.fetchone()['id']
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        claim_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = %s "
+            f"  AND wa.action_choice IN ('claim', 'investigate', 'attack')",
+            (claim_turn, beta_combat_id)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_B', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE id = %s",
+            (beta_combat_id,)
+        )
+        post_zone = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id = %s AND turn_number = %s LIMIT 1",
+            (chain_b_id, claim_turn)
+        )
+        chain_b_action = cur.fetchone()
+
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post_zone = post_zone
+        type(self)._chain_b_action = chain_b_action
+        type(self)._beta_id = beta_id
+        yield
+
+    def test_zone_holder_unchanged(self):
+        """Holder remains Beta after EOT — held-zone skip means no UPDATE
+        runs against the zones row."""
+        assert self._post_zone['holder_controller_id'] == self._beta_id, (
+            f"holder should remain Beta (id={self._beta_id}); got "
+            f"{self._post_zone['holder_controller_id']}"
+        )
+
+    def test_zone_claimer_unchanged(self):
+        """Claimer remains Beta as well — `action_params.claim_controller_id`
+        is not applied since we never enter the resolution body."""
+        assert self._post_zone['claimer_controller_id'] == self._beta_id, (
+            f"claimer should remain Beta (id={self._beta_id}); got "
+            f"{self._post_zone['claimer_controller_id']}"
+        )
+
+    def test_no_claim_report_written(self):
+        """No `claim_report` key written into the worker's `report` JSON —
+        the held-zone skip bypasses both the success and failure text paths."""
+        import json
+        report_raw = (self._chain_b_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert not report.get('claim_report'), (
+            f"claim_report should be empty for the held-zone claimer; "
+            f"got {report.get('claim_report')!r}"
+        )
+
