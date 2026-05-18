@@ -734,6 +734,11 @@ function gameReady() {
                         // Check for CSV file first
                         $csvFile = sprintf('%s/var/csv/setup%s_%s.csv', $path, $_POST['config_name'], $fileName);
                         $sqlFile = sprintf('%s/var/%s/setup%s_%s.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
+                        // Legacy fallback: CSV `_textes` was renamed to `_config`, but the SQL
+                        // counterparts kept their original `_textes.sql` filenames.
+                        if ($fileName === 'config' && !file_exists($sqlFile)) {
+                            $sqlFile = sprintf('%s/var/%s/setup%s_textes.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
+                        }
 
                         if (file_exists($csvFile)) {
                             echo "Loading CSV file $csvFile ...<br />";
