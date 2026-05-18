@@ -564,10 +564,16 @@ function claimMechanic($pdo, $mechanics) {
  * @param PDO $pdo : database connection
  * @param array $mechanics : mechanics array
  * 
- *  Groups all worker by action_choice='claim' for this turn by (controller_id, zone_id),
- *  Picks the lowest worker_id as the leader of each group and resolves the claim
- *  via calculateControllerValue('Claim') vs calculateControllerValue('ZoneDefence').
- *  Adds claimVisibleToRealBonus to the claim_val when the atacking controller already holds zones.claimer_controller_id
+ *  Groups all claim-action workers for this turn by (controller_id, zone_id),
+ *  picks the leader of each group by the highest (attack_val, defence_val,
+ *  enquete_val, worker_id) tiebreak, then iterates groups in decreasing
+ *  leader-stats order (controller_id ASC tiebreak). The first group whose
+ *  claim_val clears claimDiff wins the zone — subsequent passing groups
+ *  for the same zone are forced to lose, but their fail reports + CKE
+ *  leaks still fire (observers saw all attempts).
+ *  Resolves via calculateControllerValue('Claim') vs zone.calculated_defence_val.
+ *  Adds claimVisibleToRealBonus when attacker already has zones.claimer_controller_id
+ *  without holding the zone.
  */
 function claimByWorkerLeaderMechanic($pdo, $mechanics) {
 
@@ -581,25 +587,98 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
     // Get configs
     $claimDiff = (int) getConfig($pdo, 'claimDiff');
 
-    // Groups all worker by action_choice='claim' for this turn by (controller_id, zone_id),
-    // Picks the lowest worker_id as the leader of each group and resolves the claim
+    // Fetch every claim-action worker with its computed stats. We group +
+    // pick leader + sort in PHP so the tiebreaker rules are unified across
+    // MySQL / Postgres without resorting to window functions.
     try {
-        $sql = "SELECT cw.controller_id, w.zone_id, MIN(w.id) AS leader_worker_id, z.name AS zone_name
+        $sql = "SELECT wa.worker_id, cw.controller_id, w.zone_id, z.name AS zone_name,
+                       CONCAT(w.firstname, ' ', w.lastname) AS worker_name,
+                       wa.attack_val, wa.defence_val, wa.enquete_val
                 FROM {$prefix}worker_actions wa
                 JOIN {$prefix}workers w ON w.id = wa.worker_id
                 JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
                 JOIN {$prefix}zones z ON z.id = w.zone_id
                 WHERE wa.turn_number = :turn_number
                   AND wa.action_choice = 'claim'
-                  AND cw.is_primary_controller = " . (($_SESSION['DBTYPE'] == 'mysql') ? '1' : 'true') . "
-                GROUP BY cw.controller_id, w.zone_id, z.name";
+                  AND cw.is_primary_controller = " . (($_SESSION['DBTYPE'] == 'mysql') ? '1' : 'true');
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $stmt->execute();
-        $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT groups failed: ".$e->getMessage()."<br />";
+        echo __FUNCTION__."(): SELECT candidates failed: ".$e->getMessage()."<br />";
         return false;
+    }
+
+    // Group by (controller_id, zone_id); leader = highest (attack, defence,
+    // enquete, worker_id ASC) tiebreak. Leader's name is captured here so
+    // the per-group loop doesn't need a separate SELECT.
+    $groupsByKey = [];
+    foreach ($candidates as $c) {
+        $key = $c['controller_id'].'|'.$c['zone_id'];
+        $candidateRank = [(int)$c['attack_val'], (int)$c['defence_val'], (int)$c['enquete_val'], -((int)$c['worker_id'])];
+        if (!isset($groupsByKey[$key])) {
+            $groupsByKey[$key] = [
+                'controller_id' => (int)$c['controller_id'],
+                'zone_id' => (int)$c['zone_id'],
+                'zone_name' => $c['zone_name'],
+                'leader_worker_id' => (int)$c['worker_id'],
+                'leader_name' => (string)$c['worker_name'],
+                'leader_attack_val' => (int)$c['attack_val'],
+                'leader_defence_val' => (int)$c['defence_val'],
+                'leader_enquete_val' => (int)$c['enquete_val'],
+            ];
+            continue;
+        }
+        $cur = $groupsByKey[$key];
+        $curRank = [$cur['leader_attack_val'], $cur['leader_defence_val'], $cur['leader_enquete_val'], -$cur['leader_worker_id']];
+        if ($candidateRank > $curRank) {
+            $groupsByKey[$key]['leader_worker_id']  = (int)$c['worker_id'];
+            $groupsByKey[$key]['leader_name']       = (string)$c['worker_name'];
+            $groupsByKey[$key]['leader_attack_val'] = (int)$c['attack_val'];
+            $groupsByKey[$key]['leader_defence_val']= (int)$c['defence_val'];
+            $groupsByKey[$key]['leader_enquete_val']= (int)$c['enquete_val'];
+        }
+    }
+    // Sort groups by leader stats DESC (controller_id ASC tiebreak).
+    $groups = array_values($groupsByKey);
+    usort($groups, function ($a, $b) {
+        if ($a['leader_attack_val']  !== $b['leader_attack_val'])  return $b['leader_attack_val']  - $a['leader_attack_val'];
+        if ($a['leader_defence_val'] !== $b['leader_defence_val']) return $b['leader_defence_val'] - $a['leader_defence_val'];
+        if ($a['leader_enquete_val'] !== $b['leader_enquete_val']) return $b['leader_enquete_val'] - $a['leader_enquete_val'];
+        return $a['controller_id'] - $b['controller_id'];
+    });
+
+    // First-success-blocks tracking: once a zone is claimed this turn,
+    // subsequent passing groups for it are forced to lose.
+    $zoneClaimed = [];
+
+    // Pre-fetch every ACTIVE-action worker in each claimed zone. Used per
+    // group to derive observing-enemy workers + leader's action_params
+    // without hitting the DB N times.
+    $zoneIds = array_values(array_unique(array_column($groups, 'zone_id')));
+    $activeByZone = [];
+    $paramsByLeader = [];
+    if (!empty($zoneIds)) {
+        $active_actions_list = "'".implode("','", ACTIVE_ACTIONS)."'";
+        $placeholders = implode(',', array_fill(0, count($zoneIds), '?'));
+        try {
+            $aSql = "SELECT cw.worker_id, cw.controller_id, w.zone_id, wa.action_params
+                    FROM {$prefix}workers w
+                    JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = ?
+                    WHERE w.zone_id IN ($placeholders)
+                      AND wa.action_choice IN ($active_actions_list)";
+            $aStmt = $pdo->prepare($aSql);
+            $aStmt->execute(array_merge([$turn_number], $zoneIds));
+            foreach ($aStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $activeByZone[(int)$row['zone_id']][] = $row;
+                $paramsByLeader[(int)$row['worker_id']] = $row['action_params'];
+            }
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): SELECT active workers by zone failed: ".$e->getMessage()."<br />";
+            return false;
+        }
     }
 
     foreach ($groups as $group) {
@@ -623,78 +702,40 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
         }
         $calculated_defence_val = (int) $zone['calculated_defence_val'];
 
-        // Fetch each leader's action_params so we can honour claim_controller_id
-        $leaderParams = array();
-        try {
-            $pStmt = $pdo->prepare(
-                "SELECT action_params FROM {$prefix}worker_actions
-                 WHERE worker_id = :wid AND turn_number = :turn LIMIT 1"
-            );
-            $pStmt->bindParam(':wid', $leader_id, PDO::PARAM_INT);
-            $pStmt->bindParam(':turn', $turn_number, PDO::PARAM_INT);
-            $pStmt->execute();
-            $row = $pStmt->fetch(PDO::FETCH_ASSOC);
-            $leaderParams = !empty($row['action_params']) ? json_decode($row['action_params'], true) : array();
-            if (json_last_error() !== JSON_ERROR_NONE) $params = array();
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT action_params failed: ".$e->getMessage()."<br />";
-            continue;
-        }
-
+        // Leader's action_params (from the pre-fetched zone-active map).
+        $leaderParamsRaw = $paramsByLeader[$leader_id] ?? '';
+        $leaderParams = !empty($leaderParamsRaw) ? json_decode($leaderParamsRaw, true) : array();
+        if (json_last_error() !== JSON_ERROR_NONE) $leaderParams = array();
 
         // Get the claime val
         $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);
 
-        $success = ($claimVal - $calculated_defence_val) >= $claimDiff;
-        if ($debug) echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s<br>",
-            $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $success ? 'WIN' : 'lose');
-
-        $leaderName = '';
-        try {
-            $nStmt = $pdo->prepare("SELECT CONCAT(firstname, ' ', lastname) AS n FROM {$prefix}workers WHERE id = :wid");
-            $nStmt->bindParam(':wid', $leader_id, PDO::PARAM_INT);
-            $nStmt->execute();
-            $leaderName = (string)($nStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? '');
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT name FROM workers failed: ".$e->getMessage()."<br />";
+        $threshold_passed = ($claimVal - $calculated_defence_val) >= $claimDiff;
+        $success = $threshold_passed && empty($zoneClaimed[$zone_id]);
+        if ($debug) {
+            $outcome = $success ? 'WIN' : ($threshold_passed ? 'lose (zone already claimed this turn)' : 'lose');
+            echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s<br>",
+                $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $outcome);
         }
 
-        // Select other worker of the zone to add the claim to their report.
-        try {
-            $oStmt = $pdo->prepare("SELECT cw.worker_id, cw.controller_id
-                FROM {$prefix}workers w
-                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
-                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
-                WHERE w.zone_id = :zone_id
-                  AND cw.controller_id != :controller_id
-                  AND wa.action_choice IN (" . "'".implode("','", ACTIVE_ACTIONS)."'" . ")");
-            $oStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
-            $oStmt->bindParam(':controller_id', $cid, PDO::PARAM_INT);
-            $oStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-            $oStmt->execute();
-            $others = $oStmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT enemy workers failed: ".$e->getMessage()."<br />";
-            $others = [];
-        }
+        $leaderName = $group['leader_name'];
 
-        // All claimer's workers with claim action in this zone get exposed
-        // to enemies, not just the leader.
-        try {
-            $cStmt = $pdo->prepare("SELECT w.id FROM {$prefix}workers w
-                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
-                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
-                WHERE cw.controller_id = :controller_id
-                  AND w.zone_id = :zone_id
-                  AND wa.action_choice = 'claim'");
-            $cStmt->bindParam(':controller_id', $cid, PDO::PARAM_INT);
-            $cStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
-            $cStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-            $cStmt->execute();
-            $claimerWorkerIds = array_column($cStmt->fetchAll(PDO::FETCH_ASSOC), 'id');
-        } catch (PDOException $e) {
-            $claimerWorkerIds = [$leader_id];
+        // Enemy (other-controller) ACTIVE workers in this zone — derived
+        // from the pre-fetched zone-active map.
+        $others = array_values(array_filter(
+            $activeByZone[$zone_id] ?? [],
+            fn($w) => (int)$w['controller_id'] !== $cid
+        ));
+
+        // All this controller's claim-action workers in this zone —
+        // derived from the candidates list we already have.
+        $claimerWorkerIds = [];
+        foreach ($candidates as $c) {
+            if ((int)$c['controller_id'] === $cid && (int)$c['zone_id'] === $zone_id) {
+                $claimerWorkerIds[] = (int)$c['worker_id'];
+            }
         }
+        if (empty($claimerWorkerIds)) $claimerWorkerIds = [$leader_id];
 
         // Get the correct text config textesClaimFailViewArray / textesClaimSuccessViewArray
         // (nom) - %1$s
@@ -745,6 +786,7 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
                 $uStmt->bindParam(':holder', $cid, PDO::PARAM_INT);
                 $uStmt->bindParam(':zid', $zone_id, PDO::PARAM_INT);
                 $uStmt->execute();
+                $zoneClaimed[$zone_id] = $cid;
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): UPDATE zones failed: ".$e->getMessage()."<br />";
             }

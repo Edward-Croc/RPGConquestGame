@@ -708,3 +708,166 @@ class TestClaimModeHeldZoneSkip:
             f"got {report.get('claim_report')!r}"
         )
 
+
+@pytest.mark.db
+class TestClaimModeMultiControllerOrdering:
+    """Mode B — when two controllers both submit claims for the same
+    unowned zone and both clear `claimDiff`, the resolver picks the
+    leader with the highest `(attack_val, defence_val, enquete_val,
+    worker_id)` tiebreak. The first group (in that sort order) to pass
+    wins the zone; later passing groups are forced to lose. All losers
+    still write their fail reports + leak CKE to observers (per user
+    spec — observers saw every attempt).
+
+    Scenario uses Chain_A (Alpha) vs Chain_D (Delta) in Beta-Combat:
+      - Chain_A's powers Eagle Scout / Veteran Tactician / Focused
+        Mind / War Gear sum attack=5. Chain_D's Blank Slate / Common
+        Folk sum 0. With TestConfig dice fixed at 3 (MINROLL=MAXROLL=3)
+        and `claim` ∈ `activeAttackActions`, Chain_A's attack_val=8 vs
+        Chain_D's 3 → Alpha sorts first.
+      - Both leaders' claim_val = baseClaim(5) + workers(1) = 6 >
+        noControllerZoneDefenceBonus(3) + claimDiff(1) → both would pass.
+        Alpha wins; Delta forced-loss.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def multi_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='worker_leader' "
+            f"WHERE name='claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='5' "
+            f"WHERE name='baseClaim'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=0, "
+            f"claimer_controller_id=NULL, holder_controller_id=NULL "
+            f"WHERE name='Beta-Combat'"
+        )
+        cur.execute(
+            f"SELECT id, lastname FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname IN ('Alpha', 'Delta')"
+        )
+        ids = {row['lastname']: row['id'] for row in cur.fetchall()}
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_A' LIMIT 1"
+        )
+        chain_a_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_D' LIMIT 1"
+        )
+        chain_d_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat' LIMIT 1"
+        )
+        beta_combat_id = cur.fetchone()['id']
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        claim_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice='passive', wa.action_params='{{}}' "
+            f"WHERE wa.turn_number=%s AND w.zone_id=%s "
+            f"  AND wa.action_choice='claim'",
+            (claim_turn, beta_combat_id)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_A', 'Alpha')
+        ui_claim(page, 'Chain_D', 'Delta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE id=%s",
+            (beta_combat_id,)
+        )
+        post_zone = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id=%s AND turn_number=%s LIMIT 1",
+            (chain_a_id, claim_turn)
+        )
+        chain_a_action = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id=%s AND turn_number=%s LIMIT 1",
+            (chain_d_id, claim_turn)
+        )
+        chain_d_action = cur.fetchone()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value=%s WHERE name=%s",
+                (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=6 "
+            f"WHERE name='Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post_zone = post_zone
+        type(self)._chain_a_action = chain_a_action
+        type(self)._chain_d_action = chain_d_action
+        type(self)._alpha_id = ids['Alpha']
+        type(self)._delta_id = ids['Delta']
+        yield
+
+    def test_holder_is_alpha_highest_attack_val(self):
+        """Alpha wins the ordering: Chain_A's attack_val (dice 3 + powers
+        5 = 8) beats Chain_D's (dice 3 + powers 0 = 3). The UPDATE fires
+        for Alpha; the zone's holder reflects that."""
+        assert self._post_zone['holder_controller_id'] == self._alpha_id, (
+            f"holder should be Alpha (id={self._alpha_id}, highest "
+            f"attack_val leader); got {self._post_zone['holder_controller_id']}"
+        )
+
+    def test_claimer_mirrors_winner(self):
+        """`action_params.claim_controller_id` from `ui_claim_click` is
+        Alpha (the leader's own controller). Claimer column tracks that."""
+        assert self._post_zone['claimer_controller_id'] == self._alpha_id
+
+    def test_winner_chain_a_got_claim_report(self):
+        """Chain_A's claim_report key is populated (from
+        textesClaimSuccessArray) — proves the winning group still wrote
+        its self-report."""
+        import json
+        report_raw = (self._chain_a_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert report.get('claim_report'), (
+            f"Chain_A (winner) should have a claim_report; got "
+            f"{report.get('claim_report')!r}"
+        )
+
+    def test_loser_chain_d_still_got_claim_report(self):
+        """Chain_D's claim cleared the threshold individually but was
+        forced to lose because Alpha already won the zone. The fail
+        report + CKE leak still fire — observers saw both attempts."""
+        import json
+        report_raw = (self._chain_d_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert report.get('claim_report'), (
+            f"Chain_D (post-winner loser) should still have a "
+            f"claim_report (fail-text); got {report.get('claim_report')!r}"
+        )
+
