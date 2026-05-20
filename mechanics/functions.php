@@ -483,17 +483,32 @@ function claimMechanic($pdo, $mechanics) {
             }
             if ($debug)
                 echo sprintf ("sql_workers_by_zone => workers : %s <br>", var_export($workers, true) );
+
+            // Parity with other modes: view templates take 4 args (%1$s leader, %2$s zone, %3$s co-claimers, %4$s on-behalf target).
+            $coClaimerNames = '';
+            $claimerParamsRaw = $claimer['claimer_params'] ?? '';
+            $claimerParams = !empty($claimerParamsRaw) ? json_decode($claimerParamsRaw, true) : array();
+            if (json_last_error() !== JSON_ERROR_NONE) $claimerParams = array();
+            $onBehalfId = $claimerParams['claim_controller_id'] ?? 'null';
+            if ($onBehalfId === 'null' || $onBehalfId === null || $onBehalfId === '') {
+                $onBehalfName = 'Personne (Sans bannière)';
+            } else {
+                $onBehalfName = (string) getControllerName($pdo, (int)$onBehalfId);
+            }
+
             foreach ( $workers AS $worker) {
                 if ($debug)  echo sprintf ("for worker : %s <br>", var_export($worker, true) );
                 //textesClaimFailViewArray / textesClaimSuccessViewArray
                 // (nom) - %1$s
                 // (zone) - %2$s
+                // (co-claimer names, mode A → '') - %3$s
+                // (claim_controller_id target name) - %4$s
                 $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimFailViewArray'), true);
                 if ($success)
                     $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessViewArray'), true);
                 $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
 
-                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']).'<br/>';
+                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name'], $coClaimerNames, $onBehalfName).'<br/>';
                 // add description of violent claim to report and if $success
                 updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
                 // update controller_known_enemies for controllers of workers in zone
