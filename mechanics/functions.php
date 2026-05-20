@@ -489,11 +489,13 @@ function claimMechanic($pdo, $mechanics) {
             $claimerParamsRaw = $claimer['claimer_params'] ?? '';
             $claimerParams = !empty($claimerParamsRaw) ? json_decode($claimerParamsRaw, true) : array();
             if (json_last_error() !== JSON_ERROR_NONE) $claimerParams = array();
-            $onBehalfId = $claimerParams['claim_controller_id'] ?? 'null';
-            if ($onBehalfId === 'null' || $onBehalfId === null || $onBehalfId === '') {
+            $claimControllerId = $claimerParams['claim_controller_id'] ?? null;
+            if ($claimControllerId === 'null') {
                 $onBehalfName = 'Personne (Sans bannière)';
+            } elseif (empty($claimControllerId)) {
+                $onBehalfName = (string) getControllerName($pdo, (int)$claimer['claimer_controller_id']);
             } else {
-                $onBehalfName = (string) getControllerName($pdo, (int)$onBehalfId);
+                $onBehalfName = (string) getControllerName($pdo, (int)$claimControllerId);
             }
 
             foreach ( $workers AS $worker) {
@@ -771,13 +773,14 @@ function claimByWorkerLeaderMechanic($pdo, $mechanics) {
             ));
         }
 
-        // claim_controller_id override target (%4$s, used by fail-view).
-        // 'null' sentinel = "remove visible claim" = "Personne (Sans bannière)".
-        $onBehalfId = $leaderParams['claim_controller_id'] ?? 'null';
-        if ($onBehalfId === 'null' || $onBehalfId === null || $onBehalfId === '') {
+        // Mirrors success-write: unset → claim for self ($cid), 'null' sentinel → remove visible claim.
+        $claimControllerId = $leaderParams['claim_controller_id'] ?? null;
+        if ($claimControllerId === 'null') {
             $onBehalfName = 'Personne (Sans bannière)';
+        } elseif (empty($claimControllerId)) {
+            $onBehalfName = (string) getControllerName($pdo, $cid);
         } else {
-            $onBehalfName = (string) getControllerName($pdo, (int)$onBehalfId);
+            $onBehalfName = (string) getControllerName($pdo, (int)$claimControllerId);
         }
 
         // Get the correct text config textesClaimFailViewArray / textesClaimSuccessViewArray
