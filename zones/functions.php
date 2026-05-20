@@ -228,7 +228,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
                     LEFT JOIN
                         {$prefix}worker_actions wa ON wa.worker_id = w.id
                     LEFT JOIN
-                        {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
+                        {$prefix}controller_worker cw ON cw.worker_id = w.id
                     WHERE
                         z.holder_controller_id = cw.controller_id
                         AND wa.action_choice IN (%s)
@@ -247,7 +247,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
                     FROM {$prefix}zones z
                     LEFT JOIN {$prefix}workers w ON w.zone_id = z.id
                     LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
+                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
                     WHERE z.holder_controller_id = cw.controller_id
                     AND wa.action_choice IN (%s)
                     AND wa.turn_number = :turn_number
@@ -257,12 +257,10 @@ function recalculateZoneDefence($pdo, $mechanics) {
             ";
         }
         $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-        $is_primary_controller = true;
 
         $sql = sprintf($sql, $active_actions);
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
-        $stmt->bindParam(':is_primary_controller', $is_primary_controller, PDO::PARAM_BOOL);
         $stmt->execute();
 
     } catch (PDOException $e) {
