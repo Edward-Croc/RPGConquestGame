@@ -585,7 +585,7 @@ class TestClaimModeDisabled:
 class TestClaimModeHeldZoneSkip:
     """Mode B — when a worker's `action_choice='claim'` targets a zone the
     worker's own controller ALREADY holds, the claim path skips entirely
-    in `claimByWorkerLeaderMechanic`. The worker still counts as a
+    in `claimByWorkerLeaderMath`. The worker still counts as a
     defence supporter via `recalculateZoneDefence`'s mode-B supporting
     term, but produces no `claim_report`, no CKE leak, no zone-row
     UPDATE.
