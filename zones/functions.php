@@ -365,7 +365,8 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                     if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
                 }
             } else {
-                if ($controller_id != 0 && $zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
+                // Si le controller n'est pas 0, '' ou NULL alors on peut comparer aux holders ou claimers
+                if (!empty ($controller_id) && ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id)) {
                     $value += 1;
                     if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
                 }
