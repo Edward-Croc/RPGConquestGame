@@ -176,8 +176,9 @@ function getLocationsArray($pdo) {
  * 
  * Recompute zones.calculated_defence_val for every zone.
  * Dispatches on claimMode:
- * - 'worker' (or any unknown / future value) uses SQL formula (z.defence_val + COUNT of holder's active workers);
- * - 'worker_leader' uses calculateControllerValue('ZoneDefence', ...)
+ * - 'worker': SQL formula (z.defence_val + COUNT of holder's active workers).
+ * - 'worker_leader': calculateControllerValue('ZoneDefence', ...) per zone.
+ * - any other value: no-op (echoes "not supported, skipped" and returns true).
  */
 function recalculateZoneDefence($pdo, $mechanics) {
     $prefix = $_SESSION['GAME_PREFIX'];

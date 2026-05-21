@@ -1,5 +1,7 @@
 <?php
 
+require_once '../controllers/functions.php';
+
 /**
  * Resolve the on-behalf controller name for the fail/success view template (%4$s).
  *
