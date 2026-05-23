@@ -107,16 +107,16 @@
     ""Iel est clairement atypique, iel possède un.e %s. ""
 ]","Texts for transformation level 2"
 "textesClaimFailViewArray","[
-    ""J’ai vu <strong>%1$s</strong> tenter de prendre le contrôle du territoire <strong>%2$s</strong>, mais la défense l’a repoussé.e brutalement."",
-    ""L’assaut de <strong>%1$s</strong> sur le territoire <strong>%2$s</strong> a échoué ; c’était un vrai carnage."",
-    ""<strong>%1$s</strong> a voulu s’imposer au <strong>%2$s</strong>, sans succès. Iel a été forcé.e de battre en retraite."",
-    ""Je pense que <strong>%1$s</strong> pensait avoir une chance au <strong>%2$s</strong>. C’était mal calculé, iel a échoué.""
+    ""J’ai vu <strong>%1$s</strong> tenter de prendre le contrôle du territoire <strong>%2$s</strong> en compagnie de %3$s et au nom de <strong>%4$s</strong>, mais la défense l’a repoussé.e brutalement."",
+    ""L’assaut de <strong>%1$s</strong>, soutenu.e par %3$s et mené au nom de <strong>%4$s</strong>, sur le territoire <strong>%2$s</strong> a échoué ; c’était un vrai carnage."",
+    ""<strong>%1$s</strong>, accompagné.e de %3$s, a voulu s’imposer au <strong>%2$s</strong> au nom de <strong>%4$s</strong>, sans succès. Iel a été forcé.e de battre en retraite."",
+    ""Je pense que <strong>%1$s</strong>, avec %3$s, pensait avoir une chance au <strong>%2$s</strong> au nom de <strong>%4$s</strong>. C’était mal calculé, iel a échoué.""
 ]","Texts the workers observing the failed violent claiming of a zone"
 "textesClaimSuccessViewArray","[
-    ""J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>. La zone a changé de mains.<br/>"",
-    ""<strong>%2$s</strong> appartient désormais au maitre de <strong>%1$s</strong>. Iel a balayé toute résistance.<br/>"",
-    ""L’opération de <strong>%1$s</strong> sur <strong>%2$s</strong> a été une réussite totale, malgré les dégats.<br/>"",
-    ""<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force. Iel n’a laissé aucune chance aux défenseurs.<br/>""
+    ""J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>, en compagnie de %3$s. La zone a changé de mains.<br/>"",
+    ""<strong>%2$s</strong> appartient désormais au maitre de <strong>%1$s</strong>. Iel et %3$s ont balayé toute résistance.<br/>"",
+    ""L’opération de <strong>%1$s</strong>, appuyé.e par %3$s, sur <strong>%2$s</strong> a été une réussite totale, malgré les dégats.<br/>"",
+    ""<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force, en compagnie de %3$s. Iels n’ont laissé aucune chance aux défenseurs.<br/>""
 ]","Texts the workers observing the successful violent claiming of a zone"
 "textesClaimFailArray","[
     ""Notre tentative de prise de contrôle de <strong>%2$s</strong> a échoué. La défense était trop solide.<br/>"",

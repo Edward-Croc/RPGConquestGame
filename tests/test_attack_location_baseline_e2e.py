@@ -874,102 +874,6 @@ class TestAttackLocationEndTurnMode:
         )
 
 
-class TestAttackLocationWorkerMode:
-    """Worker mode (`locationAttackMode='worker'`).
-
-    UI-only. Contract: controller-page attack-selector form is HIDDEN.
-    Backend rejects any direct GET to action.php?attackLocation= as
-    defence in depth — observable as ABSENCE of italic queued previews
-    in Foxtrot's panel and ABSENCE of new alert entries in Echo's panel
-    after the crafted GET.
-    """
-
-    @pytest.fixture(scope="class", autouse=True)
-    def worker_state(self, browser):
-        context = browser.new_context()
-        page = context.new_page()
-        register_php_error_listener(page)
-        ensure_gm_login(page, PHP_BASE_URL)
-
-        echo_base_id = _location_id_via_management(page, "Echo-Base")
-        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
-
-        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
-        _set_config_via_ui(page, "locationAttackMode", "worker")
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        foxtrot_html_in_worker_mode = page.content()
-        attack_button_count = page.locator("input[name='attackLocation']").count()
-
-        _switch_controller(page, "Echo")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        pre_get_echo_html = page.content()
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(
-            page,
-            f"{PHP_BASE_URL}/controllers/action.php"
-            f"?attackLocation=1&target_location_id={echo_base_id}"
-        )
-        page.wait_for_load_state("load")
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        post_get_foxtrot_html = page.content()
-
-        _switch_controller(page, "Echo")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        post_get_echo_html = page.content()
-
-        assert_no_collected_php_errors(page)
-        _set_config_via_ui(page, "locationAttackMode", "immediate")
-        context.close()
-
-        type(self)._echo_base_id = echo_base_id
-        type(self)._attack_button_count = attack_button_count
-        type(self)._foxtrot_html_in_worker_mode = foxtrot_html_in_worker_mode
-        type(self)._pre_get_echo_html = pre_get_echo_html
-        type(self)._post_get_foxtrot_html = post_get_foxtrot_html
-        type(self)._post_get_echo_html = post_get_echo_html
-        yield
-
-    def test_attack_selector_hidden(self):
-        """Controller view should NOT render the attack-selector form
-        when locationAttackMode='worker' — UI gate at view.php."""
-        assert self._attack_button_count == 0, (
-            "Attack form should be hidden in worker mode; got "
-            f"{self._attack_button_count} attackLocation buttons"
-        )
-
-    def test_crafted_get_does_not_queue(self):
-        """Crafted GET to action.php?attackLocation= must be rejected by
-        attackLocation()'s mode-check. Foxtrot's panel should not gain
-        a new italic queued preview as a result."""
-        italic_in_worker = self._foxtrot_html_in_worker_mode.count("<em>Attaque planifi")
-        italic_post_get = self._post_get_foxtrot_html.count("<em>Attaque planifi")
-        assert italic_post_get == italic_in_worker, (
-            f"Crafted GET in worker mode should NOT add an italic "
-            f"queued preview to Foxtrot's panel; "
-            f"before_GET={italic_in_worker} after_GET={italic_post_get}"
-        )
-
-    def test_crafted_get_does_not_log(self):
-        """Crafted GET must not surface as a new entry in Echo's
-        `Alerte` incoming-attack panel (no effects path runs)."""
-        pre_alertes = self._pre_get_echo_html.count("Alerte !")
-        post_alertes = self._post_get_echo_html.count("Alerte !")
-        assert post_alertes == pre_alertes, (
-            f"Echo's alert-panel count should NOT change after a "
-            f"crafted GET in worker mode; pre={pre_alertes} "
-            f"post={post_alertes}"
-        )
-
-
 class TestAttackLocationEndTurnCancelAndFilter:
     """endTurn mode UX extensions:
       (a) a planned attack is cancellable via an inline 'Annuler' button
@@ -1075,4 +979,97 @@ class TestAttackLocationEndTurnCancelAndFilter:
         option_marker = f'value="{self._echo_base_id}">Echo-Base'
         assert option_marker in self._post_cancel_html, (
             "Echo-Base should reappear in the attackable dropdown after cancel"
+        )
+
+
+class TestAttackModeDisabled:
+    """`locationAttackMode` set to a value outside the implemented whitelist
+    (`['immediate', 'endTurn']` for attack form/URL, `['endTurn']` for
+    cancel + EOT resolver) — e.g. `'worker'` (mode C, not yet built) or any
+    unknown string — must disable every attack gate. We use `'foobar'`
+    here as a deliberately unknown value so a single fixture exercises all
+    four gates: form hidden (A1), attackLocation URL → 403 (A2),
+    cancelLocationAttack URL → 403 (A3), locationAttackMechanic skipped
+    with echoed warning (A5). `'worker'` would also pass A1+A2 (existing
+    `TestAttackLocationWorkerMode` covers that path).
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def disabled_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+        _set_config_via_ui(page, "locationAttackMode", "foobar")
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        attack_button_count = page.locator("input[name='attackLocation']").count()
+
+        attack_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&target_location_id={echo_base_id}"
+            f"&controller_id={foxtrot_id}"
+        )
+        attack_url_status = attack_url_resp.status if attack_url_resp else None
+
+        cancel_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?cancelLocationAttack=1&controller_id={foxtrot_id}"
+        )
+        cancel_url_status = cancel_url_resp.status if cancel_url_resp else None
+
+        ensure_gm_login(page, PHP_BASE_URL)
+        page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
+        page.wait_for_load_state("load", timeout=120000)
+        eot_html = page.content()
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._attack_button_count = attack_button_count
+        type(self)._attack_url_status = attack_url_status
+        type(self)._cancel_url_status = cancel_url_status
+        type(self)._eot_html = eot_html
+        yield
+
+    def test_attack_form_hidden_for_unknown_mode(self):
+        """A1 — controller view should NOT render the attack-selector
+        form when `locationAttackMode` is outside the whitelist
+        (`['immediate', 'endTurn']`)."""
+        assert self._attack_button_count == 0, (
+            f"input[name='attackLocation'] should be hidden when "
+            f"locationAttackMode is unknown; got {self._attack_button_count}"
+        )
+
+    def test_attackLocation_url_returns_403(self):
+        """A2 — crafted GET to action.php?attackLocation=… hard-403s
+        before the dispatcher runs. Stricter than the existing 'no-side-effect'
+        assertion in `TestAttackLocationWorkerMode`."""
+        assert self._attack_url_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode is "
+            f"unknown; got {self._attack_url_status}"
+        )
+
+    def test_cancelLocationAttack_url_returns_403(self):
+        """A3 — cancelLocationAttack is gated to `['endTurn']` only. Any
+        other mode (including `'immediate'`) must hard-403."""
+        assert self._cancel_url_status == 403, (
+            f"cancelLocationAttack URL should 403 when locationAttackMode "
+            f"is outside ['endTurn']; got {self._cancel_url_status}"
+        )
+
+    def test_locationAttackMechanic_skipped_at_end_turn(self):
+        """A5 — locationAttackMechanic prints the skip warning and does
+        not iterate the (potentially stale) queue when mode is outside
+        `['endTurn']`."""
+        assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
+            "EOT page should contain the locationAttackMechanic skip-warning"
         )

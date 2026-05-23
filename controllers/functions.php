@@ -356,7 +356,7 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
     // Exclude own — controller cannot attack own base.
-    $excludePending = (getConfig($pdo, 'locationAttackMode') === 'endTurn');
+    $excludePending = in_array(getConfig($pdo, 'locationAttackMode'), ['endTurn'], true);
     $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true, $excludePending);
     if (empty($locations)) return NULL;
 
@@ -436,7 +436,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $mode = getConfig($pdo, 'locationAttackMode');
-    if ($mode === 'worker') {
+    if (!in_array($mode, ['immediate', 'endTurn'], true)) {
         return array('success' => false, 'message' => 'Action indisponible.');
     }
 

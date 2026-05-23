@@ -168,11 +168,115 @@ function getLocationsArray($pdo) {
 }
 
 /**
+ * Function to recalculateZoneDefence
+ * @param PDO $pdo
+ * @param array $mechanics : mechanics array
+ *
+ * @return bool
+ * 
+ * Recompute zones.calculated_defence_val for every zone.
+ * Dispatches on claimMode:
+ * - 'worker': SQL formula (z.defence_val + COUNT of holder's active workers).
+ * - 'worker_leader': calculateControllerValue('ZoneDefence', ...) per zone.
+ * - any other value: no-op (echoes "not supported, skipped" and returns true).
+ */
+function recalculateZoneDefence($pdo, $mechanics) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $mode = getConfig($pdo, 'claimMode');
+
+    echo '<div> <p> <h3> Calculate zone defense values: </h3> ';
+
+    if (!in_array($mode, ['worker', 'worker_leader'], true)) {
+        echo "Mode '".htmlspecialchars((string)$mode)."' not supported, skipped</p></div>";
+        return true;
+    }
+
+    if ($mode === 'worker_leader') {
+        try {
+            $zStmt = $pdo->prepare("SELECT id, holder_controller_id FROM {$prefix}zones");
+            $zStmt->execute();
+            $zones = $zStmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($zones as $zone) {
+                $holder = !empty($zone['holder_controller_id']) ? (int)$zone['holder_controller_id'] : null;
+                $val = calculateControllerValue($pdo, 'ZoneDefence', (int)$zone['id'], $holder);
+                $uStmt = $pdo->prepare("UPDATE {$prefix}zones SET calculated_defence_val = :val WHERE id = :id");
+                $uStmt->bindParam(':val', $val, PDO::PARAM_INT);
+                $uStmt->bindParam(':id', $zone['id'], PDO::PARAM_INT);
+                $uStmt->execute();
+            }
+        } catch (PDOException $e) {
+            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
+            return false;
+        }
+        echo 'DONE (worker_leader) </p></div>';
+        return true;
+    }
+
+    // Default mode 'worker'
+    try {
+        $sql = '';
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "UPDATE {$prefix}zones
+                SET calculated_defence_val = defence_val + subquery.worker_count
+                FROM (
+                    SELECT
+                        z.id AS zone_id,
+                        COALESCE(COUNT(w.id), 0) AS worker_count
+                    FROM
+                        {$prefix}zones z
+                    LEFT JOIN
+                        {$prefix}workers w ON w.zone_id = z.id
+                    LEFT JOIN
+                        {$prefix}worker_actions wa ON wa.worker_id = w.id
+                    LEFT JOIN
+                        {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    WHERE
+                        z.holder_controller_id = cw.controller_id
+                        AND wa.action_choice IN (%s)
+                        AND wa.turn_number = :turn_number
+                    GROUP BY
+                        z.id
+                ) AS subquery
+                WHERE {$prefix}zones.id = subquery.zone_id
+            ";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "UPDATE {$prefix}zones z
+                JOIN (
+                    SELECT z.id AS zone_id,
+                        COALESCE(COUNT(w.id), 0) AS worker_count
+                    FROM {$prefix}zones z
+                    LEFT JOIN {$prefix}workers w ON w.zone_id = z.id
+                    LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
+                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    WHERE z.holder_controller_id = cw.controller_id
+                    AND wa.action_choice IN (%s)
+                    AND wa.turn_number = :turn_number
+                    GROUP BY z.id
+                ) AS subquery ON z.id = subquery.zone_id
+                SET z.calculated_defence_val = z.defence_val + subquery.worker_count
+            ";
+        }
+        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+
+        $sql = sprintf($sql, $active_actions);
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
+        $stmt->execute();
+
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
+        return false;
+    }
+    echo 'DONE </p></div>';
+    return true;
+}
+
+/**
  * Function to recalculateBaseDefence
  * @param PDO $pdo
  *
  * @return bool
- *
  */
 function recalculateBaseDefence($pdo) {
     echo "<div><h3>Recalculating base defence</h3><br />";
@@ -215,11 +319,11 @@ function recalculateBaseDefence($pdo) {
 }
 
 /**
- * Calculate the value 'DEF, ATK, SEARCH' for the controller, and optionnal zone or location
+ * Calculate the value 'DEF, ATK, SEARCH, CLAIM, ZONE_DEFENCE' for the controller, and optionnal zone or location
  *
  * @param PDO $pdo
  * @param int $controller_id
- * @param string $type
+ * @param string $type in ['DiscoveryDiff', 'Defence', 'Attack', 'Claim', 'ZoneDefence']
  * @param int $zone_id
  * @param int|null $location_id
  *
@@ -234,7 +338,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
 
-    if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
+    if ($debug) echo sprintf("<p> <b>calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)</b><br>", $type, $zone_id, $controller_id, $location_id);
 
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
@@ -250,14 +354,24 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $zoneStmt->execute([':zone_id' => $zone_id]);
     $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($zone) {
-        if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
-            $value += 1;
-            if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
-        }
-    }
-
     if ($controller_id !== null) {
+        // Holders & Claimers 
+        if ($zone) {
+            if ($type === 'Claim') {
+                if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
+                    $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
+                    $value += $vrBonus;
+                    if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+                }
+            } else {
+                // Si le controller n'est pas 0, '' ou NULL alors on peut comparer aux holders ou claimers
+                if (!empty ($controller_id) && ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id)) {
+                    $value += 1;
+                    if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+                }
+            }
+        }
+    
         // Powers
         $powerMultiplier = floatval(getConfig($pdo, "base{$type}AddPowers"));
         if ($debug) echo sprintf("powerMultiplier : %f<br>", $powerMultiplier);
@@ -323,43 +437,100 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
             $value += $bonus;
             if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
         }
+
+        // Owned-locations term — fires only for 'Claim' and 'ZoneDefence' types
+        // (controller's locations in this zone count toward the value).
+        if ($type === 'Claim' || $type === 'ZoneDefence') {
+            $ownedMultiplier = floatval(getConfig($pdo, "base{$type}AddOwnedLocations"));
+            $maxOwnedBonus = (int)getConfig($pdo, "maxBonus{$type}OwnedLocations");
+            if ($ownedMultiplier !== 0) {
+                $ownedSql = "SELECT COUNT(*) AS n FROM {$prefix}locations
+                    WHERE controller_id = :controller_id AND zone_id = :zone_id";
+                $ownedStmt = $pdo->prepare($ownedSql);
+                $ownedStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+                $ownedStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+                $ownedStmt->execute();
+                $owned_count = (int)($ownedStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? 0);
+                $ownedBonus = ceil($owned_count * $ownedMultiplier);
+                if ($maxOwnedBonus > 0) $ownedBonus = min($ownedBonus, $maxOwnedBonus);
+                $value += $ownedBonus;
+                if ($debug) echo sprintf("%s (+owned_locations) : %d<br>", $type, $value);
+            }
+        }
+
+        // Supporting-agents bonus max(0, COUNT(workers in zone) - 1) × multiplier.
+        // Rewards co-agents beyond the leader; only co-action workers count here.
+        $supportMultiplier = floatval(getConfig($pdo, "base{$type}AddSupporting")) ?? 0;
+        if ($supportMultiplier !== 0) {
+            $supportAction =  NULL;
+            $supportOnNth = 0;
+            switch ($type){ // 'claim' or ZoneDefence
+                case 'Claim' :
+                    $supportAction = 'claim';
+                    $supportOnNth = 1;
+                    break;
+                case 'ZoneDefence' :
+                    $supportAction = 'claim';
+                    break;
+            }
+            if ($supportAction != NULL) {
+                $supportSql = "SELECT COUNT(*) AS n FROM {$prefix}workers w
+                    JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                    WHERE cw.controller_id = :controller_id
+                        AND w.zone_id = :zone_id
+                        AND wa.action_choice = '{$supportAction}'";
+                $supportStmt = $pdo->prepare($supportSql);
+                $supportStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+                $supportStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+                $supportStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+                $supportStmt->execute();
+                $count = (int)($supportStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? 0);
+                $supporters = max(0, $count - $supportOnNth);
+                $supportBonus = ceil($supporters * $supportMultiplier);
+                $value += $supportBonus;
+                if ($debug) echo sprintf("%s (+supporting_agents %d) : %d<br>", $type, $supporters, $value);
+            }
+        }
     } else {
         if ($debug) echo sprintf("%s : controller_id is NULL <br>", $type);
         $value += getConfig($pdo, "noController{$type}Bonus");
     }
 
-    // Turns / Age
-    $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
-    if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
-    $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
-    if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
-    if ($turnMultiplier !== 0 && $location_id !== NUll) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
+    // Turns / Age for locations 
+    if ($location_id !== NUll) {
+        $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
+        if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
+        if ($turnMultiplier !== 0) {
+            $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
+            if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
+            $mechanics = getMechanics($pdo);
+            $turn_number = $mechanics['turncounter'];
 
-        $sql = "
-            SELECT setup_turn
-            FROM {$prefix}locations
-            WHERE id = :location_id
-            LIMIT 1
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':location_id' => $location_id
-        ]);
-        $base = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($base) {
-            $setup_turn = (int)$base['setup_turn'];
-            $turn_diff = max(0, $turn_number - $setup_turn);
-            // round up to integer
-            $bonus = ceil($turn_diff * $turnMultiplier);
-            if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
-            $value += $bonus;
-            if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            $sql = "
+                SELECT setup_turn
+                FROM {$prefix}locations
+                WHERE id = :location_id
+                LIMIT 1
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':location_id' => $location_id
+            ]);
+            $base = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($base) {
+                $setup_turn = (int)$base['setup_turn'];
+                $turnDiff = max(0, $turn_number - $setup_turn);
+                // round up to integer
+                $bonus = ceil($turnDiff * $turnMultiplier);
+                if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
+                $value += $bonus;
+                if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            }
         }
     }
 
-    if ($debug) echo sprintf("%s final value : %d<br>", $type, $value);
+    if ($debug) echo sprintf("%s final value : %d</p>", $type, $value);
     return $value;
 }
 

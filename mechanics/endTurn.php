@@ -97,11 +97,17 @@ if ($mechanics['end_step'] == 'attackMechanic') {
         echo __FUNCTION__."(): Failed to recalculate base defence: recalculateBaseDefence <br />";
         return false;
     }
-    changeEndTurnState($gameReady, 'recalculateBaseDefence', $mechanics);
-    $mechanics['end_step'] = 'recalculateBaseDefence';
+    // recalculate zone defence (claimMode-aware single source of truth)
+    $zdrResult = recalculateZoneDefence($gameReady, $mechanics);
+    if ( !$zdrResult){
+        echo __FUNCTION__."(): Failed to recalculate zone defence: recalculateZoneDefence <br />";
+        return false;
+    }
+    changeEndTurnState($gameReady, 'recalculateBaseZoneDefence', $mechanics);
+    $mechanics['end_step'] = 'recalculateBaseZoneDefence';
 }
 
-if ($mechanics['end_step'] == 'recalculateBaseDefence') {
+if ($mechanics['end_step'] == 'recalculateBaseZoneDefence') {
     require_once 'locationAttackMechanic.php';
     $locationAttackResult = locationAttackMechanic($gameReady, $mechanics['turncounter']);
     if ( !$locationAttackResult){

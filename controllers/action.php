@@ -71,11 +71,21 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         moveBase($gameReady, $base_id, $zone_id, $controller_id);
     }
     if (isset($_GET['attackLocation'])){
+        $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
+        if (!in_array($locationAttackMode, ['immediate', 'endTurn'], true)) {
+            http_response_code(403);
+            exit();
+        }
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
         if ($debug) echo sprintf('end %s %s<br/>', $attackLocationResult['success'], $attackLocationResult['message']);
     }
     if (isset($_GET['cancelLocationAttack'])){
+        $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
+        if (!in_array($locationAttackMode, ['endTurn'], true)) {
+            http_response_code(403);
+            exit();
+        }
         $queue_row_id = (int) $_GET['cancelLocationAttack'];
         try {
             $sql = "DELETE FROM {$prefix}controller_location_attacks
