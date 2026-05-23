@@ -316,6 +316,26 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
     spendRessourcesToMoveBase($pdo, $controller_id);
 
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    // Cancel any in-flight end-turn attacks targeting this base.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    try {
+        $sel = $pdo->prepare("SELECT id, location_id, location_name, attacker_controller_id
+            FROM {$prefix}controller_location_attacks
+            WHERE location_id = :base_id AND queued_turn = :turn AND success IS NULL");
+        $sel->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $sel->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+        $sel->execute();
+        $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT in-flight attacks failed: " . $e->getMessage()."<br />";
+        $inFlight = [];
+    }
+    foreach ($inFlight as $row) {
+        failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
+    }
+
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{
