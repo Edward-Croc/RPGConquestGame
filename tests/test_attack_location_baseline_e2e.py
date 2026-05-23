@@ -1265,3 +1265,72 @@ class TestMoveBaseCancelsInFlightAttacks:
             f"attacker_result_text should contain moved-text; "
             f"got {log['attacker_result_text']!r}"
         )
+
+
+class TestDuplicateQueueAttemptRejected:
+    """Backend INSERT WHERE NOT EXISTS guard at attackLocation() must
+    prevent duplicate (attacker, location, queued_turn) queue rows.
+    Two URL hits with identical params → exactly one queue row exists."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def duplicate_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticDupTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, echo_id),
+        )
+        synthetic_id = cur.lastrowid
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        url = (
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&controller_id={foxtrot_id}&target_location_id={synthetic_id}"
+        )
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` "
+            f"WHERE attacker_controller_id = %s AND location_id = %s AND queued_turn = %s",
+            (foxtrot_id, synthetic_id, turn),
+        )
+        queue_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_rows = queue_rows
+        yield
+
+    def test_duplicate_url_attack_inserts_only_one_row(self):
+        """Two URL hits with same (attacker, location, turn) → exactly
+        one queue row (backend INSERT WHERE NOT EXISTS guard fires on
+        the second attempt)."""
+        assert len(self._queue_rows) == 1, (
+            f"Expected exactly one queue row after duplicate URL hit; "
+            f"got {len(self._queue_rows)}"
+        )
