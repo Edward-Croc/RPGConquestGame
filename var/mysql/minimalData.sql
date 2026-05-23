@@ -138,6 +138,8 @@ VALUES
     ('textLocationAttackOutcomeWeak', 'Faibles chances.', 'Predicted-outcome band when current attack is within bandwidth of snapshot defence'),
     ('textLocationAttackOutcomeProbable', 'Réussite probable.', 'Predicted-outcome band when current attack is well above snapshot defence'),
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
+    ('textLocationAttackDestroyed', 'La cible a été détruite avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target.'),
+    ('textLocationAttackMoved', 'La base avait été déplacée avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')

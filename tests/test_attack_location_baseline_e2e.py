@@ -1073,3 +1073,97 @@ class TestAttackModeDisabled:
         assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
             "EOT page should contain the locationAttackMechanic skip-warning"
         )
+
+
+class TestEndTurnCascadeDestroyed:
+    """When a queued end-turn attack's target no longer exists at
+    resolution time (cascade from prior successful attack — FK
+    ON DELETE SET NULL blanks the queue row's location_id), the row
+    must be marked success=0/resolved_turn AND an attacker-only log
+    entry must be written using the textLocationAttackDestroyed
+    config text. Defender-invisible: target_controller_id=NULL.
+
+    Uses a synthetic location + synthetic queue row to isolate from
+    the rest of the file's location-attack state."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def cascade_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticCascadeTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, foxtrot_id),
+        )
+        synthetic_id = cur.lastrowid
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}controller_location_attacks` "
+            f"(location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot) "
+            f"VALUES (%s, 'SyntheticCascadeTarget', %s, %s, 0)",
+            (synthetic_id, foxtrot_id, turn),
+        )
+        queue_row_id = cur.lastrowid
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id = %s",
+            (synthetic_id,),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        end_turn(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` WHERE id = %s",
+            (queue_row_id,),
+        )
+        queue_row_post = cur.fetchone()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}location_attack_logs` "
+            f"WHERE location_name = 'SyntheticCascadeTarget' AND attacker_id = %s",
+            (foxtrot_id,),
+        )
+        log_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_row_post = queue_row_post
+        type(self)._log_rows = log_rows
+        yield
+
+    def test_cascade_destroyed_fails_and_logs(self):
+        """Combined assertion: queue row resolved-failed; log entry
+        defender-invisible with textLocationAttackDestroyed message."""
+        assert self._queue_row_post['success'] == 0, (
+            f"Queue row should be success=0; got {self._queue_row_post['success']}"
+        )
+        assert self._queue_row_post['resolved_turn'] is not None
+        assert len(self._log_rows) == 1, (
+            f"Expected exactly one log row; got {len(self._log_rows)}"
+        )
+        log = self._log_rows[0]
+        assert log['target_controller_id'] is None, (
+            f"target_controller_id must be NULL (defender-invisible); "
+            f"got {log['target_controller_id']}"
+        )
+        assert 'détruite' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should contain destroyed-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
