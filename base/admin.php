@@ -58,9 +58,10 @@ require_once '../base/baseHTML.php';
                 <h2> FULL Reset : </br>
                     <select id="configSelect" name="config_name">
                         <optgroup label="Config via CSV"> 
-                        <option  value='Japon1555CSV'> Shikoku (四国) 1555 </option>
-                        <option  value='Vampire1966CSV'> Firenze Vampire 1966 </option>
-                        <option  value='TestConfig'> TestConfig </option>
+                            <option  value='Japon1555CSV'> Shikoku (四国) 1555 </option>
+                            <option  value='Vampire1966CSV'> Firenze Vampire 1966 </option>
+                            <option  value='TestConfig'> TestConfig </option>
+                        </optgroup>
                         <optgroup label="Anciennes config SQL"> 
                             <option  value='Vampire1966SQL'> Firenze Vampire 1966 </option>
                             <option  value='Japon1555SQL'> Shikoku (四国) 1555 </option>
