@@ -316,6 +316,26 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
     spendRessourcesToMoveBase($pdo, $controller_id);
 
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    // Cancel any in-flight end-turn attacks targeting this base.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    try {
+        $sel = $pdo->prepare("SELECT id, location_id, location_name, attacker_controller_id
+            FROM {$prefix}controller_location_attacks
+            WHERE location_id = :base_id AND queued_turn = :turn AND success IS NULL");
+        $sel->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $sel->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+        $sel->execute();
+        $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT in-flight attacks failed: " . $e->getMessage()."<br />";
+        $inFlight = [];
+    }
+    foreach ($inFlight as $row) {
+        failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
+    }
+
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{
@@ -468,16 +488,29 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
     if ($mode === 'endTurn') {
         try {
+            // INSERT WHERE NOT EXISTS: dedupe (attacker, location, turn) at the backend.
             $insertSql = "INSERT INTO {$prefix}controller_location_attacks
                 (location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot)
-                VALUES (:location_id, :location_name, :attacker, :turn, :defence)";
+                SELECT :location_id, :location_name, :attacker, :turn, :defence
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {$prefix}controller_location_attacks
+                    WHERE attacker_controller_id = :attacker_check
+                      AND location_id = :location_check
+                      AND queued_turn = :turn_check
+                )";
             $stmt = $pdo->prepare($insertSql);
             $stmt->bindParam(':location_id', $target_location_id, PDO::PARAM_INT);
+            $stmt->bindParam(':location_check', $target_location_id, PDO::PARAM_INT);
             $stmt->bindParam(':location_name', $location[0]['name'], PDO::PARAM_STR);
             $stmt->bindParam(':attacker', $controller_id, PDO::PARAM_INT);
+            $stmt->bindParam(':attacker_check', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+            $stmt->bindParam(':turn_check', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':defence', $locationDefence, PDO::PARAM_INT);
             $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                return array('success' => false, 'queued' => false, 'message' => 'Attaque déjà planifiée ce tour.');
+            }
         } catch (PDOException $e) {
             echo __FUNCTION__."(): INSERT controller_location_attacks Failed: " . $e->getMessage()."<br />";
             return array('success' => false, 'message' => 'Error : Queue Failed');

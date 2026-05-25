@@ -4,6 +4,7 @@ require_once '../mechanics/aiMechanic.php';
 require_once '../mechanics/attackMechanic.php';
 require_once '../mechanics/claimMechanic.php';
 require_once '../mechanics/investigateMechanic.php';
+require_once '../mechanics/locationAttackMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
 
 /**

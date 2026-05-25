@@ -34,6 +34,7 @@ VALUES
     ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
     ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
     ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
+    ('owner_knows_own_base_secret', 'TRUE', 'On base creation / scenario load, seed controller_known_locations with found_secret=TRUE so owners auto-know their own base secrets. Set FALSE for fog-of-war setups where the owner must learn their own base secret separately.'),
     ('MINROLL', '1', 'Minimum Roll for an active worker'),
     ('MAXROLL', '6', 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', '3', 'Value for passive actions'),
@@ -125,6 +126,8 @@ VALUES
     ('textLocationAttackOutcomeWeak', 'Faibles chances.', 'Predicted-outcome band when current attack is within bandwidth of snapshot defence'),
     ('textLocationAttackOutcomeProbable', 'Réussite probable.', 'Predicted-outcome band when current attack is well above snapshot defence'),
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
+    ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
+    ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     ('ressource_management', 'TRUE', 'Ressource management configuration')
 ON CONFLICT (name) DO NOTHING;
