@@ -39,7 +39,7 @@ require_once '../base/baseHTML.php';
                     <th> Value </th>
                 </tr>
                 <?php
-            // Display config values in a table
+                // Display config values in a table
                 foreach ($mechanics as $key => $value) {
                 echo" <tr>
                     <td> $key </td>
@@ -51,14 +51,21 @@ require_once '../base/baseHTML.php';
         </div>
         <div class="config">
             <h1>Config Management</h1>
-            <?php echo sprintf('<form action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
-                <h2> FULL Reset :
+            <?php echo sprintf( '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
+                $_SESSION['FOLDER']
+            );
+            echo sprintf('<form action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
+                <h2> FULL Reset : </br>
                     <select id="configSelect" name="config_name">
-                        <option  value='TestConfig'> TestConfig (CSV) </option>
-                        <option  value='Japon1555SQL'> Shikoku (四国) 1555 — SQL </option>
-                        <option  value='Japon1555CSV'> Shikoku (四国) 1555 — CSV </option>
-                        <option  value='Vampire1966SQL'> Firenze Vampire 1966 — SQL </option>
-                        <option  value='Vampire1966CSV'> Firenze Vampire 1966 — CSV </option>
+                        <optgroup label="Config via CSV"> 
+                            <option  value='Japon1555CSV'> Shikoku (四国) 1555 </option>
+                            <option  value='Vampire1966CSV'> Firenze Vampire 1966 </option>
+                            <option  value='TestConfig'> TestConfig </option>
+                        </optgroup>
+                        <optgroup label="Anciennes config SQL"> 
+                            <option  value='Vampire1966SQL'> Firenze Vampire 1966 </option>
+                            <option  value='Japon1555SQL'> Shikoku (四国) 1555 </option>
+                        </optgroup>
                     </select>
                     <input type="hidden" name="resetBDD" />
                     <input type="submit" name="submit" value="Submit" />
@@ -68,9 +75,8 @@ require_once '../base/baseHTML.php';
         <div class="config">
                 <h1>Management</h1>
                 <?php echo sprintf( '
-                <p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>
-                <p> <a href="/%1$s/artefacts/management.php">Artefacts</a> </p>
                 <p> <a href="/%1$s/controllers/management.php">Player-Controllers</a> </p>
+                <p> <a href="/%1$s/artefacts/management.php">Artefacts</a> </p>
                 <p> <a href="/%1$s/ressources/management.php">Ressources</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>

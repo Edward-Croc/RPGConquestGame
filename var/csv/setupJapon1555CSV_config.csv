@@ -2,6 +2,7 @@
 "map_file","Carte_Shikoku_1555.jpg","Map image file for Shikoku"
 "locationAttackMode","endTurn","Where/when controller location attacks resolve: immediate | endTurn | worker"
 "claimMode","worker_leader","Zone-claim resolver mode: worker (D6 per worker) | worker_leader (aggregate) | controller"
+"continuing_claimed_action",0,"Does the claim action stay active"
 "first_come_origin_list","1,2,3,4,5,6,7,8,9,10,11","Origins disponibles pour le recrutement premier-venu (Shikoku : 11 origines)"
 "recrutement_origin_list","1,2,3,4,5,6,7","Origins disponibles pour le recrutement avec choix (Shikoku : 7 origines)"
 "local_origin_list","1,2,3,4,5,6","Origins considérées comme locales pour les textes d'enquête"
