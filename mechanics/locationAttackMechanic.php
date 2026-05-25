@@ -16,7 +16,7 @@
 function failQueuedLocationAttack($pdo, array $queue_row, $turn_number, $reason) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $textKey = $reason === 'moved' ? 'textLocationAttackMoved' : 'textLocationAttackDestroyed';
-    $attackerText = (string)getConfig($pdo, $textKey);
+    $attackerText = sprintf((string)getConfig($pdo, $textKey), $queue_row['location_name']);
 
     try {
         $u = $pdo->prepare("UPDATE {$prefix}controller_location_attacks

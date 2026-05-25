@@ -126,8 +126,8 @@ VALUES
     ('textLocationAttackOutcomeWeak', 'Faibles chances.', 'Predicted-outcome band when current attack is within bandwidth of snapshot defence'),
     ('textLocationAttackOutcomeProbable', 'Réussite probable.', 'Predicted-outcome band when current attack is well above snapshot defence'),
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
-    ('textLocationAttackDestroyed', 'La cible a été détruite avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target.'),
-    ('textLocationAttackMoved', 'La base avait été déplacée avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution.'),
+    ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
+    ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     ('ressource_management', 'TRUE', 'Ressource management configuration')
 ON CONFLICT (name) DO NOTHING;

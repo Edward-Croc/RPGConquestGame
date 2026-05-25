@@ -1163,8 +1163,12 @@ class TestEndTurnCascadeDestroyed:
             f"target_controller_id must be NULL (defender-invisible); "
             f"got {log['target_controller_id']}"
         )
-        assert 'détruite' in (log['attacker_result_text'] or ''), (
+        assert 'détruit' in (log['attacker_result_text'] or ''), (
             f"attacker_result_text should contain destroyed-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticCascadeTarget' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
             f"got {log['attacker_result_text']!r}"
         )
 
@@ -1261,8 +1265,12 @@ class TestMoveBaseCancelsInFlightAttacks:
             f"target_controller_id must be NULL (defender-invisible); "
             f"got {log['target_controller_id']}"
         )
-        assert 'déplacée' in (log['attacker_result_text'] or ''), (
+        assert 'déplacé' in (log['attacker_result_text'] or ''), (
             f"attacker_result_text should contain moved-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticMovedBase' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
             f"got {log['attacker_result_text']!r}"
         )
 
