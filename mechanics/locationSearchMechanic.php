@@ -17,8 +17,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  */
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     $prefix = $_SESSION['GAME_PREFIX'];
-    $investigate_actions = getConfig($pdo, 'investigateActionsList');
-    if (empty($investigate_actions)) $investigate_actions = "'passive','investigate'";
+    $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
     // Define the SQL query
     $sql = sprintf(
         "WITH searchers AS (

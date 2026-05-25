@@ -210,8 +210,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     if ( !EMPTY($searcher_id) ) $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
     if ($debug) echo sprintf("sql : %s <br/>", $sql);
     try{
-        $investigate_actions = getConfig($pdo, 'investigateActionsList');
-        if (empty($investigate_actions)) $investigate_actions = "'passive','investigate'";
+        $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
         $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
         if ($debug) echo sprintf("turn_number : %s <br/>", $turn_number);
         if ($debug) echo sprintf("investigate_actions : %s <br/>", $investigate_actions);

@@ -6,6 +6,13 @@ require_once '../mechanics/claimMechanic.php';
 require_once '../mechanics/investigateMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
 
+if (!defined('WORKER_ACTION_CHOICES_ALLOWED')) {
+    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'captured', 'dead', 'trace']);
+}
+if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
+    define('INVESTIGATE_ACTIONS_DEFAULT', ['passive', 'investigate']);
+}
+
 /**
  * Start or Pause the game state
  * 
@@ -97,6 +104,75 @@ function diceRoll($pdo) {
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
     return $roll[0]['roll'];
+}
+
+/**
+ * Validate a configurable list of action_choice values and return a SQL-safe IN-list.
+ *
+ * @param string|null $configValue
+ * @param array $allowedActions
+ * @param array $defaultActions
+ *
+ * @return string
+ */
+function validateActionChoiceListForSql($configValue, $allowedActions, $defaultActions) {
+    $parsedActions = [];
+    if (!empty($configValue)) {
+        $normalized = trim((string)$configValue);
+
+        // Native format used by config rows: 'passive','investigate'
+        if (preg_match("/^'[^']+'(?:\\s*,\\s*'[^']+')*$/", $normalized)) {
+            preg_match_all("/'([^']+)'/", $normalized, $matches);
+            if (!empty($matches[1])) {
+                $parsedActions = $matches[1];
+            }
+        } else {
+            // Fallback parser for loosely formatted CSV-like strings.
+            $normalized = str_replace(["'", '"'], '', $normalized);
+            $rawParts = explode(',', $normalized);
+            foreach ($rawParts as $part) {
+                $part = trim($part);
+                if ($part !== '') {
+                    $parsedActions[] = $part;
+                }
+            }
+        }
+    }
+
+    if (empty($parsedActions)) {
+        $parsedActions = $defaultActions;
+    }
+
+    $safeActions = [];
+    foreach ($parsedActions as $action) {
+        if (in_array($action, $allowedActions, true) && !in_array($action, $safeActions, true)) {
+            $safeActions[] = $action;
+        }
+    }
+
+    if (empty($safeActions)) {
+        $safeActions = $defaultActions;
+    }
+
+    $quotedActions = [];
+    foreach ($safeActions as $action) {
+        $quotedActions[] = "'".$action."'";
+    }
+
+    return implode(',', $quotedActions);
+}
+
+/**
+ * Return validated investigation actions for SQL usage.
+ *
+ * @param PDO $pdo
+ *
+ * @return string
+ */
+function getValidatedInvestigateActionsForSql($pdo) {
+    $configuredActions = getConfig($pdo, 'investigateActionsList');
+
+    return validateActionChoiceListForSql($configuredActions, WORKER_ACTION_CHOICES_ALLOWED, INVESTIGATE_ACTIONS_DEFAULT);
 }
 
 /**
