@@ -345,7 +345,8 @@ CREATE TABLE {prefix}ressources_config (
     location_repaire_cost INT NOT NULL DEFAULT 0,
     servant_first_come_cost INT NOT NULL DEFAULT 0,
     servant_recruitment_cost INT NOT NULL DEFAULT 0,
-    extra_first_come_cost INT NOT NULL DEFAULT 0
+    extra_first_come_cost INT NOT NULL DEFAULT 0,
+    gain_rules JSON DEFAULT NULL
 );
 
 CREATE TABLE {prefix}controller_ressources (
@@ -356,7 +357,8 @@ CREATE TABLE {prefix}controller_ressources (
     amount_stored INT NOT NULL DEFAULT 0,
     end_turn_gain INT NOT NULL DEFAULT 0,
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id),
-    FOREIGN KEY (ressource_id) REFERENCES {prefix}ressources_config (id)
+    FOREIGN KEY (ressource_id) REFERENCES {prefix}ressources_config (id),
+    UNIQUE (controller_id, ressource_id)
 );
 -- Create indexes on the controller_ressources table
 CREATE INDEX idx_controller_ressources_controller_id ON {prefix}controller_ressources (controller_id);
