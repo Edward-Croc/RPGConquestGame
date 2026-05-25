@@ -262,3 +262,34 @@ class TestInactiveStateBlock:
             f"resurrect carve-out); got 403"
         )
         ctx_xform.close()
+
+
+# ---------------------------------------------------------------------------
+# /workers/massAction.php ownership guard
+#
+# Sibling endpoint to /workers/action.php. The gm-driven happy path
+# (TestMassMoveBetaCombatWorkers in test_workers_special_e2e.py) uses
+# is_privileged=1 and bypasses the ownership check entirely; this single
+# negative test exercises the new non-privileged codepath.
+# ---------------------------------------------------------------------------
+
+def test_mass_action_non_owner_returns_403(browser, base_url):
+    """single_player owns Alpha; Bystander_1 belongs to Beta. massAction.php
+    must 403 before any moveWorker() call when a non-privileged controller
+    attempts to mass-move workers they do not own."""
+    bystander_wid = _resolve_worker_id(browser, base_url, "Bystander_1")
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    login_as(page, base_url, "single_player", "test")
+    url = (
+        f"{base_url}/workers/massAction.php"
+        f"?mass_move=1&zone_id=1&worker_ids%5B%5D={bystander_wid}"
+    )
+    response = page.goto(url)
+    assert response is not None
+    assert response.status == 403, (
+        f"Non-owner mass-move on a foreign worker must 403; "
+        f"got {response.status}"
+    )
+    ctx.close()

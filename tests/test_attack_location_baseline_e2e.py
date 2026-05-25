@@ -1070,6 +1070,6 @@ class TestAttackModeDisabled:
         """A5 — locationAttackMechanic prints the skip warning and does
         not iterate the (potentially stale) queue when mode is outside
         `['endTurn']`."""
-        assert "locationAttackMechanic : mode 'foobar' not supported, skipped" in self._eot_html, (
+        assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
             "EOT page should contain the locationAttackMechanic skip-warning"
         )

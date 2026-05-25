@@ -10,8 +10,10 @@
 function locationAttackMechanic($pdo, $turn_number) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $mode = getConfig($pdo, 'locationAttackMode');
+
+    echo "<div><h3>locationAttackMechanic : mode '".htmlspecialchars((string)$mode)."'</h3>" ;
     if (!in_array($mode, ['endTurn'], true)) {
-        echo "<div><h3>locationAttackMechanic : mode '".htmlspecialchars((string)$mode)."' not supported, skipped</h3></div>";
+        echo " not supported, skipped</div>";
         return true;
     }
 
@@ -62,5 +64,7 @@ function locationAttackMechanic($pdo, $turn_number) {
             return false;
         }
     }
+
+    echo '<p> locationAttackMechanic : DONE </p> </div>';
     return true;
 }

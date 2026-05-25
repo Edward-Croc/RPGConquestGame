@@ -272,7 +272,7 @@ class TestClaimModeWorkerLeaderCrossController:
 
 @pytest.mark.db
 class TestClaimModeSupportingClaimersBonus:
-    """Mode B `baseClaimAddSupportingClaimers` term — adds
+    """Mode B `baseClaimAddSupporting` term — adds
     `max(0, COUNT(claim-action workers in zone for controller) - 1) × multiplier`
     to the controller's claim_val.
 
@@ -292,7 +292,7 @@ class TestClaimModeSupportingClaimersBonus:
         cur.execute(
             f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
             f"'claimMode','baseClaim','baseClaimAddWorkers',"
-            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
         )
         prev_config = {row['name']: row['value'] for row in cur.fetchall()}
         cur.execute(
@@ -305,7 +305,7 @@ class TestClaimModeSupportingClaimersBonus:
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
-            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+            f"WHERE name = 'baseClaimAddSupporting'"
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
@@ -372,7 +372,7 @@ class TestClaimModeSupportingClaimersBonus:
         assert self._post['holder_controller_id'] == self._beta_id, (
             f"holder_controller_id should be Beta (id={self._beta_id}); "
             f"got {self._post['holder_controller_id']}. Without "
-            f"baseClaimAddSupportingClaimers contributing, claim_val would be "
+            f"baseClaimAddSupporting contributing, claim_val would be "
             f"0 and Beta would not have won."
         )
 
@@ -398,7 +398,7 @@ class TestClaimModeSupportingClaimersControl:
         cur.execute(
             f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
             f"'claimMode','baseClaim','baseClaimAddWorkers',"
-            f"'baseClaimAddOwnedLocations','baseClaimAddSupportingClaimers')"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
         )
         prev_config = {row['name']: row['value'] for row in cur.fetchall()}
         cur.execute(
@@ -411,7 +411,7 @@ class TestClaimModeSupportingClaimersControl:
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}config` SET value = '10' "
-            f"WHERE name = 'baseClaimAddSupportingClaimers'"
+            f"WHERE name = 'baseClaimAddSupporting'"
         )
         cur.execute(
             f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
@@ -579,3 +579,467 @@ class TestClaimModeDisabled:
         assert "Mode 'controller' not supported, skipped" in self._eot_html, (
             "EOT page should contain the recalculateZoneDefence skip-warning"
         )
+
+
+@pytest.mark.db
+class TestClaimModeHeldZoneSkip:
+    """Mode B — when a worker's `action_choice='claim'` targets a zone the
+    worker's own controller ALREADY holds, the claim path skips entirely
+    in `claimByWorkerLeaderMath`. The worker still counts as a
+    defence supporter via `recalculateZoneDefence`'s mode-B supporting
+    term, but produces no `claim_report`, no CKE leak, no zone-row
+    UPDATE.
+
+    Scenario: Beta-Combat is pre-set so holder == Beta. Chain_B (Beta's
+    worker) submits claim. EOT runs. Assertions:
+      - Zone holder/claimer unchanged.
+      - Chain_B has no `claim_report` for the post-EOT turn (its row
+        carried forward without one being written for the resolved turn).
+      - No CKE entries for Chain_B with `last_discovery_turn == claim_turn`
+        (no enemy observer learned of the worker via the claim path).
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def held_zone_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Beta' LIMIT 1"
+        )
+        beta_id = cur.fetchone()['id']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = %s, holder_controller_id = %s "
+            f"WHERE name = 'Beta-Combat'",
+            (beta_id, beta_id)
+        )
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name = 'Beta-Combat' LIMIT 1"
+        )
+        beta_combat_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname = 'Chain_B' LIMIT 1"
+        )
+        chain_b_id = cur.fetchone()['id']
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        claim_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = %s "
+            f"  AND wa.action_choice IN ('claim', 'investigate', 'attack')",
+            (claim_turn, beta_combat_id)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_B', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE id = %s",
+            (beta_combat_id,)
+        )
+        post_zone = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id = %s AND turn_number = %s LIMIT 1",
+            (chain_b_id, claim_turn)
+        )
+        chain_b_action = cur.fetchone()
+
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker' "
+            f"WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post_zone = post_zone
+        type(self)._chain_b_action = chain_b_action
+        type(self)._beta_id = beta_id
+        yield
+
+    def test_zone_holder_unchanged(self):
+        """Holder remains Beta after EOT — held-zone skip means no UPDATE
+        runs against the zones row."""
+        assert self._post_zone['holder_controller_id'] == self._beta_id, (
+            f"holder should remain Beta (id={self._beta_id}); got "
+            f"{self._post_zone['holder_controller_id']}"
+        )
+
+    def test_zone_claimer_unchanged(self):
+        """Claimer remains Beta as well — `action_params.claim_controller_id`
+        is not applied since we never enter the resolution body."""
+        assert self._post_zone['claimer_controller_id'] == self._beta_id, (
+            f"claimer should remain Beta (id={self._beta_id}); got "
+            f"{self._post_zone['claimer_controller_id']}"
+        )
+
+    def test_no_claim_report_written(self):
+        """No `claim_report` key written into the worker's `report` JSON —
+        the held-zone skip bypasses both the success and failure text paths."""
+        import json
+        report_raw = (self._chain_b_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert not report.get('claim_report'), (
+            f"claim_report should be empty for the held-zone claimer; "
+            f"got {report.get('claim_report')!r}"
+        )
+
+
+@pytest.mark.db
+class TestClaimModeMultiControllerOrdering:
+    """Mode B — when two controllers both submit claims for the same
+    unowned zone and both clear `claimDiff`, the resolver picks the
+    leader with the highest `(attack_val, defence_val, enquete_val,
+    worker_id)` tiebreak. The first group (in that sort order) to pass
+    wins the zone; later passing groups are forced to lose. All losers
+    still write their fail reports + leak CKE to observers (per user
+    spec — observers saw every attempt).
+
+    Scenario uses Chain_A (Alpha) vs Chain_D (Delta) in Beta-Combat:
+      - Chain_A's powers Eagle Scout / Veteran Tactician / Focused
+        Mind / War Gear sum attack=5. Chain_D's Blank Slate / Common
+        Folk sum 0. With TestConfig dice fixed at 3 (MINROLL=MAXROLL=3)
+        and `claim` ∈ `activeAttackActions`, Chain_A's attack_val=8 vs
+        Chain_D's 3 → Alpha sorts first.
+      - Both leaders' claim_val = baseClaim(5) + workers(1) = 6 >
+        noControllerZoneDefenceBonus(3) + claimDiff(1) → both would pass.
+        Alpha wins; Delta forced-loss.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def multi_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='worker_leader' "
+            f"WHERE name='claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='5' "
+            f"WHERE name='baseClaim'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=0, "
+            f"claimer_controller_id=NULL, holder_controller_id=NULL "
+            f"WHERE name='Beta-Combat'"
+        )
+        cur.execute(
+            f"SELECT id, lastname FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname IN ('Alpha', 'Delta')"
+        )
+        ids = {row['lastname']: row['id'] for row in cur.fetchall()}
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_A' LIMIT 1"
+        )
+        chain_a_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_D' LIMIT 1"
+        )
+        chain_d_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat' LIMIT 1"
+        )
+        beta_combat_id = cur.fetchone()['id']
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        claim_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice='passive', wa.action_params='{{}}' "
+            f"WHERE wa.turn_number=%s AND w.zone_id=%s "
+            f"  AND wa.action_choice='claim'",
+            (claim_turn, beta_combat_id)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_A', 'Alpha')
+        ui_claim(page, 'Chain_D', 'Delta')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT claimer_controller_id, holder_controller_id "
+            f"FROM `{GAME_PREFIX}zones` WHERE id=%s",
+            (beta_combat_id,)
+        )
+        post_zone = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id=%s AND turn_number=%s LIMIT 1",
+            (chain_a_id, claim_turn)
+        )
+        chain_a_action = cur.fetchone()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id=%s AND turn_number=%s LIMIT 1",
+            (chain_d_id, claim_turn)
+        )
+        chain_d_action = cur.fetchone()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value=%s WHERE name=%s",
+                (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=6 "
+            f"WHERE name='Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._post_zone = post_zone
+        type(self)._chain_a_action = chain_a_action
+        type(self)._chain_d_action = chain_d_action
+        type(self)._alpha_id = ids['Alpha']
+        type(self)._delta_id = ids['Delta']
+        yield
+
+    def test_holder_is_alpha_highest_attack_val(self):
+        """Alpha wins the ordering: Chain_A's attack_val (dice 3 + powers
+        5 = 8) beats Chain_D's (dice 3 + powers 0 = 3). The UPDATE fires
+        for Alpha; the zone's holder reflects that."""
+        assert self._post_zone['holder_controller_id'] == self._alpha_id, (
+            f"holder should be Alpha (id={self._alpha_id}, highest "
+            f"attack_val leader); got {self._post_zone['holder_controller_id']}"
+        )
+
+    def test_claimer_mirrors_winner(self):
+        """`action_params.claim_controller_id` from `ui_claim_click` is
+        Alpha (the leader's own controller). Claimer column tracks that."""
+        assert self._post_zone['claimer_controller_id'] == self._alpha_id
+
+    def test_winner_chain_a_got_claim_report(self):
+        """Chain_A's claim_report key is populated (from
+        textesClaimSuccessArray) — proves the winning group still wrote
+        its self-report."""
+        import json
+        report_raw = (self._chain_a_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert report.get('claim_report'), (
+            f"Chain_A (winner) should have a claim_report; got "
+            f"{report.get('claim_report')!r}"
+        )
+
+    def test_loser_chain_d_still_got_claim_report(self):
+        """Chain_D's claim cleared the threshold individually but was
+        forced to lose because Alpha already won the zone. The fail
+        report + CKE leak still fire — observers saw both attempts."""
+        import json
+        report_raw = (self._chain_d_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        assert report.get('claim_report'), (
+            f"Chain_D (post-winner loser) should still have a "
+            f"claim_report (fail-text); got {report.get('claim_report')!r}"
+        )
+
+
+@pytest.mark.db
+class TestClaimModeWorkerLeaderReportPlaceholders:
+    """Mode B view templates resolve all 4 placeholders:
+      - %1$s = leader's full name
+      - %2$s = zone name
+      - %3$s = co-claimer names (or `d'autres agents` fallback)
+      - %4$s = `action_params.claim_controller_id` target controller's name
+               (or `Personne (Sans bannière)` for the `'null'` sentinel /
+                missing override)
+
+    TestConfig's `textesClaim{Success,Fail}ViewArray` are only `%1$s`/`%2$s`
+    in steady state (TestConfig runs Mode A). This class transiently
+    overrides them to single-variant markers with all 4 placeholders, runs
+    a mode-B claim, then reads an observing enemy worker's `claim_report`
+    and asserts the substitutions actually landed.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def report_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim',"
+            f"'textesClaimSuccessViewArray','textesClaimFailViewArray')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='worker_leader' "
+            f"WHERE name='claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value='10' WHERE name='baseClaim'"
+        )
+        cur.execute(
+            f'UPDATE `{GAME_PREFIX}config` SET value=\'["SUCCESS_MARKER '
+            f'leader=%1$s zone=%2$s co=%3$s onBehalf=%4$s"]\' '
+            f"WHERE name='textesClaimSuccessViewArray'"
+        )
+        cur.execute(
+            f'UPDATE `{GAME_PREFIX}config` SET value=\'["FAIL_MARKER '
+            f'leader=%1$s zone=%2$s co=%3$s onBehalf=%4$s"]\' '
+            f"WHERE name='textesClaimFailViewArray'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=0, "
+            f"claimer_controller_id=NULL, holder_controller_id=NULL "
+            f"WHERE name='Beta-Combat'"
+        )
+
+        cur.execute(
+            f"SELECT id, lastname, CONCAT(firstname, ' ', lastname) AS full_name "
+            f"FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname IN ('Alpha', 'Beta')"
+        )
+        controller_rows = list(cur.fetchall())
+        ids = {row['lastname']: row['id'] for row in controller_rows}
+        controller_full_names = {row['lastname']: row['full_name'] for row in controller_rows}
+        cur.execute(
+            f"SELECT id, CONCAT(firstname, ' ', lastname) AS full_name "
+            f"FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_A' LIMIT 1"
+        )
+        chain_a_row = cur.fetchone()
+        cur.execute(
+            f"SELECT id, CONCAT(firstname, ' ', lastname) AS full_name "
+            f"FROM `{GAME_PREFIX}workers` WHERE lastname='Even_Atk' LIMIT 1"
+        )
+        even_atk_row = cur.fetchone()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}workers` WHERE lastname='Chain_C' LIMIT 1"
+        )
+        chain_c_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat' LIMIT 1"
+        )
+        beta_combat_id = cur.fetchone()['id']
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        claim_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id=wa.worker_id "
+            f"SET wa.action_choice='passive', wa.action_params='{{}}' "
+            f"WHERE wa.turn_number=%s AND w.zone_id=%s "
+            f"  AND wa.action_choice='claim'",
+            (claim_turn, beta_combat_id)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # Chain_A submits claim with claim_controller_id=Beta (override).
+        # Even_Atk submits claim with Alpha default. Both belong to Alpha.
+        # Leader = Chain_A (powers-attack=5 vs Even_Atk's 0 → highest attack_val).
+        ui_claim_click(page, 'Chain_A', 'Beta')
+        ui_claim(page, 'Even_Atk', 'Alpha')
+        end_turn(page, PHP_BASE_URL)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT report FROM `{GAME_PREFIX}worker_actions` "
+            f"WHERE worker_id=%s AND turn_number=%s LIMIT 1",
+            (chain_c_id, claim_turn)
+        )
+        chain_c_action = cur.fetchone()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value=%s WHERE name=%s",
+                (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val=6 WHERE name='Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._chain_c_action = chain_c_action
+        type(self)._chain_a_full_name = chain_a_row['full_name']
+        type(self)._even_atk_full_name = even_atk_row['full_name']
+        type(self)._beta_full_name = controller_full_names['Beta']
+        yield
+
+    def _claim_report(self):
+        import json
+        report_raw = (self._chain_c_action or {}).get('report')
+        report = json.loads(report_raw) if report_raw else {}
+        return report.get('claim_report') or ''
+
+    def test_success_marker_present(self):
+        """Observer's report came from the SUCCESS template (Alpha's group
+        won the zone) — proves the template selection on `$success=true`."""
+        assert 'SUCCESS_MARKER' in self._claim_report(), (
+            f"Expected SUCCESS_MARKER in Chain_C's claim_report; got "
+            f"{self._claim_report()!r}"
+        )
+
+    def test_leader_name_substituted(self):
+        """%1$s rendered Chain_A's full name (the leader)."""
+        assert f'leader={self._chain_a_full_name}' in self._claim_report(), (
+            f"Expected `leader={self._chain_a_full_name}`; got "
+            f"{self._claim_report()!r}"
+        )
+
+    def test_zone_name_substituted(self):
+        """%2$s rendered the zone name."""
+        assert 'zone=Beta-Combat' in self._claim_report()
+
+    def test_co_claimer_names_substituted(self):
+        """%3$s rendered Even_Atk's full name (the co-claimer; Chain_A
+        is the leader and is excluded)."""
+        assert f'co={self._even_atk_full_name}' in self._claim_report(), (
+            f"Expected `co={self._even_atk_full_name}`; got "
+            f"{self._claim_report()!r}"
+        )
+
+    def test_on_behalf_controller_name_substituted(self):
+        """%4$s rendered Beta's full controller name (Chain_A's
+        action_params.claim_controller_id override target). `getControllerName`
+        returns `CONCAT(firstname, ' ', lastname)`."""
+        assert f'onBehalf={self._beta_full_name}' in self._claim_report(), (
+            f"Expected `onBehalf={self._beta_full_name}`; got "
+            f"{self._claim_report()!r}"
+        )
+
