@@ -1073,3 +1073,272 @@ class TestAttackModeDisabled:
         assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
             "EOT page should contain the locationAttackMechanic skip-warning"
         )
+
+
+class TestEndTurnCascadeDestroyed:
+    """When a queued end-turn attack's target no longer exists at
+    resolution time (cascade from prior successful attack — FK
+    ON DELETE SET NULL blanks the queue row's location_id), the row
+    must be marked success=0/resolved_turn AND an attacker-only log
+    entry must be written using the textLocationAttackDestroyed
+    config text. Defender-invisible: target_controller_id=NULL.
+
+    Uses a synthetic location + synthetic queue row to isolate from
+    the rest of the file's location-attack state."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def cascade_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticCascadeTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, foxtrot_id),
+        )
+        synthetic_id = cur.lastrowid
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}controller_location_attacks` "
+            f"(location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot) "
+            f"VALUES (%s, 'SyntheticCascadeTarget', %s, %s, 0)",
+            (synthetic_id, foxtrot_id, turn),
+        )
+        queue_row_id = cur.lastrowid
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id = %s",
+            (synthetic_id,),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        end_turn(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` WHERE id = %s",
+            (queue_row_id,),
+        )
+        queue_row_post = cur.fetchone()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}location_attack_logs` "
+            f"WHERE location_name = 'SyntheticCascadeTarget' AND attacker_id = %s",
+            (foxtrot_id,),
+        )
+        log_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_row_post = queue_row_post
+        type(self)._log_rows = log_rows
+        yield
+
+    def test_cascade_destroyed_fails_and_logs(self):
+        """Combined assertion: queue row resolved-failed; log entry
+        defender-invisible with textLocationAttackDestroyed message."""
+        assert self._queue_row_post['success'] == 0, (
+            f"Queue row should be success=0; got {self._queue_row_post['success']}"
+        )
+        assert self._queue_row_post['resolved_turn'] is not None
+        assert len(self._log_rows) == 1, (
+            f"Expected exactly one log row; got {len(self._log_rows)}"
+        )
+        log = self._log_rows[0]
+        assert log['target_controller_id'] is None, (
+            f"target_controller_id must be NULL (defender-invisible); "
+            f"got {log['target_controller_id']}"
+        )
+        assert 'détruit' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should contain destroyed-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticCascadeTarget' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
+            f"got {log['attacker_result_text']!r}"
+        )
+
+
+class TestMoveBaseCancelsInFlightAttacks:
+    """When moveBase fires while in-flight queued end-turn attacks
+    target the base, those attacks must be cancelled via
+    failQueuedLocationAttack with reason='moved'. Defender-invisible
+    (target_controller_id=NULL); attacker_result_text uses
+    textLocationAttackMoved config text.
+
+    Uses a synthetic base + synthetic queue row + gm-privileged
+    /controllers/action.php?moveBase=… URL to isolate from other state."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_cancel_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 2")
+        zones = cur.fetchall()
+        zone_origin = zones[0]['id']
+        zone_target = zones[1]['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticMovedBase', 'temp', %s, %s, 1, 1)",
+            (zone_origin, echo_id),
+        )
+        synthetic_id = cur.lastrowid
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}controller_location_attacks` "
+            f"(location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot) "
+            f"VALUES (%s, 'SyntheticMovedBase', %s, %s, 0)",
+            (synthetic_id, foxtrot_id, turn),
+        )
+        queue_row_id = cur.lastrowid
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?moveBase=1&base_id={synthetic_id}&zone_id={zone_target}&controller_id={echo_id}",
+        )
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` WHERE id = %s",
+            (queue_row_id,),
+        )
+        queue_row_post = cur.fetchone()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}location_attack_logs` "
+            f"WHERE location_name = 'SyntheticMovedBase' AND attacker_id = %s",
+            (foxtrot_id,),
+        )
+        log_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_row_post = queue_row_post
+        type(self)._log_rows = log_rows
+        yield
+
+    def test_move_cancels_in_flight_attack(self):
+        """Combined assertion: queue row resolved-failed; log entry
+        defender-invisible with textLocationAttackMoved message."""
+        assert self._queue_row_post['success'] == 0, (
+            f"Queue row should be success=0; got {self._queue_row_post['success']}"
+        )
+        assert self._queue_row_post['resolved_turn'] is not None
+        assert len(self._log_rows) == 1, (
+            f"Expected exactly one log row; got {len(self._log_rows)}"
+        )
+        log = self._log_rows[0]
+        assert log['target_controller_id'] is None, (
+            f"target_controller_id must be NULL (defender-invisible); "
+            f"got {log['target_controller_id']}"
+        )
+        assert 'déplacé' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should contain moved-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticMovedBase' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
+            f"got {log['attacker_result_text']!r}"
+        )
+
+
+class TestDuplicateQueueAttemptRejected:
+    """Backend INSERT WHERE NOT EXISTS guard at attackLocation() must
+    prevent duplicate (attacker, location, queued_turn) queue rows.
+    Two URL hits with identical params → exactly one queue row exists."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def duplicate_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticDupTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, echo_id),
+        )
+        synthetic_id = cur.lastrowid
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        url = (
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&controller_id={foxtrot_id}&target_location_id={synthetic_id}"
+        )
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` "
+            f"WHERE attacker_controller_id = %s AND location_id = %s AND queued_turn = %s",
+            (foxtrot_id, synthetic_id, turn),
+        )
+        queue_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_rows = queue_rows
+        yield
+
+    def test_duplicate_url_attack_inserts_only_one_row(self):
+        """Two URL hits with same (attacker, location, turn) → exactly
+        one queue row (backend INSERT WHERE NOT EXISTS guard fires on
+        the second attempt)."""
+        assert len(self._queue_rows) == 1, (
+            f"Expected exactly one queue row after duplicate URL hit; "
+            f"got {len(self._queue_rows)}"
+        )

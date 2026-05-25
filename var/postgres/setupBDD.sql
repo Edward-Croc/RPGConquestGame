@@ -148,7 +148,8 @@ CREATE TABLE {prefix}controller_location_attacks (
     defence_val_resolved INT DEFAULT NULL,
     resolved_turn INT DEFAULT NULL,
     FOREIGN KEY (location_id) REFERENCES {prefix}locations (id) ON DELETE SET NULL,
-    FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id)
+    FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id),
+    UNIQUE (attacker_controller_id, location_id, queued_turn)
 );
 CREATE INDEX idx_controller_location_attacks_location_id ON {prefix}controller_location_attacks (location_id);
 CREATE INDEX idx_controller_location_attacks_attacker_controller_id ON {prefix}controller_location_attacks (attacker_controller_id);
