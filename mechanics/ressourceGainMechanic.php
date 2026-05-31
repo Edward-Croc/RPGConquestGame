@@ -19,6 +19,7 @@ if (!defined('RESSOURCE_GAIN_CONDITION_TYPES')) {
  */
 function ressourceGainMechanic($pdo, $timing) {
     $prefix = $_SESSION['GAME_PREFIX'];
+    $hasErrors = false;
     echo "<div><h3>ressourceGainMechanic : timing '".htmlspecialchars($timing)."'</h3>";
 
     // Get the list of ressources
@@ -67,7 +68,12 @@ function ressourceGainMechanic($pdo, $timing) {
                     $u->bindValue(':cid', $controllerId, PDO::PARAM_INT);
                     $u->bindValue(':rid', $ressourceId, PDO::PARAM_INT);
                     $u->execute();
+                    if ($u->rowCount() === 0) {
+                        $hasErrors = true;
+                        echo __FUNCTION__."(): no controller_ressources row for c={$controllerId},r={$ressourceId}<br />";
+                    }
                 } catch (PDOException $e) {
+                    $hasErrors = true;
                     echo __FUNCTION__."(): UPDATE failed for c={$controllerId},r={$ressourceId}: ".$e->getMessage()."<br />";
                 }
             }
@@ -75,7 +81,7 @@ function ressourceGainMechanic($pdo, $timing) {
     }
 
     echo "<p>ressourceGainMechanic : DONE</p></div>";
-    return true;
+    return !$hasErrors;
 }
 
 /**
