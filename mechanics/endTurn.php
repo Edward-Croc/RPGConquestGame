@@ -23,6 +23,11 @@ if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
             echo __FUNCTION__."(): Failed to update ressources: updateRessources <br />";
             return false;
         }
+        $beforeClaimGainResult = ressourceGainMechanic($gameReady, 'before_claim');
+        if ( !$beforeClaimGainResult){
+            echo __FUNCTION__."(): Failed to apply before-claim ressource gain rules: ressourceGainMechanic <br />";
+            return false;
+        }
         changeEndTurnState($gameReady, 'updateRessources', $mechanics);
         $mechanics['end_step'] = 'updateRessources';
     }
@@ -130,6 +135,18 @@ if ($mechanics['end_step'] == 'locationAttackMechanic') {
 }
 
 if ($mechanics['end_step'] == 'claimMechanic') {
+    if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+        $afterClaimGainResult = ressourceGainMechanic($gameReady, 'after_claim');
+        if ( !$afterClaimGainResult){
+            echo __FUNCTION__."(): Failed to apply after-claim ressource gain rules: ressourceGainMechanic <br />";
+            return false;
+        }
+    }
+    changeEndTurnState($gameReady, 'ressourceGainAfterClaim', $mechanics);
+    $mechanics['end_step'] = 'ressourceGainAfterClaim';
+}
+
+if ($mechanics['end_step'] == 'ressourceGainAfterClaim') {
     // check investigations
     $investigateResult = investigateMechanic($gameReady, $mechanics);
     if ( !$investigateResult){
