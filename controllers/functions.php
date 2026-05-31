@@ -273,8 +273,8 @@ function createBase($pdo, $controller_id, $zone_id) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
     }
 
-    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True)";
+    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base, location_types) VALUES
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True, '[\"fortress\"]')";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -336,6 +336,16 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
     }
 
+    // Defensive: ensure any pre-existing base lacking the fortress tag gets it.              
+    try {                                                                                     
+        $stmt = $pdo->prepare("UPDATE {$prefix}locations SET location_types = '[\"fortress\"]'
+            WHERE id = :base_id AND location_types IS NULL");                                            
+        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);                               
+            $stmt->execute();                                                                     
+        } catch (PDOException $e) {                                                               
+            echo __FUNCTION__."(): UPDATE location_types failed: " . $e->getMessage()."<br />";   
+    }
+  
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{

@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST')) {
-    define('RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST', ['is_base', 'can_be_destroyed', 'zone_id', 'location_id']);
+    define('RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST', ['is_base', 'can_be_destroyed', 'zone_id', 'location_id', 'location_type']);
 }
 if (!defined('RESSOURCE_GAIN_CONDITION_TYPES')) {
     define('RESSOURCE_GAIN_CONDITION_TYPES', ['holds_zone', 'claims_zone', 'owns_location_type']);
@@ -133,9 +133,11 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
     }
 
     if ($conditionType === 'owns_location_type') {
+        // Scalar filters resolved in SQL; location_type (JSON-array containment) resolved in PHP after fetch.
         $extras = [];
         $params = [];
         foreach (RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST as $allowedKey) {
+            if ($allowedKey === 'location_type') continue;
             if (isset($condition[$allowedKey])) {
                 $extras[] = "l.{$allowedKey} = :{$allowedKey}";
                 $params[":{$allowedKey}"] = $condition[$allowedKey];
@@ -143,22 +145,36 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
         }
         $extra = empty($extras) ? '' : ' AND '.implode(' AND ', $extras);
         try {
-            $sql = "SELECT c.id AS controller_id, COUNT(l.id) AS match_count
+            $sql = "SELECT c.id AS controller_id, l.id AS location_id, l.location_types
                 FROM {$prefix}controllers c
-                LEFT JOIN {$prefix}locations l ON l.controller_id = c.id{$extra}
-                GROUP BY c.id
-                HAVING COUNT(l.id) > 0";
+                JOIN {$prefix}locations l ON l.controller_id = c.id{$extra}";
             $stmt = $pdo->prepare($sql);
             foreach ($params as $key => $value) {
                 $paramType = is_bool($value) ? PDO::PARAM_BOOL : PDO::PARAM_INT;
                 $stmt->bindValue($key, $value, $paramType);
             }
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             echo __FUNCTION__."(): location SELECT failed: ".$e->getMessage()."<br />";
             return [];
         }
+
+        $requiredTag = $condition['location_type'] ?? null;
+        $counts = [];
+        foreach ($rows as $row) {
+            if ($requiredTag !== null) {
+                $tags = json_decode($row['location_types'] ?? '[]', true);
+                if (!is_array($tags) || !in_array($requiredTag, $tags, true)) continue;
+            }
+            $cid = (int)$row['controller_id'];
+            $counts[$cid] = ($counts[$cid] ?? 0) + 1;
+        }
+        $matches = [];
+        foreach ($counts as $cid => $count) {
+            $matches[] = ['controller_id' => $cid, 'match_count' => $count];
+        }
+        return $matches;
     }
 
     return [];

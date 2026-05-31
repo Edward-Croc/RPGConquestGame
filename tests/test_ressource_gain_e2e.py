@@ -240,3 +240,89 @@ class TestRessourceGainAfterClaimCountStyle:
             f"Expected post-EOT Gold = {expected} ({self._rule_amount}×"
             f"{self._zone_count} matches); got {self._post_amount}"
         )
+
+
+class TestRessourceGainOwnsLocationTypeTag:
+    """`condition: {type: owns_location_type, location_type: 'temple'}` with
+    Alpha owning 2 synthetic temple-tagged locations and 1 non-tagged location
+    must add `amount × 2` (tag-filtered count) to Alpha's Gold."""
+
+    _rule_amount = 30
+    _temple_count = 2  # 2 tagged locations created
+    _other_count = 1   # 1 untagged location created (should NOT count)
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        # Create 2 temple-tagged locations + 1 untagged, all owned by Alpha
+        synthetic_ids = []
+        for i in range(self._temple_count):
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}locations` "
+                f"(name, description, zone_id, controller_id, can_be_destroyed, is_base, location_types) "
+                f"VALUES (%s, %s, %s, %s, 0, 0, %s)",
+                (f"SyntheticTempleA{i}", "test", zone_id, alpha_id, '["temple"]'),
+            )
+            synthetic_ids.append(cur.lastrowid)
+        for i in range(self._other_count):
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}locations` "
+                f"(name, description, zone_id, controller_id, can_be_destroyed, is_base, location_types) "
+                f"VALUES (%s, %s, %s, %s, 0, 0, %s)",
+                (f"SyntheticPlainA{i}", "test", zone_id, alpha_id, None),
+            )
+            synthetic_ids.append(cur.lastrowid)
+        conn.commit()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "owns_location_type", "location_type": "temple"},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        # Cleanup: delete CKL rows first (FK), then synthetic locations.
+        placeholders = ",".join(["%s"] * len(synthetic_ids))
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}controller_known_locations` WHERE location_id IN ({placeholders})",
+            synthetic_ids,
+        )
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id IN ({placeholders})",
+            synthetic_ids,
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_post_amount_matches_temple_tagged_count(self):
+        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
+        Alpha owns 2 temple-tagged + 1 untagged locations. Filter
+        location_type='temple' matches the 2 temples; untagged skipped.
+        Expected: 30 × 2 = 60."""
+        expected = self._rule_amount * self._temple_count
+        assert self._post_amount == expected, (
+            f"Expected post-EOT Gold = {expected} ({self._rule_amount}×"
+            f"{self._temple_count} temple matches; untagged location ignored); "
+            f"got {self._post_amount}"
+        )

@@ -104,6 +104,7 @@ CREATE TABLE {prefix}locations (
     can_be_repaired TINYINT(1) DEFAULT 0,
     is_base TINYINT(1) DEFAULT 0, -- Is a controllers Base
     activate_json JSON,
+    location_types JSON DEFAULT NULL, -- multi-tag classification (e.g. ["temple","fortress"])
     FOREIGN KEY (zone_id) REFERENCES {prefix}zones (id),
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id)
 );
