@@ -139,7 +139,8 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
         foreach (RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST as $allowedKey) {
             if ($allowedKey === 'location_type') continue;
             if (isset($condition[$allowedKey])) {
-                $extras[] = "l.{$allowedKey} = :{$allowedKey}";
+                $sqlColumn = $allowedKey === 'location_id' ? 'id' : $allowedKey;
+                $extras[] = "l.{$sqlColumn} = :{$allowedKey}";
                 $params[":{$allowedKey}"] = $condition[$allowedKey];
             }
         }

@@ -151,7 +151,7 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 {"amount": 100, "timing": "after_claim", "condition": {"type": "holds_zone"}}
 ```
 
-- **`amount`** — multiplicateur entier. Les règles avec `amount <= 0` sont ignorées silencieusement.
+- **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
 - **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
 - **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
 
