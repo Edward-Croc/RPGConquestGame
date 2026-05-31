@@ -11,7 +11,7 @@ if (!$started) {
     exit();
 }
 
-echo sprintf(" Starting END of Turn %s with end_step : %s<br />",
+echo sprintf(" <h2>  Starting END of Turn %s with end_step : %s</h2>",
     $mechanics['turncounter'],
     $mechanics['end_step']
 );
@@ -204,4 +204,4 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     }
 }
 
-echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
+echo sprintf("<h2> %s: %s </h2>", ucfirst(getConfig($gameReady, 'timeValue')), $turn);

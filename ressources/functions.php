@@ -9,6 +9,8 @@
  * @return bool
  */
 function updateRessources($pdo, $mechanics) {
+    echo '<div> <h3>  updateRessources : </h3> ';
+
     /** Foreach controller :
      *  - If corresponding line controller_ressources exists,
      *    - If ressource_config.is_stored is TRUE, add amount to amount_stored
@@ -28,11 +30,11 @@ function updateRessources($pdo, $mechanics) {
         // For each ressource :
         foreach ($controllerRessources as $controllerRessource) {
             //    - If ressource_config.is_stored is TRUE, add amount to amount_stored
-            if ($controllerRessource['is_stored'] === TRUE) {
+            if (!empty($controllerRessource['is_stored'])) {
                 $controllerRessource['amount_stored'] += $controllerRessource['amount'];
             }
             //    - If ressource_config.is_rollable is FALSE, set amount to 0
-            if ($controllerRessource['is_rollable'] === FALSE) {
+            if (empty($controllerRessource['is_rollable'])) {
                 $controllerRessource['amount'] = 0;
             }
             //    - Add end_turn_gain to amount
@@ -42,11 +44,9 @@ function updateRessources($pdo, $mechanics) {
             $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount, amount_stored = :amount_stored WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':amount_stored' => $controllerRessource['amount_stored'], ':id' => $controllerRessource['rc_id']]);
-            if (!$stmt->rowCount()) {
-                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
-            }
         }
     }
+    echo '</div> ';
     return true;
 }
 

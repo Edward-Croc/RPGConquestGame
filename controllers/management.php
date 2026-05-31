@@ -129,7 +129,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
     <h2>Controller Details</h2>
     <table border="1">
         <tr>
-            <th>Controller</th>
+            <th>ID - Controller</th>
             <th>Is seceret</th>
             <th>Can Build Base</th>
             <th>Total Recruited Workers</th>
@@ -166,7 +166,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
             $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
 
             echo sprintf('<tr class="controller-row" data-controller-id="%1$s" data-controller-name="%2$s">
-                <td data-field="lastname">%2$s</td>
+                <td data-field="lastname">%1$s - %2$s</td>
                 <td data-field="secret_controller">%3$s</td>
                 <td data-field="can_build_base">%4$s</td>
                 <td data-field="recruited_workers">%5$s</td>
