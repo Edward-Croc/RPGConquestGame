@@ -31,6 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([':id' => $_POST['controller_ressource_id']]);
         echo "Ressource removed from controller.";
     }
+
+    if (isset($_POST['update_gain_rules'])) {
+        $rules = trim($_POST['gain_rules'] ?? '');
+        $stmt = $gameReady->prepare("UPDATE {$prefix}ressources_config SET gain_rules = :rules WHERE id = :id");
+        $stmt->execute([
+            ':rules' => $rules !== '' ? $rules : null,
+            ':id'    => $_POST['ressource_config_id'],
+        ]);
+        echo "Gain rules updated.";
+    }
 }
 
 // Fetch controllers and ressources
@@ -64,35 +74,27 @@ require_once '../base/baseHTML.php';
                 <th>Servant Recruitment Cost</th>
                 <th>Gain Rules (JSON)</th>
                 <th>Actions</th>
-    <?php foreach ($ressourcesConfig as $ressourceConfig) {
-        echo sprintf('<tr>
-            <td>%2$s</td>
-            <td>%3$s</td>
-            <td>%4$s</td>
-            <td>%5$s</td>
-            <td>%6$s</td>
-            <td>%7$s</td>
-            <td>%8$s</td>
-            <td>%9$s</td>
-            <td>%10$s</td>
-            <td>%11$s</td>
-            <td>%12$s</td>
-        </tr>',
-            $ressourceConfig['id'],
-            $ressourceConfig['ressource_name'],
-            $ressourceConfig['presentation'],
-            $ressourceConfig['stored_text'],
-            (isset($ressourceConfig['is_rollable']) && $ressourceConfig['is_rollable'] ? '✔️ Yes' : '❌ No'),
-            (isset($ressourceConfig['is_stored']) && $ressourceConfig['is_stored'] ? '✔️ Yes' : '❌ No'),
-            $ressourceConfig['base_building_cost'],
-            $ressourceConfig['base_moving_cost'],
-            $ressourceConfig['location_repaire_cost'],
-            $ressourceConfig['servant_first_come_cost'],
-            $ressourceConfig['servant_recruitment_cost'],
-            $ressourceConfig['gain_rules']
-        );
-    }
-    ?>
+<?php foreach ($ressourcesConfig as $ressourceConfig): ?>
+        <tr>
+            <td><?= htmlspecialchars($ressourceConfig['ressource_name']) ?></td>
+            <td><?= htmlspecialchars($ressourceConfig['presentation']) ?></td>
+            <td><?= htmlspecialchars($ressourceConfig['stored_text']) ?></td>
+            <td><?= !empty($ressourceConfig['is_rollable']) ? '✔️ Yes' : '❌ No' ?></td>
+            <td><?= !empty($ressourceConfig['is_stored']) ? '✔️ Yes' : '❌ No' ?></td>
+            <td><?= (int)$ressourceConfig['base_building_cost'] ?></td>
+            <td><?= (int)$ressourceConfig['base_moving_cost'] ?></td>
+            <td><?= (int)$ressourceConfig['location_repaire_cost'] ?></td>
+            <td><?= (int)$ressourceConfig['servant_first_come_cost'] ?></td>
+            <td><?= (int)$ressourceConfig['servant_recruitment_cost'] ?></td>
+            <td>
+                <form method="POST" style="display:inline;">
+                    <textarea name="gain_rules" rows="3" cols="40"><?= htmlspecialchars($ressourceConfig['gain_rules'] ?? '') ?></textarea>
+                    <input type="hidden" name="ressource_config_id" value="<?= (int)$ressourceConfig['id'] ?>">
+                    <br><button type="submit" name="update_gain_rules">Update gain rules</button>
+                </form>
+            </td>
+        </tr>
+<?php endforeach; ?>
     </table>
 </div>
 
