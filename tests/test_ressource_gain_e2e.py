@@ -130,10 +130,95 @@ def _zero_controller_ressource(controller_id, ressource_id):
     conn.close()
 
 
-@pytest.mark.db
+# --- UI-only helpers (POC for converting DB-marked tests to UI-only) ---
+
+import re as _re
+
+
+def _ui_resolve_controller_id(page, lastname):
+    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
+    page.wait_for_load_state("load")
+    return page.locator(
+        f"select[name='controller_id'] option:has-text('{lastname}')"
+    ).first.get_attribute("value")
+
+
+def _ui_resolve_zone_id(page, zone_name):
+    safe_goto(page, f"{PHP_BASE_URL}/zones/management_zones.php")
+    page.wait_for_load_state("load")
+    return page.locator(
+        f"tr:has(td:text-is('{zone_name}')) input[name='zone_id']"
+    ).first.get_attribute("value")
+
+
+def _ui_resolve_ressource_config_id(page, ressource_name):
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/management.php")
+    page.wait_for_load_state("load")
+    return page.locator(
+        f"tr:has(td:text-is('{ressource_name}')) input[name='ressource_config_id']"
+    ).first.get_attribute("value")
+
+
+def _ui_resolve_controller_ressource_id(page, lastname, ressource_name):
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/management.php")
+    page.wait_for_load_state("load")
+    return page.locator(
+        f"tr:has(td:has-text('{lastname}')):has(td:text-is('{ressource_name}')) "
+        f"input[name='controller_ressource_id']"
+    ).first.get_attribute("value")
+
+
+def _ui_set_zone_holder(page, zone_id, controller_id_or_none, claimer_id_or_none=None):
+    page.request.post(
+        f"{PHP_BASE_URL}/zones/management_zones.php",
+        form={
+            "zone_id":    str(zone_id),
+            "claimer_id": str(claimer_id_or_none) if claimer_id_or_none else "",
+            "holder_id":  str(controller_id_or_none) if controller_id_or_none else "",
+        },
+    )
+
+
+def _ui_set_gain_rules(page, ressource_config_id, rules_json_or_none):
+    page.request.post(
+        f"{PHP_BASE_URL}/ressources/management.php",
+        form={
+            "ressource_config_id": str(ressource_config_id),
+            "gain_rules":          rules_json_or_none if rules_json_or_none else "",
+            "update_gain_rules":   "1",
+        },
+    )
+
+
+def _ui_set_controller_ressource(page, controller_ressource_id, amount, amount_stored=0, end_turn_gain=0):
+    page.request.post(
+        f"{PHP_BASE_URL}/ressources/management.php",
+        form={
+            "controller_ressource_id": str(controller_ressource_id),
+            "amount":         str(amount),
+            "amount_stored":  str(amount_stored),
+            "end_turn_gain":  str(end_turn_gain),
+            "update_ressource": "1",
+        },
+    )
+
+
+def _ui_read_amount(page, controller_id, ressource_name):
+    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={controller_id}")
+    page.wait_for_load_state("load")
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
+    page.wait_for_load_state("load")
+    content = page.content()
+    pattern = rf'<td>{_re.escape(ressource_name)}</td>\s*<td[^>]*>\s*(-?\d+)\s*</td>'
+    m = _re.search(pattern, content)
+    return int(m.group(1)) if m else None
+
+
 class TestRessourceGainAfterClaimSpecificZone:
     """`condition: {type: holds_zone, zone_id: Z}` with Alpha holding Z
-    must add exactly `amount` to Alpha's Gold after EOT (binary match)."""
+    must add exactly `amount` to Alpha's Gold after EOT (binary match).
+    UI-only: state seeded via admin pages, amount read from Alpha's
+    Ressources view, no direct DB access."""
 
     _rule_amount = 7
 
@@ -144,32 +229,24 @@ class TestRessourceGainAfterClaimSpecificZone:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
 
-        gold_id, alpha_id = _resolve_ids()
-        _reset_zone_holders()
-        _zero_controller_ressource(alpha_id, gold_id)
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
 
-        conn = _db_conn()
-        cur = conn.cursor()
-        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
-        target_zone_id = cur.fetchone()['id']
-        cur.execute(
-            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
-            (alpha_id, target_zone_id),
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        _set_gain_rules(gold_id, [{
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        _ui_set_zone_holder(page, zone_id, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
             "amount": self._rule_amount,
             "timing": "after_claim",
-            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
-        }])
+            "condition": {"type": "holds_zone", "zone_id": int(zone_id)},
+        }]))
 
         end_turn(page, PHP_BASE_URL)
-        post_amount = _read_amount(alpha_id, gold_id)
-        _set_gain_rules(gold_id, None)
-        _reset_zone_holders()
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        _ui_set_zone_holder(page, zone_id, None)
         assert_no_collected_php_errors(page)
         ctx.close()
 
@@ -177,21 +254,20 @@ class TestRessourceGainAfterClaimSpecificZone:
         yield
 
     def test_alpha_post_amount_matches_rule(self):
-        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
-        The 1× holds_zone rule with Alpha holding the target zone
-        adds 7 → expected post-EOT amount = 7."""
         assert self._post_amount == self._rule_amount, (
             f"Expected post-EOT Gold = {self._rule_amount}; got {self._post_amount}"
         )
 
 
-@pytest.mark.db
 class TestRessourceGainAfterClaimCountStyle:
-    """`condition: {type: holds_zone}` (no zone_id) with Alpha holding 3
-    zones must add `amount × 3` to Alpha's Gold after EOT (count-style)."""
+    """`condition: {type: holds_zone}` (no zone_id) with Alpha holding 4
+    zones must add `amount × 4` to Alpha's Gold after EOT (count-style).
+    Baseline: TestConfig CSV already sets Alpha as holder of Gamma-Claims;
+    this test adds Alpha as holder of Beta-Combat, Epsilon-Controlled,
+    Zeta-Unclaimed → total 4."""
 
     _rule_amount = 50
-    _zone_count = 3
+    _expected_zone_count = 4
 
     @pytest.fixture(scope="class", autouse=True)
     def gain_state(self, browser):
@@ -200,33 +276,30 @@ class TestRessourceGainAfterClaimCountStyle:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
 
-        gold_id, alpha_id = _resolve_ids()
-        _reset_zone_holders()
-        _zero_controller_ressource(alpha_id, gold_id)
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        added_zone_ids = [
+            _ui_resolve_zone_id(page, "Beta-Combat"),
+            _ui_resolve_zone_id(page, "Epsilon-Controlled"),
+            _ui_resolve_zone_id(page, "Zeta-Unclaimed"),
+        ]
 
-        conn = _db_conn()
-        cur = conn.cursor()
-        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` ORDER BY id ASC LIMIT %s", (self._zone_count,))
-        zoneIds = [r['id'] for r in cur.fetchall()]
-        for zoneId in zoneIds:
-            cur.execute(
-                f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
-                (alpha_id, zoneId),
-            )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        _set_gain_rules(gold_id, [{
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        for zid in added_zone_ids:
+            _ui_set_zone_holder(page, zid, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
             "amount": self._rule_amount,
             "timing": "after_claim",
             "condition": {"type": "holds_zone"},
-        }])
+        }]))
 
         end_turn(page, PHP_BASE_URL)
-        post_amount = _read_amount(alpha_id, gold_id)
-        _set_gain_rules(gold_id, None)
-        _reset_zone_holders()
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        for zid in added_zone_ids:
+            _ui_set_zone_holder(page, zid, None)
         assert_no_collected_php_errors(page)
         ctx.close()
 
@@ -234,16 +307,17 @@ class TestRessourceGainAfterClaimCountStyle:
         yield
 
     def test_alpha_post_amount_matches_rule_times_count(self):
-        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
-        The count-style holds_zone rule with Alpha holding 3 zones
-        adds 50×3 = 150 → expected post-EOT amount = 150."""
-        expected = self._rule_amount * self._zone_count
+        expected = self._rule_amount * self._expected_zone_count
         assert self._post_amount == expected, (
             f"Expected post-EOT Gold = {expected} ({self._rule_amount}×"
-            f"{self._zone_count} matches); got {self._post_amount}"
+            f"{self._expected_zone_count} matches); got {self._post_amount}"
         )
 
 
+# Still @pytest.mark.db: needs synthetic temple-tagged locations owned
+# by Alpha. Admin UI exposes location_types editor + delete + toggle
+# but has no path to create a location or set locations.controller_id.
+# Conversion deferred until a locations-ownership admin editor lands.
 @pytest.mark.db
 class TestRessourceGainOwnsLocationTypeTag:
     """`condition: {type: owns_location_type, location_type: 'temple'}` with
@@ -331,11 +405,9 @@ class TestRessourceGainOwnsLocationTypeTag:
         )
 
 
-@pytest.mark.db
 class TestRessourceGainBeforeClaimTiming:
     """`timing: 'before_claim'` fires inside the existing updateRessources
     end_step at the start of EOT (rather than the new after_claim step).
-    Pre-fixture sets amount=0, end_turn_gain=0 and Alpha holding 1 zone.
     Verifies the inside-updateRessources hook actually runs."""
 
     _rule_amount = 8
@@ -347,32 +419,24 @@ class TestRessourceGainBeforeClaimTiming:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
 
-        gold_id, alpha_id = _resolve_ids()
-        _reset_zone_holders()
-        _zero_controller_ressource(alpha_id, gold_id)
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
 
-        conn = _db_conn()
-        cur = conn.cursor()
-        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
-        target_zone_id = cur.fetchone()['id']
-        cur.execute(
-            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
-            (alpha_id, target_zone_id),
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        _set_gain_rules(gold_id, [{
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        _ui_set_zone_holder(page, zone_id, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
             "amount": self._rule_amount,
             "timing": "before_claim",
-            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
-        }])
+            "condition": {"type": "holds_zone", "zone_id": int(zone_id)},
+        }]))
 
         end_turn(page, PHP_BASE_URL)
-        post_amount = _read_amount(alpha_id, gold_id)
-        _set_gain_rules(gold_id, None)
-        _reset_zone_holders()
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        _ui_set_zone_holder(page, zone_id, None)
         assert_no_collected_php_errors(page)
         ctx.close()
 
@@ -380,13 +444,15 @@ class TestRessourceGainBeforeClaimTiming:
         yield
 
     def test_before_claim_hook_fires_with_correct_amount(self):
-        """before_claim rule on holds_zone with 1 match → +8."""
         assert self._post_amount == self._rule_amount, (
             f"Expected post-EOT Gold = {self._rule_amount} (before_claim "
             f"hook inside updateRessources); got {self._post_amount}"
         )
 
 
+# Still @pytest.mark.db: needs a synthetic location with a specific
+# locations.id owned by Alpha. No admin path to create a location or
+# set its controller_id directly. Conversion deferred.
 @pytest.mark.db
 class TestRessourceGainOwnsLocationByLocationId:
     """Regression test for the location_id column-mapping fix:
@@ -458,12 +524,11 @@ class TestRessourceGainOwnsLocationByLocationId:
         )
 
 
-@pytest.mark.db
 class TestRessourceGainNegativeAmountPenalty:
     """Per docs/configuration.md, amount=0 is a no-op but negative amounts
     are allowed and subtract from the resource — useful for configuring
-    conditional penalties. Pre-fixture starts Alpha Gold at 0; a -30 rule
-    on a held zone should produce post-EOT amount = -30."""
+    conditional penalties. Starts Alpha Gold at 0; a -30 rule on a held
+    zone should produce post-EOT amount = -30."""
 
     _rule_amount = -30
 
@@ -474,32 +539,24 @@ class TestRessourceGainNegativeAmountPenalty:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
 
-        gold_id, alpha_id = _resolve_ids()
-        _reset_zone_holders()
-        _zero_controller_ressource(alpha_id, gold_id)
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
 
-        conn = _db_conn()
-        cur = conn.cursor()
-        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
-        target_zone_id = cur.fetchone()['id']
-        cur.execute(
-            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
-            (alpha_id, target_zone_id),
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        _set_gain_rules(gold_id, [{
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        _ui_set_zone_holder(page, zone_id, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
             "amount": self._rule_amount,
             "timing": "after_claim",
-            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
-        }])
+            "condition": {"type": "holds_zone", "zone_id": int(zone_id)},
+        }]))
 
         end_turn(page, PHP_BASE_URL)
-        post_amount = _read_amount(alpha_id, gold_id)
-        _set_gain_rules(gold_id, None)
-        _reset_zone_holders()
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        _ui_set_zone_holder(page, zone_id, None)
         assert_no_collected_php_errors(page)
         ctx.close()
 
