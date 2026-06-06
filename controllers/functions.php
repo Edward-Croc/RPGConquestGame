@@ -1186,10 +1186,9 @@ function getInformationGiftsReceived($pdo, $controller_id) {
             l.turn,
             l.target_type,
             l.target_id,
-            CONCAT(c.firstname, ' ', c.lastname, ' (', f.name, ')') AS giver
+            CONCAT(c.firstname, ' ', c.lastname) AS giver
         FROM {$prefix}information_gift_logs l
         JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
-        LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
         WHERE l.recipient_controller_id = :recipient
         ORDER BY l.turn DESC, l.created_at DESC";
         $stmt = $pdo->prepare($sql);
