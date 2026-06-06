@@ -97,6 +97,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                         $htmlRessources .= '</p>';
                         $htmlRessources .= '<br>';
                     }
+                    $htmlRessources .= sprintf(
+                        '<a href="/%s/ressources/view.php" class="button is-small is-info mt-2">Voir le détail / gérer</a>',
+                        $_SESSION['FOLDER']
+                    );
                     $htmlRessources .= '</div>';
                     echo $htmlRessources;
                 }
