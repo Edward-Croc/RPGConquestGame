@@ -430,19 +430,38 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             if (empty($receivedInfoGifts)) {
                 $htmlReceived .= '<p class="has-text-grey">Aucune information reçue.</p>';
             } else {
-                $htmlReceived .= '<ul>';
-                foreach ($receivedInfoGifts as $gift) {
-                    $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
-                    $htmlReceived .= sprintf(
-                        '<li>%s %d &mdash; %s vous a transmis %s <strong>%s</strong></li>',
-                        htmlspecialchars($timeValueLabel),
-                        (int)$gift['turn'],
-                        htmlspecialchars($gift['giver']),
-                        $label,
-                        htmlspecialchars($gift['target_label'])
+                $giftsByTurn = [];
+                foreach ($receivedInfoGifts as $gift) { $giftsByTurn[(int)$gift['turn']][] = $gift; }
+                krsort($giftsByTurn);
+                $tabs = '<div class="tabs"><ul>';
+                $panels = '';
+                $first = true;
+                $idx = 0;
+                foreach ($giftsByTurn as $turn => $turnGifts) {
+                    $tabs .= sprintf(
+                        '<li%s data-tab-group="info-gifts" data-tab-index="%d"><a onclick="selectTab(\'info-gifts\', %d)">%s %d</a></li>',
+                        $first ? ' class="is-active"' : '', $idx, $idx,
+                        htmlspecialchars($timeValueLabel), $turn
                     );
+                    $items = '';
+                    foreach ($turnGifts as $gift) {
+                        $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
+                        $items .= sprintf(
+                            '<li>%s vous a transmis %s <strong>%s</strong></li>',
+                            htmlspecialchars($gift['giver']),
+                            $label,
+                            htmlspecialchars($gift['target_label'])
+                        );
+                    }
+                    $panels .= sprintf(
+                        '<div class="tab-content"%s data-tab-group="info-gifts" data-tab-index="%d"><ul>%s</ul></div>',
+                        $first ? '' : ' style="display:none"', $idx, $items
+                    );
+                    $first = false;
+                    $idx++;
                 }
-                $htmlReceived .= '</ul>';
+                $tabs .= '</ul></div>';
+                $htmlReceived .= $tabs . $panels;
             }
             $htmlReceived .= '</div>';
             echo $htmlReceived;

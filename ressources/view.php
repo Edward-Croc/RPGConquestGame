@@ -138,12 +138,31 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
                 <h3 class="title is-5">Donations reçues</h3>
 <?php if (empty($receivedGifts)): ?>
                 <p class="has-text-grey">Aucune donation reçue.</p>
-<?php else: ?>
-                <ul>
-<?php foreach ($receivedGifts as $g): ?>
-                    <li><?= htmlspecialchars($timeValueLabel) ?> <?= (int)$g['turn'] ?> &mdash; <?= htmlspecialchars($g['giver']) ?> vous a donné <strong><?= (int)$g['amount'] ?> <?= htmlspecialchars($g['ressource']) ?></strong></li>
+<?php else:
+    $giftsByTurn = [];
+    foreach ($receivedGifts as $g) { $giftsByTurn[(int)$g['turn']][] = $g; }
+    krsort($giftsByTurn);
+    $first = true;
+    $idx = 0;
+?>
+                <div class="tabs"><ul>
+<?php foreach ($giftsByTurn as $turn => $_tabRows): ?>
+                    <li<?= $first ? ' class="is-active"' : '' ?> data-tab-group="ressource-gifts" data-tab-index="<?= $idx ?>"><a onclick="selectTab('ressource-gifts', <?= $idx ?>)"><?= htmlspecialchars($timeValueLabel) ?> <?= $turn ?></a></li>
+<?php $first = false; $idx++; endforeach; ?>
+                </ul></div>
+<?php
+    $first = true;
+    $idx = 0;
+    foreach ($giftsByTurn as $turn => $tabRows):
+?>
+                <div class="tab-content"<?= $first ? '' : ' style="display:none"' ?> data-tab-group="ressource-gifts" data-tab-index="<?= $idx ?>">
+                    <ul>
+<?php foreach ($tabRows as $g): ?>
+                        <li><?= htmlspecialchars($g['giver']) ?> vous a donné <strong><?= (int)$g['amount'] ?> <?= htmlspecialchars($g['ressource']) ?></strong></li>
 <?php endforeach; ?>
-                </ul>
+                    </ul>
+                </div>
+<?php $first = false; $idx++; endforeach; ?>
 <?php endif; ?>
             </div>
 
