@@ -150,14 +150,28 @@ def as_controller(page: Page, lastname: str, base_url: str = None):
 def end_turn(page: Page, base_url: str = None):
     """Trigger end-of-turn. Page must already be logged in.
 
-    Asserts no PHP warning or fatal error in the rendered response.
+    Waits for the FINAL `<h2> <timeValue>: <new_turn> </h2>` header that
+    endTurn.php emits after all end_step processing — `load` alone fires
+    on initial stream open and the captured HTML may not include the
+    completion marker yet, so silent EOT failures (PDO exceptions
+    echoed as plain text mid-stream) would slip through.
+
+    Asserts no PHP warning, fatal error, caught-PDO error text, or
+    PHP notice in the rendered response.
     """
     url = base_url or PHP_BASE_URL
     safe_goto(page, f"{url}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=120000)
+    page.wait_for_function(
+        "() => Array.from(document.querySelectorAll('h2'))"
+        ".some(h => /\\w+\\s*:\\s*\\d+/.test(h.textContent))",
+        timeout=180000,
+    )
     html = page.content()
     assert "<b>Warning</b>" not in html, "PHP warning during end turn"
     assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
+    assert "<b>Notice</b>" not in html, "PHP notice during end turn"
+    assert "Failed:" not in html, "Caught-PDO error during end turn (look for 'Failed:' echo)"
+    assert "Stack trace" not in html, "Uncaught exception trace during end turn"
 
 
 def load_scenario_via_admin(browser, base_url: str, scenario_name: str):

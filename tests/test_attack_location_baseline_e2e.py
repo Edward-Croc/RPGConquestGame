@@ -1075,6 +1075,13 @@ class TestAttackModeDisabled:
         )
 
 
+# Still @pytest.mark.db — belt-and-buckle DB class. Verifies internal
+# queue resolution state (controller_location_attacks.success flag,
+# resolved_turn timestamp) and defender-invisible log details
+# (location_attack_logs.target_controller_id = NULL) that have no UI
+# surface even if synthetic locations + queue rows could be seeded via
+# admin endpoints.
+@pytest.mark.db
 class TestEndTurnCascadeDestroyed:
     """When a queued end-turn attack's target no longer exists at
     resolution time (cascade from prior successful attack — FK
@@ -1173,6 +1180,8 @@ class TestEndTurnCascadeDestroyed:
         )
 
 
+# Still @pytest.mark.db — see TestEndTurnCascadeDestroyed comment.
+@pytest.mark.db
 class TestMoveBaseCancelsInFlightAttacks:
     """When moveBase fires while in-flight queued end-turn attacks
     target the base, those attacks must be cancelled via
@@ -1275,6 +1284,8 @@ class TestMoveBaseCancelsInFlightAttacks:
         )
 
 
+# Still @pytest.mark.db — see TestEndTurnCascadeDestroyed comment.
+@pytest.mark.db
 class TestDuplicateQueueAttemptRejected:
     """Backend INSERT WHERE NOT EXISTS guard at attackLocation() must
     prevent duplicate (attacker, location, queued_turn) queue rows.

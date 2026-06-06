@@ -207,6 +207,26 @@ Ordre des étapes liées aux ressources :
 3. **`ressourceGainAfterClaim`** : application des règles `gain_rules` avec `timing="after_claim"`.
 4. Étapes restantes : `investigateMechanic`, `locationSearchMechanic`, etc.
 
+### Page « Ressources » et don entre factions
+
+Quand `ressource_management=TRUE`, une entrée **Ressources** s'affiche dans la barre latérale (entre *Agents* et *Les Zones*). Elle pointe vers `ressources/view.php` et propose au contrôleur actif :
+
+- un **résumé** de ses ressources (montant, montant stocké, estimation du gain au prochain tour) ;
+- la **liste des règles `gain_rules`** rendues en français avec un compte courant (« +200 par zone tenue × 3 = +600 ») ;
+- un **formulaire de don** pour transférer une quantité d'une ressource à une autre faction visible ;
+- un panneau **Donations reçues** rappelant les transferts entrants.
+
+Le don passe par `ressources/action.php` qui appelle l'helper `giftRessource()` (dans `ressources/functions.php`). La fonction :
+
+1. valide l'entrée (montant > 0, cible ≠ soi-même, cible non secrète, ressource existante, stock suffisant) ;
+2. ouvre une **transaction PDO** ;
+3. décrémente le donneur (avec un garde-fou `WHERE amount >= :amt` pour annuler en cas de course) ;
+4. incrémente le destinataire (insertion si la ligne `controller_ressources` n'existe pas encore) ;
+5. inscrit le transfert dans **`ressource_gift_logs`** (`giver_controller_id`, `recipient_controller_id`, `ressource_id`, `amount`, `turn`, `created_at`) ;
+6. commit / rollback complet sur exception.
+
+La page admin `ressources/management.php` reçoit en bas une section **Ressource Transactions** qui liste tous les enregistrements de `ressource_gift_logs` triés du plus récent au plus ancien (utile pour suivre ou enquêter sur les échanges).
+
 ## 5. Journal des dons d'informations entre factions
 
 Le système permet à un contrôleur de transmettre à une autre faction visible la connaissance d'un agent (`giftInformationAgent`) ou d'un lieu (`giftInformationLocation`) découvert. Ces actions écrivent directement dans `controllers_known_enemies` / `controller_known_locations` pour donner au destinataire la même connaissance que le donneur.
