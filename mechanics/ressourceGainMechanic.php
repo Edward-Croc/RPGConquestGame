@@ -68,9 +68,12 @@ function ressourceGainMechanic($pdo, $timing) {
                     $u->bindValue(':cid', $controllerId, PDO::PARAM_INT);
                     $u->bindValue(':rid', $ressourceId, PDO::PARAM_INT);
                     $u->execute();
+                    // rowCount=0 = controller doesn't own this ressource — legitimate
+                    // for sparse scenarios (Japon1555 etc.) where not every controller
+                    // has every ressource_config row. Echo for visibility but don't
+                    // flag as error; abort propagates and breaks the whole EOT.
                     if ($u->rowCount() === 0) {
-                        $hasErrors = true;
-                        echo __FUNCTION__."(): no controller_ressources row for c={$controllerId},r={$ressourceId}<br />";
+                        echo __FUNCTION__."(): no controller_ressources row for c={$controllerId},r={$ressourceId} (skipped)<br />";
                     }
                 } catch (PDOException $e) {
                     $hasErrors = true;
