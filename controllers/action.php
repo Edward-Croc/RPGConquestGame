@@ -126,11 +126,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
         // Gift information
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+        logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter']);
     }
     if (isset($_GET['giftInformationLocation'])){
         $target_controller_id = $_GET['target_controller_id'];
         $location_id = $_GET['location_id'];
         addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
+        logInformationGift($gameReady, $_GET['controller_id'] ?? ($_SESSION['controller']['id'] ?? 0), $target_controller_id, 'location', $location_id, $mechanics['turncounter']);
     }
 }
 

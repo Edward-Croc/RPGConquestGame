@@ -1134,3 +1134,84 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     $html .= '</div>';
     return $html;
 }
+
+/**
+ * Append a row to information_gift_logs. Silent on error; the caller's
+ * actual gift-information action has already succeeded (CKE/CKL row
+ * written) and we don't want the log failure to surface as a user-facing
+ * error.
+ *
+ * @param PDO    $pdo
+ * @param int    $giver_id
+ * @param int    $recipient_id
+ * @param string $target_type 'agent' | 'location'
+ * @param int    $target_id   worker_id or location_id
+ * @param int    $turn
+ *
+ * @return void
+ */
+function logInformationGift($pdo, $giver_id, $recipient_id, $target_type, $target_id, $turn) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}information_gift_logs
+            (giver_controller_id, recipient_controller_id, target_type, target_id, turn)
+            VALUES (:giver, :recipient, :type, :tid, :turn)");
+        $stmt->execute([
+            ':giver'     => (int)$giver_id,
+            ':recipient' => (int)$recipient_id,
+            ':type'      => $target_type,
+            ':tid'       => (int)$target_id,
+            ':turn'      => (int)$turn,
+        ]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT information_gift_logs failed: ".$e->getMessage()."<br />";
+    }
+}
+
+/**
+ * Fetch information gifts received by a controller, newest first.
+ * Each row resolves `target_label` via the appropriate table:
+ *   target_type='agent'    → worker firstname + lastname
+ *   target_type='location' → location name
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array each row: ['turn', 'giver', 'target_type', 'target_label']
+ */
+function getInformationGiftsReceived($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT
+            l.turn,
+            l.target_type,
+            l.target_id,
+            CONCAT(c.firstname, ' ', c.lastname, ' (', f.name, ')') AS giver
+        FROM {$prefix}information_gift_logs l
+        JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
+        LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
+        WHERE l.recipient_controller_id = :recipient
+        ORDER BY l.turn DESC, l.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':recipient' => (int)$controller_id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT information_gift_logs failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+
+    foreach ($rows as &$row) {
+        if ($row['target_type'] === 'agent') {
+            $w = $pdo->prepare("SELECT CONCAT(firstname, ' ', lastname) AS label FROM {$prefix}workers WHERE id = :id");
+            $w->execute([':id' => (int)$row['target_id']]);
+            $row['target_label'] = $w->fetchColumn() ?: '#'.(int)$row['target_id'];
+        } elseif ($row['target_type'] === 'location') {
+            $l = $pdo->prepare("SELECT name AS label FROM {$prefix}locations WHERE id = :id");
+            $l->execute([':id' => (int)$row['target_id']]);
+            $row['target_label'] = $l->fetchColumn() ?: '#'.(int)$row['target_id'];
+        } else {
+            $row['target_label'] = '#'.(int)$row['target_id'];
+        }
+    }
+    return $rows;
+}

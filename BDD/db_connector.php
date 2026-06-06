@@ -202,6 +202,7 @@ function destroyAllTables($pdo) {
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $tables = array(
+                'information_gift_logs',
                 'controller_ressources',
                 'ressources_config',
                 'controller_location_attacks',
