@@ -227,6 +227,33 @@ Le don passe par `ressources/action.php` qui appelle l'helper `giftRessource()` 
 
 La page admin `ressources/management.php` reçoit en bas une section **Ressource Transactions** qui liste tous les enregistrements de `ressource_gift_logs` triés du plus récent au plus ancien (utile pour suivre ou enquêter sur les échanges).
 
-## 5. Débogage
+## 5. Journal des dons d'informations entre factions
+
+Le système permet à un contrôleur de transmettre à une autre faction visible la connaissance d'un agent (`giftInformationAgent`) ou d'un lieu (`giftInformationLocation`) découvert. Ces actions écrivent directement dans `controllers_known_enemies` / `controller_known_locations` pour donner au destinataire la même connaissance que le donneur.
+
+Pour permettre le suivi et l'enquête sur ces échanges, chaque don exécuté par le chemin joueur (`controllers/action.php`) écrit aussi une ligne dans `information_gift_logs` via l'helper `logInformationGift()` :
+
+- `giver_controller_id` — contrôleur qui a fait le don ;
+- `recipient_controller_id` — contrôleur destinataire ;
+- `target_type` — `'agent'` ou `'location'` ;
+- `target_id` — identifiant dans la table `workers` ou `locations` ;
+- `turn` — tour courant ;
+- `created_at` — horodatage.
+
+**Note :** le chemin admin (`controllers/management.php`) qui permet au game master de pré-attribuer des connaissances n'écrit *pas* de log — il ne représente pas un échange entre joueurs.
+
+### Panneau « Informations reçues » sur Ma Faction
+
+`controllers/view.php` rend un panneau qui liste les dons reçus par le contrôleur actif via `getInformationGiftsReceived()`. Le helper résout `target_label` via un JOIN sur `workers` (`firstname + lastname`) ou `locations` (`name`). Format affiché :
+
+> <timeValue> <turn> — <giver_name> (<faction>) vous a transmis l'agent / le lieu <target_label>
+
+(le préfixe est la valeur configurée par `timeValue`, par exemple « Tour 12 » ou « Trimestre 12 »)
+
+### Section admin « Information Transactions »
+
+`controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
+
+## 6. Débogage
 
 *Section à compléter dans un commit suivant.* Couvrira : `DEBUG`, `DEBUG_REPORT`, `DEBUG_ATTACK`, `DEBUG_TRANSFORM`, `ACTIVATE_TESTS`.

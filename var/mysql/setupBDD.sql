@@ -173,6 +173,18 @@ CREATE TABLE {prefix}location_attack_logs (
     FOREIGN KEY (attacker_id) REFERENCES {prefix}controllers (id) -- Link to controllers table
 );
 
+CREATE TABLE {prefix}information_gift_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    giver_controller_id INT NOT NULL,
+    recipient_controller_id INT NOT NULL,
+    target_type VARCHAR(16) NOT NULL,
+    target_id INT NOT NULL,
+    turn INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (giver_controller_id) REFERENCES {prefix}controllers (id),
+    FOREIGN KEY (recipient_controller_id) REFERENCES {prefix}controllers (id)
+);
+
 -- Prepare the Worker Origins
 CREATE TABLE {prefix}worker_origins (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -171,6 +171,16 @@ CREATE TABLE {prefix}location_attack_logs (
     FOREIGN KEY (attacker_id) REFERENCES {prefix}controllers (id) -- Link to controllers table
 );
 
+CREATE TABLE {prefix}information_gift_logs (
+    id SERIAL PRIMARY KEY,
+    giver_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    recipient_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    target_type VARCHAR(16) NOT NULL,
+    target_id INT NOT NULL,
+    turn INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Prepare the Worker Origins
 CREATE TABLE {prefix}worker_origins (
     id SERIAL PRIMARY KEY,

@@ -206,3 +206,63 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
     </table>
     <?php echo buildGiveKnowledgeHTML($gameReady, 'admin'); ?>
 </div>
+<?php
+$infoTxs = $gameReady->query(
+    "SELECT
+        l.turn,
+        l.target_type,
+        l.target_id,
+        l.created_at,
+        CONCAT(g.firstname, ' ', g.lastname) AS giver_name,
+        gf.name AS giver_faction,
+        CONCAT(r.firstname, ' ', r.lastname) AS recipient_name,
+        rf.name AS recipient_faction
+     FROM {$prefix}information_gift_logs l
+     JOIN {$prefix}controllers g ON l.giver_controller_id = g.id
+     LEFT JOIN {$prefix}factions gf ON g.faction_id = gf.ID
+     JOIN {$prefix}controllers r ON l.recipient_controller_id = r.id
+     LEFT JOIN {$prefix}factions rf ON r.faction_id = rf.ID
+     ORDER BY l.turn DESC, l.created_at DESC"
+)->fetchAll(PDO::FETCH_ASSOC);
+foreach ($infoTxs as &$tx) {
+    if ($tx['target_type'] === 'agent') {
+        $s = $gameReady->prepare("SELECT CONCAT(firstname, ' ', lastname) AS lbl FROM {$prefix}workers WHERE id = :id");
+        $s->execute([':id' => (int)$tx['target_id']]);
+        $tx['target_label'] = $s->fetchColumn() ?: '#'.(int)$tx['target_id'];
+    } elseif ($tx['target_type'] === 'location') {
+        $s = $gameReady->prepare("SELECT name AS lbl FROM {$prefix}locations WHERE id = :id");
+        $s->execute([':id' => (int)$tx['target_id']]);
+        $tx['target_label'] = $s->fetchColumn() ?: '#'.(int)$tx['target_id'];
+    } else {
+        $tx['target_label'] = '#'.(int)$tx['target_id'];
+    }
+}
+unset($tx);
+?>
+<div class='management'>
+    <h1>Information Transactions</h1>
+<?php if (empty($infoTxs)): ?>
+    <p>Aucune transaction enregistrée.</p>
+<?php else: ?>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Turn</th>
+            <th>Date</th>
+            <th>Giver</th>
+            <th>Recipient</th>
+            <th>Type</th>
+            <th>Target</th>
+        </tr>
+<?php foreach ($infoTxs as $tx): ?>
+        <tr>
+            <td><?= (int)$tx['turn'] ?></td>
+            <td><?= htmlspecialchars($tx['created_at']) ?></td>
+            <td><?= htmlspecialchars($tx['giver_name'].' ('.($tx['giver_faction'] ?? '—').')') ?></td>
+            <td><?= htmlspecialchars($tx['recipient_name'].' ('.($tx['recipient_faction'] ?? '—').')') ?></td>
+            <td><?= htmlspecialchars($tx['target_type']) ?></td>
+            <td><?= htmlspecialchars($tx['target_label']) ?></td>
+        </tr>
+<?php endforeach; ?>
+    </table>
+<?php endif; ?>
+</div>
