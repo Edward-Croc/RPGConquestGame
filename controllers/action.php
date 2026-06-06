@@ -113,26 +113,33 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     $mechanics = getMechanics($gameReady);
 
     if (isset($_GET['giftInformationAgent'])){
-        //  Get Turn Number
-        $controller_id = $_GET['controller_id'];
-        $target_controller_id = $_GET['target_controller_id'];
-        $enemy_worker_id = $_GET['enemy_worker_id'];
+        $controller_id = $_GET['controller_id'] ?? '';
+        $target_controller_id = $_GET['target_controller_id'] ?? '';
+        $enemy_worker_id = $_GET['enemy_worker_id'] ?? '';
 
-        // Get zone from controllers_known_enemies where controller_id = $controller_id and discovered_worker_id = $enemyWorkersSelect
-        $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
-        $stmt = $gameReady->prepare($sql);
-        $stmt->execute([$controller_id, $enemy_worker_id]);
-        $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
+        if (empty($controller_id) || empty($target_controller_id) || empty($enemy_worker_id)) {
+            echo '<div class="notification is-warning">Sélection incomplète : faction ou agent manquant.</div>';
+        } else {
+            $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+            $stmt = $gameReady->prepare($sql);
+            $stmt->execute([$controller_id, $enemy_worker_id]);
+            $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
 
-        // Gift information
-        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
-        logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter']);
+            addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+            logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter']);
+        }
     }
     if (isset($_GET['giftInformationLocation'])){
-        $target_controller_id = $_GET['target_controller_id'];
-        $location_id = $_GET['location_id'];
-        addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
-        logInformationGift($gameReady, $_GET['controller_id'] ?? ($_SESSION['controller']['id'] ?? 0), $target_controller_id, 'location', $location_id, $mechanics['turncounter']);
+        $target_controller_id = $_GET['target_controller_id'] ?? '';
+        $location_id = $_GET['location_id'] ?? '';
+        $giver_id = $_GET['controller_id'] ?? ($_SESSION['controller']['id'] ?? '');
+
+        if (empty($target_controller_id) || empty($location_id) || empty($giver_id)) {
+            echo '<div class="notification is-warning">Sélection incomplète : faction ou lieu manquant.</div>';
+        } else {
+            addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
+            logInformationGift($gameReady, $giver_id, $target_controller_id, 'location', $location_id, $mechanics['turncounter']);
+        }
     }
 }
 

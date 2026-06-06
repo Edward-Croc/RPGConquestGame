@@ -1034,7 +1034,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     $enemyWorkersSelect = sprintf("
         <div class='control for-select'>
             <div class='select is-fullwidth'>
-                <select id='enemyWorkersSelect' name='enemy_worker_id' >
+                <select id='enemyWorkersSelect' name='enemy_worker_id' required>
                     <option value=\"\">Sélectionner un agent</option>
                     %s
                 </select>
@@ -1096,7 +1096,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     $knownLocationsSelect = sprintf("
         <div class='control for-select'>
             <div class='select is-fullwidth'>
-                <select id='locationsSelect' name='location_id' >
+                <select id='locationsSelect' name='location_id' required>
                     <option value=\"\">Sélectionner un lieu</option>
                     %s
                 </select>
