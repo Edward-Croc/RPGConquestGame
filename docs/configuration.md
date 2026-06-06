@@ -226,7 +226,9 @@ Pour permettre le suivi et l'enquête sur ces échanges, chaque don exécuté pa
 
 `controllers/view.php` rend un panneau qui liste les dons reçus par le contrôleur actif via `getInformationGiftsReceived()`. Le helper résout `target_label` via un JOIN sur `workers` (`firstname + lastname`) ou `locations` (`name`). Format affiché :
 
-> T<turn> — <giver_name> (<faction>) vous a transmis l'agent / le lieu <target_label>
+> <timeValue> <turn> — <giver_name> (<faction>) vous a transmis l'agent / le lieu <target_label>
+
+(le préfixe est la valeur configurée par `timeValue`, par exemple « Tour 12 » ou « Trimestre 12 »)
 
 ### Section admin « Information Transactions »
 
