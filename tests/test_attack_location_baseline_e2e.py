@@ -1075,6 +1075,7 @@ class TestAttackModeDisabled:
         )
 
 
+@pytest.mark.db
 class TestEndTurnCascadeDestroyed:
     """When a queued end-turn attack's target no longer exists at
     resolution time (cascade from prior successful attack — FK
@@ -1173,6 +1174,7 @@ class TestEndTurnCascadeDestroyed:
         )
 
 
+@pytest.mark.db
 class TestMoveBaseCancelsInFlightAttacks:
     """When moveBase fires while in-flight queued end-turn attacks
     target the base, those attacks must be cancelled via
@@ -1275,6 +1277,7 @@ class TestMoveBaseCancelsInFlightAttacks:
         )
 
 
+@pytest.mark.db
 class TestDuplicateQueueAttemptRejected:
     """Backend INSERT WHERE NOT EXISTS guard at attackLocation() must
     prevent duplicate (attacker, location, queued_turn) queue rows.

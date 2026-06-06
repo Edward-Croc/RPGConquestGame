@@ -130,6 +130,7 @@ def _zero_controller_ressource(controller_id, ressource_id):
     conn.close()
 
 
+@pytest.mark.db
 class TestRessourceGainAfterClaimSpecificZone:
     """`condition: {type: holds_zone, zone_id: Z}` with Alpha holding Z
     must add exactly `amount` to Alpha's Gold after EOT (binary match)."""
@@ -184,6 +185,7 @@ class TestRessourceGainAfterClaimSpecificZone:
         )
 
 
+@pytest.mark.db
 class TestRessourceGainAfterClaimCountStyle:
     """`condition: {type: holds_zone}` (no zone_id) with Alpha holding 3
     zones must add `amount × 3` to Alpha's Gold after EOT (count-style)."""
@@ -242,6 +244,7 @@ class TestRessourceGainAfterClaimCountStyle:
         )
 
 
+@pytest.mark.db
 class TestRessourceGainOwnsLocationTypeTag:
     """`condition: {type: owns_location_type, location_type: 'temple'}` with
     Alpha owning 2 synthetic temple-tagged locations and 1 non-tagged location
@@ -328,6 +331,7 @@ class TestRessourceGainOwnsLocationTypeTag:
         )
 
 
+@pytest.mark.db
 class TestRessourceGainBeforeClaimTiming:
     """`timing: 'before_claim'` fires inside the existing updateRessources
     end_step at the start of EOT (rather than the new after_claim step).
@@ -383,6 +387,7 @@ class TestRessourceGainBeforeClaimTiming:
         )
 
 
+@pytest.mark.db
 class TestRessourceGainOwnsLocationByLocationId:
     """Regression test for the location_id column-mapping fix:
     `owns_location_type` with `location_id: N` must match the location
@@ -453,6 +458,7 @@ class TestRessourceGainOwnsLocationByLocationId:
         )
 
 
+@pytest.mark.db
 class TestRessourceGainNegativeAmountPenalty:
     """Per docs/configuration.md, amount=0 is a no-op but negative amounts
     are allowed and subtract from the resource — useful for configuring
