@@ -26,6 +26,11 @@ $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 ?>
 <div class="management">
     <h1>Ressources de la faction</h1>
+<?php if (!empty($_GET['feedback']) && in_array($_GET['feedback'], ['success', 'error'], true)): ?>
+    <div class="notification <?= $_GET['feedback'] === 'success' ? 'is-success' : 'is-danger' ?>">
+        <?= htmlspecialchars($_GET['msg'] ?? '') ?>
+    </div>
+<?php endif; ?>
     <div class="content columns">
 
         <div class="column is-two-thirds">
