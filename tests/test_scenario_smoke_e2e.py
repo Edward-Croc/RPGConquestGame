@@ -71,9 +71,11 @@ def _assert_eot_clean(html, context=""):
 
 
 def _scrape_new_turn(html):
-    """endTurn.php renders `<h2> <timeValue>: <new_turn> </h2>`."""
-    m = re.search(r'<h2>\s*\w+:\s*(\d+)\s*</h2>', html)
-    return int(m.group(1)) if m else None
+    """endTurn.php emits several <h2> tags during EOT processing; the
+    "new turn" header is the LAST <h2> matching `<word>: <digits>` (e.g.
+    `<h2> Semaine: 2 </h2>`)."""
+    matches = re.findall(r'<h2>\s*(\S+?)\s*:\s*(\d+)\s*</h2>', html)
+    return int(matches[-1][1]) if matches else None
 
 
 class TestJapon1555CSVEndTurnSmoke:
@@ -91,7 +93,11 @@ class TestJapon1555CSVEndTurnSmoke:
 
     def test_turn_advanced(self):
         new_turn = _scrape_new_turn(self._html)
-        assert new_turn is not None, "endTurn.php did not render the turn label"
+        if new_turn is None:
+            h2s = re.findall(r'<h2>[^<]*</h2>', self._html)
+            raise AssertionError(
+                f"Japon1555 endTurn.php did not render a turn label; h2 tags found: {h2s[:6]}"
+            )
         assert new_turn >= 1, f"Expected new turn >= 1; got {new_turn}"
 
 
