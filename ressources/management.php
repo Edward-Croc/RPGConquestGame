@@ -173,3 +173,50 @@ require_once '../base/baseHTML.php';
         <button type="submit" name="add_ressource">Add Ressource</button>
     </form>
  </div>
+<?php
+$transactions = $gameReady->query(
+    "SELECT
+        l.turn,
+        l.amount,
+        l.created_at,
+        CONCAT(g.firstname, ' ', g.lastname) AS giver_name,
+        gf.name AS giver_faction,
+        CONCAT(r.firstname, ' ', r.lastname) AS recipient_name,
+        rf.name AS recipient_faction,
+        rc.ressource_name AS ressource
+     FROM {$prefix}ressource_gift_logs l
+     JOIN {$prefix}controllers g ON l.giver_controller_id = g.id
+     LEFT JOIN {$prefix}factions gf ON g.faction_id = gf.ID
+     JOIN {$prefix}controllers r ON l.recipient_controller_id = r.id
+     LEFT JOIN {$prefix}factions rf ON r.faction_id = rf.ID
+     JOIN {$prefix}ressources_config rc ON l.ressource_id = rc.id
+     ORDER BY l.turn DESC, l.created_at DESC"
+)->fetchAll(PDO::FETCH_ASSOC);
+?>
+<div class='management'>
+    <h1>Ressource Transactions</h1>
+<?php if (empty($transactions)): ?>
+    <p>Aucune transaction enregistrée.</p>
+<?php else: ?>
+    <table border="1" cellpadding="5">
+        <tr>
+            <th>Turn</th>
+            <th>Date</th>
+            <th>Giver</th>
+            <th>Recipient</th>
+            <th>Ressource</th>
+            <th>Amount</th>
+        </tr>
+<?php foreach ($transactions as $tx): ?>
+        <tr>
+            <td><?= (int)$tx['turn'] ?></td>
+            <td><?= htmlspecialchars($tx['created_at']) ?></td>
+            <td><?= htmlspecialchars($tx['giver_name'].' ('.($tx['giver_faction'] ?? '—').')') ?></td>
+            <td><?= htmlspecialchars($tx['recipient_name'].' ('.($tx['recipient_faction'] ?? '—').')') ?></td>
+            <td><?= htmlspecialchars($tx['ressource']) ?></td>
+            <td><?= (int)$tx['amount'] ?></td>
+        </tr>
+<?php endforeach; ?>
+    </table>
+<?php endif; ?>
+</div>
