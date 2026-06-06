@@ -28,7 +28,7 @@ if (isset($_POST['toggle_destruction'])) {
 
 // Get all locations
 $locations = $gameReady->query("
-    SELECT l.id, l.name, l.discovery_diff, l.description, l.activate_json, z.name AS zone_name
+    SELECT l.id, l.name, l.discovery_diff, l.description, l.activate_json, l.location_types, z.name AS zone_name
     FROM {$prefix}locations AS l
     LEFT JOIN {$prefix}zones AS z ON l.zone_id = z.id
     ORDER BY l.id, z.id
@@ -58,6 +58,8 @@ echo '
 
         $toggleUpdateLocation = '';
         $activate_json = json_decode($loc['activate_json'], true);
+        $locationTypes = json_decode($loc['location_types'] ?? '[]', true);
+        $locationTypesText = is_array($locationTypes) && !empty($locationTypes) ? implode(', ', $locationTypes) : '—';
         if (!empty($activate_json['update_location'])) {
             $toggleUpdateLocation = sprintf(
                 '<!-- Action toggle destruction/repair -->
@@ -75,7 +77,7 @@ echo '
             <p>
                 <h5 onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'block\':\'none\';">Description</a>:
                 </h5>
-                <span style="display:none;"> (%6$s) %4$s </span>
+                <span style="display:none;"> (%6$s) [types: %7$s] %4$s </span>
             </p>
             <p>
                 <h5 onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'block\':\'none\';">Actions</a>:
@@ -96,7 +98,8 @@ echo '
             $loc['discovery_diff'],
             $loc['description'],
             $toggleUpdateLocation,
-            $loc['zone_name']
+            $loc['zone_name'],
+            htmlspecialchars($locationTypesText)
         );
         foreach ($controllers as $ctrl):
             $isKnown = isset($knownMap[$loc['id']][$ctrl['id']]);

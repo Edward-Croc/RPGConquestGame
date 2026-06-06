@@ -62,6 +62,7 @@ require_once '../base/baseHTML.php';
                 <th>Location Repaire Cost</th>
                 <th>Servant First Come Cost</th>
                 <th>Servant Recruitment Cost</th>
+                <th>Gain Rules (JSON)</th>
                 <th>Actions</th>
     <?php foreach ($ressourcesConfig as $ressourceConfig) {
         echo sprintf('<tr>
@@ -75,7 +76,8 @@ require_once '../base/baseHTML.php';
             <td>%9$s</td>
             <td>%10$s</td>
             <td>%11$s</td>
-            <td></td>',
+            <td>%12$s</td>
+        </tr>',
             $ressourceConfig['id'],
             $ressourceConfig['ressource_name'],
             $ressourceConfig['presentation'],
@@ -86,7 +88,8 @@ require_once '../base/baseHTML.php';
             $ressourceConfig['base_moving_cost'],
             $ressourceConfig['location_repaire_cost'],
             $ressourceConfig['servant_first_come_cost'],
-            $ressourceConfig['servant_recruitment_cost']
+            $ressourceConfig['servant_recruitment_cost'],
+            $ressourceConfig['gain_rules']
         );
     }
     ?>

@@ -6,6 +6,7 @@ require_once '../mechanics/claimMechanic.php';
 require_once '../mechanics/investigateMechanic.php';
 require_once '../mechanics/locationAttackMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
+require_once '../mechanics/ressourceGainMechanic.php';
 
 if (!defined('WORKER_ACTION_CHOICES_ALLOWED')) {
     define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'captured', 'dead', 'trace']);

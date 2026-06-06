@@ -1,0 +1,508 @@
+"""Playwright E2E tests for Issue #11 — ressource gain rules.
+
+`mechanics/ressourceGainMechanic.php` fires at two end-turn moments:
+- inside the existing `updateRessources` step (`before_claim` timing)
+- in a new `ressourceGainAfterClaim` step (`after_claim` timing)
+
+Each rule's `condition` is evaluated against zones/locations state to
+produce an amount × COUNT(matches) gain per matching controller.
+
+Each fixture resets Alpha's Gold row to amount=0, end_turn_gain=0
+before EOT so the gain-rule arithmetic is isolated from the existing
+updateRessources reset/carry behaviour (which has its own quirks
+around BOOLEAN-as-int handling — out of scope for Issue #11).
+
+Post-EOT expected amount = rule_gain × match_count.
+
+Run:
+    python3 -m pytest tests/test_ressource_gain_e2e.py -v
+"""
+import json
+
+import pymysql
+import pytest
+
+from conftest import (
+    GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
+    PHP_BASE_URL, ensure_gm_login,
+)
+from helpers import (
+    DB_AVAILABLE, end_turn, load_minimal_data, safe_goto,
+    register_php_error_listener, assert_no_collected_php_errors,
+)
+
+
+def _db_conn():
+    return pymysql.connect(
+        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
+        password=MYSQL_PASSWORD, database=MYSQL_DB,
+        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
+    )
+
+
+@pytest.fixture(scope="session")
+def base_url():
+    return PHP_BASE_URL
+
+
+@pytest.fixture(scope="module", autouse=True)
+def load_test_config(browser):
+    if DB_AVAILABLE:
+        load_minimal_data()
+    context = browser.new_context()
+    page = context.new_page()
+    ensure_gm_login(page, PHP_BASE_URL)
+    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+    page.wait_for_load_state("networkidle")
+    page.locator("select[name='config_name']").select_option("TestConfig")
+    page.locator("input[name='submit'][value='Submit']").click()
+    page.wait_for_timeout(5000)
+    page.wait_for_load_state("load", timeout=90000)
+    context.close()
+    yield
+
+
+def _resolve_ids():
+    """Return (gold_id, alpha_id) from TestConfig."""
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT id FROM `{GAME_PREFIX}ressources_config` WHERE ressource_name='Gold' LIMIT 1")
+    gold_id = cur.fetchone()['id']
+    cur.execute(f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname='Alpha' LIMIT 1")
+    alpha_id = cur.fetchone()['id']
+    cur.close()
+    conn.close()
+    return gold_id, alpha_id
+
+
+def _reset_zone_holders():
+    """Wipe holder/claimer on all zones before a test seeds its own."""
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE `{GAME_PREFIX}zones` "
+        f"SET holder_controller_id = NULL, claimer_controller_id = NULL"
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def _set_gain_rules(ressource_id, rules):
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE `{GAME_PREFIX}ressources_config` SET gain_rules = %s WHERE id = %s",
+        (json.dumps(rules) if rules is not None else None, ressource_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def _read_amount(controller_id, ressource_id):
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        f"SELECT amount FROM `{GAME_PREFIX}controller_ressources` "
+        f"WHERE controller_id = %s AND ressource_id = %s LIMIT 1",
+        (controller_id, ressource_id),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['amount'] if row else None
+
+
+def _zero_controller_ressource(controller_id, ressource_id):
+    """Reset amount/amount_stored/end_turn_gain to 0 so post-EOT amount
+    is purely the gain-rule contribution."""
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE `{GAME_PREFIX}controller_ressources` "
+        f"SET amount = 0, amount_stored = 0, end_turn_gain = 0 "
+        f"WHERE controller_id = %s AND ressource_id = %s",
+        (controller_id, ressource_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+class TestRessourceGainAfterClaimSpecificZone:
+    """`condition: {type: holds_zone, zone_id: Z}` with Alpha holding Z
+    must add exactly `amount` to Alpha's Gold after EOT (binary match)."""
+
+    _rule_amount = 7
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        target_zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
+            (alpha_id, target_zone_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_post_amount_matches_rule(self):
+        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
+        The 1× holds_zone rule with Alpha holding the target zone
+        adds 7 → expected post-EOT amount = 7."""
+        assert self._post_amount == self._rule_amount, (
+            f"Expected post-EOT Gold = {self._rule_amount}; got {self._post_amount}"
+        )
+
+
+class TestRessourceGainAfterClaimCountStyle:
+    """`condition: {type: holds_zone}` (no zone_id) with Alpha holding 3
+    zones must add `amount × 3` to Alpha's Gold after EOT (count-style)."""
+
+    _rule_amount = 50
+    _zone_count = 3
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` ORDER BY id ASC LIMIT %s", (self._zone_count,))
+        zoneIds = [r['id'] for r in cur.fetchall()]
+        for zoneId in zoneIds:
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
+                (alpha_id, zoneId),
+            )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "holds_zone"},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_post_amount_matches_rule_times_count(self):
+        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
+        The count-style holds_zone rule with Alpha holding 3 zones
+        adds 50×3 = 150 → expected post-EOT amount = 150."""
+        expected = self._rule_amount * self._zone_count
+        assert self._post_amount == expected, (
+            f"Expected post-EOT Gold = {expected} ({self._rule_amount}×"
+            f"{self._zone_count} matches); got {self._post_amount}"
+        )
+
+
+class TestRessourceGainOwnsLocationTypeTag:
+    """`condition: {type: owns_location_type, location_type: 'temple'}` with
+    Alpha owning 2 synthetic temple-tagged locations and 1 non-tagged location
+    must add `amount × 2` (tag-filtered count) to Alpha's Gold."""
+
+    _rule_amount = 30
+    _temple_count = 2  # 2 tagged locations created
+    _other_count = 1   # 1 untagged location created (should NOT count)
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        # Create 2 temple-tagged locations + 1 untagged, all owned by Alpha
+        synthetic_ids = []
+        for i in range(self._temple_count):
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}locations` "
+                f"(name, description, zone_id, controller_id, can_be_destroyed, is_base, location_types) "
+                f"VALUES (%s, %s, %s, %s, 0, 0, %s)",
+                (f"SyntheticTempleA{i}", "test", zone_id, alpha_id, '["temple"]'),
+            )
+            synthetic_ids.append(cur.lastrowid)
+        for i in range(self._other_count):
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}locations` "
+                f"(name, description, zone_id, controller_id, can_be_destroyed, is_base, location_types) "
+                f"VALUES (%s, %s, %s, %s, 0, 0, %s)",
+                (f"SyntheticPlainA{i}", "test", zone_id, alpha_id, None),
+            )
+            synthetic_ids.append(cur.lastrowid)
+        conn.commit()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "owns_location_type", "location_type": "temple"},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        # Cleanup: delete CKL rows first (FK), then synthetic locations.
+        placeholders = ",".join(["%s"] * len(synthetic_ids))
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}controller_known_locations` WHERE location_id IN ({placeholders})",
+            synthetic_ids,
+        )
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id IN ({placeholders})",
+            synthetic_ids,
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_post_amount_matches_temple_tagged_count(self):
+        """Pre-fixture sets Alpha Gold to amount=0, end_turn_gain=0.
+        Alpha owns 2 temple-tagged + 1 untagged locations. Filter
+        location_type='temple' matches the 2 temples; untagged skipped.
+        Expected: 30 × 2 = 60."""
+        expected = self._rule_amount * self._temple_count
+        assert self._post_amount == expected, (
+            f"Expected post-EOT Gold = {expected} ({self._rule_amount}×"
+            f"{self._temple_count} temple matches; untagged location ignored); "
+            f"got {self._post_amount}"
+        )
+
+
+class TestRessourceGainBeforeClaimTiming:
+    """`timing: 'before_claim'` fires inside the existing updateRessources
+    end_step at the start of EOT (rather than the new after_claim step).
+    Pre-fixture sets amount=0, end_turn_gain=0 and Alpha holding 1 zone.
+    Verifies the inside-updateRessources hook actually runs."""
+
+    _rule_amount = 8
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        target_zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
+            (alpha_id, target_zone_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "before_claim",
+            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_before_claim_hook_fires_with_correct_amount(self):
+        """before_claim rule on holds_zone with 1 match → +8."""
+        assert self._post_amount == self._rule_amount, (
+            f"Expected post-EOT Gold = {self._rule_amount} (before_claim "
+            f"hook inside updateRessources); got {self._post_amount}"
+        )
+
+
+class TestRessourceGainOwnsLocationByLocationId:
+    """Regression test for the location_id column-mapping fix:
+    `owns_location_type` with `location_id: N` must match the location
+    whose `locations.id = N` (not a hypothetical `location_id` column).
+    Binary match → +amount × 1."""
+
+    _rule_amount = 11
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticByIdTarget', 'test', %s, %s, 0, 0)",
+            (zone_id, alpha_id),
+        )
+        synthetic_id = cur.lastrowid
+        conn.commit()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "owns_location_type", "location_id": synthetic_id},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        # Cleanup: delete CKL rows first (FK), then synthetic location.
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}controller_known_locations` WHERE location_id = %s",
+            (synthetic_id,),
+        )
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id = %s",
+            (synthetic_id,),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_location_id_filter_matches_specific_location(self):
+        """location_id filter resolves to locations.id at SQL build time
+        (special-cased away from the auto l.{key} = ? pattern). Match
+        is binary → +11."""
+        assert self._post_amount == self._rule_amount, (
+            f"Expected post-EOT Gold = {self._rule_amount} (location_id "
+            f"binary match); got {self._post_amount}"
+        )
+
+
+class TestRessourceGainNegativeAmountPenalty:
+    """Per docs/configuration.md, amount=0 is a no-op but negative amounts
+    are allowed and subtract from the resource — useful for configuring
+    conditional penalties. Pre-fixture starts Alpha Gold at 0; a -30 rule
+    on a held zone should produce post-EOT amount = -30."""
+
+    _rule_amount = -30
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        gold_id, alpha_id = _resolve_ids()
+        _reset_zone_holders()
+        _zero_controller_ressource(alpha_id, gold_id)
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        target_zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET holder_controller_id = %s WHERE id = %s",
+            (alpha_id, target_zone_id),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        _set_gain_rules(gold_id, [{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "condition": {"type": "holds_zone", "zone_id": target_zone_id},
+        }])
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _read_amount(alpha_id, gold_id)
+        _set_gain_rules(gold_id, None)
+        _reset_zone_holders()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_negative_amount_subtracts(self):
+        """Negative amount (-30) × 1 match = -30 net penalty."""
+        assert self._post_amount == self._rule_amount, (
+            f"Expected post-EOT Gold = {self._rule_amount} (penalty "
+            f"semantics, amount < 0); got {self._post_amount}"
+        )

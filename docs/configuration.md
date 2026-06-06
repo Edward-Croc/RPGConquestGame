@@ -119,7 +119,93 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
 ## 4. Ressources
 
-*Section à compléter dans un commit suivant.* Couvrira : `ressource_management` et le format de la table `ressources_config`.
+Cette section décrit le système économique : coûts d'action, gain forfaitaire de fin de tour, puis gains conditionnels selon l'état du jeu.
+
+**`ressource_management`** (= `TRUE`) — Active tout le module. Si `FALSE`, aucun coût n'est prélevé et aucun gain n'est distribué en fin de tour. Pratique pour les scénarios sans économie.
+
+### Famille `ressources_config` — définition des ressources du scénario
+
+La table `{prefix}ressources_config` définit les types de ressources disponibles. Dans la plupart des scénarios, on utilise une seule ressource (ex. Koku pour Japon1555, Gold pour TestConfig).
+
+- **`ressource_name`** — nom affiché (« Koku », « Gold »).
+- **`presentation`** + **`stored_text`** — textes UI avec placeholders `%s %s` (montant + nom de la ressource).
+- **`is_rollable`** (= `0` ou `1`) — si `1`, `amount` est conservé d'un tour à l'autre ; si `0`, `amount` est remis à `0` en fin de tour avant `end_turn_gain` et `gain_rules`.
+- **`is_stored`** (= `0` ou `1`) — si `1`, le `amount` du tour précédent est ajouté à `amount_stored` (réserve), ce qui sépare budget courant et stock accumulé.
+- **`*_cost`** (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`, `servant_first_come_cost`, `servant_recruitment_cost`) — coût soustrait à `amount` quand l'action correspondante est lancée.
+- **`gain_rules`** — colonne JSON contenant les règles de gain conditionnel (détaillées ci-dessous).
+
+### Famille `controller_ressources` — état par contrôleur
+
+Une ligne par couple `(controller_id, ressource_id)` (combinaison unique). Chaque ligne contient :
+- **`amount`** — solde courant.
+- **`amount_stored`** — réserve cumulative (utilisée surtout si `is_stored=1`).
+- **`end_turn_gain`** — gain forfaitaire ajouté à `amount` à chaque fin de tour (avant les `gain_rules`).
+
+### Famille `gain_rules` — gains conditionnels de fin de tour
+
+Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évaluées pour chaque contrôleur. Chaque règle ajoute `amount × COUNT(matches)`.
+
+**Exemple minimal :**
+
+```json
+{"amount": 100, "timing": "after_claim", "condition": {"type": "holds_zone"}}
+```
+
+- **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
+- **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
+- **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
+
+**Types de condition implémentés :**
+
+- **`holds_zone`** — match quand le contrôleur est `zones.holder_controller_id` ; filtre optionnel : `zone_id`.
+- **`claims_zone`** — match quand le contrôleur est `zones.claimer_controller_id` ; filtre optionnel : `zone_id`.
+- **`owns_location_type`** — match quand le contrôleur est `locations.controller_id`, puis filtrage optionnel AND-combiné via `is_base`, `can_be_destroyed`, `zone_id`, `location_id`, `location_type`.
+
+**`holds_zone` vs `claims_zone` :** avec contrôleurs secrets / doubles agents, le propriétaire réel (`holder`) peut différer de la bannière visible (`claimer`). Choisir la condition selon ce que la récompense doit refléter.
+
+**Agrégation binaire vs comptée :**
+
+- `{type: "holds_zone", zone_id: 5}` → binaire : gain 1 fois si la zone 5 est tenue.
+- `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
+- `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
+- `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
+
+**Filtres whitelistés pour `owns_location_type`** (tous optionnels, AND-combinés) :
+
+- **`is_base`** (`bool`) — `locations.is_base = 1`.
+- **`can_be_destroyed`** (`bool`) — `locations.can_be_destroyed = 1`.
+- **`zone_id`** (`int`) — lieu dans une zone spécifique.
+- **`location_id`** (`int`) — lieu précis par ID.
+- **`location_type`** (`string`) — lieu contenant ce tag dans `locations.location_types` (JSON array).
+
+Les clés hors whitelist sont ignorées silencieusement. Les règles mal formées (JSON invalide, `condition.type` inconnu, `amount` absent) sont ignorées et loggées à l'exécution.
+
+### `locations.location_types` — tags multi-valués
+
+Colonne JSON dans `{prefix}locations` contenant un tableau de tags textuels :
+
+```json
+["temple"]
+["fortress"]
+["temple", "fortress"]
+```
+
+Ces tags sont exploités par `owns_location_type` via le filtre `location_type`. Un même lieu peut cumuler plusieurs tags (ex. monastère fortifié = `["temple", "fortress"]`).
+
+**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. Les bases historiques sans tag doivent être complétées dans le CSV du scénario.
+
+### Séquence de fin de tour
+
+Ordre des étapes liées aux ressources :
+
+1. **`updateRessources`** (début de fin de tour, si `ressource_management=TRUE`) :
+   1. Si `is_stored=1` : `amount_stored += amount`.
+   2. Si `is_rollable=0` : `amount = 0`.
+   3. `amount += end_turn_gain`.
+   4. Application des règles `gain_rules` avec `timing="before_claim"`.
+2. Étapes intermédiaires : `calculateVals` → `attackMechanic` → `recalculateBaseZoneDefence` → `locationAttackMechanic` → `claimMechanic`.
+3. **`ressourceGainAfterClaim`** : application des règles `gain_rules` avec `timing="after_claim"`.
+4. Étapes restantes : `investigateMechanic`, `locationSearchMechanic`, etc.
 
 ## 5. Débogage
 
