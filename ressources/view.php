@@ -25,7 +25,7 @@ $visibleFactions = array_values(array_filter(
 $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
 ?>
-<div class="management">
+<div class="factions">
     <h1>Ressources de la faction</h1>
 <?php if (!empty($_GET['feedback']) && in_array($_GET['feedback'], ['success', 'error'], true)): ?>
     <div class="notification <?= $_GET['feedback'] === 'success' ? 'is-success' : 'is-danger' ?>">
@@ -145,7 +145,7 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
     $first = true;
     $idx = 0;
 ?>
-                <div class="tabs"><ul>
+                <div class="tabs title"><ul>
 <?php foreach ($giftsByTurn as $turn => $_tabRows): ?>
                     <li<?= $first ? ' class="is-active"' : '' ?> data-tab-group="ressource-gifts" data-tab-index="<?= $idx ?>"><a onclick="selectTab('ressource-gifts', <?= $idx ?>)"><?= htmlspecialchars($timeValueLabel) ?> <?= $turn ?></a></li>
 <?php $first = false; $idx++; endforeach; ?>

@@ -433,7 +433,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 $giftsByTurn = [];
                 foreach ($receivedInfoGifts as $gift) { $giftsByTurn[(int)$gift['turn']][] = $gift; }
                 krsort($giftsByTurn);
-                $tabs = '<div class="tabs"><ul>';
+                $tabs = '<div class="tabs title"><ul>';
                 $panels = '';
                 $first = true;
                 $idx = 0;
