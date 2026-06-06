@@ -16,34 +16,13 @@ if (getConfig($gameReady, 'ressource_management') !== 'TRUE') {
 
 $controller_id = (int)$_SESSION['controller']['id'];
 
-// === MOCK DATA — to be replaced with live queries in commit 2 ===
-$mockRessources = [
-    ['id' => 1, 'name' => 'Koku', 'amount' => 1200, 'amount_stored' => 0, 'end_turn_gain' => 100, 'rules_estimate' => 1000],
-    ['id' => 2, 'name' => 'Honneur', 'amount' => 45, 'amount_stored' => 0, 'end_turn_gain' => 10, 'rules_estimate' => 0],
-];
-$mockRules = [
-    1 => [
-        'before_claim' => [
-            ['amount' => 100, 'text' => 'par zone revendiquée ce tour', 'count' => 2, 'total' => 200],
-            ['amount' => 200, 'text' => 'par zone tenue', 'count' => 3, 'total' => 600],
-        ],
-        'after_claim' => [
-            ['amount' => 100, 'text' => 'par temple possédé', 'count' => 1, 'total' => 100],
-            ['amount' => 100, 'text' => 'par forteresse possédée', 'count' => 1, 'total' => 100],
-        ],
-    ],
-    2 => ['before_claim' => [], 'after_claim' => []],
-];
-$mockVisibleFactions = [
-    ['id' => 2, 'firstname' => 'Date',     'lastname' => 'Masamune',  'faction_name' => 'Tendai'],
-    ['id' => 3, 'firstname' => 'Tokugawa', 'lastname' => 'Ieyasu',    'faction_name' => 'Wako'],
-    ['id' => 4, 'firstname' => 'Toyotomi', 'lastname' => 'Hideyoshi', 'faction_name' => 'Shikoku'],
-];
-$mockReceivedGifts = [
-    ['turn' => 12, 'giver' => 'Date Masamune (Tendai)',     'ressource' => 'Koku',    'amount' => 100],
-    ['turn' => 10, 'giver' => 'Oda Nobunaga (Ashikaga)',    'ressource' => 'Honneur', 'amount' => 5],
-];
-// === END MOCK DATA ===
+$ressourcesList = getRessources($gameReady, $controller_id);
+$gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
+$visibleFactions = array_values(array_filter(
+    getControllers($gameReady, NULL, NULL, true) ?: [],
+    function ($c) use ($controller_id) { return (int)$c['id'] !== $controller_id; }
+));
+$receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 ?>
 <div class="management">
     <h1>Ressources de la faction</h1>
@@ -64,12 +43,14 @@ $mockReceivedGifts = [
                             </tr>
                         </thead>
                         <tbody>
-<?php foreach ($mockRessources as $r): ?>
+<?php foreach ($ressourcesList as $r):
+    $rulesTotal = $gainEstimate[(int)$r['ressource_id']]['total'] ?? 0;
+?>
                             <tr>
-                                <td><?= htmlspecialchars($r['name']) ?></td>
+                                <td><?= htmlspecialchars($r['ressource_name']) ?></td>
                                 <td class="has-text-right"><?= (int)$r['amount'] ?></td>
                                 <td class="has-text-right"><?= (int)$r['amount_stored'] ?></td>
-                                <td class="has-text-right">+<?= (int)($r['end_turn_gain'] + $r['rules_estimate']) ?></td>
+                                <td class="has-text-right">+<?= (int)($r['end_turn_gain'] + $rulesTotal) ?></td>
                             </tr>
 <?php endforeach; ?>
                         </tbody>
@@ -79,11 +60,11 @@ $mockReceivedGifts = [
 
             <div class="box mb-5">
                 <h3 class="title is-5">Règles d'obtention</h3>
-<?php foreach ($mockRessources as $r):
-    $rules = $mockRules[$r['id']] ?? ['before_claim' => [], 'after_claim' => []];
+<?php foreach ($ressourcesList as $r):
+    $rules = $gainEstimate[(int)$r['ressource_id']] ?? ['before_claim' => [], 'after_claim' => [], 'total' => 0];
     $hasAny = !empty($rules['before_claim']) || !empty($rules['after_claim']);
 ?>
-                <h4 class="title is-6 mt-4"><?= htmlspecialchars($r['name']) ?></h4>
+                <h4 class="title is-6 mt-4"><?= htmlspecialchars($r['ressource_name']) ?></h4>
 <?php if (!$hasAny): ?>
                 <p class="has-text-grey">Aucune règle conditionnelle.</p>
                 <p>Gain de fin de tour fixe : +<?= (int)$r['end_turn_gain'] ?></p>
@@ -105,7 +86,7 @@ $mockReceivedGifts = [
                 </ul>
 <?php endif; ?>
                 <p class="mt-3">Gain de fin de tour fixe : +<?= (int)$r['end_turn_gain'] ?></p>
-                <p>Estimation totale du tour suivant : <strong>+<?= (int)($r['end_turn_gain'] + $r['rules_estimate']) ?></strong></p>
+                <p>Estimation totale du tour suivant : <strong>+<?= (int)($r['end_turn_gain'] + ($rules['total'] ?? 0)) ?></strong></p>
 <?php endif; ?>
 <?php endforeach; ?>
             </div>
@@ -122,8 +103,8 @@ $mockReceivedGifts = [
                         <div class="control for-select">
                             <div class="select is-fullwidth">
                                 <select name="ressource_id" id="giftRessourceSelect" required>
-<?php foreach ($mockRessources as $r): ?>
-                                    <option value="<?= (int)$r['id'] ?>" data-max="<?= (int)$r['amount'] ?>"><?= htmlspecialchars($r['name']) ?> (max <?= (int)$r['amount'] ?>)</option>
+<?php foreach ($ressourcesList as $r): ?>
+                                    <option value="<?= (int)$r['ressource_id'] ?>" data-max="<?= (int)$r['amount'] ?>"><?= htmlspecialchars($r['ressource_name']) ?> (max <?= (int)$r['amount'] ?>)</option>
 <?php endforeach; ?>
                                 </select>
                             </div>
@@ -137,7 +118,7 @@ $mockReceivedGifts = [
                     </div>
                     <div class="field">
                         <label class="label">Faction cible</label>
-<?= showControllerSelect($mockVisibleFactions, null, 'target_controller_id') ?>
+<?= showControllerSelect($visibleFactions, null, 'target_controller_id') ?>
                     </div>
                     <div class="field">
                         <div class="control">
@@ -149,11 +130,11 @@ $mockReceivedGifts = [
 
             <div class="box mb-5">
                 <h3 class="title is-5">Donations reçues</h3>
-<?php if (empty($mockReceivedGifts)): ?>
+<?php if (empty($receivedGifts)): ?>
                 <p class="has-text-grey">Aucune donation reçue.</p>
 <?php else: ?>
                 <ul>
-<?php foreach ($mockReceivedGifts as $g): ?>
+<?php foreach ($receivedGifts as $g): ?>
                     <li>T<?= (int)$g['turn'] ?> &mdash; <?= htmlspecialchars($g['giver']) ?> vous a donné <strong><?= (int)$g['amount'] ?> <?= htmlspecialchars($g['ressource']) ?></strong></li>
 <?php endforeach; ?>
                 </ul>
