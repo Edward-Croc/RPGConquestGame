@@ -419,7 +419,30 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
             echo '</div></form>';
             echo buildGiveKnowledgeHTML($gameReady, 'controller', $controllers['id']);
-            echo '</div>';  
+
+            $receivedInfoGifts = getInformationGiftsReceived($gameReady, $controllers['id']);
+            $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
+            $htmlReceived = '<div class="box mb-5"><h3 class="title is-5 mt-5">Informations reçues :</h3>';
+            if (empty($receivedInfoGifts)) {
+                $htmlReceived .= '<p class="has-text-grey">Aucune information reçue.</p>';
+            } else {
+                $htmlReceived .= '<ul>';
+                foreach ($receivedInfoGifts as $gift) {
+                    $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
+                    $htmlReceived .= sprintf(
+                        '<li>%s %d &mdash; %s vous a transmis %s <strong>%s</strong></li>',
+                        htmlspecialchars($timeValueLabel),
+                        (int)$gift['turn'],
+                        htmlspecialchars($gift['giver']),
+                        $label,
+                        htmlspecialchars($gift['target_label'])
+                    );
+                }
+                $htmlReceived .= '</ul>';
+            }
+            $htmlReceived .= '</div>';
+            echo $htmlReceived;
+            echo '</div>';
     }
     echo '</div>';
 
