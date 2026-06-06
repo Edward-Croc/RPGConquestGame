@@ -16,8 +16,20 @@ echo sprintf(" <h2>  Starting END of Turn %s with end_step : %s</h2>",
     $mechanics['end_step']
 );
 
+if (in_array($mechanics['end_step'], [null, ''])) {
+    // AI controllers are 'players' — they queue their own actions for
+    // this turn before any resolution mechanic reads worker_actions.
+    $aiResult = aiMechanic($gameReady, $mechanics);
+    if ( !$aiResult){
+        echo __FUNCTION__."(): Failed to run AI: aiMechanic <br />";
+        return false;
+    }
+    changeEndTurnState($gameReady, 'aiMechanic', $mechanics);
+    $mechanics['end_step'] = 'aiMechanic';
+}
+
 if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
-    if (in_array($mechanics['end_step'], [null, ''])) {
+    if (in_array($mechanics['end_step'], [null, '', 'aiMechanic'])) {
         $ressourcesResult = updateRessources($gameReady, $mechanics);
         if ( !$ressourcesResult){
             echo __FUNCTION__."(): Failed to update ressources: updateRessources <br />";
@@ -33,7 +45,7 @@ if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
     }
 }
 
-if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessources'])) {
+if (in_array($mechanics['end_step'], [null, '', 'aiMechanic', 'calculateVals', 'updateRessources'])) {
     $valsResult = true;
     $valsResult = calculateVals($gameReady, $mechanics);
     if ($valsResult) {
