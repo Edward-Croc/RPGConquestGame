@@ -23,6 +23,7 @@ $visibleFactions = array_values(array_filter(
     function ($c) use ($controller_id) { return (int)$c['id'] !== $controller_id; }
 ));
 $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
+$timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
 ?>
 <div class="management">
     <h1>Ressources de la faction</h1>
@@ -140,7 +141,7 @@ $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 <?php else: ?>
                 <ul>
 <?php foreach ($receivedGifts as $g): ?>
-                    <li>T<?= (int)$g['turn'] ?> &mdash; <?= htmlspecialchars($g['giver']) ?> vous a donné <strong><?= (int)$g['amount'] ?> <?= htmlspecialchars($g['ressource']) ?></strong></li>
+                    <li><?= htmlspecialchars($timeValueLabel) ?> <?= (int)$g['turn'] ?> &mdash; <?= htmlspecialchars($g['giver']) ?> vous a donné <strong><?= (int)$g['amount'] ?> <?= htmlspecialchars($g['ressource']) ?></strong></li>
 <?php endforeach; ?>
                 </ul>
 <?php endif; ?>
