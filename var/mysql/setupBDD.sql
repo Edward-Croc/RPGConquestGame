@@ -364,3 +364,16 @@ CREATE TABLE {prefix}controller_ressources (
 -- Create indexes on the controller_ressources table
 CREATE INDEX idx_controller_ressources_controller_id ON {prefix}controller_ressources (controller_id);
 CREATE INDEX idx_controller_ressources_ressource_id ON {prefix}controller_ressources (ressource_id);
+
+CREATE TABLE {prefix}ressource_gift_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    giver_controller_id INT NOT NULL,
+    recipient_controller_id INT NOT NULL,
+    ressource_id INT NOT NULL,
+    amount INT NOT NULL,
+    turn INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (giver_controller_id) REFERENCES {prefix}controllers (id),
+    FOREIGN KEY (recipient_controller_id) REFERENCES {prefix}controllers (id),
+    FOREIGN KEY (ressource_id) REFERENCES {prefix}ressources_config (id)
+);

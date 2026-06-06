@@ -289,3 +289,134 @@ function repairLocationCostHTML($pdo, $controller_id) {
     }
     return $html;
 }
+
+/**
+ * Natural-French rendering of a gain rule's condition for display.
+ * $zoneTypeLabel is the resolved `textForZoneType` config ("zone" / "quartier"
+ * / "territoire"). Caller fetches it once and passes it in.
+ *
+ * @param array  $rule
+ * @param string $zoneTypeLabel
+ *
+ * @return string
+ */
+function gainRuleToText(array $rule, $zoneTypeLabel = 'zone') {
+    $type = $rule['condition']['type'] ?? '';
+    switch ($type) {
+        case 'holds_zone':
+            if (isset($rule['condition']['zone_id'])) {
+                return sprintf('pour le %s tenu (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            return sprintf('par %s tenu', $zoneTypeLabel);
+        case 'claims_zone':
+            if (isset($rule['condition']['zone_id'])) {
+                return sprintf('pour le %s revendiqué (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            return sprintf('par %s sous notre bannière ce tour', $zoneTypeLabel);
+        case 'owns_location_type':
+            $tag = $rule['condition']['location_type'] ?? null;
+            if ($tag === 'temple')   return 'par temple possédé';
+            if ($tag === 'fortress') return 'par forteresse possédée';
+            if ($tag !== null)       return sprintf('par lieu de type "%s" possédé', $tag);
+            return 'par lieu possédé';
+        default:
+            return 'selon règle';
+    }
+}
+
+/**
+ * Compute the next-turn gain estimate for a single controller, grouped by timing.
+ * Returns a map: ressource_id => [
+ *   'before_claim' => [ ['amount', 'text', 'count', 'total'], ... ],
+ *   'after_claim'  => [ ... ],
+ *   'total'        => sum of all rule contributions for this ressource,
+ * ].
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array
+ */
+function ressourceGainEstimateForController($pdo, $controller_id) {
+    require_once __DIR__ . '/../mechanics/ressourceGainMechanic.php';
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $estimate = [];
+    $zoneTypeLabel = getConfig($pdo, 'textForZoneType') ?: 'zone';
+
+    try {
+        $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
+            FROM {$prefix}ressources_config
+            WHERE gain_rules IS NOT NULL");
+        $stmt->execute();
+        $configRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT gain_rules failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+
+    foreach ($configRows as $row) {
+        $ressourceId = (int)$row['ressource_id'];
+        $rules = json_decode($row['gain_rules'], true);
+        if (!is_array($rules)) continue;
+        $bucket = ['before_claim' => [], 'after_claim' => [], 'total' => 0];
+
+        foreach ($rules as $rule) {
+            if (!is_array($rule)) continue;
+            if (!isset($rule['amount']) || !is_numeric($rule['amount'])) continue;
+            if (!isset($rule['timing']) || !in_array($rule['timing'], ['before_claim', 'after_claim'], true)) continue;
+            if (!isset($rule['condition']['type'])) continue;
+
+            $matches = ressourceGainEvaluateCondition($pdo, $rule['condition']);
+            $count = 0;
+            foreach ($matches as $match) {
+                if ((int)$match['controller_id'] === (int)$controller_id) {
+                    $count = (int)$match['match_count'];
+                    break;
+                }
+            }
+            $amount = (int)$rule['amount'];
+            $total = $amount * $count;
+            $bucket[$rule['timing']][] = [
+                'amount' => $amount,
+                'text'   => gainRuleToText($rule, $zoneTypeLabel),
+                'count'  => $count,
+                'total'  => $total,
+            ];
+            $bucket['total'] += $total;
+        }
+        $estimate[$ressourceId] = $bucket;
+    }
+    return $estimate;
+}
+
+/**
+ * Fetch ressource gifts received by a controller, newest first.
+ * Each row: ['turn', 'amount', 'giver', 'ressource'].
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array
+ */
+function getRessourceGiftsReceived($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT
+            l.turn,
+            l.amount,
+            CONCAT(c.firstname, ' ', c.lastname, ' (', f.name, ')') AS giver,
+            rc.ressource_name AS ressource
+        FROM {$prefix}ressource_gift_logs l
+        JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
+        LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
+        JOIN {$prefix}ressources_config rc ON l.ressource_id = rc.id
+        WHERE l.recipient_controller_id = :recipient_id
+        ORDER BY l.turn DESC, l.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':recipient_id' => $controller_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT ressource_gift_logs failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+}
