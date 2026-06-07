@@ -5,6 +5,7 @@ DevPersoCommandes.txt
 infinitybasefiles
 __pycache__/
 .pytest_cache/
+tests/stress_runs/
 
 # Repo-local override: vendored libraries under lib/ are tracked
 # (some user-global excludesfile entries ignore `lib`).

@@ -17,15 +17,20 @@ GAME_PREFIX = os.environ.get("GAME_PREFIX", "game_test_")
 # on the HTTP/UI path.
 UI_ONLY = os.environ.get("UI_ONLY", "").lower() in ("1", "true", "yes")
 
+# Opt-in flag for long-running multi-turn AI stress tests; default off.
+STRESS = os.environ.get("STRESS", "").lower() in ("1", "true", "yes")
+
 
 def pytest_collection_modifyitems(config, items):
-    """Auto-skip @pytest.mark.db tests when UI_ONLY=1 is set."""
-    if not UI_ONLY:
-        return
+    """Auto-skip @pytest.mark.db tests when UI_ONLY=1 is set,
+    and auto-skip @pytest.mark.stress tests unless STRESS=1 is set."""
     skip_db = pytest.mark.skip(reason="UI_ONLY=1 — test requires direct DB access")
+    skip_stress = pytest.mark.skip(reason="STRESS not set — opt-in via STRESS=1")
     for item in items:
-        if "db" in item.keywords:
+        if UI_ONLY and "db" in item.keywords:
             item.add_marker(skip_db)
+        if not STRESS and "stress" in item.keywords:
+            item.add_marker(skip_stress)
 
 # Path to project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
