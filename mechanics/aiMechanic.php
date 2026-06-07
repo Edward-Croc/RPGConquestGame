@@ -55,6 +55,8 @@ function aiMechanic($pdo, $mechanics) {
             case 'aggressive': aiAggressiveBehaviour($pdo, $c, $turn_number); break;
             case 'violent':    aiViolentBehaviour($pdo, $c, $turn_number); break;
         }
+
+        aiRebuildOwnedLocations($pdo, $c);
     }
 
     echo "</div>";
@@ -66,9 +68,8 @@ function aiMechanic($pdo, $mechanics) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Ensure the controller has a base. Applies to ALL states — no base =
- * no recruit, no defence. Picks the controller's claimed/held zone
- * (lowest id) as the target; falls back to first zone if none.
+ * Ensure the controller has a base. Picks origin_zone_id if set,
+ * else a claimed/held zone, else zone id 1.
  */
 function aiEnsureBase($pdo, $c) {
     if (empty($c['can_build_base'])) return;
@@ -83,21 +84,51 @@ function aiEnsureBase($pdo, $c) {
         $stmt->execute([':cid' => $c['id']]);
         if ($stmt->fetch(PDO::FETCH_ASSOC)) return;
 
-        $stmt = $pdo->prepare(
-            "SELECT id FROM {$prefix}zones
-             WHERE claimer_controller_id = :cid OR holder_controller_id = :cid
-             ORDER BY id ASC LIMIT 1"
-        );
-        $stmt->execute([':cid' => $c['id']]);
-        $zone = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$zone) {
+        $zoneId = !empty($c['origin_zone_id']) ? (int)$c['origin_zone_id'] : null;
+        if ($zoneId === null) {
+            $stmt = $pdo->prepare(
+                "SELECT id FROM {$prefix}zones
+                 WHERE claimer_controller_id = :cid OR holder_controller_id = :cid
+                 ORDER BY id ASC LIMIT 1"
+            );
+            $stmt->execute([':cid' => $c['id']]);
+            $zone = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($zone) $zoneId = (int)$zone['id'];
+        }
+        if ($zoneId === null) {
             $stmt = $pdo->prepare("SELECT id FROM {$prefix}zones ORDER BY id ASC LIMIT 1");
             $stmt->execute();
             $zone = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($zone) $zoneId = (int)$zone['id'];
         }
-        if ($zone) createBase($pdo, $c['id'], $zone['id']);
+        if ($zoneId !== null) createBase($pdo, $c['id'], $zoneId);
     } catch (PDOException $e) {
         echo __FUNCTION__."(): failed: ".$e->getMessage()."<br />";
+    }
+}
+
+/**
+ * Rebuild any owned, repairable locations while resources allow.
+ */
+function aiRebuildOwnedLocations($pdo, $c) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT * FROM {$prefix}locations
+             WHERE controller_id = :cid AND can_be_repaired = True
+             ORDER BY id ASC"
+        );
+        $stmt->execute([':cid' => $c['id']]);
+        $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT failed: ".$e->getMessage()."<br />";
+        return;
+    }
+    foreach ($locations as $location) {
+        if (!hasEnoughRessourcesToRepairLocation($pdo, $c['id'])) break;
+        $activate_json = json_decode($location['activate_json'], true);
+        spendRessourcesToRepairLocation($pdo, $c['id']);
+        updateLocation($pdo, $location, $activate_json);
     }
 }
 
