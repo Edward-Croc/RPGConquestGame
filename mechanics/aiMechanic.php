@@ -248,6 +248,32 @@ function aiBaseOrLocationAttackedThisTurn($pdo, $controller_id, $turn_number) {
 /* ------------------------------------------------------------------ */
 
 /**
+ * Recruits per turn by ai_type. aggressive / violent recruit two,
+ * passive / searching recruit one.
+ */
+function aiRecruitsPerTurn($ia_type) {
+    switch ($ia_type) {
+        case 'aggressive':
+        case 'violent':
+            return 2;
+        default:
+            return 1;
+    }
+}
+
+/**
+ * Recruit aiRecruitsPerTurn workers in the given zone. Each call
+ * consumes a first_come slot (preferred) or a recrutement slot.
+ * If neither is available the inner aiRecruitOneInZone is a no-op.
+ */
+function aiRecruitForState($pdo, $c, $zone_id, $turn_number) {
+    $n = aiRecruitsPerTurn($c['ia_type']);
+    for ($i = 0; $i < $n; $i++) {
+        aiRecruitOneInZone($pdo, $c, $zone_id, $turn_number);
+    }
+}
+
+/**
  * Resolve the zone set each ai_type considers reachable for worker
  * placement. Always includes the base zone if one exists.
  */
@@ -267,7 +293,7 @@ function aiAllowedZonesForState($pdo, $c, $state) {
 function aiPassiveBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone === null) return;
-    aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
+    aiRecruitForState($pdo, $c, $base_zone, $turn_number);
     $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'passive'));
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $moved);
 }
@@ -275,7 +301,7 @@ function aiPassiveBehaviour($pdo, $c, $turn_number) {
 function aiSearchingBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
-        aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
+        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
     }
     $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'searching'));
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $moved);
@@ -285,7 +311,7 @@ function aiSearchingBehaviour($pdo, $c, $turn_number) {
 function aiAggressiveBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
-        aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
+        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
     }
     $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'aggressive'));
     aiSetAggressiveWorkerActions($pdo, $c, $turn_number, false, $moved);
@@ -295,7 +321,7 @@ function aiAggressiveBehaviour($pdo, $c, $turn_number) {
 function aiViolentBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
-        aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
+        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
     }
     $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'violent'));
     aiSetAggressiveWorkerActions($pdo, $c, $turn_number, true, $moved);

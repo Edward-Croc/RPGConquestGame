@@ -1,9 +1,9 @@
 name,description,hide_turn_zero,controllers__lastname->claimer_controller_id,controllers__lastname->holder_controller_id,adjacent_zones
-Alpha-Investigation,zone for investigation and detection tests,0,,,
-Beta-Combat,zone for combat tests,0,,,
-Gamma-Claims,zone control tests: claimed and held by Alpha,0,Alpha,Alpha,
-Delta-Disputed,"claim tests: claimed by Beta, not held",0,Beta,,
-Epsilon-Controlled,reserve zone for future tests,0,,,
-Zeta-Unclaimed,unclaimed reserve zone,0,,,
-Eta-Hidden,hidden zone at turn zero,1,,,
-Theta-Artefacts,zone for artefact visibility & management tests,0,,,
+Alpha-Investigation,zone for investigation and detection tests,0,,,2
+Beta-Combat,zone for combat tests,0,,,"1,3"
+Gamma-Claims,zone control tests: claimed and held by Alpha,0,Alpha,Alpha,"2,4"
+Delta-Disputed,"claim tests: claimed by Beta, not held",0,Beta,,"3,5"
+Epsilon-Controlled,reserve zone for future tests,0,,,"4,6"
+Zeta-Unclaimed,unclaimed reserve zone,0,,,"5,7"
+Eta-Hidden,hidden zone at turn zero,1,,,"6,8"
+Theta-Artefacts,zone for artefact visibility & management tests,0,,,7
