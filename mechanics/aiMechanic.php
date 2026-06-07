@@ -248,52 +248,57 @@ function aiBaseOrLocationAttackedThisTurn($pdo, $controller_id, $turn_number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Passive: create at most 1 worker per turn in base zone; leave all
- * existing workers on action_choice='passive' (carried forward by the
- * end-turn pipeline's createNewTurnLines step).
+ * Resolve the zone set each ai_type considers reachable for worker
+ * placement. Always includes the base zone if one exists.
  */
+function aiAllowedZonesForState($pdo, $c, $state) {
+    $base_zone = aiBaseZone($pdo, $c['id']);
+    if ($state === 'passive') {
+        $zones = aiOwnZoneIds($pdo, $c['id']);
+    } else {
+        $zones = aiOwnedAndAdjacentZoneIds($pdo, $c['id']);
+    }
+    if ($base_zone !== null && !in_array((int)$base_zone, array_map('intval', $zones), true)) {
+        $zones[] = (int)$base_zone;
+    }
+    return array_values(array_map('intval', $zones));
+}
+
 function aiPassiveBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone === null) return;
     aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
+    $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'passive'));
+    aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $moved);
 }
 
-/**
- * Searching: investigate workers, recruit 1 per turn, optionally move
- * idle workers to an unexplored adjacent (= claimed/held) zone.
- */
 function aiSearchingBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
         aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
     }
-    aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number);
+    $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'searching'));
+    aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $moved);
     aiEquipPowers($pdo, $c);
 }
 
-/**
- * Aggressive: attack enemy workers in own/adjacent zones, others
- * investigate, recruit 1 per turn. Equip powers.
- */
 function aiAggressiveBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
         aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
     }
-    aiSetAggressiveWorkerActions($pdo, $c, $turn_number, false);
+    $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'aggressive'));
+    aiSetAggressiveWorkerActions($pdo, $c, $turn_number, false, $moved);
     aiEquipPowers($pdo, $c);
 }
 
-/**
- * Violent: attack enemies anywhere known, attack discovered enemy
- * locations (capped at 5/turn per audit §12), recruit, equip.
- */
 function aiViolentBehaviour($pdo, $c, $turn_number) {
     $base_zone = aiBaseZone($pdo, $c['id']);
     if ($base_zone !== null) {
         aiRecruitOneInZone($pdo, $c, $base_zone, $turn_number);
     }
-    aiSetAggressiveWorkerActions($pdo, $c, $turn_number, true);
+    $moved = aiDistributeWorkers($pdo, $c, $turn_number, aiAllowedZonesForState($pdo, $c, 'violent'));
+    aiSetAggressiveWorkerActions($pdo, $c, $turn_number, true, $moved);
     aiQueueLocationAttacks($pdo, $c, 5);
     aiEquipPowers($pdo, $c);
 }
@@ -424,31 +429,34 @@ function aiWorkerHasPowerType($pdo, $worker_id, $type_name) {
 }
 
 /**
- * Set every alive worker's action_choice to the given single action.
- * Used by searching (investigate) and passive carry-forward fallback.
+ * Set every alive worker's action_choice to $action, skipping any worker
+ * id in $skipWorkerIds (typically workers just moved this turn).
  */
-function aiSetWorkerActionsForState($pdo, $c, $action, $turn_number) {
+function aiSetWorkerActionsForState($pdo, $c, $action, $turn_number, $skipWorkerIds = []) {
+    $skip = array_flip(array_map('intval', $skipWorkerIds));
     $workers = aiAliveWorkers($pdo, $c['id'], $turn_number);
     foreach ($workers as $w) {
+        if (isset($skip[(int)$w['id']])) continue;
         activateWorker($pdo, $w['id'], $action, null);
     }
 }
 
 /**
  * Aggressive/violent worker action assignment.
- * $globalAttack=false (aggressive): only attack enemies in worker's
- *   current zone or controller's claimer/holder zones.
- * $globalAttack=true (violent): attack any known enemy worker anywhere.
+ * $globalAttack=true attacks any known enemy worker anywhere.
+ * $globalAttack=false attacks enemies in the worker's current zone.
  * Workers without an attack target fall back to investigate.
+ * Workers in $skipWorkerIds are left untouched.
  */
-function aiSetAggressiveWorkerActions($pdo, $c, $turn_number, $globalAttack) {
+function aiSetAggressiveWorkerActions($pdo, $c, $turn_number, $globalAttack, $skipWorkerIds = []) {
+    $skip = array_flip(array_map('intval', $skipWorkerIds));
     $workers = aiAliveWorkers($pdo, $c['id'], $turn_number);
     if (empty($workers)) return;
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    $ownZones = $globalAttack ? null : aiOwnZoneIds($pdo, $c['id']);
 
     foreach ($workers as $w) {
+        if (isset($skip[(int)$w['id']])) continue;
         try {
             if ($globalAttack) {
                 $eStmt = $pdo->prepare(
@@ -475,6 +483,41 @@ function aiSetAggressiveWorkerActions($pdo, $c, $turn_number, $globalAttack) {
             activateWorker($pdo, $w['id'], 'investigate', null);
         }
     }
+}
+
+/**
+ * Distribute alive workers across $allowedZones. Workers already in an
+ * allowed zone stay; workers outside go to the least-occupied allowed
+ * zone. Returns the int[] of worker ids that were actually moved
+ * (these workers stay action_choice='passive' for the turn).
+ */
+function aiDistributeWorkers($pdo, $c, $turn_number, $allowedZones) {
+    if (empty($allowedZones)) return [];
+    $workers = aiAliveWorkers($pdo, $c['id'], $turn_number);
+    if (empty($workers)) return [];
+
+    $count = array_fill_keys(array_map('intval', $allowedZones), 0);
+    $needsMove = [];
+    foreach ($workers as $w) {
+        $z = (int)$w['zone_id'];
+        if (isset($count[$z])) {
+            $count[$z]++;
+        } else {
+            $needsMove[] = $w;
+        }
+    }
+
+    $moved = [];
+    foreach ($needsMove as $w) {
+        $minZone = null; $minCount = PHP_INT_MAX;
+        foreach ($count as $z => $n) {
+            if ($n < $minCount) { $minCount = $n; $minZone = $z; }
+        }
+        moveWorker($pdo, $w['id'], $minZone);
+        $count[$minZone]++;
+        $moved[] = (int)$w['id'];
+    }
+    return $moved;
 }
 
 function aiAliveWorkers($pdo, $controller_id, $turn_number) {
