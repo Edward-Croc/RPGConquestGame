@@ -53,6 +53,7 @@ CREATE TABLE {prefix}controllers (
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
     ia_type text DEFAULT '',
+    origin_zone_id INT, -- AI anchor zone: home / start / fallback location
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller BOOLEAN DEFAULT FALSE,
@@ -82,6 +83,7 @@ CREATE TABLE {prefix}zones (
     claimer_controller_id INT, -- id of controller officialy claiming the zone
     holder_controller_id INT,   -- id of controller defending the zone
     hide_turn_zero BOOLEAN DEFAULT FALSE, -- JSON storing the hide turns checks
+    adjacent_zones text, -- comma-separated zone ids reachable from this zone (map topology)
     FOREIGN KEY (claimer_controller_id) REFERENCES {prefix}controllers (id),
     FOREIGN KEY (holder_controller_id) REFERENCES {prefix}controllers (id)
 );
