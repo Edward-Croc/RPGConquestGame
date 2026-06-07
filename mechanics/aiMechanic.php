@@ -515,6 +515,22 @@ function aiOwnZoneIds($pdo, $controller_id) {
 }
 
 /**
+ * Return the deduped int[] of zone ids the controller owns plus one
+ * hop of adjacency from each.
+ */
+function aiOwnedAndAdjacentZoneIds($pdo, $controller_id) {
+    $owned = aiOwnZoneIds($pdo, $controller_id);
+    $set = [];
+    foreach ($owned as $z) {
+        $set[(int)$z] = true;
+        foreach (getAdjacentZoneIds($pdo, (int)$z) as $adj) {
+            $set[(int)$adj] = true;
+        }
+    }
+    return array_keys($set);
+}
+
+/**
  * Queue or resolve location attacks against known destroyable not-own
  * locations, capped at $cap per controller per turn. attackLocation()
  * dispatches per locationAttackMode.

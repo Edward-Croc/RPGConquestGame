@@ -23,6 +23,36 @@ function getZoneName($pdo, $zone_id){
 }
 
 /**
+ * Return the int[] of zone ids reachable from $zone_id via the
+ * zones.adjacent_zones comma-separated text column.
+ *
+ * @param PDO $pdo
+ * @param int $zone_id
+ *
+ * @return int[]
+ */
+function getAdjacentZoneIds($pdo, $zone_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT adjacent_zones FROM {$prefix}zones WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => (int)$zone_id]);
+        $raw = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+    if (empty($raw)) return [];
+    $ids = [];
+    foreach (explode(',', (string)$raw) as $tok) {
+        $tok = trim($tok);
+        if ($tok === '') continue;
+        $n = (int)$tok;
+        if ($n > 0) $ids[] = $n;
+    }
+    return $ids;
+}
+
+/**
  * Function to get ZONEs and return as an array
  *
  * @param PDO $pdo
