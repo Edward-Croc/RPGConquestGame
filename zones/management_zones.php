@@ -28,10 +28,11 @@ $controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname)
 $allControllers = $controllerStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $zoneSql = "
-SELECT 
+SELECT
     z.id,
     z.name,
     z.description,
+    z.adjacent_zones,
     claimer.id AS claimer_id,
     CONCAT(claimer.firstname, ' ', claimer.lastname) AS claimer_name,
     holder.id AS holder_id,
@@ -43,6 +44,9 @@ ORDER BY z.id ASC
 ";
 $zoneStmt = $gameReady->query($zoneSql);
 $zones = $zoneStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$zoneNameById = [];
+foreach ($zones as $z) { $zoneNameById[(int)$z['id']] = $z['name']; }
 
 require_once '../base/baseHTML.php';
 ?>
@@ -56,8 +60,19 @@ require_once '../base/baseHTML.php';
             <!-- <th>Description</th>-->
             <th>Sous la banière de</th>
             <th>Défendue par</th>
+            <th>Zones adjacentes</th>
         </tr>
-        <?php foreach ($zones as $zone): ?>
+        <?php foreach ($zones as $zone):
+            $adjacentNames = '—';
+            if (!empty($zone['adjacent_zones'])) {
+                $ids = array_filter(array_map('trim', explode(',', $zone['adjacent_zones'])));
+                $names = [];
+                foreach ($ids as $id) {
+                    $names[] = $zoneNameById[(int)$id] ?? "#$id";
+                }
+                if ($names) $adjacentNames = implode(', ', $names);
+            }
+        ?>
         <tr>
             <form method="post">
                 <td><?= htmlspecialchars($zone['id']) ?></td>
@@ -82,6 +97,7 @@ require_once '../base/baseHTML.php';
                         <?php endforeach; ?>
                     </select>
                 </td>
+                <td data-field="adjacent_zones"><?= htmlspecialchars($adjacentNames) ?></td>
                 <td>
                     <input type="hidden" name="zone_id" value="<?= $zone['id'] ?>">
                     <button type="submit">Update</button>
