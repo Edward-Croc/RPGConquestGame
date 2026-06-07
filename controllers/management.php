@@ -148,6 +148,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
             <th>Can Build Base</th>
             <th>IA Type</th>
             <th>Is IA</th>
+            <th>Origin Zone</th>
             <th>Total Recruited Workers</th>
             <th>Turn Recruited Workers</th>
             <th>Turn Recruited Firstcome Workers</th>
@@ -164,10 +165,13 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 c.secret_controller,
                 c.ia_type,
                 c.is_ia,
+                c.origin_zone_id,
+                z.name AS origin_zone_name,
                 c.recruited_workers,
                 c.turn_recruited_workers,
                 c.turn_firstcome_workers
             FROM {$prefix}controllers c
+            LEFT JOIN {$prefix}zones z ON z.id = c.origin_zone_id
             ORDER BY c.lastname
         ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -189,6 +193,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 <td data-field="can_build_base">%4$s</td>
                 <td data-field="ia_type">%9$s</td>
                 <td data-field="is_ia">%10$s</td>
+                <td data-field="origin_zone">%11$s</td>
                 <td data-field="recruited_workers">%5$s</td>
                 <td data-field="turn_recruited_workers">%6$s</td>
                 <td data-field="turn_firstcome_workers">%7$s</td>
@@ -225,7 +230,8 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 $controller['turn_firstcome_workers'],
                 implode(', ', $playerList),
                 htmlspecialchars($controller['ia_type'] ?? ''),
-                (!empty($controller['is_ia']) ? '✔️ Yes' : '❌ No')
+                (!empty($controller['is_ia']) ? '✔️ Yes' : '❌ No'),
+                htmlspecialchars($controller['origin_zone_name'] ?? '—')
             );
         }
         ?>

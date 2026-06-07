@@ -260,6 +260,49 @@ function destroyAllTables($pdo) {
  * @param array $columns Array of column names in CSV order (can include lookup columns like 'origin_name->origin_id')
  * @return bool Success status
  */
+/**
+ * Post-zones forward-reference resolver for controllers.origin_zone_id.
+ * The CSV loader runs `controllers` BEFORE `zones`, so the
+ * `zones__name->origin_zone_id` lookup returns NULL at controllers-load
+ * time. This walks the controllers CSV after zones are loaded and
+ * UPDATEs each row's origin_zone_id based on the zone name in the CSV.
+ *
+ * @param PDO    $pdo
+ * @param string $controllersCsvPath
+ *
+ * @return int  count of rows updated
+ */
+function resolveControllerOriginZones($pdo, $controllersCsvPath) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $fh = fopen($controllersCsvPath, 'r');
+    if (!$fh) return 0;
+    $header = fgetcsv($fh);
+    if (!$header) { fclose($fh); return 0; }
+    $lastCol = array_search('lastname', $header);
+    $originCol = array_search('zones__name->origin_zone_id', $header);
+    if ($lastCol === false || $originCol === false) { fclose($fh); return 0; }
+    $count = 0;
+    while (($row = fgetcsv($fh)) !== false) {
+        $lastname = $row[$lastCol] ?? '';
+        $zoneName = $row[$originCol] ?? '';
+        if ($lastname === '' || $zoneName === '') continue;
+        try {
+            $zoneStmt = $pdo->prepare("SELECT id FROM {$prefix}zones WHERE name = :n LIMIT 1");
+            $zoneStmt->execute([':n' => $zoneName]);
+            $zoneId = $zoneStmt->fetchColumn();
+            if (!$zoneId) continue;
+            $upd = $pdo->prepare("UPDATE {$prefix}controllers SET origin_zone_id = :z WHERE lastname = :n");
+            $upd->execute([':z' => $zoneId, ':n' => $lastname]);
+            if ($upd->rowCount() > 0) $count++;
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): {$lastname} → {$zoneName} failed: ".$e->getMessage()."<br />";
+        }
+    }
+    fclose($fh);
+    if ($count > 0) echo "resolveControllerOriginZones: updated $count controller origin_zone_id rows.<br />";
+    return $count;
+}
+
 function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $prefixedTable = $prefix . $tableName;
@@ -721,11 +764,11 @@ function gameReady() {
                         'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
                         'players' => ['username', 'passwd', 'is_privileged'],
-                        'controllers' => ['firstname', 'lastname', 'ia_type', 'is_ia', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'controllers' => ['firstname', 'lastname', 'ia_type', 'is_ia', 'zones__name->origin_zone_id', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules'],
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
-                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
+                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
                         'config' => ['name', 'value', 'description'],
@@ -733,6 +776,14 @@ function gameReady() {
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
                     ];
                     foreach ( $fileNames as $fileName => $columns ) {
+                        // Post-zones forward-reference fixup: controllers.origin_zone_id
+                        // can only resolve after zones are loaded.
+                        if ($fileName === 'locations') {
+                            $controllersCsv = sprintf('%s/var/csv/setup%s_controllers.csv', $path, $_POST['config_name']);
+                            if (file_exists($controllersCsv)) {
+                                resolveControllerOriginZones($pdo, $controllersCsv);
+                            }
+                        }
                         // Check for CSV file first
                         $csvFile = sprintf('%s/var/csv/setup%s_%s.csv', $path, $_POST['config_name'], $fileName);
                         $sqlFile = sprintf('%s/var/%s/setup%s_%s.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
