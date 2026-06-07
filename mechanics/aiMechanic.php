@@ -25,7 +25,8 @@ function aiMechanic($pdo, $mechanics) {
     try {
         $stmt = $pdo->prepare(
             "SELECT * FROM {$prefix}controllers
-             WHERE ia_type IN ('passive','searching','aggressive','violent')
+             WHERE is_ia = TRUE
+               AND ia_type IN ('passive','searching','aggressive','violent')
              ORDER BY id ASC"
         );
         $stmt->execute();

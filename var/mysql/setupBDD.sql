@@ -55,6 +55,7 @@ CREATE TABLE {prefix}controllers (
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
     ia_type TEXT,
+    is_ia TINYINT(1) DEFAULT 0,
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller TINYINT(1) DEFAULT 0,

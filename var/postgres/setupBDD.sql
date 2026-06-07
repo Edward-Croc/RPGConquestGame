@@ -53,6 +53,7 @@ CREATE TABLE {prefix}controllers (
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
     ia_type text DEFAULT '',
+    is_ia BOOLEAN DEFAULT FALSE,
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller BOOLEAN DEFAULT FALSE,

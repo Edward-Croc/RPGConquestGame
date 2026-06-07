@@ -721,7 +721,7 @@ function gameReady() {
                         'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
                         'players' => ['username', 'passwd', 'is_privileged'],
-                        'controllers' => ['firstname', 'lastname', 'ia_type', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'controllers' => ['firstname', 'lastname', 'ia_type', 'is_ia', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules'],
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],

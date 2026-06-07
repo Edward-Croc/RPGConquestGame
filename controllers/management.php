@@ -61,6 +61,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "Secret Controller status toggled.";
     }
 
+    // Toggle is_ia (AI-controlled vs player-controlled). The ia_type
+    // behaviour preference is left untouched so a flip to player-control
+    // doesn't erase the configured behaviour.
+    if (isset($_POST['toggle_is_ia_id'])) {
+        $cid = intval($_POST['toggle_is_ia_id']);
+        $current = $gameReady->prepare("SELECT is_ia FROM {$prefix}controllers WHERE id = :id");
+        $current->execute(['id' => $cid]);
+        $val = $current->fetchColumn();
+        $newVal = ($val) ? 0 : 1;
+        $upd = $gameReady->prepare("UPDATE {$prefix}controllers SET is_ia = :newVal WHERE id = :id");
+        $upd->execute(['newVal' => $newVal, 'id' => $cid]);
+        $message = "is_ia toggled.";
+    }
+
     // Reset turn_recruited_workers
     if (isset($_POST['reset_turn_recruited_workers_id'])) {
         $cid = intval($_POST['reset_turn_recruited_workers_id']);
@@ -132,6 +146,8 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
             <th>ID - Controller</th>
             <th>Is seceret</th>
             <th>Can Build Base</th>
+            <th>IA Type</th>
+            <th>Is IA</th>
             <th>Total Recruited Workers</th>
             <th>Turn Recruited Workers</th>
             <th>Turn Recruited Firstcome Workers</th>
@@ -141,11 +157,13 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
         <?php
         // Fetch all controllers with their properties and player list
         $controllers = $gameReady->query("
-            SELECT 
+            SELECT
                 c.id,
                 c.lastname,
                 c.can_build_base,
                 c.secret_controller,
+                c.ia_type,
+                c.is_ia,
                 c.recruited_workers,
                 c.turn_recruited_workers,
                 c.turn_firstcome_workers
@@ -169,6 +187,8 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 <td data-field="lastname">%1$s - %2$s</td>
                 <td data-field="secret_controller">%3$s</td>
                 <td data-field="can_build_base">%4$s</td>
+                <td data-field="ia_type">%9$s</td>
+                <td data-field="is_ia">%10$s</td>
                 <td data-field="recruited_workers">%5$s</td>
                 <td data-field="turn_recruited_workers">%6$s</td>
                 <td data-field="turn_firstcome_workers">%7$s</td>
@@ -181,6 +201,10 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="toggle_secret_controller_id" value="%1$s"/>
                     <button type="submit" name="toggle_secret_controller">Change Is Secret Controller</button>
+                </form>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="toggle_is_ia_id" value="%1$s"/>
+                    <button type="submit" name="toggle_is_ia">Toggle Is IA</button>
                 </form>
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="reset_turn_recruited_workers_id" value="%1$s"/>
@@ -199,7 +223,9 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 $controller['recruited_workers'],
                 $controller['turn_recruited_workers'],
                 $controller['turn_firstcome_workers'],
-                implode(', ', $playerList)
+                implode(', ', $playerList),
+                htmlspecialchars($controller['ia_type'] ?? ''),
+                (!empty($controller['is_ia']) ? '✔️ Yes' : '❌ No')
             );
         }
         ?>
