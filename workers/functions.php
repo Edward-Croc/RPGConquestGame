@@ -1630,6 +1630,30 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
     return true;
 }
 
+/**
+ * Sort the worker buckets by the given sort key
+ * 
+ * @param array &$bucket
+ * @param string $sort
+ * 
+ * @return void
+ */
+function sortWorkerBuckets(array &$bucket, string $sort): void {
+    if (empty($bucket)) return;
+    usort($bucket, function($a, $b) use ($sort) {
+        switch ($sort) {
+            case 'zone':
+                return strcmp($a['zone_name'], $b['zone_name']) ?: ($a['id'] <=> $b['id']);
+            case 'investigate':
+                return ($b['total_enquete'] <=> $a['total_enquete']) ?: ($a['id'] <=> $b['id']);
+            case 'attack':
+                return ($b['total_attack'] <=> $a['total_attack']) ?: ($a['id'] <=> $b['id']);
+            case 'age':
+            default:
+                return $a['id'] <=> $b['id'];
+        }
+    });
+}
 
 // TODO : Add Conversion to the captured agent possible actions list,
     // lock behind config JSON for certain factions, conversion probablility values 
