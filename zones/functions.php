@@ -630,6 +630,40 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_nu
         $out .= '</ul></details>';
     }
 
+    $enemyListing = buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number);
+    $recent = $enemyListing['recent'];
+    $older  = $enemyListing['older'];
+    $hasRecent = !empty($recent['unaffiliated']) || !empty($recent['networks']);
+    $hasOlder  = !empty($older['unaffiliated'])  || !empty($older['networks']);
+
+    if ($hasRecent || $hasOlder) {
+        $renderEnemies = function($group) {
+            $items = '';
+            foreach ($group['unaffiliated'] as $w) {
+                $items .= sprintf('<li class="is-size-7">%s</li>', $w['name']);
+            }
+            foreach ($group['networks'] as $cid => $network) {
+                $items .= sprintf(
+                    '<li class="is-size-7"><strong>Réseau %d - %s</strong><ul>',
+                    $cid, $network['name']
+                );
+                foreach ($network['workers'] as $w) {
+                    $items .= sprintf('<li class="is-size-7">%s</li>', $w['name']);
+                }
+                $items .= '</ul></li>';
+            }
+            return $items;
+        };
+
+        $out .= '<p><strong>Agents ennemis repérés :</strong></p>';
+        if ($hasRecent) {
+            $out .= '<ul>' . $renderEnemies($recent) . '</ul>';
+        }
+        if ($hasOlder) {
+            $out .= '<details><summary>Plus anciens</summary><ul>' . $renderEnemies($older) . '</ul></details>';
+        }
+    }
+
     return $out;
 }
 
