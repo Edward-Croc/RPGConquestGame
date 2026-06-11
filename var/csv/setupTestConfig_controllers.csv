@@ -3,6 +3,6 @@ Lord,Alpha,passive,0,Alpha-Investigation,,,,1,1,0,0,FactionAlpha,FactionAlpha
 Lady,Beta,violent,0,Beta-Combat,,,,1,1,0,0,FactionBeta,FactionBeta
 Lord,Charlie,aggressive,0,Gamma-Claims,,,,0,0,0,0,FactionCharlie,FactionCharlie
 Lady,Delta,searching,0,Delta-Disputed,,,,0,0,0,0,FactionDelta,FactionDelta
-Lord,Echo,,0,,,,,0,0,0,0,FactionEcho,FactionEcho
+Lord,Echo,passive,0,Theta-Artefacts,,,,0,0,0,0,FactionEcho,FactionEcho
 Lady,Foxtrot,,0,,,,,0,0,0,0,FactionFoxtrot,FactionFoxtrot
 Lord,Golf,,0,,,,,0,0,0,0,FactionGolf,FactionGolf
