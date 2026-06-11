@@ -60,10 +60,13 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         }
         if ( isset($_SESSION['controller']) ) {
             $controllers = getControllers($gameReady, NULL, $_SESSION['controller']['id'])[0];
+            $openingText = (!empty($controllers['is_ia']) && !empty($controllers['ia_type']))
+                ? ucfirst($controllers['ia_type']).' IA'
+                : 'Vous êtes';
             $htmlFaction = sprintf ('<h2 class="title is-4">Votre Faction</h2>
                 <div class="box mb-4">
                 <p>
-                Vous êtes <strong>%1$s %2$s</strong> (réseau <strong>%3$s</strong>) de la faction : <strong>%4$s</strong> (<span class="has-text-grey">%5$s</span>)
+                %10$s <strong>%1$s %2$s</strong> (réseau <strong>%3$s</strong>) de la faction : <strong>%4$s</strong> (<span class="has-text-grey">%5$s</span>)
                 </p>
                 %8$s
                 %6$s %7$s
@@ -78,7 +81,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 !empty($controllers['url']) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$controllers['url'].'\', \'_blank\')">Document de faction</button>' : '',
                 !empty($playerURL) ? '<button type="button" class="button is-small is-info mb-2" onclick="window.open(\''.$playerURL.'\', \'_blank\')">Document du joueur</button>' : '',
                 !empty($controllers['story']) ? '<div class="notification is-light mb-2"><span class="is-size-7">'.nl2br($controllers['story']).'</span></div>' : '',
-                $_SESSION['FOLDER']
+                $_SESSION['FOLDER'],
+                $openingText
             );
             echo $htmlFaction;
 
