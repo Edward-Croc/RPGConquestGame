@@ -603,10 +603,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($owned_bases)) {
-        $returnText .= "<p><strong>Vos lieux secrets:</strong><br />";
+        $returnText .= "<p><strong>Vos lieux secrets:</strong></p><ul>";
         foreach ($owned_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br><em>%s%s</em><br />",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 $base['hidden_description']
@@ -614,8 +614,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
 
             // Fetch artefacts for this location
             $stmtArt = $pdo->prepare("
-            SELECT name, description, full_description 
-            FROM {$prefix}artefacts 
+            SELECT name, description, full_description
+            FROM {$prefix}artefacts
             WHERE location_id = :location_id
             ");
             $stmtArt->execute([':location_id' => $base['id']]);
@@ -633,8 +633,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                 }
                 $returnText .= "</ul>";
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  "</p>";
+        $returnText .= "</ul>";
     }
 
     // Known enemy bases in zone — exclude own (listed above as Vos lieux secrets).
@@ -655,22 +656,22 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($known_bases)) {
-        $returnText .=  "<p><strong>Lieux découverts :</strong><br />";
+        $returnText .= "<p><strong>Lieux découverts :</strong></p><ul>";
         foreach ($known_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br/><em>%s%s</em><br/>",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 ((INT)$base['found_secret'] == 1) ? $base['hidden_description'] : ''
             );
 
             if ($base['can_be_destroyed'] && hasBase($pdo, $controller_id)) {
-                $returnText .=  sprintf('
+                $returnText .= sprintf('
                     <form action="/%s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value="%d">
                         <input type="hidden" name="target_location_id" value="%d">
                         <input
-                            type="submit" name="attackLocation" 
+                            type="submit" name="attackLocation"
                             value="Mener une équipe d\'attaque sur place"
                             class="button is-danger controller-action-btn"
                         >
@@ -680,8 +681,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                     $base['id']
                 );
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  '</p>';
+        $returnText .= "</ul>";
     }
     return $returnText;
 }
