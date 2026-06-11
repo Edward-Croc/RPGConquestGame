@@ -576,6 +576,64 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
 }
 
 /**
+ * Per-zone agent lists for the zone box: friendlies + folded doubles.
+ *
+ * Filters `$controllerWorkers` to the self-perspective rows in this zone and
+ * splits them by `is_primary_controller`. Doubles render inside a `<details>`
+ * fold; both sections skip individually when empty.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id          logged-in controller (self perspective)
+ * @param int $zone_id
+ * @param int $turn_number            current turn (used for ACTIVE_ACTIONS lookup)
+ * @param array $controllerWorkers    pre-fetched getWorkersByController result; caller coalesces NULL to []
+ *
+ * @return string HTML — '' when both sections empty
+ */
+function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_number, array $controllerWorkers): string {
+    $friendlies = [];
+    $doubles = [];
+    foreach ($controllerWorkers as $w) {
+        if ((int)$w['controller_id'] !== $controller_id) continue;
+        if ((int)$w['zone_id']       !== $zone_id) continue;
+        $action = $w['actions'][$turn_number]['action_choice'] ?? '';
+        if (!in_array($action, ACTIVE_ACTIONS, true)) continue;
+        if (!empty($w['is_primary_controller'])) {
+            $friendlies[] = $w;
+        } else {
+            $doubles[] = $w;
+        }
+    }
+
+    $folder = $_SESSION['FOLDER'];
+    $out = '';
+    if (!empty($friendlies)) {
+        $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
+        foreach ($friendlies as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold is-size-7" role="button" style="text-decoration:none;">%s %s</a> <i class="is-size-7">(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul>';
+    }
+    if (!empty($doubles)) {
+        $out .= '<details><summary>Nos Agents doubles</summary><ul>';
+        foreach ($doubles as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold is-size-7" role="button" style="text-decoration:none;">%s %s</a> <i class="is-size-7">(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul></details>';
+    }
+
+    return $out;
+}
+
+/**
 * Displays the known or owned bases in a zone by a controller
 * Allows attacking destructible bases
  *

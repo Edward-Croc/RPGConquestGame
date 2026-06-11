@@ -18,6 +18,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         htmlspecialchars(getConfig($gameReady, 'map_alt'))
     );
 
+    $controllerWorkers = !empty($_SESSION['controller']['id'])
+        ? (getWorkersByController($gameReady, $_SESSION['controller']['id']) ?? [])
+        : [];
+
 ?>
 
 <div class="section zones">
@@ -47,6 +51,9 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             $knownSecrets = !empty($_SESSION['controller']['id'])
                 ? showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id'])
                 : '';
+            $agentLists = !empty($_SESSION['controller']['id'])
+                ? showZoneAgents($gameReady, $_SESSION['controller']['id'], $zone['zone_id'], $mechanics['turncounter'], $controllerWorkers)
+                : '';
             $ourControl = (!empty($_SESSION['controller']['id']) && $zone['holder_controller_id'] == $_SESSION['controller']['id'])
                 ? '<span class="tag is-danger ml-2">Sous notre contrôle</span><br>'
                 : '';
@@ -59,6 +66,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                     <div id="description-%2$s" style="display: none;">
                         <p class="mb-2"><i>%4$s</i></p>
                         %5$s
+                        %7$s
                     </div>
                 </div>
                 ',
@@ -67,7 +75,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 $controllerBanner,
                 $description,
                 $knownSecrets,
-                $ourControl
+                $ourControl,
+                $agentLists
             );
         }
         ?>

@@ -212,32 +212,37 @@ function getWorkers($pdo, $workerIds) {
 }
 
 /**
- * Function to get controllers and return as an array
+ * Get workers linked to a controller (primary OR double-agent), optionally filtered to a single zone.
  *
  * @param PDO $pdo : database connection
  * @param int $controller_id
+ * @param int|null $zone_id  when set, restrict to workers currently in this zone
  *
  * @return array|null workersArray
- *
  */
-function getWorkersByController($pdo, $controller_id) {
+function getWorkersByController($pdo, $controller_id, $zone_id = null) {
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    $sql = " SELECT * FROM {$prefix}controller_worker AS cw
+    $zoneJoin = ($zone_id !== null)
+        ? "JOIN {$prefix}workers w ON w.id = cw.worker_id AND w.zone_id = :zone_id"
+        : "";
+    $sql = "
+        SELECT cw.* FROM {$prefix}controller_worker AS cw
+        $zoneJoin
         WHERE cw.controller_id = :controller_id
     ";
     try {
+        $params = [':controller_id' => $controller_id];
+        if ($zone_id !== null) $params[':zone_id'] = $zone_id;
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':controller_id' => $controller_id]);
+        $stmt->execute($params);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 
-    // Fetch the results
     $controller_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $worker_ids = NULL;
-    // Store controllers in the array
     foreach ($controller_workers as $controller_worker) {
         $worker_ids[] = $controller_worker['worker_id'];
     }
