@@ -59,7 +59,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 : '';
 
             echo sprintf('
-                <div class="box mb-4">
+                <div class="box mb-4" id="zone-%2$s">
                     <h3 class="title is-5" onclick="toggleDescription(\'%2$s\')" style="cursor: pointer;">
                         %1$s <span class="has-text-grey-light">(%2$s)</span> %3$s %6$s
                     </h3>
@@ -82,3 +82,15 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         ?>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var match = (window.location.hash || '').match(/^#zone-(\w+)$/);
+        if (!match) return;
+        var id = match[1];
+        var description = document.getElementById('description-' + id);
+        if (description) description.style.display = 'block';
+        var box = document.getElementById('zone-' + id);
+        if (box) box.scrollIntoView();
+    });
+</script>
