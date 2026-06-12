@@ -127,16 +127,6 @@ class TestZoneBoxDoubleAgents:
             f"found {details.count()}"
         )
 
-    @pytest.mark.skip(
-        reason="Requires perfect-worker recruitment via /workers/action.php "
-        "?creation=true with go_traitor metier to seed a double-agent row. "
-        "Pattern lives in tests/test_workers_special_e2e.py::TestDoubleAgentCapture; "
-        "extract into helpers and re-enable."
-    )
-    def test_double_agent_appears_in_folded_details(self, alpha_page: Page, base_url):
-        pass
-
-
 class TestZoneBoxEnemyAgents:
     """Recent enemies render in a <ul>; older fold inside <details>Plus anciens</details>."""
 
@@ -161,22 +151,6 @@ class TestZoneBoxEnemyAgents:
             "Empty older bucket should not render its <details>; "
             f"found {plus_anciens.count()}"
         )
-
-    @pytest.mark.skip(
-        reason="Needs a CKE seed via investigate flow + multi-controller scenario. "
-        "Reuse pattern from tests/test_agent_detection_e2e.py + ui_detected_enemies_of "
-        "helper. Defer until that scaffolding is lifted into a shared fixture."
-    )
-    def test_recent_enemies_render_in_ul(self, alpha_page: Page, base_url):
-        pass
-
-    @pytest.mark.skip(
-        reason="Needs a CKE seed AND turn advancement past attackTimeWindow=1 to "
-        "push the discovery into 'older'. Same scaffolding dependency as above."
-    )
-    def test_older_enemies_fold_inside_details(self, alpha_page: Page, base_url):
-        pass
-
 
 # ---------------------------------------------------------------------------
 # Part B — workers/viewAll.php sort dropdown
