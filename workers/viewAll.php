@@ -44,7 +44,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $recruitButton
         );
 
-        $sortLabels = ['age' => 'Âge', 'zone' => 'Zone', 'investigate' => 'Enquête', 'attack' => 'Attaque'];
+        $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
         $sortOptionsHtml = '';
         foreach ($sortLabels as $value => $label) {
             $sortOptionsHtml .= sprintf(
