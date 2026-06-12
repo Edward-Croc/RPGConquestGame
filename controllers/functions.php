@@ -1128,10 +1128,10 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $knownLocationsSelect
     );
 
-    $html = '<div class="box mb-5"><h3 class="title is-5 mt-5">Donner des informations :</h3>';
+    $html = '<div class="box mb-5"><details><summary class="title is-5">Donner des informations :</summary>';
     $html .= $htmlGiftInformationAgent;
     $html .= $htmlGiftInformationLocation;
-    $html .= '</div>';
+    $html .= '</details></div>';
     return $html;
 }
 
