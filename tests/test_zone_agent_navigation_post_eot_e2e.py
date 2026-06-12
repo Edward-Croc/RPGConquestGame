@@ -150,7 +150,6 @@ class TestDoubleAgentFolded:
         expect(anchor).to_be_visible()
         cls = anchor.get_attribute("class") or ""
         assert "has-text-weight-semibold" in cls
-        assert "is-size-7" in cls
 
 
 # ---------------------------------------------------------------------------

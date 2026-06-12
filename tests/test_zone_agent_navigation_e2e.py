@@ -79,8 +79,8 @@ class TestZoneBoxFriendlyAgents:
         expect(alpha_inv_box.locator("div[id^='description-']")).to_be_visible()
         assert "Nos Agents présents" in alpha_inv_box.inner_text()
 
-    def test_friendly_link_anchor_present_with_compact_classes(self, alpha_page: Page, base_url):
-        """Friendly anchors carry has-text-weight-semibold + is-size-7 + role=button."""
+    def test_friendly_link_anchor_present_with_clickable_title_classes(self, alpha_page: Page, base_url):
+        """Friendly anchors carry has-text-weight-semibold + role=button."""
         safe_goto(alpha_page, f"{base_url}/zones/action.php")
         alpha_page.wait_for_load_state("networkidle")
         alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
@@ -89,7 +89,6 @@ class TestZoneBoxFriendlyAgents:
         assert anchors.count() >= 1, "Expected at least one friendly-agent anchor"
         first_class = anchors.first.get_attribute("class") or ""
         assert "has-text-weight-semibold" in first_class
-        assert "is-size-7" in first_class
         assert anchors.first.get_attribute("role") == "button"
 
     def test_friendly_stats_block_present(self, alpha_page: Page, base_url):
@@ -98,9 +97,10 @@ class TestZoneBoxFriendlyAgents:
         alpha_page.wait_for_load_state("networkidle")
         alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
         alpha_inv_box.locator("h3").click()
-        stats_block = alpha_inv_box.locator("i.is-size-7").first
-        assert "(" in stats_block.inner_text()
-        assert ")" in stats_block.inner_text()
+        first_li_text = alpha_inv_box.locator("ul li").first.inner_text()
+        assert "(" in first_li_text and ")" in first_li_text, (
+            f"Expected stats parentheses in the first friendly <li>; got: {first_li_text!r}"
+        )
 
     def test_no_friendlies_no_header(self, alpha_page: Page, base_url):
         """A zone where Alpha has zero alive+active workers shows no

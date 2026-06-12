@@ -611,7 +611,7 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_nu
         $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
         foreach ($friendlies as $w) {
             $out .= sprintf(
-                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold is-size-7" role="button" style="text-decoration:none;">%s %s</a> <i class="is-size-7">(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
                 $folder, $w['id'], $w['firstname'], $w['lastname'],
                 $w['total_enquete'], $w['total_attack'], $w['total_defence']
             );
@@ -622,7 +622,7 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_nu
         $out .= '<details><summary>Nos Agents doubles</summary><ul>';
         foreach ($doubles as $w) {
             $out .= sprintf(
-                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold is-size-7" role="button" style="text-decoration:none;">%s %s</a> <i class="is-size-7">(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
                 $folder, $w['id'], $w['firstname'], $w['lastname'],
                 $w['total_enquete'], $w['total_attack'], $w['total_defence']
             );
@@ -640,15 +640,15 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_nu
         $renderEnemies = function($group) {
             $items = '';
             foreach ($group['unaffiliated'] as $w) {
-                $items .= sprintf('<li class="is-size-7">%s</li>', $w['name']);
+                $items .= sprintf('<li>%s</li>', $w['name']);
             }
             foreach ($group['networks'] as $cid => $network) {
                 $items .= sprintf(
-                    '<li class="is-size-7"><strong>Réseau %d - %s</strong><ul>',
+                    '<li><strong>Réseau %d - %s</strong><ul>',
                     $cid, $network['name']
                 );
                 foreach ($network['workers'] as $w) {
-                    $items .= sprintf('<li class="is-size-7">%s</li>', $w['name']);
+                    $items .= sprintf('<li>%s</li>', $w['name']);
                 }
                 $items .= '</ul></li>';
             }
