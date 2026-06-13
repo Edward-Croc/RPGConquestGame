@@ -576,6 +576,98 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
 }
 
 /**
+ * Per-zone agent lists for the zone box: friendlies + folded doubles.
+ *
+ * Filters `$controllerWorkers` to the self-perspective rows in this zone and
+ * splits them by `is_primary_controller`. Doubles render inside a `<details>`
+ * fold; both sections skip individually when empty.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id          logged-in controller (self perspective)
+ * @param int $zone_id
+ * @param int $turn_number            current turn (used for ACTIVE_ACTIONS lookup)
+ * @param array $controllerWorkers    pre-fetched getWorkersByController result; caller coalesces NULL to []
+ *
+ * @return string HTML — '' when both sections empty
+ */
+function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_number, array $controllerWorkers): string {
+    $friendlies = [];
+    $doubles = [];
+    foreach ($controllerWorkers as $w) {
+        if ((int)$w['controller_id'] !== $controller_id) continue;
+        if ((int)$w['zone_id']       !== $zone_id) continue;
+        $action = $w['actions'][$turn_number]['action_choice'] ?? '';
+        if (!in_array($action, ACTIVE_ACTIONS, true)) continue;
+        if (!empty($w['is_primary_controller'])) {
+            $friendlies[] = $w;
+        } else {
+            $doubles[] = $w;
+        }
+    }
+
+    $folder = $_SESSION['FOLDER'];
+    $out = '';
+    if (!empty($friendlies)) {
+        $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
+        foreach ($friendlies as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul>';
+    }
+    if (!empty($doubles)) {
+        $out .= '<details><summary>Nos Agents doubles</summary><ul>';
+        foreach ($doubles as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul></details>';
+    }
+
+    $enemyListing = buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number);
+    $recent = $enemyListing['recent'];
+    $older  = $enemyListing['older'];
+    $hasRecent = !empty($recent['unaffiliated']) || !empty($recent['networks']);
+    $hasOlder  = !empty($older['unaffiliated'])  || !empty($older['networks']);
+
+    if ($hasRecent || $hasOlder) {
+        $renderEnemies = function($group) {
+            $items = '';
+            foreach ($group['unaffiliated'] as $w) {
+                $items .= sprintf('<li>%s</li>', $w['name']);
+            }
+            foreach ($group['networks'] as $cid => $network) {
+                $items .= sprintf(
+                    '<li><strong>Réseau %d - %s</strong><ul>',
+                    $cid, $network['name']
+                );
+                foreach ($network['workers'] as $w) {
+                    $items .= sprintf('<li>%s</li>', $w['name']);
+                }
+                $items .= '</ul></li>';
+            }
+            return $items;
+        };
+
+        $out .= '<p><strong>Agents ennemis repérés :</strong></p>';
+        if ($hasRecent) {
+            $out .= '<ul>' . $renderEnemies($recent) . '</ul>';
+        }
+        if ($hasOlder) {
+            $out .= '<details><summary>Plus anciens</summary><ul>' . $renderEnemies($older) . '</ul></details>';
+        }
+    }
+
+    return $out;
+}
+
+/**
 * Displays the known or owned bases in a zone by a controller
 * Allows attacking destructible bases
  *
@@ -603,10 +695,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($owned_bases)) {
-        $returnText .= "<p><strong>Vos lieux secrets:</strong><br />";
+        $returnText .= "<p><strong>Vos lieux secrets:</strong></p><ul>";
         foreach ($owned_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br><em>%s%s</em><br />",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 $base['hidden_description']
@@ -614,8 +706,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
 
             // Fetch artefacts for this location
             $stmtArt = $pdo->prepare("
-            SELECT name, description, full_description 
-            FROM {$prefix}artefacts 
+            SELECT name, description, full_description
+            FROM {$prefix}artefacts
             WHERE location_id = :location_id
             ");
             $stmtArt->execute([':location_id' => $base['id']]);
@@ -633,8 +725,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                 }
                 $returnText .= "</ul>";
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  "</p>";
+        $returnText .= "</ul>";
     }
 
     // Known enemy bases in zone — exclude own (listed above as Vos lieux secrets).
@@ -655,22 +748,22 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($known_bases)) {
-        $returnText .=  "<p><strong>Lieux découverts :</strong><br />";
+        $returnText .= "<p><strong>Lieux découverts :</strong></p><ul>";
         foreach ($known_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br/><em>%s%s</em><br/>",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 ((INT)$base['found_secret'] == 1) ? $base['hidden_description'] : ''
             );
 
             if ($base['can_be_destroyed'] && hasBase($pdo, $controller_id)) {
-                $returnText .=  sprintf('
+                $returnText .= sprintf('
                     <form action="/%s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value="%d">
                         <input type="hidden" name="target_location_id" value="%d">
                         <input
-                            type="submit" name="attackLocation" 
+                            type="submit" name="attackLocation"
                             value="Mener une équipe d\'attaque sur place"
                             class="button is-danger controller-action-btn"
                         >
@@ -680,8 +773,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                     $base['id']
                 );
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  '</p>';
+        $returnText .= "</ul>";
     }
     return $returnText;
 }

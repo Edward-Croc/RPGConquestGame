@@ -127,11 +127,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
 
             // build worker action presentation texte :
-            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <strong>%2$s</strong>',
+            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <a href="/%5$s/zones/action.php#zone-%6$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%2$s</a>',
                 ucfirst($textActionUpdated), // %1$s
                 $worker['zone_name'], // %2$s
                 getConfig($gameReady, 'textForZoneType'), // %3$s
-                $workerActionInfo // %4$s
+                $workerActionInfo, // %4$s
+                $_SESSION['FOLDER'], // %5$s
+                $worker['zone_id'] // %6$s
             );
 
             // get zone value by  $worker['zone_id'] and use to get controller name

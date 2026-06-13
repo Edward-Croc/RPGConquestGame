@@ -17,6 +17,14 @@ if (getConfig($gameReady, 'ressource_management') !== 'TRUE') {
 $controller_id = (int)$_SESSION['controller']['id'];
 
 $ressourcesList = getRessources($gameReady, $controller_id);
+$hasStoredRessource = false;
+foreach ($ressourcesList as $r) {
+    if (!empty($r['is_stored'])) {
+        $hasStoredRessource = true;
+        break;
+    }
+}
+
 $gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
 $visibleFactions = array_values(array_filter(
     getControllers($gameReady, NULL, NULL, true) ?: [],
@@ -43,8 +51,10 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
                         <thead>
                             <tr>
                                 <th>Ressource</th>
-                                <th class="has-text-right">Montant</th>
-                                <th class="has-text-right">Stockée</th>
+                                <th class="has-text-right">Montant utilisable</th>
+<?php if ($hasStoredRessource): ?>
+                                <th class="has-text-right">Stockée inaccessible</th>
+<?php endif; ?>
                                 <th class="has-text-right">Estimation tour +1</th>
                             </tr>
                         </thead>
@@ -55,7 +65,9 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
                             <tr>
                                 <td><?= htmlspecialchars($r['ressource_name']) ?></td>
                                 <td class="has-text-right"><?= (int)$r['amount'] ?></td>
+                                <?php if ($hasStoredRessource): ?>
                                 <td class="has-text-right"><?= (int)$r['amount_stored'] ?></td>
+                                <?php endif; ?>
                                 <td class="has-text-right">+<?= (int)($r['end_turn_gain'] + $rulesTotal) ?></td>
                             </tr>
 <?php endforeach; ?>
