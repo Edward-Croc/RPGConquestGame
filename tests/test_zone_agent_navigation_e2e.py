@@ -205,6 +205,55 @@ class TestWorkersListSortDropdown:
             f"got: {worker_text[:200]}"
         )
 
+    def test_sort_investigate_marks_investigate_option_selected(self, alpha_page: Page, base_url):
+        safe_goto(alpha_page, f"{base_url}/workers/viewAll.php?sort=investigate")
+        alpha_page.wait_for_load_state("networkidle")
+        selected = alpha_page.locator("select[name='sort'] option[selected]")
+        assert selected.get_attribute("value") == "investigate"
+
+    def test_sort_attack_marks_attack_option_selected(self, alpha_page: Page, base_url):
+        safe_goto(alpha_page, f"{base_url}/workers/viewAll.php?sort=attack")
+        alpha_page.wait_for_load_state("networkidle")
+        selected = alpha_page.locator("select[name='sort'] option[selected]")
+        assert selected.get_attribute("value") == "attack"
+
+    def _live_bucket_lastname_order(self, page: Page, base_url: str, watch: list[str]):
+        """Return the subset of `watch` lastnames in the order they appear in
+        Alpha's live bucket. Other workers are skipped — useful for stat-
+        sort assertions that pivot on two known workers' relative position."""
+        live_box = page.locator("div.box.mb-4").filter(has_text="Nos Agents :").first
+        order = []
+        for w in live_box.locator("div.worker-short").all():
+            text = w.inner_text()
+            for name in watch:
+                if name in text:
+                    order.append(name)
+                    break
+        return order
+
+    def test_sort_attack_orders_chain_a_before_searcher_1(self, alpha_page: Page, base_url):
+        """Chain_A carries Eagle Scout|Veteran Tactician|Focused Mind|War Gear
+        (multi-power, attack-stacking); Searcher_1 has Blank Slate|Common Folk
+        (zero-stat). Under sort=attack DESC, Chain_A must precede Searcher_1
+        in Alpha's live bucket."""
+        safe_goto(alpha_page, f"{base_url}/workers/viewAll.php?sort=attack")
+        alpha_page.wait_for_load_state("networkidle")
+        order = self._live_bucket_lastname_order(alpha_page, base_url, ["Chain_A", "Searcher_1"])
+        assert order == ["Chain_A", "Searcher_1"], (
+            f"Expected Chain_A before Searcher_1 under sort=attack; got: {order}"
+        )
+
+    def test_sort_investigate_orders_chain_a_before_searcher_1(self, alpha_page: Page, base_url):
+        """Chain_A carries Eagle Scout (enquete-positive) plus other stacking
+        powers; Searcher_1 has Blank Slate|Common Folk (zero enquete). Under
+        sort=investigate DESC, Chain_A must precede Searcher_1."""
+        safe_goto(alpha_page, f"{base_url}/workers/viewAll.php?sort=investigate")
+        alpha_page.wait_for_load_state("networkidle")
+        order = self._live_bucket_lastname_order(alpha_page, base_url, ["Chain_A", "Searcher_1"])
+        assert order == ["Chain_A", "Searcher_1"], (
+            f"Expected Chain_A before Searcher_1 under sort=investigate; got: {order}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Part C — agent view → zone box anchor link
