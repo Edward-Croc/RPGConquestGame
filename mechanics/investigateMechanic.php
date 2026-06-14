@@ -208,6 +208,9 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         ";
     }
     if ( !EMPTY($searcher_id) ) $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
+    // Whitelisted (asc|desc) — getInvestigateOrder enforces the only safe interpolation surface
+    $order = strtoupper(getInvestigateOrder($pdo));
+    $sql .= " ORDER BY s.searcher_enquete_val $order, s.searcher_id ASC";
     if ($debug) echo sprintf("sql : %s <br/>", $sql);
     try{
         $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
@@ -232,280 +235,305 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
 }
 
 /**
- * do the necessary checks for the claim Mechanic
- * 
+ * Build the per-row HTML chunk for one (searcher, found) pair: variant-aware (no CKE / moved / still-here / upgrade).
+ * Returns [reportElement, ckePowersFlag, ckeControllerId, ckeControllerName] — the caller passes the last 3 to addWorkerToCKE.
+ *
+ * @param PDO $pdo
+ * @param array $row : one getSearcherComparisons row
+ * @param array|null $prevCke : CKE row read before this upsert (NULL = no prior entry)
+ * @param array $zoneNameById : map of zone_id => zone name (for the "moved from <zone>" summary)
+ * @param array $txtBag : pre-loaded text-config bag (slab templates, variant templates, action labels)
+ *
+ * @return array
+ */
+function buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag) {
+    $REPORTDIFF = $txtBag['REPORTDIFF'];
+    $enqDiff = (int)$row['enquete_difference'];
+
+    if      ($enqDiff >= $REPORTDIFF[3]) $currentLevel = 3;
+    elseif  ($enqDiff >= $REPORTDIFF[2]) $currentLevel = 2;
+    elseif  ($enqDiff >= $REPORTDIFF[1]) $currentLevel = 1;
+    elseif  ($enqDiff >= $REPORTDIFF[0]) $currentLevel = 0;
+    else    return ['', false, NULL, NULL];
+
+    $disciplines = cleanAndSplitString($row['found_discipline']);
+    $discipline_2 = '';
+    foreach ($disciplines as $key => $discipline) {
+        if ($key == 0) continue;
+        $discipline_2 .= sprintf(
+            $txtBag['textesFoundDisciplines'][array_rand($txtBag['textesFoundDisciplines'])],
+            $discipline
+        );
+    }
+
+    $hidden_transformation = cleanAndSplitString($row['hidden_transformation']);
+    $found_transformation = cleanAndSplitString($row['found_transformation']);
+    $transformationTextDiff = ['', '', '', ''];
+    foreach ($hidden_transformation as $iteration => $diffval) {
+        if ($iteration > 0 && !empty($transformationTextDiff[$diffval]))
+            $transformationTextDiff[$diffval] .= ' et ';
+        if ($diffval == 0 || $diffval == 3)
+            $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
+        if ($diffval == 1)
+            $transformationTextDiff[$diffval] .= sprintf(
+                $txtBag['textesTransformationDiff1'][array_rand($txtBag['textesTransformationDiff1'])],
+                $found_transformation[$iteration]
+            );
+        if ($diffval == 2)
+            $transformationTextDiff[$diffval] .= sprintf(
+                $txtBag['textesTransformationDiff2'][array_rand($txtBag['textesTransformationDiff2'])],
+                $found_transformation[$iteration]
+            );
+    }
+
+    $text_action_ps = $txtBag['actions'][$row['found_action']]['ps'];
+    $text_action_inf = $txtBag['actions'][$row['found_action']]['inf'];
+    if ($row['found_action'] == 'claim' && $row['found_action_params'] != '{}') {
+        $found_action_params = json_decode($row['found_action_params'], true);
+        if (is_array($found_action_params)) {
+            if ($found_action_params['claim_controller_id'] == 'null') {
+                $text_action_ps .= ' au nom de personne';
+                $text_action_inf .= ' au nom de personne';
+            } else {
+                $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
+                $claim_suffix = sprintf(' au nom %s %s %s', $txtBag['controllerNameDenominatorThe'], $controllers[0]['firstname'], $controllers[0]['lastname']);
+                $text_action_ps .= $claim_suffix;
+                $text_action_inf .= $claim_suffix;
+            }
+        }
+    }
+    if ($row['found_action'] == 'attack' && $row['found_action_params'] != '{}') {
+        $found_action_params = json_decode($row['found_action_params'], true);
+        $networkIDs = [];
+        $workerIDs = [];
+        if (is_array($found_action_params)) {
+            foreach ($found_action_params as $param) {
+                if (isset($param['attackScope']) && isset($param['attackID'])) {
+                    if ($param['attackScope'] === 'network') $networkIDs[] = $param['attackID'];
+                    elseif ($param['attackScope'] === 'worker') $workerIDs[] = $param['attackID'];
+                }
+            }
+        }
+        if (count($networkIDs) != 0) {
+            $suffix = (count($networkIDs) == 1)
+                ? ' le réseau '.$networkIDs[0]
+                : ' les réseaux '.implode(', ', $networkIDs);
+            $text_action_ps .= $suffix;
+            $text_action_inf .= $suffix;
+        } elseif (count($workerIDs) != 0) {
+            $suffix = (count($workerIDs) == 1) ? ' une personne ' : ' plusieurs personnes ';
+            $text_action_ps .= $suffix;
+            $text_action_inf .= $suffix;
+        }
+    }
+
+    $originTexte = '';
+    if (!in_array($row['found_worker_origin_id'], explode(',', $txtBag['local_origin_list']))) {
+        $originTexte = sprintf(
+            $txtBag['textesOrigine'][array_rand($txtBag['textesOrigine'])],
+            $row['found_worker_origin_name']
+        );
+    }
+
+    $found_hobby = cleanAndSplitString($row['found_hobby']);
+    $found_metier = cleanAndSplitString($row['found_metier']);
+
+    $textesDiff01Array = !empty($transformationTextDiff[0])
+        ? $txtBag['textesDiff01TransformationDiff0Array']
+        : $txtBag['textesDiff01Array'];
+    $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
+
+    $slabArgs = [
+        $row['found_name'], $found_metier[0], $found_hobby[0],
+        $text_action_ps, $text_action_inf, $disciplines[0],
+        $transformationTextDiff[0], $transformationTextDiff[1], $originTexte
+    ];
+    $slabs = [
+        0 => vsprintf($texteDiff01[0], $slabArgs),
+        1 => vsprintf($texteDiff01[1], $slabArgs),
+    ];
+
+    // slab[2] and slab[3] only need building if either current OR prev knows that level
+    $needSlab2 = ($currentLevel >= 2) || ($prevCke && !empty($prevCke['discovered_controller_id']));
+    $needSlab3 = ($currentLevel >= 3) || ($prevCke && !empty($prevCke['discovered_controller_name']));
+    if ($needSlab2) {
+        $slabs[2] = sprintf(
+            $txtBag['textesDiff2'][array_rand($txtBag['textesDiff2'])],
+            $row['found_controller_id'], $transformationTextDiff[2], $discipline_2
+        );
+    }
+    if ($needSlab3) {
+        $slabs[3] = sprintf(
+            $txtBag['textesDiff3'][array_rand($txtBag['textesDiff3'])],
+            $row['found_controller_name']
+        );
+    }
+
+    if (empty($prevCke)) {
+        $prevLevel = -1;
+        $prevZone = NULL;
+    } else {
+        $prevLevel = 0;
+        if (!empty($prevCke['discovered_powers']))          $prevLevel = max($prevLevel, 1);
+        if (!empty($prevCke['discovered_controller_id']))   $prevLevel = max($prevLevel, 2);
+        if (!empty($prevCke['discovered_controller_name'])) $prevLevel = max($prevLevel, 3);
+        $prevZone = (int)$prevCke['zone_id'];
+    }
+    $currentZone = (int)$row['zone_id'];
+
+    $foundName = $row['found_name'];
+    $reminderLabel = $txtBag['textesAgentReminderLabel'];
+
+    if ($prevLevel == -1) {
+        // No prior CKE — full text (current behaviour)
+        $visibleSlabs = [];
+        for ($i = 0; $i <= $currentLevel; $i++) $visibleSlabs[] = $slabs[$i];
+        $reportElement = '<p>'.implode(' ', $visibleSlabs).'</p>';
+    } elseif ($prevZone !== NULL && $prevZone !== $currentZone) {
+        // Moved — summary + full known text folded
+        $prevZoneName = $zoneNameById[$prevZone] ?? ('zone #'.$prevZone);
+        $movedTpl = $txtBag['textesAgentMoved'][array_rand($txtBag['textesAgentMoved'])];
+        $summary = sprintf($movedTpl, $foundName, $prevZoneName);
+        $maxLevel = max($currentLevel, $prevLevel);
+        $foldedSlabs = [];
+        for ($i = 0; $i <= $maxLevel; $i++) {
+            if (isset($slabs[$i])) $foldedSlabs[] = $slabs[$i];
+        }
+        $reportElement = '<details><summary>'.$summary.'</summary><p>'.implode(' ', $foldedSlabs).'</p></details>';
+    } elseif ($currentLevel <= $prevLevel) {
+        // delta <= 0 — "still here" + folded prev
+        $stillTpl = $txtBag['textesAgentStillHere'][array_rand($txtBag['textesAgentStillHere'])];
+        $summary = sprintf($stillTpl, $foundName);
+        $foldedSlabs = [];
+        for ($i = 0; $i <= $prevLevel; $i++) {
+            if (isset($slabs[$i])) $foldedSlabs[] = $slabs[$i];
+        }
+        $reportElement = '<details><summary>'.$summary.'</summary><p>'.implode(' ', $foldedSlabs).'</p></details>';
+    } else {
+        // delta > 0 — new slabs visible + previously-known folded
+        $upgradeTpl = $txtBag['textesAgentUpgradeInfo'][array_rand($txtBag['textesAgentUpgradeInfo'])];
+        $upgradeText = sprintf($upgradeTpl, $foundName);
+        $newSlabs = [];
+        for ($i = $prevLevel + 1; $i <= $currentLevel; $i++) $newSlabs[] = $slabs[$i];
+        $oldSlabs = [];
+        for ($i = 0; $i <= $prevLevel; $i++) {
+            if (isset($slabs[$i])) $oldSlabs[] = $slabs[$i];
+        }
+        $reportElement = '<p>'.$upgradeText.' '.implode(' ', $newSlabs).'</p>';
+        if (!empty($oldSlabs)) {
+            $reportElement .= '<details><summary>'.$reminderLabel.'</summary><p>'.implode(' ', $oldSlabs).'</p></details>';
+        }
+    }
+
+    $ckePowersFlag       = ($currentLevel >= 1);
+    $ckeControllerId     = ($currentLevel >= 2) ? $row['found_controller_id'] : NULL;
+    $ckeControllerName   = ($currentLevel >= 3) ? $row['found_controller_name'] : NULL;
+
+    return [$reportElement, $ckePowersFlag, $ckeControllerId, $ckeControllerName];
+}
+
+/**
+ * Resolves end-of-turn investigation reports for every active investigator.
+ * Sorts searchers by enquete (config-driven asc/desc with age tiebreak) so weak-then-strong dedup gives every searcher a chance to discover something new.
+ *
  * @param PDO $pdo : database connection
- * 
+ * @param array $mechanics : mechanics row
+ *
  * @return bool success
  */
 function investigateMechanic($pdo, $mechanics) {
     $turn_number = $mechanics['turncounter'];
     echo '<div> <h3> investigateMechanic : </h3> ';
-
     echo "turn_number : $turn_number <br>";
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
 
-    $REPORTDIFF0 = getConfig($pdo, 'REPORTDIFF0');
-    $REPORTDIFF1 = getConfig($pdo, 'REPORTDIFF1');
-    $REPORTDIFF2 = getConfig($pdo, 'REPORTDIFF2');
-    $REPORTDIFF3 = getConfig($pdo, 'REPORTDIFF3');
+    $REPORTDIFF = [
+        0 => (int)getConfig($pdo, 'REPORTDIFF0'),
+        1 => (int)getConfig($pdo, 'REPORTDIFF1'),
+        2 => (int)getConfig($pdo, 'REPORTDIFF2'),
+        3 => (int)getConfig($pdo, 'REPORTDIFF3'),
+    ];
     if ($debug) {
-        echo "REPORTDIFF0 : $REPORTDIFF0 <br/>";
-        echo "REPORTDIFF1 : $REPORTDIFF1 <br/>";
-        echo "REPORTDIFF2 : $REPORTDIFF2 <br/>";
-        echo "REPORTDIFF3 : $REPORTDIFF3 <br/>";
+        foreach ($REPORTDIFF as $k => $v) echo "REPORTDIFF$k : $v <br/>";
     }
 
-    // Get investigations worker vs workers
     $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
-    if ($debug)
-        echo sprintf("investigations : %s <br/>", var_export($investigations, true));
+    if ($debug) echo sprintf("investigations : %s <br/>", var_export($investigations, true));
+
+    $txtBag = [
+        'actions' => [
+            'hide'        => ['ps' => getConfig($pdo, 'txt_ps_hide'),        'inf' => getConfig($pdo, 'txt_inf_hide')],
+            'passive'     => ['ps' => getConfig($pdo, 'txt_ps_passive'),     'inf' => getConfig($pdo, 'txt_inf_passive')],
+            'investigate' => ['ps' => getConfig($pdo, 'txt_ps_investigate'), 'inf' => getConfig($pdo, 'txt_inf_investigate')],
+            'attack'      => ['ps' => getConfig($pdo, 'txt_ps_attack'),      'inf' => getConfig($pdo, 'txt_inf_attack')],
+            'claim'       => ['ps' => getConfig($pdo, 'txt_ps_claim'),       'inf' => getConfig($pdo, 'txt_inf_claim')],
+            'captured'    => ['ps' => getConfig($pdo, 'txt_ps_captured'),    'inf' => getConfig($pdo, 'txt_inf_captured')],
+            'dead'        => ['ps' => getConfig($pdo, 'txt_ps_dead'),        'inf' => getConfig($pdo, 'txt_inf_dead')],
+        ],
+        'textesStartInvestigate'              => getConfig($pdo, 'textesStartInvestigate'),
+        'textesDiff01Array'                   => json_decode(getConfig($pdo, 'textesDiff01Array'), true),
+        'textesDiff01TransformationDiff0Array'=> json_decode(getConfig($pdo, 'textesDiff01TransformationDiff0Array'), true),
+        'textesDiff2'                         => json_decode(getConfig($pdo, 'textesDiff2'), true),
+        'textesDiff3'                         => json_decode(getConfig($pdo, 'textesDiff3'), true),
+        'textesFoundDisciplines'              => json_decode(getConfig($pdo, 'textesFoundDisciplines'), true),
+        'textesTransformationDiff1'           => json_decode(getConfig($pdo, 'textesTransformationDiff1'), true),
+        'textesTransformationDiff2'           => json_decode(getConfig($pdo, 'textesTransformationDiff2'), true),
+        'textesOrigine'                       => json_decode(getConfig($pdo, 'textesOrigine'), true),
+        'local_origin_list'                   => getConfig($pdo, 'local_origin_list'),
+        'controllerNameDenominatorThe'        => getConfig($pdo, 'controllerNameDenominatorThe'),
+        'textesAgentStillHere'                => json_decode(getConfig($pdo, 'textesAgentStillHere'), true),
+        'textesAgentMoved'                    => json_decode(getConfig($pdo, 'textesAgentMoved'), true),
+        'textesAgentUpgradeInfo'              => json_decode(getConfig($pdo, 'textesAgentUpgradeInfo'), true),
+        'textesAgentReminderLabel'            => getConfig($pdo, 'textesAgentReminderLabel'),
+        'REPORTDIFF'                          => $REPORTDIFF,
+    ];
+
+    $zoneNameById = [];
+    foreach (getZonesArray($pdo) as $z) {
+        $zoneNameById[(int)$z['zone_id']] = $z['name'];
+    }
 
     $reportArray = [];
 
-    $txtArray = [];
-    $txtArray['hide']['ps'] = getConfig($pdo, 'txt_ps_hide');
-    $txtArray['passive']['ps'] = getConfig($pdo, 'txt_ps_passive');
-    $txtArray['investigate']['ps'] = getConfig($pdo, 'txt_ps_investigate');
-    $txtArray['attack']['ps'] = getConfig($pdo, 'txt_ps_attack');
-    $txtArray['claim']['ps'] = getConfig($pdo, 'txt_ps_claim');
-    $txtArray['captured']['ps'] = getConfig($pdo, 'txt_ps_captured');
-    $txtArray['dead']['ps'] = getConfig($pdo, 'txt_ps_dead');
-    $txtArray['hide']['inf'] = getConfig($pdo, 'txt_inf_hide');
-    $txtArray['passive']['inf'] = getConfig($pdo, 'txt_inf_passive');
-    $txtArray['investigate']['inf'] = getConfig($pdo, 'txt_inf_investigate');
-    $txtArray['attack']['inf'] = getConfig($pdo, 'txt_inf_attack');
-    $txtArray['claim']['inf'] = getConfig($pdo, 'txt_inf_claim');
-    $txtArray['captured']['inf'] = getConfig($pdo, 'txt_inf_captured');
-    $txtArray['dead']['inf'] = getConfig($pdo, 'txt_inf_dead');
-
     foreach ($investigations as $row) {
+        if ($debug) echo "<div><p> row : ".var_export($row, true)."</p>";
 
-        // Build report :
-        if ($debug) echo "<div>
-            <p> row : ". var_export($row, true). "</p>";
-
-        // If no report has been created yet for this worker
-        if ( empty($reportArray[$row['searcher_id']]) )
-            $reportArray[$row['searcher_id']] = sprintf( getConfig($pdo,'textesStartInvestigate'), $row['zone_name'] );
-        if ($debug) echo "<p> START : reportArray[row['searcher_id']] : ". var_export($reportArray[$row['searcher_id']], true). "</p>";
-
-        $disciplines = cleanAndSplitString($row['found_discipline']);
-        $discipline_2 = '';
-        $textesFoundDisciplines = json_decode(getConfig($pdo,'textesFoundDisciplines'), true);
-        foreach ($disciplines AS $key => $discipline) {
-            if ($key == 0) continue;
-            $discipline_2 .= sprintf($textesFoundDisciplines[array_rand($textesFoundDisciplines)], $discipline);
-        }
-        if ($debug) echo "Prepare discipline_2 string : $discipline_2 <br>";
-
-        // transformation
-        $hidden_transformation = cleanAndSplitString($row['hidden_transformation']);
-        $found_transformation = cleanAndSplitString($row['found_transformation']);
-        $transformationTextDiff[0] = '';
-        $transformationTextDiff[1] = '';
-        $transformationTextDiff[2] = '';
-        $transformationTextDiff[3] = '';
-        $textesTransformationDiff1 = json_decode(getConfig($pdo,'textesTransformationDiff1'), true);
-        $textesTransformationDiff2 = json_decode(getConfig($pdo,'textesTransformationDiff2'), true);
-
-        // for ($iteration = 0; $iteration < count($hidden_transformation); $iteration++) {
-        foreach ($hidden_transformation AS $iteration => $diffval ) {
-            if ( $iteration > 0 && !empty($transformationTextDiff[$diffval]))
-                $transformationTextDiff[$diffval] .= ' et ';
-            if ( $diffval == 0 || $diffval == 3)
-                $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
-            if ( $diffval == 1 )
-                $transformationTextDiff[$diffval] .= sprintf($textesTransformationDiff1[array_rand($textesTransformationDiff1)], $found_transformation[$iteration]);
-            if ( $diffval == 2 )
-                $transformationTextDiff[$diffval] .= sprintf($textesTransformationDiff2[array_rand($textesTransformationDiff2)], $found_transformation[$iteration]);
-        }
-        if ($debug) echo "Build transformationTextDiff array string :".var_export($transformationTextDiff, true)." <br>";
-
-        $text_action_ps = $txtArray[$row['found_action']]['ps'];
-        $text_action_inf = $txtArray[$row['found_action']]['inf'];
-        // get action info from params
-        if ($debug) echo "row['found_action'] : ".$row['found_action']."; row['found_action_params']:".$row['found_action_params']."; <br>";
-        if ( $row['found_action'] == 'claim' && $row['found_action_params'] != '{}' ) {
-            $found_action_params = json_decode($row['found_action_params'],true);
-            if (is_array($found_action_params)) {
-                // USE $found_action_params['claim_controller_id']
-                if ($found_action_params['claim_controller_id'] == 'null') {
-                    $text_action_ps .= ' au nom de personne';
-                    $text_action_inf .= ' au nom de personne';
-                } else {
-                    $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
-                    $text_action_ps .= sprintf( ' au nom %s %s %s', getConfig($pdo,'controllerNameDenominatorThe'), $controllers[0]['firstname'], $controllers[0]['lastname']);
-                    $text_action_inf .= sprintf( ' au nom %s %s %s', getConfig($pdo,'controllerNameDenominatorThe'), $controllers[0]['firstname'], $controllers[0]['lastname']);
-                }
-            }
-        }
-        if ( $row['found_action'] == 'attack' && $row['found_action_params'] != '{}' ) {
-            $found_action_params = json_decode($row['found_action_params'],true);
-            if (is_array($found_action_params)) {
-                $networkIDs = [];
-                $workerIDs = [];
-
-                // Iterate through the decoded array
-                foreach ($found_action_params as $param) {
-                    if (isset($param['attackScope']) && isset($param['attackID'])) {
-                        if ($param['attackScope'] === 'network') {
-                            $networkIDs[] = $param['attackID']; // Collect network IDs
-                        } elseif ($param['attackScope'] === 'worker') {
-                            $workerIDs[] = $param['attackID']; // Collect worker IDs
-                        }
-                    }
-                }
-            }
-            if ( count($networkIDs) != 0 ){
-                $text_action_ps .= '';
-                $text_action_inf .= '';
-                if ( count($networkIDs) ==1 ){
-                    $text_action_ps .= ' le réseau '.$networkIDs[0];
-                    $text_action_inf .= ' le réseau '.$networkIDs[0];
-                }else{
-                    $text_action_ps .= ' les réseaux '. implode(', ',$networkIDs);
-                    $text_action_inf .= ' les réseaux '. implode(', ',$networkIDs);
-                }
-            }else if (count($workerIDs) != 0) {
-                if (count($workerIDs) == 1){
-                    $text_action_ps .= ' une personne ';
-                    $text_action_inf .= ' une personne ';
-                }else{
-                    $text_action_ps .= ' plusieurs personnes ';
-                    $text_action_inf .= ' plusieurs personnes ';
-                }
-            }
-        }
-        if ($debug) echo "Build text_action_ps et text_action_inf <br>";
-
-       $originTexte = '';
-        $local_origin_list = getConfig($pdo, 'local_origin_list');
-        if (!in_array($row['found_worker_origin_id'], explode(',',$local_origin_list))) {
-            $textesOrigine = json_decode(getConfig($pdo,'textesOrigine'), true);
-            $originTexte = sprintf($textesOrigine[array_rand($textesOrigine)], $row['found_worker_origin_name']);
-        }
-        if ($debug) echo "Build originTexte : $originTexte <br>";
-
-        // Extract hobby and metier
-        $found_hobby = cleanAndSplitString($row['found_hobby']);
-        if ($debug) echo "Build found_hobby array :".var_export($found_hobby, true)." <br>";
-
-        $found_metier = cleanAndSplitString($row['found_metier']);
-        if ($debug) echo "Build found_metier array string :".var_export($found_metier, true)." <br>";
-
-        // Start compiling the report
-        $report = "<p>";
-
-        /*
-        textesDiff01Array
-        (nom) - %1$s
-        (metier/role) - %2$s
-        (hobby/objet) - %3$s
-        (action_ps) - %4$s
-        (action_inf) - %5$s
-        (discipline) - %6$s
-        (transformation0) - %7$s
-        (transformation1) - %8$s
-        (origin_text) - %9$s
-        */
-        $textesDiff01Array = json_decode(getConfig($pdo,'textesDiff01Array'), true);
-        // ! (transformation0)
-        if (!empty( $transformationTextDiff[0]))
-            $textesDiff01Array = json_decode(getConfig($pdo,'textesDiff01TransformationDiff0Array'), true);
-        $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
-
-        // Diff 0
-        if ($debug) echo "With row['enquete_difference'] AS :".var_export($row['enquete_difference'] , true)." <br>";
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
-            if ($debug) echo " REPORTDIFF 0 Start <br>";
-
-            $report = sprintf($texteDiff01[0],
-                $row['found_name'], // nom - %1$s
-                $found_metier[0], // (metier) - %2$s
-                $found_hobby[0], // (hobby) - %3$s
-                $text_action_ps, // (action_ps) - %4$s
-                $text_action_inf, // (action_inf) - %5$s
-                $disciplines[0], // (discipline) - %6$s
-                $transformationTextDiff[0], // (transformation0) - %7$s
-                $transformationTextDiff[1], //(transformation1) - %8$s
-                $originTexte, // (origin_text) - %9$s
-            );
+        if (empty($reportArray[$row['searcher_id']])) {
+            $reportArray[$row['searcher_id']] = sprintf($txtBag['textesStartInvestigate'], $row['zone_name']);
         }
 
-        // Diff 1
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF1 ) {
-            if ($debug) echo " REPORTDIFF 1 Start <br>";
-            $report .= sprintf($texteDiff01[1],
-                $row['found_name'], // nom - %1$s
-                $found_metier[0], // (metier) - %2$s
-                $found_hobby[0], // (hobby) - %3$s
-                $text_action_ps, // (action_ps) - %4$s
-                $text_action_inf, // (action_inf) - %5$s
-                $disciplines[0], // (discipline) - %6$s
-                $transformationTextDiff[0], // (transformation0) - %7$s
-                $transformationTextDiff[1], //(transformation1) - %8$s
-                $originTexte, // (origin_text) - %9$s
-            );
+        $prevCke = getCKEEntry($pdo, $row['searcher_controller_id'], $row['found_id']);
+
+        list($reportElement, $ckePowersFlag, $ckeControllerId, $ckeControllerName) =
+            buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag);
+
+        if ($reportElement !== '') {
+            $reportArray[$row['searcher_id']] .= $reportElement;
         }
 
-        // Diff 2
-        // %1$s - réseau
-        // %2$s - (transformation2)
-        // %3$s - (discipline_2)
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 ) {
-            if ($debug) echo " REPORTDIFF 3 Start <br>";
-            $textesDiff2 = json_decode(getConfig($pdo,'textesDiff2'), true);
-            $report .= sprintf($textesDiff2[array_rand($textesDiff2)], $row['found_controller_id'], $transformationTextDiff[2], $discipline_2 );
-        }
-
-        // Diff 3
-        // %1$s - found_controller_name
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 ) {
-            if ($debug) echo " REPORTDIFF 3 Start <br>";
-            $textesDiff3 = json_decode(getConfig($pdo,'textesDiff3'), true);
-            $report .= sprintf($textesDiff3[array_rand($textesDiff3)], $row['found_controller_name']);
-        }
-
-        // Debug report
-        if ($debug) {
-            $report .= "Searcher ID: {$row['searcher_id']}, Searcher Enquete Val: {$row['searcher_enquete_val']}, ";
-            $report .= "Found ID: {$row['found_id']}, Found Enquete Val: {$row['found_enquete_val']}, ";
-            $report .= "Difference: {$row['enquete_difference']}, ";
-        }
-        $report .= '</p>';
-        if ($debug) echo sprintf("Rapport: %s<br />",var_export( $report, true));
-        $reportArray[$row['searcher_id']] .= $report;
-
-        if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF0 ) {
-            if ($debug) echo "<p> Start controllers_known_enemies - <br /> ";
-            // Add to controllers_known_enemies
-            $discovered_controller_name = null;
-            $discovered_controller_id = null;
-            if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF2 )
-                $discovered_controller_id = $row['found_controller_id'];
-            if ( (int)$row['enquete_difference'] >= (int)$REPORTDIFF3 )
-                $discovered_controller_name = $row['found_controller_name'];
+        $enqDiff = (int)$row['enquete_difference'];
+        if ($enqDiff >= $REPORTDIFF[0]) {
             addWorkerToCKE(
                 $pdo,
                 $row['searcher_controller_id'],
                 $row['found_id'],
                 $turn_number,
                 $row['zone_id'],
-                $discovered_controller_id,
-                $discovered_controller_name
+                $ckeControllerId,
+                $ckeControllerName,
+                $ckePowersFlag
             );
 
-            // If the seracher is a double agent, add the found_id to controllers_known_enemies for the other controller
+            // Double-agent CKE seeding: same fields propagate to every other controller of the searcher
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
                 $sql = sprintf(
-                    "SELECT controller_id FROM {$prefix}controller_worker 
-                    WHERE worker_id = %s AND controller_id !=  %s",
+                    "SELECT controller_id FROM {$prefix}controller_worker
+                    WHERE worker_id = %s AND controller_id != %s",
                     $row['searcher_id'],
                     $row['searcher_controller_id']
-               );
+                );
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute();
                 $controllers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -516,22 +544,22 @@ function investigateMechanic($pdo, $mechanics) {
                         $row['found_id'],
                         $turn_number,
                         $row['zone_id'],
-                        $discovered_controller_id,
-                        $discovered_controller_name
+                        $ckeControllerId,
+                        $ckeControllerName,
+                        $ckePowersFlag
                     );
                 }
             } catch (PDOException $e) {
                 echo __FUNCTION__."(): Error SELECT controller_id FROM controller_worker Failed: " . $e->getMessage()."<br />";
             }
-
-            if ($debug)
-                echo " DONE controllers_known_enemies </p>";
-            
         }
+
+        if ($debug) echo "</div>";
     }
-    foreach ($reportArray as $worker_id => $report){
-        try{
-            updateWorkerAction($pdo, $worker_id,  $turn_number, NULL, ['investigate_report' => $report]);
+
+    foreach ($reportArray as $worker_id => $report) {
+        try {
+            updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['investigate_report' => $report]);
         } catch (Exception $e) {
             echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
             break;
@@ -539,6 +567,5 @@ function investigateMechanic($pdo, $mechanics) {
     }
 
     echo '<p>investigateMechanic : DONE </p> </div>';
-
     return true;
 }
