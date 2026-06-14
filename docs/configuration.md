@@ -48,6 +48,21 @@ Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses
 
 > **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
 
+### Réduction de la redondance des rapports d'enquête
+
+Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôleur (via `controllers_known_enemies` / `controller_known_locations`), le rapport bascule sur une variante condensée — un résumé visible et le détail complet replié dans un widget `<details>` — au lieu de répéter les mêmes slabs. Les artefacts trouvés restent toujours affichés en dehors du repli.
+
+**`investigateOrder`** (= `'asc'`) — Ordre de traitement des enquêteurs au sein d'un même contrôleur. `'asc'` (défaut) : les enquêteurs à faible `enquete_val` traitent leur cible en premier, ce qui laisse une chance à chaque enquêteur de découvrir une information avant qu'un collègue mieux équipé ne sature les `controllers_known_enemies`. `'desc'` : ordre inverse (les forts révèlent tout, les faibles voient principalement des « déjà connus »). Le tri est appliqué directement dans le SQL de `getSearcherComparisons` / `getLocationSearcherComparisons`. Toute valeur hors liste blanche retombe sur `'asc'`.
+
+**Templates de variantes** (tableaux JSON ou chaînes simples — un élément suffit, plusieurs entrées sont tirées au hasard) :
+
+- **`textesAgentStillHere`** (= `["L'agent %1$s est toujours présent dans cette zone."]`) — résumé `<summary>` quand un agent connu est revu dans la même zone sans nouvelle information. `%1$s` = nom de l'agent.
+- **`textesAgentMoved`** (= `["L'agent %1$s, repéré précédemment dans %2$s, s'est déplacé ici."]`) — résumé quand `controllers_known_enemies.zone_id` diffère de la zone d'observation. `%1$s` = nom, `%2$s` = zone précédente.
+- **`textesAgentUpgradeInfo`** (= `["Nous avons obtenu de nouvelles informations concernant %1$s :"]`) — en-tête visible quand l'enquête courante atteint un niveau `DIFF` supérieur à ce qui était déjà connu ; les slabs nouveaux apparaissent ensuite en clair, les anciens sont repliés.
+- **`textesAgentReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` qui replie les slabs déjà connus dans la variante « upgrade ».
+- **`textesLocationStillHere`** (= `["Le lieu %1$s est toujours là."]`) — résumé pour un lieu déjà répertorié dans `controller_known_locations` sans nouvelle découverte. `%1$s` = nom du lieu.
+- **`textesLocationReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` pour les lieux repliés.
+
 ### Combat entre agents
 
 **`ATTACKDIFF0`** (= 1), **`ATTACKDIFF1`** (= 3) — Seuils de différence `attack_val − defence_val` pour les résultats d'attaque. En-dessous de `ATTACKDIFF0` : échec (la cible apprend le nom de l'attaquant). À partir de `ATTACKDIFF0` : élimination de la cible. À partir de `ATTACKDIFF1` : capture vivante (le contrôleur obtient l'accès aux rapports). Augmenter `ATTACKDIFF1` rend les captures plus rares.
