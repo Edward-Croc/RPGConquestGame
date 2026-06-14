@@ -18,7 +18,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
-    // Define the SQL query
+    // Whitelisted (asc|desc) — getInvestigateOrder enforces the only safe interpolation surface
+    $order = strtoupper(getInvestigateOrder($pdo));
     $sql = sprintf(
         "WITH searchers AS (
             SELECT
@@ -58,7 +59,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         JOIN {$prefix}locations l ON s.zone_id = l.zone_id
         LEFT JOIN {$prefix}controllers lc ON l.controller_id = lc.id
         %s
-        ORDER BY l.discovery_diff DESC, l.id DESC;",
+        ORDER BY s.searcher_enquete_val $order, s.searcher_id ASC, l.discovery_diff DESC, l.id DESC;",
         $investigate_actions,
         (!empty($searcher_id)) ? " WHERE s.searcher_id = :searcher_id" : ''
     );
@@ -77,131 +78,172 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
 
 
 /**
- * do the necessary checks for the location Search Mechanic
- * 
+ * Build the per-row HTML chunk for one (searcher, found_location) pair: variant-aware (no CKL / still here / secret newly revealed).
+ * The artefact list is appended VISIBLE (outside the fold) when current investigation reaches LOCATIONARTEFACTSDIFF and artefacts exist.
+ * Returns [reportElement, foundSecretFlag] — the caller passes foundSecretFlag to addLocationToCKL when current reached INFORMATIONDIFF.
+ *
+ * @param PDO $pdo
+ * @param array $row : one getLocationSearcherComparisons row
+ * @param array|null $prevCkl : CKL row read before this upsert (NULL = no prior entry)
+ * @param array $txtBag : pre-loaded text-config bag (slab templates, variant templates, diff thresholds)
+ *
+ * @return array
+ */
+function buildLocationSearchReportLine($pdo, $row, $prevCkl, $txtBag) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $NAMEDIFF      = $txtBag['LOCATIONNAMEDIFF'];
+    $INFODIFF      = $txtBag['LOCATIONINFORMATIONDIFF'];
+    $ARTEFACTSDIFF = $txtBag['LOCATIONARTEFACTSDIFF'];
+    $enqDiff = (int) $row['enquete_difference'];
+
+    if      ($enqDiff >= $ARTEFACTSDIFF) $currentLevel = 2;
+    elseif  ($enqDiff >= $INFODIFF)      $currentLevel = 1;
+    elseif  ($enqDiff >= $NAMEDIFF)      $currentLevel = 0;
+    else    return ['', false];
+
+    $foundName = $row['found_name'];
+    $hasSecretText = !empty($row['found_hidden_description']);
+    $foundSecretFlag = ($currentLevel >= 2) && $hasSecretText;
+
+    if ($currentLevel >= 1) {
+        $descTpl = $txtBag['locationDescText'][array_rand($txtBag['locationDescText'])];
+        $descbody = sprintf($descTpl, $foundName, $row['found_description']);
+        if ($foundSecretFlag) {
+            $descbody .= "<br />" . $row['found_hidden_description'];
+        }
+        if ((int) $row['found_can_be_destroyed'] == 1) {
+            $descbody .= $txtBag['locationDestroyableText'][array_rand($txtBag['locationDestroyableText'])];
+        }
+    } else {
+        $nameTpl = $txtBag['locationNameText'][array_rand($txtBag['locationNameText'])];
+        $descbody = sprintf($nameTpl, $foundName);
+    }
+
+    $artefactsHtml = '';
+    if ($currentLevel >= 2) {
+        $stmtArt = $pdo->prepare("SELECT name, description FROM {$prefix}artefacts WHERE location_id = :location_id");
+        $stmtArt->execute([':location_id' => $row['found_id']]);
+        $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($artefacts)) {
+            $artefactsHtml = "<p>Ce lieu contient : <ul>";
+            foreach ($artefacts as $art) {
+                $artefactsHtml .= sprintf(
+                    "<li><strong>%s</strong>: %s</li>",
+                    htmlspecialchars($art['name']),
+                    htmlspecialchars($art['description'])
+                );
+            }
+            $artefactsHtml .= "</ul></p>";
+        }
+    }
+
+    if (empty($prevCkl)) {
+        $coreElement = "<p>" . $descbody . "</p>";
+    } else {
+        $prevSecret = !empty($prevCkl['found_secret']);
+        $newSecret = (!$prevSecret) && $foundSecretFlag;
+        if ($newSecret) {
+            $coreElement = "<p>" . $descbody . "</p>";
+        } else {
+            $stillTpl = $txtBag['textesLocationStillHere'][array_rand($txtBag['textesLocationStillHere'])];
+            $summary = sprintf($stillTpl, $foundName);
+            $coreElement = '<details><summary>' . $summary . '</summary><p>' . $descbody . '</p></details>';
+        }
+    }
+
+    return [$coreElement . $artefactsHtml, $foundSecretFlag];
+}
+
+/**
+ * Resolves end-of-turn location-search reports for every active searcher.
+ * Searcher dimension is sorted by SQL ORDER BY (config-driven asc/desc, age tiebreak), so weak-then-strong dedup gives every searcher a chance to discover something new.
+ *
  * @param PDO $pdo : database connection
- * @param array $mechanics : mechanics array
- * 
+ * @param array $mechanics : mechanics row
+ *
  * @return bool success
  */
 function locationSearchMechanic($pdo, $mechanics) {
     echo '<div><h3>locationSearchMechanic :</h3>';
     $turn_number = $mechanics['turncounter'];
     echo "turn_number : $turn_number <br>";
-    $prefix = $_SESSION['GAME_PREFIX'];
 
     $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
 
     $locationsInvestigation = getLocationSearcherComparisons($pdo, $turn_number);
     if ($debug) echo "<p>locationsInvestigation : " . var_export($locationsInvestigation, true) . "</p>";
 
-    $reportArray = [];
-    $LOCATIONNAMEDIFF = getConfig($pdo, 'LOCATIONNAMEDIFF');
-    $LOCATIONINFORMATIONDIFF = getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
-    $LOCATIONARTEFACTSDIFF = getConfig($pdo, 'LOCATIONARTEFACTSDIFF');
+    $LOCATIONNAMEDIFF        = (int) getConfig($pdo, 'LOCATIONNAMEDIFF');
+    $LOCATIONINFORMATIONDIFF = (int) getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
+    $LOCATIONARTEFACTSDIFF   = (int) getConfig($pdo, 'LOCATIONARTEFACTSDIFF');
 
-    // Fetch dynamic text templates
-    $locationNameText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_NAME'), true);
-    $locationDescText =  json_decode(getConfig($pdo,'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true);
-    $locationDestroyableText =  json_decode(getConfig($pdo,'TEXT_LOCATION_CAN_BE_DESTROYED'), true);
+    $txtBag = [
+        'LOCATIONNAMEDIFF'            => $LOCATIONNAMEDIFF,
+        'LOCATIONINFORMATIONDIFF'     => $LOCATIONINFORMATIONDIFF,
+        'LOCATIONARTEFACTSDIFF'       => $LOCATIONARTEFACTSDIFF,
+        'locationNameText'            => json_decode(getConfig($pdo, 'TEXT_LOCATION_DISCOVERED_NAME'), true),
+        'locationDescText'            => json_decode(getConfig($pdo, 'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true),
+        'locationDestroyableText'     => json_decode(getConfig($pdo, 'TEXT_LOCATION_CAN_BE_DESTROYED'), true),
+        'textesLocationStillHere'     => json_decode(getConfig($pdo, 'textesLocationStillHere'), true),
+        'textesLocationReminderLabel' => getConfig($pdo, 'textesLocationReminderLabel'),
+    ];
 
     $textForZoneType = getConfig($pdo, 'textForZoneType');
     $controllerNameDenominatorOf = getConfig($pdo, 'controllerNameDenominatorOf');
 
+    $reportArray = [];
+
     foreach ($locationsInvestigation as $row) {
         if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
 
+        // First row for this searcher → emit zone preamble + holder context
         if (empty($reportArray[$row['searcher_id']])) {
-
-            // Do the necessary checks for the zone Investigate Mechanic
-            // In the reports it is necessary to investigate who is the controller that is the holder of a zone,
-            // not just the banner under which it is !!
             $holderTexte = '';
-            if (!empty($row['zone_holder_controller_id'])) {
-                // 	- Basée sur la défense d'enquête de la zone VS l'enquête du serviteur
-                // 		- Inférieur	ne sais pas
-                // 		- 0-2		découvre le réseau
-                // 		- 3+		découvre le réseau, le contrôleur 
-                if ( (int)$row['zone_discovery_diff'] > 0 ) {
-                    $holderTexte = sprintf(
-                        " Ce %s est défendu par le réseau <strong> %s </strong>",
-                        $textForZoneType,
-                        $row['zone_holder_controller_id']
-                    );
-                    if ( (int)$row['zone_discovery_diff'] > 2) {
-                        $holderTexte .= sprintf(
-                            ", les hommes de <strong>%s</strong>",
-                            $row['zone_holder_controller_name']
-                        );
-                    }
-                    $holderTexte .= ".";
+            if (!empty($row['zone_holder_controller_id']) && (int) $row['zone_discovery_diff'] > 0) {
+                $holderTexte = sprintf(
+                    " Ce %s est défendu par le réseau <strong> %s </strong>",
+                    $textForZoneType,
+                    $row['zone_holder_controller_id']
+                );
+                if ((int) $row['zone_discovery_diff'] > 2) {
+                    $holderTexte .= sprintf(", les hommes de <strong>%s</strong>", $row['zone_holder_controller_name']);
                 }
+                $holderTexte .= ".";
             }
 
-            // At begining of the report Show zone name and information
             $reportArray[$row['searcher_id']] = sprintf(
                 "<p>Dans le %s <strong>%s</strong>. </br> %s %s </p>",
                 $textForZoneType,
                 $row['zone_name'],
-                // If a claimer exists, use it,
-                !empty($row['zone_claimer_controller_name']) ? sprintf("Ce %s est sous la bannière %s <strong> %s </strong>. ", $textForZoneType, $controllerNameDenominatorOf, $row['zone_claimer_controller_name']) : "",
-                // If a holder exists, use it,
+                !empty($row['zone_claimer_controller_name'])
+                    ? sprintf("Ce %s est sous la bannière %s <strong> %s </strong>. ", $textForZoneType, $controllerNameDenominatorOf, $row['zone_claimer_controller_name'])
+                    : "",
                 $holderTexte
             );
         }
 
+        // Skip own locations
         if ($row['searcher_controller_id'] == $row['location_controller']) continue;
 
-        if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONNAMEDIFF) {
-            $found_secret = false;
-            $reportElement = "<p>".sprintf($locationNameText[array_rand($locationNameText)], $row['found_name']);
+        $prevCkl = getCKLEntry($pdo, $row['searcher_controller_id'], $row['found_id']);
 
-            if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONINFORMATIONDIFF) {
-                $reportElement = "<p>".sprintf($locationDescText[array_rand($locationDescText)], $row['found_name'], $row['found_description']);
+        list($reportElement, $foundSecretFlag) =
+            buildLocationSearchReportLine($pdo, $row, $prevCkl, $txtBag);
 
-                if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONARTEFACTSDIFF) {
-                    if (!empty($row['found_hidden_description'])) {
-                        $reportElement .= "<br />" . $row['found_hidden_description'];
-                        $found_secret = true;
-                    }
-                }
-                addLocationToCKL($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $found_secret);
-
-                if ((INT)$row['found_can_be_destroyed'] == 1) {
-                    $reportElement .= $locationDestroyableText[array_rand($locationDestroyableText)];
-                }
-
-                if ((INT)$row['enquete_difference'] >= (INT)$LOCATIONARTEFACTSDIFF) {
-                    // Fetch artefacts for this location
-                    $stmtArt = $pdo->prepare("
-                    SELECT name, description
-                    FROM {$prefix}artefacts
-                    WHERE location_id = :location_id
-                    ");
-                    $stmtArt->execute([':location_id' => $row['found_id']]);
-                    $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
-
-                    if (!empty($artefacts)) {
-                        $reportElement .= "<br />Ce lieu contient : <ul>";
-                        foreach ($artefacts as $art) {
-                            $reportElement .= sprintf(
-                                "<li><strong>%s</strong>: %s</li>",
-                                htmlspecialchars($art['name']),
-                                htmlspecialchars($art['description'])
-                            );
-                        }
-                        $reportElement .= "</ul>";
-                    }
-                }
-            }
-            $reportElement .= '</p>';
+        if ($reportElement !== '') {
             $reportArray[$row['searcher_id']] .= $reportElement;
+        }
+
+        // Upsert CKL only when current investigation reached at least INFORMATIONDIFF (name-only discoveries don't seed CKL)
+        $enqDiff = (int) $row['enquete_difference'];
+        if ($enqDiff >= $LOCATIONINFORMATIONDIFF) {
+            addLocationToCKL($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $foundSecretFlag);
         }
 
         if ($debug) echo "<p>Updated reportArray: " . var_export($reportArray[$row['searcher_id']], true) . "</p></div>";
     }
 
-    foreach ($reportArray AS $worker_id => $report) {
+    foreach ($reportArray as $worker_id => $report) {
         updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['secrets_report' => $report]);
     }
 
