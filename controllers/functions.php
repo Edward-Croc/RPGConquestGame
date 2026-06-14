@@ -780,6 +780,34 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
 }
 
 /**
+ * Read a single CKE row for (controller, worker). Caller compares prior state (zone_id + level flags) before calling addWorkerToCKE.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $worker_id
+ *
+ * @return array|null  associative row, or NULL if no CKE entry exists
+ */
+function getCKEEntry($pdo, $controller_id, $worker_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controllers_known_enemies
+            WHERE controller_id = :controller_id
+              AND discovered_worker_id = :worker_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':worker_id' => $worker_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $searcher_controller_id
@@ -898,6 +926,34 @@ function addWorkerToCKE(
 }
 
 /**
+ * Read a single CKL row for (controller, location). Caller compares prior state (found_secret) before calling addLocationToCKL.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $location_id
+ *
+ * @return array|null  associative row, or NULL if no CKL entry exists
+ */
+function getCKLEntry($pdo, $controller_id, $location_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controller_known_locations
+            WHERE controller_id = :controller_id
+              AND location_id = :location_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':location_id' => $location_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $controller_id
@@ -905,7 +961,7 @@ function addWorkerToCKE(
  * @param int $turn_number
  *
  * @return int $ckl_existing_record_id
- * 
+ *
  */
 function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
