@@ -403,7 +403,7 @@ function buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag
     } elseif ($currentLevel <= $prevLevel) {
         // delta <= 0 — "still here" + folded prev
         $stillTpl = $txtBag['textesAgentStillHere'][array_rand($txtBag['textesAgentStillHere'])];
-        $summary = sprintf($stillTpl, $foundName);
+        $summary = sprintf($stillTpl, $foundName, $txtBag['textForZoneType']);
         $foldedSlabs = [];
         for ($i = 0; $i <= $prevLevel; $i++) {
             if (isset($slabs[$i])) $foldedSlabs[] = $slabs[$i];
@@ -486,6 +486,7 @@ function investigateMechanic($pdo, $mechanics) {
         'textesAgentMoved'                    => json_decode(getConfig($pdo, 'textesAgentMoved'), true),
         'textesAgentUpgradeInfo'              => json_decode(getConfig($pdo, 'textesAgentUpgradeInfo'), true),
         'textesAgentReminderLabel'            => getConfig($pdo, 'textesAgentReminderLabel'),
+        'textForZoneType'                     => getConfig($pdo, 'textForZoneType'),
         'REPORTDIFF'                          => $REPORTDIFF,
     ];
 

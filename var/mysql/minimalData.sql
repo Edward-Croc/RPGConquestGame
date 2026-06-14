@@ -110,7 +110,7 @@ VALUES
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
     -- Investigation report redundancy (Issue #63)
     ('investigateOrder', 'asc', 'Order of investigation processing (asc/desc by searcher_enquete_val). asc lets weaker investigators discover first.'),
-    ('textesAgentStillHere', '["L''agent %1$s est toujours présent dans cette zone."]', 'Templates (JSON array) for the "agent already known" report variant. %1$s = agent name.'),
+    ('textesAgentStillHere', '["L''agent %1$s est toujours présent dans ce %2$s."]', 'Templates (JSON array) for the "agent already known" report variant. %1$s = agent name, %2$s = textForZoneType config value (e.g. "territoire", "quartier", "zone").'),
     ('textesAgentMoved', '["L''agent %1$s, repéré précédemment dans %2$s, s''est déplacé ici."]', 'Templates (JSON array) for the "agent moved" report variant. %1$s = agent name, %2$s = previous zone name.'),
     ('textesAgentUpgradeInfo', '["Nous avons obtenu de nouvelles informations concernant %1$s :"]', 'Templates (JSON array) for the "new info on agent" report variant. %1$s = agent name.'),
     ('textesAgentReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known agent info.'),

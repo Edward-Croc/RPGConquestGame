@@ -56,7 +56,7 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 **Templates de variantes** (tableaux JSON ou chaînes simples — un élément suffit, plusieurs entrées sont tirées au hasard) :
 
-- **`textesAgentStillHere`** (= `["L'agent %1$s est toujours présent dans cette zone."]`) — résumé `<summary>` quand un agent connu est revu dans la même zone sans nouvelle information. `%1$s` = nom de l'agent.
+- **`textesAgentStillHere`** (= `["L'agent %1$s est toujours présent dans ce %2$s."]`) — résumé `<summary>` quand un agent connu est revu dans la même zone sans nouvelle information. `%1$s` = nom de l'agent, `%2$s` = valeur du config `textForZoneType` (par exemple « territoire », « quartier »).
 - **`textesAgentMoved`** (= `["L'agent %1$s, repéré précédemment dans %2$s, s'est déplacé ici."]`) — résumé quand `controllers_known_enemies.zone_id` diffère de la zone d'observation. `%1$s` = nom, `%2$s` = zone précédente.
 - **`textesAgentUpgradeInfo`** (= `["Nous avons obtenu de nouvelles informations concernant %1$s :"]`) — en-tête visible quand l'enquête courante atteint un niveau `DIFF` supérieur à ce qui était déjà connu ; les slabs nouveaux apparaissent ensuite en clair, les anciens sont repliés.
 - **`textesAgentReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` qui replie les slabs déjà connus dans la variante « upgrade ».
