@@ -21,7 +21,7 @@ Run:
 """
 import pymysql
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
@@ -35,6 +35,7 @@ from helpers import (
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
+    end_turn,
 )
 
 
@@ -659,4 +660,126 @@ class TestWorkerViewPage:
         html = page.content()
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert "Location A" not in report_section
+
+
+# ---------------------------------------------------------------------------
+# Issue #63: investigation/location-search report redundancy on repeat turn
+# ---------------------------------------------------------------------------
+
+
+def _investigation_section_html(html: str) -> str:
+    """Slice the HTML between the 'Mes investigations' h4 header and the next h4."""
+    start = html.find("Mes investigations")
+    if start < 0:
+        return ""
+    next_h4 = html.find("<h4", start + 1)
+    return html[start:next_h4] if next_h4 > 0 else html[start:]
+
+
+def _recherches_section_html(html: str) -> str:
+    """Slice the HTML between the 'Mes recherches' h4 header and the next h4."""
+    start = html.find("Mes recherches")
+    if start < 0:
+        return ""
+    next_h4 = html.find("<h4", start + 1)
+    return html[start:next_h4] if next_h4 > 0 else html[start:]
+
+
+class TestReportRedundancy:
+    """After a 2nd EOT, repeat investigations on previously-known targets
+    collapse into `<details>` folds, and the artefact list stays visible
+    OUTSIDE any fold. Class-scoped fixture runs the extra EOT once."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def second_end_turn(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        end_turn(page, base_url=PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def _go_to_worker(self, page, base_url, controller_lastname, worker_lastname):
+        ensure_gm_login(page, base_url)
+        ctrl_id = _cached_cid(page, controller_lastname)
+        worker_id = _cached_wid(page, worker_lastname)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
+        page.wait_for_load_state("load")
+
+    def test_agent_still_here_template_appears(self, page: Page, base_url):
+        """Searcher_1 re-investigates Alpha-Investigation; the still-here
+        template must surface in its 'Mes investigations' section."""
+        self._go_to_worker(page, base_url, 'Alpha', 'Searcher_1')
+        section = _investigation_section_html(page.content())
+        assert section, "Searcher_1 should have a 'Mes investigations' section"
+        assert "est toujours présent" in section, (
+            f"Expected 'still here' template in repeat report; got: {section[:600]}"
+        )
+
+    def test_agent_click_summary_reveals_folded_slabs(self, page: Page, base_url):
+        """Clicking the still-here summary expands the fold body."""
+        self._go_to_worker(page, base_url, 'Alpha', 'Searcher_1')
+        summary = (
+            page.locator("details summary")
+            .filter(has_text="est toujours présent")
+            .first
+        )
+        expect(summary).to_be_visible()
+        details_handle = summary.locator("xpath=..")
+        closed_inner = (summary.inner_text() or "").strip()
+        summary.click()
+        full_text = (details_handle.text_content() or "").strip()
+        assert len(full_text) > len(closed_inner), (
+            "Click should reveal more text inside the fold; "
+            f"summary='{closed_inner[:120]}' body='{full_text[:300]}'"
+        )
+
+    def test_first_turn_paragraph_before_any_details(self, page: Page, base_url):
+        """Turn 1's full slabs stay in a `<p>` BEFORE turn 2's `<details>`."""
+        self._go_to_worker(page, base_url, 'Alpha', 'Searcher_1')
+        section = _investigation_section_html(page.content())
+        lower = section.lower()
+        first_details = lower.find("<details>")
+        first_p_close = lower.find("</p>", lower.find("mes investigations"))
+        assert first_p_close >= 0, "Investigation section should contain a closing </p>"
+        if first_details > 0:
+            assert first_p_close < first_details, (
+                "Turn 1's full-text slabs must close their </p> BEFORE turn 2's <details> opens"
+            )
+
+    def test_location_still_here_template_appears(self, page: Page, base_url):
+        """Artefact_Searcher_Echo's 'Mes recherches' section shows the
+        location still-here template on the repeat turn."""
+        self._go_to_worker(page, base_url, 'Echo', 'Artefact_Searcher_Echo')
+        section = _recherches_section_html(page.content())
+        assert section, "Artefact_Searcher_Echo should have a 'Mes recherches' section"
+        assert "est toujours là" in section, (
+            f"Expected location 'still here' template; got: {section[:600]}"
+        )
+
+    def test_artefact_marker_outside_fold(self, page: Page, base_url):
+        """Civic-Site Token (discovery_diff=0) is reachable at ARTEFACTSDIFF;
+        the artefact list must render OUTSIDE every `<details>` fold."""
+        self._go_to_worker(page, base_url, 'Echo', 'Artefact_Searcher_Echo')
+        section = _recherches_section_html(page.content())
+        assert "Ce lieu contient" in section, (
+            f"Expected artefact list marker in recherches section; got: {section[:600]}"
+        )
+        lower = section.lower()
+        cursor = 0
+        while True:
+            d_open = lower.find("<details>", cursor)
+            if d_open < 0:
+                break
+            d_close = lower.find("</details>", d_open)
+            assert d_close > 0, "Malformed <details> block"
+            fold_body = section[d_open:d_close + len("</details>")]
+            assert "Ce lieu contient" not in fold_body, (
+                f"Artefact list must stay OUTSIDE any <details> fold; found inside: {fold_body[:300]}"
+            )
+            cursor = d_close + 1
 
