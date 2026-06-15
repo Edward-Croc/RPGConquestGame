@@ -30,12 +30,12 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data,
-    ui_controller_id, ui_worker_id, ui_worker_controller_id,
+    ui_controller_id, ui_worker_id, ui_worker_controller_id, ui_zone_id,
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    end_turn,
+    end_turn, ui_move, ui_teach_discipline_click,
 )
 
 
@@ -782,4 +782,193 @@ class TestReportRedundancy:
                 f"Artefact list must stay OUTSIDE any <details> fold; found inside: {fold_body[:300]}"
             )
             cursor = d_close + 1
+
+
+class TestReportRedundancyMoved:
+    """V2 variant: prev CKE.zone_id != current row.zone_id → "moved from <prev>"
+    summary + folded body. Fixture moves Searcher_1 + Bystander_1 to
+    Theta-Artefacts, re-activates Searcher_1's investigate, runs a 3rd EOT."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_targets_and_third_eot(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        ui_move(page, "Bystander_1", "Theta-Artefacts", base_url=PHP_BASE_URL)
+        ui_move(page, "Searcher_1", "Theta-Artefacts", base_url=PHP_BASE_URL)
+        wid = _cached_wid(page, "Searcher_1")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}&investigate=1")
+        page.wait_for_load_state("load")
+        end_turn(page, base_url=PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def _go_to_searcher_1(self, page, base_url):
+        ensure_gm_login(page, base_url)
+        ctrl_id = _cached_cid(page, "Alpha")
+        worker_id = _cached_wid(page, "Searcher_1")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
+        page.wait_for_load_state("load")
+
+    def test_moved_template_appears(self, page: Page, base_url):
+        """Report contains the 'déplacé' template for re-detected Bystander_1."""
+        self._go_to_searcher_1(page, base_url)
+        section = _investigation_section_html(page.content())
+        assert section, "Searcher_1 should have a 'Mes investigations' section"
+        assert "déplacé" in section, (
+            f"Expected 'moved' template in repeat-after-relocation report; got: {section[:600]}"
+        )
+
+    def test_moved_summary_names_prev_zone(self, page: Page, base_url):
+        """The moved-from summary mentions the previous zone (Alpha-Investigation)."""
+        self._go_to_searcher_1(page, base_url)
+        summary = (
+            page.locator("details summary")
+            .filter(has_text="déplacé")
+            .first
+        )
+        expect(summary).to_be_visible()
+        text = (summary.inner_text() or "").strip()
+        assert "Alpha-Investigation" in text, (
+            f"Expected prev zone 'Alpha-Investigation' in moved summary; got: '{text}'"
+        )
+
+    def test_moved_body_folded_under_details(self, page: Page, base_url):
+        """Clicking the moved summary expands additional content from the fold."""
+        self._go_to_searcher_1(page, base_url)
+        summary = (
+            page.locator("details summary")
+            .filter(has_text="déplacé")
+            .first
+        )
+        details_handle = summary.locator("xpath=..")
+        closed_inner = (summary.inner_text() or "").strip()
+        summary.click()
+        full_text = (details_handle.text_content() or "").strip()
+        assert len(full_text) > len(closed_inner), (
+            "Clicking moved summary should reveal folded body; "
+            f"summary='{closed_inner[:120]}' body='{full_text[:300]}'"
+        )
+
+
+class TestReportRedundancyUpgrade:
+    """V4 variant: prev CKE level < current level → "we have new info" visible
+    paragraph + folded reminder. Fixture teaches Searcher_1 'Focused Mind'
+    (+1 enquete) so Searcher_1's enquete jumps from 3 to 4. vs Bystander_1
+    (enquete 3) the diff moves from 0 (level 0) to 1 (level 1, REPORTDIFF1=1)
+    → delta > 0 → V4."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def teach_and_fourth_eot(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        ui_teach_discipline_click(page, "Searcher_1", "Focused Mind",
+                                  base_url=PHP_BASE_URL)
+        end_turn(page, base_url=PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def _go_to_searcher_1(self, page, base_url):
+        ensure_gm_login(page, base_url)
+        ctrl_id = _cached_cid(page, "Alpha")
+        worker_id = _cached_wid(page, "Searcher_1")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
+        page.wait_for_load_state("networkidle")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
+        page.wait_for_load_state("load")
+
+    def test_upgrade_template_appears(self, page: Page, base_url):
+        """The 'nouvelles informations' (new info) template surfaces in the report."""
+        self._go_to_searcher_1(page, base_url)
+        section = _investigation_section_html(page.content())
+        assert section, "Searcher_1 should have a 'Mes investigations' section"
+        assert "nouvelles informations" in section, (
+            f"Expected upgrade template; got: {section[:600]}"
+        )
+
+    def test_upgrade_keeps_new_slabs_visible(self, page: Page, base_url):
+        """The upgrade body sits in a `<p>` (visible), not folded under <details>."""
+        self._go_to_searcher_1(page, base_url)
+        section = _investigation_section_html(page.content())
+        lower = section.lower()
+        upgrade_pos = section.find("nouvelles informations")
+        assert upgrade_pos >= 0
+        next_details = lower.find("<details>", upgrade_pos)
+        next_p_close = lower.find("</p>", upgrade_pos)
+        assert next_p_close >= 0, "Upgrade text should close in a </p>"
+        if next_details > 0:
+            assert next_p_close < next_details, (
+                "Upgrade new-info text must be visible (closed </p>) BEFORE "
+                "the reminder <details> opens"
+            )
+
+    def test_upgrade_reminder_fold_present(self, page: Page, base_url):
+        """A 'Rappel' reminder summary folds the previously-known info."""
+        self._go_to_searcher_1(page, base_url)
+        summary = (
+            page.locator("details summary")
+            .filter(has_text="Rappel")
+            .first
+        )
+        expect(summary).to_be_visible()
+
+
+@pytest.mark.db
+class TestMonotonicCKEPreservation:
+    """addWorkerToCKE UPDATE is monotonic (CODE_KNOWLEDGE §10 #22). A 5-arg
+    call from a gift / attack / claim path must NOT downgrade the discovered_*
+    flags set by a prior investigation. After the V4 upgrade EOT, Alpha's CKE
+    row for Bystander_1 has discovered_powers=TRUE. The GM gift handler at
+    controllers/management.php?giftInformationAgent=1 hits addWorkerToCKE
+    with default args (discovered_controller_id=NULL, _name=NULL, _powers=false)
+    — the conditional SET clauses must skip those columns and preserve the flag."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def trigger_5arg_addworker(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        alpha_id = _cached_cid(page, "Alpha")
+        bystander_id = _cached_wid(page, "Bystander_1")
+        theta_zone_id = ui_zone_id(page, "Theta-Artefacts", base_url=PHP_BASE_URL)
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/controllers/management.php"
+            f"?giftInformationAgent=1&target_controller_id={alpha_id}"
+            f"&enemy_worker_id={bystander_id}&zone_id={theta_zone_id}",
+        )
+        page.wait_for_load_state("load")
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_discovered_powers_preserved_after_5arg_call(self):
+        """Alpha's CKE row for Bystander_1 must still have discovered_powers=1
+        after the 5-arg gift call."""
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(f"""
+                    SELECT cke.discovered_powers, cke.zone_id
+                    FROM `{GAME_PREFIX}controllers_known_enemies` cke
+                    JOIN `{GAME_PREFIX}controllers` c ON c.id = cke.controller_id
+                    JOIN `{GAME_PREFIX}workers` w ON w.id = cke.discovered_worker_id
+                    WHERE c.lastname = 'Alpha' AND w.lastname = 'Bystander_1'
+                """)
+                row = cursor.fetchone()
+        finally:
+            conn.close()
+        assert row is not None, "Expected a CKE row for (Alpha, Bystander_1)"
+        assert int(row['discovered_powers']) == 1, (
+            f"Monotonic UPDATE broken: discovered_powers downgraded to "
+            f"{row['discovered_powers']} by 5-arg gift call (should stay 1)"
+        )
 
