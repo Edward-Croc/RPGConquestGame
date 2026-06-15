@@ -178,9 +178,12 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     """Login as gm in a fresh context and load the named scenario via admin.php.
 
     Uses its own browser context so it does not disturb the caller's page.
+    Registers a PHP-error listener on the load page and raises if anything
+    surfaced during scenario load.
     """
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
     login_as(page, base_url, "gm", "orga")
     safe_goto(page, f"{base_url}/base/admin.php")
     _wait_loaded(page, "select[name='config_name']")
@@ -188,6 +191,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     page.locator("input[name='submit'][value='Submit']").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=120000)
+    assert_no_collected_php_errors(page)
     context.close()
 
 

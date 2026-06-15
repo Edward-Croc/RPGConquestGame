@@ -54,7 +54,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db,
-    end_turn, load_minimal_data,
+    end_turn, load_minimal_data, load_scenario_via_admin,
     ui_all_workers, ui_controller_id, ui_worker_id,
     ui_workers_by_lastname,
     clear_ui_caches, ui_attack, ui_attack_click,
@@ -105,26 +105,14 @@ def combat_scenario(browser):
 
     Turn 1 → 2: attack mechanic resolves all combats by enquete_val DESC.
     """
-    # Local bootstrap — skipped on prod where MySQL isn't reachable
     if DB_AVAILABLE:
         load_minimal_data()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
-
-    # Login and load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-
-    # Reset module-level id caches for this fixture run. Tests that run
-    # against different deployments should each get fresh ids scraped
-    # from the current page state.
     clear_ui_caches()
 
     # End turn 0 → 1

@@ -16,7 +16,7 @@ import pytest
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -30,16 +30,7 @@ def base_url():
 def load_test_config(browser):
     if DB_AVAILABLE:
         load_minimal_data()
-    context = browser.new_context()
-    page = context.new_page()
-    ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 

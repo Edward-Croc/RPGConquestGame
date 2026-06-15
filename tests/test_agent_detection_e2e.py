@@ -29,7 +29,7 @@ from conftest import (
 )
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection, load_minimal_data,
+    DB_AVAILABLE, get_db_connection, load_minimal_data, load_scenario_via_admin,
     ui_controller_id, ui_worker_id, ui_worker_controller_id, ui_zone_id,
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
@@ -161,41 +161,19 @@ def get_calculated_values(turn=0):
 
 @pytest.fixture(scope="module", autouse=True)
 def load_and_end_turn(browser):
-    """Load TestConfig, then trigger end turn to execute mechanics.
-
-    Runs against local Docker and remote prod: local DB-direct seeding is
-    skipped when MySQL isn't reachable; the admin-UI scenario load works
-    over HTTP regardless.
-    """
+    """Load TestConfig, then trigger end turn to execute mechanics."""
     if DB_AVAILABLE:
         load_minimal_data()
-
-    # Reset id caches so each module run re-scrapes against the current target.
     _wid_cache.clear()
     _cid_cache.clear()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
-
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-
-    # Trigger end turn and capture page for warning check
+    ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
-
     assert_no_collected_php_errors(page)
     context.close()
     yield
