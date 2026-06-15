@@ -1127,8 +1127,13 @@ class TestOwnerKnowsOwnBase:
         safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
         page.wait_for_load_state("load")
 
-        # The gift-info form has input[name='giftInformationLocation']
-        # and a sibling location select with name='location_id'.
+        # The gift-info section is a closed-by-default <details>; open it
+        # before scraping the location select.
+        gift_details_summary = page.locator("details summary").filter(
+            has_text="Donner des informations"
+        ).first
+        if gift_details_summary.count() > 0:
+            gift_details_summary.click()
         gift_locations = []
         if page.locator("input[name='giftInformationLocation']").count() > 0:
             options = page.locator(

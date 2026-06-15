@@ -48,6 +48,8 @@ if (
         $isPrivileged = $_SESSION['is_privileged'] ?? false;
 
         if (!$isLoggedIn && !empty($noConnection)) {
+            $sysClass = ($pageName === 'systemPresentation') ? ' class="select"' : '';
+            echo "<a href='/$folder/base/systemPresentation.php'$sysClass>Le Système</a>";
             echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
         } else {
             // Define main links
@@ -55,9 +57,12 @@ if (
                 'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
                 'controllers_action' => ['label' => 'Ma Faction', 'path' => 'controllers/action.php'],
                 'view_workers' => ['label' => 'Agents de la faction', 'path' => 'workers/viewAll.php'],
-                'zones_action' => ['label' => 'Les Zones', 'path' => 'zones/action.php'],
-                'systemPresentation' => ['label' => 'Le Système', 'path' => 'base/systemPresentation.php']
             ];
+            if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+                $links['ressources_view'] = ['label' => 'Ressources', 'path' => 'ressources/view.php'];
+            }
+            $links['zones_action'] = ['label' => 'Les Zones', 'path' => 'zones/action.php'];
+            $links['systemPresentation'] = ['label' => 'Le Système', 'path' => 'base/systemPresentation.php'];
 
             foreach ($links as $key => $info) {
                 $selectedClass = ($pageName === $key) ? ' class="select"' : '';

@@ -202,6 +202,8 @@ function destroyAllTables($pdo) {
         }
         if ($_SESSION['DBTYPE'] == 'mysql'){
             $tables = array(
+                'information_gift_logs',
+                'ressource_gift_logs',
                 'controller_ressources',
                 'ressources_config',
                 'controller_location_attacks',
@@ -258,6 +260,49 @@ function destroyAllTables($pdo) {
  * @param array $columns Array of column names in CSV order (can include lookup columns like 'origin_name->origin_id')
  * @return bool Success status
  */
+/**
+ * Post-zones forward-reference resolver for controllers.origin_zone_id.
+ * The CSV loader runs `controllers` BEFORE `zones`, so the
+ * `zones__name->origin_zone_id` lookup returns NULL at controllers-load
+ * time. This walks the controllers CSV after zones are loaded and
+ * UPDATEs each row's origin_zone_id based on the zone name in the CSV.
+ *
+ * @param PDO    $pdo
+ * @param string $controllersCsvPath
+ *
+ * @return int  count of rows updated
+ */
+function resolveControllerOriginZones($pdo, $controllersCsvPath) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $fh = fopen($controllersCsvPath, 'r');
+    if (!$fh) return 0;
+    $header = fgetcsv($fh);
+    if (!$header) { fclose($fh); return 0; }
+    $lastCol = array_search('lastname', $header);
+    $originCol = array_search('zones__name->origin_zone_id', $header);
+    if ($lastCol === false || $originCol === false) { fclose($fh); return 0; }
+    $count = 0;
+    while (($row = fgetcsv($fh)) !== false) {
+        $lastname = $row[$lastCol] ?? '';
+        $zoneName = $row[$originCol] ?? '';
+        if ($lastname === '' || $zoneName === '') continue;
+        try {
+            $zoneStmt = $pdo->prepare("SELECT id FROM {$prefix}zones WHERE name = :n LIMIT 1");
+            $zoneStmt->execute([':n' => $zoneName]);
+            $zoneId = $zoneStmt->fetchColumn();
+            if (!$zoneId) continue;
+            $upd = $pdo->prepare("UPDATE {$prefix}controllers SET origin_zone_id = :z WHERE lastname = :n");
+            $upd->execute([':z' => $zoneId, ':n' => $lastname]);
+            if ($upd->rowCount() > 0) $count++;
+        } catch (PDOException $e) {
+            echo __FUNCTION__."(): {$lastname} → {$zoneName} failed: ".$e->getMessage()."<br />";
+        }
+    }
+    fclose($fh);
+    if ($count > 0) echo "resolveControllerOriginZones: updated $count controller origin_zone_id rows.<br />";
+    return $count;
+}
+
 function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $prefixedTable = $prefix . $tableName;
@@ -650,59 +695,6 @@ function loadWorkersCSV($pdo, $csvFile) {
 }
 
 /**
- * Execute SQL UPDATE statements from CSV
- * CSV format: table_name,column_name,where_column,where_value,new_value
- *
- * @param PDO $pdo Database connection
- * @param string $csvFile Path to CSV file
- * @return bool Success status
- */
-function loadCSVUpdates($pdo, $csvFile) {
-    $prefix = $_SESSION['GAME_PREFIX'];
-    
-    if (!file_exists($csvFile)) {
-        echo "CSV file $csvFile not found.<br />";
-        return false;
-    }
-    
-    try {
-        $handle = fopen($csvFile, 'r');
-        if ($handle === false) {
-            echo "Failed to open CSV file $csvFile.<br />";
-            return false;
-        }
-        
-        // Skip header row
-        $header = fgetcsv($handle);
-        
-        $updateCount = 0;
-        while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 5) {
-                continue;
-            }
-            
-            $tableName = $prefix . trim($row[0]);
-            $columnName = trim($row[1]);
-            $whereColumn = trim($row[2]);
-            $whereValue = trim($row[3]);
-            $newValue = trim($row[4]);
-            
-            $sql = "UPDATE {$tableName} SET {$columnName} = ? WHERE {$whereColumn} = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$newValue, $whereValue]);
-            $updateCount++;
-        }
-        
-        fclose($handle);
-        echo "CSV updates from $csvFile executed successfully ($updateCount updates).<br />";
-        return true;
-    } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error loading CSV updates $csvFile: " . $e->getMessage()."<br />";
-        return false;
-    }
-}
-
-/**
  * Check that the game is ready:
  *  - databse is accessible
  *  - tables are loaded
@@ -772,34 +764,41 @@ function gameReady() {
                         'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
                         'players' => ['username', 'passwd', 'is_privileged'],
-                        'controllers' => ['firstname', 'lastname', 'ia_type', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'controllers' => ['firstname', 'lastname', 'ia_type', 'zones__name->origin_zone_id', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
-                        'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost'],
+                        'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules'],
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
-                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id'],
-                        'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json'],
+                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
+                        'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
-                        'textes' => ['name', 'value', 'description'],
+                        'config' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
                     ];
                     foreach ( $fileNames as $fileName => $columns ) {
+                        // Post-zones forward-reference fixup: controllers.origin_zone_id
+                        // can only resolve after zones are loaded.
+                        if ($fileName === 'locations') {
+                            $controllersCsv = sprintf('%s/var/csv/setup%s_controllers.csv', $path, $_POST['config_name']);
+                            if (file_exists($controllersCsv)) {
+                                resolveControllerOriginZones($pdo, $controllersCsv);
+                            }
+                        }
                         // Check for CSV file first
                         $csvFile = sprintf('%s/var/csv/setup%s_%s.csv', $path, $_POST['config_name'], $fileName);
                         $sqlFile = sprintf('%s/var/%s/setup%s_%s.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name'], $fileName);
+                        // Legacy fallback: CSV `_textes` was renamed to `_config`, but the SQL
+                        // counterparts kept their original `_textes.sql` filenames.
+                        if ($fileName === 'config' && !file_exists($sqlFile)) {
+                            $sqlFile = sprintf('%s/var/%s/setup%s_textes.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
+                        }
 
                         if (file_exists($csvFile)) {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
                             
-                            // Handle specific file types
-                            // Map file names to actual table names where they differ
-                            $tableNameMap = ['textes' => 'config'];
-                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'textes', 'zones'])) {
-                                $tableName = $tableNameMap[$fileName] ?? $fileName;
-                                loadCSVFile($pdo, $csvFile, $tableName, $columns);
-                            } elseif ($fileName === 'config') {
-                                loadCSVUpdates($pdo, $csvFile);
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'config', 'zones'])) {
+                                loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } else {
                                 // For base and zones, they contain complex SQL with subqueries
                                 // CSV support for these would require more complex handling

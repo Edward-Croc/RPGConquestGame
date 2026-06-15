@@ -273,8 +273,8 @@ function createBase($pdo, $controller_id, $zone_id) {
         echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
     }
 
-    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base) VALUES
-        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True)";
+    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base, location_types) VALUES
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True, '[\"fortress\"]')";
     try{
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -316,6 +316,36 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
     spendRessourcesToMoveBase($pdo, $controller_id);
 
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    // Cancel any in-flight end-turn attacks targeting this base.
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    try {
+        $sel = $pdo->prepare("SELECT id, location_id, location_name, attacker_controller_id
+            FROM {$prefix}controller_location_attacks
+            WHERE location_id = :base_id AND queued_turn = :turn AND success IS NULL");
+        $sel->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $sel->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+        $sel->execute();
+        $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT in-flight attacks failed: " . $e->getMessage()."<br />";
+        $inFlight = [];
+    }
+    foreach ($inFlight as $row) {
+        failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
+    }
+
+    // Defensive: ensure any pre-existing base lacking the fortress tag gets it.              
+    try {                                                                                     
+        $stmt = $pdo->prepare("UPDATE {$prefix}locations SET location_types = '[\"fortress\"]'
+            WHERE id = :base_id AND location_types IS NULL");                                            
+        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);                               
+            $stmt->execute();                                                                     
+        } catch (PDOException $e) {                                                               
+            echo __FUNCTION__."(): UPDATE location_types failed: " . $e->getMessage()."<br />";   
+    }
+  
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{
@@ -356,7 +386,7 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
  */
 function showAttackableControllerKnownLocations($pdo, $controller_id) {
     // Exclude own — controller cannot attack own base.
-    $excludePending = (getConfig($pdo, 'locationAttackMode') === 'endTurn');
+    $excludePending = in_array(getConfig($pdo, 'locationAttackMode'), ['endTurn'], true);
     $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true, $excludePending);
     if (empty($locations)) return NULL;
 
@@ -436,7 +466,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $mode = getConfig($pdo, 'locationAttackMode');
-    if ($mode === 'worker') {
+    if (!in_array($mode, ['immediate', 'endTurn'], true)) {
         return array('success' => false, 'message' => 'Action indisponible.');
     }
 
@@ -468,16 +498,29 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
 
     if ($mode === 'endTurn') {
         try {
+            // INSERT WHERE NOT EXISTS: dedupe (attacker, location, turn) at the backend.
             $insertSql = "INSERT INTO {$prefix}controller_location_attacks
                 (location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot)
-                VALUES (:location_id, :location_name, :attacker, :turn, :defence)";
+                SELECT :location_id, :location_name, :attacker, :turn, :defence
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {$prefix}controller_location_attacks
+                    WHERE attacker_controller_id = :attacker_check
+                      AND location_id = :location_check
+                      AND queued_turn = :turn_check
+                )";
             $stmt = $pdo->prepare($insertSql);
             $stmt->bindParam(':location_id', $target_location_id, PDO::PARAM_INT);
+            $stmt->bindParam(':location_check', $target_location_id, PDO::PARAM_INT);
             $stmt->bindParam(':location_name', $location[0]['name'], PDO::PARAM_STR);
             $stmt->bindParam(':attacker', $controller_id, PDO::PARAM_INT);
+            $stmt->bindParam(':attacker_check', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+            $stmt->bindParam(':turn_check', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':defence', $locationDefence, PDO::PARAM_INT);
             $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                return array('success' => false, 'queued' => false, 'message' => 'Attaque déjà planifiée ce tour.');
+            }
         } catch (PDOException $e) {
             echo __FUNCTION__."(): INSERT controller_location_attacks Failed: " . $e->getMessage()."<br />";
             return array('success' => false, 'message' => 'Error : Queue Failed');
@@ -991,7 +1034,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     $enemyWorkersSelect = sprintf("
         <div class='control for-select'>
             <div class='select is-fullwidth'>
-                <select id='enemyWorkersSelect' name='enemy_worker_id' >
+                <select id='enemyWorkersSelect' name='enemy_worker_id' required>
                     <option value=\"\">Sélectionner un agent</option>
                     %s
                 </select>
@@ -1053,7 +1096,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
     $knownLocationsSelect = sprintf("
         <div class='control for-select'>
             <div class='select is-fullwidth'>
-                <select id='locationsSelect' name='location_id' >
+                <select id='locationsSelect' name='location_id' required>
                     <option value=\"\">Sélectionner un lieu</option>
                     %s
                 </select>
@@ -1085,9 +1128,89 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $knownLocationsSelect
     );
 
-    $html = '<div class="box mb-5"><h3 class="title is-5 mt-5">Donner des informations :</h3>';
+    $html = '<div class="box mb-5"><details><summary class="title is-5">Donner des informations :</summary>';
     $html .= $htmlGiftInformationAgent;
     $html .= $htmlGiftInformationLocation;
-    $html .= '</div>';
+    $html .= '</details></div>';
     return $html;
+}
+
+/**
+ * Append a row to information_gift_logs. Silent on error; the caller's
+ * actual gift-information action has already succeeded (CKE/CKL row
+ * written) and we don't want the log failure to surface as a user-facing
+ * error.
+ *
+ * @param PDO    $pdo
+ * @param int    $giver_id
+ * @param int    $recipient_id
+ * @param string $target_type 'agent' | 'location'
+ * @param int    $target_id   worker_id or location_id
+ * @param int    $turn
+ *
+ * @return void
+ */
+function logInformationGift($pdo, $giver_id, $recipient_id, $target_type, $target_id, $turn) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}information_gift_logs
+            (giver_controller_id, recipient_controller_id, target_type, target_id, turn)
+            VALUES (:giver, :recipient, :type, :tid, :turn)");
+        $stmt->execute([
+            ':giver'     => (int)$giver_id,
+            ':recipient' => (int)$recipient_id,
+            ':type'      => $target_type,
+            ':tid'       => (int)$target_id,
+            ':turn'      => (int)$turn,
+        ]);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): INSERT information_gift_logs failed: ".$e->getMessage()."<br />";
+    }
+}
+
+/**
+ * Fetch information gifts received by a controller, newest first.
+ * Each row resolves `target_label` via the appropriate table:
+ *   target_type='agent'    → worker firstname + lastname
+ *   target_type='location' → location name
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array each row: ['turn', 'giver', 'target_type', 'target_label']
+ */
+function getInformationGiftsReceived($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT
+            l.turn,
+            l.target_type,
+            l.target_id,
+            CONCAT(c.firstname, ' ', c.lastname) AS giver
+        FROM {$prefix}information_gift_logs l
+        JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
+        WHERE l.recipient_controller_id = :recipient
+        ORDER BY l.turn DESC, l.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':recipient' => (int)$controller_id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT information_gift_logs failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+
+    foreach ($rows as &$row) {
+        if ($row['target_type'] === 'agent') {
+            $w = $pdo->prepare("SELECT CONCAT(firstname, ' ', lastname) AS label FROM {$prefix}workers WHERE id = :id");
+            $w->execute([':id' => (int)$row['target_id']]);
+            $row['target_label'] = $w->fetchColumn() ?: '#'.(int)$row['target_id'];
+        } elseif ($row['target_type'] === 'location') {
+            $l = $pdo->prepare("SELECT name AS label FROM {$prefix}locations WHERE id = :id");
+            $l->execute([':id' => (int)$row['target_id']]);
+            $row['target_label'] = $l->fetchColumn() ?: '#'.(int)$row['target_id'];
+        } else {
+            $row['target_label'] = '#'.(int)$row['target_id'];
+        }
+    }
+    return $rows;
 }

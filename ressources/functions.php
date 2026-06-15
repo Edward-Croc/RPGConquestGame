@@ -9,6 +9,8 @@
  * @return bool
  */
 function updateRessources($pdo, $mechanics) {
+    echo '<div> <h3>  updateRessources : </h3> ';
+
     /** Foreach controller :
      *  - If corresponding line controller_ressources exists,
      *    - If ressource_config.is_stored is TRUE, add amount to amount_stored
@@ -28,11 +30,11 @@ function updateRessources($pdo, $mechanics) {
         // For each ressource :
         foreach ($controllerRessources as $controllerRessource) {
             //    - If ressource_config.is_stored is TRUE, add amount to amount_stored
-            if ($controllerRessource['is_stored'] === TRUE) {
+            if (!empty($controllerRessource['is_stored'])) {
                 $controllerRessource['amount_stored'] += $controllerRessource['amount'];
             }
             //    - If ressource_config.is_rollable is FALSE, set amount to 0
-            if ($controllerRessource['is_rollable'] === FALSE) {
+            if (empty($controllerRessource['is_rollable'])) {
                 $controllerRessource['amount'] = 0;
             }
             //    - Add end_turn_gain to amount
@@ -42,11 +44,9 @@ function updateRessources($pdo, $mechanics) {
             $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount, amount_stored = :amount_stored WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':amount_stored' => $controllerRessource['amount_stored'], ':id' => $controllerRessource['rc_id']]);
-            if (!$stmt->rowCount()) {
-                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
-            }
         }
     }
+    echo '</div> ';
     return true;
 }
 
@@ -288,4 +288,226 @@ function repairLocationCostHTML($pdo, $controller_id) {
         }
     }
     return $html;
+}
+
+/**
+ * Natural-French rendering of a gain rule's condition for display.
+ * $zoneTypeLabel is the resolved `textForZoneType` config ("zone" / "quartier"
+ * / "territoire"). Caller fetches it once and passes it in.
+ *
+ * @param array  $rule
+ * @param string $zoneTypeLabel
+ *
+ * @return string
+ */
+function gainRuleToText(array $rule, $zoneTypeLabel = 'zone') {
+    $type = $rule['condition']['type'] ?? '';
+    switch ($type) {
+        case 'holds_zone':
+            if (isset($rule['condition']['zone_id'])) {
+                return sprintf('pour le %s tenu (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            return sprintf('par %s tenu', $zoneTypeLabel);
+        case 'claims_zone':
+            if (isset($rule['condition']['zone_id'])) {
+                return sprintf('pour le %s revendiqué (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            return sprintf('par %s sous notre bannière ce tour', $zoneTypeLabel);
+        case 'owns_location_type':
+            $tag = $rule['condition']['location_type'] ?? null;
+            if ($tag === 'temple')   return 'par temple possédé';
+            if ($tag === 'fortress') return 'par forteresse possédée';
+            if ($tag !== null)       return sprintf('par lieu de type "%s" possédé', $tag);
+            return 'par lieu possédé';
+        default:
+            return 'selon règle';
+    }
+}
+
+/**
+ * Compute the next-turn gain estimate for a single controller, grouped by timing.
+ * Returns a map: ressource_id => [
+ *   'before_claim' => [ ['amount', 'text', 'count', 'total'], ... ],
+ *   'after_claim'  => [ ... ],
+ *   'total'        => sum of all rule contributions for this ressource,
+ * ].
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array
+ */
+function ressourceGainEstimateForController($pdo, $controller_id) {
+    require_once __DIR__ . '/../mechanics/ressourceGainMechanic.php';
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $estimate = [];
+    $zoneTypeLabel = getConfig($pdo, 'textForZoneType') ?: 'zone';
+
+    try {
+        $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
+            FROM {$prefix}ressources_config
+            WHERE gain_rules IS NOT NULL");
+        $stmt->execute();
+        $configRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT gain_rules failed: ".$e->getMessage()."<br />";
+        return [];
+    }
+
+    foreach ($configRows as $row) {
+        $ressourceId = (int)$row['ressource_id'];
+        $rules = json_decode($row['gain_rules'], true);
+        if (!is_array($rules)) continue;
+        $bucket = ['before_claim' => [], 'after_claim' => [], 'total' => 0];
+
+        foreach ($rules as $rule) {
+            if (!is_array($rule)) continue;
+            if (!isset($rule['amount']) || !is_numeric($rule['amount'])) continue;
+            if (!isset($rule['timing']) || !in_array($rule['timing'], ['before_claim', 'after_claim'], true)) continue;
+            if (!isset($rule['condition']['type'])) continue;
+
+            $matches = ressourceGainEvaluateCondition($pdo, $rule['condition']);
+            $count = 0;
+            foreach ($matches as $match) {
+                if ((int)$match['controller_id'] === (int)$controller_id) {
+                    $count = (int)$match['match_count'];
+                    break;
+                }
+            }
+            $amount = (int)$rule['amount'];
+            $total = $amount * $count;
+            $bucket[$rule['timing']][] = [
+                'amount' => $amount,
+                'text'   => gainRuleToText($rule, $zoneTypeLabel),
+                'count'  => $count,
+                'total'  => $total,
+            ];
+            $bucket['total'] += $total;
+        }
+        $estimate[$ressourceId] = $bucket;
+    }
+    return $estimate;
+}
+
+/**
+ * Process a ressource gift from $giver_id to $post['target_controller_id'].
+ * Validates inputs, wraps the decrement / increment / log writes in a
+ * transaction so partial failure cannot vanish ressources.
+ *
+ * @param PDO   $pdo
+ * @param int   $giver_id
+ * @param array $post  expects 'ressource_id', 'target_controller_id', 'amount'
+ *
+ * @return array ['success' => bool, 'message' => string]
+ */
+function giftRessource($pdo, $giver_id, array $post) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $ressource_id = (int)($post['ressource_id'] ?? 0);
+    $target_id    = (int)($post['target_controller_id'] ?? 0);
+    $amount       = (int)($post['amount'] ?? 0);
+    $giver_id     = (int)$giver_id;
+
+    if ($amount <= 0) {
+        return ['success' => false, 'message' => 'Quantité invalide.'];
+    }
+    if ($target_id <= 0 || $target_id === $giver_id) {
+        return ['success' => false, 'message' => 'Faction cible invalide.'];
+    }
+    if ($ressource_id <= 0) {
+        return ['success' => false, 'message' => 'Ressource invalide.'];
+    }
+
+    try {
+        $stmt = $pdo->prepare("SELECT 1 FROM {$prefix}controllers WHERE id = :id AND secret_controller IS NOT TRUE");
+        $stmt->execute([':id' => $target_id]);
+        if (!$stmt->fetchColumn()) {
+            return ['success' => false, 'message' => 'Faction cible invalide.'];
+        }
+
+        $stmt = $pdo->prepare("SELECT 1 FROM {$prefix}ressources_config WHERE id = :id");
+        $stmt->execute([':id' => $ressource_id]);
+        if (!$stmt->fetchColumn()) {
+            return ['success' => false, 'message' => 'Ressource introuvable.'];
+        }
+
+        $stmt = $pdo->prepare("SELECT amount FROM {$prefix}controller_ressources WHERE controller_id = :cid AND ressource_id = :rid");
+        $stmt->execute([':cid' => $giver_id, ':rid' => $ressource_id]);
+        $giverAmount = $stmt->fetchColumn();
+        if ($giverAmount === false) {
+            return ['success' => false, 'message' => 'Vous ne possédez pas cette ressource.'];
+        }
+        if ((int)$giverAmount < $amount) {
+            return ['success' => false, 'message' => 'Quantité supérieure à votre stock actuel.'];
+        }
+
+        $stmt = $pdo->query("SELECT turncounter FROM {$prefix}mechanics LIMIT 1");
+        $turn = (int)($stmt->fetchColumn() ?: 0);
+    } catch (PDOException $e) {
+        return ['success' => false, 'message' => 'Erreur de validation.'];
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare("UPDATE {$prefix}controller_ressources
+            SET amount = amount - :amt
+            WHERE controller_id = :cid AND ressource_id = :rid AND amount >= :amt2");
+        $stmt->execute([':amt' => $amount, ':amt2' => $amount, ':cid' => $giver_id, ':rid' => $ressource_id]);
+        if ($stmt->rowCount() === 0) {
+            $pdo->rollBack();
+            return ['success' => false, 'message' => 'Échec : stock insuffisant ou modifié.'];
+        }
+
+        $stmt = $pdo->prepare("UPDATE {$prefix}controller_ressources
+            SET amount = amount + :amt
+            WHERE controller_id = :cid AND ressource_id = :rid");
+        $stmt->execute([':amt' => $amount, ':cid' => $target_id, ':rid' => $ressource_id]);
+        if ($stmt->rowCount() === 0) {
+            $stmt = $pdo->prepare("INSERT INTO {$prefix}controller_ressources (controller_id, ressource_id, amount, amount_stored, end_turn_gain)
+                VALUES (:cid, :rid, :amt, 0, 0)");
+            $stmt->execute([':cid' => $target_id, ':rid' => $ressource_id, ':amt' => $amount]);
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}ressource_gift_logs
+            (giver_controller_id, recipient_controller_id, ressource_id, amount, turn)
+            VALUES (:giver, :recipient, :rid, :amt, :turn)");
+        $stmt->execute([':giver' => $giver_id, ':recipient' => $target_id, ':rid' => $ressource_id, ':amt' => $amount, ':turn' => $turn]);
+
+        $pdo->commit();
+        return ['success' => true, 'message' => sprintf('Don de %d effectué.', $amount)];
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        return ['success' => false, 'message' => 'Erreur lors du don.'];
+    }
+}
+
+/**
+ * Fetch ressource gifts received by a controller, newest first.
+ * Each row: ['turn', 'amount', 'giver', 'ressource'].
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ *
+ * @return array
+ */
+function getRessourceGiftsReceived($pdo, $controller_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT
+            l.turn,
+            l.amount,
+            CONCAT(c.firstname, ' ', c.lastname, ' (', f.name, ')') AS giver,
+            rc.ressource_name AS ressource
+        FROM {$prefix}ressource_gift_logs l
+        JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
+        LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
+        JOIN {$prefix}ressources_config rc ON l.ressource_id = rc.id
+        WHERE l.recipient_controller_id = :recipient_id
+        ORDER BY l.turn DESC, l.created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':recipient_id' => $controller_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): SELECT ressource_gift_logs failed: ".$e->getMessage()."<br />";
+        return [];
+    }
 }

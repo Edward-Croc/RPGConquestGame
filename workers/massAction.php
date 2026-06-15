@@ -2,6 +2,14 @@
 
 require_once '../base/basePHP.php';
 
+// Check if the user is logged in
+if (
+    (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true)
+) {
+    header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
+    exit();
+}
+
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
 
@@ -14,6 +22,31 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     // Mass move workers to zone
     if (isset($_GET['mass_move']) && !empty($zone_id) && !empty($worker_ids)){
+        if (!is_array($worker_ids)) { http_response_code(403); exit(); }
+        $worker_ids = array_map('intval', $worker_ids);
+
+        // Ownership check: every worker_id must belong to the session controller
+        if (empty($_SESSION['is_privileged'])) {
+            $session_controller_id = $_SESSION['controller']['id'] ?? null;
+            if (empty($session_controller_id)) { http_response_code(403); exit(); }
+
+            try {
+                $prefix = $_SESSION['GAME_PREFIX'];
+                $placeholders = implode(',', array_fill(0, count($worker_ids), '?'));
+                $stmt = $gameReady->prepare(
+                    "SELECT COUNT(*) FROM {$prefix}controller_worker
+                     WHERE controller_id = ? AND worker_id IN ($placeholders)"
+                );
+                $stmt->execute(array_merge([$session_controller_id], $worker_ids));
+                if ((int)$stmt->fetchColumn() !== count($worker_ids)) {
+                    http_response_code(403); exit();
+                }
+            } catch (PDOException $e) {
+                echo __FUNCTION__."(): SELECT controller_worker Failed: " . $e->getMessage()."<br />";
+                http_response_code(403); exit();
+            }
+        }
+
         foreach ($worker_ids as $worker_id) {
             moveWorker($gameReady, $worker_id, $zone_id);
         }

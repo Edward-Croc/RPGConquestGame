@@ -53,6 +53,7 @@ CREATE TABLE {prefix}controllers (
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
     ia_type text DEFAULT '',
+    origin_zone_id INT, -- AI anchor zone: home / start / fallback location
     faction_id INT NOT NULL,
     fake_faction_id INT NOT NULL,
     secret_controller BOOLEAN DEFAULT FALSE,
@@ -82,6 +83,7 @@ CREATE TABLE {prefix}zones (
     claimer_controller_id INT, -- id of controller officialy claiming the zone
     holder_controller_id INT,   -- id of controller defending the zone
     hide_turn_zero BOOLEAN DEFAULT FALSE, -- JSON storing the hide turns checks
+    adjacent_zones text, -- comma-separated zone ids reachable from this zone (map topology)
     FOREIGN KEY (claimer_controller_id) REFERENCES {prefix}controllers (id),
     FOREIGN KEY (holder_controller_id) REFERENCES {prefix}controllers (id)
 );
@@ -102,6 +104,7 @@ CREATE TABLE {prefix}locations (
     can_be_repaired BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE, -- Is a controllers Base
     activate_json JSON DEFAULT '{}'::json,
+    location_types JSON DEFAULT NULL, -- multi-tag classification (e.g. ["temple","fortress"])
     FOREIGN KEY (zone_id) REFERENCES {prefix}zones (id),
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id)
 );
@@ -148,7 +151,8 @@ CREATE TABLE {prefix}controller_location_attacks (
     defence_val_resolved INT DEFAULT NULL,
     resolved_turn INT DEFAULT NULL,
     FOREIGN KEY (location_id) REFERENCES {prefix}locations (id) ON DELETE SET NULL,
-    FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id)
+    FOREIGN KEY (attacker_controller_id) REFERENCES {prefix}controllers (id),
+    UNIQUE (attacker_controller_id, location_id, queued_turn)
 );
 CREATE INDEX idx_controller_location_attacks_location_id ON {prefix}controller_location_attacks (location_id);
 CREATE INDEX idx_controller_location_attacks_attacker_controller_id ON {prefix}controller_location_attacks (attacker_controller_id);
@@ -167,6 +171,16 @@ CREATE TABLE {prefix}location_attack_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (target_controller_id) REFERENCES {prefix}controllers (id), -- Link to controllers table
     FOREIGN KEY (attacker_id) REFERENCES {prefix}controllers (id) -- Link to controllers table
+);
+
+CREATE TABLE {prefix}information_gift_logs (
+    id SERIAL PRIMARY KEY,
+    giver_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    recipient_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    target_type VARCHAR(16) NOT NULL,
+    target_id INT NOT NULL,
+    turn INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Prepare the Worker Origins
@@ -342,7 +356,8 @@ CREATE TABLE {prefix}ressources_config (
     location_repaire_cost INT NOT NULL DEFAULT 0,
     servant_first_come_cost INT NOT NULL DEFAULT 0,
     servant_recruitment_cost INT NOT NULL DEFAULT 0,
-    extra_first_come_cost INT NOT NULL DEFAULT 0
+    extra_first_come_cost INT NOT NULL DEFAULT 0,
+    gain_rules JSON DEFAULT NULL
 );
 
 CREATE TABLE {prefix}controller_ressources (
@@ -353,8 +368,19 @@ CREATE TABLE {prefix}controller_ressources (
     amount_stored INT NOT NULL DEFAULT 0,
     end_turn_gain INT NOT NULL DEFAULT 0,
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id),
-    FOREIGN KEY (ressource_id) REFERENCES {prefix}ressources_config (id)
+    FOREIGN KEY (ressource_id) REFERENCES {prefix}ressources_config (id),
+    UNIQUE (controller_id, ressource_id)
 );
 -- Create indexes on the controller_ressources table
 CREATE INDEX idx_controller_ressources_controller_id ON {prefix}controller_ressources (controller_id);
 CREATE INDEX idx_controller_ressources_ressource_id ON {prefix}controller_ressources (ressource_id);
+
+CREATE TABLE {prefix}ressource_gift_logs (
+    id SERIAL PRIMARY KEY,
+    giver_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    recipient_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
+    ressource_id INT NOT NULL REFERENCES {prefix}ressources_config (id),
+    amount INT NOT NULL,
+    turn INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

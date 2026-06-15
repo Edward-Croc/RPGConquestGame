@@ -1,9 +1,19 @@
 <?php
 
-require_once '../mechanics/attackMechanic.php';
-require_once '../mechanics/investigateMechanic.php';
 require_once '../mechanics/aiMechanic.php';
+require_once '../mechanics/attackMechanic.php';
+require_once '../mechanics/claimMechanic.php';
+require_once '../mechanics/investigateMechanic.php';
+require_once '../mechanics/locationAttackMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
+require_once '../mechanics/ressourceGainMechanic.php';
+
+if (!defined('WORKER_ACTION_CHOICES_ALLOWED')) {
+    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'captured', 'dead', 'trace']);
+}
+if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
+    define('INVESTIGATE_ACTIONS_DEFAULT', ['passive', 'investigate']);
+}
 
 /**
  * Start or Pause the game state
@@ -96,6 +106,75 @@ function diceRoll($pdo) {
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
     return $roll[0]['roll'];
+}
+
+/**
+ * Validate a configurable list of action_choice values and return a SQL-safe IN-list.
+ *
+ * @param string|null $configValue
+ * @param array $allowedActions
+ * @param array $defaultActions
+ *
+ * @return string
+ */
+function validateActionChoiceListForSql($configValue, $allowedActions, $defaultActions) {
+    $parsedActions = [];
+    if (!empty($configValue)) {
+        $normalized = trim((string)$configValue);
+
+        // Native format used by config rows: 'passive','investigate'
+        if (preg_match("/^'[^']+'(?:\\s*,\\s*'[^']+')*$/", $normalized)) {
+            preg_match_all("/'([^']+)'/", $normalized, $matches);
+            if (!empty($matches[1])) {
+                $parsedActions = $matches[1];
+            }
+        } else {
+            // Fallback parser for loosely formatted CSV-like strings.
+            $normalized = str_replace(["'", '"'], '', $normalized);
+            $rawParts = explode(',', $normalized);
+            foreach ($rawParts as $part) {
+                $part = trim($part);
+                if ($part !== '') {
+                    $parsedActions[] = $part;
+                }
+            }
+        }
+    }
+
+    if (empty($parsedActions)) {
+        $parsedActions = $defaultActions;
+    }
+
+    $safeActions = [];
+    foreach ($parsedActions as $action) {
+        if (in_array($action, $allowedActions, true) && !in_array($action, $safeActions, true)) {
+            $safeActions[] = $action;
+        }
+    }
+
+    if (empty($safeActions)) {
+        $safeActions = $defaultActions;
+    }
+
+    $quotedActions = [];
+    foreach ($safeActions as $action) {
+        $quotedActions[] = "'".$action."'";
+    }
+
+    return implode(',', $quotedActions);
+}
+
+/**
+ * Return validated investigation actions for SQL usage.
+ *
+ * @param PDO $pdo
+ *
+ * @return string
+ */
+function getValidatedInvestigateActionsForSql($pdo) {
+    $configuredActions = getConfig($pdo, 'investigateActionsList');
+
+    return validateActionChoiceListForSql($configuredActions, WORKER_ACTION_CHOICES_ALLOWED, INVESTIGATE_ACTIONS_DEFAULT);
 }
 
 /**
@@ -227,64 +306,7 @@ function calculateVals($pdo, $mechanics){
         echo "DONE <br /></p>";
     }
 
-    echo '</div><div><p> <h3> Calculate zone defense values: </h3> ';
-    try {
-        if ($_SESSION['DBTYPE'] == 'postgres'){
-            $sql = "UPDATE {$prefix}zones
-                SET calculated_defence_val = defence_val + subquery.worker_count
-                FROM (
-                    SELECT
-                        z.id AS zone_id,
-                        COALESCE(COUNT(w.id), 0) AS worker_count
-                    FROM
-                        {$prefix}zones z
-                    LEFT JOIN
-                        {$prefix}workers w ON w.zone_id = z.id
-                    LEFT JOIN 
-                        {$prefix}worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN
-                        {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
-                    WHERE
-                        z.holder_controller_id = cw.controller_id
-                        AND wa.action_choice IN (%s)
-                        AND wa.turn_number = :turn_number
-                    GROUP BY
-                        z.id
-                ) AS subquery
-                WHERE {$prefix}zones.id = subquery.zone_id
-            ";
-        }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
-            $sql = "UPDATE {$prefix}zones z
-                JOIN (
-                    SELECT z.id AS zone_id, 
-                        COALESCE(COUNT(w.id), 0) AS worker_count 
-                    FROM {$prefix}zones z 
-                    LEFT JOIN {$prefix}workers w ON w.zone_id = z.id 
-                    LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
-                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = :is_primary_controller
-                    WHERE z.holder_controller_id = cw.controller_id 
-                    AND wa.action_choice IN (%s)
-                    AND wa.turn_number = :turn_number
-                    GROUP BY z.id
-                ) AS subquery ON z.id = subquery.zone_id
-                SET z.calculated_defence_val = z.defence_val + subquery.worker_count
-            ";
-        }
-        // Prepare and execute SQL query
-        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-        $is_primary_controller = true;
-
-        $sql = sprintf($sql, $active_actions);
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
-        $stmt->bindParam(':is_primary_controller', $is_primary_controller, PDO::PARAM_BOOL);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
-        return false;
-    }
-    echo 'DONE </p></div>';
+    echo '</div>';
 
     changeEndTurnState($pdo, 'calculateVals', $mechanics);
     return true;
@@ -371,238 +393,6 @@ function createNewTurnLines($pdo, $turn_number){
     }
 
     echo '<p>createNewTurnLines : DONE</p> </div>';
-
-    return true;
-}
-
-/**
- *
- * 
- * @param PDO $pdo : database connection
- * @param array $mechanics : mechanics array
- *
- * @return bool : success
- *
- */
-function claimMechanic($pdo, $mechanics) {
-    $turn_number = $mechanics['turncounter'];
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
-
-    echo '<div> <h3>  claimMechanic : </h3> ';
-    echo "turn_number : $turn_number <br>";
-
-    $prefix = $_SESSION['GAME_PREFIX'];
-    
-    // Define the SQL query
-    $sql = "SELECT
-            wa.worker_id AS claimer_id,
-            CONCAT(w.firstname, ' ', w.lastname) AS claimer_name,
-            wa.enquete_val AS claimer_enquete_val,
-            wa.attack_val AS claimer_attack_val,
-            wa.action_params AS claimer_params,
-            wa.controller_id AS claimer_controller_id,
-            z.id AS zone_id,
-            z.name AS zone_name,
-            z.holder_controller_id AS zone_holder_controller_id,
-            (wa.enquete_val - z.calculated_defence_val) AS discrete_claim,
-            (wa.attack_val - z.calculated_defence_val) AS violent_claim
-        FROM {$prefix}worker_actions wa
-        JOIN {$prefix}zones z ON z.id = wa.zone_id
-        JOIN {$prefix}workers w ON w.id = wa.worker_id
-        -- JOIN controller c ON c.id = wa.controller_id
-        WHERE
-            wa.action_choice = 'claim'
-            AND wa.turn_number = :turn_number
-        ORDER BY
-            z.id, wa.attack_val DESC
-    ";
-    try{
-        // Prepare and execute the statement
-        $stmt = $pdo->prepare($sql);
-        if ( !EMPTY($searcher_id) ) $stmt->bindParam(':searcher_id', $searcher_id);
-        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
-    }
-    // Fetch and return the results
-    $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($debug)
-    echo sprintf("%s(): claimerArray %s </br>", __FUNCTION__, var_export($claimerArray,true));
-
-    $arrayZoneInfo = array();
-    $DISCRETECLAIMDIFF = (INT)getConfig($pdo, 'DISCRETECLAIMDIFF');
-    $VIOLENTCLAIMDIFF = (INT)getConfig($pdo, 'VIOLENTCLAIMDIFF');
-    $CLAIMTYPEDIFF = $DISCRETECLAIMDIFF - $VIOLENTCLAIMDIFF;
-
-    foreach( $claimerArray AS $key => $claimer ) {
-        $worker_id = $claimer['claimer_id'];
-
-        if ($debug)
-            echo sprintf("<p> %s(): checking key %s => claimer: %s </br>", __FUNCTION__, $key, var_export($claimer,true));
-
-        // claims are generally violent
-        $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = true;
-        // claim are not generally successful
-        $success = false;
-
-        if ($debug) {
-            echo sprintf(
-                "%s(): zone_holder_controller_id : '%s', zone has not been claimed this turn: '%s', next key exists : '%s'",
-                __FUNCTION__,
-                var_export($claimer['zone_holder_controller_id'],true),
-                var_export(empty($arrayZoneInfo[$claimer['zone_id']]['claimer']),true),
-                var_export(!empty($claimerArray[$key+1]),true)
-            );
-            echo sprintf("%s(): It is this 1st iteration and only for active zone %s: ", __FUNCTION__, $claimer['zone_id']);
-        }
-        // if its the 1st and only claim for a previously unclaimed zone then
-        if (
-            $claimer['zone_holder_controller_id'] == NULL
-            && empty($arrayZoneInfo[$claimer['zone_id']]['claimer'])
-            && (
-                $key-1 < 0
-                || $claimerArray[$key-1]['zone_id'] != $claimer['zone_id']
-            )
-            && (
-                empty($claimerArray[$key+1])
-                || $claimerArray[$key+1]['zone_id'] != $claimer['zone_id']
-            )
-        ){
-            if ($debug) echo " -> yes ";
-            // if discrete_claim or violent_claim is sufficient to claim
-            if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
-                // mark as success
-                $success = true;
-                // Save claimer info
-                $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
-                // Check if it is exceptionnaly a discret claim
-                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF )
-                    $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'] = false;
-            }
-
-        // if its not the 1st claim found for the zone or the zone was already claimed then
-        } else {
-            if ($debug) echo " -> no  ";
-            // if no successful claimer has been found yet
-            if ( empty($arrayZoneInfo[$claimer['zone_id']]['claimer']) ) {
-                if ($debug) echo " -> is Allowed to claim ";
-                // if discrete_claim or violent_claim is sufficient to claim
-                if ( (INT)$claimer['discrete_claim'] >= $DISCRETECLAIMDIFF || (INT)$claimer['violent_claim'] >= $VIOLENTCLAIMDIFF ) {
-                    if ($debug) echo " -> Success ";
-                    // mark as success
-                    $success = true;
-                    // Save claimer info
-                    $arrayZoneInfo[$claimer['zone_id']]['claimer'] = $claimer;
-                }
-            }
-        }
-        //if ($debug)
-        if ($debug) echo " </br>";
-
-        //if ($debug)
-        if ($debug) echo sprintf(
-                "Warn controllers of workers that violence happened : %s and if it was successful or not : %s",
-                var_export( $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim'], true),
-                var_export( $success, true)
-            );
-        if ($arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']) {
-            // get all workers of zone
-            $sql_workers_by_zone = "SELECT *
-                FROM {$prefix}workers w
-                JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
-                JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
-                WHERE
-                    w.zone_id = :zone_id
-                    AND cw.controller_id != :controller_id
-                    AND wa.action_choice IN (%s)";
-            try {
-                $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-                $sql_workers_by_zone = sprintf($sql_workers_by_zone, $active_actions);
-
-                $stmt = $pdo->prepare($sql_workers_by_zone);
-                $stmt->bindParam(':zone_id', $claimer['zone_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':controller_id', $claimer['claimer_controller_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-                $stmt->execute();
-                $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (PDOException $e) {
-                echo "getWorkersByZone(): Failed to fetch workers: " . $e->getMessage();
-                continue;
-            }
-            if ($debug)
-                echo sprintf ("sql_workers_by_zone => workers : %s <br>", var_export($workers, true) );
-            foreach ( $workers AS $worker) {
-                if ($debug)  echo sprintf ("for worker : %s <br>", var_export($worker, true) );
-                //textesClaimFailViewArray / textesClaimSuccessViewArray
-                // (nom) - %1$s
-                // (zone) - %2$s
-                $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimFailViewArray'), true);
-                if ($success)
-                    $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessViewArray'), true);
-                $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
-
-                $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']).'<br/>';
-                // add description of violent claim to report and if $success
-                updateWorkerAction($pdo, $worker['worker_id'],  $turn_number, NULL, ['claim_report' => $report]);
-                // update controller_known_enemies for controllers of workers in zone
-                if ($debug)
-                    echo sprintf("addWorkerToCKE (%s, %s, %s, %s) <br>", $worker['controller_id'], $worker_id, $turn_number, $claimer['zone_id']);
-                addWorkerToCKE($pdo, $worker['controller_id'], $worker_id, $turn_number, $claimer['zone_id']);
-            }
-        }
-        // For Worker add message if claim is successful or failed ($success) an if it was violent or not $arrayZoneInfo[$claimer['zone_id']]['is_violent_claim']
-        // (nom) - %1$s
-        // (zone) - %2$s
-        $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimFailArray'), true);
-        if ($success)
-            $textesClaimViewArray = json_decode(getConfig($pdo,'textesClaimSuccessArray'), true);
-        $textesClaimView = $textesClaimViewArray[array_rand($textesClaimViewArray)];
-        $report = sprintf($textesClaimView, $claimer['claimer_name'], $claimer['zone_name']);
-        try{
-            updateWorkerAction($pdo, $worker_id,  $turn_number, NULL, ['claim_report' => $report]);
-        } catch (Exception $e) {
-            echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
-            break;
-        }
-
-        if ($debug) echo '</p>';
-    }
-
-    foreach ( $arrayZoneInfo as $key => $zoneInfo ) {
-        if ( ! empty($zoneInfo['claimer']) )  {
-            if ($debug) echo "zoneInfo['claimer']['claimer_params'] :". var_export($zoneInfo['claimer']['claimer_params'], true). "<br />";
-
-            $claimer_params = json_decode($zoneInfo['claimer']['claimer_params'], true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
-                $claimer_params = array();
-            }
-            if ($debug) echo "claimer_params :". var_export($claimer_params, true);
-
-            $claimer_controller_id = $zoneInfo['claimer']['claimer_controller_id'];
-            if ( !empty($claimer_params['claim_controller_id'])) {
-                $claimer_controller_id = $claimer_params['claim_controller_id'];
-                if ($claimer_params['claim_controller_id'] == 'null') $claimer_controller_id = null;
-            }
-
-            $sql = "UPDATE {$prefix}zones SET claimer_controller_id = :claimer_controller_id , holder_controller_id = :holder_controller_id WHERE id = :id";
-            try{
-                // Update config value in the database
-                $stmt = $pdo->prepare($sql);
-                $stmt->bindParam(':id', $zoneInfo['claimer']['zone_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':holder_controller_id', $zoneInfo['claimer']['claimer_controller_id'], PDO::PARAM_INT);
-                $stmt->bindParam(':claimer_controller_id', $claimer_controller_id, PDO::PARAM_INT);
-                $stmt->execute();
-            } catch (PDOException $e) {
-                echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
-            }
-            echo $sql. "</br>";
-        }
-        else { echo "Zone $key Unclaimed. <br />";}
-    }
-
-    echo '<p>claimMechanic : DONE</p> </div>';
 
     return true;
 }

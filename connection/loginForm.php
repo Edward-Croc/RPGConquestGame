@@ -43,9 +43,13 @@ if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
 }else{
-    $_SESSION['DEBUG'] = getConfig($gameReady, 'DEBUG');
+    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
+        $_SESSION['DEBUG'] = true;
+    }
+    $gameTitle = getConfig($gameReady, 'TITLE');
     if ($_SESSION['DEBUG'] == true){
         echo "The game is ready.<br />";
+        echo "The gameTitle is : '$gameTitle'.<br />";
     }
 }
 
@@ -123,8 +127,17 @@ if (
 </head>
 <body>
 <div class="header">
-    <h1>RPGConquestGame</h1>
+    <h1>RPGConquestGame : <?php echo $gameTitle ?> </h1>
 </div>
+<!-- Sidebar MENU -->
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
+    <?php $folder = $_SESSION['FOLDER'] ?? ''; ?>
+    <a href="/<?php echo htmlspecialchars($folder); ?>/base/systemPresentation.php">Le Système</a>
+    <a href="/<?php echo htmlspecialchars($folder); ?>/connection/loginForm.php" class="select">Login</a>
+</div>
+<span class="openbtn" onclick="toggleSidebar()"> ☰ </span>
+<?php require_once '../base/baseScript.php'; ?>
 <div class="content flex">
     <form action="loginForm.php" method="post">
         <h3> Please log in : </H3>

@@ -14,6 +14,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
+    $sort = in_array($_GET['sort'] ?? '', ['age','zone','investigate','attack']) ? $_GET['sort'] : 'age';
+
     echo "<div class='section workers'>";
         $recruitButton = "";
         if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
@@ -40,6 +42,34 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $controller_id,
             $firstComeButton,
             $recruitButton
+        );
+
+        $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
+        $sortOptionsHtml = '';
+        foreach ($sortLabels as $value => $label) {
+            $sortOptionsHtml .= sprintf(
+                '<option value="%s"%s>%s</option>',
+                $value,
+                ($sort === $value) ? ' selected' : '',
+                $label
+            );
+        }
+        echo sprintf("
+            <form action='/%s/workers/viewAll.php' method='GET' class='box mb-5'>
+                <h3 class='title is-4'>Tri :</h3>
+                <div class='field is-grouped is-grouped-multiline'>
+                    <div class='control'>
+                        <div class='select'>
+                            <select name='sort'>%s</select>
+                        </div>
+                    </div>
+                    <div class='control'>
+                        <input type='submit' value='Trier' class='button is-link'>
+                    </div>
+                </div>
+            </form>",
+            $_SESSION['FOLDER'],
+            $sortOptionsHtml
         );
 
         $workersArray = getWorkersBycontroller($gameReady, $controller_id);
@@ -84,6 +114,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 )
                     $deadWorkerArray[] = $worker;
             }
+
+            sortWorkerBuckets($liveWorkerArray, $sort);
+            sortWorkerBuckets($doubleAgentWorkerArray, $sort);
+            sortWorkerBuckets($prisonersWorkerArray, $sort);
+            sortWorkerBuckets($deadWorkerArray, $sort);
+
             if (!empty($liveWorkerArray)) {
                 echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
                 // Mass worker action form

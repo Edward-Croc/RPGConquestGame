@@ -49,6 +49,7 @@ VALUES
     ('HIDE_ENQUETE_FLAT_BONUS', 4, 'Bonus to the investigate value if the worker is using hide'),
     ('HIDE_DEFENCE_FLAT_BONUS', 1, 'Bonus to the investigate value if the worker is using hide'),
     -- passive, investigate, attack, claim, captured, dead
+    ('investigateActionsList', '''passive'',''investigate''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
     ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
     ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
@@ -74,6 +75,22 @@ VALUES
     -- Diff vals in claim results
     ('DISCRETECLAIMDIFF', 2, 'Value for discrete claim'),
     ('VIOLENTCLAIMDIFF', 0, 'Value for violent claim'),
+    ('claimMode', 'worker', 'Zone claim resolution mode. worker | worker_leader | controller (v1 ships worker + worker_leader only)'),
+    ('baseClaim', 0, 'Base claim value floor (modes B+C)'),
+    ('baseClaimAddWorkers', 1, 'Per-worker multiplier for claim value (modes B+C)'),
+    ('baseClaimAddOwnedLocations', 1, 'Per-owned-location multiplier for claim value (modes B+C)'),
+    ('maxBonusClaimWorkers', 0, 'Cap on worker bonus for claim (0 = no cap)'),
+    ('maxBonusClaimOwnedLocations', 0, 'Cap on owned-location bonus for claim (0 = no cap)'),
+    ('claimDiff', 1, 'Threshold. claim_val minus defence_val must clear this to succeed (modes B+C)'),
+    ('claimVisibleToRealBonus', 1, 'claim_val bonus when attacker already holds claimer_controller_id but not holder_controller_id'),
+    ('baseClaimAddSupporting', 1, 'Per-supporting-claimer bonus. max(0, COUNT(claimer workers in zone with action=claim) - 1) times this multiplier (claimMode worker_leader)'),
+    ('baseZoneDefenceAddSupporting', 1, 'Per-supporting-claimer bonus. max(0, COUNT(claimer workers in zone with action=claim) - 1) times this multiplier (claimMode worker_leader)'),
+    ('baseZoneDefence', 0, 'Base zone defence floor'),
+    ('baseZoneDefenceAddWorkers', 1, 'Per-worker multiplier for zone defence (holder workers in zone)'),
+    ('baseZoneDefenceAddOwnedLocations', 1, 'Per-owned-location multiplier for zone defence (holder locations in zone)'),
+    ('maxBonusZoneDefenceWorkers', 0, 'Cap on worker bonus for zone defence (0 = no cap)'),
+    ('maxBonusZoneDefenceOwnedLocations', 0, 'Cap on owned-location bonus for zone defence (0 = no cap)'),
+    ('noControllerZoneDefenceBonus', 3, 'Fixed defence bonus when holder_controller_id IS NULL'),
     -- action text in report config
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
     ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
@@ -122,6 +139,8 @@ VALUES
     ('textLocationAttackOutcomeWeak', 'Faibles chances.', 'Predicted-outcome band when current attack is within bandwidth of snapshot defence'),
     ('textLocationAttackOutcomeProbable', 'Réussite probable.', 'Predicted-outcome band when current attack is well above snapshot defence'),
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
+    ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
+    ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')

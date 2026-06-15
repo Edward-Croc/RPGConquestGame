@@ -53,7 +53,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
                 FROM
                     {$prefix}worker_actions wa
                 WHERE
-                    wa.action_choice IN ('passive', 'investigate')
+                    wa.action_choice IN (%s)
                     AND turn_number = :turn_number
             )
             SELECT
@@ -192,7 +192,7 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
                 FROM
                     {$prefix}worker_actions wa
                 WHERE
-                    wa.action_choice IN ('passive', 'investigate')
+                    wa.action_choice IN (%s)
                     AND turn_number = :turn_number
             ) s
             JOIN {$prefix}zones z ON z.id = s.zone_id
@@ -210,10 +210,12 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     if ( !EMPTY($searcher_id) ) $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
     if ($debug) echo sprintf("sql : %s <br/>", $sql);
     try{
+        $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
         $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
         if ($debug) echo sprintf("turn_number : %s <br/>", $turn_number);
+        if ($debug) echo sprintf("investigate_actions : %s <br/>", $investigate_actions);
         if ($debug) echo sprintf("active_actions : %s <br/>", $active_actions);
-        $sql = sprintf($sql, $active_actions);
+        $sql = sprintf($sql, $investigate_actions, $active_actions);
 
         // Prepare and execute the statement
         $stmt = $pdo->prepare($sql);

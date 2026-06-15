@@ -127,11 +127,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
 
             // build worker action presentation texte :
-            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <strong>%2$s</strong>',
+            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <a href="/%5$s/zones/action.php#zone-%6$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%2$s</a>',
                 ucfirst($textActionUpdated), // %1$s
                 $worker['zone_name'], // %2$s
                 getConfig($gameReady, 'textForZoneType'), // %3$s
-                $workerActionInfo // %4$s
+                $workerActionInfo, // %4$s
+                $_SESSION['FOLDER'], // %5$s
+                $worker['zone_id'] // %6$s
             );
 
             // get zone value by  $worker['zone_id'] and use to get controller name
@@ -198,7 +200,28 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
 
                 $controllers = getControllers($gameReady);
                 $showcontrollersSelect = showControllerSelect($controllers, $controller_id, 'gift_controller_id');
-                $showListClaimTargetsSelect = showControllerSelect($controllers, $controller_id, 'claim_controller_id', TRUE);
+
+                $claim_mode = getConfig($gameReady, 'claimMode');
+                $showListClaimTargetsSelect = '';
+                $claimActionHTML = '';
+                if (in_array($claim_mode, ['worker', 'worker_leader'], true)) {
+                    $showListClaimTargetsSelect = showControllerSelect($controllers, $controller_id, 'claim_controller_id', TRUE);
+                    $claim_label = ($zoneOwner) ? 'Protéger' : 'Revendiquer';
+                    $claimActionHTML = sprintf(
+                        '<div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                %1$s le %2$s au nom de
+                            </div>
+                            %3$s
+                            <div class="control">
+                                <input type="submit" name="claim" value="%1$s" class="button is-success">
+                            </div>
+                        </div>',
+                        $claim_label,
+                        getConfig($gameReady, 'textForZoneType'),
+                        $showListClaimTargetsSelect
+                    );
+                }
 
                 // build attack select HTML
                 $enemyWorkersSelect = showEnemyWorkersSelect($gameReady, $worker['zone_id'], $controller_id);
@@ -230,15 +253,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                                 <input type="submit" name="hide" value="%11$s" class="button is-danger"><br />
                             </div>
                         </div>
-                        <div class="field is-grouped is-grouped-multiline">
-                            <div class="control">
-                                %14$s le %8$s au nom de
-                            </div>
-                            %5$s
-                            <div class="control">
-                                <input type="submit" name="claim" value="%14$s" class="button is-success">
-                            </div>
-                        </div>
+                        %14$s
                         %3$s
                         <label class="label"><strong>Actions immédiates :</strong></label>
                         %7$s
@@ -261,21 +276,22 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                             </div>
                         </div>
                     </form>
-                </div>',
-                $worker['id'], // %1$s
-                $showZoneSelect, // %2$s
-                $attackActionHTML, // %3$s
-                ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %4$s
-                $showListClaimTargetsSelect, // %5$s
-                $showcontrollersSelect, // %6$s
-                $recallWorkerButton, // %7$s 
-                getConfig($gameReady, 'textForZoneType'), // %8$s
-                $_SESSION['FOLDER'], // %9$s
-                ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %10$s
-                ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %11$s
-                $workerActionText, // %12$s
-                ucfirst(getConfig($gameReady, 'timeValue')), // %13$s
-                ($zoneOwner) ? 'Protéger/Revendiquer' : 'Revendiquer'
+                </div>
+                ',
+                    $worker['id'], // %1$s
+                    $showZoneSelect, // %2$s
+                    $attackActionHTML, // %3$s
+                    ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %4$s
+                    $showListClaimTargetsSelect, // %5$s
+                    $showcontrollersSelect, // %6$s
+                    $recallWorkerButton, // %7$s 
+                    getConfig($gameReady, 'textForZoneType'), // %8$s
+                    $_SESSION['FOLDER'], // %9$s
+                    ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %10$s
+                    ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %11$s
+                    $workerActionText, // %12$s
+                    ucfirst(getConfig($gameReady, 'timeValue')), // %13$s
+                    $claimActionHTML // %14$s
                 );
             }
 

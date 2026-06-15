@@ -97,6 +97,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                         $htmlRessources .= '</p>';
                         $htmlRessources .= '<br>';
                     }
+                    $htmlRessources .= sprintf(
+                        '<a href="/%s/ressources/view.php" class="button is-small is-info mt-2">Voir le détail / gérer</a>',
+                        $_SESSION['FOLDER']
+                    );
                     $htmlRessources .= '</div>';
                     echo $htmlRessources;
                 }
@@ -215,7 +219,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
             $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
             $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
-            if ($locationAttackMode !== 'worker' && hasBase($gameReady, $controllers['id'])) {
+            if (in_array($locationAttackMode, ['immediate', 'endTurn'], true) && hasBase($gameReady, $controllers['id'])) {
                 if($showAttackableControllerKnownLocations !== NULL) {
                     echo sprintf('<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
                             <input type="hidden" name="controller_id" value="%1$s">
@@ -275,10 +279,13 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 } else {
                     $bandKey = 'textLocationAttackOutcomeWeak';
                 }
-                $cancelLink = sprintf(
-                    '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
-                    $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
-                );
+                $cancelLink = '';
+                if (in_array($locationAttackMode, ['endTurn'], true)) {
+                    $cancelLink = sprintf(
+                        '<a href="/%s/controllers/action.php?cancelLocationAttack=%d&controller_id=%d" class="button is-small is-warning ml-2 cancel-location-attack-btn">Annuler</a>',
+                        $_SESSION['FOLDER'], $q['queue_row_id'], $_SESSION['controller']['id']
+                    );
+                }
                 $byTurn[(int)$q['queued_turn']][] =
                     '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
                     . $cancelLink;
@@ -416,7 +423,49 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
             echo '</div></form>';
             echo buildGiveKnowledgeHTML($gameReady, 'controller', $controllers['id']);
-            echo '</div>';  
+
+            $receivedInfoGifts = getInformationGiftsReceived($gameReady, $controllers['id']);
+            $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
+            $htmlReceived = '<div class="box mb-5"><h3 class="title is-5 mt-5">Informations reçues :</h3>';
+            if (empty($receivedInfoGifts)) {
+                $htmlReceived .= '<p class="has-text-grey">Aucune information reçue.</p>';
+            } else {
+                $giftsByTurn = [];
+                foreach ($receivedInfoGifts as $gift) { $giftsByTurn[(int)$gift['turn']][] = $gift; }
+                krsort($giftsByTurn);
+                $tabs = '<div class="tabs title"><ul>';
+                $panels = '';
+                $first = true;
+                $idx = 0;
+                foreach ($giftsByTurn as $turn => $turnGifts) {
+                    $tabs .= sprintf(
+                        '<li%s data-tab-group="info-gifts" data-tab-index="%d"><a onclick="selectTab(\'info-gifts\', %d)">%s %d</a></li>',
+                        $first ? ' class="is-active"' : '', $idx, $idx,
+                        htmlspecialchars($timeValueLabel), $turn
+                    );
+                    $items = '';
+                    foreach ($turnGifts as $gift) {
+                        $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
+                        $items .= sprintf(
+                            '<li>%s vous a transmis %s <strong>%s</strong></li>',
+                            htmlspecialchars($gift['giver']),
+                            $label,
+                            htmlspecialchars($gift['target_label'])
+                        );
+                    }
+                    $panels .= sprintf(
+                        '<div class="tab-content"%s data-tab-group="info-gifts" data-tab-index="%d"><ul>%s</ul></div>',
+                        $first ? '' : ' style="display:none"', $idx, $items
+                    );
+                    $first = false;
+                    $idx++;
+                }
+                $tabs .= '</ul></div>';
+                $htmlReceived .= $tabs . $panels;
+            }
+            $htmlReceived .= '</div>';
+            echo $htmlReceived;
+            echo '</div>';
     }
     echo '</div>';
 

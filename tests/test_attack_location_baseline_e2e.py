@@ -874,102 +874,6 @@ class TestAttackLocationEndTurnMode:
         )
 
 
-class TestAttackLocationWorkerMode:
-    """Worker mode (`locationAttackMode='worker'`).
-
-    UI-only. Contract: controller-page attack-selector form is HIDDEN.
-    Backend rejects any direct GET to action.php?attackLocation= as
-    defence in depth — observable as ABSENCE of italic queued previews
-    in Foxtrot's panel and ABSENCE of new alert entries in Echo's panel
-    after the crafted GET.
-    """
-
-    @pytest.fixture(scope="class", autouse=True)
-    def worker_state(self, browser):
-        context = browser.new_context()
-        page = context.new_page()
-        register_php_error_listener(page)
-        ensure_gm_login(page, PHP_BASE_URL)
-
-        echo_base_id = _location_id_via_management(page, "Echo-Base")
-        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
-
-        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
-        _set_config_via_ui(page, "locationAttackMode", "worker")
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        foxtrot_html_in_worker_mode = page.content()
-        attack_button_count = page.locator("input[name='attackLocation']").count()
-
-        _switch_controller(page, "Echo")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        pre_get_echo_html = page.content()
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(
-            page,
-            f"{PHP_BASE_URL}/controllers/action.php"
-            f"?attackLocation=1&target_location_id={echo_base_id}"
-        )
-        page.wait_for_load_state("load")
-
-        _switch_controller(page, "Foxtrot")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        post_get_foxtrot_html = page.content()
-
-        _switch_controller(page, "Echo")
-        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
-        page.wait_for_load_state("load")
-        post_get_echo_html = page.content()
-
-        assert_no_collected_php_errors(page)
-        _set_config_via_ui(page, "locationAttackMode", "immediate")
-        context.close()
-
-        type(self)._echo_base_id = echo_base_id
-        type(self)._attack_button_count = attack_button_count
-        type(self)._foxtrot_html_in_worker_mode = foxtrot_html_in_worker_mode
-        type(self)._pre_get_echo_html = pre_get_echo_html
-        type(self)._post_get_foxtrot_html = post_get_foxtrot_html
-        type(self)._post_get_echo_html = post_get_echo_html
-        yield
-
-    def test_attack_selector_hidden(self):
-        """Controller view should NOT render the attack-selector form
-        when locationAttackMode='worker' — UI gate at view.php."""
-        assert self._attack_button_count == 0, (
-            "Attack form should be hidden in worker mode; got "
-            f"{self._attack_button_count} attackLocation buttons"
-        )
-
-    def test_crafted_get_does_not_queue(self):
-        """Crafted GET to action.php?attackLocation= must be rejected by
-        attackLocation()'s mode-check. Foxtrot's panel should not gain
-        a new italic queued preview as a result."""
-        italic_in_worker = self._foxtrot_html_in_worker_mode.count("<em>Attaque planifi")
-        italic_post_get = self._post_get_foxtrot_html.count("<em>Attaque planifi")
-        assert italic_post_get == italic_in_worker, (
-            f"Crafted GET in worker mode should NOT add an italic "
-            f"queued preview to Foxtrot's panel; "
-            f"before_GET={italic_in_worker} after_GET={italic_post_get}"
-        )
-
-    def test_crafted_get_does_not_log(self):
-        """Crafted GET must not surface as a new entry in Echo's
-        `Alerte` incoming-attack panel (no effects path runs)."""
-        pre_alertes = self._pre_get_echo_html.count("Alerte !")
-        post_alertes = self._post_get_echo_html.count("Alerte !")
-        assert post_alertes == pre_alertes, (
-            f"Echo's alert-panel count should NOT change after a "
-            f"crafted GET in worker mode; pre={pre_alertes} "
-            f"post={post_alertes}"
-        )
-
-
 class TestAttackLocationEndTurnCancelAndFilter:
     """endTurn mode UX extensions:
       (a) a planned attack is cancellable via an inline 'Annuler' button
@@ -1075,4 +979,377 @@ class TestAttackLocationEndTurnCancelAndFilter:
         option_marker = f'value="{self._echo_base_id}">Echo-Base'
         assert option_marker in self._post_cancel_html, (
             "Echo-Base should reappear in the attackable dropdown after cancel"
+        )
+
+
+class TestAttackModeDisabled:
+    """`locationAttackMode` set to a value outside the implemented whitelist
+    (`['immediate', 'endTurn']` for attack form/URL, `['endTurn']` for
+    cancel + EOT resolver) — e.g. `'worker'` (mode C, not yet built) or any
+    unknown string — must disable every attack gate. We use `'foobar'`
+    here as a deliberately unknown value so a single fixture exercises all
+    four gates: form hidden (A1), attackLocation URL → 403 (A2),
+    cancelLocationAttack URL → 403 (A3), locationAttackMechanic skipped
+    with echoed warning (A5). `'worker'` would also pass A1+A2 (existing
+    `TestAttackLocationWorkerMode` covers that path).
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def disabled_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+        _set_config_via_ui(page, "locationAttackMode", "foobar")
+
+        _switch_controller(page, "Foxtrot")
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        attack_button_count = page.locator("input[name='attackLocation']").count()
+
+        attack_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&target_location_id={echo_base_id}"
+            f"&controller_id={foxtrot_id}"
+        )
+        attack_url_status = attack_url_resp.status if attack_url_resp else None
+
+        cancel_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?cancelLocationAttack=1&controller_id={foxtrot_id}"
+        )
+        cancel_url_status = cancel_url_resp.status if cancel_url_resp else None
+
+        ensure_gm_login(page, PHP_BASE_URL)
+        page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
+        page.wait_for_load_state("load", timeout=120000)
+        eot_html = page.content()
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._attack_button_count = attack_button_count
+        type(self)._attack_url_status = attack_url_status
+        type(self)._cancel_url_status = cancel_url_status
+        type(self)._eot_html = eot_html
+        yield
+
+    def test_attack_form_hidden_for_unknown_mode(self):
+        """A1 — controller view should NOT render the attack-selector
+        form when `locationAttackMode` is outside the whitelist
+        (`['immediate', 'endTurn']`)."""
+        assert self._attack_button_count == 0, (
+            f"input[name='attackLocation'] should be hidden when "
+            f"locationAttackMode is unknown; got {self._attack_button_count}"
+        )
+
+    def test_attackLocation_url_returns_403(self):
+        """A2 — crafted GET to action.php?attackLocation=… hard-403s
+        before the dispatcher runs. Stricter than the existing 'no-side-effect'
+        assertion in `TestAttackLocationWorkerMode`."""
+        assert self._attack_url_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode is "
+            f"unknown; got {self._attack_url_status}"
+        )
+
+    def test_cancelLocationAttack_url_returns_403(self):
+        """A3 — cancelLocationAttack is gated to `['endTurn']` only. Any
+        other mode (including `'immediate'`) must hard-403."""
+        assert self._cancel_url_status == 403, (
+            f"cancelLocationAttack URL should 403 when locationAttackMode "
+            f"is outside ['endTurn']; got {self._cancel_url_status}"
+        )
+
+    def test_locationAttackMechanic_skipped_at_end_turn(self):
+        """A5 — locationAttackMechanic prints the skip warning and does
+        not iterate the (potentially stale) queue when mode is outside
+        `['endTurn']`."""
+        assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
+            "EOT page should contain the locationAttackMechanic skip-warning"
+        )
+
+
+# Still @pytest.mark.db — belt-and-buckle DB class. Verifies internal
+# queue resolution state (controller_location_attacks.success flag,
+# resolved_turn timestamp) and defender-invisible log details
+# (location_attack_logs.target_controller_id = NULL) that have no UI
+# surface even if synthetic locations + queue rows could be seeded via
+# admin endpoints.
+@pytest.mark.db
+class TestEndTurnCascadeDestroyed:
+    """When a queued end-turn attack's target no longer exists at
+    resolution time (cascade from prior successful attack — FK
+    ON DELETE SET NULL blanks the queue row's location_id), the row
+    must be marked success=0/resolved_turn AND an attacker-only log
+    entry must be written using the textLocationAttackDestroyed
+    config text. Defender-invisible: target_controller_id=NULL.
+
+    Uses a synthetic location + synthetic queue row to isolate from
+    the rest of the file's location-attack state."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def cascade_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticCascadeTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, foxtrot_id),
+        )
+        synthetic_id = cur.lastrowid
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}controller_location_attacks` "
+            f"(location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot) "
+            f"VALUES (%s, 'SyntheticCascadeTarget', %s, %s, 0)",
+            (synthetic_id, foxtrot_id, turn),
+        )
+        queue_row_id = cur.lastrowid
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}locations` WHERE id = %s",
+            (synthetic_id,),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        end_turn(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` WHERE id = %s",
+            (queue_row_id,),
+        )
+        queue_row_post = cur.fetchone()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}location_attack_logs` "
+            f"WHERE location_name = 'SyntheticCascadeTarget' AND attacker_id = %s",
+            (foxtrot_id,),
+        )
+        log_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_row_post = queue_row_post
+        type(self)._log_rows = log_rows
+        yield
+
+    def test_cascade_destroyed_fails_and_logs(self):
+        """Combined assertion: queue row resolved-failed; log entry
+        defender-invisible with textLocationAttackDestroyed message."""
+        assert self._queue_row_post['success'] == 0, (
+            f"Queue row should be success=0; got {self._queue_row_post['success']}"
+        )
+        assert self._queue_row_post['resolved_turn'] is not None
+        assert len(self._log_rows) == 1, (
+            f"Expected exactly one log row; got {len(self._log_rows)}"
+        )
+        log = self._log_rows[0]
+        assert log['target_controller_id'] is None, (
+            f"target_controller_id must be NULL (defender-invisible); "
+            f"got {log['target_controller_id']}"
+        )
+        assert 'détruit' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should contain destroyed-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticCascadeTarget' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
+            f"got {log['attacker_result_text']!r}"
+        )
+
+
+# Still @pytest.mark.db — see TestEndTurnCascadeDestroyed comment.
+@pytest.mark.db
+class TestMoveBaseCancelsInFlightAttacks:
+    """When moveBase fires while in-flight queued end-turn attacks
+    target the base, those attacks must be cancelled via
+    failQueuedLocationAttack with reason='moved'. Defender-invisible
+    (target_controller_id=NULL); attacker_result_text uses
+    textLocationAttackMoved config text.
+
+    Uses a synthetic base + synthetic queue row + gm-privileged
+    /controllers/action.php?moveBase=… URL to isolate from other state."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_cancel_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 2")
+        zones = cur.fetchall()
+        zone_origin = zones[0]['id']
+        zone_target = zones[1]['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticMovedBase', 'temp', %s, %s, 1, 1)",
+            (zone_origin, echo_id),
+        )
+        synthetic_id = cur.lastrowid
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}controller_location_attacks` "
+            f"(location_id, location_name, attacker_controller_id, queued_turn, defence_val_snapshot) "
+            f"VALUES (%s, 'SyntheticMovedBase', %s, %s, 0)",
+            (synthetic_id, foxtrot_id, turn),
+        )
+        queue_row_id = cur.lastrowid
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?moveBase=1&base_id={synthetic_id}&zone_id={zone_target}&controller_id={echo_id}",
+        )
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` WHERE id = %s",
+            (queue_row_id,),
+        )
+        queue_row_post = cur.fetchone()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}location_attack_logs` "
+            f"WHERE location_name = 'SyntheticMovedBase' AND attacker_id = %s",
+            (foxtrot_id,),
+        )
+        log_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_row_post = queue_row_post
+        type(self)._log_rows = log_rows
+        yield
+
+    def test_move_cancels_in_flight_attack(self):
+        """Combined assertion: queue row resolved-failed; log entry
+        defender-invisible with textLocationAttackMoved message."""
+        assert self._queue_row_post['success'] == 0, (
+            f"Queue row should be success=0; got {self._queue_row_post['success']}"
+        )
+        assert self._queue_row_post['resolved_turn'] is not None
+        assert len(self._log_rows) == 1, (
+            f"Expected exactly one log row; got {len(self._log_rows)}"
+        )
+        log = self._log_rows[0]
+        assert log['target_controller_id'] is None, (
+            f"target_controller_id must be NULL (defender-invisible); "
+            f"got {log['target_controller_id']}"
+        )
+        assert 'déplacé' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should contain moved-text; "
+            f"got {log['attacker_result_text']!r}"
+        )
+        assert 'SyntheticMovedBase' in (log['attacker_result_text'] or ''), (
+            f"attacker_result_text should embed the location name; "
+            f"got {log['attacker_result_text']!r}"
+        )
+
+
+# Still @pytest.mark.db — see TestEndTurnCascadeDestroyed comment.
+@pytest.mark.db
+class TestDuplicateQueueAttemptRejected:
+    """Backend INSERT WHERE NOT EXISTS guard at attackLocation() must
+    prevent duplicate (attacker, location, queued_turn) queue rows.
+    Two URL hits with identical params → exactly one queue row exists."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def duplicate_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "endTurn")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+        echo_id = _controller_id_via_management(page, "Echo")
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = cur.fetchone()['turncounter']
+        cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 1")
+        zone_id = cur.fetchone()['id']
+        cur.execute(
+            f"INSERT INTO `{GAME_PREFIX}locations` "
+            f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+            f"VALUES ('SyntheticDupTarget', 'temp', %s, %s, 1, 1)",
+            (zone_id, echo_id),
+        )
+        synthetic_id = cur.lastrowid
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        url = (
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&controller_id={foxtrot_id}&target_location_id={synthetic_id}"
+        )
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+        safe_goto(page, url)
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT * FROM `{GAME_PREFIX}controller_location_attacks` "
+            f"WHERE attacker_controller_id = %s AND location_id = %s AND queued_turn = %s",
+            (foxtrot_id, synthetic_id, turn),
+        )
+        queue_rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        type(self)._queue_rows = queue_rows
+        yield
+
+    def test_duplicate_url_attack_inserts_only_one_row(self):
+        """Two URL hits with same (attacker, location, turn) → exactly
+        one queue row (backend INSERT WHERE NOT EXISTS guard fires on
+        the second attempt)."""
+        assert len(self._queue_rows) == 1, (
+            f"Expected exactly one queue row after duplicate URL hit; "
+            f"got {len(self._queue_rows)}"
         )

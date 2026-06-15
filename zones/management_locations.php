@@ -26,9 +26,16 @@ if (isset($_POST['toggle_destruction'])) {
     updateLocation($gameReady, $location, $activate_json);
 }
 
+if (isset($_POST['update_types_id'])) {
+    $tags = array_values(array_filter(array_map('trim', explode(',', $_POST['location_types'] ?? ''))));
+    $jsonTags = empty($tags) ? null : json_encode($tags);
+    $stmt = $gameReady->prepare("UPDATE {$prefix}locations SET location_types = ? WHERE id = ?");
+    $stmt->execute([$jsonTags, $_POST['update_types_id']]);
+}
+
 // Get all locations
 $locations = $gameReady->query("
-    SELECT l.id, l.name, l.discovery_diff, l.description, l.activate_json, z.name AS zone_name
+    SELECT l.id, l.name, l.discovery_diff, l.description, l.activate_json, l.location_types, z.name AS zone_name
     FROM {$prefix}locations AS l
     LEFT JOIN {$prefix}zones AS z ON l.zone_id = z.id
     ORDER BY l.id, z.id
@@ -58,6 +65,8 @@ echo '
 
         $toggleUpdateLocation = '';
         $activate_json = json_decode($loc['activate_json'], true);
+        $locationTypes = json_decode($loc['location_types'] ?? '[]', true);
+        $locationTypesText = is_array($locationTypes) && !empty($locationTypes) ? implode(', ', $locationTypes) : '—';
         if (!empty($activate_json['update_location'])) {
             $toggleUpdateLocation = sprintf(
                 '<!-- Action toggle destruction/repair -->
@@ -75,7 +84,7 @@ echo '
             <p>
                 <h5 onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'block\':\'none\';">Description</a>:
                 </h5>
-                <span style="display:none;"> (%6$s) %4$s </span>
+                <span style="display:none;"> (%6$s) [types: %7$s] %4$s </span>
             </p>
             <p>
                 <h5 onclick="var d=this.nextElementSibling;d.style.display=d.style.display===\'none\'?\'block\':\'none\';">Actions</a>:
@@ -87,6 +96,12 @@ echo '
                         <button type="submit">Delete</button>
                     </form>
                     %5$s
+                    <!-- Action update location_types -->
+                    <form method="POST" style="margin-top:0.3em;">
+                        <input type="hidden" name="update_types_id" value="%1$s">
+                        <input type="text" name="location_types" value="%8$s" placeholder="temple, fortress" size="30">
+                        <button type="submit">Update types</button>
+                    </form>
                 </span>
             </p>
             <h5>Discovered by:</h5>
@@ -96,7 +111,9 @@ echo '
             $loc['discovery_diff'],
             $loc['description'],
             $toggleUpdateLocation,
-            $loc['zone_name']
+            $loc['zone_name'],
+            htmlspecialchars($locationTypesText),
+            htmlspecialchars($locationTypesText === '—' ? '' : $locationTypesText)
         );
         foreach ($controllers as $ctrl):
             $isKnown = isset($knownMap[$loc['id']][$ctrl['id']]);

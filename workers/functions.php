@@ -212,32 +212,37 @@ function getWorkers($pdo, $workerIds) {
 }
 
 /**
- * Function to get controllers and return as an array
+ * Get workers linked to a controller (primary OR double-agent), optionally filtered to a single zone.
  *
  * @param PDO $pdo : database connection
  * @param int $controller_id
+ * @param int|null $zone_id  when set, restrict to workers currently in this zone
  *
  * @return array|null workersArray
- *
  */
-function getWorkersByController($pdo, $controller_id) {
+function getWorkersByController($pdo, $controller_id, $zone_id = null) {
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    $sql = " SELECT * FROM {$prefix}controller_worker AS cw
+    $zoneJoin = ($zone_id !== null)
+        ? "JOIN {$prefix}workers w ON w.id = cw.worker_id AND w.zone_id = :zone_id"
+        : "";
+    $sql = "
+        SELECT cw.* FROM {$prefix}controller_worker AS cw
+        $zoneJoin
         WHERE cw.controller_id = :controller_id
     ";
     try {
+        $params = [':controller_id' => $controller_id];
+        if ($zone_id !== null) $params[':zone_id'] = $zone_id;
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([':controller_id' => $controller_id]);
+        $stmt->execute($params);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
     }
 
-    // Fetch the results
     $controller_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $worker_ids = NULL;
-    // Store controllers in the array
     foreach ($controller_workers as $controller_worker) {
         $worker_ids[] = $controller_worker['worker_id'];
     }
@@ -1300,17 +1305,65 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
 }
 
 /**
+ * Structured enemy listing for a zone — shared by attack select + zone box.
+ *
+ * @param PDO $pdo
+ * @param int $zone_id
+ * @param int $controller_id
+ * @param int|null $turn_number  default mechanics.turncounter
+ * @param int|null $window       default getConfig('attackTimeWindow'); falls back to $turn_number when empty
+ *
+ * @return array shape: recent/older → ['unaffiliated' => [...rows], 'networks' => [<cid> => ['name', 'workers' => [...rows]]]]
+ */
+function buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number = null, $window = null) {
+    if (empty($turn_number)) {
+        $mechanics = getMechanics($pdo);
+        $turn_number = $mechanics['turncounter'];
+    }
+    if ($window === null) {
+        $window = getConfig($pdo, 'attackTimeWindow');
+    }
+    if (empty($window)) $window = $turn_number;
+
+    $enemies = getEnemyWorkers($pdo, $zone_id, $controller_id);
+    $listing = [
+        'recent' => ['unaffiliated' => [], 'networks' => []],
+        'older'  => ['unaffiliated' => [], 'networks' => []],
+    ];
+
+    foreach (($enemies['workers_without_controller'] ?? []) as $w) {
+        if (!isset($w['last_discovery_turn'])) continue;
+        $bucket = $w['last_discovery_turn'] >= ($turn_number - $window) ? 'recent' : 'older';
+        $listing[$bucket]['unaffiliated'][] = $w;
+    }
+
+    foreach (($enemies['workers_with_controller'] ?? []) as $w) {
+        if (!isset($w['last_discovery_turn'])) continue;
+        $bucket = $w['last_discovery_turn'] >= ($turn_number - $window) ? 'recent' : 'older';
+        $cid = $w['discovered_controller_id'];
+        if (!isset($listing[$bucket]['networks'][$cid])) {
+            $listing[$bucket]['networks'][$cid] = [
+                'name'    => $w['discovered_controller_name'] ?? '',
+                'workers' => [],
+            ];
+        }
+        $listing[$bucket]['networks'][$cid]['workers'][] = $w;
+    }
+
+    return $listing;
+}
+
+/**
  * Build the HTML select for the known enemy workers for the controller in the zone
- * 
+ *
  * @param PDO $pdo : database connection
  * @param int $zone_id
  * @param int $controller_id
  * @param int|null $turn_number
- * 
- * @return string 
+ *
+ * @return string
  */
 function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
-    $enemyWorkerOptions = '';
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     if (empty($turn_number)) {
@@ -1319,47 +1372,40 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
     }
     if ($debug) echo "turn_number : $turn_number <br>";
 
-    $enemyWorkersArray = getEnemyWorkers($pdo, $zone_id, $controller_id);
+    $listing = buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number);
 
     if ($_SESSION['DEBUG_ATTACK']) {
-        echo sprintf("enemyWorkersArray: %s <br/> " , var_export($enemyWorkersArray, true));
+        echo sprintf("listing: %s <br/> ", var_export($listing, true));
     }
 
-    if (empty($enemyWorkersArray['workers_without_controller']) && empty($enemyWorkersArray['workers_with_controller'])) return '';
+    $recent = $listing['recent'];
+    $older  = $listing['older'];
 
-    // Prepare config val
-    $attackTimeWindow = getConfig($pdo, 'attackTimeWindow');
-    if (empty($attackTimeWindow)) $attackTimeWindow = $turn_number;
+    if (empty($recent['unaffiliated']) && empty($recent['networks'])
+        && empty($older['unaffiliated']) && empty($older['networks'])) {
+        return '';
+    }
+
     $canAttackNetwork = getConfig($pdo, 'canAttackNetwork');
-    if (empty($attackTimeWindow)) $attackTimeWindow = 0;
+    if (empty($canAttackNetwork)) $canAttackNetwork = 0;
 
-    if (!empty($enemyWorkersArray['workers_without_controller'])){
-        // Display select list of workers
-        foreach ( $enemyWorkersArray['workers_without_controller'] as $enemyWorker) {
-            if (!isset($enemyWorker['last_discovery_turn'])) continue;
-            if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow))
-                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
+    $enemyWorkerOptions = '';
+    foreach ($recent['unaffiliated'] as $w) {
+        $enemyWorkerOptions .= sprintf('<option value="worker_%1$s"> %2$s </option>', $w['discovered_worker_id'], $w['name']);
+    }
+    foreach ($recent['networks'] as $cid => $network) {
+        if ($canAttackNetwork > 0) {
+            $enemyWorkerOptions .= sprintf(
+                '<option value=\'network_%1$s\'>Réseau %1$s - %2$s :</option>',
+                $cid,
+                $network['name']
+            );
+        }
+        foreach ($network['workers'] as $w) {
+            $enemyWorkerOptions .= sprintf('<option value="worker_%1$s">- %2$s </option>', $w['discovered_worker_id'], $w['name']);
         }
     }
-    if (!empty($enemyWorkersArray['workers_with_controller'])) {
-        $discovered_controller_id = 0;
-        // Display select list of controllers
-        foreach ( $enemyWorkersArray['workers_with_controller'] as $enemyWorker) {
-            if (!isset($enemyWorker['last_discovery_turn'])) continue;
-            if ($enemyWorker['last_discovery_turn'] >= ($turn_number - $attackTimeWindow)) {
 
-                if ( $discovered_controller_id != $enemyWorker['discovered_controller_id'] && $canAttackNetwork > 0){
-                    $discovered_controller_id = $enemyWorker['discovered_controller_id'];
-                    $enemyWorkerOptions .= sprintf(
-                        '<option value=\'network_%1$s\'>Réseau %1$s - %2$s :</option>',
-                        $enemyWorker['discovered_controller_id'],
-                        $enemyWorker['discovered_controller_name'],
-                    );
-                }
-                $enemyWorkerOptions .= sprintf('<option value="worker_%1$s">- %2$s </option>', $enemyWorker['discovered_worker_id'],  $enemyWorker['name']);
-            }
-        }
-    }
     $enemyWorkersSelect = sprintf("
         <div class='control for-select'>
             <div class='select is-multiple'>
@@ -1584,6 +1630,30 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
     return true;
 }
 
+/**
+ * Sort the worker buckets by the given sort key
+ * 
+ * @param array &$bucket
+ * @param string $sort
+ * 
+ * @return void
+ */
+function sortWorkerBuckets(array &$bucket, string $sort): void {
+    if (empty($bucket)) return;
+    usort($bucket, function($a, $b) use ($sort) {
+        switch ($sort) {
+            case 'zone':
+                return strcmp($a['zone_name'], $b['zone_name']) ?: ($a['id'] <=> $b['id']);
+            case 'investigate':
+                return ($b['total_enquete'] <=> $a['total_enquete']) ?: ($a['id'] <=> $b['id']);
+            case 'attack':
+                return ($b['total_attack'] <=> $a['total_attack']) ?: ($a['id'] <=> $b['id']);
+            case 'age':
+            default:
+                return $a['id'] <=> $b['id'];
+        }
+    });
+}
 
 // TODO : Add Conversion to the captured agent possible actions list,
     // lock behind config JSON for certain factions, conversion probablility values 

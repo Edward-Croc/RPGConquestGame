@@ -11,7 +11,7 @@ if (!$started) {
     exit();
 }
 
-echo sprintf(" Starting END of Turn %s with end_step : %s<br />",
+echo sprintf(" <h2>  Starting END of Turn %s with end_step : %s</h2>",
     $mechanics['turncounter'],
     $mechanics['end_step']
 );
@@ -21,6 +21,11 @@ if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
         $ressourcesResult = updateRessources($gameReady, $mechanics);
         if ( !$ressourcesResult){
             echo __FUNCTION__."(): Failed to update ressources: updateRessources <br />";
+            return false;
+        }
+        $beforeClaimGainResult = ressourceGainMechanic($gameReady, 'before_claim');
+        if ( !$beforeClaimGainResult){
+            echo __FUNCTION__."(): Failed to apply before-claim ressource gain rules: ressourceGainMechanic <br />";
             return false;
         }
         changeEndTurnState($gameReady, 'updateRessources', $mechanics);
@@ -97,11 +102,17 @@ if ($mechanics['end_step'] == 'attackMechanic') {
         echo __FUNCTION__."(): Failed to recalculate base defence: recalculateBaseDefence <br />";
         return false;
     }
-    changeEndTurnState($gameReady, 'recalculateBaseDefence', $mechanics);
-    $mechanics['end_step'] = 'recalculateBaseDefence';
+    // recalculate zone defence (claimMode-aware single source of truth)
+    $zdrResult = recalculateZoneDefence($gameReady, $mechanics);
+    if ( !$zdrResult){
+        echo __FUNCTION__."(): Failed to recalculate zone defence: recalculateZoneDefence <br />";
+        return false;
+    }
+    changeEndTurnState($gameReady, 'recalculateBaseZoneDefence', $mechanics);
+    $mechanics['end_step'] = 'recalculateBaseZoneDefence';
 }
 
-if ($mechanics['end_step'] == 'recalculateBaseDefence') {
+if ($mechanics['end_step'] == 'recalculateBaseZoneDefence') {
     require_once 'locationAttackMechanic.php';
     $locationAttackResult = locationAttackMechanic($gameReady, $mechanics['turncounter']);
     if ( !$locationAttackResult){
@@ -124,6 +135,18 @@ if ($mechanics['end_step'] == 'locationAttackMechanic') {
 }
 
 if ($mechanics['end_step'] == 'claimMechanic') {
+    if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+        $afterClaimGainResult = ressourceGainMechanic($gameReady, 'after_claim');
+        if ( !$afterClaimGainResult){
+            echo __FUNCTION__."(): Failed to apply after-claim ressource gain rules: ressourceGainMechanic <br />";
+            return false;
+        }
+    }
+    changeEndTurnState($gameReady, 'ressourceGainAfterClaim', $mechanics);
+    $mechanics['end_step'] = 'ressourceGainAfterClaim';
+}
+
+if ($mechanics['end_step'] == 'ressourceGainAfterClaim') {
     // check investigations
     $investigateResult = investigateMechanic($gameReady, $mechanics);
     if ( !$investigateResult){
@@ -181,4 +204,4 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     }
 }
 
-echo ucfirst(getConfig($gameReady, 'timeValue')).": $turn";
+echo sprintf("<h2> %s: %s </h2>", ucfirst(getConfig($gameReady, 'timeValue')), $turn);

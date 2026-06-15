@@ -168,11 +168,115 @@ function getLocationsArray($pdo) {
 }
 
 /**
+ * Function to recalculateZoneDefence
+ * @param PDO $pdo
+ * @param array $mechanics : mechanics array
+ *
+ * @return bool
+ * 
+ * Recompute zones.calculated_defence_val for every zone.
+ * Dispatches on claimMode:
+ * - 'worker': SQL formula (z.defence_val + COUNT of holder's active workers).
+ * - 'worker_leader': calculateControllerValue('ZoneDefence', ...) per zone.
+ * - any other value: no-op (echoes "not supported, skipped" and returns true).
+ */
+function recalculateZoneDefence($pdo, $mechanics) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $mode = getConfig($pdo, 'claimMode');
+
+    echo '<div> <p> <h3> Calculate zone defense values: </h3> ';
+
+    if (!in_array($mode, ['worker', 'worker_leader'], true)) {
+        echo "Mode '".htmlspecialchars((string)$mode)."' not supported, skipped</p></div>";
+        return true;
+    }
+
+    if ($mode === 'worker_leader') {
+        try {
+            $zStmt = $pdo->prepare("SELECT id, holder_controller_id FROM {$prefix}zones");
+            $zStmt->execute();
+            $zones = $zStmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($zones as $zone) {
+                $holder = !empty($zone['holder_controller_id']) ? (int)$zone['holder_controller_id'] : null;
+                $val = calculateControllerValue($pdo, 'ZoneDefence', (int)$zone['id'], $holder);
+                $uStmt = $pdo->prepare("UPDATE {$prefix}zones SET calculated_defence_val = :val WHERE id = :id");
+                $uStmt->bindParam(':val', $val, PDO::PARAM_INT);
+                $uStmt->bindParam(':id', $zone['id'], PDO::PARAM_INT);
+                $uStmt->execute();
+            }
+        } catch (PDOException $e) {
+            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
+            return false;
+        }
+        echo 'DONE (worker_leader) </p></div>';
+        return true;
+    }
+
+    // Default mode 'worker'
+    try {
+        $sql = '';
+        if ($_SESSION['DBTYPE'] == 'postgres'){
+            $sql = "UPDATE {$prefix}zones
+                SET calculated_defence_val = defence_val + subquery.worker_count
+                FROM (
+                    SELECT
+                        z.id AS zone_id,
+                        COALESCE(COUNT(w.id), 0) AS worker_count
+                    FROM
+                        {$prefix}zones z
+                    LEFT JOIN
+                        {$prefix}workers w ON w.zone_id = z.id
+                    LEFT JOIN
+                        {$prefix}worker_actions wa ON wa.worker_id = w.id
+                    LEFT JOIN
+                        {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    WHERE
+                        z.holder_controller_id = cw.controller_id
+                        AND wa.action_choice IN (%s)
+                        AND wa.turn_number = :turn_number
+                    GROUP BY
+                        z.id
+                ) AS subquery
+                WHERE {$prefix}zones.id = subquery.zone_id
+            ";
+        }
+        if ($_SESSION['DBTYPE'] == 'mysql'){
+            $sql = "UPDATE {$prefix}zones z
+                JOIN (
+                    SELECT z.id AS zone_id,
+                        COALESCE(COUNT(w.id), 0) AS worker_count
+                    FROM {$prefix}zones z
+                    LEFT JOIN {$prefix}workers w ON w.zone_id = z.id
+                    LEFT JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id
+                    LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    WHERE z.holder_controller_id = cw.controller_id
+                    AND wa.action_choice IN (%s)
+                    AND wa.turn_number = :turn_number
+                    GROUP BY z.id
+                ) AS subquery ON z.id = subquery.zone_id
+                SET z.calculated_defence_val = z.defence_val + subquery.worker_count
+            ";
+        }
+        $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
+
+        $sql = sprintf($sql, $active_actions);
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':turn_number', $mechanics['turncounter'], PDO::PARAM_INT);
+        $stmt->execute();
+
+    } catch (PDOException $e) {
+        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
+        return false;
+    }
+    echo 'DONE </p></div>';
+    return true;
+}
+
+/**
  * Function to recalculateBaseDefence
  * @param PDO $pdo
  *
  * @return bool
- *
  */
 function recalculateBaseDefence($pdo) {
     echo "<div><h3>Recalculating base defence</h3><br />";
@@ -215,11 +319,11 @@ function recalculateBaseDefence($pdo) {
 }
 
 /**
- * Calculate the value 'DEF, ATK, SEARCH' for the controller, and optionnal zone or location
+ * Calculate the value 'DEF, ATK, SEARCH, CLAIM, ZONE_DEFENCE' for the controller, and optionnal zone or location
  *
  * @param PDO $pdo
  * @param int $controller_id
- * @param string $type
+ * @param string $type in ['DiscoveryDiff', 'Defence', 'Attack', 'Claim', 'ZoneDefence']
  * @param int $zone_id
  * @param int|null $location_id
  *
@@ -234,7 +338,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
 
-    if ($debug) echo sprintf("calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)<br>", $type, $zone_id, $controller_id, $location_id);
+    if ($debug) echo sprintf("<p> <b>calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)</b><br>", $type, $zone_id, $controller_id, $location_id);
 
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
@@ -250,14 +354,24 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $zoneStmt->execute([':zone_id' => $zone_id]);
     $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($zone) {
-        if ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id) {
-            $value += 1;
-            if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
-        }
-    }
-
     if ($controller_id !== null) {
+        // Holders & Claimers 
+        if ($zone) {
+            if ($type === 'Claim') {
+                if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
+                    $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
+                    $value += $vrBonus;
+                    if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+                }
+            } else {
+                // Si le controller n'est pas 0, '' ou NULL alors on peut comparer aux holders ou claimers
+                if (!empty ($controller_id) && ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id)) {
+                    $value += 1;
+                    if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+                }
+            }
+        }
+    
         // Powers
         $powerMultiplier = floatval(getConfig($pdo, "base{$type}AddPowers"));
         if ($debug) echo sprintf("powerMultiplier : %f<br>", $powerMultiplier);
@@ -323,43 +437,100 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
             $value += $bonus;
             if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
         }
+
+        // Owned-locations term — fires only for 'Claim' and 'ZoneDefence' types
+        // (controller's locations in this zone count toward the value).
+        if ($type === 'Claim' || $type === 'ZoneDefence') {
+            $ownedMultiplier = floatval(getConfig($pdo, "base{$type}AddOwnedLocations"));
+            $maxOwnedBonus = (int)getConfig($pdo, "maxBonus{$type}OwnedLocations");
+            if ($ownedMultiplier !== 0) {
+                $ownedSql = "SELECT COUNT(*) AS n FROM {$prefix}locations
+                    WHERE controller_id = :controller_id AND zone_id = :zone_id";
+                $ownedStmt = $pdo->prepare($ownedSql);
+                $ownedStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+                $ownedStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+                $ownedStmt->execute();
+                $owned_count = (int)($ownedStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? 0);
+                $ownedBonus = ceil($owned_count * $ownedMultiplier);
+                if ($maxOwnedBonus > 0) $ownedBonus = min($ownedBonus, $maxOwnedBonus);
+                $value += $ownedBonus;
+                if ($debug) echo sprintf("%s (+owned_locations) : %d<br>", $type, $value);
+            }
+        }
+
+        // Supporting-agents bonus max(0, COUNT(workers in zone) - 1) × multiplier.
+        // Rewards co-agents beyond the leader; only co-action workers count here.
+        $supportMultiplier = floatval(getConfig($pdo, "base{$type}AddSupporting")) ?? 0;
+        if ($supportMultiplier !== 0) {
+            $supportAction =  NULL;
+            $supportOnNth = 0;
+            switch ($type){ // 'claim' or ZoneDefence
+                case 'Claim' :
+                    $supportAction = 'claim';
+                    $supportOnNth = 1;
+                    break;
+                case 'ZoneDefence' :
+                    $supportAction = 'claim';
+                    break;
+            }
+            if ($supportAction != NULL) {
+                $supportSql = "SELECT COUNT(*) AS n FROM {$prefix}workers w
+                    JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                    JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND wa.turn_number = :turn_number
+                    WHERE cw.controller_id = :controller_id
+                        AND w.zone_id = :zone_id
+                        AND wa.action_choice = '{$supportAction}'";
+                $supportStmt = $pdo->prepare($supportSql);
+                $supportStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+                $supportStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+                $supportStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+                $supportStmt->execute();
+                $count = (int)($supportStmt->fetch(PDO::FETCH_ASSOC)['n'] ?? 0);
+                $supporters = max(0, $count - $supportOnNth);
+                $supportBonus = ceil($supporters * $supportMultiplier);
+                $value += $supportBonus;
+                if ($debug) echo sprintf("%s (+supporting_agents %d) : %d<br>", $type, $supporters, $value);
+            }
+        }
     } else {
         if ($debug) echo sprintf("%s : controller_id is NULL <br>", $type);
         $value += getConfig($pdo, "noController{$type}Bonus");
     }
 
-    // Turns / Age
-    $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
-    if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
-    $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
-    if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
-    if ($turnMultiplier !== 0 && $location_id !== NUll) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
+    // Turns / Age for locations 
+    if ($location_id !== NUll) {
+        $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
+        if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
+        if ($turnMultiplier !== 0) {
+            $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
+            if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
+            $mechanics = getMechanics($pdo);
+            $turn_number = $mechanics['turncounter'];
 
-        $sql = "
-            SELECT setup_turn
-            FROM {$prefix}locations
-            WHERE id = :location_id
-            LIMIT 1
-        ";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':location_id' => $location_id
-        ]);
-        $base = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($base) {
-            $setup_turn = (int)$base['setup_turn'];
-            $turn_diff = max(0, $turn_number - $setup_turn);
-            // round up to integer
-            $bonus = ceil($turn_diff * $turnMultiplier);
-            if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
-            $value += $bonus;
-            if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            $sql = "
+                SELECT setup_turn
+                FROM {$prefix}locations
+                WHERE id = :location_id
+                LIMIT 1
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':location_id' => $location_id
+            ]);
+            $base = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($base) {
+                $setup_turn = (int)$base['setup_turn'];
+                $turnDiff = max(0, $turn_number - $setup_turn);
+                // round up to integer
+                $bonus = ceil($turnDiff * $turnMultiplier);
+                if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
+                $value += $bonus;
+                if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+            }
         }
     }
 
-    if ($debug) echo sprintf("%s final value : %d<br>", $type, $value);
+    if ($debug) echo sprintf("%s final value : %d</p>", $type, $value);
     return $value;
 }
 
@@ -405,6 +576,98 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
 }
 
 /**
+ * Per-zone agent lists for the zone box: friendlies + folded doubles.
+ *
+ * Filters `$controllerWorkers` to the self-perspective rows in this zone and
+ * splits them by `is_primary_controller`. Doubles render inside a `<details>`
+ * fold; both sections skip individually when empty.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id          logged-in controller (self perspective)
+ * @param int $zone_id
+ * @param int $turn_number            current turn (used for ACTIVE_ACTIONS lookup)
+ * @param array $controllerWorkers    pre-fetched getWorkersByController result; caller coalesces NULL to []
+ *
+ * @return string HTML — '' when both sections empty
+ */
+function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_number, array $controllerWorkers): string {
+    $friendlies = [];
+    $doubles = [];
+    foreach ($controllerWorkers as $w) {
+        if ((int)$w['controller_id'] !== $controller_id) continue;
+        if ((int)$w['zone_id']       !== $zone_id) continue;
+        $action = $w['actions'][$turn_number]['action_choice'] ?? '';
+        if (!in_array($action, ACTIVE_ACTIONS, true)) continue;
+        if (!empty($w['is_primary_controller'])) {
+            $friendlies[] = $w;
+        } else {
+            $doubles[] = $w;
+        }
+    }
+
+    $folder = $_SESSION['FOLDER'];
+    $out = '';
+    if (!empty($friendlies)) {
+        $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
+        foreach ($friendlies as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul>';
+    }
+    if (!empty($doubles)) {
+        $out .= '<details><summary>Nos Agents doubles</summary><ul>';
+        foreach ($doubles as $w) {
+            $out .= sprintf(
+                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
+                $folder, $w['id'], $w['firstname'], $w['lastname'],
+                $w['total_enquete'], $w['total_attack'], $w['total_defence']
+            );
+        }
+        $out .= '</ul></details>';
+    }
+
+    $enemyListing = buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number);
+    $recent = $enemyListing['recent'];
+    $older  = $enemyListing['older'];
+    $hasRecent = !empty($recent['unaffiliated']) || !empty($recent['networks']);
+    $hasOlder  = !empty($older['unaffiliated'])  || !empty($older['networks']);
+
+    if ($hasRecent || $hasOlder) {
+        $renderEnemies = function($group) {
+            $items = '';
+            foreach ($group['unaffiliated'] as $w) {
+                $items .= sprintf('<li>%s</li>', $w['name']);
+            }
+            foreach ($group['networks'] as $cid => $network) {
+                $items .= sprintf(
+                    '<li><strong>Réseau %d - %s</strong><ul>',
+                    $cid, $network['name']
+                );
+                foreach ($network['workers'] as $w) {
+                    $items .= sprintf('<li>%s</li>', $w['name']);
+                }
+                $items .= '</ul></li>';
+            }
+            return $items;
+        };
+
+        $out .= '<p><strong>Agents ennemis repérés :</strong></p>';
+        if ($hasRecent) {
+            $out .= '<ul>' . $renderEnemies($recent) . '</ul>';
+        }
+        if ($hasOlder) {
+            $out .= '<details><summary>Plus anciens</summary><ul>' . $renderEnemies($older) . '</ul></details>';
+        }
+    }
+
+    return $out;
+}
+
+/**
 * Displays the known or owned bases in a zone by a controller
 * Allows attacking destructible bases
  *
@@ -432,10 +695,10 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($owned_bases)) {
-        $returnText .= "<p><strong>Vos lieux secrets:</strong><br />";
+        $returnText .= "<p><strong>Vos lieux secrets:</strong></p><ul>";
         foreach ($owned_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br><em>%s%s</em><br />",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 $base['hidden_description']
@@ -443,8 +706,8 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
 
             // Fetch artefacts for this location
             $stmtArt = $pdo->prepare("
-            SELECT name, description, full_description 
-            FROM {$prefix}artefacts 
+            SELECT name, description, full_description
+            FROM {$prefix}artefacts
             WHERE location_id = :location_id
             ");
             $stmtArt->execute([':location_id' => $base['id']]);
@@ -462,8 +725,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                 }
                 $returnText .= "</ul>";
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  "</p>";
+        $returnText .= "</ul>";
     }
 
     // Known enemy bases in zone — exclude own (listed above as Vos lieux secrets).
@@ -484,22 +748,22 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
     $known_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($known_bases)) {
-        $returnText .=  "<p><strong>Lieux découverts :</strong><br />";
+        $returnText .= "<p><strong>Lieux découverts :</strong></p><ul>";
         foreach ($known_bases as $base) {
-            $returnText .=  sprintf(
-                "<b>%s</b><br/><em>%s%s</em><br/>",
+            $returnText .= sprintf(
+                "<li><b>%s</b> <em>%s%s</em>",
                 $base['name'],
                 $base['description'],
                 ((INT)$base['found_secret'] == 1) ? $base['hidden_description'] : ''
             );
 
             if ($base['can_be_destroyed'] && hasBase($pdo, $controller_id)) {
-                $returnText .=  sprintf('
+                $returnText .= sprintf('
                     <form action="/%s/controllers/action.php" method="GET">
                         <input type="hidden" name="controller_id" value="%d">
                         <input type="hidden" name="target_location_id" value="%d">
                         <input
-                            type="submit" name="attackLocation" 
+                            type="submit" name="attackLocation"
                             value="Mener une équipe d\'attaque sur place"
                             class="button is-danger controller-action-btn"
                         >
@@ -509,8 +773,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                     $base['id']
                 );
             }
+            $returnText .= "</li>";
         }
-        $returnText .=  '</p>';
+        $returnText .= "</ul>";
     }
     return $returnText;
 }
