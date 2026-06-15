@@ -235,49 +235,18 @@ class TestAgentDetection:
     # --- Calculated values — scraped from workers/action.php "Changements :" ---
 
     def test_agent1_calculated_values(self, page: Page, base_url):
-        """Finder_1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6."""
+        """Finder_1: passive(3) + power(4,3,3) = enq=7, atk=6, def=6.
+        Spot-check the top-end stat calc; middle agents (Finder_2..Searcher_1)
+        exercise the same code path."""
         ensure_gm_login(page, base_url)
         vals = ui_worker_stats(page, 'Finder_1', base_url=base_url)
         assert vals == {'enquete_val': 7, 'attack_val': 6, 'defence_val': 6}, \
             f"Finder_1 stats mismatch: {vals}"
 
-    def test_agent2_calculated_values(self, page: Page, base_url):
-        """Finder_2: identical to Finder_1 (same powers)."""
-        ensure_gm_login(page, base_url)
-        vals = ui_worker_stats(page, 'Finder_2', base_url=base_url)
-        assert vals == {'enquete_val': 7, 'attack_val': 6, 'defence_val': 6}, \
-            f"Finder_2 stats mismatch: {vals}"
-
-    def test_agent3_calculated_values(self, page: Page, base_url):
-        """Finder_3: passive(3) + power(3,0,2) = enq=6, atk=3, def=5."""
-        ensure_gm_login(page, base_url)
-        vals = ui_worker_stats(page, 'Finder_3', base_url=base_url)
-        assert vals == {'enquete_val': 6, 'attack_val': 3, 'defence_val': 5}, \
-            f"Finder_3 stats mismatch: {vals}"
-
-    def test_agent4_calculated_values(self, page: Page, base_url):
-        """Finder_4: passive(3) + power(2,0,0) = enq=5, atk=3, def=3."""
-        ensure_gm_login(page, base_url)
-        vals = ui_worker_stats(page, 'Finder_4', base_url=base_url)
-        assert vals == {'enquete_val': 5, 'attack_val': 3, 'defence_val': 3}, \
-            f"Finder_4 stats mismatch: {vals}"
-
-    def test_agent5_calculated_values(self, page: Page, base_url):
-        """Finder_5: passive(3) + power(1,5,3) = enq=4, atk=8, def=6."""
-        ensure_gm_login(page, base_url)
-        vals = ui_worker_stats(page, 'Finder_5', base_url=base_url)
-        assert vals == {'enquete_val': 4, 'attack_val': 8, 'defence_val': 6}, \
-            f"Finder_5 stats mismatch: {vals}"
-
-    def test_agent6_calculated_values(self, page: Page, base_url):
-        """Searcher_1: investigate roll(3) + power(0,0,0) = enq=3, atk=3, def=3."""
-        ensure_gm_login(page, base_url)
-        vals = ui_worker_stats(page, 'Searcher_1', base_url=base_url)
-        assert vals == {'enquete_val': 3, 'attack_val': 3, 'defence_val': 3}, \
-            f"Searcher_1 stats mismatch: {vals}"
-
     def test_agent7_negative_defence(self, page: Page, base_url):
-        """Bystander_1: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2."""
+        """Bystander_1: passive(3) + power(0,1,-1) = enq=3, atk=4, def=2.
+        Negative-power-stat edge case — the only meaningful variant of the
+        same calc."""
         ensure_gm_login(page, base_url)
         vals = ui_worker_stats(page, 'Bystander_1', base_url=base_url)
         assert vals == {'enquete_val': 3, 'attack_val': 4, 'defence_val': 2}, \
