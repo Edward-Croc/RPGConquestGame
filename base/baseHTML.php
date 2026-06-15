@@ -67,7 +67,7 @@ if (
             // Privileged user section
             if ($isPrivileged) {
                 $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
-                echo "<a href='/$folder/mechanics/endTurn.php' class='sidebar-btn'>$btnText</a>";
+                echo "<a href='/$folder/mechanics/endTurn.php' id='endTurnBtn' class='sidebar-btn'>$btnText</a>";
 
                 $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
                 echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
@@ -106,3 +106,45 @@ if (
         require_once __DIR__ . '/baseHTMLFooter.php';
     });
 ?>
+    <div id="endTurnModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Confirm</p>
+            </header>
+            <section class="modal-card-body">
+                <p>Are you sure ?</p>
+            </section>
+            <footer class="modal-card-foot">
+                <button id="endTurnModalYes" class="button is-danger">Yes</button>
+                <button id="endTurnModalNo" class="button">Cancel</button>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        function openEndTurnModal(event) {
+            event.preventDefault();
+            document.getElementById('endTurnModal').classList.add('is-active');
+        }
+
+        function closeEndTurnModal() {
+            document.getElementById('endTurnModal').classList.remove('is-active');
+        }
+
+        function confirmEndTurn() {
+            window.location.href = document.getElementById('endTurnBtn').href;
+        }
+
+        function initEndTurnConfirmation() {
+            const endTurnBtn = document.getElementById('endTurnBtn');
+            if (!endTurnBtn) return; // Not rendered for non-privileged users
+
+            endTurnBtn.addEventListener('click', openEndTurnModal);
+            document.getElementById('endTurnModalNo').addEventListener('click', closeEndTurnModal);
+            document.getElementById('endTurnModalYes').addEventListener('click', confirmEndTurn);
+            document.querySelector('#endTurnModal .modal-background').addEventListener('click', closeEndTurnModal);
+        }
+
+        document.addEventListener('DOMContentLoaded', initEndTurnConfirmation);
+    </script>

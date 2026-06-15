@@ -142,7 +142,7 @@ require_once '../base/baseHTML.php';
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Please wait...</p>
+            <p class="modal-card-title">Creating the world...</p>
         </header>
         <section class="modal-card-body">
             <p id="waitModalMessage"></p>
