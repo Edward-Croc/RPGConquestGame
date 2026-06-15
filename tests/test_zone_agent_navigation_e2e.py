@@ -17,9 +17,9 @@ from playwright.sync_api import Page, expect
 
 from conftest import PHP_BASE_URL
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    as_controller,
+    as_controller, end_turn, ui_zone_id, ui_controller_id, ui_move_click,
 )
 
 
@@ -33,23 +33,7 @@ def load_test_config_advanced(browser):
     """Load TestConfig advanced (seeds workers across zones)."""
     if DB_AVAILABLE:
         load_minimal_data()
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    assert_no_collected_php_errors(page)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 
@@ -58,6 +42,15 @@ def alpha_page(page: Page, base_url):
     """Logged in as gm, switched to controller Alpha."""
     login_as(page, base_url, "gm", "orga")
     as_controller(page, "Alpha", base_url=base_url)
+    yield page
+    logout(page, base_url)
+
+
+@pytest.fixture
+def echo_page(page: Page, base_url):
+    """Logged in as gm, switched to controller Echo."""
+    login_as(page, base_url, "gm", "orga")
+    as_controller(page, "Echo", base_url=base_url)
     yield page
     logout(page, base_url)
 
@@ -319,3 +312,166 @@ class TestAgentViewZoneLink:
         assert description.evaluate("el => el.style.display") == "block", (
             "On-load JS should set the targeted description to display:block"
         )
+
+
+# ---------------------------------------------------------------------------
+# Post-EOT state — recruit a double agent and run one EOT.
+# Doubles fold (Echo's view) + recent enemies (Alpha's view).
+# ---------------------------------------------------------------------------
+
+
+class TestZoneBoxAfterFirstEot:
+    """Class-scoped fixture recruits a Charlie/Echo double via the perfect-worker
+    form URL, then runs one EOT so Searcher_1's investigate seeds Alpha's CKE."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def recruit_double_and_eot(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        login_as(page, PHP_BASE_URL, "gm", "orga")
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _option_value(selector, text_match):
+            for opt in page.locator(f"{selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(f"Option containing '{text_match}' not found in {selector}")
+
+        blank_slate_id = _option_value("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _option_value("select#power_metier_id", "Test_Job_GoTraitor_Echo")
+        origin_id = _option_value("select#origin_id", "origine Accessible")
+        charlie_id = ui_controller_id(page, "Charlie", base_url=PHP_BASE_URL)
+        theta_id = ui_zone_id(page, "Theta-Artefacts", base_url=PHP_BASE_URL)
+
+        url = (
+            f"{PHP_BASE_URL}/workers/action.php?creation=true"
+            f"&controller_id={charlie_id}&zone_id={theta_id}&origin_id={origin_id}"
+            f"&firstname=double&lastname=DoubleNav_W"
+            f"&power_hobby_id={blank_slate_id}&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+        assert_no_collected_php_errors(page)
+
+        end_turn(page, base_url=PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_doubles_fold_visible_in_theta_box(self, echo_page: Page, base_url):
+        """Echo's recruited double-agent worker appears under Theta-Artefacts'
+        <details>Nos Agents doubles</details> fold."""
+        safe_goto(echo_page, f"{base_url}/zones/action.php")
+        echo_page.wait_for_load_state("networkidle")
+        theta_box = echo_page.locator("div.box.mb-4").filter(has_text="Theta-Artefacts").first
+        theta_box.locator("h3").click()
+        details = theta_box.locator("details").filter(has_text="Nos Agents doubles")
+        expect(details).to_be_visible()
+
+    def test_double_agent_name_in_expanded_fold(self, echo_page: Page, base_url):
+        safe_goto(echo_page, f"{base_url}/zones/action.php")
+        echo_page.wait_for_load_state("networkidle")
+        theta_box = echo_page.locator("div.box.mb-4").filter(has_text="Theta-Artefacts").first
+        theta_box.locator("h3").click()
+        details = theta_box.locator("details").filter(has_text="Nos Agents doubles")
+        details.locator("summary").click()
+        assert "DoubleNav_W" in details.inner_text()
+
+    def test_double_agent_link_uses_clickable_title_classes(self, echo_page: Page, base_url):
+        """The double-agent name renders as a clickable-title anchor (we control them)."""
+        safe_goto(echo_page, f"{base_url}/zones/action.php")
+        echo_page.wait_for_load_state("networkidle")
+        theta_box = echo_page.locator("div.box.mb-4").filter(has_text="Theta-Artefacts").first
+        theta_box.locator("h3").click()
+        details = theta_box.locator("details").filter(has_text="Nos Agents doubles")
+        details.locator("summary").click()
+        anchor = details.locator("a[href*='/workers/action.php?worker_id=']").first
+        expect(anchor).to_be_visible()
+        cls = anchor.get_attribute("class") or ""
+        assert "has-text-weight-semibold" in cls
+
+    def test_enemy_header_visible_in_alpha_investigation(self, alpha_page: Page, base_url):
+        """Alpha's CKE populated by Searcher_1's turn-0 investigation."""
+        safe_goto(alpha_page, f"{base_url}/zones/action.php")
+        alpha_page.wait_for_load_state("networkidle")
+        alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
+        alpha_inv_box.locator("h3").click()
+        assert "Agents ennemis repérés" in alpha_inv_box.inner_text()
+
+    def test_at_least_one_enemy_name_appears(self, alpha_page: Page, base_url):
+        safe_goto(alpha_page, f"{base_url}/zones/action.php")
+        alpha_page.wait_for_load_state("networkidle")
+        alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
+        alpha_inv_box.locator("h3").click()
+        box_text = alpha_inv_box.inner_text()
+        plausible_enemies = ["Finder_1", "Finder_2", "Finder_3", "Finder_4",
+                             "Finder_5", "Bystander_1"]
+        found = [e for e in plausible_enemies if e in box_text]
+        assert found, (
+            f"Expected at least one detected enemy from {plausible_enemies} "
+            f"in Alpha-Investigation box; got: {box_text[:300]}"
+        )
+
+    def test_no_plus_anciens_fold_after_one_eot(self, alpha_page: Page, base_url):
+        """attackTimeWindow=1 + only one EOT → no Plus anciens widget."""
+        safe_goto(alpha_page, f"{base_url}/zones/action.php")
+        alpha_page.wait_for_load_state("networkidle")
+        plus_anciens = alpha_page.locator("details summary").filter(has_text="Plus anciens")
+        assert plus_anciens.count() == 0, (
+            f"No CKE entry should be 'older' after a single EOT; "
+            f"found {plus_anciens.count()} Plus anciens widget(s)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# After several EOTs without active investigation, initial CKE entries
+# fall outside attackTimeWindow → "Plus anciens" fold appears.
+# ---------------------------------------------------------------------------
+
+
+class TestZoneBoxAfterAgingCke:
+    """Move Searcher_1 out of Alpha-Investigation (stops CKE refresh) and run
+    3 more EOTs, pushing the initial CKE entries past attackTimeWindow=1."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def age_cke_with_extra_eots(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        login_as(page, PHP_BASE_URL, "gm", "orga")
+        ui_move_click(page, "Searcher_1", "Beta-Combat", base_url=PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        for _ in range(3):
+            end_turn(page, base_url=PHP_BASE_URL)
+            assert_no_collected_php_errors(page)
+        context.close()
+        yield
+
+    def test_plus_anciens_details_visible(self, alpha_page: Page, base_url):
+        safe_goto(alpha_page, f"{base_url}/zones/action.php")
+        alpha_page.wait_for_load_state("networkidle")
+        alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
+        alpha_inv_box.locator("h3").click()
+        plus_anciens = alpha_inv_box.locator("details summary").filter(has_text="Plus anciens")
+        expect(plus_anciens).to_be_visible()
+
+    def test_expand_plus_anciens_reveals_enemy_names(self, alpha_page: Page, base_url):
+        safe_goto(alpha_page, f"{base_url}/zones/action.php")
+        alpha_page.wait_for_load_state("networkidle")
+        alpha_inv_box = alpha_page.locator("div.box.mb-4").filter(has_text="Alpha-Investigation").first
+        alpha_inv_box.locator("h3").click()
+        plus_anciens_summary = (
+            alpha_inv_box.locator("details summary").filter(has_text="Plus anciens").first
+        )
+        plus_anciens_summary.click()
+        details = alpha_inv_box.locator("details").filter(has_text="Plus anciens").first
+        box_text = details.inner_text()
+        plausible_enemies = ["Finder_1", "Finder_2", "Finder_3", "Finder_4",
+                             "Finder_5", "Bystander_1"]
+        found = [e for e in plausible_enemies if e in box_text]
+        assert found, f"Expected enemy names in Plus anciens; got: {box_text[:300]}"
