@@ -231,7 +231,8 @@ function locationSearchMechanic($pdo, $mechanics) {
             buildLocationSearchReportLine($pdo, $row, $prevCkl, $txtBag);
 
         if ($reportElement !== '') {
-            $reportArray[$row['searcher_id']] .= $reportElement;
+            $separator = (substr($reportElement, -10) === '</details>') ? '<br />' : '';
+            $reportArray[$row['searcher_id']] .= $reportElement . $separator;
         }
 
         // Upsert CKL only when current investigation reached at least INFORMATIONDIFF (name-only discoveries don't seed CKL)

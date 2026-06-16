@@ -419,7 +419,8 @@ function buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag
         for ($i = 0; $i <= $prevLevel; $i++) {
             if (isset($slabs[$i])) $oldSlabs[] = $slabs[$i];
         }
-        $reportElement = '<p>'.$upgradeText.' '.implode(' ', $newSlabs).'</p>';
+        $upgradePClass = !empty($oldSlabs) ? ' class="mb-0"' : '';
+        $reportElement = '<p'.$upgradePClass.'>'.$upgradeText.' '.implode(' ', $newSlabs).'</p>';
         if (!empty($oldSlabs)) {
             $reportElement .= '<details><summary>'.$reminderLabel.'</summary><p>'.implode(' ', $oldSlabs).'</p></details>';
         }
@@ -510,7 +511,8 @@ function investigateMechanic($pdo, $mechanics) {
             buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag);
 
         if ($reportElement !== '') {
-            $reportArray[$row['searcher_id']] .= $reportElement;
+            $separator = (substr($reportElement, -10) === '</details>') ? '<br />' : '';
+            $reportArray[$row['searcher_id']] .= $reportElement . $separator;
         }
 
         $enqDiff = (int)$row['enquete_difference'];
