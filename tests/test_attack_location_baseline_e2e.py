@@ -84,7 +84,9 @@ def load_test_config(browser):
     safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
     page.wait_for_load_state("load")
     page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
+    page.locator("input[type='submit'][value='Submit']").click()
+    if page.locator("#confirmModalYes").is_visible():
+        page.locator("#confirmModalYes").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=90000)
     assert_no_collected_php_errors(page)
