@@ -159,7 +159,7 @@ require_once '../base/baseHTML.php';
 
 <script>
 
-    const wordCreationMessage = [
+    const worldCreationMessages = [
         "Birthing Gaia out of Chaos...",
         "Hollowing Ymir's bones...",
         "Stirring the ocean with Izanagi (伊邪那岐神) and Izanami (伊邪那美神)'s spear...",
@@ -177,8 +177,8 @@ require_once '../base/baseHTML.php';
     }
 
     function pickRandomWaitMessage() {
-        const index = Math.floor(Math.random() * wordCreationMessage.length);
-        document.getElementById('waitModalMessage').textContent = wordCreationMessage[index];
+        const index = Math.floor(Math.random() * worldCreationMessages.length);
+        document.getElementById('waitModalMessage').textContent = worldCreationMessages[index];
     }
 
     function openWaitModal() {
