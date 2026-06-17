@@ -55,7 +55,7 @@ require_once '../base/baseHTML.php';
                 $_SESSION['FOLDER']
             );
             echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
-                <h2> FULL Reset : </br>
+                <h2> FULL Reset : <br />
                     <select id="configSelect" name="config_name">
                         <optgroup label="Config via CSV">
                             <option  value='Japon1555CSV'> Shikoku (四国) 1555 </option>
@@ -98,7 +98,7 @@ require_once '../base/baseHTML.php';
                     // Add button to extract BDD to file.sql or .sql
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
                         <input type="hidden" name="exportBDD" />
-                        <input type="submit" name="submit" value="Export BDD to file.sql" />
+                        <input type="submit" name="submitButton" value="Export BDD to file.sql" />
                     </form> </p>',
                     $_SESSION['FOLDER']
                     );
@@ -106,7 +106,7 @@ require_once '../base/baseHTML.php';
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="importBDD" />
                         <input type="file" name="bddFile" id="bddFile" />
-                        <input type="submit" name="submit" value="Import BDD from file.sql" />
+                        <input type="submit" name="submitButton" value="Import BDD from file.sql" />
                     </form> </p>',
                     $_SESSION['FOLDER']
                     );
