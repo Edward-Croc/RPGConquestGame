@@ -119,6 +119,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
         if (empty($controller_id) || empty($target_controller_id) || empty($enemy_worker_id)) {
             echo '<div class="notification is-warning">Sélection incomplète : faction ou agent manquant.</div>';
+        } else if ((int)$controller_id === (int)$target_controller_id) {
+            echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
             $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
             $stmt = $gameReady->prepare($sql);
@@ -136,6 +138,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
         if (empty($target_controller_id) || empty($location_id) || empty($giver_id)) {
             echo '<div class="notification is-warning">Sélection incomplète : faction ou lieu manquant.</div>';
+        } else if ((int)$giver_id === (int)$target_controller_id) {
+            echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
             addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
             logInformationGift($gameReady, $giver_id, $target_controller_id, 'location', $location_id, $mechanics['turncounter']);

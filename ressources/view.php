@@ -26,10 +26,7 @@ foreach ($ressourcesList as $r) {
 }
 
 $gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
-$visibleFactions = array_values(array_filter(
-    getControllers($gameReady, NULL, NULL, true) ?: [],
-    function ($c) use ($controller_id) { return (int)$c['id'] !== $controller_id; }
-));
+$visibleFactions = getControllers($gameReady, NULL, NULL, true, $controller_id) ?: [];
 $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
 ?>
