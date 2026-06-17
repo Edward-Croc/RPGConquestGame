@@ -85,7 +85,7 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
                 <h4 class="title is-6 mt-4"><?= htmlspecialchars($r['ressource_name']) ?></h4>
 <?php if (!$hasAny): ?>
                 <p class="has-text-grey">Aucune règle conditionnelle.</p>
-                <p>Gain de fin de tour fixe : +<?= (int)$r['end_turn_gain'] ?></p>
+                <p>Gain de fin de tour fixe : <strong>+<?= (int)$r['end_turn_gain'] ?></strong></p>
 <?php else: ?>
 <?php if (!empty($rules['before_claim'])): ?>
                 <h5 class="title is-6 has-text-weight-semibold mt-2">Avant la résolution des conquêtes</h5>
@@ -103,7 +103,7 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
 <?php endforeach; ?>
                 </ul>
 <?php endif; ?>
-                <p class="mt-3">Gain de fin de tour fixe : +<?= (int)$r['end_turn_gain'] ?></p>
+                <p class="mt-3">Gain de fin de tour fixe : <strong>+<?= (int)$r['end_turn_gain'] ?></strong></p>
                 <p>Estimation totale du tour suivant : <strong>+<?= (int)($r['end_turn_gain'] + ($rules['total'] ?? 0)) ?></strong></p>
 <?php endif; ?>
 <?php endforeach; ?>
