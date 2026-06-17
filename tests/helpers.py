@@ -188,7 +188,9 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     safe_goto(page, f"{base_url}/base/admin.php")
     _wait_loaded(page, "select[name='config_name']")
     page.locator("select[name='config_name']").select_option(scenario_name)
-    page.locator("input[name='submit'][value='Submit']").click()
+    page.locator("input[type='submit'][value='Submit']").click()
+    if page.locator("#confirmModalYes").is_visible():
+        page.locator("#confirmModalYes").click()
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=120000)
     assert_no_collected_php_errors(page)
