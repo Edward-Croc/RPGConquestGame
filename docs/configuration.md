@@ -61,7 +61,6 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 - **`textesAgentUpgradeInfo`** (= `["Nous avons obtenu de nouvelles informations concernant %1$s :"]`) — en-tête visible quand l'enquête courante atteint un niveau `DIFF` supérieur à ce qui était déjà connu ; les slabs nouveaux apparaissent ensuite en clair, les anciens sont repliés.
 - **`textesAgentReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` qui replie les slabs déjà connus dans la variante « upgrade ».
 - **`textesLocationStillHere`** (= `["Le lieu %1$s est toujours là."]`) — résumé pour un lieu déjà répertorié dans `controller_known_locations` sans nouvelle découverte. `%1$s` = nom du lieu.
-- **`textesLocationReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` pour les lieux repliés.
 
 ### Combat entre agents
 

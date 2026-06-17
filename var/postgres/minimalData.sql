@@ -104,7 +104,6 @@ VALUES
     ('textesAgentUpgradeInfo', '["Nous avons obtenu de nouvelles informations concernant %1$s :"]', 'Templates (JSON array) for the "new info on agent" report variant. %1$s = agent name.'),
     ('textesAgentReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known agent info.'),
     ('textesLocationStillHere', '["Le lieu %1$s est toujours là."]', 'Templates (JSON array) for the "location still here" report variant. %1$s = location name.'),
-    ('textesLocationReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known location info.'),
     ('continuing_investigate_action', '1', 'Does the investigate action stay active'),
     ('continuing_claimed_action', '1', 'Does the claim action stay active'),
     ('baseDiscoveryDiff', '3', 'Base discovery value for bases'),
