@@ -34,7 +34,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_teach_button_visible, ui_teach_discipline_options,
     ui_transform_options, ui_teach_discipline_click, ui_transform_click,
@@ -54,26 +54,7 @@ def load_test_config(browser):
     Transform_Subject)."""
     if DB_AVAILABLE:
         load_minimal_data()
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("load")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("load")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("load")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[type='submit'][value='Submit']").click()
-    if page.locator("#confirmModalYes").is_visible():
-        page.locator("#confirmModalYes").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    assert_no_collected_php_errors(page)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 

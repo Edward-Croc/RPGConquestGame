@@ -26,7 +26,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, login_as, safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, safe_goto,
     ui_controller_id,
 )
 
@@ -41,18 +41,7 @@ def setup_testconfig(browser):
     """Load TestConfig once per module so the test controllers exist."""
     if DB_AVAILABLE:
         load_minimal_data()
-    context = browser.new_context()
-    page = context.new_page()
-    ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[type='submit'][value='Submit']").click()
-    if page.locator("#confirmModalYes").is_visible():
-        page.locator("#confirmModalYes").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 

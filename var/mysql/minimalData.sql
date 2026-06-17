@@ -108,6 +108,14 @@ VALUES
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
     ('txt_inf_captured', 'a été capturé', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
+    -- Investigation report redundancy (Issue #63)
+    ('investigateOrder', 'asc', 'Order of investigation processing (asc/desc by searcher_enquete_val). asc lets weaker investigators discover first.'),
+    ('textesAgentStillHere', '["L''agent %1$s est toujours présent dans ce %2$s."]', 'Templates (JSON array) for the "agent already known" report variant. %1$s = agent name, %2$s = textForZoneType config value (e.g. "territoire", "quartier", "zone").'),
+    ('textesAgentMoved', '["L''agent %1$s, repéré précédemment dans %2$s, s''est déplacé ici."]', 'Templates (JSON array) for the "agent moved" report variant. %1$s = agent name, %2$s = previous zone name.'),
+    ('textesAgentUpgradeInfo', '["Nous avons obtenu de nouvelles informations concernant %1$s :"]', 'Templates (JSON array) for the "new info on agent" report variant. %1$s = agent name.'),
+    ('textesAgentReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known agent info.'),
+    ('textesLocationStillHere', '["Le lieu %1$s est toujours là."]', 'Templates (JSON array) for the "location still here" report variant. %1$s = location name.'),
+    ('textesLocationReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known location info.'),
     -- Action End turn effects
     ('continuing_investigate_action', 1, 'Does the investigate action stay active' ),
     ('continuing_claimed_action', 1, 'Does the claim action stay active' ),

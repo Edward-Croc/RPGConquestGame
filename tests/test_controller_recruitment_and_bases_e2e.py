@@ -52,6 +52,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
+    load_scenario_via_admin,
     ui_controller_id, ui_zone_id, ui_controller_counters,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -351,24 +352,14 @@ def recruitment_scenario(browser):
     omitted — the @pytest.mark.db tests that consume them are themselves
     skipped under UI_ONLY=1.
     """
-    # Local bootstrap; skipped on prod
     if DB_AVAILABLE:
         load_minimal_data()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
-
-    # Login + load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[type='submit'][value='Submit']").click()
-    if page.locator("#confirmModalYes").is_visible():
-        page.locator("#confirmModalYes").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
 
     # ---- TURN 0 ----
 

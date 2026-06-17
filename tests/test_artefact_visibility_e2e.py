@@ -28,7 +28,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, login_as, logout, safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id,
 )
@@ -61,33 +61,17 @@ def load_artefact_scenario(browser):
     Skips local minimal-data seeding when DB is unavailable (prod target)."""
     if DB_AVAILABLE:
         load_minimal_data()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[type='submit'][value='Submit']").click()
-    if page.locator("#confirmModalYes").is_visible():
-        page.locator("#confirmModalYes").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-
+    ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
-
     _scrape_controller_ids(page, PHP_BASE_URL)
-
     assert_no_collected_php_errors(page)
     context.close()
-
     yield
 
 

@@ -780,15 +780,46 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
 }
 
 /**
+ * Read a single CKE row for (controller, worker). Caller compares prior state (zone_id + level flags) before calling addWorkerToCKE.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $worker_id
+ *
+ * @return array|null  associative row, or NULL if no CKE entry exists
+ */
+function getCKEEntry($pdo, $controller_id, $worker_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controllers_known_enemies
+            WHERE controller_id = :controller_id
+              AND discovered_worker_id = :worker_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':worker_id' => $worker_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $searcher_controller_id
  * @param int $found_id
  * @param int $turn_number
  * @param int $zone_id
+ * @param int|null $discovered_controller_id   monotonic — only persisted if truthy
+ * @param string|null $discovered_controller_name   monotonic — only persisted if truthy
+ * @param bool $discovered_powers   monotonic — DIFF1 flag (disciplines/transformations/hobby revealed); only persisted if truthy
  *
  * @return int $cke_existing_record_id
- * 
+ *
  */
 function addWorkerToCKE(
         $pdo,
@@ -797,7 +828,8 @@ function addWorkerToCKE(
         $turn_number,
         $zone_id,
         $discovered_controller_id = NULL,
-        $discovered_controller_name = NULL
+        $discovered_controller_name = NULL,
+        $discovered_powers = false
     ) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
@@ -845,10 +877,11 @@ function addWorkerToCKE(
             // Update if record exists
             $sql = sprintf("UPDATE {$prefix}controllers_known_enemies
                 SET last_discovery_turn = :turn_number, zone_id = :zone_id
-                %s %s
+                %s %s %s
                 WHERE id = :id",
                 $discovered_controller_id ? ", discovered_controller_id = :discovered_controller_id" : "",
-                $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : ""
+                $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : "",
+                $discovered_powers ? ", discovered_powers = :discovered_powers" : ""
             );
             if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
             $stmt = $pdo->prepare($sql);
@@ -861,6 +894,9 @@ function addWorkerToCKE(
             if ($discovered_controller_name) {
                 $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
             }
+            if ($discovered_powers) {
+                $stmt->bindParam(':discovered_powers', $discovered_powers, PDO::PARAM_BOOL);
+            }
             $stmt->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__."(): Error UPDATE {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
@@ -869,8 +905,8 @@ function addWorkerToCKE(
         try{
             // Insert if record doesn't exist
             $sql = "INSERT INTO {$prefix}controllers_known_enemies
-                (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name)
-                VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name)";
+                (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name, discovered_powers)
+                VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name, :discovered_powers)";
             if ($debug) echo "sql :".var_export($sql, true)." <br>";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':searcher_controller_id', $searcher_controller_id, PDO::PARAM_INT);
@@ -879,6 +915,7 @@ function addWorkerToCKE(
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
             $stmt->bindParam(':discovered_controller_id', $discovered_controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
+            $stmt->bindParam(':discovered_powers', $discovered_powers, PDO::PARAM_BOOL);
             $stmt->execute();
             $cke_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
@@ -889,6 +926,34 @@ function addWorkerToCKE(
 }
 
 /**
+ * Read a single CKL row for (controller, location). Caller compares prior state (found_secret) before calling addLocationToCKL.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $location_id
+ *
+ * @return array|null  associative row, or NULL if no CKL entry exists
+ */
+function getCKLEntry($pdo, $controller_id, $location_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controller_known_locations
+            WHERE controller_id = :controller_id
+              AND location_id = :location_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':location_id' => $location_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $controller_id
@@ -896,7 +961,7 @@ function addWorkerToCKE(
  * @param int $turn_number
  *
  * @return int $ckl_existing_record_id
- * 
+ *
  */
 function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
