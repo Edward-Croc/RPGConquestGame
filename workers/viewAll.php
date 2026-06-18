@@ -127,16 +127,27 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 foreach ($liveWorkerArray as $worker) {
                     echo $worker['view'];
                 }
-                echo '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">';
-                echo '<div class="control"><label class="label is-small mb-0">Zone cible (pour déplacement uniquement) :</label></div>';
-                echo showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true);
-                echo " <div class='control'> <input type='submit' name='mass_move' value='Déplacer les agents sélectionnés' class='button is-warning mb-2 ml-2'></div>";
-                echo " <div class='control'> <input type='submit' name='mass_investigate' value='Enquêter sur les agents sélectionnés' class='button is-info mb-2 ml-2'></div>";
-                echo " <div class='control'> <input type='submit' name='mass_passive' value='Mettre en passif les agents sélectionnés' class='button is-warning mb-2 ml-2'></div>";
-                echo " <div class='control'> <input type='submit' name='mass_hide' value='Cacher les agents sélectionnés' class='button is-danger mb-2 ml-2'></div>";
-                echo "</div>";
-                echo "</form>";
-                echo "</div>";
+                echo sprintf('
+                <div class="control"><strong>Zone cible (pour déplacement uniquement) :</strong></div>
+                <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                    %s
+                    <div class="control"> 
+                        <input type="submit" name="mass_move" value="Déplacer les agents sélectionnés" class="button is-warning">
+                    </div>
+                </div>
+                <div class="control"><strong>Mettre en place l\'action suivante sur les agents sélectionnés :</strong></div>
+                <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                    <div class="control"> 
+                        <input type="submit" name="mass_investigate" value="%3$s" class="button is-info">
+                        <input type="submit" name="mass_passive" value="%2$s" class="button is-warning">
+                        <input type="submit" name="mass_hide" value="%4$s" class="button is-danger">
+                </div></div>', 
+                showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true), // %1$s
+                ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %2$s
+                ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %3$s
+                ucfirst(getConfig($gameReady, 'txt_inf_hide')) // %4$s
+                );
+                echo "</form></div>";
             }
 
             if ( !empty($doubleAgentWorkerArray )) {
