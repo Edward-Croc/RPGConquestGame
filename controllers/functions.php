@@ -1,44 +1,49 @@
 <?php
 
 /**
- * get all information for Controllers 
+ * get all information for Controllers
  *  - optional by player
  *  - optional for a specific controller
- * 
+ *  - optional exclusion of one controller (e.g. session-active controller for "target" selects)
+ *
  * @param PDO $pdo : database connection
  * @param int|null $player_id
  * @param int|null $controller_id
  * @param bool $hide_secret_controllers default: true
- * 
- * @return array|null 
- * 
+ * @param int|null $exclude_controller_id : drops one controller from the result (used to forbid self-target on gift selects)
+ *
+ * @return array|null
+ *
  */
 // Function to get controllers and return as an array
-function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true) {
+function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true, $exclude_controller_id = NULL) {
     $controllersArray = array();
     $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
         $sql = "SELECT c.*,
-            f.name AS faction_name, 
+            f.name AS faction_name,
             ff.name AS fake_faction_name
             FROM {$prefix}controllers c
             LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
             LEFT JOIN {$prefix}factions ff ON c.fake_faction_id = ff.ID";
+        $hasWhere = false;
         if ($player_id !== NULL){
             $sql .= "
                 INNER JOIN {$prefix}player_controller pc ON pc.controller_id = c.id
                 WHERE pc.player_id = '$player_id'";
+            $hasWhere = true;
         }
         if ($controller_id !== NULL){
-            $sql .= sprintf (
-                " %s c.id = '%s'",
-                $player_id !== NULL ? 'AND' : 'WHERE',
-                $controller_id
-            );
+            $sql .= sprintf(' %s c.id = \'%s\'', $hasWhere ? 'AND' : 'WHERE', $controller_id);
+            $hasWhere = true;
         } else if ($hide_secret_controllers == true){
-            $sql .=  ($player_id !== NULL) ? ' AND' : ' WHERE';
-            $sql .= " c.secret_controller IS NOT True";
+            $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            $hasWhere = true;
+        }
+        if ($exclude_controller_id !== NULL){
+            $sql .= sprintf(' %s c.id <> %d', $hasWhere ? 'AND' : 'WHERE', (int) $exclude_controller_id);
+            $hasWhere = true;
         }
         $sql .= ' ORDER BY c.id';
         $stmt = $pdo->prepare($sql);
@@ -1109,7 +1114,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $enemyWorkerOptions
     );
 
-    $controllers = getControllers($pdo, null, null, ($origin != 'admin'));
+    $controllers = getControllers($pdo, null, null, ($origin != 'admin'), ($origin != 'admin') ? $controller_id : NULL);
     $htmlGiftInformationAgent = sprintf('
         <form action="/%s/%s" method="GET">
         <h4 class="title is-5 mt-5">Sur les agents connus:</h4>
