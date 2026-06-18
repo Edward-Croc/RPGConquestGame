@@ -14,7 +14,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
-    $sort = in_array($_GET['sort'] ?? '', ['age','zone','investigate','attack']) ? $_GET['sort'] : 'age';
+    $validSorts = ['age','zone','investigate','attack'];
+    if (in_array($_GET['sort'] ?? '', $validSorts, true)) {
+        $sort = $_GET['sort'];
+        $_SESSION['workers_view_sort'] = $sort;
+    } else {
+        $sort = $_SESSION['workers_view_sort'] ?? 'age';
+    }
 
     echo "<div class='section workers'>";
         $recruitButton = "";
