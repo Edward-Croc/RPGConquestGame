@@ -145,6 +145,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])){
+        $session_controller_id = $_SESSION['controller']['id'] ?? null;
+        if (empty($_SESSION['is_privileged']) && $session_controller_id !== null && (int)$gift_controller_id === (int)$session_controller_id) {
+            http_response_code(403);
+            exit();
+        }
         activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
         header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }

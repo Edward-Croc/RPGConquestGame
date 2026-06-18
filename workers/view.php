@@ -199,7 +199,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
                 $controllers = getControllers($gameReady);
-                $showcontrollersSelect = showControllerSelect($controllers, $controller_id, 'gift_controller_id');
+                $giftControllers = getControllers($gameReady, NULL, NULL, true, $controller_id);
+                $showcontrollersSelect = showControllerSelect($giftControllers, $controller_id, 'gift_controller_id');
 
                 $claim_mode = getConfig($gameReady, 'claimMode');
                 $showListClaimTargetsSelect = '';
