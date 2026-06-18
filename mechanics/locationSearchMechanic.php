@@ -185,7 +185,6 @@ function locationSearchMechanic($pdo, $mechanics) {
         'locationDescText'            => json_decode(getConfig($pdo, 'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true),
         'locationDestroyableText'     => json_decode(getConfig($pdo, 'TEXT_LOCATION_CAN_BE_DESTROYED'), true),
         'textesLocationStillHere'     => json_decode(getConfig($pdo, 'textesLocationStillHere'), true),
-        'textesLocationReminderLabel' => getConfig($pdo, 'textesLocationReminderLabel'),
     ];
 
     $textForZoneType = getConfig($pdo, 'textForZoneType');
