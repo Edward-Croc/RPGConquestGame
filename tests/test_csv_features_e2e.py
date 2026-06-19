@@ -96,20 +96,29 @@ class TestLinkTableFeature:
             f"Expected 13 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
 
     def test_disciplines_linked_to_discipline_type(self, page: Page, base_url):
-        """The 3 discipline CSV powers appear in the Discipline dropdown."""
+        """All discipline CSV powers appear in the Discipline dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         disciplines = set(options_by_type['Discipline'])
-        expected = {'Offensive Stance', 'Defensive Posture', 'Focused Mind'}
+        expected = {
+            'Offensive Stance', 'Defensive Posture', 'Focused Mind',
+            'Test Discipline Zone Gated',
+        }
         assert disciplines == expected, \
             f"Discipline dropdown mismatch — expected {expected}, got {disciplines}"
 
     def test_transformations_linked_to_transformation_type(self, page: Page, base_url):
-        """The 3 transformation CSV powers appear in the Transformation dropdown."""
+        """All transformation CSV powers appear in the Transformation dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         transformations = set(options_by_type['Transformation'])
-        expected = {'War Gear', 'Shadow Cloak', 'Combat Vest'}
+        expected = {
+            'War Gear', 'Shadow Cloak', 'Combat Vest',
+            'Test Gold Cost Explicit', 'Test Gold Cost Default',
+            'Test Gold Gate Optout', 'Test OR Zone Or Gold',
+            'Test D21 Direct And OR', 'Test D21 Cross Resource',
+            'Test Malformed Amount',
+        }
         assert transformations == expected, \
             f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
 
@@ -118,7 +127,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 3, 'Transformation': 3}
+        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 4, 'Transformation': 10}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
