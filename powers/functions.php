@@ -358,10 +358,12 @@ function getRuleCostForPower($pdo, $power, $controller_id, $worker_id, $turn_num
     }
 
     if ($direct_cost !== null && $or_cost !== null){
-        error_log(sprintf(
-            'getRuleCostForPower: cross-resource cost not supported (§9), using direct (direct=%s, or=%s)',
-            $direct_cost['ressource_name'], $or_cost['ressource_name']
-        ));
+        if ($direct_cost['ressource_name'] !== $or_cost['ressource_name']){
+            error_log(sprintf(
+                'getRuleCostForPower: cross-resource cost not supported, using direct (direct=%s, or=%s)',
+                $direct_cost['ressource_name'], $or_cost['ressource_name']
+            ));
+        }
         $or_cost = null;
     }
     $cost = $direct_cost ?? $or_cost;
