@@ -231,174 +231,285 @@ function showDisciplineSelect($pdo, $powerDisciplineArray, $showText = true){
 }
 
 /**
+ * Filter a list of powers by JSON-driven unlock rules at `[$state_text]`.
+ * Pure-check: never mutates DB. Delegates per-power gating to findMatchingBranch.
  *
- *
- * @param PDO $pdo : database connection
- * @param array $powerArray
- * @param int $controller_id
- * @param int $worker_id
- * @param int $turn_number
- * @param string $state_text
- *
- * @return array|null : $powerArray
- *
+ * @return array|null surviving powers (NULL when empty)
  */
 function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $worker_id, $turn_number, $state_text ){
     $debug = (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true');
 
-    $worker = null;
     $workersPowersList = array();
-
     if (!empty($worker_id)){
-        $workersArray = getWorkers($pdo, [$worker_id]);
-        $worker = $workersArray[0];
         $workersPowersArray = getPowersByWorkers($pdo, $worker_id);
         foreach ($workersPowersArray as $workerPower){
             $workersPowersList[] = $workerPower['id'];
         }
     }
-    $controllersArray = array();
-    $zonesArray = array();
-    if (!empty($controller_id)){
-        $controllersArray = getControllers($pdo, NULL, $controller_id);
-        $zonesArray = getZonesArray($pdo, $controller_id, null, null);
-        $zonesArrayHolder = getZonesArray($pdo, null, $controller_id, null);
-    }
 
-    if ($debug)
-        echo sprintf(
-            "<p> powerArray : %s<br/> worker: %s <br/> controllersArray: %s<p/> ",
-            var_export($powerArray,true),
-            var_export($worker,true),
-            var_export($controllersArray,true)
-        );
-
-    // TODO : Implement NOT Effect ?? NOT controller X
-    // Loop through powers and validate against JSON conditions
     foreach ( $powerArray AS $key => $power ) {
-
-        // Skip powers the worker already possesses
-        if (!empty($worker_id) && !empty($powerArray) && in_array($power['id'],$workersPowersList,true) ){
-            if ($debug) echo sprintf("kill power(%s) <br>", $key);
+        if (!empty($worker_id) && in_array($power['id'], $workersPowersList, true)){
+            if ($debug) echo sprintf("kill power(%s) — already possessed<br>", $key);
             unset($powerArray[$key]);
             continue;
         }
 
-        $powerConditions = json_decode($power['other'], true);
-        if ($debug) 
-            echo sprintf("power(%s) : %s ==> json powerConditions : %s <br>", $key, var_export($power, true), var_export($powerConditions,true));
+        $powerConditions = json_decode($power['other'] ?? '', true);
+        if (!is_array($powerConditions)) continue;
 
-        // Base state is always keep
-        $keepElement = true;
-        if (!empty($powerConditions[$state_text]) ){
-
-            // Raw false as string = to drop
-            if ( (gettype($powerConditions[$state_text]) == "string") && (strtolower($powerConditions[$state_text]) == strtolower('false')) ){
-                $keepElement = false;
-            }
-            // If condition is an array, check details
-            else if( is_array($powerConditions[$state_text]) ) {
-                if ($debug)
-                     echo sprintf("powerConditions[%s] is array : %s  <br>", $state_text, var_export($powerConditions[$state_text], true));
-
-                // OR condition block
-                if (!empty($powerConditions[$state_text]['OR']) ){
-                    if ($debug) echo 'test the OR condition : <br/>' ;
-                    $OR = false;
-                    foreach ($powerConditions[$state_text]['OR'] AS $element){
-                        if (!empty($worker) ) {
-                            if (!empty($element['age']) && !empty($worker['age']) && ($element['age'] <= $worker['age']) ) {
-                                if ($debug) echo 'test PASSE the age condition : <br/>' ;
-                                $OR = true;
-                            }
-                            if (!empty($element['worker_is_alive']) && isset($worker['actions'][$turn_number]['action_choice'])) {
-                                $should_be_alive = true;
-                                if ($element['worker_is_alive'] == "0" ) $should_be_alive = false;
-                                if ( in_array($worker['actions'][$turn_number]['action_choice'], ACTIVE_ACTIONS) === $should_be_alive) {
-                                    if ($debug) echo 'test PASSED the worker_is_alive condition : <br/>' ;
-                                    $OR = true;
-                                }
-                            }
-                        }
-                    }
-                    $keepElement = $OR;
-                }
-
-                // Direct checks
-                if (!empty($worker) ) {
-                    if ($debug) echo sprintf("!empty(worker) (%s): %s <br>", gettype($worker), var_export($worker,true));
-                    if (isset($powerConditions[$state_text]['age']) && !empty($worker['age']) && ($powerConditions[$state_text]['age'] > $worker['age']) ) {
-                        if ($debug) echo 'test FAILED the age condition : <br/>' ;
-                        $keepElement = false;
-                    }
-
-                    if (isset($powerConditions[$state_text]['worker_is_alive']) && isset($worker['actions'][$turn_number]['action_choice'])){
-                        if ($debug) echo sprintf("test the worker_is_alive condition : %s <br>", var_export($powerConditions[$state_text]['worker_is_alive'], true));
-                        $should_be_alive = true;
-                        if ($powerConditions[$state_text]['worker_is_alive'] == "0" ) $should_be_alive = false;
-                        if ( in_array($worker['actions'][$turn_number]['action_choice'], ACTIVE_ACTIONS) !== $should_be_alive) {
-                            if ($debug) echo sprintf("test FAILED the worker_is_alive condition : %s <br>", var_export($worker['actions'][$turn_number]['action_choice'], true));
-                            $keepElement = false;
-                        }
-                        if ($debug) echo ' <br/>' ;
-                    }
-                }
-
-                if (isset($powerConditions[$state_text]['turn']) && $powerConditions[$state_text]['turn'] > $turn_number) {
-                    if ($debug) echo 'test FAILED the turn condition : <br/>' ;
-                    $keepElement = false;
-                }
-
-                if (!empty($powerConditions[$state_text]['controller_faction']) && $powerConditions[$state_text]['controller_faction'] != $controllersArray[0]['faction_name']){
-                    if ($debug) echo 'test FAILED the controller_faction condition : <br/>' ;
-                    $keepElement = false;
-                }
-
-                // controller_has_zone
-                if (!empty($powerConditions[$state_text]['controller_has_zone']) ) {
-                    if (empty($zonesArray) && empty($zonesArrayHolder)) {
-                        $keepElement = false;
-                        if ($debug)
-                            echo "FAILED controller_has_zone check<br/>";
-                    } else{
-                        $foundZone = false;
-                        foreach ( $zonesArray as $zone ){
-                           if ( $zone['name'] == $powerConditions[$state_text]['controller_has_zone'])
-                            $foundZone = true;
-                        }
-                        foreach ( $zonesArrayHolder as $zone ){
-                            if ( $zone['name'] == $powerConditions[$state_text]['controller_has_zone'])
-                            $foundZone = true;
-                        }
-                        if ( !$foundZone ) $keepElement = false;
-                    }
-                }
-
-                // worker_in_zone
-                if (
-                    !empty($powerConditions[$state_text]['worker_in_zone'])
-                    && !empty($worker)
-                    && ( ! ($worker['zone_name'] == $powerConditions[$state_text]['worker_in_zone']) )
-                ) {
-                    $keepElement = false;
-                    if ($debug)
-                        echo "FAILED controller_has_zone check<br/>";
-                }
-            }
-        }
-        else{
-            if ($debug) echo sprintf("powerConditions[%s] is empty : %s ", $state_text, $powerConditions[$state_text]);
-        }
-
-        // Remove if not valid
-        if (!$keepElement){
-            if ($debug) echo sprintf("kill power(%s) <br>", $key);
+        $match = findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text);
+        if (!$match['keep']){
+            if ($debug) echo sprintf("kill power(%s)<br>", $key);
             unset($powerArray[$key]);
         }
     }
-    if ($debug) echo sprintf("Whats left of powerArray : %s <br>", var_export($powerArray,true));
 
     return empty($powerArray) ? NULL : $powerArray ;
+}
+
+/**
+ * Decide whether a power's `[$state_text]` rule satisfies, and surface which OR
+ * branch fired. Single source of truth for gate semantics across display
+ * (cleanPowerListFromJsonConditions) and commit (getRuleCostForPower) per D19.
+ *
+ * @return array ['keep' => bool, 'matching_branch' => ?array]
+ */
+function findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text){
+    static $contextCache = [];
+
+    $result = ['keep' => true, 'matching_branch' => null];
+
+    if (empty($powerConditions[$state_text])) return $result;
+    $rule = $powerConditions[$state_text];
+
+    if (gettype($rule) === 'string' && strtolower($rule) === 'false'){
+        $result['keep'] = false;
+        return $result;
+    }
+    if (!is_array($rule)) return $result;
+
+    $cacheKey = "{$controller_id}_{$worker_id}_{$turn_number}";
+    if (!isset($contextCache[$cacheKey])){
+        $contextCache[$cacheKey] = buildRuleEvaluationContext($pdo, $controller_id, $worker_id);
+    }
+    $context = $contextCache[$cacheKey];
+
+    $direct = $rule;
+    $orBranches = null;
+    if (array_key_exists('OR', $direct)){
+        $orBranches = $direct['OR'];
+        unset($direct['OR']);
+    }
+
+    if (!evaluateRuleKeysAllMatch($direct, $context, $turn_number)){
+        $result['keep'] = false;
+        return $result;
+    }
+
+    if ($orBranches !== null){
+        if (!is_array($orBranches) || array_keys($orBranches) !== range(0, count($orBranches) - 1)){
+            // D12: OR must be array-of-objects, not single object
+            $result['keep'] = false;
+            return $result;
+        }
+        $matched = null;
+        foreach ($orBranches as $branch){
+            if (!is_array($branch)) continue;
+            if (evaluateRuleKeysAllMatch($branch, $context, $turn_number)){
+                $matched = $branch;
+                break;
+            }
+        }
+        if ($matched === null){
+            $result['keep'] = false;
+            return $result;
+        }
+        $result['matching_branch'] = $matched;
+    } else {
+        $result['matching_branch'] = $direct;
+    }
+
+    return $result;
+}
+
+/**
+ * Resolve the ressource cost owed at commit time for an unlocked power per D21:
+ * walks both the direct-level controller_has_ressource and the matched OR branch
+ * (via findMatchingBranch). Direct precedence on cross-resource collision +
+ * error_log warning. Returns null when no deducting cost applies.
+ *
+ * @return array|null ['ressource_id' => int, 'ressource_name' => string, 'amount' => int]
+ */
+function getRuleCostForPower($pdo, $power, $controller_id, $worker_id, $turn_number, $state_text){
+    if (empty($power['other'])) return null;
+    $powerConditions = json_decode($power['other'], true);
+    if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) return null;
+    $rule = $powerConditions[$state_text];
+
+    // D19/D21 — gate via the shared matcher first; no cost if the rule does not pass.
+    $match = findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text);
+    if (!$match['keep']) return null;
+
+    $direct_cost = extractRessourceCostFromRule($rule['controller_has_ressource'] ?? null);
+
+    $or_cost = null;
+    if (isset($rule['OR']) && is_array($match['matching_branch'])){
+        $or_cost = extractRessourceCostFromRule($match['matching_branch']['controller_has_ressource'] ?? null);
+    }
+
+    if ($direct_cost !== null && $or_cost !== null){
+        error_log(sprintf(
+            'getRuleCostForPower: cross-resource cost not supported (§9), using direct (direct=%s, or=%s)',
+            $direct_cost['ressource_name'], $or_cost['ressource_name']
+        ));
+        $or_cost = null;
+    }
+    $cost = $direct_cost ?? $or_cost;
+    if ($cost === null) return null;
+
+    $rid = resolveRessourceIdByName($pdo, $cost['ressource_name']);
+    if ($rid === null){
+        error_log(sprintf('getRuleCostForPower: ressource not found in ressources_config (name=%s)', $cost['ressource_name']));
+        return null;
+    }
+    return ['ressource_id' => $rid, 'ressource_name' => $cost['ressource_name'], 'amount' => $cost['amount']];
+}
+
+/**
+ * Pre-fetch all per-controller / per-worker data the rule keys need.
+ * Cached inside findMatchingBranch for the request.
+ */
+function buildRuleEvaluationContext($pdo, $controller_id, $worker_id){
+    $worker = null;
+    if (!empty($worker_id)){
+        $workersArray = getWorkers($pdo, [$worker_id]);
+        if (!empty($workersArray[0])) $worker = $workersArray[0];
+    }
+    $controllersArray = [];
+    $zonesArray = [];
+    $zonesArrayHolder = [];
+    $ressourcesArray = [];
+    if (!empty($controller_id)){
+        $controllersArray = getControllers($pdo, NULL, $controller_id);
+        $zonesArray = getZonesArray($pdo, $controller_id, null, null);
+        $zonesArrayHolder = getZonesArray($pdo, null, $controller_id, null);
+        $ressourcesArray = getRessources($pdo, $controller_id);
+    }
+    return [
+        'worker' => $worker,
+        'controllersArray' => $controllersArray,
+        'zonesArray' => $zonesArray,
+        'zonesArrayHolder' => $zonesArrayHolder,
+        'ressourcesArray' => $ressourcesArray,
+    ];
+}
+
+/**
+ * AND-of-all-keys evaluator per D20. Used for both direct rules and OR branches.
+ * Unknown keys silently skipped (forward-compat).
+ */
+function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
+    $worker = $context['worker'];
+    $controllersArray = $context['controllersArray'];
+    $zonesArray = $context['zonesArray'];
+    $zonesArrayHolder = $context['zonesArrayHolder'];
+    $ressourcesArray = $context['ressourcesArray'];
+
+    foreach ($keys as $key => $value){
+        if ($key === 'OR') continue;
+
+        if ($key === 'age'){
+            if (!empty($worker) && !empty($worker['age']) && ((int)$value > (int)$worker['age'])) return false;
+        }
+        elseif ($key === 'worker_is_alive'){
+            if (!empty($worker) && isset($worker['actions'][$turn_number]['action_choice'])){
+                $should_be_alive = ($value != "0");
+                $is_alive = in_array($worker['actions'][$turn_number]['action_choice'], ACTIVE_ACTIONS);
+                if ($is_alive !== $should_be_alive) return false;
+            }
+        }
+        elseif ($key === 'turn'){
+            if ((int)$value > (int)$turn_number) return false;
+        }
+        elseif ($key === 'controller_faction'){
+            if (!empty($value) && !empty($controllersArray) && $value !== $controllersArray[0]['faction_name']) return false;
+        }
+        elseif ($key === 'controller_has_zone'){
+            if (empty($value)) continue;
+            $found = false;
+            foreach ($zonesArray as $zone){
+                if ($zone['name'] === $value){ $found = true; break; }
+            }
+            if (!$found){
+                foreach ($zonesArrayHolder as $zone){
+                    if ($zone['name'] === $value){ $found = true; break; }
+                }
+            }
+            if (!$found) return false;
+        }
+        elseif ($key === 'worker_in_zone'){
+            if (!empty($value) && !empty($worker) && ($worker['zone_name'] ?? null) !== $value) return false;
+        }
+        elseif ($key === 'controller_has_ressource'){
+            if (!is_array($value)){
+                error_log('controller_has_ressource: malformed rule (not an object)');
+                return false;
+            }
+            $rname = $value['ressource_name'] ?? null;
+            $rawAmount = $value['amount'] ?? null;
+            $amountIsStrictInt = is_int($rawAmount) || (is_string($rawAmount) && ctype_digit($rawAmount));
+            if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0){
+                error_log(sprintf('controller_has_ressource: invalid ressource_name or amount (rname=%s, amount=%s)', var_export($rname, true), var_export($rawAmount, true)));
+                return false;
+            }
+            if (array_key_exists('consume', $value) && !is_bool($value['consume'])){
+                error_log(sprintf('controller_has_ressource: consume must be bool if present (got %s)', var_export($value['consume'], true)));
+                return false;
+            }
+            $amount = (int)$rawAmount;
+            $found = false;
+            foreach ($ressourcesArray as $r){
+                if (($r['ressource_name'] ?? null) === $rname && (int)($r['amount'] ?? 0) >= $amount){
+                    $found = true; break;
+                }
+            }
+            if (!$found) return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Extract the gate/cost form of a controller_has_ressource value.
+ * Returns null when consume === false (gate-only) or malformed.
+ */
+function extractRessourceCostFromRule($ressourceRule){
+    if (!is_array($ressourceRule)) return null;
+    if (array_key_exists('consume', $ressourceRule)){
+        if (!is_bool($ressourceRule['consume'])) return null;
+        if ($ressourceRule['consume'] === false) return null;
+    }
+    $rname = $ressourceRule['ressource_name'] ?? null;
+    $rawAmount = $ressourceRule['amount'] ?? null;
+    $amountIsStrictInt = is_int($rawAmount) || (is_string($rawAmount) && ctype_digit($rawAmount));
+    if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0) return null;
+    return ['ressource_name' => $rname, 'amount' => (int)$rawAmount];
+}
+
+/**
+ * Resolve a ressource_id from its ressource_name.
+ */
+function resolveRessourceIdByName($pdo, $ressource_name){
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM {$prefix}ressources_config WHERE ressource_name = :name LIMIT 1");
+        $stmt->execute([':name' => $ressource_name]);
+        $rid = $stmt->fetchColumn();
+        return $rid !== false ? (int)$rid : null;
+    } catch (PDOException $e) {
+        error_log('resolveRessourceIdByName: '.$e->getMessage());
+        return null;
+    }
 }
 
 /**
