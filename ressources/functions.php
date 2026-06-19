@@ -390,6 +390,33 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
 }
 
 /**
+ * Atomically decrement a controller's ressource amount by $amount.
+ * Single-row UPDATE with the `WHERE amount >= :amt` guard (TOCTOU-safe).
+ * Caller is responsible for the surrounding transaction.
+ *
+ * @return bool true on success; false on insufficient amount, missing row, or DB error.
+ */
+function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $amount): bool {
+    if ($amount <= 0 || $controller_id <= 0 || $ressource_id <= 0) return false;
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("UPDATE {$prefix}controller_ressources
+            SET amount = amount - :amt
+            WHERE controller_id = :cid AND ressource_id = :rid AND amount >= :amt2");
+        $stmt->execute([
+            ':amt'  => $amount,
+            ':amt2' => $amount,
+            ':cid'  => $controller_id,
+            ':rid'  => $ressource_id,
+        ]);
+        return $stmt->rowCount() === 1;
+    } catch (PDOException $e) {
+        error_log(__FUNCTION__.": ".$e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Process a ressource gift from $giver_id to $post['target_controller_id'].
  * Validates inputs, wraps the decrement / increment / log writes in a
  * transaction so partial failure cannot vanish ressources.
