@@ -10,6 +10,8 @@ if (
     exit();
 }
 
+$MASS_ACTIONS = ['mass_move', 'mass_investigate', 'mass_passive', 'mass_hide'];
+
 if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
 
@@ -20,12 +22,15 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     if ( !empty($_GET['zone_id']) ) $zone_id = $_GET['zone_id'];
     if ( $_SESSION['DEBUG'] == true ) echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
 
-    // Mass move workers to zone
-    if (isset($_GET['mass_move']) && !empty($zone_id) && !empty($worker_ids)){
+    $mass_action_requested = false;
+    foreach ($MASS_ACTIONS as $k) {
+        if (isset($_GET[$k])) { $mass_action_requested = true; break; }
+    }
+
+    if ($mass_action_requested && !empty($worker_ids)) {
         if (!is_array($worker_ids)) { http_response_code(403); exit(); }
         $worker_ids = array_map('intval', $worker_ids);
 
-        // Ownership check: every worker_id must belong to the session controller
         if (empty($_SESSION['is_privileged'])) {
             $session_controller_id = $_SESSION['controller']['id'] ?? null;
             if (empty($session_controller_id)) { http_response_code(403); exit(); }
@@ -47,8 +52,22 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
 
-        foreach ($worker_ids as $worker_id) {
-            moveWorker($gameReady, $worker_id, $zone_id);
+        if (isset($_GET['mass_move']) && !empty($zone_id)) {
+            foreach ($worker_ids as $worker_id) {
+                moveWorker($gameReady, $worker_id, $zone_id);
+            }
+        } else if (isset($_GET['mass_investigate'])) {
+            foreach ($worker_ids as $worker_id) {
+                activateWorker($gameReady, $worker_id, 'investigate');
+            }
+        } else if (isset($_GET['mass_passive'])) {
+            foreach ($worker_ids as $worker_id) {
+                activateWorker($gameReady, $worker_id, 'passive');
+            }
+        } else if (isset($_GET['mass_hide'])) {
+            foreach ($worker_ids as $worker_id) {
+                activateWorker($gameReady, $worker_id, 'hide');
+            }
         }
     }
 }

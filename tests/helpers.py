@@ -941,6 +941,49 @@ def ui_mass_move_click(page: Page, controller_lastname: str,
     page.wait_for_load_state("load")
 
 
+def _ui_mass_zoneless_action_click(page: Page, controller_lastname: str,
+                                   worker_lastnames: list, action: str,
+                                   base_url: str = None):
+    """Shared driver for the parameter-free mass actions (investigate, passive, hide).
+    Same pre-resolve-then-click pattern as ui_mass_move_click, minus the zone select."""
+    if action not in ('investigate', 'passive', 'hide'):
+        raise ValueError(f"unsupported mass action: {action}")
+    submit_name = f"mass_{action}"
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    cid = ui_controller_id(page, controller_lastname, base_url=url)
+    worker_ids = [_cached_wid(page, ln, base_url) for ln in worker_lastnames]
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    safe_goto(page, f"{url}/workers/viewAll.php")
+    _wait_loaded(page, f"input[name='{submit_name}']")
+    for wid in worker_ids:
+        page.locator(f"input[name='worker_ids[]'][value='{wid}']").check()
+    page.locator(f"input[name='{submit_name}']").click()
+    page.wait_for_load_state("load")
+
+
+def ui_mass_investigate_click(page: Page, controller_lastname: str,
+                              worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Investigate form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'investigate', base_url)
+
+
+def ui_mass_passive_click(page: Page, controller_lastname: str,
+                          worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Passive form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'passive', base_url)
+
+
+def ui_mass_hide_click(page: Page, controller_lastname: str,
+                       worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Hide form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'hide', base_url)
+
+
 def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,
              base_url: str = None):
     """Queue a claim action targeting `claim_controller_lastname`."""
