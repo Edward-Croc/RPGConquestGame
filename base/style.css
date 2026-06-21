@@ -156,9 +156,48 @@ body {
 @media (max-width: 768px) {
     .for-select {
         max-width: 100%;
-    } 
+    }
     .content.flex {
         flex-direction: column;
     }
 
+}
+
+/* Agent page navigation header (issue #13) */
+
+.card-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    padding: 0.5em 0.75em;
+}
+
+.button.is-nav-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.card.is-bucket-alive .card-header {
+    background-color: #209cee;
+    color: #fff;
+}
+.card.is-bucket-double-agent .card-header {
+    background-color: #7d6ba8;
+    color: #fff;
+}
+.card.is-bucket-prisoner .card-header {
+    background-color: #6f7d8c;
+    color: #fff;
+}
+.card.is-bucket-dead .card-header {
+    background-color: #8a8a8a;
+    color: #fff;
 }
