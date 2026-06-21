@@ -73,17 +73,19 @@ def _summary_table_names(html):
 
 def test_alpha_platinum_hidden_bronze_visible(browser, base_url):
     """Alpha holds 0 of both Bronze (hide_when_zero=0) and Platinum
-    (hide_when_zero=1). Platinum row must be filtered out; Bronze stays
-    in the summary table."""
+    (hide_when_zero=1). Platinum row must be filtered out of BOTH render
+    surfaces (the Ressources page summary table AND the Vos Ressources
+    block on the faction page); Bronze stays visible everywhere because
+    its config flag is off. Confirms the shared filterVisibleRessources
+    helper is wired into both call sites."""
     ctx = browser.new_context()
     page = ctx.new_page()
     register_php_error_listener(page)
     ensure_gm_login(page, base_url)
-    _set_active(page, "Alpha")
-    html = _ressources_html(page)
-    assert_no_collected_php_errors(page)
-    ctx.close()
+    alpha_cid = _set_active(page, "Alpha")
 
+    # Surface 1: ressources/view.php — summary table
+    html = _ressources_html(page)
     names = _summary_table_names(html)
     assert "Bronze" in names, (
         f"Bronze has hide_when_zero=0 so it must appear even at amount=0. "
@@ -91,8 +93,22 @@ def test_alpha_platinum_hidden_bronze_visible(browser, base_url):
     )
     assert "Platinum" not in names, (
         f"Platinum has hide_when_zero=1 AND Alpha holds 0/0/0 → it must "
-        f"be filtered out. Got: {names}"
+        f"be filtered out of the Ressources page. Got: {names}"
     )
+
+    # Surface 2: controllers/view.php — Vos Ressources block
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/view.php?controller_id={alpha_cid}")
+    page.wait_for_load_state("load")
+    faction_html = page.content()
+    block = re.search(r"Vos Ressources\s*:?.*?</div>", faction_html, re.DOTALL)
+    block_html = block.group(0) if block else faction_html
+    assert "Platinum" not in block_html, (
+        "Platinum is hide_when_zero=1 AND Alpha holds 0/0/0 → must be "
+        "filtered out of the controllers/view.php Vos Ressources block."
+    )
+
+    assert_no_collected_php_errors(page)
+    ctx.close()
 
 
 def test_beta_platinum_visible_when_nonzero(browser, base_url):

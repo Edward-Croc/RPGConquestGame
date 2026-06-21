@@ -83,8 +83,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             echo $htmlFaction;
 
             if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
-                $ressources = getRessources($gameReady, $controllers['id']);
-                if ($debug) 
+                $ressources = filterVisibleRessources(getRessources($gameReady, $controllers['id']));
+                if ($debug)
                     echo sprintf('<p> ressources: %s </p>', var_export($ressources, true));
                 if (!empty($ressources)) {
                     $htmlRessources = '<div class="box mb-5"><h3 class="title is-5 mt-4">Vos Ressources :</h3>';

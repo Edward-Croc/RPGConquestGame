@@ -71,6 +71,19 @@ function getRessources($pdo, $controller_id) {
 }
 
 /**
+ * Apply the hide_when_zero render filter (strict no-presence): drop rows
+ * whose config flag is set AND amount, amount_stored and end_turn_gain
+ * are all zero. Caller responsibility — internal checks (cost, gating)
+ * must NOT filter, since a hidden ressource at non-zero stays usable.
+ */
+function filterVisibleRessources(array $ressources): array {
+    return array_values(array_filter($ressources, function ($r) {
+        if (empty($r['hide_when_zero'])) return true;
+        return (int)$r['amount'] !== 0 || (int)$r['amount_stored'] !== 0 || (int)$r['end_turn_gain'] !== 0;
+    }));
+}
+
+/**
  * Does the controller have enought ressources to build a base ?
  *
  * @param PDO $pdo

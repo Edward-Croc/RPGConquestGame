@@ -16,12 +16,7 @@ if (getConfig($gameReady, 'ressource_management') !== 'TRUE') {
 
 $controller_id = (int)$_SESSION['controller']['id'];
 
-$ressourcesList = getRessources($gameReady, $controller_id);
-// hide_when_zero: drop rows that have never been held (strict no-presence)
-$ressourcesList = array_values(array_filter($ressourcesList, function ($r) {
-    if (empty($r['hide_when_zero'])) return true;
-    return (int)$r['amount'] !== 0 || (int)$r['amount_stored'] !== 0 || (int)$r['end_turn_gain'] !== 0;
-}));
+$ressourcesList = filterVisibleRessources(getRessources($gameReady, $controller_id));
 $hasStoredRessource = false;
 foreach ($ressourcesList as $r) {
     if (!empty($r['is_stored'])) {
