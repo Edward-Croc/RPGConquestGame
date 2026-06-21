@@ -200,6 +200,7 @@ La table `{prefix}ressources_config` définit les types de ressources disponible
 - **`is_stored`** (= `0` ou `1`) — si `1`, le `amount` du tour précédent est ajouté à `amount_stored` (réserve), ce qui sépare budget courant et stock accumulé.
 - **`*_cost`** (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`, `servant_first_come_cost`, `servant_recruitment_cost`) — coût soustrait à `amount` quand l'action correspondante est lancée.
 - **`gain_rules`** — colonne JSON contenant les règles de gain conditionnel (détaillées ci-dessous).
+- **`hide_when_zero`** (= `0` ou `1`, défaut `0`) — si `1`, la ressource est filtrée de la page « Ressources de la faction » du joueur quand le contrôleur n'en a jamais possédé (seuil strict : `amount = 0` ET `amount_stored = 0` ET `end_turn_gain = 0`). Dès qu'une de ces trois colonnes devient non-nulle, la ressource réapparaît normalement. Cas d'usage : ressources rares et scénario-spécifiques (équipement par zone, devise de niche) qui encombreraient la page pour les contrôleurs qui ne les produisent pas. Le filtre est purement d'affichage : `ressourceGainMechanic`, `giftRessource` et les autres mécaniques mutent toujours `controller_ressources` directement, donc une ressource cachée continue à être réceptionnée silencieusement.
 
 ### Famille `controller_ressources` — état par contrôleur
 

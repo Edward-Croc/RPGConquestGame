@@ -358,7 +358,8 @@ CREATE TABLE {prefix}ressources_config (
     servant_first_come_cost INT NOT NULL DEFAULT 0,
     servant_recruitment_cost INT NOT NULL DEFAULT 0,
     extra_first_come_cost INT NOT NULL DEFAULT 0,
-    gain_rules JSON DEFAULT NULL
+    gain_rules JSON DEFAULT NULL,
+    hide_when_zero BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE {prefix}controller_ressources (
