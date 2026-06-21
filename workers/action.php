@@ -236,6 +236,59 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 }
 
+// Resolve effective sort for prev/next nav buttons (D6: URL > session > 'age', both whitelist-validated)
+$navValidSorts = ['age', 'zone', 'investigate', 'attack'];
+$sort = 'age';
+if (in_array($_GET['sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_GET['sort'];
+} elseif (in_array($_SESSION['workers_view_sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_SESSION['workers_view_sort'];
+}
+
+// Resolve prev / next worker ids + bucket class for the card background (D4 + D8)
+$navControllerId = (int)($_SESSION['controller']['id'] ?? 0);
+$navIds = ['prev' => null, 'next' => null];
+$navBucketClass = '';
+if ($navControllerId > 0 && !empty($worker_id)) {
+    $navIds = getPrevNextWorkerIds(
+        $gameReady,
+        $navControllerId,
+        (int)$worker_id,
+        $sort,
+        (int)($mechanics['turncounter'] ?? 0)
+    );
+    $navWorkerArray = getWorkers($gameReady, [$worker_id]);
+    if (!empty($navWorkerArray[0])) {
+        $navWorkerStatus = getWorkerStatus($navWorkerArray[0], $mechanics);
+        if ($navWorkerStatus && $navWorkerStatus !== 'unfound') {
+            $navBucketClass = 'is-bucket-' . str_replace('_', '-', $navWorkerStatus);
+        }
+    }
+}
+
+// Back URL — Referer-aware with strict-equality whitelist (D3)
+$navFolder = $_SESSION['FOLDER'] ?? '';
+$navBackUrl = "/{$navFolder}/workers/viewAll.php";
+$navReferer = $_SERVER['HTTP_REFERER'] ?? '';
+if ($navReferer !== '') {
+    $navRefererParts = parse_url($navReferer);
+    $navRefererHost = $navRefererParts['host'] ?? '';
+    $navRefererPath = rtrim($navRefererParts['path'] ?? '', '/');
+    if ($navRefererHost === ($_SERVER['HTTP_HOST'] ?? '')) {
+        $navAllowedPaths = [
+            "/{$navFolder}/workers/viewAll.php",
+            "/{$navFolder}/zones/view.php",
+            "/{$navFolder}/controllers/view.php",
+        ];
+        foreach ($navAllowedPaths as $allowed) {
+            if ($navRefererPath === rtrim($allowed, '/')) {
+                $navBackUrl = $navReferer;
+                break;
+            }
+        }
+    }
+}
+
 require_once '../base/baseHTML.php';
 require_once '../workers/view.php';
 
