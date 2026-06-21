@@ -446,9 +446,31 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 );
             }
 
+            // Build the 3-button nav block; falls back to disabled-span at bucket edges
+            $navFolderEnc = htmlspecialchars($_SESSION['FOLDER'] ?? '', ENT_QUOTES);
+            $navSortEnc = htmlspecialchars($sort ?? 'age', ENT_QUOTES);
+            $navPrevHTML = ($navIds['prev'] ?? null) !== null
+                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small mr-1">← Précédent</a>',
+                    $navFolderEnc, (int)$navIds['prev'], $navSortEnc)
+                : '<span class="button is-info is-small is-nav-disabled mr-1" aria-disabled="true">← Précédent</span>';
+            $navNextHTML = ($navIds['next'] ?? null) !== null
+                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small">Suivant →</a>',
+                    $navFolderEnc, (int)$navIds['next'], $navSortEnc)
+                : '<span class="button is-info is-small is-nav-disabled" aria-disabled="true">Suivant →</span>';
+            $navButtonsHTML = sprintf(
+                '<div class="card-header-actions">
+                    <a href="%s" class="button is-info is-small mr-1">← Retour</a>
+                    %s
+                    %s
+                </div>',
+                htmlspecialchars($navBackUrl ?? "/{$navFolderEnc}/workers/viewAll.php", ENT_QUOTES),
+                $navPrevHTML,
+                $navNextHTML
+            );
+
             $viewHTML = sprintf(
-                '<div class="card">
-                    <header 
+                '<div class="card %15$s">
+                    <header
                         class="card-header"
                         data-worker-id="%1$s"
                         data-worker-lastname="%3$s"
@@ -459,12 +481,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         <p class="card-header-title">
                             Agent %2$s %3$s
                         </p>
+                        %16$s
                     </header>
                     <div class="card-content">
                         <div class="box info">
                             %4$s <br />
                             <i>
-                                Capacité d’enquête : <strong>%6$s</strong>. 
+                                Capacité d’enquête : <strong>%6$s</strong>.
                                 Capacité d’attaque / défense : <strong>%7$s</strong> / <strong>%8$s</strong>
                             </i>
                         </div>
@@ -486,7 +509,9 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $upgradeHTML, // %11$s
                 htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %12$s
                 htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %13$s
-                htmlspecialchars($workerStatus, ENT_QUOTES) // %14$s
+                htmlspecialchars($workerStatus, ENT_QUOTES), // %14$s
+                htmlspecialchars($navBucketClass ?? '', ENT_QUOTES), // %15$s
+                $navButtonsHTML // %16$s
             );
             echo $viewHTML;
 
