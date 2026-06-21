@@ -273,6 +273,9 @@ $navReferer = $_SERVER['HTTP_REFERER'] ?? '';
 if ($navReferer !== '') {
     $navRefererParts = parse_url($navReferer);
     $navRefererHost = $navRefererParts['host'] ?? '';
+    if (isset($navRefererParts['port'])) {
+        $navRefererHost .= ':' . $navRefererParts['port'];
+    }
     $navRefererPath = rtrim($navRefererParts['path'] ?? '', '/');
     if ($navRefererHost === ($_SERVER['HTTP_HOST'] ?? '')) {
         $navAllowedPaths = [
