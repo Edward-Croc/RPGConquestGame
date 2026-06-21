@@ -177,7 +177,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
                 http_response_code(403);
                 exit();
             }
-            $candidates = getPowersByType($gameReady, '3', NULL, false);
+            $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
             $matchedPower = null;
             if (is_array($candidates)) {

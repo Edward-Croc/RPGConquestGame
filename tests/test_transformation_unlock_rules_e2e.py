@@ -399,6 +399,20 @@ class TestMalformedAmount:
             f"Amount=0 must drop the power (D3); got: {options}"
         )
 
+    def test_unknown_key_drops_power(self, browser, base_url):
+        """Fail-closed on unknown rule keys: a typo like
+        'controller_has_resource' (English single-`s`) used as the only
+        key in a state rule must hide the power. Otherwise the power
+        would silently unlock — a footgun on a security/gating surface."""
+        ctx = browser.new_context(); page = ctx.new_page()
+        ensure_gm_login(page, base_url)
+        options = ui_transform_options(page, "Transform_Subject", base_url=base_url)
+        ctx.close()
+
+        assert "Test Unknown Rule Key" not in options, (
+            f"Unknown rule key must fail closed (drop the power); got: {options}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Commit-time re-validation closes the display-vs-commit security gap
@@ -482,6 +496,44 @@ class TestCommitRevalidation:
         assert row['c'] == 0, (
             "Crafted teach_discipline GET must NOT insert worker_powers "
             "when re-validation fails"
+        )
+
+    def test_discipline_crafted_get_rejected_when_enemy_faction(self, browser, base_url):
+        """Closing the same family of bug as #67 on the faction surface:
+        a non-privileged player must not be able to teach an enemy-faction
+        discipline by GET-crafting the link_power_type_id, even when the
+        discipline carries no failing JSON gate. 'Defensive Posture' is
+        FactionBeta-only via faction_powers; Alpha is in FactionAlpha so
+        the display dropdown filters it out (getPowersByType joined on
+        faction_powers). The commit branch must mirror that filtering."""
+        lpt = _link_power_type_id("Defensive Posture")
+        if lpt is None:
+            pytest.skip("Defensive Posture not in scenario")
+        _remove_worker_power("Transform_Subject", "Defensive Posture")
+        wid = _worker_id_db("Transform_Subject")
+
+        ctx = browser.new_context(); page = ctx.new_page()
+        login_as(page, base_url, "single_player", "test")
+        page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&discipline={lpt}&teach_discipline=1"
+        )
+        page.wait_for_load_state("load")
+        ctx.close()
+
+        conn = _db(); cur = conn.cursor()
+        cur.execute(
+            f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}worker_powers` wp "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wp.worker_id "
+            f"WHERE w.lastname='Transform_Subject' AND wp.link_power_type_id=%s",
+            (lpt,),
+        )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        assert row['c'] == 0, (
+            "Crafted teach_discipline targeting an enemy-faction discipline "
+            "must NOT insert worker_powers — the commit-side candidate "
+            "fetch must use the controller's faction_powers join"
         )
 
 

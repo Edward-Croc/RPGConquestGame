@@ -408,9 +408,16 @@ function buildRuleEvaluationContext($pdo, $controller_id, $worker_id){
 
 /**
  * AND-of-all-keys evaluator per D20. Used for both direct rules and OR branches.
- * Unknown keys silently skipped (forward-compat).
+ * Fail-closed on unknown keys: a typo like `controller_has_resource` (English
+ * single-`s` spelling) would otherwise unlock the power instead of hiding it.
+ * When the rule grammar is extended, add the new key here AND lock it in the
+ * audit doc.
  */
 function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
+    static $ALLOWED_KEYS = [
+        'age', 'worker_is_alive', 'turn', 'controller_faction',
+        'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
+    ];
     $worker = $context['worker'];
     $controllersArray = $context['controllersArray'];
     $zonesArray = $context['zonesArray'];
@@ -419,6 +426,10 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
 
     foreach ($keys as $key => $value){
         if ($key === 'OR') continue;
+        if (!in_array($key, $ALLOWED_KEYS, true)){
+            error_log(sprintf('evaluateRuleKeysAllMatch: unknown rule key %s — failing closed', var_export($key, true)));
+            return false;
+        }
 
         if ($key === 'age'){
             if (!empty($worker) && !empty($worker['age']) && ((int)$value > (int)$worker['age'])) return false;
