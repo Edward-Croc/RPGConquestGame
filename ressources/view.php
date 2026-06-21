@@ -16,7 +16,8 @@ if (getConfig($gameReady, 'ressource_management') !== 'TRUE') {
 
 $controller_id = (int)$_SESSION['controller']['id'];
 
-$ressourcesList = filterVisibleRessources(getRessources($gameReady, $controller_id));
+$gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
+$ressourcesList = filterVisibleRessources(getRessources($gameReady, $controller_id), $gainEstimate);
 $hasStoredRessource = false;
 foreach ($ressourcesList as $r) {
     if (!empty($r['is_stored'])) {
@@ -24,8 +25,6 @@ foreach ($ressourcesList as $r) {
         break;
     }
 }
-
-$gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
 $visibleFactions = getControllers($gameReady, NULL, NULL, true, $controller_id) ?: [];
 $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');

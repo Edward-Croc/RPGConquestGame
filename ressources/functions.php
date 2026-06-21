@@ -75,11 +75,21 @@ function getRessources($pdo, $controller_id) {
  * whose config flag is set AND amount, amount_stored and end_turn_gain
  * are all zero. Caller responsibility — internal checks (cost, gating)
  * must NOT filter, since a hidden ressource at non-zero stays usable.
+ *
+ * When $gainEstimate is provided (map of ressource_id => ['total' => int]),
+ * a positive next-turn gain prediction also keeps the row visible — used
+ * by the Ressources page so a ressource the controller is about to acquire
+ * surfaces ahead of its first non-zero turn. The faction-page recap omits
+ * this param and stays strict.
  */
-function filterVisibleRessources(array $ressources): array {
-    return array_values(array_filter($ressources, function ($r) {
+function filterVisibleRessources(array $ressources, array $gainEstimate = []): array {
+    return array_values(array_filter($ressources, function ($r) use ($gainEstimate) {
         if (empty($r['hide_when_zero'])) return true;
-        return (int)$r['amount'] !== 0 || (int)$r['amount_stored'] !== 0 || (int)$r['end_turn_gain'] !== 0;
+        if ((int)$r['amount'] !== 0 || (int)$r['amount_stored'] !== 0 || (int)$r['end_turn_gain'] !== 0) {
+            return true;
+        }
+        $rid = (int)$r['ressource_id'];
+        return (int)($gainEstimate[$rid]['total'] ?? 0) > 0;
     }));
 }
 

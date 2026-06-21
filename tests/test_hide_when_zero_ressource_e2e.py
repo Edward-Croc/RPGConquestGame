@@ -111,6 +111,43 @@ def test_alpha_platinum_hidden_bronze_visible(browser, base_url):
     ctx.close()
 
 
+def test_diamond_surfaces_only_on_ressources_page_when_rules_predict_gain(browser, base_url):
+    """Diamond is hide_when_zero=1 with a gain_rule that fires for any
+    controller holding Gamma-Claims. Alpha (the natural Gamma-Claims
+    holder) is at Diamond=0/0/0 but ressourceGainEstimateForController
+    predicts +1 next turn. The Ressources page must surface Diamond
+    because of the positive rules estimate; the faction-page recap
+    stays strict (no estimate awareness) and keeps Diamond hidden."""
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    register_php_error_listener(page)
+    ensure_gm_login(page, base_url)
+    alpha_cid = _set_active(page, "Alpha")
+
+    # Surface 1: ressources/view.php — Diamond appears thanks to rules estimate
+    html = _ressources_html(page)
+    names = _summary_table_names(html)
+    assert "Diamond" in names, (
+        f"Diamond has hide_when_zero=1 AND Alpha at 0/0/0 BUT the rules "
+        f"estimate is +1 (Gamma-Claims holder) → must surface on the "
+        f"Ressources page. Got: {names}"
+    )
+
+    # Surface 2: controllers/view.php — Diamond stays hidden (strict filter)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/view.php?controller_id={alpha_cid}")
+    page.wait_for_load_state("load")
+    faction_html = page.content()
+    block = re.search(r"Vos Ressources\s*:?.*?</div>", faction_html, re.DOTALL)
+    block_html = block.group(0) if block else faction_html
+    assert "Diamond" not in block_html, (
+        "Faction-page recap uses strict filterVisibleRessources (no "
+        "gain estimate) — Diamond at 0/0/0 must stay hidden there."
+    )
+
+    assert_no_collected_php_errors(page)
+    ctx.close()
+
+
 def test_beta_platinum_visible_when_nonzero(browser, base_url):
     """Beta holds Platinum=5 (amount>0). Even with hide_when_zero=1, the
     row must surface."""
