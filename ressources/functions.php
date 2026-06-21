@@ -71,6 +71,29 @@ function getRessources($pdo, $controller_id) {
 }
 
 /**
+ * Apply the hide_when_zero render filter (strict no-presence): drop rows
+ * whose config flag is set AND amount, amount_stored and end_turn_gain
+ * are all zero. Caller responsibility — internal checks (cost, gating)
+ * must NOT filter, since a hidden ressource at non-zero stays usable.
+ *
+ * When $gainEstimate is provided (map of ressource_id => ['total' => int]),
+ * a positive next-turn gain prediction also keeps the row visible — used
+ * by the Ressources page so a ressource the controller is about to acquire
+ * surfaces ahead of its first non-zero turn. The faction-page recap omits
+ * this param and stays strict.
+ */
+function filterVisibleRessources(array $ressources, array $gainEstimate = []): array {
+    return array_values(array_filter($ressources, function ($r) use ($gainEstimate) {
+        if (empty($r['hide_when_zero'])) return true;
+        if ((int)$r['amount'] !== 0 || (int)$r['amount_stored'] !== 0 || (int)$r['end_turn_gain'] !== 0) {
+            return true;
+        }
+        $rid = (int)$r['ressource_id'];
+        return (int)($gainEstimate[$rid]['total'] ?? 0) > 0;
+    }));
+}
+
+/**
  * Does the controller have enought ressources to build a base ?
  *
  * @param PDO $pdo
@@ -387,6 +410,33 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
         $estimate[$ressourceId] = $bucket;
     }
     return $estimate;
+}
+
+/**
+ * Atomically decrement a controller's ressource amount by $amount.
+ * Single-row UPDATE with the `WHERE amount >= :amt` guard (TOCTOU-safe).
+ * Caller is responsible for the surrounding transaction.
+ *
+ * @return bool true on success; false on insufficient amount, missing row, or DB error.
+ */
+function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $amount): bool {
+    if ($amount <= 0 || $controller_id <= 0 || $ressource_id <= 0) return false;
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("UPDATE {$prefix}controller_ressources
+            SET amount = amount - :amt
+            WHERE controller_id = :cid AND ressource_id = :rid AND amount >= :amt2");
+        $stmt->execute([
+            ':amt'  => $amount,
+            ':amt2' => $amount,
+            ':cid'  => $controller_id,
+            ':rid'  => $ressource_id,
+        ]);
+        return $stmt->rowCount() === 1;
+    } catch (PDOException $e) {
+        error_log(__FUNCTION__.": ".$e->getMessage());
+        return false;
+    }
 }
 
 /**

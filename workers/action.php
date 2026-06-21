@@ -167,10 +167,71 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if (isset($_GET['teach_discipline']) ){
-        upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
+        if (!empty($_SESSION['is_privileged'])) {
+            upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
+        } else {
+            $session_controller_id = $_SESSION['controller']['id'] ?? null;
+            $turn = $mechanics['turncounter'] ?? 0;
+            $linkPowerTypeId = $_GET['discipline'] ?? null;
+            if (empty($linkPowerTypeId) || empty($session_controller_id)) {
+                http_response_code(403);
+                exit();
+            }
+            $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
+            $matchedPower = null;
+            if (is_array($candidates)) {
+                foreach ($candidates as $p) {
+                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) { $matchedPower = $p; break; }
+                }
+            }
+            if ($matchedPower === null) {
+                echo "Cette discipline n'est plus disponible.<br />";
+            } else {
+                upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
+            }
+        }
     }
     if (isset($_GET['transform'])){
-        upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
+        if (!empty($_SESSION['is_privileged'])) {
+            upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
+        } else {
+            $session_controller_id = $_SESSION['controller']['id'] ?? null;
+            $turn = $mechanics['turncounter'] ?? 0;
+            $linkPowerTypeId = $_GET['transformation'] ?? null;
+            if (empty($linkPowerTypeId) || empty($session_controller_id)) {
+                http_response_code(403);
+                exit();
+            }
+            $candidates = getPowersByType($gameReady, '4', NULL, false);
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_transformation');
+            $matchedPower = null;
+            if (is_array($candidates)) {
+                foreach ($candidates as $p) {
+                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) { $matchedPower = $p; break; }
+                }
+            }
+            if ($matchedPower === null) {
+                echo "Cette transformation n'est plus disponible.<br />";
+            } else {
+                $cost = getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $worker_id, $turn, 'on_transformation');
+                if ($cost === null) {
+                    upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
+                } else {
+                    $gameReady->beginTransaction();
+                    if (consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
+                        if (upgradeWorker($gameReady, $worker_id, $linkPowerTypeId)) {
+                            $gameReady->commit();
+                        } else {
+                            $gameReady->rollBack();
+                        }
+                    } else {
+                        $gameReady->rollBack();
+                        echo "Stock insuffisant ou modifié.<br />";
+                    }
+                }
+            }
+        }
     }
 
 }

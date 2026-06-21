@@ -16,7 +16,8 @@ if (getConfig($gameReady, 'ressource_management') !== 'TRUE') {
 
 $controller_id = (int)$_SESSION['controller']['id'];
 
-$ressourcesList = getRessources($gameReady, $controller_id);
+$gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
+$ressourcesList = filterVisibleRessources(getRessources($gameReady, $controller_id), $gainEstimate);
 $hasStoredRessource = false;
 foreach ($ressourcesList as $r) {
     if (!empty($r['is_stored'])) {
@@ -24,8 +25,6 @@ foreach ($ressourcesList as $r) {
         break;
     }
 }
-
-$gainEstimate = ressourceGainEstimateForController($gameReady, $controller_id);
 $visibleFactions = getControllers($gameReady, NULL, NULL, true, $controller_id) ?: [];
 $receivedGifts = getRessourceGiftsReceived($gameReady, $controller_id);
 $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
@@ -79,7 +78,7 @@ $timeValueLabel = ucfirst(getConfig($gameReady, 'timeValue') ?: 'Tour');
     $rules = $gainEstimate[(int)$r['ressource_id']] ?? ['before_claim' => [], 'after_claim' => [], 'total' => 0];
     $hasAny = !empty($rules['before_claim']) || !empty($rules['after_claim']);
 ?>
-                <h4 class="title is-6 mt-4"><?= htmlspecialchars($r['ressource_name']) ?></h4>
+                <h4 class="title is-5 has-text-weight-bold mt-5"><?= htmlspecialchars($r['ressource_name']) ?> :</h4>
 <?php if (!$hasAny): ?>
                 <p class="has-text-grey">Aucune règle conditionnelle.</p>
                 <p>Gain de fin de tour fixe : <strong>+<?= (int)$r['end_turn_gain'] ?></strong></p>

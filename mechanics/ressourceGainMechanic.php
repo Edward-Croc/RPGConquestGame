@@ -121,9 +121,14 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
         $fkColumn = $conditionType === 'holds_zone' ? 'holder_controller_id' : 'claimer_controller_id';
         $extra = '';
         $params = [];
+        // Supported filter keys: zone_id (int), zone_name (string). Pick one per rule.
         if (isset($condition['zone_id'])) {
-            $extra = ' AND z.id = :zone_id';
+            $extra .= ' AND z.id = :zone_id';
             $params[':zone_id'] = (int)$condition['zone_id'];
+        }
+        if (isset($condition['zone_name'])) {
+            $extra .= ' AND z.name = :zone_name';
+            $params[':zone_name'] = (string)$condition['zone_name'];
         }
         try {
             $sql = "SELECT c.id AS controller_id, COUNT(z.id) AS match_count
@@ -132,7 +137,9 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
                 GROUP BY c.id
                 HAVING COUNT(z.id) > 0";
             $stmt = $pdo->prepare($sql);
-            foreach ($params as $key => $value) $stmt->bindValue($key, $value, PDO::PARAM_INT);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {

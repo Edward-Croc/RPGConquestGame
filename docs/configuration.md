@@ -131,6 +131,61 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
 *Section à compléter dans un commit suivant.* Couvrira : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_*`, `recrutement_*`, `age_discipline`, `age_transformation`, `owner_knows_own_base_secret`.
 
+### Règles JSON de déverrouillage des disciplines et transformations
+
+La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (disciplines), `on_transformation` (transformations) et `on_recrutment` (au moment du recrutement) décrivent les conditions à remplir pour rendre le power éligible. La même grammaire est appliquée par `cleanPowerListFromJsonConditions` au moment de l'affichage du sélecteur pour les trois états. **Re-validation côté commit** : pour `on_age` (`teach_discipline`) et `on_transformation` (`transform`), `workers/action.php` rejoue la vérification au moment de la validation, fermant l'écart entre affichage et commit — un GET forgé qui contournerait la liste filtrée est refusé côté serveur, et le coût ressource éventuel n'est débité que sur ce chemin (transformations seulement, par D4). `on_recrutment` reste filtré uniquement à l'affichage : aucun débit de ressource ni revalidation commit ne s'applique au recrutement dans cette version.
+
+**Clés inconnues : fail-closed**. Si une règle référence une clé non listée ci-dessous (typo `controller_has_resource` au lieu de `controller_has_ressource`, ou nouvelle clé non encore implémentée), `evaluateRuleKeysAllMatch` retourne `false` et le power est masqué, plus un log d'erreur. Ajouter une nouvelle clé à la grammaire suppose donc de l'ajouter aussi au whitelist de la fonction (et de l'inscrire comme verrou d'audit).
+
+**Forme d'une règle :**
+
+```json
+"on_transformation": {
+    "worker_is_alive": "1",
+    "controller_has_zone": "Province de Sanuki",
+    "OR": [
+        {"controller_has_zone": "Cap sud de Tosa"},
+        {"controller_has_ressource": {"ressource_name": "Cheval Sanuki", "amount": 1, "consume": true}}
+    ]
+}
+```
+
+- Les **clés directes** (`worker_is_alive`, `controller_has_zone`, etc.) sont combinées en **AND** : toutes doivent être satisfaites.
+- Le **bloc `OR`** est un **tableau d'objets** (jamais un objet simple). Chaque sous-objet est une **branche** ; à l'intérieur d'une branche, les clés sont aussi combinées en **AND**. Le tableau est évalué dans l'ordre, en premier-match-gagne : dès qu'une branche est satisfaite, la suivante n'est plus testée.
+- Convention d'écriture : pour une règle « zone A OR zone B OR avoir la ressource », utiliser trois branches à une clé `[{A}, {B}, {C}]` plutôt qu'une branche à trois clés.
+
+**Clés disponibles (toutes optionnelles) :**
+
+- **`age`** (int) — l'agent doit avoir au moins cet âge.
+- **`worker_is_alive`** (`"0"` ou `"1"`) — `1` exige une action active (move, attack, claim, gift, …), `0` exige une action inactive (passive, hide, dead, …).
+- **`turn`** (int) — disponible **à partir** de ce tour (porte « aube », pas « crépuscule »).
+- **`controller_faction`** (string) — nom exact de la faction du contrôleur.
+- **`controller_has_zone`** (string) — nom de zone que le contrôleur réclame ou détient (claim OR holder).
+- **`worker_in_zone`** (string) — nom de zone où l'agent se trouve actuellement.
+- **`controller_has_ressource`** (objet) — voir ci-dessous. Honorée en clé directe **et** à l'intérieur d'une branche OR.
+
+**`controller_has_ressource` — porte ressource :**
+
+```json
+{"ressource_name": "Koku", "amount": 3, "consume": true}
+```
+
+- **`ressource_name`** (string, requis) — nom exact tel qu'apparaissant dans `ressources_config.ressource_name`.
+- **`amount`** (int positif, requis) — seuil minimal. Une valeur absente, nulle, négative ou non-entière fait tomber le power au chargement avec un avertissement dans le log d'erreur.
+- **`consume`** (bool, optionnel, **défaut : `true`**) — si absent ou `true`, le `amount` est décrémenté atomiquement au commit (porte ET coût). Mettre **explicitement `consume: false`** pour une porte seule (vérification sans coût). Toute autre valeur (chaîne, nombre, etc.) est rejetée comme mal formée.
+
+**Composition direct + OR (D21) :**
+
+Une règle peut porter `controller_has_ressource` au niveau direct **et** à l'intérieur d'une branche OR satisfaite. Si les deux décrivent un coût, **le niveau direct prime** et un avertissement « cross-resource cost not supported » est loggé : empiler deux ressources différentes n'est pas supporté en v1. Pour empiler le « coût toujours » (direct) avec un coût optionnel selon le contexte, mettre la branche OR coûtante en dernier et soit assurer une autre branche moins chère en première position, soit accepter le passage forcé par le coût direct.
+
+**Convention OR pour le « gratuit si possédé, payant sinon » :**
+
+L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obtenir « gratuit si je tiens la zone, payant si je dois échanger », placer la branche zone **avant** la branche ressource. L'inverse ferait payer un joueur qui tient la zone ET possède aussi la ressource.
+
+**Chemin admin / gm :**
+
+La validation au commit (re-vérification de la règle + débit ressource) est gardée par `$_SESSION['is_privileged']`. Le compte admin (`gm`) court-circuite tout : il peut accorder n'importe quelle discipline ou transformation à un agent **sans** vérification et **sans** consommer la moindre ressource. C'est une issue de secours volontaire, dans la même lignée que la création directe d'agents ou la modification d'action via la page d'administration.
+
 ## 4. Ressources
 
 Cette section décrit le système économique : coûts d'action, gain forfaitaire de fin de tour, puis gains conditionnels selon l'état du jeu.
@@ -147,6 +202,7 @@ La table `{prefix}ressources_config` définit les types de ressources disponible
 - **`is_stored`** (= `0` ou `1`) — si `1`, le `amount` du tour précédent est ajouté à `amount_stored` (réserve), ce qui sépare budget courant et stock accumulé.
 - **`*_cost`** (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`, `servant_first_come_cost`, `servant_recruitment_cost`) — coût soustrait à `amount` quand l'action correspondante est lancée.
 - **`gain_rules`** — colonne JSON contenant les règles de gain conditionnel (détaillées ci-dessous).
+- **`hide_when_zero`** (= `0` ou `1`, défaut `0`) — si `1`, la ressource est filtrée des pages d'affichage quand le contrôleur n'en a jamais possédé (seuil strict : `amount = 0` ET `amount_stored = 0` ET `end_turn_gain = 0`). Dès qu'une de ces trois colonnes devient non-nulle, la ressource réapparaît normalement. **Échappatoire sur la page « Ressources de la faction » uniquement** : si l'estimation issue de `gain_rules` pour le prochain tour est strictement positive (i.e. le contrôleur tient une zone qui va produire de la ressource), la ligne réapparaît même au seuil 0/0/0 — le joueur peut ainsi anticiper son acquisition. Le bloc « Vos Ressources » du tableau de bord faction (`controllers/view.php`) reste sur le filtre strict pour rester sobre. Cas d'usage : ressources rares et scénario-spécifiques (équipement par zone, devise de niche) qui encombreraient la page pour les contrôleurs qui ne les produisent pas. Le filtre est purement d'affichage : `ressourceGainMechanic`, `giftRessource` et les autres mécaniques mutent toujours `controller_ressources` directement, donc une ressource cachée continue à être réceptionnée silencieusement.
 
 ### Famille `controller_ressources` — état par contrôleur
 
@@ -171,8 +227,8 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 
 **Types de condition implémentés :**
 
-- **`holds_zone`** — match quand le contrôleur est `zones.holder_controller_id` ; filtre optionnel : `zone_id`.
-- **`claims_zone`** — match quand le contrôleur est `zones.claimer_controller_id` ; filtre optionnel : `zone_id`.
+- **`holds_zone`** — match quand le contrôleur est `zones.holder_controller_id` ; filtres optionnels : `zone_id` (int) **ou** `zone_name` (string).
+- **`claims_zone`** — match quand le contrôleur est `zones.claimer_controller_id` ; filtres optionnels : `zone_id` (int) **ou** `zone_name` (string).
 - **`owns_location_type`** — match quand le contrôleur est `locations.controller_id`, puis filtrage optionnel AND-combiné via `is_base`, `can_be_destroyed`, `zone_id`, `location_id`, `location_type`.
 
 **`holds_zone` vs `claims_zone` :** avec contrôleurs secrets / doubles agents, le propriétaire réel (`holder`) peut différer de la bannière visible (`claimer`). Choisir la condition selon ce que la récompense doit refléter.
@@ -180,6 +236,7 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 **Agrégation binaire vs comptée :**
 
 - `{type: "holds_zone", zone_id: 5}` → binaire : gain 1 fois si la zone 5 est tenue.
+- `{type: "holds_zone", zone_name: "Province de Sanuki"}` → binaire stable au tri du CSV : gain 1 fois si la zone nommée est tenue (préférer `zone_name` à `zone_id` dans les CSV pour éviter le couplage à l'ordre des lignes).
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
