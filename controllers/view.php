@@ -95,7 +95,6 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                             $htmlRessources .= "</br>".sprintf($ressource['stored_text'], $ressource['amount_stored'], $ressource['ressource_name']);
                         }
                         $htmlRessources .= '</p>';
-                        $htmlRessources .= '<br>';
                     }
                     $htmlRessources .= sprintf(
                         '<a href="/%s/ressources/view.php" class="button is-small is-info mt-2">Voir le détail / gérer</a>',
