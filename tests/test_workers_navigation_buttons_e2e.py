@@ -217,7 +217,7 @@ def test_prev_disabled_at_first_worker(browser, base_url):
     html = page.content()
     ctx.close()
 
-    prev = re.search(r'<(\w+)([^>]*)>← Précédent</\w+>', html)
+    prev = re.search(r'<(\w+)([^>]*)>Précédent</\w+>', html)
     assert prev, "Previous button not found"
     tag, attrs = prev.group(1), prev.group(2)
     assert tag == "span", f"Previous must be a <span> at first; got <{tag}>"
@@ -265,7 +265,7 @@ def test_back_button_honours_viewall_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>← Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
     assert back, "Back button anchor not found"
     # Honoured referer keeps the full URL (scheme + host). Fallback is path-only.
     assert back.group(1) == referer, (
@@ -285,7 +285,7 @@ def test_back_button_honours_zone_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>← Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
     assert back, "Back button anchor not found"
     assert "zones/view.php" in back.group(1), (
         f"Back should honour zones/view.php referer; got {back.group(1)}"
@@ -303,7 +303,7 @@ def test_back_button_fallback_no_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>← Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
     assert back, "Back button anchor not found"
     assert "viewAll.php" in back.group(1), f"Back should fall back to viewAll; got {back.group(1)}"
 
@@ -323,7 +323,7 @@ def test_back_button_rejects_cross_domain_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>← Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
     assert back, "Back button anchor not found"
     href = back.group(1)
     assert "evil.example.com" not in href, (
@@ -347,7 +347,7 @@ def test_back_button_rejects_substring_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>← Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
     assert back, "Back button anchor not found"
     href = back.group(1)
     assert "viewAll.phpdoor" not in href, (
