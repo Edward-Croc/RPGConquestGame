@@ -236,7 +236,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 }
 
-// Resolve effective sort for prev/next nav buttons (D6: URL > session > 'age', both whitelist-validated)
+// Resolve effective sort for prev/next nav buttons — URL > session > 'age', both whitelist-validated
 $navValidSorts = ['age', 'zone', 'investigate', 'attack'];
 $sort = 'age';
 if (in_array($_GET['sort'] ?? '', $navValidSorts, true)) {
@@ -245,7 +245,7 @@ if (in_array($_GET['sort'] ?? '', $navValidSorts, true)) {
     $sort = $_SESSION['workers_view_sort'];
 }
 
-// Resolve prev / next worker ids + bucket class for the card background (D4 + D8)
+// Resolve prev / next worker ids + bucket class for the card background
 $navControllerId = (int)($_SESSION['controller']['id'] ?? 0);
 $navIds = ['prev' => null, 'next' => null];
 $navBucketClass = '';
@@ -266,7 +266,7 @@ if ($navControllerId > 0 && !empty($worker_id)) {
     }
 }
 
-// Back URL — Referer-aware with strict-equality whitelist (D3)
+// Back URL — Referer-aware with strict-equality whitelist + host equality
 $navFolder = $_SESSION['FOLDER'] ?? '';
 $navBackUrl = "/{$navFolder}/workers/viewAll.php";
 $navReferer = $_SERVER['HTTP_REFERER'] ?? '';
