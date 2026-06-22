@@ -278,10 +278,16 @@ if ($navReferer !== '') {
     }
     $navRefererPath = rtrim($navRefererParts['path'] ?? '', '/');
     if ($navRefererHost === ($_SERVER['HTTP_HOST'] ?? '')) {
+        // Whitelist the canonical entry points (action.php / accueil.php).
+        // *view.php files are include-only (403 direct) so they shouldn't
+        // appear as a real Referer in practice — kept defensively.
         $navAllowedPaths = [
             "/{$navFolder}/workers/viewAll.php",
+            "/{$navFolder}/zones/action.php",
             "/{$navFolder}/zones/view.php",
+            "/{$navFolder}/controllers/action.php",
             "/{$navFolder}/controllers/view.php",
+            "/{$navFolder}/base/accueil.php",
         ];
         foreach ($navAllowedPaths as $allowed) {
             if ($navRefererPath === rtrim($allowed, '/')) {

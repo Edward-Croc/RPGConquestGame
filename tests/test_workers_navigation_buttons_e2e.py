@@ -217,7 +217,7 @@ def test_prev_disabled_at_first_worker(browser, base_url):
     html = page.content()
     ctx.close()
 
-    prev = re.search(r'<(\w+)([^>]*)>Précédent</\w+>', html)
+    prev = re.search(r'<(\w+)([^>]*)>[^<]*Précédent[^<]*</\w+>', html)
     assert prev, "Previous button not found"
     tag, attrs = prev.group(1), prev.group(2)
     assert tag == "span", f"Previous must be a <span> at first; got <{tag}>"
@@ -239,7 +239,7 @@ def test_next_disabled_at_last_worker(browser, base_url):
     html = page.content()
     ctx.close()
 
-    nxt = re.search(r'<(\w+)([^>]*)>Suivant →</\w+>', html)
+    nxt = re.search(r'<(\w+)([^>]*)>[^<]*Suivant[^<]*</\w+>', html)
     assert nxt, "Next button not found"
     tag, attrs = nxt.group(1), nxt.group(2)
     assert tag == "span", f"Next must be a <span> at last; got <{tag}>"
@@ -265,7 +265,7 @@ def test_back_button_honours_viewall_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
     assert back, "Back button anchor not found"
     # Honoured referer keeps the full URL (scheme + host). Fallback is path-only.
     assert back.group(1) == referer, (
@@ -275,20 +275,70 @@ def test_back_button_honours_viewall_referer(browser, base_url):
 
 
 def test_back_button_honours_zone_referer(browser, base_url):
-    """Referer = our zones/view.php → back URL points at zones/view.php."""
+    """Referer = our zones/action.php#zone-N (canonical zone URL —
+    zones/view.php is include-only/403 direct). Path-only whitelist
+    check survives the #fragment so the user lands back on the zone
+    they came from."""
     workers = _alpha_live_workers_by_id()
     wid = workers[0]['id']
 
+    referer = f"{base_url}/zones/action.php#zone-11"
     ctx = browser.new_context()
     page = ctx.new_page()
-    _open_worker_as_alpha(page, base_url, wid, referer=f"{base_url}/zones/view.php")
+    _open_worker_as_alpha(page, base_url, wid, referer=referer)
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
     assert back, "Back button anchor not found"
-    assert "zones/view.php" in back.group(1), (
-        f"Back should honour zones/view.php referer; got {back.group(1)}"
+    assert "zones/action.php" in back.group(1), (
+        f"Back should honour zones/action.php referer; got {back.group(1)}"
+    )
+
+
+def test_back_button_honours_accueil_referer(browser, base_url):
+    """Referer = base/accueil.php with query string → back URL points
+    at it. parse_url separates path/query so the path-only whitelist
+    check passes and the full URL (query included) is preserved."""
+    workers = _alpha_live_workers_by_id()
+    wid = workers[0]['id']
+
+    referer = f"{base_url}/base/accueil.php?controller_id=2&chosir=Choisir"
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    _open_worker_as_alpha(page, base_url, wid, referer=referer)
+    html = page.content()
+    ctx.close()
+
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
+    assert back, "Back button anchor not found"
+    href = back.group(1).replace("&amp;", "&")
+    assert "base/accueil.php" in href, (
+        f"Back should honour accueil.php referer; got {href}"
+    )
+    assert "controller_id=2" in href, (
+        f"Query string should be preserved on honoured referer; got {href}"
+    )
+
+
+def test_back_button_honours_controllers_action_referer(browser, base_url):
+    """Referer = controllers/action.php with query string → back URL
+    points at it (path-only check passes, full URL preserved)."""
+    workers = _alpha_live_workers_by_id()
+    wid = workers[0]['id']
+
+    referer = f"{base_url}/controllers/action.php?controller_id=2&base_id=48&zone_id=2&moveBase=Déménager"
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    _open_worker_as_alpha(page, base_url, wid, referer=referer)
+    html = page.content()
+    ctx.close()
+
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
+    assert back, "Back button anchor not found"
+    href = back.group(1).replace("&amp;", "&")
+    assert "controllers/action.php" in href, (
+        f"Back should honour controllers/action.php referer; got {href}"
     )
 
 
@@ -303,7 +353,7 @@ def test_back_button_fallback_no_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
     assert back, "Back button anchor not found"
     assert "viewAll.php" in back.group(1), f"Back should fall back to viewAll; got {back.group(1)}"
 
@@ -323,7 +373,7 @@ def test_back_button_rejects_cross_domain_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
     assert back, "Back button anchor not found"
     href = back.group(1)
     assert "evil.example.com" not in href, (
@@ -347,7 +397,7 @@ def test_back_button_rejects_substring_referer(browser, base_url):
     html = page.content()
     ctx.close()
 
-    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>Retour</a>', html)
+    back = re.search(r'<a[^>]*href="([^"]+)"[^>]*>[^<]*Retour[^<]*</a>', html)
     assert back, "Back button anchor not found"
     href = back.group(1)
     assert "viewAll.phpdoor" not in href, (

@@ -454,9 +454,9 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     $navFolderEnc, (int)$navIds['prev'], $navSortEnc)
                 : '<span class="button is-info is-small is-nav-disabled mr-1" aria-disabled="true">Précédent</span>';
             $navNextHTML = ($navIds['next'] ?? null) !== null
-                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small">Suivant →</a>',
+                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small">Suivant</a>',
                     $navFolderEnc, (int)$navIds['next'], $navSortEnc)
-                : '<span class="button is-info is-small is-nav-disabled" aria-disabled="true">Suivant →</span>';
+                : '<span class="button is-info is-small is-nav-disabled" aria-disabled="true">Suivant</span>';
             $navButtonsHTML = sprintf(
                 '<div class="card-header-actions">
                     <a href="%s" class="button is-info is-small mr-1">Retour</a>
