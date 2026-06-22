@@ -15,7 +15,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     // Get workers information
     $workersArray = getWorkers($gameReady, [$worker_id]);
 
-    echo "<div class='workers section'>";
+    echo sprintf("<div class='workers section %s'>", htmlspecialchars($navBucketClass ?? '', ENT_QUOTES));
 
     if ( $_SESSION['DEBUG'] == true )
         echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
@@ -469,7 +469,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             );
 
             $viewHTML = sprintf(
-                '<div class="card %15$s">
+                '<div class="card">
                     <header
                         class="card-header"
                         data-worker-id="%1$s"
@@ -481,7 +481,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         <p class="card-header-title">
                             Agent %2$s %3$s
                         </p>
-                        %16$s
+                        %15$s
                     </header>
                     <div class="card-content">
                         <div class="box info">
@@ -510,8 +510,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %12$s
                 htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %13$s
                 htmlspecialchars($workerStatus, ENT_QUOTES), // %14$s
-                htmlspecialchars($navBucketClass ?? '', ENT_QUOTES), // %15$s
-                $navButtonsHTML // %16$s
+                $navButtonsHTML // %15$s
             );
             echo $viewHTML;
 

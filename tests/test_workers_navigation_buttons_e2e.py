@@ -391,8 +391,10 @@ def test_bucket_scope_alive_only_navigates_alive(browser, base_url):
 
 
 def test_bucket_background_color_class_alive(browser, base_url):
-    """Alpha's live worker page renders the outer card with class
-    'is-bucket-alive' so the header background takes the alive colour."""
+    """Alpha's live worker page renders the outer '.workers section'
+    wrapper with class 'is-bucket-alive' so the existing .workers blue
+    is applied as the alive background (soft palette anchored on the
+    existing #c3e5f8 .workers tint)."""
     workers = _alpha_live_workers_by_id()
     wid = workers[0]['id']
 
@@ -402,11 +404,12 @@ def test_bucket_background_color_class_alive(browser, base_url):
     html = page.content()
     ctx.close()
 
-    card = re.search(r'<div\s+class="card([^"]*)"', html)
-    assert card, "Outer card div not found"
-    classes = card.group(1)
+    wrapper = re.search(r"<div\s+class=['\"]workers section([^'\"]*)['\"]", html)
+    assert wrapper, "'.workers section' wrapper div not found"
+    classes = wrapper.group(1)
     assert "is-bucket-alive" in classes, (
-        f"Alive worker must carry is-bucket-alive class; got: '{classes}'"
+        f"Alive worker must carry is-bucket-alive on the .workers wrapper; "
+        f"got: 'workers section{classes}'"
     )
 
 

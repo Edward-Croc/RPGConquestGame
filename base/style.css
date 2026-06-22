@@ -185,19 +185,18 @@ body {
     pointer-events: none;
 }
 
-.card.is-bucket-alive .card-header {
-    background-color: #209cee;
-    color: #fff;
+/* Bucket-tinted background on the .workers section wrapper.
+   alive = existing .workers blue (#c3e5f8). Other 3 are soft variants
+   at the same lightness so body text stays readable without white-on-X. */
+.workers.is-bucket-alive {
+    background-color: #c3e5f8;
 }
-.card.is-bucket-double-agent .card-header {
-    background-color: #7d6ba8;
-    color: #fff;
+.workers.is-bucket-double-agent {
+    background-color: #d8c6e5;
 }
-.card.is-bucket-prisoner .card-header {
-    background-color: #6f7d8c;
-    color: #fff;
+.workers.is-bucket-prisoner {
+    background-color: #c3d0d8;
 }
-.card.is-bucket-dead .card-header {
-    background-color: #8a8a8a;
-    color: #fff;
+.workers.is-bucket-dead {
+    background-color: #cccccc;
 }
