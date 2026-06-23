@@ -116,31 +116,16 @@ function hasEnoughRessourcesToBuildBase($pdo, $controller_id) {
 }
 
 /**
- * Spend the ressources to build a base
+ * Spend the ressources to build a base. Atomic across all costed ressources:
+ * if any consumeRessource fails (insufficient stock), the whole transaction
+ * rolls back and the caller receives false. Returns true also when
+ * ressource_management is off, or when no ressource carries a positive
+ * base_building_cost (nothing to spend).
  *
- * @param PDO $pdo
- * @param int $controller_id
- *
- * @return bool
+ * @return bool true on full deduction (or no-op), false on any shortfall.
  */
-function spendRessourcesToBuildBase($pdo, $controller_id) {
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_building_cost'] <= 0) {
-                continue;
-            }
-            $controllerRessource['amount'] -= $controllerRessource['base_building_cost'];
-            $prefix = $_SESSION['GAME_PREFIX'];
-            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
-            if (!$stmt->rowCount()) {
-                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
-            }
-        }
-    }
-    return true;
+function spendRessourcesToBuildBase(PDO $pdo, int $controller_id): bool {
+    return spendRessourcesByCostField($pdo, $controller_id, 'base_building_cost');
 }
 
 /**
@@ -190,31 +175,13 @@ function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
 }
 
 /**
- * Spend the ressources to move a base
+ * Spend the ressources to move a base. Atomic; rolls back on any shortfall.
+ * See spendRessourcesToBuildBase for the contract.
  *
- * @param PDO $pdo
- * @param int $controller_id
- *
- * @return bool
+ * @return bool true on full deduction (or no-op), false on any shortfall.
  */
-function spendRessourcesToMoveBase($pdo, $controller_id) {
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $prefix = $_SESSION['GAME_PREFIX'];
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_moving_cost'] <= 0) {
-                continue;
-            }
-            $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
-            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
-            if (!$stmt->rowCount()) {
-                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
-            }
-        }
-    }
-    return true;
+function spendRessourcesToMoveBase(PDO $pdo, int $controller_id): bool {
+    return spendRessourcesByCostField($pdo, $controller_id, 'base_moving_cost');
 }
 
 /**
@@ -272,23 +239,48 @@ function hasEnoughRessourcesToRepairLocation($pdo, $controller_id) {
  *
  * @return bool
  */
-function spendRessourcesToRepairLocation($pdo, $controller_id) {
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['location_repaire_cost'] <= 0) {
-                continue;
-            }
-            $controllerRessource['amount'] -= $controllerRessource['location_repaire_cost'];
-            $prefix = $_SESSION['GAME_PREFIX'];
-            $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
-            if (!$stmt->rowCount()) {
-                echo __FUNCTION__."(): Failed to update controller_ressources: " . $controllerRessource['rc_id'] . "<br />";
-            }
+function spendRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool {
+    return spendRessourcesByCostField($pdo, $controller_id, 'location_repaire_cost');
+}
+
+/**
+ * Shared deducting primitive for the three spend* operations. Loops over
+ * the controller's ressources_config, filters to the cost field passed in,
+ * and composes consumeRessource calls inside a single transaction. Any
+ * shortfall (or `consumeRessource` returning false for any other reason)
+ * triggers a rollback so partial deductions cannot ship.
+ *
+ * Cost-zero ressources never reach consumeRessource — the filter elides
+ * them, so the old "rowCount on no-op UPDATE" noise is impossible by
+ * construction.
+ *
+ * @param string $costField one of: base_building_cost, base_moving_cost,
+ *                          location_repaire_cost. Whitelist enforced.
+ */
+function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costField): bool {
+    static $allowed = ['base_building_cost', 'base_moving_cost', 'location_repaire_cost'];
+    if (!in_array($costField, $allowed, true)) {
+        error_log(__FUNCTION__.": unknown cost field {$costField}");
+        return false;
+    }
+    if (getConfig($pdo, 'ressource_management') !== 'TRUE') return true;
+
+    $costed = [];
+    foreach (getRessources($pdo, $controller_id) as $r) {
+        if ((int)$r[$costField] > 0) {
+            $costed[] = ['ressource_id' => (int)$r['ressource_id'], 'amount' => (int)$r[$costField]];
         }
     }
+    if (empty($costed)) return true;
+
+    $pdo->beginTransaction();
+    foreach ($costed as $row) {
+        if (!consumeRessource($pdo, $controller_id, $row['ressource_id'], $row['amount'])) {
+            $pdo->rollBack();
+            return false;
+        }
+    }
+    $pdo->commit();
     return true;
 }
 

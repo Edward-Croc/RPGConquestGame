@@ -1201,6 +1201,16 @@ class TestMoveBaseCancelsInFlightAttacks:
             (synthetic_id, foxtrot_id, turn),
         )
         queue_row_id = cur.lastrowid
+        # Top up Echo's Gold so spendRessourcesToMoveBase actually succeeds and
+        # the in-flight cancellation logic runs. TestConfig seeds Echo with
+        # Gold=2 < base_moving_cost=5; without this the move aborts before
+        # cancelling the queued attack.
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}controller_ressources` SET amount = 50 "
+            f"WHERE controller_id = %s AND ressource_id = "
+            f"(SELECT id FROM `{GAME_PREFIX}ressources_config` WHERE ressource_name = 'Gold')",
+            (echo_id,),
+        )
         conn.commit()
         cur.close()
         conn.close()
