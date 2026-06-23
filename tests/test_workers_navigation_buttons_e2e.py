@@ -32,7 +32,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    login_as,
+    login_as, ui_worker_id, ui_zone_id,
 )
 
 
@@ -495,3 +495,130 @@ def test_sticky_header_on_scroll(browser, base_url):
     assert page.locator(".card-header :text('Suivant')").first.is_visible()
 
     ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# Bucket colour respects viewer (regression: double-agent purple must only
+# apply to controllers who see the worker as a double agent, not to the
+# primary controller — getWorkers() returns one row per controller_worker
+# pair, so the result must be filtered to the viewing controller's row
+# before reading is_primary_controller).
+# ---------------------------------------------------------------------------
+
+class TestBucketColourPerController:
+    """A worker recruited with the go_traitor metier has TWO rows in
+    controller_worker: primary=Charlie, secondary=Echo. The bucket-colour
+    class on workers/view.php's wrapper must reflect HOW THE VIEWING
+    CONTROLLER sees the worker: alive for Charlie, double-agent for Echo.
+
+    Repros the pre-fix bug where action.php read $navWorkerArray[0]
+    without filtering, picking whichever controller's row sorted first
+    in getWorkers() — leaking the wrong perspective half the time.
+    """
+
+    _controller_ids = {}
+    _worker_lastname = "DA_BucketColour"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_double_agent_worker(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        login_as(page, PHP_BASE_URL, "gm", "orga")
+
+        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
+        page.wait_for_load_state("networkidle")
+        for opt in page.locator("select#controllerSelect option").all():
+            val = opt.get_attribute("value") or ""
+            text = (opt.inner_text() or "").strip()
+            if val and text:
+                self._controller_ids[text.split()[-1]] = int(val)
+
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        page.wait_for_load_state("networkidle")
+
+        def _scrape(select_selector, text_match):
+            for opt in page.locator(f"{select_selector} option").all():
+                txt = (opt.inner_text() or "").strip()
+                val = opt.get_attribute("value") or ""
+                if text_match in txt and val:
+                    return int(val)
+            raise AssertionError(
+                f"Option containing '{text_match}' not found in {select_selector}"
+            )
+
+        blank_slate_id = _scrape("select#power_hobby_id", "Blank Slate")
+        go_traitor_id = _scrape("select#power_metier_id", "Test_Job_GoTraitor_Echo")
+        origin_id = _scrape("select#origin_id", "origine Accessible")
+
+        charlie_id = self._controller_ids["Charlie"]
+        beta_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+
+        url = (
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?creation=true"
+            f"&controller_id={charlie_id}"
+            f"&zone_id={beta_id}"
+            f"&origin_id={origin_id}"
+            f"&firstname=combat"
+            f"&lastname={self._worker_lastname}"
+            f"&power_hobby_id={blank_slate_id}"
+            f"&power_metier_id={go_traitor_id}"
+            f"&chosir=Recruter+et+Affecter"
+        )
+        page.goto(url)
+        page.wait_for_load_state("load")
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        yield
+
+    def _open_as(self, browser, controller_lastname):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        login_as(page, PHP_BASE_URL, "gm", "orga")
+        cid = self._controller_ids[controller_lastname]
+        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+        page.wait_for_load_state("networkidle")
+        wid = ui_worker_id(page, self._worker_lastname, base_url=PHP_BASE_URL)
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
+        page.wait_for_load_state("load")
+        html = page.content()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        return html
+
+    def test_primary_controller_sees_alive_bucket_class(self, browser):
+        """Charlie (primary) viewing DA_BucketColour must see
+        'is-bucket-alive' on the .workers wrapper, NOT
+        'is-bucket-double-agent', even though the worker has a
+        secondary controller_worker row pointing to Echo."""
+        html = self._open_as(browser, "Charlie")
+        wrapper = re.search(r"<div\s+class=['\"]workers([^'\"]*)['\"]", html)
+        assert wrapper, "'.workers' wrapper div not found"
+        classes = wrapper.group(1)
+        assert "is-bucket-alive" in classes, (
+            f"Primary controller (Charlie) must see is-bucket-alive on the "
+            f".workers wrapper; got classes='{classes.strip()}'"
+        )
+        assert "is-bucket-double-agent" not in classes, (
+            f"Primary controller (Charlie) must NOT see is-bucket-double-agent "
+            f"(this is the pre-fix bug); got classes='{classes.strip()}'"
+        )
+
+    def test_secondary_controller_sees_double_agent_bucket_class(self, browser):
+        """Echo (secondary) viewing DA_BucketColour must see
+        'is-bucket-double-agent' — only the non-primary controller_worker
+        row exists for Echo, so the worker is their double agent."""
+        html = self._open_as(browser, "Echo")
+        wrapper = re.search(r"<div\s+class=['\"]workers([^'\"]*)['\"]", html)
+        assert wrapper, "'.workers' wrapper div not found"
+        classes = wrapper.group(1)
+        assert "is-bucket-double-agent" in classes, (
+            f"Secondary controller (Echo) must see is-bucket-double-agent on "
+            f"the .workers wrapper; got classes='{classes.strip()}'"
+        )
+        assert "is-bucket-alive" not in classes, (
+            f"Secondary controller (Echo) must NOT see is-bucket-alive; "
+            f"got classes='{classes.strip()}'"
+        )
