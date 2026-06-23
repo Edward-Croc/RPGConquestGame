@@ -30,7 +30,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, safe_goto,
+    DB_AVAILABLE, load_minimal_data, ensure_scenario_loaded, login_as, safe_goto,
     ui_worker_id, ui_workers_by_lastname,
     ui_attack, end_turn,
 )
@@ -43,10 +43,10 @@ def base_url():
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_testconfig(browser):
-    """Load TestConfig once per module so the test workers exist."""
+    """Load TestConfig once per module (skipped if already loaded)."""
     if DB_AVAILABLE:
         load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+    ensure_scenario_loaded(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 

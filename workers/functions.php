@@ -1655,6 +1655,48 @@ function sortWorkerBuckets(array &$bucket, string $sort): void {
     });
 }
 
+/**
+ * Resolve previous + next worker ids for the agent page nav buttons.
+ * Mirrors viewAll.php bucket logic so the agent page navigates within
+ * the same bucket the user was browsing, in the same sort order.
+ *
+ * @return array ['prev' => ?int, 'next' => ?int] — null when at edge or unfound
+ */
+function getPrevNextWorkerIds(PDO $pdo, int $controller_id, int $current_worker_id, string $sort, int $turn_number): array {
+    $result = ['prev' => null, 'next' => null];
+    $workers = getWorkersByController($pdo, $controller_id);
+    if (empty($workers)) return $result;
+
+    $live = []; $double = []; $prisoners = []; $dead = [];
+    foreach ($workers as $w) {
+        if ((int)$w['controller_id'] !== $controller_id) continue;
+        if (!isset($w['actions'][$turn_number]['action_choice'])) continue;
+        $status = getWorkerStatus($w, ['turncounter' => $turn_number]);
+        if ($status === 'alive')        $live[]      = $w;
+        elseif ($status === 'double_agent') $double[]    = $w;
+        elseif ($status === 'prisoner') $prisoners[] = $w;
+        elseif ($status === 'dead')     $dead[]      = $w;
+    }
+
+    $currentBucket = null;
+    foreach (['alive' => &$live, 'double_agent' => &$double, 'prisoner' => &$prisoners, 'dead' => &$dead] as $key => &$bucket) {
+        foreach ($bucket as $w) {
+            if ((int)$w['id'] === $current_worker_id) { $currentBucket = &$bucket; break 2; }
+        }
+    }
+    if ($currentBucket === null) return $result;
+
+    sortWorkerBuckets($currentBucket, $sort);
+    $idx = null;
+    foreach ($currentBucket as $i => $w) {
+        if ((int)$w['id'] === $current_worker_id) { $idx = $i; break; }
+    }
+    if ($idx === null) return $result;
+    if ($idx > 0)                          $result['prev'] = (int)$currentBucket[$idx - 1]['id'];
+    if ($idx < count($currentBucket) - 1)  $result['next'] = (int)$currentBucket[$idx + 1]['id'];
+    return $result;
+}
+
 // TODO : Add Conversion to the captured agent possible actions list,
     // lock behind config JSON for certain factions, conversion probablility values 
     // This function should take an worker_id and a controller_id:

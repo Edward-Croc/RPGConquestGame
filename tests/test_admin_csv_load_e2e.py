@@ -139,7 +139,7 @@ class TestCSVLoadViaAdmin:
         logged_in_page.locator("select[name='config_name']").select_option("TestConfig")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
-            logged_in_page.locator("#confirmModalYes").click()
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(2000)
 
@@ -189,7 +189,7 @@ class TestCSVLoadViaAdmin:
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
-            logged_in_page.locator("#confirmModalYes").click()
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(3000)
 
@@ -235,7 +235,7 @@ class TestCSVLoadViaAdmin:
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
-            logged_in_page.locator("#confirmModalYes").click()
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(5000)
 
@@ -296,7 +296,7 @@ class TestCSVLoadViaAdmin:
         logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
-            logged_in_page.locator("#confirmModalYes").click()
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(5000)
 

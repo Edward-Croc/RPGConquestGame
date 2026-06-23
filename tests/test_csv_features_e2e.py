@@ -28,7 +28,7 @@ from helpers import (
     DB_AVAILABLE, get_db_connection, load_minimal_data, load_scenario_via_admin, safe_goto,
     ui_worker_count, ui_power_options_by_type, ui_all_workers,
     register_php_error_listener, assert_no_collected_php_errors,
-    csv_row_count,
+    csv_row_count, ui_controller_ids_map,
 )
 
 
@@ -334,15 +334,7 @@ class TestLoadWorkersCSV:
         query produced. UI-runnable.
         """
         ensure_gm_login(page, base_url)
-        # Build controller_id → lastname map from accueil's controllerSelect
-        safe_goto(page, f"{base_url}/base/accueil.php")
-        page.wait_for_load_state("networkidle")
-        id_to_lastname = {}
-        for opt in page.locator("select#controllerSelect option").all():
-            val = opt.get_attribute("value") or ""
-            text = (opt.inner_text() or "").strip()
-            if val and text:
-                id_to_lastname[int(val)] = text.split()[-1]  # "Lord Alpha" → "Alpha"
+        id_to_lastname = {v: k for k, v in ui_controller_ids_map(page, base_url).items()}
 
         # Build worker → controller lastname map via management_workers
         workers = ui_all_workers(page, base_url=base_url)

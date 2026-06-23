@@ -236,6 +236,75 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 }
 
+// Resolve effective sort for prev/next nav buttons — URL > session > 'age', both whitelist-validated
+$navValidSorts = ['age', 'zone', 'investigate', 'attack'];
+$sort = 'age';
+if (in_array($_GET['sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_GET['sort'];
+} elseif (in_array($_SESSION['workers_view_sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_SESSION['workers_view_sort'];
+}
+
+// Resolve prev / next worker ids + bucket class for the card background
+$navControllerId = (int)($_SESSION['controller']['id'] ?? 0);
+$navIds = ['prev' => null, 'next' => null];
+$navBucketClass = '';
+if ($navControllerId > 0 && !empty($worker_id)) {
+    $navIds = getPrevNextWorkerIds(
+        $gameReady,
+        $navControllerId,
+        (int)$worker_id,
+        $sort,
+        (int)($mechanics['turncounter'] ?? 0)
+    );
+    $navWorkerArray = getWorkers($gameReady, [$worker_id]);
+    $navWorkerRow = null;
+    foreach ($navWorkerArray ?? [] as $row) {
+        if ((int)($row['controller_id'] ?? 0) === $navControllerId) {
+            $navWorkerRow = $row;
+            break;
+        }
+    }
+    if ($navWorkerRow !== null) {
+        $navWorkerStatus = getWorkerStatus($navWorkerRow, $mechanics);
+        if ($navWorkerStatus && $navWorkerStatus !== 'unfound') {
+            $navBucketClass = 'is-bucket-' . str_replace('_', '-', $navWorkerStatus);
+        }
+    }
+}
+
+// Back URL — Referer-aware with strict-equality whitelist + host equality
+$navFolder = $_SESSION['FOLDER'] ?? '';
+$navBackUrl = "/{$navFolder}/workers/viewAll.php";
+$navReferer = $_SERVER['HTTP_REFERER'] ?? '';
+if ($navReferer !== '') {
+    $navRefererParts = parse_url($navReferer);
+    $navRefererHost = $navRefererParts['host'] ?? '';
+    if (isset($navRefererParts['port'])) {
+        $navRefererHost .= ':' . $navRefererParts['port'];
+    }
+    $navRefererPath = rtrim($navRefererParts['path'] ?? '', '/');
+    if ($navRefererHost === ($_SERVER['HTTP_HOST'] ?? '')) {
+        // Whitelist the canonical entry points (action.php / accueil.php).
+        // *view.php files are include-only (403 direct) so they shouldn't
+        // appear as a real Referer in practice — kept defensively.
+        $navAllowedPaths = [
+            "/{$navFolder}/workers/viewAll.php",
+            "/{$navFolder}/zones/action.php",
+            "/{$navFolder}/zones/view.php",
+            "/{$navFolder}/controllers/action.php",
+            "/{$navFolder}/controllers/view.php",
+            "/{$navFolder}/base/accueil.php",
+        ];
+        foreach ($navAllowedPaths as $allowed) {
+            if ($navRefererPath === rtrim($allowed, '/')) {
+                $navBackUrl = $navReferer;
+                break;
+            }
+        }
+    }
+}
+
 require_once '../base/baseHTML.php';
 require_once '../workers/view.php';
 
