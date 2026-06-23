@@ -15,11 +15,16 @@ Run:
     python3 -m pytest tests/test_vampire_anchor_zones_e2e.py -v
 """
 import html as _html
+import json as _json
 import re
 
+import pymysql
 import pytest
 
-from conftest import PHP_BASE_URL, ensure_gm_login
+from conftest import (
+    GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
+    PHP_BASE_URL, ensure_gm_login,
+)
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
@@ -153,3 +158,54 @@ class TestZoneAdjacencyAdminView:
             assert shown == expected, (
                 f"{zone}: expected adjacents {sorted(expected)}, got {sorted(shown)}"
             )
+
+
+def _db():
+    return pymysql.connect(
+        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
+        password=MYSQL_PASSWORD, database=MYSQL_DB,
+        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
+    )
+
+
+class TestPossessionORShape:
+    """Regression on Vampire1966CSV's Possession power. Pre-fix the
+    on_transformation.OR was a single object, which PHP iterated as
+    scalar keys: $OR stayed false and the power was fully hidden. The
+    fix authors the OR as a list of single-key branches (one rule per
+    branch), each evaluated independently.
+
+    Belt-and-buckle DB check: decode the Possession row's `other` JSON
+    and assert the OR shape stays correct."""
+
+    def test_possession_or_shape_is_array_of_single_key_objects(self):
+        conn = _db(); cur = conn.cursor()
+        cur.execute(
+            f"SELECT other FROM `{GAME_PREFIX}powers` WHERE name='Possession' LIMIT 1"
+        )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        assert row is not None, "Possession row not loaded from Vampire1966CSV"
+
+        other = _json.loads(row['other'])
+        ot = other.get('on_transformation') or {}
+        or_block = ot.get('OR')
+
+        assert isinstance(or_block, list), (
+            f"OR must be array-of-objects, got {type(or_block).__name__}: {or_block}"
+        )
+        assert len(or_block) == 2, (
+            f"Possession OR must carry exactly TWO single-key branches; got {or_block}"
+        )
+        for branch in or_block:
+            assert isinstance(branch, dict), (
+                f"Each OR branch must be an object; got {type(branch).__name__}"
+            )
+            assert len(branch) == 1, (
+                f"One key per OR branch (authoring convention); got {branch}"
+            )
+        keys = {next(iter(b.keys())) for b in or_block}
+        assert keys == {"age", "worker_is_alive"}, (
+            f"Possession OR must carry exactly the age and worker_is_alive "
+            f"branches; got keys {keys}"
+        )

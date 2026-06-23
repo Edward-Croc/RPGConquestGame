@@ -33,7 +33,7 @@ from helpers import (
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, clear_ui_caches,
-    ui_mass_move_click, ui_all_workers,
+    ui_mass_move_click, ui_all_workers, ui_controller_ids_map,
 )
 
 
@@ -43,17 +43,6 @@ _controller_ids = {}
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
-
-
-def _scrape_controller_ids(page, base_url):
-    """controller-lastname → id via accueil's select#controllerSelect."""
-    safe_goto(page, f"{base_url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
-    for opt in page.locator("select#controllerSelect option").all():
-        val = opt.get_attribute("value") or ""
-        text = (opt.inner_text() or "").strip()
-        if val and text:
-            _controller_ids[text.split()[-1]] = int(val)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -67,7 +56,7 @@ def load_gift_scenario(browser):
     page = context.new_page()
     register_php_error_listener(page)
     ensure_gm_login(page, PHP_BASE_URL)
-    _scrape_controller_ids(page, PHP_BASE_URL)
+    _controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
     assert_no_collected_php_errors(page)
     context.close()
 

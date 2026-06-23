@@ -30,7 +30,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_worker_id,
+    ui_worker_id, ui_controller_ids_map,
 )
 
 
@@ -40,19 +40,6 @@ _controller_ids = {}
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
-
-
-def _scrape_controller_ids(page, base_url):
-    """Populate the controller-lastname → id map by scraping accueil's
-    select#controllerSelect. Works against any reachable target."""
-    safe_goto(page, f"{base_url}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
-    for opt in page.locator("select#controllerSelect option").all():
-        val = opt.get_attribute("value") or ""
-        text = (opt.inner_text() or "").strip()
-        if val and text:
-            # "Lord Echo" → "Echo"
-            _controller_ids[text.split()[-1]] = int(val)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -69,7 +56,7 @@ def load_artefact_scenario(browser):
     ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
-    _scrape_controller_ids(page, PHP_BASE_URL)
+    _controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
     assert_no_collected_php_errors(page)
     context.close()
     yield

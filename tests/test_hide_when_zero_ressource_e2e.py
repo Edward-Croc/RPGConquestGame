@@ -20,7 +20,7 @@ import pytest
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
+    DB_AVAILABLE, load_minimal_data, ensure_scenario_loaded, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -34,7 +34,7 @@ def base_url():
 def setup_testconfig(browser):
     if DB_AVAILABLE:
         load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+    ensure_scenario_loaded(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 

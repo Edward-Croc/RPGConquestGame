@@ -174,6 +174,9 @@ def end_turn(page: Page, base_url: str = None):
     assert "Stack trace" not in html, "Uncaught exception trace during end turn"
 
 
+_current_scenario = None  # tracked by load_scenario_via_admin; consulted by ensure_scenario_loaded
+
+
 def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     """Login as gm in a fresh context and load the named scenario via admin.php.
 
@@ -181,6 +184,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     Registers a PHP-error listener on the load page and raises if anything
     surfaced during scenario load.
     """
+    global _current_scenario
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
@@ -197,6 +201,21 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     page.wait_for_load_state("load", timeout=120000)
     assert_no_collected_php_errors(page)
     context.close()
+    _current_scenario = scenario_name
+
+
+def ensure_scenario_loaded(browser, base_url: str, scenario_name: str):
+    """Load the named scenario only if it is not already the most recently
+    loaded one. Returns True if a load happened, False if it was skipped.
+
+    Intended for groups of files that share a TestConfig baseline and want
+    to skip the ~60s admin reset when pytest happens to run them
+    consecutively. Falls back to a full load if any other scenario has
+    been loaded since (mid-suite drift / first call of the session)."""
+    if _current_scenario == scenario_name:
+        return False
+    load_scenario_via_admin(browser, base_url, scenario_name)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +243,24 @@ def ui_controller_id(page: Page, lastname: str, base_url: str = None):
     raise AssertionError(
         f"Controller with lastname '{lastname}' not found in controllerSelect"
     )
+
+
+def ui_controller_ids_map(page: Page, base_url: str = None):
+    """Return {lastname: id} for every controller in accueil's controllerSelect.
+
+    Splits the display text on whitespace and takes the last token as the
+    lastname (e.g. 'Lord Alpha' -> 'Alpha'). One DOM round-trip; useful when
+    a fixture needs to resolve several controllers up front."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/base/accueil.php")
+    _wait_loaded(page, "select#controllerSelect")
+    result = {}
+    for opt in page.locator("select#controllerSelect option").all():
+        val = opt.get_attribute("value") or ""
+        text = (opt.inner_text() or "").strip()
+        if val and text:
+            result[text.split()[-1]] = int(val)
+    return result
 
 
 def ui_all_workers(page: Page, base_url: str = None):

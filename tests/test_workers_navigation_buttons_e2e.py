@@ -32,7 +32,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    login_as, ui_worker_id, ui_zone_id,
+    login_as, ui_worker_id, ui_zone_id, ui_controller_ids_map,
 )
 
 
@@ -525,14 +525,7 @@ class TestBucketColourPerController:
         page = ctx.new_page()
         register_php_error_listener(page)
         login_as(page, PHP_BASE_URL, "gm", "orga")
-
-        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
-        page.wait_for_load_state("networkidle")
-        for opt in page.locator("select#controllerSelect option").all():
-            val = opt.get_attribute("value") or ""
-            text = (opt.inner_text() or "").strip()
-            if val and text:
-                self._controller_ids[text.split()[-1]] = int(val)
+        self._controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
 
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
         page.wait_for_load_state("networkidle")
