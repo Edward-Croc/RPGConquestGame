@@ -258,8 +258,15 @@ if ($navControllerId > 0 && !empty($worker_id)) {
         (int)($mechanics['turncounter'] ?? 0)
     );
     $navWorkerArray = getWorkers($gameReady, [$worker_id]);
-    if (!empty($navWorkerArray[0])) {
-        $navWorkerStatus = getWorkerStatus($navWorkerArray[0], $mechanics);
+    $navWorkerRow = null;
+    foreach ($navWorkerArray ?? [] as $row) {
+        if ((int)($row['controller_id'] ?? 0) === $navControllerId) {
+            $navWorkerRow = $row;
+            break;
+        }
+    }
+    if ($navWorkerRow !== null) {
+        $navWorkerStatus = getWorkerStatus($navWorkerRow, $mechanics);
         if ($navWorkerStatus && $navWorkerStatus !== 'unfound') {
             $navBucketClass = 'is-bucket-' . str_replace('_', '-', $navWorkerStatus);
         }
