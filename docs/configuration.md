@@ -133,9 +133,9 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
 ### Règles JSON de déverrouillage des disciplines et transformations
 
-La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (disciplines), `on_transformation` (transformations) et `on_recrutment` (au moment du recrutement) décrivent les conditions à remplir pour rendre le power éligible. La même grammaire est appliquée par `cleanPowerListFromJsonConditions` au moment de l'affichage du sélecteur pour les trois états. **Re-validation côté commit** : pour `on_age` (`teach_discipline`) et `on_transformation` (`transform`), `workers/action.php` rejoue la vérification au moment de la validation, fermant l'écart entre affichage et commit — un GET forgé qui contournerait la liste filtrée est refusé côté serveur, et le coût ressource éventuel n'est débité que sur ce chemin (transformations seulement, par D4). `on_recrutment` reste filtré uniquement à l'affichage : aucun débit de ressource ni revalidation commit ne s'applique au recrutement dans cette version.
+La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (disciplines), `on_transformation` (transformations) et `on_recrutment` (au moment du recrutement) décrivent les conditions à remplir pour rendre le power éligible. La même grammaire est appliquée par `cleanPowerListFromJsonConditions` au moment de l'affichage du sélecteur pour les trois états. **Re-validation côté commit** : pour `on_age` (`teach_discipline`) et `on_transformation` (`transform`), `workers/action.php` rejoue la vérification au moment de la validation, fermant l'écart entre affichage et commit — un GET forgé qui contournerait la liste filtrée est refusé côté serveur, et le coût ressource éventuel n'est débité que sur ce chemin (transformations seulement). `on_recrutment` reste filtré uniquement à l'affichage : aucun débit de ressource ni revalidation commit ne s'applique au recrutement dans cette version.
 
-**Clés inconnues : fail-closed**. Si une règle référence une clé non listée ci-dessous (typo `controller_has_resource` au lieu de `controller_has_ressource`, ou nouvelle clé non encore implémentée), `evaluateRuleKeysAllMatch` retourne `false` et le power est masqué, plus un log d'erreur. Ajouter une nouvelle clé à la grammaire suppose donc de l'ajouter aussi au whitelist de la fonction (et de l'inscrire comme verrou d'audit).
+**Clés inconnues : fail-closed**. Si une règle référence une clé non listée ci-dessous (typo `controller_has_resource` au lieu de `controller_has_ressource`, ou nouvelle clé non encore implémentée), `evaluateRuleKeysAllMatch` retourne `false` et le power est masqué, plus un log d'erreur. Ajouter une nouvelle clé à la grammaire suppose donc de l'ajouter aussi au whitelist de la fonction.
 
 **Forme d'une règle :**
 
@@ -174,7 +174,7 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 - **`amount`** (int positif, requis) — seuil minimal. Une valeur absente, nulle, négative ou non-entière fait tomber le power au chargement avec un avertissement dans le log d'erreur.
 - **`consume`** (bool, optionnel, **défaut : `true`**) — si absent ou `true`, le `amount` est décrémenté atomiquement au commit (porte ET coût). Mettre **explicitement `consume: false`** pour une porte seule (vérification sans coût). Toute autre valeur (chaîne, nombre, etc.) est rejetée comme mal formée.
 
-**Composition direct + OR (D21) :**
+**Composition direct + OR :**
 
 Une règle peut porter `controller_has_ressource` au niveau direct **et** à l'intérieur d'une branche OR satisfaite. Si les deux décrivent un coût, **le niveau direct prime** et un avertissement « cross-resource cost not supported » est loggé : empiler deux ressources différentes n'est pas supporté en v1. Pour empiler le « coût toujours » (direct) avec un coût optionnel selon le contexte, mettre la branche OR coûtante en dernier et soit assurer une autre branche moins chère en première position, soit accepter le passage forcé par le coût direct.
 

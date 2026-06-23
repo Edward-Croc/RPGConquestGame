@@ -1,6 +1,6 @@
 """E2E tests for issue #67 — controller_has_ressource gate + opt-out consume
-flag + commit-time re-validation + atomic cost deduction + D21 direct+OR
-cost composition.
+flag + commit-time re-validation + atomic cost deduction + direct+OR cost
+composition.
 
 CSV pre-conditions (TestConfig):
   ressources_config:        Gold, Silver
@@ -9,8 +9,8 @@ CSV pre-conditions (TestConfig):
   zones:                    Gamma-Claims claimer+holder=Alpha
   transformations:          Test Gold Cost Explicit / Default / Optout,
                             Test OR Zone Or Gold,
-                            Test D21 Direct And OR,
-                            Test D21 Cross Resource,
+                            Test Direct And OR,
+                            Test Cross Resource,
                             Test Malformed Amount
 
 Test users:
@@ -228,11 +228,11 @@ class TestRessourceGate:
 
 
 # ---------------------------------------------------------------------------
-# consume opt-out semantics (D5 default-deduct)
+# consume opt-out semantics (default-deduct)
 # ---------------------------------------------------------------------------
 
 class TestConsumeBehavior:
-    """D5 opt-out default: rule deducts unless explicit consume:false."""
+    """Default behaviour: rule deducts unless explicit consume:false."""
 
     def test_explicit_consume_true_deducts(self, browser, base_url):
         alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
@@ -247,7 +247,7 @@ class TestConsumeBehavior:
         _set_amount(alpha, gold, 100)
 
     def test_default_consume_deducts(self, browser, base_url):
-        """D5 — consume OMITTED defaults to true → deduct."""
+        """consume OMITTED defaults to true → deduct."""
         alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
         _set_amount(alpha, gold, 10)
         _remove_worker_power("Transform_Subject", "Test Gold Cost Default")
@@ -255,13 +255,13 @@ class TestConsumeBehavior:
         _click_transform_via_get(browser, base_url, "Transform_Subject", "Test Gold Cost Default")
 
         assert _read_amount(alpha, gold) == 7, (
-            f"absent consume defaults to true (D5); must deduct 3 from 10; "
+            f"absent consume defaults to true; must deduct 3 from 10; "
             f"got {_read_amount(alpha, gold)}"
         )
         _set_amount(alpha, gold, 100)
 
     def test_explicit_consume_false_does_not_deduct(self, browser, base_url):
-        """D5 — explicit consume:false opts out → gate only, no deduction."""
+        """explicit consume:false opts out → gate only, no deduction."""
         alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
         _set_amount(alpha, gold, 10)
         _remove_worker_power("Transform_Subject", "Test Gold Gate Optout")
@@ -279,7 +279,7 @@ class TestConsumeBehavior:
 # ---------------------------------------------------------------------------
 
 class TestORComposition:
-    """D13 first-match-wins on OR. D15 cheaper-branch-first means the zone
+    """First-match-wins on OR with cheaper-branch-first ordering: the zone
     branch is consulted first; if it matches, no deduction. Otherwise the
     ressource branch matches and the cost is deducted."""
 
@@ -336,10 +336,10 @@ class TestORComposition:
 
 
 # ---------------------------------------------------------------------------
-# D21 direct + OR composition + cross-resource warning
+# direct + OR composition + cross-resource warning
 # ---------------------------------------------------------------------------
 
-class TestD21Composition:
+class TestDirectAndORComposition:
     """A rule can have both direct controller_has_ressource AND an OR
     branch carrying its own cost. Direct takes precedence; cross-resource
     fires error_log + only the direct cost deducts."""
@@ -351,9 +351,9 @@ class TestD21Composition:
         alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
         _set_zone_holder("Gamma-Claims", "Alpha")
         _set_amount(alpha, gold, 10)
-        _remove_worker_power("Transform_Subject", "Test D21 Direct And OR")
+        _remove_worker_power("Transform_Subject", "Test Direct And OR")
 
-        _click_transform_via_get(browser, base_url, "Transform_Subject", "Test D21 Direct And OR")
+        _click_transform_via_get(browser, base_url, "Transform_Subject", "Test Direct And OR")
 
         assert _read_amount(alpha, gold) == 7, (
             f"Direct cost Gold=3 must deduct even when OR matches via "
@@ -368,22 +368,22 @@ class TestD21Composition:
         gold = _ressource_id("Gold"); silver = _ressource_id("Silver")
         _set_amount(alpha, gold, 5)
         _set_amount(alpha, silver, 5)
-        _remove_worker_power("Transform_Subject", "Test D21 Cross Resource")
+        _remove_worker_power("Transform_Subject", "Test Cross Resource")
 
-        _click_transform_via_get(browser, base_url, "Transform_Subject", "Test D21 Cross Resource")
+        _click_transform_via_get(browser, base_url, "Transform_Subject", "Test Cross Resource")
 
         assert _read_amount(alpha, gold) == 4, (
             f"Direct Gold cost must deduct; got Gold={_read_amount(alpha, gold)}"
         )
         assert _read_amount(alpha, silver) == 5, (
-            f"OR Silver cost must NOT deduct under D21 cross-resource policy; "
+            f"OR Silver cost must NOT deduct under cross-resource policy; "
             f"got Silver={_read_amount(alpha, silver)}"
         )
         _set_amount(alpha, gold, 100); _set_amount(alpha, silver, 5)
 
 
 # ---------------------------------------------------------------------------
-# D3 malformed amount
+# Malformed amount
 # ---------------------------------------------------------------------------
 
 class TestMalformedAmount:
@@ -396,7 +396,7 @@ class TestMalformedAmount:
         ctx.close()
 
         assert "Test Malformed Amount" not in options, (
-            f"Amount=0 must drop the power (D3); got: {options}"
+            f"Amount=0 must drop the power; got: {options}"
         )
 
     def test_unknown_key_drops_power(self, browser, base_url):
@@ -538,7 +538,7 @@ class TestCommitRevalidation:
 
 
 # ---------------------------------------------------------------------------
-# D7 — Privileged admin path bypasses re-validation AND cost
+# Privileged admin path bypasses re-validation AND cost
 # ---------------------------------------------------------------------------
 
 class TestAdminBypass:
