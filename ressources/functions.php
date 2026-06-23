@@ -127,9 +127,10 @@ function spendRessourcesToBuildBase($pdo, $controller_id) {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_building_cost'] > 0) {
-                $controllerRessource['amount'] -= $controllerRessource['base_building_cost'];
+            if ($controllerRessource['base_building_cost'] <= 0) {
+                continue;
             }
+            $controllerRessource['amount'] -= $controllerRessource['base_building_cost'];
             $prefix = $_SESSION['GAME_PREFIX'];
             $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
@@ -201,9 +202,10 @@ function spendRessourcesToMoveBase($pdo, $controller_id) {
         $prefix = $_SESSION['GAME_PREFIX'];
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_moving_cost'] > 0) {
-                $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
+            if ($controllerRessource['base_moving_cost'] <= 0) {
+                continue;
             }
+            $controllerRessource['amount'] -= $controllerRessource['base_moving_cost'];
             $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':amount' => $controllerRessource['amount'], ':id' => $controllerRessource['rc_id']]);
@@ -274,9 +276,10 @@ function spendRessourcesToRepairLocation($pdo, $controller_id) {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['location_repaire_cost'] > 0) {
-                $controllerRessource['amount'] -= $controllerRessource['location_repaire_cost'];
+            if ($controllerRessource['location_repaire_cost'] <= 0) {
+                continue;
             }
+            $controllerRessource['amount'] -= $controllerRessource['location_repaire_cost'];
             $prefix = $_SESSION['GAME_PREFIX'];
             $sql = "UPDATE {$prefix}controller_ressources SET amount = :amount WHERE id = :id";
             $stmt = $pdo->prepare($sql);
