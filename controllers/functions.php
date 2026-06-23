@@ -230,7 +230,10 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    spendRessourcesToBuildBase($pdo, $controller_id);
+    if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
+        echo "Stock insuffisant ou modifié.<br />";
+        return false;
+    }
 
     $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
@@ -318,7 +321,10 @@ function createBase($pdo, $controller_id, $zone_id) {
  */
 function moveBase($pdo, $base_id, $zone_id, $controller_id) {
 
-    spendRessourcesToMoveBase($pdo, $controller_id);
+    if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
+        echo "Stock insuffisant ou modifié.<br />";
+        return false;
+    }
 
     $prefix = $_SESSION['GAME_PREFIX'];
 

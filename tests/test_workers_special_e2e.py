@@ -1,8 +1,6 @@
 """Playwright E2E tests for special worker actions: gift, prisoner return,
 double-agent lifecycle, trace immutability.
 
-D1 / Step 7 — Slice 1: Gift only (TestGiftWorker, TestGiftPrisoner).
-
 Gift flow under test (workers/functions.php:1020):
   - swaps controller_worker.controller_id to the new owner
   - updates worker_actions.controller_id for the current turn

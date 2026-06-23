@@ -270,7 +270,7 @@ function cleanPowerListFromJsonConditions($pdo, $powerArray, $controller_id, $wo
 /**
  * Decide whether a power's `[$state_text]` rule satisfies, and surface which OR
  * branch fired. Single source of truth for gate semantics across display
- * (cleanPowerListFromJsonConditions) and commit (getRuleCostForPower) per D19.
+ * (cleanPowerListFromJsonConditions) and commit (getRuleCostForPower).
  *
  * @return array ['keep' => bool, 'matching_branch' => ?array]
  */
@@ -308,7 +308,7 @@ function findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, 
 
     if ($orBranches !== null){
         if (!is_array($orBranches) || array_keys($orBranches) !== range(0, count($orBranches) - 1)){
-            // D12: OR must be array-of-objects, not single object
+            // OR must be array-of-objects, not single object
             $result['keep'] = false;
             return $result;
         }
@@ -333,8 +333,8 @@ function findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, 
 }
 
 /**
- * Resolve the ressource cost owed at commit time for an unlocked power per D21:
- * walks both the direct-level controller_has_ressource and the matched OR branch
+ * Resolve the ressource cost owed at commit time for an unlocked power: walks
+ * both the direct-level controller_has_ressource and the matched OR branch
  * (via findMatchingBranch). Direct precedence on cross-resource collision +
  * error_log warning. Returns null when no deducting cost applies.
  *
@@ -346,7 +346,7 @@ function getRuleCostForPower($pdo, $power, $controller_id, $worker_id, $turn_num
     if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) return null;
     $rule = $powerConditions[$state_text];
 
-    // D19/D21 — gate via the shared matcher first; no cost if the rule does not pass.
+    // Gate via the shared matcher first; no cost if the rule does not pass.
     $match = findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text);
     if (!$match['keep']) return null;
 
@@ -407,11 +407,10 @@ function buildRuleEvaluationContext($pdo, $controller_id, $worker_id){
 }
 
 /**
- * AND-of-all-keys evaluator per D20. Used for both direct rules and OR branches.
+ * AND-of-all-keys evaluator. Used for both direct rules and OR branches.
  * Fail-closed on unknown keys: a typo like `controller_has_resource` (English
  * single-`s` spelling) would otherwise unlock the power instead of hiding it.
- * When the rule grammar is extended, add the new key here AND lock it in the
- * audit doc.
+ * When the rule grammar is extended, add the new key here.
  */
 function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
     static $ALLOWED_KEYS = [

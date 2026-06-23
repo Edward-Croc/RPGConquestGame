@@ -116,7 +116,7 @@ class TestLinkTableFeature:
             'War Gear', 'Shadow Cloak', 'Combat Vest',
             'Test Gold Cost Explicit', 'Test Gold Cost Default',
             'Test Gold Gate Optout', 'Test OR Zone Or Gold',
-            'Test D21 Direct And OR', 'Test D21 Cross Resource',
+            'Test Direct And OR', 'Test Cross Resource',
             'Test Malformed Amount', 'Test Unknown Rule Key',
         }
         assert transformations == expected, \

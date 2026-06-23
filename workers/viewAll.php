@@ -78,7 +78,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $sortOptionsHtml
         );
 
-        $workersArray = getWorkersBycontroller($gameReady, $controller_id);
+        $workersArray = getWorkersByController($gameReady, $controller_id);
 
         if ( $_SESSION['DEBUG'] == true )
             echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
