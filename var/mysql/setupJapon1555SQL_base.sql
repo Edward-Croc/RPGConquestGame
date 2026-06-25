@@ -309,6 +309,7 @@ INSERT INTO  {prefix}link_power_type ( power_type_id, power_id ) VALUES
     , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Armure en fer de Tosa'))
     , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Thé d’Oboké'))
     , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Encens Coréen'))
+    , ((SELECT ID FROM {prefix}power_types WHERE name = 'Transformation'),(SELECT ID FROM {prefix}powers WHERE name = 'Teppo Européen'))
 ;
 
 UPDATE {prefix}config SET value = '''Sōjutsu (槍術) – Art de la lance (Yari)'', ''Kyūjutsu (弓術) – Art du tir à l’arc'', ''Shodō (書道) – Calligraphie'', ''Kadō / Ikebana (華道 / 生け花) – Art floral'''

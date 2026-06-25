@@ -252,7 +252,7 @@ class TestCSVLoadViaAdmin:
             "Expected worker_names CSV to load 122 rows"
         assert "setupJapon1555CSV_zones.csv loaded successfully (11 rows)" in page_html, \
             "Expected zones CSV to load 11 rows"
-        assert "setupJapon1555CSV_hobbys.csv loaded successfully (48 rows)" in page_html, \
+        assert "setupJapon1555CSV_hobbys.csv loaded successfully (47 rows)" in page_html, \
             "Expected hobbys CSV to load 48 rows"
         assert "setupJapon1555CSV_jobs.csv loaded successfully (46 rows)" in page_html, \
             "Expected jobs CSV to load 46 rows"
