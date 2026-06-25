@@ -89,11 +89,11 @@ class TestLinkTableFeature:
             f"Powers appearing in >1 type dropdown (bad junction): {duplicates}"
 
     def test_hobbys_linked_to_hobby_type(self, page: Page, base_url):
-        """All 13 hobby CSV powers should appear in the Hobby dropdown."""
+        """All 14 hobby CSV powers should appear in the Hobby dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
-        assert len(options_by_type['Hobby']) == 13, \
-            f"Expected 13 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
+        assert len(options_by_type['Hobby']) == 14, \
+            f"Expected 14 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
 
     def test_disciplines_linked_to_discipline_type(self, page: Page, base_url):
         """All discipline CSV powers appear in the Discipline dropdown."""
@@ -127,7 +127,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 4, 'Transformation': 11}
+        expected = {'Hobby': 14, 'Metier': 14, 'Discipline': 4, 'Transformation': 11}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 

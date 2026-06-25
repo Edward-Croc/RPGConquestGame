@@ -12,3 +12,4 @@ name,description,enquete,attack,defence,other,linkTable_power_types__name->link_
 "War Drummer"," combat inspiration",1,2,1,,Metier
 "Common Folk"," untrained civilian",0,0,0,,Metier
 "Test_Job_GoTraitor_Echo"," go_traitor recruitment effect (test data only — secondary controller = Echo)",0,0,0,"{""on_recrutment"":{""action"":{""type"":""go_traitor"",""controller_lastname"":""Echo""}}}",Metier
+"Test_Job_UnlockTurn_2"," metier randomly available only from turn 2",0,0,0,"{""on_random_pick"": {""unlock_turn"": 2}}",Metier
