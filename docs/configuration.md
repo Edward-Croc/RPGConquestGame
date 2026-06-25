@@ -186,6 +186,26 @@ L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obt
 
 La validation au commit (re-vérification de la règle + débit ressource) est gardée par `$_SESSION['is_privileged']`. Le compte admin (`gm`) court-circuite tout : il peut accorder n'importe quelle discipline ou transformation à un agent **sans** vérification et **sans** consommer la moindre ressource. C'est une issue de secours volontaire, dans la même lignée que la création directe d'agents ou la modification d'action via la page d'administration.
 
+### Verrou de tour sur les pouvoirs aléatoires (`on_random_pick.unlock_turn`)
+
+Pour empêcher un Métier ou un Hobby d'apparaître trop tôt dans le tirage aléatoire à la création d'un agent, ajoutez `on_random_pick.unlock_turn` dans le JSON du power :
+
+```json
+{ "on_random_pick": { "unlock_turn": 2 } }
+```
+
+Ici, le power est verrouillé aux tours 0 et 1, puis devient tirable à partir du tour 2. Sans `on_random_pick.unlock_turn`, le power reste tirable dès le début.
+
+Ce verrou concerne seulement le tirage aléatoire des Métiers et Hobbies dans `workers/new.php`. La page admin « Créer agent parfait » garde accès à tous les powers.
+
+La même clé `unlock_turn` peut aussi être utilisée dans les règles `on_age`, `on_transformation` ou `on_recrutment` si un choix manuel doit rester caché avant un certain tour :
+
+```json
+{ "on_age": { "unlock_turn": 5 } }
+```
+
+Vérifiez simplement qu'il reste toujours au moins un Métier et un Hobby tirables à chaque tour atteignable. Si tous les powers d'un type sont verrouillés, le recrutement ne pourra pas proposer de tirage valide.
+
 ## 4. Ressources
 
 Cette section décrit le système économique : coûts d'action, gain forfaitaire de fin de tour, puis gains conditionnels selon l'état du jeu.
