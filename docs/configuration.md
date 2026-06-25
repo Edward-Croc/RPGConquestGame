@@ -158,7 +158,7 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 
 - **`age`** (int) — l'agent doit avoir au moins cet âge.
 - **`worker_is_alive`** (`"0"` ou `"1"`) — `1` exige une action active (move, attack, claim, gift, …), `0` exige une action inactive (passive, hide, dead, …).
-- **`turn`** (int) — disponible **à partir** de ce tour (porte « aube », pas « crépuscule »).
+- **`unlock_turn`** (int) — disponible **à partir** de ce tour inclus (ex. `5` masque le power aux tours 0 à 4, puis l'affiche dès le tour 5).
 - **`controller_faction`** (string) — nom exact de la faction du contrôleur.
 - **`controller_has_zone`** (string) — nom de zone que le contrôleur réclame ou détient (claim OR holder).
 - **`worker_in_zone`** (string) — nom de zone où l'agent se trouve actuellement.
@@ -243,7 +243,19 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 
 - **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
 - **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
+- **`unlock_turn`** (int, optionnel) — la règle ne produit rien avant ce tour inclus. Exemple : `1` masque le gain au tour 0, puis l'active dès le tour 1. Sans cette clé, la règle est active dès le début.
 - **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
+
+**Exemple avec verrou de tour :**
+
+```json
+{
+    "amount": 2,
+    "timing": "before_claim",
+    "unlock_turn": 1,
+    "condition": {"type": "holds_zone", "zone_name": "Côte Est d’Awa"}
+}
+```
 
 **Types de condition implémentés :**
 
