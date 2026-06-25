@@ -40,6 +40,14 @@ def _db_conn():
     )
 
 
+def _current_turn():
+    conn = _db_conn(); cur = conn.cursor()
+    cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    return int(row['turncounter'])
+
+
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
@@ -559,4 +567,98 @@ class TestRessourceGainNegativeAmountPenalty:
         assert self._post_amount == self._rule_amount, (
             f"Expected post-EOT Gold = {self._rule_amount} (penalty "
             f"semantics, amount < 0); got {self._post_amount}"
+        )
+
+
+class TestRessourceGainUnlockTurnSkipsBeforeThreshold:
+    """`unlock_turn > current_turn` must suppress the rule at end-of-turn.
+    Order-independent: read turncounter at fixture time and set
+    unlock_turn = current_turn + 1 so the rule is locked at THIS EOT."""
+
+    _rule_amount = 50
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
+        locked_unlock_turn = _current_turn() + 1
+
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        _ui_set_zone_holder(page, zone_id, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "unlock_turn": locked_unlock_turn,
+            "condition": {"type": "holds_zone", "zone_id": int(zone_id)},
+        }]))
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        _ui_set_zone_holder(page, zone_id, None)
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_gold_does_not_gain_when_unlock_turn_above_current(self):
+        assert self._post_amount == 0, (
+            f"unlock_turn = current_turn + 1 must suppress the rule; "
+            f"expected Gold=0, got {self._post_amount}"
+        )
+
+
+class TestRessourceGainUnlockTurnFiresAtThreshold:
+    """`unlock_turn == current_turn` must fire (inclusive lower boundary —
+    `value > turn` is false when equal). Order-independent: read
+    turncounter at fixture time and set unlock_turn = current_turn."""
+
+    _rule_amount = 50
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gain_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        alpha_id = _ui_resolve_controller_id(page, "Alpha")
+        gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
+        alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
+        zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
+        threshold_unlock_turn = _current_turn()
+
+        _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
+        _ui_set_zone_holder(page, zone_id, alpha_id)
+        _ui_set_gain_rules(page, gold_config_id, json.dumps([{
+            "amount": self._rule_amount,
+            "timing": "after_claim",
+            "unlock_turn": threshold_unlock_turn,
+            "condition": {"type": "holds_zone", "zone_id": int(zone_id)},
+        }]))
+
+        end_turn(page, PHP_BASE_URL)
+        post_amount = _ui_read_amount(page, alpha_id, "Gold")
+
+        _ui_set_gain_rules(page, gold_config_id, None)
+        _ui_set_zone_holder(page, zone_id, None)
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        type(self)._post_amount = post_amount
+        yield
+
+    def test_alpha_gold_gains_when_unlock_turn_equals_current(self):
+        assert self._post_amount == self._rule_amount, (
+            f"unlock_turn == current_turn must fire (inclusive boundary); "
+            f"expected Gold={self._rule_amount}, got {self._post_amount}"
         )

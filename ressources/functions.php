@@ -361,6 +361,9 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
     $estimate = [];
     $zoneTypeLabel = getConfig($pdo, 'textForZoneType') ?: 'zone';
 
+    $mechanics = getMechanics($pdo);
+    $currentTurn = (int)($mechanics['turncounter'] ?? 0);
+
     try {
         $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
             FROM {$prefix}ressources_config
@@ -383,6 +386,7 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
             if (!isset($rule['amount']) || !is_numeric($rule['amount'])) continue;
             if (!isset($rule['timing']) || !in_array($rule['timing'], ['before_claim', 'after_claim'], true)) continue;
             if (!isset($rule['condition']['type'])) continue;
+            if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) continue;
 
             $matches = ressourceGainEvaluateCondition($pdo, $rule['condition']);
             $count = 0;
