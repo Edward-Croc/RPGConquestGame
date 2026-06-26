@@ -760,10 +760,10 @@ class TestPowerEquipped:
 class TestJapon1555TransformationGate:
     """Conditional-transformation regression test on Japon1555CSV.
 
-    Japon1555 transformations gate by controller_has_zone:
-      - 'Armure en fer de Tosa' requires 'Cap sud de Tosa'
+    Japon1555 transformations gate by controller_has_zone (OR pay ressource):
+      - 'Armure en fer de Kubokawa' requires 'Cap sud de Tosa'
         → owned by Chōsokabe in setupJapon1555CSV_zones.csv
-      - 'Cheval Sanuki' requires 'Province de Sanuki'
+      - 'Cheval de Takamatsu' requires 'Province de Sanuki'
         → owned by Hosokawa
       - 'Thé d'Oboké' and 'Encens Coréen' require unclaimed zones
 
@@ -775,8 +775,8 @@ class TestJapon1555TransformationGate:
     aren't in faction_powers so the SELECT returned empty)."""
 
     CONTROLLER_TRANSFORMATIONS = {
-        "Chōsokabe (長宗我部)": "Armure en fer de Tosa",
-        "Hosokawa (細川)":      "Cheval Sanuki",
+        "Chōsokabe (長宗我部)": "Armure en fer de Kubokawa",
+        "Hosokawa (細川)":      "Cheval de Takamatsu",
     }
 
     @pytest.fixture(scope="class", autouse=True)
@@ -818,8 +818,8 @@ class TestJapon1555TransformationGate:
             )
 
     def test_each_worker_gets_qualifying_transformation(self):
-        """Chōsokabe → Armure en fer de Tosa (owns Cap sud de Tosa).
-        Hosokawa → Cheval Sanuki (owns Province de Sanuki).
+        """Chōsokabe → Armure en fer de Kubokawa (owns Cap sud de Tosa).
+        Hosokawa → Cheval de Takamatsu (owns Province de Sanuki).
         Per-worker assertion to catch any partial regression."""
         for lastname, expected in self.CONTROLLER_TRANSFORMATIONS.items():
             for entry in self._per_worker[lastname]:

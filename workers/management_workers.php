@@ -63,7 +63,7 @@ require_once '../base/baseHTML.php';
             $worker['firstname']." ".$worker['lastname'],
             $worker['zone_name'],
             sprintf('<strong>%s, %s/%s</strong>', $worker['total_enquete'], $worker['total_attack'], $worker['total_defence']),
-            $worker['powers']['Metier']['texte'] . ' ' . $worker['powers']['Hobby']['texte'],
+            ($worker['powers']['Metier']['texte'] ?? '') . ' ' . ($worker['powers']['Hobby']['texte'] ?? ''),
             $worker['powers']['Discipline']['texte'] ?? '',
             $worker['powers']['Transformation']['texte'] ?? '',
             showDisciplineSelect($gameReady, $powerDisciplineArray, true),
