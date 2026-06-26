@@ -771,6 +771,7 @@ function gameReady() {
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
+                        'ai_controller_params' => ['controllers__lastname->controller_id', 'target_zone_ids', 'destroy_location_ids', 'repair_location_ids', 'ai_budget_by_state', 'ai_strike_margin_percent', 'ai_location_attack_cap', 'ai_power_priority_list', 'ai_claim_priority_by_yield', 'objectives_json'],
                         'config' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
@@ -797,7 +798,7 @@ function gameReady() {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
                             
-                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'config', 'zones'])) {
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'ai_controller_params', 'worker_origins', 'worker_names', 'config', 'zones'])) {
                                 loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } else {
                                 // For base and zones, they contain complex SQL with subqueries

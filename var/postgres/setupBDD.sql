@@ -74,6 +74,24 @@ CREATE TABLE {prefix}player_controller (
 CREATE INDEX idx_player_controller_controller_id ON {prefix}player_controller (controller_id);
 CREATE INDEX idx_player_controller_player_id ON {prefix}player_controller (player_id);
 
+-- Per-controller AI invariants and override params (1:1 with controllers).
+-- NULL override columns fall back to the global config table.
+CREATE TABLE {prefix}ai_controller_params (
+    controller_id INT PRIMARY KEY,
+    target_zone_ids JSON DEFAULT NULL,
+    destroy_location_ids JSON DEFAULT NULL,
+    repair_location_ids JSON DEFAULT NULL,
+    ai_budget_by_state JSON DEFAULT NULL,
+    ai_strike_margin_percent INT DEFAULT NULL,
+    ai_location_attack_cap INT DEFAULT NULL,
+    ai_power_priority_list TEXT DEFAULT NULL,
+    ai_claim_priority_by_yield BOOLEAN DEFAULT NULL,
+    objectives_json JSON DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id)
+);
+
 -- Create the zones and locations
 CREATE TABLE {prefix}zones (
     id SERIAL PRIMARY KEY,

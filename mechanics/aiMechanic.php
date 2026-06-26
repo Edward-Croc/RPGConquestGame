@@ -14,3 +14,4 @@ require_once __DIR__ . '/ia/aiTargets.php';
 require_once __DIR__ . '/ia/aiBudget.php';
 require_once __DIR__ . '/ia/aiTerritory.php';
 require_once __DIR__ . '/ia/aiIntel.php';
+require_once __DIR__ . '/ia/aiParams.php';
