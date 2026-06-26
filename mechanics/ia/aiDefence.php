@@ -22,7 +22,7 @@ function aiRebuildOwnedLocations($pdo, $c) {
             continue;
         }
         $activate_json = json_decode($location['activate_json'], true);
-        spendRessourcesToRepairLocation($pdo, $c['id']);
+        if (!spendRessourcesToRepairLocation($pdo, $c['id'])) continue;
         updateLocation($pdo, $location, $activate_json);
     }
 }

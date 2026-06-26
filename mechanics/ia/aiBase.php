@@ -6,7 +6,6 @@
  */
 function aiEnsureBase($pdo, $c) {
     if (empty($c['can_build_base'])) return;
-    if (!hasEnoughRessourcesToBuildBase($pdo, $c['id'])) return;
 
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
@@ -34,7 +33,11 @@ function aiEnsureBase($pdo, $c) {
             $zone = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($zone) $zoneId = (int)$zone['id'];
         }
-        if ($zoneId !== null) createBase($pdo, $c['id'], $zoneId);
+        if ($zoneId !== null) {
+            if (!hasEnoughRessourcesToBuildBase($pdo, $c['id'])) return;
+            $ok = createBase($pdo, $c['id'], $zoneId);
+            if (!$ok) return;
+        }
     } catch (PDOException $e) {
         echo __FUNCTION__."(): failed: ".$e->getMessage()."<br />";
     }
@@ -79,7 +82,6 @@ function aiBaseOrLocationAttackedThisTurn($pdo, $controller_id, $turn_number) {
 function aiRelocateBase($pdo, $c) {
     if (aiBaseZone($pdo, $c['id']) !== null) return null;
     if (empty($c['can_build_base'])) return null;
-    if (!hasEnoughRessourcesToBuildBase($pdo, $c['id'])) return null;
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $zoneId = null;
@@ -105,7 +107,8 @@ function aiRelocateBase($pdo, $c) {
         }
     }
     if ($zoneId === null) return null;
+    if (!hasEnoughRessourcesToBuildBase($pdo, $c['id'])) return null;
 
-    createBase($pdo, $c['id'], $zoneId);
-    return $zoneId;
+    $ok = createBase($pdo, $c['id'], $zoneId);
+    return $ok ? $zoneId : null;
 }
