@@ -4,14 +4,15 @@ require_once __DIR__ . '/aiBase.php';
 require_once __DIR__ . '/aiState.php';
 require_once __DIR__ . '/aiBehaviour.php';
 require_once __DIR__ . '/aiDefence.php';
+require_once __DIR__ . '/aiParams.php';
 
 /**
  * AI mechanic — invoked as a phase of mechanics/endTurn.php.
  *
- * Iterates every controller with ia_type IN ('passive','searching',
- * 'aggressive','violent') in controllers.id ASC. For each: ensures a
- * base exists (universal pre-step, resource-gated), computes the state
- * transition, then dispatches per-state behaviour.
+ * Iterates every controller with is_ia=TRUE and a current_state in
+ * ('passive','searching','aggressive','violent') in controllers.id ASC.
+ * For each: ensures a base exists (universal pre-step, resource-gated),
+ * computes the state transition, then dispatches per-state behaviour.
  *
  * State transitions:
  *   passive    → searching   if any own worker died or was captured this turn
@@ -26,10 +27,12 @@ function aiMechanic($pdo, $mechanics) {
 
     try {
         $stmt = $pdo->prepare(
-            "SELECT * FROM {$prefix}controllers
-             WHERE is_ia = TRUE
-               AND ia_type IN ('passive','searching','aggressive','violent')
-             ORDER BY id ASC"
+            "SELECT c.*, acp.current_state AS ia_type
+             FROM {$prefix}controllers c
+             JOIN {$prefix}ai_controller_params acp ON acp.controller_id = c.id
+             WHERE c.is_ia = TRUE
+               AND acp.current_state IN ('passive','searching','aggressive','violent')
+             ORDER BY c.id ASC"
         );
         $stmt->execute();
         $aiControllers = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -222,10 +222,12 @@ function destroyAllTables($pdo) {
                 'power_types',
                 'powers',
                 'player_controller',
+                'ai_controller_relations',
+                'ai_controller_params',
                 'artefacts',
                 'locations',
                 'zones',
-                'controllers', 
+                'controllers',
                 'factions',
                 'players',
                 'mechanics',
@@ -764,14 +766,15 @@ function gameReady() {
                         'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
                         'players' => ['username', 'passwd', 'is_privileged'],
-                        'controllers' => ['firstname', 'lastname', 'ia_type', 'is_ia', 'zones__name->origin_zone_id', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
+                        'controllers' => ['firstname', 'lastname', 'is_ia', 'zones__name->origin_zone_id', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules', 'hide_when_zero'],
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
-                        'ai_controller_params' => ['controllers__lastname->controller_id', 'target_zone_ids', 'destroy_location_ids', 'repair_location_ids', 'ai_budget_by_state', 'ai_strike_margin_percent', 'ai_location_attack_cap', 'ai_power_priority_list', 'ai_claim_priority_by_yield', 'objectives_json'],
+                        'ai_controller_params' => ['controllers__lastname->controller_id', 'current_state', 'expansionism', 'worker_violence', 'target_zone_ids', 'destroy_location_ids', 'repair_location_ids', 'ai_budget_by_state', 'ai_strike_margin_percent', 'ai_location_attack_cap', 'ai_power_priority_list', 'ai_claim_priority_by_yield', 'objectives_json'],
+                        'ai_controller_relations' => ['controllers__lastname->controller_id', 'controllers__lastname->target_controller_id', 'disposition'],
                         'config' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
@@ -798,7 +801,7 @@ function gameReady() {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
                             
-                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'ai_controller_params', 'worker_origins', 'worker_names', 'config', 'zones'])) {
+                            if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'ai_controller_params', 'ai_controller_relations', 'worker_origins', 'worker_names', 'config', 'zones'])) {
                                 loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } else {
                                 // For base and zones, they contain complex SQL with subqueries

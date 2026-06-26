@@ -23,10 +23,12 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
     try{
         $sql = "SELECT c.*,
             f.name AS faction_name,
-            ff.name AS fake_faction_name
+            ff.name AS fake_faction_name,
+            acp.current_state AS ia_type
             FROM {$prefix}controllers c
             LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
-            LEFT JOIN {$prefix}factions ff ON c.fake_faction_id = ff.ID";
+            LEFT JOIN {$prefix}factions ff ON c.fake_faction_id = ff.ID
+            LEFT JOIN {$prefix}ai_controller_params acp ON acp.controller_id = c.id";
         $hasWhere = false;
         if ($player_id !== NULL){
             $sql .= "

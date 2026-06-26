@@ -1,6 +1,8 @@
 <?php
 // Ressource budgeting scope: offence / defence / reserve buckets per state
 
+require_once __DIR__ . '/aiParams.php';
+
 function aiBudget($pdo, $c, $turn_number) {
     $defaultJson = '{"passive":[0,70,30],"searching":[20,50,30],"aggressive":[60,30,10],"violent":[80,10,10]}';
     $raw = getConfig($pdo, 'aiBudgetByState');
@@ -11,7 +13,7 @@ function aiBudget($pdo, $c, $turn_number) {
     if (!is_array($map)) {
         $map = json_decode($defaultJson, true);
     }
-    $state = isset($c['ia_type']) ? $c['ia_type'] : 'passive';
+    $state = $c['ia_type'] ?? aiCurrentState($pdo, (int) $c['id']);
     $ratios = isset($map[$state]) && is_array($map[$state]) ? $map[$state] : $map['passive'];
     $offencePct = isset($ratios[0]) ? (int)$ratios[0] : 0;
     $defencePct = isset($ratios[1]) ? (int)$ratios[1] : 0;

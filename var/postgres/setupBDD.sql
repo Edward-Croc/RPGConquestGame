@@ -52,7 +52,6 @@ CREATE TABLE {prefix}controllers (
     recruited_workers INT DEFAULT 0,
     turn_recruited_workers INT DEFAULT 0,
     turn_firstcome_workers INT DEFAULT 0,
-    ia_type text DEFAULT '',
     is_ia BOOLEAN DEFAULT FALSE,
     origin_zone_id INT, -- AI anchor zone: home / start / fallback location
     faction_id INT NOT NULL,
@@ -78,6 +77,9 @@ CREATE INDEX idx_player_controller_player_id ON {prefix}player_controller (playe
 -- NULL override columns fall back to the global config table.
 CREATE TABLE {prefix}ai_controller_params (
     controller_id INT PRIMARY KEY,
+    current_state TEXT DEFAULT NULL,
+    expansionism TEXT DEFAULT NULL,
+    worker_violence TEXT DEFAULT NULL,
     target_zone_ids JSON DEFAULT NULL,
     destroy_location_ids JSON DEFAULT NULL,
     repair_location_ids JSON DEFAULT NULL,
@@ -90,6 +92,16 @@ CREATE TABLE {prefix}ai_controller_params (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id)
+);
+
+-- Per-pair AI disposition (asymmetric, no auto-seed from factions).
+CREATE TABLE {prefix}ai_controller_relations (
+    controller_id INT NOT NULL,
+    target_controller_id INT NOT NULL,
+    disposition TEXT NOT NULL,
+    PRIMARY KEY (controller_id, target_controller_id),
+    FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id),
+    FOREIGN KEY (target_controller_id) REFERENCES {prefix}controllers (id)
 );
 
 -- Create the zones and locations

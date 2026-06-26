@@ -1,0 +1,12 @@
+controllers__lastname->controller_id,current_state,expansionism,worker_violence,target_zone_ids,destroy_location_ids,repair_location_ids,ai_budget_by_state,ai_strike_margin_percent,ai_location_attack_cap,ai_power_priority_list,ai_claim_priority_by_yield,objectives_json
+Shikoku (四国),passive,,,,,,,,,,,
+Ashikaga (足利),passive,,,,,,,,,,,
+Kōno (河野),searching,,,,,,,,,,,
+Chōsokabe (長宗我部),searching,,,,,,,,,,,
+Hosokawa (細川),searching,,,,,,,,,,,
+Miyoshi (三好),searching,,,,,,,,,,,
+Jōdo-shinshū (浄土真宗),aggressive,,,,,,,,,,,
+Tendai (天台宗),passive,,,,,,,,,,,
+Wako (和光),aggressive,,,,,,,,,,,
+Sogō (十河),violent,,,,,,,,,,,
+Takeda (武田),violent,,,,,,,,,,,

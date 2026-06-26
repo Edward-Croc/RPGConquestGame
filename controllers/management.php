@@ -163,7 +163,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 c.lastname,
                 c.can_build_base,
                 c.secret_controller,
-                c.ia_type,
+                acp.current_state AS ia_type,
                 c.is_ia,
                 c.origin_zone_id,
                 z.name AS origin_zone_name,
@@ -172,6 +172,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 c.turn_firstcome_workers
             FROM {$prefix}controllers c
             LEFT JOIN {$prefix}zones z ON z.id = c.origin_zone_id
+            LEFT JOIN {$prefix}ai_controller_params acp ON acp.controller_id = c.id
             ORDER BY c.lastname
         ")->fetchAll(PDO::FETCH_ASSOC);
 
