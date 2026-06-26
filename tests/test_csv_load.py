@@ -239,7 +239,7 @@ class TestLoadCSVFile:
             conn, csv_file, "powers",
             ["name", "description", "enquete", "attack", "defence", "other"]
         )
-        assert count == 13
+        assert count == 14
         assert len(warnings) == 0
 
         cursor = conn.cursor()

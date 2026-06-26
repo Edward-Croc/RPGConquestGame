@@ -158,7 +158,7 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 
 - **`age`** (int) — l'agent doit avoir au moins cet âge.
 - **`worker_is_alive`** (`"0"` ou `"1"`) — `1` exige une action active (move, attack, claim, gift, …), `0` exige une action inactive (passive, hide, dead, …).
-- **`turn`** (int) — disponible **à partir** de ce tour (porte « aube », pas « crépuscule »).
+- **`unlock_turn`** (int) — disponible **à partir** de ce tour inclus (ex. `5` masque le power aux tours 0 à 4, puis l'affiche dès le tour 5).
 - **`controller_faction`** (string) — nom exact de la faction du contrôleur.
 - **`controller_has_zone`** (string) — nom de zone que le contrôleur réclame ou détient (claim OR holder).
 - **`worker_in_zone`** (string) — nom de zone où l'agent se trouve actuellement.
@@ -185,6 +185,26 @@ L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obt
 **Chemin admin / gm :**
 
 La validation au commit (re-vérification de la règle + débit ressource) est gardée par `$_SESSION['is_privileged']`. Le compte admin (`gm`) court-circuite tout : il peut accorder n'importe quelle discipline ou transformation à un agent **sans** vérification et **sans** consommer la moindre ressource. C'est une issue de secours volontaire, dans la même lignée que la création directe d'agents ou la modification d'action via la page d'administration.
+
+### Verrou de tour sur les pouvoirs aléatoires (`on_random_pick.unlock_turn`)
+
+Pour empêcher un Métier ou un Hobby d'apparaître trop tôt dans le tirage aléatoire à la création d'un agent, ajoutez `on_random_pick.unlock_turn` dans le JSON du power :
+
+```json
+{ "on_random_pick": { "unlock_turn": 2 } }
+```
+
+Ici, le power est verrouillé aux tours 0 et 1, puis devient tirable à partir du tour 2. Sans `on_random_pick.unlock_turn`, le power reste tirable dès le début.
+
+Ce verrou concerne seulement le tirage aléatoire des Métiers et Hobbies dans `workers/new.php`. La page admin « Créer agent parfait » garde accès à tous les powers.
+
+La même clé `unlock_turn` peut aussi être utilisée dans les règles `on_age`, `on_transformation` ou `on_recrutment` si un choix manuel doit rester caché avant un certain tour :
+
+```json
+{ "on_age": { "unlock_turn": 5 } }
+```
+
+Vérifiez simplement qu'il reste toujours au moins un Métier et un Hobby tirables à chaque tour atteignable. Si tous les powers d'un type sont verrouillés, le recrutement ne pourra pas proposer de tirage valide.
 
 ## 4. Ressources
 
@@ -223,7 +243,19 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 
 - **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
 - **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
+- **`unlock_turn`** (int, optionnel) — la règle ne produit rien avant ce tour inclus. Exemple : `1` masque le gain au tour 0, puis l'active dès le tour 1. Sans cette clé, la règle est active dès le début.
 - **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
+
+**Exemple avec verrou de tour :**
+
+```json
+{
+    "amount": 2,
+    "timing": "before_claim",
+    "unlock_turn": 1,
+    "condition": {"type": "holds_zone", "zone_name": "Côte Est d’Awa"}
+}
+```
 
 **Types de condition implémentés :**
 

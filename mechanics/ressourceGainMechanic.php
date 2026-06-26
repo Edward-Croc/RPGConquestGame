@@ -22,6 +22,9 @@ function ressourceGainMechanic($pdo, $timing) {
     $hasErrors = false;
     echo "<div><h3>ressourceGainMechanic : timing '".htmlspecialchars($timing)."'</h3>";
 
+    $mechanics = getMechanics($pdo);
+    $currentTurn = (int)($mechanics['turncounter'] ?? 0);
+
     // Get the list of ressources
     try {
         $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
@@ -48,6 +51,7 @@ function ressourceGainMechanic($pdo, $timing) {
         foreach ($rules as $rule) {
             // Check if rule is correctly written
             if (!ressourceGainRuleIsValid($rule, $timing)) continue;
+            if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) continue;
             $multiplier = (int)$rule['amount'];
             if ($multiplier === 0) continue;
 
@@ -101,6 +105,7 @@ function ressourceGainRuleIsValid($rule, $timing) {
     if (!isset($rule['timing']) || $rule['timing'] !== $timing) return false;
     if (!isset($rule['condition']['type'])) return false;
     if (!in_array($rule['condition']['type'], RESSOURCE_GAIN_CONDITION_TYPES, true)) return false;
+    if (isset($rule['unlock_turn']) && (!is_numeric($rule['unlock_turn']) || (int)$rule['unlock_turn'] < 0)) return false;
     return true;
 }
 

@@ -95,20 +95,36 @@ function randomPowersByType($pdo, $type, $newWorker) {
 
     $power_text = getSQLPowerText(false);
     $randCommand = 'RANDOM()';
-    if ($_SESSION['DBTYPE'] == 'mysql')
+    $unlockTurnExpr = "p.other->'on_random_pick'->>'unlock_turn'";
+    $unlockTurnCast = "({$unlockTurnExpr})::INT";
+    if ($_SESSION['DBTYPE'] == 'mysql') {
         $randCommand = 'RAND()';
+        $unlockTurnExpr = "JSON_UNQUOTE(JSON_EXTRACT(p.other, '$.on_random_pick.unlock_turn'))";
+        $unlockTurnCast = "CAST({$unlockTurnExpr} AS SIGNED)";
+    }
+    $mechanics = getMechanics($pdo);
+    $turn_number = (int)($mechanics['turncounter'] ?? 0);
+
+    // Skip rows whose on_random_pick.unlock_turn > current turn.
+    $unlockTurnFilter = sprintf(
+        "AND (%s IS NULL OR %s <= :turn)",
+        $unlockTurnExpr,
+        $unlockTurnCast
+    );
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         // Get x random values from powers for a power_type
         $sql = sprintf("SELECT p.*, %s FROM {$prefix}powers AS p
             INNER JOIN {$prefix}link_power_type lpt ON lpt.power_id = p.id
-            WHERE lpt.power_type_id = %s ORDER BY %s LIMIT 1",
+            WHERE lpt.power_type_id = %s %s ORDER BY %s LIMIT 1",
             $power_text,
             $type,
+            $unlockTurnFilter,
             $randCommand
         );
         $stmt = $pdo->prepare($sql);
-        $stmt->execute();
+        $stmt->execute([':turn' => $turn_number]);
     } catch (PDOException $e) {
         echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
         return NULL;
@@ -118,7 +134,7 @@ function randomPowersByType($pdo, $type, $newWorker) {
     $powerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $newWorker['power_'.$type] = $powerArray[0];
-    
+
     return $newWorker;
 }
 
@@ -414,7 +430,7 @@ function buildRuleEvaluationContext($pdo, $controller_id, $worker_id){
  */
 function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
     static $ALLOWED_KEYS = [
-        'age', 'worker_is_alive', 'turn', 'controller_faction',
+        'age', 'worker_is_alive', 'unlock_turn', 'controller_faction',
         'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
     ];
     $worker = $context['worker'];
@@ -440,7 +456,7 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
                 if ($is_alive !== $should_be_alive) return false;
             }
         }
-        elseif ($key === 'turn'){
+        elseif ($key === 'unlock_turn'){
             if ((int)$value > (int)$turn_number) return false;
         }
         elseif ($key === 'controller_faction'){
