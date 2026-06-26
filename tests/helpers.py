@@ -174,21 +174,48 @@ def end_turn(page: Page, base_url: str = None):
     assert "Stack trace" not in html, "Uncaught exception trace during end turn"
 
 
+_current_scenario = None  # tracked by load_scenario_via_admin; consulted by ensure_scenario_loaded
+
+
 def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     """Login as gm in a fresh context and load the named scenario via admin.php.
 
     Uses its own browser context so it does not disturb the caller's page.
+    Registers a PHP-error listener on the load page and raises if anything
+    surfaced during scenario load.
     """
+    global _current_scenario
     context = browser.new_context()
     page = context.new_page()
+    register_php_error_listener(page)
     login_as(page, base_url, "gm", "orga")
     safe_goto(page, f"{base_url}/base/admin.php")
     _wait_loaded(page, "select[name='config_name']")
     page.locator("select[name='config_name']").select_option(scenario_name)
-    page.locator("input[name='submit'][value='Submit']").click()
+    page.locator("input[type='submit'][value='Submit']").click()
+    if page.locator("#confirmModalYes").is_visible():
+        # destroyAllTables + gameReady + CSV load can take 30-60s on slower
+        # boxes (Playwright's default click timeout is 30s — too tight).
+        page.locator("#confirmModalYes").click(timeout=120000)
     page.wait_for_timeout(5000)
     page.wait_for_load_state("load", timeout=120000)
+    assert_no_collected_php_errors(page)
     context.close()
+    _current_scenario = scenario_name
+
+
+def ensure_scenario_loaded(browser, base_url: str, scenario_name: str):
+    """Load the named scenario only if it is not already the most recently
+    loaded one. Returns True if a load happened, False if it was skipped.
+
+    Intended for groups of files that share a TestConfig baseline and want
+    to skip the ~60s admin reset when pytest happens to run them
+    consecutively. Falls back to a full load if any other scenario has
+    been loaded since (mid-suite drift / first call of the session)."""
+    if _current_scenario == scenario_name:
+        return False
+    load_scenario_via_admin(browser, base_url, scenario_name)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +243,24 @@ def ui_controller_id(page: Page, lastname: str, base_url: str = None):
     raise AssertionError(
         f"Controller with lastname '{lastname}' not found in controllerSelect"
     )
+
+
+def ui_controller_ids_map(page: Page, base_url: str = None):
+    """Return {lastname: id} for every controller in accueil's controllerSelect.
+
+    Splits the display text on whitespace and takes the last token as the
+    lastname (e.g. 'Lord Alpha' -> 'Alpha'). One DOM round-trip; useful when
+    a fixture needs to resolve several controllers up front."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/base/accueil.php")
+    _wait_loaded(page, "select#controllerSelect")
+    result = {}
+    for opt in page.locator("select#controllerSelect option").all():
+        val = opt.get_attribute("value") or ""
+        text = (opt.inner_text() or "").strip()
+        if val and text:
+            result[text.split()[-1]] = int(val)
+    return result
 
 
 def ui_all_workers(page: Page, base_url: str = None):
@@ -933,6 +978,49 @@ def ui_mass_move_click(page: Page, controller_lastname: str,
     page.locator("select[name='zone_id']").select_option(value=str(target_zid))
     page.locator("input[name='mass_move']").click()
     page.wait_for_load_state("load")
+
+
+def _ui_mass_zoneless_action_click(page: Page, controller_lastname: str,
+                                   worker_lastnames: list, action: str,
+                                   base_url: str = None):
+    """Shared driver for the parameter-free mass actions (investigate, passive, hide).
+    Same pre-resolve-then-click pattern as ui_mass_move_click, minus the zone select."""
+    if action not in ('investigate', 'passive', 'hide'):
+        raise ValueError(f"unsupported mass action: {action}")
+    submit_name = f"mass_{action}"
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    cid = ui_controller_id(page, controller_lastname, base_url=url)
+    worker_ids = [_cached_wid(page, ln, base_url) for ln in worker_lastnames]
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    safe_goto(page, f"{url}/workers/viewAll.php")
+    _wait_loaded(page, f"input[name='{submit_name}']")
+    for wid in worker_ids:
+        page.locator(f"input[name='worker_ids[]'][value='{wid}']").check()
+    page.locator(f"input[name='{submit_name}']").click()
+    page.wait_for_load_state("load")
+
+
+def ui_mass_investigate_click(page: Page, controller_lastname: str,
+                              worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Investigate form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'investigate', base_url)
+
+
+def ui_mass_passive_click(page: Page, controller_lastname: str,
+                          worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Passive form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'passive', base_url)
+
+
+def ui_mass_hide_click(page: Page, controller_lastname: str,
+                       worker_lastnames: list, base_url: str = None):
+    """UI-button-click for the Mass Hide form on workers/viewAll.php."""
+    _ui_mass_zoneless_action_click(page, controller_lastname, worker_lastnames,
+                                   'hide', base_url)
 
 
 def ui_claim(page: Page, lastname: str, claim_controller_lastname: str,

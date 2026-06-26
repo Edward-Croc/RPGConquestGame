@@ -14,6 +14,14 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
     if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
 
+    $validSorts = ['age','zone','investigate','attack'];
+    if (in_array($_GET['sort'] ?? '', $validSorts, true)) {
+        $sort = $_GET['sort'];
+        $_SESSION['workers_view_sort'] = $sort;
+    } else {
+        $sort = $_SESSION['workers_view_sort'] ?? 'age';
+    }
+
     echo "<div class='section workers'>";
         $recruitButton = "";
         if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
@@ -42,7 +50,35 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
             $recruitButton
         );
 
-        $workersArray = getWorkersBycontroller($gameReady, $controller_id);
+        $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
+        $sortOptionsHtml = '';
+        foreach ($sortLabels as $value => $label) {
+            $sortOptionsHtml .= sprintf(
+                '<option value="%s"%s>%s</option>',
+                $value,
+                ($sort === $value) ? ' selected' : '',
+                $label
+            );
+        }
+        echo sprintf("
+            <form action='/%s/workers/viewAll.php' method='GET' class='box mb-5'>
+                <h3 class='title is-4'>Tri :</h3>
+                <div class='field is-grouped is-grouped-multiline'>
+                    <div class='control'>
+                        <div class='select'>
+                            <select name='sort'>%s</select>
+                        </div>
+                    </div>
+                    <div class='control'>
+                        <input type='submit' value='Trier' class='button is-link'>
+                    </div>
+                </div>
+            </form>",
+            $_SESSION['FOLDER'],
+            $sortOptionsHtml
+        );
+
+        $workersArray = getWorkersByController($gameReady, $controller_id);
 
         if ( $_SESSION['DEBUG'] == true )
             echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
@@ -84,6 +120,12 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 )
                     $deadWorkerArray[] = $worker;
             }
+
+            sortWorkerBuckets($liveWorkerArray, $sort);
+            sortWorkerBuckets($doubleAgentWorkerArray, $sort);
+            sortWorkerBuckets($prisonersWorkerArray, $sort);
+            sortWorkerBuckets($deadWorkerArray, $sort);
+
             if (!empty($liveWorkerArray)) {
                 echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
                 // Mass worker action form
@@ -91,16 +133,27 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 foreach ($liveWorkerArray as $worker) {
                     echo $worker['view'];
                 }
-                // Mass worker action
-                // Mass move to zone
-                    // Zone select
-                    echo '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">';
-                    echo showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true);
-                    echo " <div class='control'> <input type='submit' name='mass_move' value='Déplacer les agents sélectionnés' class='button is-warning mb-2 ml-2'></div>";
-                    echo "</div>";
-                    // Submit button
-                echo "</form>";
-                echo "</div>";
+                echo sprintf('
+                <div class="control"><strong>Zone cible (pour déplacement uniquement) :</strong></div>
+                <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                    %s
+                    <div class="control"> 
+                        <input type="submit" name="mass_move" value="Déplacer les agents sélectionnés" class="button is-warning">
+                    </div>
+                </div>
+                <div class="control"><strong>Mettre en place l\'action suivante sur les agents sélectionnés :</strong></div>
+                <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                    <div class="control"> 
+                        <input type="submit" name="mass_investigate" value="%3$s" class="button is-info">
+                        <input type="submit" name="mass_passive" value="%2$s" class="button is-warning">
+                        <input type="submit" name="mass_hide" value="%4$s" class="button is-danger">
+                </div></div>', 
+                showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true), // %1$s
+                ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %2$s
+                ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %3$s
+                ucfirst(getConfig($gameReady, 'txt_inf_hide')) // %4$s
+                );
+                echo "</form></div>";
             }
 
             if ( !empty($doubleAgentWorkerArray )) {

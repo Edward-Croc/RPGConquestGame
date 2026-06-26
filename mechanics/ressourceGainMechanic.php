@@ -22,6 +22,9 @@ function ressourceGainMechanic($pdo, $timing) {
     $hasErrors = false;
     echo "<div><h3>ressourceGainMechanic : timing '".htmlspecialchars($timing)."'</h3>";
 
+    $mechanics = getMechanics($pdo);
+    $currentTurn = (int)($mechanics['turncounter'] ?? 0);
+
     // Get the list of ressources
     try {
         $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
@@ -48,6 +51,7 @@ function ressourceGainMechanic($pdo, $timing) {
         foreach ($rules as $rule) {
             // Check if rule is correctly written
             if (!ressourceGainRuleIsValid($rule, $timing)) continue;
+            if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) continue;
             $multiplier = (int)$rule['amount'];
             if ($multiplier === 0) continue;
 
@@ -101,6 +105,7 @@ function ressourceGainRuleIsValid($rule, $timing) {
     if (!isset($rule['timing']) || $rule['timing'] !== $timing) return false;
     if (!isset($rule['condition']['type'])) return false;
     if (!in_array($rule['condition']['type'], RESSOURCE_GAIN_CONDITION_TYPES, true)) return false;
+    if (isset($rule['unlock_turn']) && (!is_numeric($rule['unlock_turn']) || (int)$rule['unlock_turn'] < 0)) return false;
     return true;
 }
 
@@ -121,9 +126,14 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
         $fkColumn = $conditionType === 'holds_zone' ? 'holder_controller_id' : 'claimer_controller_id';
         $extra = '';
         $params = [];
+        // Supported filter keys: zone_id (int), zone_name (string). Pick one per rule.
         if (isset($condition['zone_id'])) {
-            $extra = ' AND z.id = :zone_id';
+            $extra .= ' AND z.id = :zone_id';
             $params[':zone_id'] = (int)$condition['zone_id'];
+        }
+        if (isset($condition['zone_name'])) {
+            $extra .= ' AND z.name = :zone_name';
+            $params[':zone_name'] = (string)$condition['zone_name'];
         }
         try {
             $sql = "SELECT c.id AS controller_id, COUNT(z.id) AS match_count
@@ -132,7 +142,9 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
                 GROUP BY c.id
                 HAVING COUNT(z.id) > 0";
             $stmt = $pdo->prepare($sql);
-            foreach ($params as $key => $value) $stmt->bindValue($key, $value, PDO::PARAM_INT);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            }
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {

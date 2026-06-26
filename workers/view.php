@@ -15,7 +15,7 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     // Get workers information
     $workersArray = getWorkers($gameReady, [$worker_id]);
 
-    echo "<div class='workers section'>";
+    echo sprintf("<div class='workers section %s'>", htmlspecialchars($navBucketClass ?? '', ENT_QUOTES));
 
     if ( $_SESSION['DEBUG'] == true )
         echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
@@ -127,11 +127,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
 
             // build worker action presentation texte :
-            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <strong>%2$s</strong>',
+            $workerActionText = sprintf( ' <strong> %1$s </strong> %4$s dans le %3$s <a href="/%5$s/zones/action.php#zone-%6$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%2$s</a>',
                 ucfirst($textActionUpdated), // %1$s
                 $worker['zone_name'], // %2$s
                 getConfig($gameReady, 'textForZoneType'), // %3$s
-                $workerActionInfo // %4$s
+                $workerActionInfo, // %4$s
+                $_SESSION['FOLDER'], // %5$s
+                $worker['zone_id'] // %6$s
             );
 
             // get zone value by  $worker['zone_id'] and use to get controller name
@@ -197,7 +199,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 if ($_SESSION['DEBUG'] == true) echo "showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
 
                 $controllers = getControllers($gameReady);
-                $showcontrollersSelect = showControllerSelect($controllers, $controller_id, 'gift_controller_id');
+                $giftControllers = getControllers($gameReady, NULL, NULL, true, $controller_id);
+                $showcontrollersSelect = showControllerSelect($giftControllers, $controller_id, 'gift_controller_id');
 
                 $claim_mode = getConfig($gameReady, 'claimMode');
                 $showListClaimTargetsSelect = '';
@@ -443,9 +446,31 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 );
             }
 
+            // Build the 3-button nav block; falls back to disabled-span at bucket edges
+            $navFolderEnc = htmlspecialchars($_SESSION['FOLDER'] ?? '', ENT_QUOTES);
+            $navSortEnc = htmlspecialchars($sort ?? 'age', ENT_QUOTES);
+            $navPrevHTML = ($navIds['prev'] ?? null) !== null
+                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small mr-1">Précédent</a>',
+                    $navFolderEnc, (int)$navIds['prev'], $navSortEnc)
+                : '<span class="button is-info is-small is-nav-disabled mr-1" aria-disabled="true">Précédent</span>';
+            $navNextHTML = ($navIds['next'] ?? null) !== null
+                ? sprintf('<a href="/%s/workers/action.php?worker_id=%d&sort=%s" class="button is-info is-small">Suivant</a>',
+                    $navFolderEnc, (int)$navIds['next'], $navSortEnc)
+                : '<span class="button is-info is-small is-nav-disabled" aria-disabled="true">Suivant</span>';
+            $navButtonsHTML = sprintf(
+                '<div class="card-header-actions">
+                    <a href="%s" class="button is-info is-small mr-1">Retour</a>
+                    %s
+                    %s
+                </div>',
+                htmlspecialchars($navBackUrl ?? "/{$navFolderEnc}/workers/viewAll.php", ENT_QUOTES),
+                $navPrevHTML,
+                $navNextHTML
+            );
+
             $viewHTML = sprintf(
                 '<div class="card">
-                    <header 
+                    <header
                         class="card-header"
                         data-worker-id="%1$s"
                         data-worker-lastname="%3$s"
@@ -456,12 +481,13 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         <p class="card-header-title">
                             Agent %2$s %3$s
                         </p>
+                        %15$s
                     </header>
                     <div class="card-content">
                         <div class="box info">
                             %4$s <br />
                             <i>
-                                Capacité d’enquête : <strong>%6$s</strong>. 
+                                Capacité d’enquête : <strong>%6$s</strong>.
                                 Capacité d’attaque / défense : <strong>%7$s</strong> / <strong>%8$s</strong>
                             </i>
                         </div>
@@ -483,7 +509,8 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                 $upgradeHTML, // %11$s
                 htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %12$s
                 htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %13$s
-                htmlspecialchars($workerStatus, ENT_QUOTES) // %14$s
+                htmlspecialchars($workerStatus, ENT_QUOTES), // %14$s
+                $navButtonsHTML // %15$s
             );
             echo $viewHTML;
 

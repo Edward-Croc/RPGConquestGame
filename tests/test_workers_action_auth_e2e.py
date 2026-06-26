@@ -30,7 +30,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, login_as, safe_goto,
+    DB_AVAILABLE, load_minimal_data, ensure_scenario_loaded, login_as, safe_goto,
     ui_worker_id, ui_workers_by_lastname,
     ui_attack, end_turn,
 )
@@ -43,19 +43,10 @@ def base_url():
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_testconfig(browser):
-    """Load TestConfig once per module so the test workers exist."""
+    """Load TestConfig once per module (skipped if already loaded)."""
     if DB_AVAILABLE:
         load_minimal_data()
-    context = browser.new_context()
-    page = context.new_page()
-    ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    context.close()
+    ensure_scenario_loaded(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 
@@ -247,14 +238,21 @@ class TestInactiveStateBlock:
         )
         ctx_attack.close()
 
-        # 2. Same dead worker, transform action — must pass the block.
-        # The downstream upgradeWorker call may itself fail (no real
-        # transformation power supplied), but that happens AFTER the block;
-        # for the block-regression assertion, status != 403 is enough.
+        # 2. Same dead worker, transform action — must pass the inactive-
+        # state block (vampire resurrect carve-out). PR #67 added a
+        # commit-time re-validation that 403s when the `transformation`
+        # GET param is missing, so a valid link_power_type_id is supplied
+        # to exercise the block specifically (re-validation itself may
+        # reject this transformation for this worker, but that produces
+        # a notification — not a 403).
         ctx_xform = browser.new_context()
         page_xform = ctx_xform.new_page()
         login_as(page_xform, base_url, "delta_player", "test")
-        transform_url = f"{base_url}/workers/action.php?worker_id={wid}&transform=1"
+        # 1 is a stable id surfaced by any TestConfig load.
+        transform_url = (
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&transformation=1&transform=1"
+        )
         response = page_xform.goto(transform_url)
         assert response is not None
         assert response.status != 403, (

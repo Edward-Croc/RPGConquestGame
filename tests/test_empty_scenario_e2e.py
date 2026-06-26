@@ -17,7 +17,8 @@ from conftest import (
 )
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, ui_turn_counter,
+    DB_AVAILABLE, get_db_connection, load_minimal_data, load_scenario_via_admin,
+    safe_goto, ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -46,23 +47,7 @@ def load_empty_scenario(browser):
         return
 
     load_minimal_data()
-
-    # Load TestConfig via admin UI
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     # Remove all locations so locationSearchMechanic finds nothing.
     # Artefacts AND controller_known_locations FK-reference locations,
@@ -88,10 +73,13 @@ def load_empty_scenario(browser):
     conn.commit()
     conn.close()
 
-    # Trigger end turn
+    # Trigger end turn in a fresh gm context
+    context = browser.new_context()
+    page = context.new_page()
+    register_php_error_listener(page)
+    ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
     page.wait_for_load_state("load", timeout=90000)
-
     assert_no_collected_php_errors(page)
     context.close()
     yield

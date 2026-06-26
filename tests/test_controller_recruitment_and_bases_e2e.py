@@ -52,6 +52,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
+    load_scenario_via_admin,
     ui_controller_id, ui_zone_id, ui_controller_counters,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
@@ -351,22 +352,14 @@ def recruitment_scenario(browser):
     omitted — the @pytest.mark.db tests that consume them are themselves
     skipped under UI_ONLY=1.
     """
-    # Local bootstrap; skipped on prod
     if DB_AVAILABLE:
         load_minimal_data()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
     context = browser.new_context()
     page = context.new_page()
     register_php_error_listener(page)
-
-    # Login + load TestConfig
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
 
     # ---- TURN 0 ----
 
@@ -1127,8 +1120,13 @@ class TestOwnerKnowsOwnBase:
         safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
         page.wait_for_load_state("load")
 
-        # The gift-info form has input[name='giftInformationLocation']
-        # and a sibling location select with name='location_id'.
+        # The gift-info section is a closed-by-default <details>; open it
+        # before scraping the location select.
+        gift_details_summary = page.locator("details summary").filter(
+            has_text="Donner des informations"
+        ).first
+        if gift_details_summary.count() > 0:
+            gift_details_summary.click()
         gift_locations = []
         if page.locator("input[name='giftInformationLocation']").count() > 0:
             options = page.locator(

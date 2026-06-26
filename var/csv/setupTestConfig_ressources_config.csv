@@ -1,2 +1,6 @@
-ressource_name,presentation,stored_text,is_rollable,is_stored,base_building_cost,base_moving_cost,location_repaire_cost
-Gold,Gold resource for testing,Stored gold,0,1,10,5,3
+ressource_name,presentation,stored_text,is_rollable,is_stored,base_building_cost,base_moving_cost,location_repaire_cost,gain_rules,hide_when_zero
+Gold,Gold resource for testing,Stored gold,0,1,10,5,3,,0
+Silver,Silver resource for cross-resource test,,0,0,0,0,0,,0
+Bronze,Bronze resource for hide_when_zero test (visible row),,0,0,0,0,0,,0
+Platinum,Platinum hidden resource for hide_when_zero test,,0,0,0,0,0,,1
+Diamond,Diamond hidden ressource surfaced by positive rules estimate,,0,0,0,0,0,"[{""amount"":1,""timing"":""before_claim"",""condition"":{""type"":""holds_zone"",""zone_name"":""Gamma-Claims""}}]",1

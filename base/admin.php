@@ -54,21 +54,21 @@ require_once '../base/baseHTML.php';
             <?php echo sprintf( '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
                 $_SESSION['FOLDER']
             );
-            echo sprintf('<form action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
-                <h2> FULL Reset : </br>
+            echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
+                <h2> FULL Reset : <br />
                     <select id="configSelect" name="config_name">
-                        <optgroup label="Config via CSV"> 
+                        <optgroup label="Config via CSV">
                             <option  value='Japon1555CSV'> Shikoku (四国) 1555 </option>
                             <option  value='Vampire1966CSV'> Firenze Vampire 1966 </option>
                             <option  value='TestConfig'> TestConfig </option>
                         </optgroup>
-                        <optgroup label="Anciennes config SQL"> 
+                        <optgroup label="Anciennes config SQL">
                             <option  value='Vampire1966SQL'> Firenze Vampire 1966 </option>
                             <option  value='Japon1555SQL'> Shikoku (四国) 1555 </option>
                         </optgroup>
                     </select>
                     <input type="hidden" name="resetBDD" />
-                    <input type="submit" name="submit" value="Submit" />
+                    <input type="submit" name="submitButton" value="Submit" />
                 </h2>
             </form>
         </div>
@@ -98,7 +98,7 @@ require_once '../base/baseHTML.php';
                     // Add button to extract BDD to file.sql or .sql
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
                         <input type="hidden" name="exportBDD" />
-                        <input type="submit" name="submit" value="Export BDD to file.sql" />
+                        <input type="submit" name="submitButton" value="Export BDD to file.sql" />
                     </form> </p>',
                     $_SESSION['FOLDER']
                     );
@@ -106,7 +106,7 @@ require_once '../base/baseHTML.php';
                     echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="importBDD" />
                         <input type="file" name="bddFile" id="bddFile" />
-                        <input type="submit" name="submit" value="Import BDD from file.sql" />
+                        <input type="submit" name="submitButton" value="Import BDD from file.sql" />
                     </form> </p>',
                     $_SESSION['FOLDER']
                     );
@@ -126,3 +126,85 @@ require_once '../base/baseHTML.php';
         ?>
     </div>
 </div>
+
+<div id="confirmModal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Confirm Full Reset</p>
+        </header>
+        <section class="modal-card-body">
+            <p>Are you sure you want to perform a <strong>full reset</strong> with the selected config?</p>
+            <p>This is going to cause Mt.Fuji to explode and kill everyone.</p>
+        </section>
+        <footer class="modal-card-foot">
+            <button id="confirmModalYes" class="button is-danger">Yes, reset</button>
+            <button id="confirmModalNo" class="button">Cancel</button>
+        </footer>
+    </div>
+</div>
+
+<div id="waitModal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Creating the world...</p>
+        </header>
+        <section class="modal-card-body">
+            <p id="waitModalMessage"></p>
+            <progress class="progress is-primary" max="100">Loading</progress>
+        </section>
+    </div>
+</div>
+
+<script>
+
+    const worldCreationMessages = [
+        "Birthing Gaia out of Chaos...",
+        "Hollowing Ymir's bones...",
+        "Stirring the ocean with Izanagi (伊邪那岐神) and Izanami (伊邪那美神)'s spear...",
+        "Some bearded dude is saying 'let there be light'...",
+        "Spitting (let's keep it child-friendly) into Nu...",
+        "Sorting through four suns...",
+    ];
+
+    function openConfirmModal() {
+        document.getElementById('confirmModal').classList.add('is-active');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.remove('is-active');
+    }
+
+    function pickRandomWaitMessage() {
+        const index = Math.floor(Math.random() * worldCreationMessages.length);
+        document.getElementById('waitModalMessage').textContent = worldCreationMessages[index];
+    }
+
+    function openWaitModal() {
+        pickRandomWaitMessage();
+        document.getElementById('waitModal').classList.add('is-active');
+    }
+
+    function submitResetForm() {
+        closeConfirmModal();
+        openWaitModal();
+        document.getElementById('resetForm').submit();
+    }
+
+    function initResetConfirmation() {
+
+        document.getElementById('resetForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            openConfirmModal();
+        });
+
+        document.getElementById('confirmModalNo').addEventListener('click', closeConfirmModal);
+        document.getElementById('confirmModalYes').addEventListener('click', submitResetForm);
+
+        // Also close if clicking the dark background
+        document.querySelector('#confirmModal .modal-background').addEventListener('click', closeConfirmModal);
+    }
+
+    document.addEventListener('DOMContentLoaded', initResetConfirmation);
+</script>

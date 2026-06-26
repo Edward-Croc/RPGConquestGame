@@ -333,6 +333,7 @@ CREATE TABLE {prefix}controllers_known_enemies (
     discovered_worker_id INT NOT NULL, -- id of the discovered worker
     discovered_controller_id INT, -- Optional id of their controller
     discovered_controller_name TEXT, -- Optional name of their controller
+    discovered_powers TINYINT(1) NOT NULL DEFAULT 0, -- True when DIFF1 facts (disciplines/transformations/hobby) have been revealed
     zone_id INT NOT NULL, -- Zone of discovery
     first_discovery_turn INT NOT NULL, -- Turn number when discovery happened
     last_discovery_turn INT NOT NULL, -- Turn number when discovery happened
@@ -362,7 +363,8 @@ CREATE TABLE {prefix}ressources_config (
     servant_first_come_cost INT NOT NULL DEFAULT 0,
     servant_recruitment_cost INT NOT NULL DEFAULT 0,
     extra_first_come_cost INT NOT NULL DEFAULT 0,
-    gain_rules JSON DEFAULT NULL
+    gain_rules JSON DEFAULT NULL,
+    hide_when_zero BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE {prefix}controller_ressources (

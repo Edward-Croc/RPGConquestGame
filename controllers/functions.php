@@ -1,44 +1,49 @@
 <?php
 
 /**
- * get all information for Controllers 
+ * get all information for Controllers
  *  - optional by player
  *  - optional for a specific controller
- * 
+ *  - optional exclusion of one controller (e.g. session-active controller for "target" selects)
+ *
  * @param PDO $pdo : database connection
  * @param int|null $player_id
  * @param int|null $controller_id
  * @param bool $hide_secret_controllers default: true
- * 
- * @return array|null 
- * 
+ * @param int|null $exclude_controller_id : drops one controller from the result (used to forbid self-target on gift selects)
+ *
+ * @return array|null
+ *
  */
 // Function to get controllers and return as an array
-function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true) {
+function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true, $exclude_controller_id = NULL) {
     $controllersArray = array();
     $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
         $sql = "SELECT c.*,
-            f.name AS faction_name, 
+            f.name AS faction_name,
             ff.name AS fake_faction_name
             FROM {$prefix}controllers c
             LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
             LEFT JOIN {$prefix}factions ff ON c.fake_faction_id = ff.ID";
+        $hasWhere = false;
         if ($player_id !== NULL){
             $sql .= "
                 INNER JOIN {$prefix}player_controller pc ON pc.controller_id = c.id
                 WHERE pc.player_id = '$player_id'";
+            $hasWhere = true;
         }
         if ($controller_id !== NULL){
-            $sql .= sprintf (
-                " %s c.id = '%s'",
-                $player_id !== NULL ? 'AND' : 'WHERE',
-                $controller_id
-            );
+            $sql .= sprintf(' %s c.id = \'%s\'', $hasWhere ? 'AND' : 'WHERE', $controller_id);
+            $hasWhere = true;
         } else if ($hide_secret_controllers == true){
-            $sql .=  ($player_id !== NULL) ? ' AND' : ' WHERE';
-            $sql .= " c.secret_controller IS NOT True";
+            $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            $hasWhere = true;
+        }
+        if ($exclude_controller_id !== NULL){
+            $sql .= sprintf(' %s c.id <> %d', $hasWhere ? 'AND' : 'WHERE', (int) $exclude_controller_id);
+            $hasWhere = true;
         }
         $sql .= ' ORDER BY c.id';
         $stmt = $pdo->prepare($sql);
@@ -225,7 +230,10 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    spendRessourcesToBuildBase($pdo, $controller_id);
+    if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
+        echo "Stock insuffisant ou modifié.<br />";
+        return false;
+    }
 
     $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
@@ -313,7 +321,10 @@ function createBase($pdo, $controller_id, $zone_id) {
  */
 function moveBase($pdo, $base_id, $zone_id, $controller_id) {
 
-    spendRessourcesToMoveBase($pdo, $controller_id);
+    if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
+        echo "Stock insuffisant ou modifié.<br />";
+        return false;
+    }
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -780,15 +791,46 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
 }
 
 /**
+ * Read a single CKE row for (controller, worker). Caller compares prior state (zone_id + level flags) before calling addWorkerToCKE.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $worker_id
+ *
+ * @return array|null  associative row, or NULL if no CKE entry exists
+ */
+function getCKEEntry($pdo, $controller_id, $worker_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controllers_known_enemies
+            WHERE controller_id = :controller_id
+              AND discovered_worker_id = :worker_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':worker_id' => $worker_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $searcher_controller_id
  * @param int $found_id
  * @param int $turn_number
  * @param int $zone_id
+ * @param int|null $discovered_controller_id   monotonic — only persisted if truthy
+ * @param string|null $discovered_controller_name   monotonic — only persisted if truthy
+ * @param bool $discovered_powers   monotonic — DIFF1 flag (disciplines/transformations/hobby revealed); only persisted if truthy
  *
  * @return int $cke_existing_record_id
- * 
+ *
  */
 function addWorkerToCKE(
         $pdo,
@@ -797,7 +839,8 @@ function addWorkerToCKE(
         $turn_number,
         $zone_id,
         $discovered_controller_id = NULL,
-        $discovered_controller_name = NULL
+        $discovered_controller_name = NULL,
+        $discovered_powers = false
     ) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
@@ -845,10 +888,11 @@ function addWorkerToCKE(
             // Update if record exists
             $sql = sprintf("UPDATE {$prefix}controllers_known_enemies
                 SET last_discovery_turn = :turn_number, zone_id = :zone_id
-                %s %s
+                %s %s %s
                 WHERE id = :id",
                 $discovered_controller_id ? ", discovered_controller_id = :discovered_controller_id" : "",
-                $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : ""
+                $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : "",
+                $discovered_powers ? ", discovered_powers = :discovered_powers" : ""
             );
             if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
             $stmt = $pdo->prepare($sql);
@@ -861,6 +905,9 @@ function addWorkerToCKE(
             if ($discovered_controller_name) {
                 $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
             }
+            if ($discovered_powers) {
+                $stmt->bindParam(':discovered_powers', $discovered_powers, PDO::PARAM_BOOL);
+            }
             $stmt->execute();
         } catch (PDOException $e) {
             echo __FUNCTION__."(): Error UPDATE {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
@@ -869,8 +916,8 @@ function addWorkerToCKE(
         try{
             // Insert if record doesn't exist
             $sql = "INSERT INTO {$prefix}controllers_known_enemies
-                (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name)
-                VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name)";
+                (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name, discovered_powers)
+                VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name, :discovered_powers)";
             if ($debug) echo "sql :".var_export($sql, true)." <br>";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':searcher_controller_id', $searcher_controller_id, PDO::PARAM_INT);
@@ -879,6 +926,7 @@ function addWorkerToCKE(
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
             $stmt->bindParam(':discovered_controller_id', $discovered_controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':discovered_controller_name', $discovered_controller_name, PDO::PARAM_STR);
+            $stmt->bindParam(':discovered_powers', $discovered_powers, PDO::PARAM_BOOL);
             $stmt->execute();
             $cke_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
@@ -889,6 +937,34 @@ function addWorkerToCKE(
 }
 
 /**
+ * Read a single CKL row for (controller, location). Caller compares prior state (found_secret) before calling addLocationToCKL.
+ *
+ * @param PDO $pdo
+ * @param int $controller_id
+ * @param int $location_id
+ *
+ * @return array|null  associative row, or NULL if no CKL entry exists
+ */
+function getCKLEntry($pdo, $controller_id, $location_id) {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = "SELECT * FROM {$prefix}controller_known_locations
+            WHERE controller_id = :controller_id
+              AND location_id = :location_id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':controller_id' => $controller_id,
+            ':location_id' => $location_id
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+        return NULL;
+    }
+    return $row ?: NULL;
+}
+
+/**
  *
  * @param PDO $pdo
  * @param int $controller_id
@@ -896,7 +972,7 @@ function addWorkerToCKE(
  * @param int $turn_number
  *
  * @return int $ckl_existing_record_id
- * 
+ *
  */
 function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
@@ -1044,7 +1120,7 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $enemyWorkerOptions
     );
 
-    $controllers = getControllers($pdo, null, null, ($origin != 'admin'));
+    $controllers = getControllers($pdo, null, null, ($origin != 'admin'), ($origin != 'admin') ? $controller_id : NULL);
     $htmlGiftInformationAgent = sprintf('
         <form action="/%s/%s" method="GET">
         <h4 class="title is-5 mt-5">Sur les agents connus:</h4>
@@ -1128,10 +1204,10 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
         $knownLocationsSelect
     );
 
-    $html = '<div class="box mb-5"><h3 class="title is-5 mt-5">Donner des informations :</h3>';
+    $html = '<div class="box mb-5"><details><summary class="title is-5">Donner des informations :</summary>';
     $html .= $htmlGiftInformationAgent;
     $html .= $htmlGiftInformationLocation;
-    $html .= '</div>';
+    $html .= '</details></div>';
     return $html;
 }
 

@@ -49,8 +49,9 @@ from conftest import (
     PHP_BASE_URL, ensure_gm_login,
 )
 from helpers import (
-    DB_AVAILABLE, end_turn, load_minimal_data, safe_goto,
+    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
+    ui_controller_id,
 )
 
 
@@ -71,24 +72,7 @@ def base_url():
 def load_test_config(browser):
     if DB_AVAILABLE:
         load_minimal_data()
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("load")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("load")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("load")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    assert_no_collected_php_errors(page)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
     yield
 
 
@@ -107,14 +91,7 @@ def _location_id_via_management(page, location_name):
 
 
 def _controller_id_via_management(page, controller_lastname):
-    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
-    page.wait_for_load_state("load")
-    for opt in page.locator("select#controllerSelect option").all():
-        v = opt.get_attribute("value") or ""
-        t = (opt.inner_text() or "").strip()
-        if v and controller_lastname in t:
-            return int(v)
-    raise AssertionError(f"controller_id for '{controller_lastname}' not found")
+    return ui_controller_id(page, controller_lastname, PHP_BASE_URL)
 
 
 def _seed_ckl_admin(page, controller_lastname, location_name):
@@ -1224,6 +1201,16 @@ class TestMoveBaseCancelsInFlightAttacks:
             (synthetic_id, foxtrot_id, turn),
         )
         queue_row_id = cur.lastrowid
+        # Top up Echo's Gold so spendRessourcesToMoveBase actually succeeds and
+        # the in-flight cancellation logic runs. TestConfig seeds Echo with
+        # Gold=2 < base_moving_cost=5; without this the move aborts before
+        # cancelling the queued attack.
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}controller_ressources` SET amount = 50 "
+            f"WHERE controller_id = %s AND ressource_id = "
+            f"(SELECT id FROM `{GAME_PREFIX}ressources_config` WHERE ressource_name = 'Gold')",
+            (echo_id,),
+        )
         conn.commit()
         cur.close()
         conn.close()

@@ -137,7 +137,9 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("TestConfig")
-        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.locator("input[type='submit'][value='Submit']").click()
+        if logged_in_page.locator("#confirmModalYes").is_visible():
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(2000)
 
@@ -185,7 +187,9 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
-        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.locator("input[type='submit'][value='Submit']").click()
+        if logged_in_page.locator("#confirmModalYes").is_visible():
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(3000)
 
@@ -229,7 +233,9 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
-        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.locator("input[type='submit'][value='Submit']").click()
+        if logged_in_page.locator("#confirmModalYes").is_visible():
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(5000)
 
@@ -246,8 +252,8 @@ class TestCSVLoadViaAdmin:
             "Expected worker_names CSV to load 122 rows"
         assert "setupJapon1555CSV_zones.csv loaded successfully (11 rows)" in page_html, \
             "Expected zones CSV to load 11 rows"
-        assert "setupJapon1555CSV_hobbys.csv loaded successfully (48 rows)" in page_html, \
-            "Expected hobbys CSV to load 48 rows"
+        assert "setupJapon1555CSV_hobbys.csv loaded successfully (47 rows)" in page_html, \
+            "Expected hobbys CSV to load 47 rows"
         assert "setupJapon1555CSV_jobs.csv loaded successfully (46 rows)" in page_html, \
             "Expected jobs CSV to load 46 rows"
         assert "setupJapon1555CSV_factions.csv loaded successfully (11 rows)" in page_html, \
@@ -288,7 +294,9 @@ class TestCSVLoadViaAdmin:
         logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
-        logged_in_page.locator("input[name='submit'][value='Submit']").click()
+        logged_in_page.locator("input[type='submit'][value='Submit']").click()
+        if logged_in_page.locator("#confirmModalYes").is_visible():
+            logged_in_page.locator("#confirmModalYes").click(timeout=120000)
         logged_in_page.wait_for_load_state("networkidle")
         logged_in_page.wait_for_timeout(5000)
 

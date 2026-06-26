@@ -145,6 +145,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])){
+        $session_controller_id = $_SESSION['controller']['id'] ?? null;
+        if (empty($_SESSION['is_privileged']) && $session_controller_id !== null && (int)$gift_controller_id === (int)$session_controller_id) {
+            http_response_code(403);
+            exit();
+        }
         activateWorker($gameReady, $worker_id, 'gift', $gift_controller_id);
         header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
@@ -162,12 +167,142 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if (isset($_GET['teach_discipline']) ){
-        upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
+        if (!empty($_SESSION['is_privileged'])) {
+            upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
+        } else {
+            $session_controller_id = $_SESSION['controller']['id'] ?? null;
+            $turn = $mechanics['turncounter'] ?? 0;
+            $linkPowerTypeId = $_GET['discipline'] ?? null;
+            if (empty($linkPowerTypeId) || empty($session_controller_id)) {
+                http_response_code(403);
+                exit();
+            }
+            $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
+            $matchedPower = null;
+            if (is_array($candidates)) {
+                foreach ($candidates as $p) {
+                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) { $matchedPower = $p; break; }
+                }
+            }
+            if ($matchedPower === null) {
+                echo "Cette discipline n'est plus disponible.<br />";
+            } else {
+                upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
+            }
+        }
     }
     if (isset($_GET['transform'])){
-        upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
+        if (!empty($_SESSION['is_privileged'])) {
+            upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
+        } else {
+            $session_controller_id = $_SESSION['controller']['id'] ?? null;
+            $turn = $mechanics['turncounter'] ?? 0;
+            $linkPowerTypeId = $_GET['transformation'] ?? null;
+            if (empty($linkPowerTypeId) || empty($session_controller_id)) {
+                http_response_code(403);
+                exit();
+            }
+            $candidates = getPowersByType($gameReady, '4', NULL, false);
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_transformation');
+            $matchedPower = null;
+            if (is_array($candidates)) {
+                foreach ($candidates as $p) {
+                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) { $matchedPower = $p; break; }
+                }
+            }
+            if ($matchedPower === null) {
+                echo "Cette transformation n'est plus disponible.<br />";
+            } else {
+                $cost = getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $worker_id, $turn, 'on_transformation');
+                if ($cost === null) {
+                    upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
+                } else {
+                    $gameReady->beginTransaction();
+                    if (consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
+                        if (upgradeWorker($gameReady, $worker_id, $linkPowerTypeId)) {
+                            $gameReady->commit();
+                        } else {
+                            $gameReady->rollBack();
+                        }
+                    } else {
+                        $gameReady->rollBack();
+                        echo "Stock insuffisant ou modifié.<br />";
+                    }
+                }
+            }
+        }
     }
 
+}
+
+// Resolve effective sort for prev/next nav buttons — URL > session > 'age', both whitelist-validated
+$navValidSorts = ['age', 'zone', 'investigate', 'attack'];
+$sort = 'age';
+if (in_array($_GET['sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_GET['sort'];
+} elseif (in_array($_SESSION['workers_view_sort'] ?? '', $navValidSorts, true)) {
+    $sort = $_SESSION['workers_view_sort'];
+}
+
+// Resolve prev / next worker ids + bucket class for the card background
+$navControllerId = (int)($_SESSION['controller']['id'] ?? 0);
+$navIds = ['prev' => null, 'next' => null];
+$navBucketClass = '';
+if ($navControllerId > 0 && !empty($worker_id)) {
+    $navIds = getPrevNextWorkerIds(
+        $gameReady,
+        $navControllerId,
+        (int)$worker_id,
+        $sort,
+        (int)($mechanics['turncounter'] ?? 0)
+    );
+    $navWorkerArray = getWorkers($gameReady, [$worker_id]);
+    $navWorkerRow = null;
+    foreach ($navWorkerArray ?? [] as $row) {
+        if ((int)($row['controller_id'] ?? 0) === $navControllerId) {
+            $navWorkerRow = $row;
+            break;
+        }
+    }
+    if ($navWorkerRow !== null) {
+        $navWorkerStatus = getWorkerStatus($navWorkerRow, $mechanics);
+        if ($navWorkerStatus && $navWorkerStatus !== 'unfound') {
+            $navBucketClass = 'is-bucket-' . str_replace('_', '-', $navWorkerStatus);
+        }
+    }
+}
+
+// Back URL — Referer-aware with strict-equality whitelist + host equality
+$navFolder = $_SESSION['FOLDER'] ?? '';
+$navBackUrl = "/{$navFolder}/workers/viewAll.php";
+$navReferer = $_SERVER['HTTP_REFERER'] ?? '';
+if ($navReferer !== '') {
+    $navRefererParts = parse_url($navReferer);
+    $navRefererHost = $navRefererParts['host'] ?? '';
+    if (isset($navRefererParts['port'])) {
+        $navRefererHost .= ':' . $navRefererParts['port'];
+    }
+    $navRefererPath = rtrim($navRefererParts['path'] ?? '', '/');
+    if ($navRefererHost === ($_SERVER['HTTP_HOST'] ?? '')) {
+        // Whitelist the canonical entry points (action.php / accueil.php).
+        // *view.php files are include-only (403 direct) so they shouldn't
+        // appear as a real Referer in practice — kept defensively.
+        $navAllowedPaths = [
+            "/{$navFolder}/workers/viewAll.php",
+            "/{$navFolder}/zones/action.php",
+            "/{$navFolder}/zones/view.php",
+            "/{$navFolder}/controllers/action.php",
+            "/{$navFolder}/controllers/view.php",
+            "/{$navFolder}/base/accueil.php",
+        ];
+        foreach ($navAllowedPaths as $allowed) {
+            if ($navRefererPath === rtrim($allowed, '/')) {
+                $navBackUrl = $navReferer;
+                break;
+            }
+        }
+    }
 }
 
 require_once '../base/baseHTML.php';

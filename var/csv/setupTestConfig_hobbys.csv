@@ -12,3 +12,4 @@ name,description,enquete,attack,defence,other,linkTable_power_types__name->link_
 "Brute Force"," raw combat power",0,3,2,,Hobby
 "Blank Slate"," no aptitude",0,0,0,,Hobby
 "Dark Impulse"," reckless, fragile",-1,1,-1,,Hobby
+"Test_Hobby_UnlockTurn_2"," hobby randomly available only from turn 2",0,0,0,"{""on_random_pick"": {""unlock_turn"": 2}}",Hobby

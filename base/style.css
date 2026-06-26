@@ -156,9 +156,47 @@ body {
 @media (max-width: 768px) {
     .for-select {
         max-width: 100%;
-    } 
+    }
     .content.flex {
         flex-direction: column;
     }
 
+}
+
+/* Agent page navigation header (issue #13) */
+
+.card-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-wrap: wrap;
+}
+
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    padding: 0.5em 0.75em;
+}
+
+.button.is-nav-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Bucket-tinted background on the .workers section wrapper.
+   alive = existing .workers blue (#c3e5f8). Other 3 are soft variants
+   at the same lightness so body text stays readable without white-on-X. */
+.workers.is-bucket-alive {
+    background-color: #c3e5f8;
+}
+.workers.is-bucket-double-agent {
+    background-color: #d8c6e5;
+}
+.workers.is-bucket-prisoner {
+    background-color: #c3d0d8;
+}
+.workers.is-bucket-dead {
+    background-color: #cccccc;
 }

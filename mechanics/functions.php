@@ -178,6 +178,18 @@ function getValidatedInvestigateActionsForSql($pdo) {
 }
 
 /**
+ * Return the investigation processing order ('asc' or 'desc') from config, falling back to 'asc' on unknown values.
+ *
+ * @param PDO $pdo
+ *
+ * @return string
+ */
+function getInvestigateOrder($pdo) {
+    $value = strtolower(trim((string) getConfig($pdo, 'investigateOrder')));
+    return in_array($value, ['asc', 'desc'], true) ? $value : 'asc';
+}
+
+/**
  * Calculates the final values for each worker depending on their chosen action.
  *
  * @param PDO $pdo : database connection

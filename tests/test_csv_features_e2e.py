@@ -25,10 +25,10 @@ from conftest import (
 
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto,
+    DB_AVAILABLE, get_db_connection, load_minimal_data, load_scenario_via_admin, safe_goto,
     ui_worker_count, ui_power_options_by_type, ui_all_workers,
     register_php_error_listener, assert_no_collected_php_errors,
-    csv_row_count,
+    csv_row_count, ui_controller_ids_map,
 )
 
 
@@ -41,24 +41,7 @@ def _load_test_config(browser):
     """Load TestConfig via admin reset. Returns when complete."""
     if DB_AVAILABLE:
         load_minimal_data()
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    safe_goto(page, f"{PHP_BASE_URL}/connection/loginForm.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("input[name='username']").fill("gm")
-    page.locator("input[name='passwd']").fill("orga")
-    page.locator("input[type='submit']").first.click()
-    page.wait_for_load_state("networkidle")
-    safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-    page.wait_for_load_state("networkidle")
-    page.locator("select[name='config_name']").select_option("TestConfig")
-    page.locator("input[name='submit'][value='Submit']").click()
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=90000)
-    assert_no_collected_php_errors(page)
-    context.close()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
 
 # ---------------------------------------------------------------------------
@@ -106,27 +89,36 @@ class TestLinkTableFeature:
             f"Powers appearing in >1 type dropdown (bad junction): {duplicates}"
 
     def test_hobbys_linked_to_hobby_type(self, page: Page, base_url):
-        """All 13 hobby CSV powers should appear in the Hobby dropdown."""
+        """All 14 hobby CSV powers should appear in the Hobby dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
-        assert len(options_by_type['Hobby']) == 13, \
-            f"Expected 13 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
+        assert len(options_by_type['Hobby']) == 14, \
+            f"Expected 14 hobby powers, got {len(options_by_type['Hobby'])}: {options_by_type['Hobby']}"
 
     def test_disciplines_linked_to_discipline_type(self, page: Page, base_url):
-        """The 3 discipline CSV powers appear in the Discipline dropdown."""
+        """All discipline CSV powers appear in the Discipline dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         disciplines = set(options_by_type['Discipline'])
-        expected = {'Offensive Stance', 'Defensive Posture', 'Focused Mind'}
+        expected = {
+            'Offensive Stance', 'Defensive Posture', 'Focused Mind',
+            'Test Discipline Zone Gated',
+        }
         assert disciplines == expected, \
             f"Discipline dropdown mismatch — expected {expected}, got {disciplines}"
 
     def test_transformations_linked_to_transformation_type(self, page: Page, base_url):
-        """The 3 transformation CSV powers appear in the Transformation dropdown."""
+        """All transformation CSV powers appear in the Transformation dropdown."""
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         transformations = set(options_by_type['Transformation'])
-        expected = {'War Gear', 'Shadow Cloak', 'Combat Vest'}
+        expected = {
+            'War Gear', 'Shadow Cloak', 'Combat Vest',
+            'Test Gold Cost Explicit', 'Test Gold Cost Default',
+            'Test Gold Gate Optout', 'Test OR Zone Or Gold',
+            'Test Direct And OR', 'Test Cross Resource',
+            'Test Malformed Amount', 'Test Unknown Rule Key',
+        }
         assert transformations == expected, \
             f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
 
@@ -135,7 +127,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 13, 'Metier': 13, 'Discipline': 3, 'Transformation': 3}
+        expected = {'Hobby': 14, 'Metier': 14, 'Discipline': 4, 'Transformation': 11}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
@@ -342,15 +334,7 @@ class TestLoadWorkersCSV:
         query produced. UI-runnable.
         """
         ensure_gm_login(page, base_url)
-        # Build controller_id → lastname map from accueil's controllerSelect
-        safe_goto(page, f"{base_url}/base/accueil.php")
-        page.wait_for_load_state("networkidle")
-        id_to_lastname = {}
-        for opt in page.locator("select#controllerSelect option").all():
-            val = opt.get_attribute("value") or ""
-            text = (opt.inner_text() or "").strip()
-            if val and text:
-                id_to_lastname[int(val)] = text.split()[-1]  # "Lord Alpha" → "Alpha"
+        id_to_lastname = {v: k for k, v in ui_controller_ids_map(page, base_url).items()}
 
         # Build worker → controller lastname map via management_workers
         workers = ui_all_workers(page, base_url=base_url)
