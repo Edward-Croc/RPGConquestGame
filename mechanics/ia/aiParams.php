@@ -90,6 +90,17 @@ function aiWorkerViolence(PDO $pdo, int $controller_id): ?string {
 }
 
 /**
+ * Recruit picking strategy: 'max' (default — pick highest raw stats)
+ * or 'balance' (pick combo that pushes pool toward |attack-enquete|=0).
+ */
+function aiRecruitStrategy(PDO $pdo, int $controller_id): string {
+    $p = getAiControllerParams($pdo, $controller_id);
+    $v = $p['recruit_strategy'] ?? null;
+    if ($v === null || $v === '') return 'max';
+    return (string) $v;
+}
+
+/**
  * Atomic UPSERT of current_state. Cross-DB via DBTYPE branch. Refreshes the cache.
  */
 function setAiCurrentState(PDO $pdo, int $controller_id, string $newState): void {

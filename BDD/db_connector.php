@@ -773,7 +773,7 @@ function gameReady() {
                         'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
-                        'ai_controller_params' => ['controllers__lastname->controller_id', 'current_state', 'expansionism', 'worker_violence', 'target_zone_ids', 'destroy_location_ids', 'repair_location_ids', 'ai_budget_by_state', 'ai_strike_margin_percent', 'ai_location_attack_cap', 'ai_power_priority_list', 'ai_claim_priority_by_yield', 'objectives_json'],
+                        'ai_controller_params' => ['controllers__lastname->controller_id', 'current_state', 'expansionism', 'worker_violence', 'recruit_strategy', 'target_zone_ids', 'destroy_location_ids', 'repair_location_ids', 'ai_budget_by_state', 'ai_strike_margin_percent', 'ai_location_attack_cap', 'ai_power_priority_list', 'ai_claim_priority_by_yield', 'objectives_json'],
                         'ai_controller_relations' => ['controllers__lastname->controller_id', 'controllers__lastname->target_controller_id', 'disposition'],
                         'config' => ['name', 'value', 'description'],
                         'worker_origins' => ['name'],

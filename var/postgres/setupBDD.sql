@@ -80,6 +80,7 @@ CREATE TABLE {prefix}ai_controller_params (
     current_state TEXT DEFAULT NULL,
     expansionism TEXT DEFAULT NULL,
     worker_violence TEXT DEFAULT NULL,
+    recruit_strategy TEXT DEFAULT NULL,
     target_zone_ids JSON DEFAULT NULL,
     destroy_location_ids JSON DEFAULT NULL,
     repair_location_ids JSON DEFAULT NULL,
