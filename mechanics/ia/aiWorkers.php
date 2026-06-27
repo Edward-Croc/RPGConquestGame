@@ -190,6 +190,73 @@ function aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkerIds = []): a
     return $moved;
 }
 
+/**
+ * Spread alive workers across own (claimer-or-holder) zones. For each
+ * own zone with zero eligible workers, pick a worker from a single-hop
+ * adjacent zone whose source zone has the most workers (drain densest
+ * first). At most one mover per target zone; workers in $skipWorkerIds
+ * are not eligible. Returns int[] of moved worker ids.
+ */
+function aiSpreadAcrossOwnZones($pdo, $c, $turn_number, $skipWorkerIds = []): array {
+    $ownZones = array_map('intval', aiOwnZoneIds($pdo, $c['id']));
+    if (count($ownZones) < 2) return [];
+
+    $alive = aiAliveWorkers($pdo, $c['id'], $turn_number);
+    if (empty($alive)) return [];
+
+    $skip = array_flip(array_map('intval', $skipWorkerIds));
+
+    $byZone = [];
+    foreach ($alive as $w) {
+        $wid = (int)$w['id'];
+        if (isset($skip[$wid])) continue;
+        $z = (int)$w['zone_id'];
+        if (!isset($byZone[$z])) $byZone[$z] = [];
+        $byZone[$z][] = $wid;
+    }
+
+    $unoccupied = [];
+    foreach ($ownZones as $z) {
+        if (empty($byZone[$z])) $unoccupied[] = $z;
+    }
+    if (empty($unoccupied)) return [];
+
+    $moved = [];
+    $movedSet = [];
+    foreach ($unoccupied as $z) {
+        $adjacent = array_map('intval', getAdjacentZoneIds($pdo, $z));
+        if (empty($adjacent)) continue;
+
+        $bestZone = null; $bestCount = 0;
+        foreach ($adjacent as $az) {
+            if ($az === $z) continue;
+            if (empty($byZone[$az])) continue;
+            $eligible = 0;
+            foreach ($byZone[$az] as $wid) {
+                if (!isset($movedSet[$wid])) $eligible++;
+            }
+            if ($eligible > $bestCount) {
+                $bestCount = $eligible;
+                $bestZone = $az;
+            }
+        }
+        if ($bestZone === null) continue;
+
+        $picked = null;
+        foreach ($byZone[$bestZone] as $wid) {
+            if (isset($movedSet[$wid])) continue;
+            $picked = $wid;
+            break;
+        }
+        if ($picked === null) continue;
+
+        moveWorker($pdo, $picked, $z);
+        $moved[] = $picked;
+        $movedSet[$picked] = true;
+    }
+    return $moved;
+}
+
 function aiAliveWorkers($pdo, $controller_id, $turn_number) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $inactive = "'".implode("','", INACTIVE_ACTIONS)."'";

@@ -1166,3 +1166,134 @@ class TestAIMovesTowardTargetZone:
             f"(zone_id={self._target_zone_id}) after EOT; got {self._target_after}. "
             f"aiMoveTowardTargetZones missing or not wired into the EOT pipeline."
         )
+
+
+class TestAISpreadsWorkersAcrossOwnZones:
+    """An AI with NO `target_zone_ids` should still spread its workers
+    across the zones it already owns (claimer or holder) when more than
+    one own-zone is reachable via single-hop adjacency.
+
+    Fixture: Alpha (passive) owns Gamma-Claims (id=3) per TestConfig
+    advanced CSV (claimer_controller_id = Alpha). Alpha's 7 seeded
+    workers all live in Beta-Combat (id=2), which is adjacent to
+    Gamma-Claims. Alpha's ai_controller_params.target_zone_ids is
+    explicitly cleared to NULL so aiMoveTowardTargetZones (STEP 1) is a
+    no-op. After one EOT, the spread helper aiSpreadAcrossOwnZones
+    (STEP 2) should pull at least one Alpha worker into Gamma-Claims —
+    Alpha's other owned zone.
+
+    With no aiSpreadAcrossOwnZones implementation, Alpha's workers stay
+    in Beta-Combat and the post-EOT count in Gamma-Claims is 0 → this
+    test FAILS until the spread step lands."""
+
+    AI_LASTNAME = "Alpha"
+    OWN_TARGET_ZONE_NAME = "Gamma-Claims"
+    SOURCE_ZONE_NAME = "Beta-Combat"
+    SECOND_OWN_ZONE_NAME = "Alpha-Investigation"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def spread_state(self, browser):
+        if not DB_AVAILABLE:
+            pytest.skip("DB not available — target_zone_ids must be cleared via DB")
+
+        _fresh_test_config(browser)
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        activated = _activate_is_ia_for(page, [self.AI_LASTNAME])
+        alpha_cid = int(activated[self.AI_LASTNAME])
+
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            # Explicitly clear target_zone_ids so STEP 1 is a no-op and
+            # only the spread helper can explain a Gamma-Claims move.
+            cur.execute(
+                f"UPDATE {GAME_PREFIX}ai_controller_params "
+                f"SET target_zone_ids = NULL WHERE controller_id = %s",
+                (alpha_cid,),
+            )
+
+            # Seed Alpha-Investigation as Alpha-claimed so Alpha owns 2 zones
+            # (Alpha-Investigation + Gamma-Claims). aiSpreadAcrossOwnZones
+            # requires count(own_zones) >= 2 to do anything.
+            cur.execute(
+                f"UPDATE {GAME_PREFIX}zones SET claimer_controller_id = %s, "
+                f"holder_controller_id = %s WHERE name = %s",
+                (alpha_cid, alpha_cid, self.SECOND_OWN_ZONE_NAME),
+            )
+
+            cur.execute(
+                f"SELECT id FROM {GAME_PREFIX}zones WHERE name = %s",
+                (self.OWN_TARGET_ZONE_NAME,),
+            )
+            row = cur.fetchone()
+            assert row is not None, f"No zone named {self.OWN_TARGET_ZONE_NAME!r}"
+            own_zone_id = int(row["id"])
+
+            cur.execute(
+                f"SELECT id FROM {GAME_PREFIX}zones WHERE name = %s",
+                (self.SOURCE_ZONE_NAME,),
+            )
+            row = cur.fetchone()
+            assert row is not None, f"No zone named {self.SOURCE_ZONE_NAME!r}"
+            source_zone_id = int(row["id"])
+        conn.commit()
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, source_zone_id),
+            )
+            source_before = int(cur.fetchone()["n"])
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, own_zone_id),
+            )
+            own_before = int(cur.fetchone()["n"])
+
+        assert source_before >= 1, (
+            f"Pre-EOT: Alpha expected ≥1 worker in {self.SOURCE_ZONE_NAME}, "
+            f"got {source_before} — fixture seed drifted"
+        )
+        assert own_before == 0, (
+            f"Pre-EOT: Alpha expected 0 workers in {self.OWN_TARGET_ZONE_NAME}, "
+            f"got {own_before} — fixture seed drifted"
+        )
+
+        # Commit so InnoDB REPEATABLE-READ takes a fresh snapshot for the post-EOT reads.
+        conn.commit()
+        end_turn(page, PHP_BASE_URL)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, own_zone_id),
+            )
+            own_after = int(cur.fetchone()["n"])
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        type(self)._own_after = own_after
+        type(self)._own_zone_id = own_zone_id
+        type(self)._alpha_cid = alpha_cid
+        yield
+
+    def test_ai_worker_spreads_into_own_zone(self):
+        """At least one Alpha worker should have moved into Gamma-Claims
+        after one EOT. target_zone_ids is NULL so aiMoveTowardTargetZones
+        cannot fire — only aiSpreadAcrossOwnZones can explain a move
+        into Alpha's own (claimer) zone."""
+        assert self._own_after >= 1, (
+            f"Alpha should have spread ≥1 worker into {self.OWN_TARGET_ZONE_NAME} "
+            f"(zone_id={self._own_zone_id}) after EOT; got {self._own_after}. "
+            f"aiSpreadAcrossOwnZones missing or not wired into the EOT pipeline."
+        )

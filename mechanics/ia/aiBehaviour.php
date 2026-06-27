@@ -40,6 +40,9 @@ function aiPassiveBehaviour($pdo, $c, $turn_number) {
     $movedTarget = aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkers);
     $skipWorkers = array_merge($skipWorkers, $movedTarget);
 
+    $movedSpread = aiSpreadAcrossOwnZones($pdo, $c, $turn_number, $skipWorkers);
+    $skipWorkers = array_merge($skipWorkers, $movedSpread);
+
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $skipWorkers);
     aiEquipPowers($pdo, $c);
 }
@@ -70,6 +73,9 @@ function aiSearchingBehaviour($pdo, $c, $turn_number) {
 
     $movedTarget = aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkers);
     $skipWorkers = array_merge($skipWorkers, $movedTarget);
+
+    $movedSpread = aiSpreadAcrossOwnZones($pdo, $c, $turn_number, $skipWorkers);
+    $skipWorkers = array_merge($skipWorkers, $movedSpread);
 
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $skipWorkers);
     aiEquipPowers($pdo, $c);
@@ -105,6 +111,9 @@ function aiAggressiveBehaviour($pdo, $c, $turn_number) {
 
     $movedTarget = aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkers);
     $skipWorkers = array_merge($skipWorkers, $movedTarget);
+
+    $movedSpread = aiSpreadAcrossOwnZones($pdo, $c, $turn_number, $skipWorkers);
+    $skipWorkers = array_merge($skipWorkers, $movedSpread);
 
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $skipWorkers);
     aiEquipPowers($pdo, $c);
@@ -142,6 +151,9 @@ function aiViolentBehaviour($pdo, $c, $turn_number) {
 
     $movedTarget = aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkers);
     $skipWorkers = array_merge($skipWorkers, $movedTarget);
+
+    $movedSpread = aiSpreadAcrossOwnZones($pdo, $c, $turn_number, $skipWorkers);
+    $skipWorkers = array_merge($skipWorkers, $movedSpread);
 
     aiSetWorkerActionsForState($pdo, $c, 'investigate', $turn_number, $skipWorkers);
     aiEquipPowers($pdo, $c);
