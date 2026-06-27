@@ -342,10 +342,10 @@ class TestAIWorkerStatBalance:
         yield
 
     def test_pool_is_roughly_balanced(self):
-        """Balance is measured on stat SUMS across AI-recruited workers
-        (what the algorithm optimizes), not count categories — pre-seeded
-        CSV workers don't count. Threshold scales with sample size:
-        max(2, ceil(N*0.5)) where N is total stat-sum (enq+atk pool)."""
+        """Balance is measured on worker COUNT categories: how many
+        AI-recruited workers lean attack (a > e) vs enquete (e > a).
+        Pre-seeded CSV workers don't count. Threshold = max(1, ceil(N*0.25))
+        where N is the number of AI-recruited workers."""
         import math
         for name in self.CONTROLLERS:
             cid = self._controller_ids[name]
@@ -354,14 +354,13 @@ class TestAIWorkerStatBalance:
                 f"{name}: expected ~{2 * self.TURNS} new workers after "
                 f"{self.TURNS} EOTs, got {len(recruited)} — recruit-all not draining slots?"
             )
-            total_enq = sum(e for (_w, e, _a) in recruited)
-            total_atk = sum(a for (_w, _e, a) in recruited)
-            delta = abs(total_enq - total_atk)
-            total = total_enq + total_atk
-            threshold = max(2, math.ceil(total * 0.25))
+            attack_count  = sum(1 for (_w, e, a) in recruited if a > e)
+            enquete_count = sum(1 for (_w, e, a) in recruited if e > a)
+            delta = abs(attack_count - enquete_count)
+            threshold = max(1, math.ceil(len(recruited) * 0.25))
             assert delta <= threshold, (
-                f"{name}: stat-sum imbalance |enquete-attack| = |{total_enq} - "
-                f"{total_atk}| = {delta} > {threshold} "
+                f"{name}: count imbalance |attack-enquete| = |{attack_count} - "
+                f"{enquete_count}| = {delta} > {threshold} "
                 f"(AI-recruited workers: {recruited})"
             )
 
