@@ -21,7 +21,7 @@ function aiPassiveBehaviour($pdo, $c, $turn_number) {
         $base_zone = aiBaseZone($pdo, $c['id']);
     }
     if ($base_zone === null) return;
-    aiRecruitForState($pdo, $c, $base_zone, $turn_number);
+    aiRecruit($pdo, $c, $base_zone, $turn_number);
 
     $budget = aiBudget($pdo, $c, $turn_number);
     $ranked = aiRankTargets($pdo, $c);
@@ -48,7 +48,7 @@ function aiSearchingBehaviour($pdo, $c, $turn_number) {
         $base_zone = aiBaseZone($pdo, $c['id']);
     }
     if ($base_zone !== null) {
-        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
+        aiRecruit($pdo, $c, $base_zone, $turn_number);
     }
 
     $budget = aiBudget($pdo, $c, $turn_number);
@@ -76,7 +76,7 @@ function aiAggressiveBehaviour($pdo, $c, $turn_number) {
         $base_zone = aiBaseZone($pdo, $c['id']);
     }
     if ($base_zone !== null) {
-        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
+        aiRecruit($pdo, $c, $base_zone, $turn_number);
     }
 
     $budget = aiBudget($pdo, $c, $turn_number);
@@ -108,7 +108,7 @@ function aiViolentBehaviour($pdo, $c, $turn_number) {
         $base_zone = aiBaseZone($pdo, $c['id']);
     }
     if ($base_zone !== null) {
-        aiRecruitForState($pdo, $c, $base_zone, $turn_number);
+        aiRecruit($pdo, $c, $base_zone, $turn_number);
     }
 
     $budget = aiBudget($pdo, $c, $turn_number);

@@ -1,6 +1,6 @@
-controllers__lastname->controller_id,current_state,expansionism,worker_violence,target_zone_ids,destroy_location_ids,repair_location_ids,ai_budget_by_state,ai_strike_margin_percent,ai_location_attack_cap,ai_power_priority_list,ai_claim_priority_by_yield,objectives_json
-Alpha,passive,,,,,,,,,,,
-Beta,violent,,,,,,,,,,,
-Charlie,aggressive,,,,,,,,,,,
-Delta,searching,,,,,,,,,,,
-Echo,passive,,,,,,,,,,,
+controllers__lastname->controller_id,current_state,expansionism,worker_violence,recruit_strategy,target_zone_ids,destroy_location_ids,repair_location_ids,ai_budget_by_state,ai_strike_margin_percent,ai_location_attack_cap,ai_power_priority_list,ai_claim_priority_by_yield,objectives_json
+Alpha,passive,,,balance,,,,,,,,,
+Beta,violent,,,balance,,,,,,,,,
+Charlie,aggressive,,,,,,,,,,,,
+Delta,searching,,,,,,,,,,,,
+Echo,passive,,,,,,,,,,,,
