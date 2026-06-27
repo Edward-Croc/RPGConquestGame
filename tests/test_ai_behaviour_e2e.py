@@ -1048,3 +1048,121 @@ class TestStateTransitions:
             f"Beta (violent) should regress to aggressive when CKE+CKL are empty; "
             f"got {self._after['Beta']!r}"
         )
+
+
+class TestAIMovesTowardTargetZone:
+    """An AI with a `target_zone_ids` entry naming a zone it does NOT
+    yet occupy should advance a worker toward that zone each EOT.
+
+    Fixture: Alpha (passive) has workers seeded in Beta-Combat by the
+    TestConfig advanced CSV. Beta-Combat is adjacent to Gamma-Claims
+    (single hop) and Alpha owns 0 workers in Gamma-Claims at fixture
+    load. We patch Alpha's ai_controller_params.target_zone_ids =
+    [gamma_claims_id], run one EOT, and expect at least one Alpha
+    worker to land in Gamma-Claims.
+
+    With no aiMoveTowardTargetZones implementation, Alpha's workers
+    stay where they are and the post-EOT count in Gamma-Claims is 0
+    → this test FAILS until the move-toward-target step lands."""
+
+    AI_LASTNAME = "Alpha"
+    TARGET_ZONE_NAME = "Gamma-Claims"
+    ADJACENT_SOURCE_ZONE_NAME = "Beta-Combat"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def target_zone_state(self, browser):
+        if not DB_AVAILABLE:
+            pytest.skip("DB not available — target_zone_ids must be set via DB")
+
+        import json
+
+        _fresh_test_config(browser)
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        activated = _activate_is_ia_for(page, [self.AI_LASTNAME])
+        alpha_cid = int(activated[self.AI_LASTNAME])
+
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT id FROM {GAME_PREFIX}zones WHERE name = %s",
+                (self.TARGET_ZONE_NAME,),
+            )
+            row = cur.fetchone()
+            assert row is not None, f"No zone named {self.TARGET_ZONE_NAME!r}"
+            target_zone_id = int(row["id"])
+
+            cur.execute(
+                f"SELECT id FROM {GAME_PREFIX}zones WHERE name = %s",
+                (self.ADJACENT_SOURCE_ZONE_NAME,),
+            )
+            row = cur.fetchone()
+            assert row is not None, f"No zone named {self.ADJACENT_SOURCE_ZONE_NAME!r}"
+            source_zone_id = int(row["id"])
+
+            cur.execute(
+                f"UPDATE {GAME_PREFIX}ai_controller_params "
+                f"SET target_zone_ids = %s WHERE controller_id = %s",
+                (json.dumps([target_zone_id]), alpha_cid),
+            )
+        conn.commit()
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, source_zone_id),
+            )
+            source_before = int(cur.fetchone()["n"])
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, target_zone_id),
+            )
+            target_before = int(cur.fetchone()["n"])
+
+        assert source_before >= 1, (
+            f"Pre-EOT: Alpha expected ≥1 worker in adjacent {self.ADJACENT_SOURCE_ZONE_NAME}, "
+            f"got {source_before} — fixture seed drifted"
+        )
+        assert target_before == 0, (
+            f"Pre-EOT: Alpha expected 0 workers in {self.TARGET_ZONE_NAME}, "
+            f"got {target_before} — fixture seed drifted"
+        )
+
+        # Commit so InnoDB REPEATABLE-READ takes a fresh snapshot for the post-EOT reads.
+        conn.commit()
+        end_turn(page, PHP_BASE_URL)
+
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COUNT(*) AS n FROM {GAME_PREFIX}workers w "
+                f"JOIN {GAME_PREFIX}controller_worker cw ON cw.worker_id = w.id "
+                f"WHERE cw.controller_id = %s AND w.zone_id = %s",
+                (alpha_cid, target_zone_id),
+            )
+            target_after = int(cur.fetchone()["n"])
+        conn.close()
+
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        type(self)._target_after = target_after
+        type(self)._target_zone_id = target_zone_id
+        type(self)._alpha_cid = alpha_cid
+        yield
+
+    def test_ai_worker_reaches_target_zone(self):
+        """At least one Alpha worker should have moved into Gamma-Claims
+        after one EOT, since Gamma-Claims is single-hop adjacent to
+        Beta-Combat (where Alpha workers live) and listed in Alpha's
+        target_zone_ids."""
+        assert self._target_after >= 1, (
+            f"Alpha should have moved ≥1 worker into {self.TARGET_ZONE_NAME} "
+            f"(zone_id={self._target_zone_id}) after EOT; got {self._target_after}. "
+            f"aiMoveTowardTargetZones missing or not wired into the EOT pipeline."
+        )

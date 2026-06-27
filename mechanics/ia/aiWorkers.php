@@ -138,6 +138,58 @@ function aiClassifyWorkers($pdo, $controller_id) {
     return $result;
 }
 
+/**
+ * For each target zone the AI must own, if no alive worker of $c is
+ * already there, move one adjacent alive worker (lowest id) into it.
+ * Each target zone receives at most one mover per turn; workers in
+ * $skipWorkerIds are not eligible. Returns int[] of moved worker ids.
+ */
+function aiMoveTowardTargetZones($pdo, $c, $turn_number, $skipWorkerIds = []): array {
+    $targets = aiTargetZoneIds($pdo, (int)$c['id']);
+    if (empty($targets)) return [];
+
+    $alive = aiAliveWorkers($pdo, $c['id'], $turn_number);
+    if (empty($alive)) return [];
+
+    $skip = array_flip(array_map('intval', $skipWorkerIds));
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $primaryTrue = ($_SESSION['DBTYPE'] == 'mysql') ? '1' : 'true';
+
+    $moved = [];
+    foreach ($targets as $z) {
+        $z = (int)$z;
+        if ($z <= 0) continue;
+
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM {$prefix}workers w
+                 JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id
+                 WHERE cw.controller_id = :cid AND cw.is_primary_controller = {$primaryTrue}
+                   AND w.zone_id = :zid"
+            );
+            $stmt->execute([':cid' => $c['id'], ':zid' => $z]);
+            $already = (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            continue;
+        }
+        if ($already > 0) continue;
+
+        $adjacent = array_flip(array_map('intval', getAdjacentZoneIds($pdo, $z)));
+        if (empty($adjacent)) continue;
+
+        foreach ($alive as $w) {
+            $wid = (int)$w['id'];
+            if (isset($skip[$wid])) continue;
+            if (in_array($wid, $moved, true)) continue;
+            if (!isset($adjacent[(int)$w['zone_id']])) continue;
+            moveWorker($pdo, $wid, $z);
+            $moved[] = $wid;
+            break;
+        }
+    }
+    return $moved;
+}
+
 function aiAliveWorkers($pdo, $controller_id, $turn_number) {
     $prefix = $_SESSION['GAME_PREFIX'];
     $inactive = "'".implode("','", INACTIVE_ACTIONS)."'";
