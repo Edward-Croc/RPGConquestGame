@@ -27,7 +27,11 @@ function aiRecruitOneSlot($pdo, $c, $zone_id, $slot_type) {
     $proposals = [];
     for ($i = 0; $i < $nbChoices; $i++) {
         $cand = generateNewWorker($pdo, $c['id'], $slot_type);
-        if (!empty($cand) && !empty($cand['lastname'])) $proposals[] = $cand;
+        if (empty($cand) || empty($cand['lastname'])) continue;
+        if (aiWorkerExistsForController($pdo, (int)$c['id'], (string)$cand['firstname'], (string)$cand['lastname'], (int)$cand['origin_id'])) {
+            continue;
+        }
+        $proposals[] = $cand;
     }
     if (empty($proposals)) return false;
 
@@ -154,4 +158,23 @@ function aiPoolStatSums($pdo, $controller_id) {
         'enquete' => (int) ($row['enquete'] ?? 0),
         'attack'  => (int) ($row['attack']  ?? 0),
     ];
+}
+
+// Returns true if a worker with the same firstname+lastname+origin_id is already linked to this controller.
+function aiWorkerExistsForController(PDO $pdo, int $controller_id, string $firstname, string $lastname, int $origin_id): bool {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT w.id AS id FROM {$prefix}workers AS w
+        INNER JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
+        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
+        $stmt->bindParam(':firstname', $firstname, PDO::PARAM_STR);
+        $stmt->bindParam(':lastname', $lastname, PDO::PARAM_STR);
+        $stmt->bindParam(':origin_id', $origin_id, PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        return false;
+    }
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return !empty($rows);
 }
