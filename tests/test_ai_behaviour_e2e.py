@@ -10,6 +10,7 @@ UI-only. Run:
 """
 import html as _html
 import re
+from pathlib import Path
 
 import pytest
 
@@ -1296,4 +1297,109 @@ class TestAISpreadsWorkersAcrossOwnZones:
             f"Alpha should have spread ≥1 worker into {self.OWN_TARGET_ZONE_NAME} "
             f"(zone_id={self._own_zone_id}) after EOT; got {self._own_after}. "
             f"aiSpreadAcrossOwnZones missing or not wired into the EOT pipeline."
+        )
+
+
+def test_ai_recruit_dedupe_guard_present():
+    """Defensive regression net for STEP 1's dedupe guard.
+
+    Post-EOT observables (recruited_workers counter, actual worker
+    count) are indistinguishable between the bug and the fix: on
+    dedupe the buggy createWorker path returns an existing id without
+    incrementing, and the fixed pool-filter path returns false without
+    incrementing. The only mid-EOT divergence (turn_recruited_workers)
+    is reset before any post-EOT observation is possible.
+
+    So we assert directly on source: the helper
+    aiWorkerExistsForController must be defined AND called from within
+    aiRecruit.php. If STEP 1 gets ripped out, this test fails loudly
+    even though behavioural E2E assertions would still pass."""
+    ai_recruit_path = Path(__file__).parent.parent / "mechanics" / "ia" / "aiRecruit.php"
+    source = ai_recruit_path.read_text(encoding="utf-8")
+    assert "function aiWorkerExistsForController(" in source, (
+        f"aiWorkerExistsForController helper is not defined in {ai_recruit_path}. "
+        f"STEP 1's dedupe guard has been removed or renamed — the pool-filter "
+        f"regression net is gone."
+    )
+    assert "aiWorkerExistsForController($pdo," in source, (
+        f"aiWorkerExistsForController is defined but never called from within "
+        f"{ai_recruit_path}. STEP 1's integration point (aiRecruitOneSlot's "
+        f"candidate-pool filter) is missing — the guard exists as dead code."
+    )
+
+
+class TestAIRecruitCommuneOnlySmoke:
+    """SMOKE test: aiRecruit doesn't crash / doesn't emit `Failed:` when
+    both slots are forced to a small origin pool (origine Commune).
+
+    This is NOT a behavioural regression test for STEP 1's dedupe guard
+    — post-EOT observables cannot distinguish the buggy createWorker
+    dedupe path (returns existing id) from the fixed pool-filter path
+    (returns false). Both leave recruited_workers and actual worker
+    count unchanged on a collision. The strong regression net for STEP
+    1 lives in the module-level test test_ai_recruit_dedupe_guard_present
+    which asserts the helper is present and wired in source.
+
+    Here we only verify the AI survives running under Commune-only
+    forced configs: any negative delta or PHP error would fail."""
+
+    AI_LASTNAME = "Alpha"
+    ORIGIN_NAME = "origine Commune"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def commune_only_state(self, browser):
+        if not DB_AVAILABLE:
+            pytest.skip("DB not available — origin_list configs must be set via DB")
+
+        _fresh_test_config(browser)
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT id FROM {GAME_PREFIX}worker_origins WHERE name = %s",
+                (self.ORIGIN_NAME,),
+            )
+            row = cur.fetchone()
+            assert row is not None, f"No worker_origins row named {self.ORIGIN_NAME!r}"
+            commune_id = int(row["id"])
+
+            for key in ("first_come_origin_list", "recrutement_origin_list"):
+                cur.execute(
+                    f"INSERT INTO {GAME_PREFIX}config (name, value, description) "
+                    f"VALUES (%s, %s, %s) "
+                    f"ON DUPLICATE KEY UPDATE value = VALUES(value)",
+                    (key, str(commune_id), "Forced to Commune-only for smoke test"),
+                )
+        conn.commit()
+        conn.close()
+
+        _activate_is_ia_for(page, [self.AI_LASTNAME])
+
+        before = _scrape_total_recruited(page, self.AI_LASTNAME)
+        end_turn(page, PHP_BASE_URL)
+        after = _scrape_total_recruited(page, self.AI_LASTNAME)
+
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        type(self)._before = before
+        type(self)._after = after
+        yield
+
+    def test_ai_survives_commune_only_pool(self):
+        """Smoke: AI should recruit at least 1 worker (either slot may
+        or may not fill under collision pressure — both are acceptable)
+        and must not crash or produce PHP errors. The strong regression
+        net for STEP 1's dedupe guard is
+        test_ai_recruit_dedupe_guard_present at module scope."""
+        delta = self._after - self._before
+        assert delta >= 1, (
+            f"Alpha: expected delta >= 1 (at least one slot fills under "
+            f"Commune-only pool), got delta={delta} "
+            f"(before={self._before}, after={self._after}). "
+            f"This is a smoke test — the strong regression net for "
+            f"STEP 1's dedupe guard is test_ai_recruit_dedupe_guard_present."
         )
