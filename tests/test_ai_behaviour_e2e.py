@@ -173,16 +173,13 @@ def _scrape_worker_stats_per_controller(page, controller_ids):
 class TestAIRecruitsAllAvailable:
     """Every AI controller drains ALL per-turn recruit slots: first-come
     first, then recrutement. With TestConfig defaults
-    (turn_firstcome_workers=1, start_workers=1) → +2 workers per turn
-    in the typical case. First EOT can occasionally produce only +1
-    when the violent-state branch consumes resources mid-turn — the
-    contract is "AI tries to drain both slots", asserted by checking
-    delta >= 1 here and aggregated across turns in
-    TestAIWorkerStatBalance."""
+    (turn_firstcome_workers=1, start_workers=1) → exactly +2 workers per
+    turn. Strict delta after the aiRecruitOneSlot dedupe guard + Commune
+    pool expansion — the earlier tolerant range covered the flake this
+    pair of fixes eliminated."""
 
     CONTROLLERS = ["Alpha", "Beta"]
-    MIN_DELTA = 1
-    MAX_DELTA = 2
+    EXPECTED_DELTA = 2
 
     @pytest.fixture(scope="class", autouse=True)
     def recruit_all_state(self, browser):
@@ -207,8 +204,8 @@ class TestAIRecruitsAllAvailable:
     def test_each_ai_drains_both_slots(self):
         for name in self.CONTROLLERS:
             delta = self._after[name] - self._before[name]
-            assert self.MIN_DELTA <= delta <= self.MAX_DELTA, (
-                f"{name}: expected delta in [{self.MIN_DELTA}, {self.MAX_DELTA}], "
+            assert delta == self.EXPECTED_DELTA, (
+                f"{name}: expected strict delta == {self.EXPECTED_DELTA}, "
                 f"got delta={delta} "
                 f"(before={self._before[name]}, after={self._after[name]})"
             )
@@ -351,8 +348,8 @@ class TestAIWorkerStatBalance:
         for name in self.CONTROLLERS:
             cid = self._controller_ids[name]
             recruited = self._new_workers[cid]
-            assert len(recruited) >= 2 * self.TURNS - 2, (
-                f"{name}: expected ~{2 * self.TURNS} new workers after "
+            assert len(recruited) >= 2 * self.TURNS, (
+                f"{name}: expected {2 * self.TURNS} new workers after "
                 f"{self.TURNS} EOTs, got {len(recruited)} — recruit-all not draining slots?"
             )
             attack_count  = sum(1 for (_w, e, a) in recruited if a > e)
