@@ -230,6 +230,17 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
+    // Reject hidden-zone base builds when the controller cannot see the zone.
+    $zoneRows = getZonesArray($pdo, null, null, $zone_id);
+    $zone = $zoneRows[0] ?? null;
+    if ($zone && !empty($zone['is_hidden'])) {
+        $isGm = !empty($_SESSION['is_privileged']);
+        if (!canControllerSeeZone($pdo, $zone, (int)$controller_id, $isGm)) {
+            echo "Zone non accessible.<br />";
+            return false;
+        }
+    }
+
     if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
         echo "Stock insuffisant ou modifié.<br />";
         return false;

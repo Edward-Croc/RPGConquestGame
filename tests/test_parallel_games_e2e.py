@@ -203,11 +203,11 @@ class TestBothGamesLoaded:
             f"Expected {expected} TestConfig workers (per setupTestConfig_advanced.csv), got {count}"
 
     def test_secondary_has_shikoku_zones(self, page: Page, base_url):
-        """Secondary has Shikoku zones (11 total). Counted via management_zones."""
+        """Secondary has the 11 Shikoku zones seeded by Japon1555SQL (setupJapon1555SQL_base.sql). Counted via management_zones."""
         login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
         zones = ui_zone_names(page, base_url=PHP_BASE_URL_SECONDARY)
         assert len(zones) == 11, \
-            f"Expected 11 Shikoku zones, got {len(zones)}: {zones}"
+            f"Expected 11 Shikoku zones (per setupJapon1555SQL_base.sql), got {len(zones)}: {zones}"
 
     def test_primary_has_testconfig_zones(self, page: Page, base_url):
         """Primary has the TestConfig zones from setupTestConfig_zones.csv. Counted via management_zones."""

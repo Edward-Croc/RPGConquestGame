@@ -246,12 +246,13 @@ class TestCSVLoadViaAdmin:
             "PHP warnings found on page after Japon1555CSV reset"
 
         # Verify CSV load success messages with exact row counts
+        zones_n = csv_row_count("setupJapon1555CSV_zones.csv")
         assert "setupJapon1555CSV_worker_origins.csv loaded successfully (13 rows)" in page_html, \
             "Expected worker_origins CSV to load 13 rows"
         assert "setupJapon1555CSV_worker_names.csv loaded successfully (122 rows)" in page_html, \
             "Expected worker_names CSV to load 122 rows"
-        assert "setupJapon1555CSV_zones.csv loaded successfully (11 rows)" in page_html, \
-            "Expected zones CSV to load 11 rows"
+        assert f"setupJapon1555CSV_zones.csv loaded successfully ({zones_n} rows)" in page_html, \
+            f"Expected zones CSV to load {zones_n} rows"
         assert "setupJapon1555CSV_hobbys.csv loaded successfully (47 rows)" in page_html, \
             "Expected hobbys CSV to load 47 rows"
         assert "setupJapon1555CSV_jobs.csv loaded successfully (46 rows)" in page_html, \
@@ -266,8 +267,8 @@ class TestCSVLoadViaAdmin:
         # Verify DB row counts
         assert table_row_count("worker_origins") == 13, \
             "Japon1555CSV should load exactly 13 worker origins"
-        assert table_row_count("zones") == 11, \
-            "Japon1555CSV should load exactly 11 zones"
+        assert table_row_count("zones") == zones_n, \
+            f"Japon1555CSV should load exactly {zones_n} zones"
         assert table_row_count("worker_names") == 122, \
             "Japon1555CSV should load exactly 122 worker names"
         assert table_row_count("factions") == 11, \
