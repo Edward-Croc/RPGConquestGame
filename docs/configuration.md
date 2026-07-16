@@ -90,6 +90,64 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalculateBaseDefence` (`zones/functions.php`). La formule complète vit dans `calculateSecretLocationDiscoveryDiff`.
 
+### Règles de modification par zones adjacentes (`zones.zone_rules`)
+
+**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone en fonction de l'état d'appartenance d'une zone **voisine** (single-hop). Utile pour lier stratégiquement deux zones : imposer un prérequis territorial, récompenser un contrôle contigu, ou pénaliser un prétendant isolé.
+
+**Schéma JSON :** un objet dont chaque clé est un **type d'application** et dont la valeur est un tableau de règles.
+
+```json
+{
+    "Claim": [
+        {"adjacent_zone_name": "Plaines du Kansai", "condition": "not_held_by_actor", "value_delta": -4},
+        {"adjacent_zone_name": "Plaines du Kansai", "condition": "held_by_actor", "value_delta": 2}
+    ],
+    "Attack":        [ /* mêmes champs */ ],
+    "Defence":       [ /* ... */ ],
+    "ZoneDefence":   [ /* ... */ ],
+    "DiscoveryDiff": [ /* ... */ ]
+}
+```
+
+**Types supportés :**
+
+- **`Claim`** — modifie la valeur retournée par `calculateControllerValue('Claim', ...)`, consommée par `claimMechanic` pour comparer prétendant et défense de la zone.
+- **`Attack`** — modifie la valeur d'attaque agrégée d'un contrôleur dans la zone (place forte, agents en action `attack`).
+- **`Defence`** — modifie la valeur de défense agrégée d'un contrôleur dans la zone.
+- **`ZoneDefence`** — modifie la valeur de défense de zone recalculée en fin de tour (`recalculateBaseZoneDefence`).
+- **`DiscoveryDiff`** — modifie la difficulté de découverte (`discovery_diff`) des lieux secrets présents dans la zone.
+
+**Champs d'une règle :**
+
+- **`adjacent_zone_name`** (string, requis) — nom exact d'une zone qui doit figurer dans la colonne `adjacent_zones` de la zone porteuse. Résolu par lookup SQL sur `zones.name`.
+- **`condition`** (enum, requis) — deux valeurs implémentées :
+  - **`held_by_actor`** — la règle s'applique si l'acteur (le contrôleur pour qui on calcule) **détient** la zone voisine (`holder_controller_id == actor_id`).
+  - **`not_held_by_actor`** — la règle s'applique si l'acteur **ne détient pas** la zone voisine.
+- **`value_delta`** (int, requis) — entier signé ajouté à la valeur retournée par `calculateControllerValue` quand la condition est satisfaite. Peut être négatif (pénalité) ou positif (bonus).
+
+**Combinaison additive :** toutes les règles satisfaites contribuent, dans l'ordre du tableau. Le résultat final est `base_value + Σ(value_delta pour chaque règle satisfaite)`. Plusieurs règles peuvent viser la même zone voisine avec des conditions différentes pour couvrir les deux cas (détenue / non détenue).
+
+**Adjacence à un saut (single-hop) :** la zone référencée par `adjacent_zone_name` **doit** figurer dans la liste `adjacent_zones` de la zone porteuse. Si elle n'y est pas (topologie incohérente ou nom mal saisi), la règle est ignorée avec un `error_log` — la mécanique de calcul ne se casse pas.
+
+> **Important :** `zone_rules` ne fait **pas** de résolution multi-sauts. Chaque règle décrit un lien direct entre deux zones voisines. Pour un effet en chaîne, il faut poser une règle sur chaque zone porteuse concernée.
+
+**Fail-open — comportements de robustesse :**
+
+- `zone_rules IS NULL` ou JSON invalide → la valeur passe inchangée.
+- `controller_id NULL` (pas d'acteur, calcul générique) → la valeur passe inchangée.
+- `adjacent_zone_name` introuvable dans `zones` → `error_log` + règle ignorée.
+- Zone référencée non-adjacente (absente de `adjacent_zones` de la zone porteuse) → `error_log` + règle ignorée.
+- `condition` inconnue (hors `held_by_actor` / `not_held_by_actor`) → `error_log` + règle ignorée.
+- Règle mal formée (champs `adjacent_zone_name`, `condition` ou `value_delta` manquants) → `error_log` + règle ignorée.
+
+Le principe est simple : une configuration cassée dégrade la règle concernée mais laisse la valeur de base intacte, plutôt que de faire échouer tout le calcul de tour.
+
+**Point d'intégration :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` lit `zones.zone_rules`, filtre les règles par type d'application, évalue chaque condition contre l'état actuel des zones voisines et cumule les `value_delta` pertinents.
+
+> **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` référençant `Plaines du Kansai` (`-4` si l'acteur ne la détient pas, `+2` s'il la détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
+
+**Édition CSV / admin :** la colonne est chargée depuis les CSV de scénario (`setup{ScenarioName}_zones.csv`) via `db_connector.php`. Le JSON doit être valide et échappé selon les règles CSV (guillemets internes doublés). Aucune interface d'édition admin dédiée à `zone_rules` n'existe pour l'instant : la mise au point se fait par édition du CSV puis rechargement du scénario.
+
 ### Modes de résolution
 
 #### Famille Interaction entre Agents(workers)
