@@ -17,11 +17,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $zoneId = $_POST['zone_id'];
     $newClaimer = !empty($_POST['claimer_id']) ? $_POST['claimer_id'] : null;
     $newHolder = !empty($_POST['holder_id']) ? $_POST['holder_id'] : null;
+    $adjacentZones = isset($_POST['adjacent_zones']) ? trim($_POST['adjacent_zones']) : '';
 
-    $stmt = $gameReady->prepare("UPDATE {$prefix}zones SET claimer_controller_id = ?, holder_controller_id = ? WHERE id = ?");
-    $stmt->execute([$newClaimer, $newHolder, $zoneId]);
+    $zoneRulesRaw = isset($_POST['zone_rules']) ? $_POST['zone_rules'] : '';
+    $zoneRulesToStore = null;
+    $jsonError = false;
+    if (trim($zoneRulesRaw) !== '') {
+        $decoded = json_decode($zoneRulesRaw, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            $jsonError = true;
+        } else {
+            $zoneRulesToStore = json_encode($decoded);
+        }
+    }
 
-    $update_msg = "<p style='color: green;'>Zone #$zoneId mise à jour avec succès.</p>";
+    if ($jsonError) {
+        $update_msg = "<p style='color: red;'>Zone #$zoneId : JSON invalide, mise à jour annulée.</p>";
+    } else {
+        $stmt = $gameReady->prepare("UPDATE {$prefix}zones SET claimer_controller_id = ?, holder_controller_id = ?, adjacent_zones = ?, zone_rules = ? WHERE id = ?");
+        $stmt->execute([$newClaimer, $newHolder, $adjacentZones, $zoneRulesToStore, $zoneId]);
+        $update_msg = "<p style='color: green;'>Zone #$zoneId mise à jour avec succès.</p>";
+    }
 }
 
 $controllerStmt = $gameReady->query("SELECT id, CONCAT(firstname, ' ', lastname) AS name FROM {$prefix}controllers ORDER BY id ASC");
@@ -33,6 +49,7 @@ SELECT
     z.name,
     z.description,
     z.adjacent_zones,
+    z.zone_rules,
     claimer.id AS claimer_id,
     CONCAT(claimer.firstname, ' ', claimer.lastname) AS claimer_name,
     holder.id AS holder_id,
@@ -61,20 +78,25 @@ require_once '../base/baseHTML.php';
             <th>Sous la banière de</th>
             <th>Défendue par</th>
             <th>Zones adjacentes</th>
+            <th>Adjacent zones (raw)</th>
+            <th>Zone rules (JSON)</th>
+            <th></th>
         </tr>
-        <?php foreach ($zones as $zone):
-            $adjacentNames = '—';
-            if (!empty($zone['adjacent_zones'])) {
-                $ids = array_filter(array_map('trim', explode(',', $zone['adjacent_zones'])));
-                $names = [];
-                foreach ($ids as $id) {
-                    $names[] = $zoneNameById[(int)$id] ?? "#$id";
-                }
-                if ($names) $adjacentNames = implode(', ', $names);
+    </table>
+    <?php foreach ($zones as $zone):
+        $adjacentNames = '—';
+        if (!empty($zone['adjacent_zones'])) {
+            $ids = array_filter(array_map('trim', explode(',', $zone['adjacent_zones'])));
+            $names = [];
+            foreach ($ids as $id) {
+                $names[] = $zoneNameById[(int)$id] ?? "#$id";
             }
-        ?>
-        <tr>
-            <form method="post">
+            if ($names) $adjacentNames = implode(', ', $names);
+        }
+    ?>
+    <form method="post">
+        <table border="1" cellpadding="5">
+            <tr>
                 <td><?= htmlspecialchars($zone['id']) ?></td>
                 <td><?= htmlspecialchars($zone['name']) ?></td>
                 <td>
@@ -99,11 +121,17 @@ require_once '../base/baseHTML.php';
                 </td>
                 <td data-field="adjacent_zones"><?= htmlspecialchars($adjacentNames) ?></td>
                 <td>
+                    <textarea name="adjacent_zones" rows="1" cols="20"><?= htmlspecialchars($zone['adjacent_zones'] ?? '') ?></textarea>
+                </td>
+                <td>
+                    <textarea name="zone_rules" rows="2" cols="40"><?= htmlspecialchars($zone['zone_rules'] ?? '') ?></textarea>
+                </td>
+                <td>
                     <input type="hidden" name="zone_id" value="<?= $zone['id'] ?>">
                     <button type="submit">Update</button>
                 </td>
-            </form>
-        </tr>
+            </tr>
+        </table>
+    </form>
     <?php endforeach; ?>
-    </table>
 </div>
