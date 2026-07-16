@@ -80,6 +80,16 @@ function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null
     return $zonesArray;
 }
 
+// GM sees all; holder/claimer sees their own; non-hidden zones are public.
+function canControllerSeeZone(PDO $pdo, array $zone, ?int $controller_id, bool $isGm): bool {
+    if ($isGm) return true;
+    if (empty($zone['is_hidden'])) return true;
+    $holderId = isset($zone['holder_controller_id']) ? (int)$zone['holder_controller_id'] : null;
+    $claimerId = isset($zone['claimer_controller_id']) ? (int)$zone['claimer_controller_id'] : null;
+    if ($controller_id !== null && ($holderId === $controller_id || $claimerId === $controller_id)) return true;
+    return false;
+}
+
 /**
  * Function to prepare the zone selector from à list of zones
  *
@@ -98,9 +108,13 @@ function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false
 
     if (empty($zonesArray)) return '';
 
+    $sessionCid = isset($_SESSION['controller']['id']) ? (int)$_SESSION['controller']['id'] : null;
+    $isGm = !empty($_SESSION['is_privileged']);
+
     $zoneOptions = '';
     foreach ($zonesArray as $zone) {
-        if ($hideZones 
+        if ($hideZones && !empty($zone['is_hidden']) && !canControllerSeeZone($pdo, $zone, $sessionCid, $isGm)) continue;
+        if ($hideZones
             && ($zone['hide_turn_zero'] && $turn_number == 0)
         ) continue;
         $zoneOptions .= sprintf(
