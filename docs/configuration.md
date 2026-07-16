@@ -162,6 +162,33 @@ Le principe est simple : une configuration cassée dégrade la règle concernée
 
 **Édition CSV / admin :** la colonne est chargée depuis les CSV de scénario (`setup{ScenarioName}_zones.csv`) via `db_connector.php`. Le JSON doit être valide et échappé selon les règles CSV (guillemets internes doublés). Une interface d'édition admin est également disponible sur `zones/management_zones.php` : chaque ligne de zone expose une `<textarea>` pour `zone_rules` (JSON, textarea vide → `NULL`, JSON invalide → mise à jour refusée avec message rouge) et une `<textarea>` pour `adjacent_zones` (liste brute d'IDs séparés par des virgules, trim automatique, textarea vide → chaîne vide). La mise à jour est atomique avec les colonnes `claimer_controller_id` / `holder_controller_id` existantes.
 
+### Zones cachées persistantes (`zones.is_hidden`)
+
+**`zones.is_hidden`** — booléen sur `{prefix}zones` (défaut `0` / `FALSE`). Quand la valeur vaut `1`, la zone est **cachée à travers tous les tours** aux joueurs non-privilégiés qui n'ont ni la bannière (`holder_controller_id`) ni la revendication (`claimer_controller_id`) sur la zone. Complète — sans les remplacer — les colonnes existantes :
+
+- **`hide_turn_zero`** — cache la zone uniquement au tour 0 (comportement legacy, indépendant).
+- **`is_hidden`** — cache la zone en permanence, seulement révélée aux acteurs légitimes.
+
+**Contrat de visibilité (`canControllerSeeZone`, `zones/functions.php`) :**
+
+- GM (`$_SESSION['is_privileged']`) → voit toutes les zones, y compris les cachées.
+- Zone non cachée (`is_hidden = 0`) → tout le monde la voit (le filtre `hide_turn_zero` reste actif au tour 0).
+- Zone cachée + contrôleur session est **holder** OU **claimer** de la zone → il la voit.
+- Sinon → invisible côté display.
+
+**Points d'application :** le filtre est appliqué **au moment du rendu**, jamais dans `getZonesArray`. Deux sites de filtrage seulement :
+
+- `showZoneSelect` (`zones/functions.php`) — dropdown de zones dans `workers/new.php`, `workers/view.php`, `workers/viewAll.php`, `controllers/view.php`, etc.
+- `zones/view.php` — page publique des zones (`div.box` par zone).
+
+Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMechanic`, `locationSearchMechanic`, `ressourceGainMechanic`) traitent toutes les zones **sans filtre** : les règles `zone_name`-based et les gains conditionnels calculent silencieusement pour les zones cachées. Les rapports (`workers/view.php`, `controllers/view.php`) exposent les informations que le joueur possède déjà par une voie légitime (agent présent, CKL/CKE, gift-info reçue) — pas de filtre supplémentaire.
+
+**Garde-fou complémentaire :** `createBase` (`controllers/functions.php`) refuse la création d'une base dans une zone cachée non visible par le contrôleur (protection contre les URL forgées), avant même de dépenser les ressources. Le message affiché est `Zone non accessible.`.
+
+**Édition CSV / admin :** la colonne `is_hidden` figure dans l'en-tête des CSV de scénario (`setup{ScenarioName}_zones.csv`, valeur `0` ou `1`) et dans `$fileNames['zones']` (`BDD/db_connector.php`). L'admin `zones/management_zones.php` expose une `<input type="checkbox" name="is_hidden">` par ligne de zone, atomique avec les colonnes existantes.
+
+> **Exemple concret :** dans le scénario Japon1555, la zone `Kai (甲斐)` (fief ancestral des Takedas) porte `is_hidden = 1` avec `Takeda (武田)` comme claimer et holder. Aucun autre joueur ne voit ce territoire ; le clan Takeda et le GM le voient normalement.
+
 ### Modes de résolution
 
 #### Famille Interaction entre Agents(workers)
