@@ -160,7 +160,7 @@ Le principe est simple : une configuration cassée dégrade la règle concernée
 
 > **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` avec `zone_name: "Plaines du Kansai"` (`-4` si l'acteur ne détient pas les plaines, `+2` s'il les détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
 
-**Édition CSV / admin :** la colonne est chargée depuis les CSV de scénario (`setup{ScenarioName}_zones.csv`) via `db_connector.php`. Le JSON doit être valide et échappé selon les règles CSV (guillemets internes doublés). Aucune interface d'édition admin dédiée à `zone_rules` n'existe pour l'instant : la mise au point se fait par édition du CSV puis rechargement du scénario.
+**Édition CSV / admin :** la colonne est chargée depuis les CSV de scénario (`setup{ScenarioName}_zones.csv`) via `db_connector.php`. Le JSON doit être valide et échappé selon les règles CSV (guillemets internes doublés). Une interface d'édition admin est également disponible sur `zones/management_zones.php` : chaque ligne de zone expose une `<textarea>` pour `zone_rules` (JSON, textarea vide → `NULL`, JSON invalide → mise à jour refusée avec message rouge) et une `<textarea>` pour `adjacent_zones` (liste brute d'IDs séparés par des virgules, trim automatique, textarea vide → chaîne vide). La mise à jour est atomique avec les colonnes `claimer_controller_id` / `holder_controller_id` existantes.
 
 ### Modes de résolution
 
