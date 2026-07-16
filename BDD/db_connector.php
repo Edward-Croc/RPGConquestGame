@@ -768,7 +768,7 @@ function gameReady() {
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules', 'hide_when_zero'],
                         'controller_ressources' => ['controllers__lastname->controller_id', 'ressources_config__ressource_name->ressource_id', 'amount', 'amount_stored', 'end_turn_gain'],
-                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones'],
+                        'zones' => ['name', 'description', 'hide_turn_zero', 'controllers__lastname->claimer_controller_id', 'controllers__lastname->holder_controller_id', 'adjacent_zones', 'zone_rules'],
                         'locations' => ['name', 'description', 'hidden_description', 'discovery_diff', 'zones__name->zone_id', 'controllers__lastname->controller_id', 'is_base', 'can_be_destroyed', 'can_be_repaired', 'activate_json', 'location_types'],
                         'artefacts' => ['name', 'description', 'full_description', 'locations__name->location_id'],
                         'config' => ['name', 'value', 'description'],
