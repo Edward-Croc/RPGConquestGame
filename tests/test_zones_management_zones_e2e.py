@@ -149,9 +149,15 @@ def _reset_zone(zone_id):
 
 
 def _row_form_locator(page, zone_id):
-    """Return the <form> locator for the row whose hidden zone_id matches."""
+    """Return the row locator for the zone whose hidden zone_id matches.
+
+    Uses `tr:has(...)` rather than `form:has(...)` because the page uses
+    the standard `<tr> <form>...</form> </tr>` pattern (matching
+    ressources/management.php). Chromium's HTML5 parser DOM-evicts the
+    <form> element in that pattern, so form-scoped locators return no
+    matches; scoping by the enclosing <tr> is the reliable path."""
     return page.locator(
-        f"form:has(input[name='zone_id'][value='{zone_id}'])"
+        f"tr:has(input[name='zone_id'][value='{zone_id}'])"
     )
 
 
@@ -325,14 +331,14 @@ class TestAdjacentZonesAdminEdit:
     validation). Empty input stores `""` — NOT NULL."""
 
     def test_adjacent_zones_textarea_present(self, page: Page, base_url):
-        """A textarea[name='adjacent_zones'] must exist for at least
+        """A input[name='adjacent_zones'] must exist for at least
         one row on management_zones.php."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/zones/management_zones.php")
         page.wait_for_load_state("load")
-        textareaCount = page.locator("textarea[name='adjacent_zones']").count()
+        textareaCount = page.locator("input[name='adjacent_zones']").count()
         assert textareaCount >= 1, (
-            "Expected at least one textarea[name='adjacent_zones'] on "
+            "Expected at least one input[name='adjacent_zones'] on "
             f"management_zones.php; found {textareaCount}"
         )
 
@@ -345,7 +351,7 @@ class TestAdjacentZonesAdminEdit:
         safe_goto(page, f"{base_url}/zones/management_zones.php")
         page.wait_for_load_state("load")
         form = _row_form_locator(page, zoneId)
-        form.locator("textarea[name='adjacent_zones']").fill("2,4")
+        form.locator("input[name='adjacent_zones']").fill("2,4")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
@@ -363,7 +369,7 @@ class TestAdjacentZonesAdminEdit:
         safe_goto(page, f"{base_url}/zones/management_zones.php")
         page.wait_for_load_state("load")
         form = _row_form_locator(page, zoneId)
-        form.locator("textarea[name='adjacent_zones']").fill("  2,4  ")
+        form.locator("input[name='adjacent_zones']").fill("  2,4  ")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
@@ -390,7 +396,7 @@ class TestAdjacentZonesAdminEdit:
         safe_goto(page, f"{base_url}/zones/management_zones.php")
         page.wait_for_load_state("load")
         form = _row_form_locator(page, zoneId)
-        form.locator("textarea[name='adjacent_zones']").fill("")
+        form.locator("input[name='adjacent_zones']").fill("")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
