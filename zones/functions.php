@@ -530,6 +530,8 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
         }
     }
 
+    if ($debug) echo sprintf("%s pre-rules value : %d<br>", $type, $value);
+    $value = applyZoneRules($pdo, $type, $zone_id, $controller_id, $value);
     if ($debug) echo sprintf("%s final value : %d</p>", $type, $value);
     return $value;
 }
@@ -1010,4 +1012,97 @@ function updateLocation($pdo, $location, $activate_json) {
         echo __FUNCTION__."(): UPDATE locations Failed: " . $e->getMessage()."<br />";
     }
     return false;
+}
+
+/**
+ * Apply zone_rules value_deltas to a computed controller value.
+ * See docs/configuration.md for the JSON format.
+ *
+ * @param PDO $pdo
+ * @param string $type  One of 'Claim' | 'Attack' | 'Defence' | 'ZoneDefence' | 'DiscoveryDiff'.
+ * @param int $zone_id
+ * @param int|null $controller_id  Actor whose ownership decides rule matches.
+ * @param int $value  Pre-rules value.
+ *
+ * @return int  Value after summing every matching rule's value_delta.
+ */
+function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
+    if ($controller_id === null) {
+        return $value;
+    }
+    $prefix = $_SESSION['GAME_PREFIX'];
+
+    try {
+        $stmt = $pdo->prepare("SELECT zone_rules, adjacent_zones FROM {$prefix}zones WHERE id = :zone_id LIMIT 1");
+        $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("applyZoneRules: zone fetch failed for zone $zone_id: " . $e->getMessage());
+        return $value;
+    }
+    if (!$row || empty($row['zone_rules'])) {
+        return $value;
+    }
+
+    $rules = json_decode($row['zone_rules'], true);
+    if (!is_array($rules) || !isset($rules[$type]) || !is_array($rules[$type])) {
+        return $value;
+    }
+
+    $adjacentIdsSet = [];
+    if (!empty($row['adjacent_zones'])) {
+        foreach (explode(',', $row['adjacent_zones']) as $part) {
+            $part = trim($part);
+            if ($part !== '') {
+                $adjacentIdsSet[(int)$part] = true;
+            }
+        }
+    }
+    if (empty($adjacentIdsSet)) {
+        return $value;
+    }
+
+    foreach ($rules[$type] as $rule) {
+        if (!is_array($rule)
+            || !isset($rule['adjacent_zone_name'], $rule['condition'], $rule['value_delta'])
+        ) {
+            error_log("applyZoneRules: malformed rule on zone $zone_id for type $type");
+            continue;
+        }
+        $name = (string)$rule['adjacent_zone_name'];
+        $condition = (string)$rule['condition'];
+        $delta = (int)$rule['value_delta'];
+
+        try {
+            $lookup = $pdo->prepare("SELECT id, holder_controller_id FROM {$prefix}zones WHERE name = :name LIMIT 1");
+            $lookup->bindParam(':name', $name, PDO::PARAM_STR);
+            $lookup->execute();
+            $ref = $lookup->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("applyZoneRules: lookup failed for '$name' on zone $zone_id: " . $e->getMessage());
+            continue;
+        }
+        if (!$ref) {
+            error_log("applyZoneRules: adjacent_zone_name '$name' not found for zone $zone_id");
+            continue;
+        }
+        $refId = (int)$ref['id'];
+        if (!isset($adjacentIdsSet[$refId])) {
+            error_log("applyZoneRules: zone '$name' (id=$refId) not adjacent to zone $zone_id");
+            continue;
+        }
+
+        $isHeld = ((int)$ref['holder_controller_id'] === (int)$controller_id);
+        if ($condition === 'held_by_actor' && $isHeld) {
+            $value += $delta;
+        } elseif ($condition === 'not_held_by_actor' && !$isHeld) {
+            $value += $delta;
+        } elseif ($condition !== 'held_by_actor' && $condition !== 'not_held_by_actor') {
+            error_log("applyZoneRules: unknown condition '$condition' on zone $zone_id");
+            continue;
+        }
+    }
+
+    return $value;
 }
