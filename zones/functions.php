@@ -1049,7 +1049,11 @@ function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
     }
 
     $rules = json_decode($row['zone_rules'], true);
-    if (!is_array($rules) || !isset($rules[$type]) || !is_array($rules[$type])) {
+    if (!is_array($rules)) {
+        error_log("applyZoneRules: invalid JSON in zone_rules on zone $zone_id");
+        return $value;
+    }
+    if (!isset($rules[$type]) || !is_array($rules[$type])) {
         return $value;
     }
 

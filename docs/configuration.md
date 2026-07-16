@@ -144,7 +144,8 @@ La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalcu
 
 **Fail-open — comportements de robustesse :**
 
-- `zone_rules IS NULL` ou JSON invalide → la valeur passe inchangée.
+- `zone_rules IS NULL` → la valeur passe inchangée (aucun log).
+- JSON invalide (parse fail) → `error_log` + la valeur passe inchangée.
 - `controller_id NULL` (pas d'acteur, calcul générique) → la valeur passe inchangée.
 - Règle avec `zone_name` référençant un nom introuvable dans `zones` → `error_log` + règle ignorée.
 - Règle avec `adjacent_zones: true` mais la zone porteuse n'a aucune voisine listée → règle ignorée (aucun match possible, pas de log).
