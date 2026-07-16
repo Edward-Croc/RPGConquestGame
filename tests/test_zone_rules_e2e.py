@@ -113,6 +113,7 @@ _ZR_ZONES_TO_RESET = (
     'Epsilon-Controlled',    # primary adjacent proxy
     'Zeta-Unclaimed',        # secondary adjacent proxy
     'Alpha-Investigation',   # existing real zone used as non-adjacent probe
+    'Gamma-Claims',          # adjacent proxy used by iterator tests
 )
 
 
@@ -302,7 +303,7 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 10},
                 ],
             },
@@ -322,7 +323,7 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': False}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'not_held_by_actor', 'value_delta': 10},
                 ],
             },
@@ -343,9 +344,9 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 10},
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'not_held_by_actor', 'value_delta': -50},
                 ],
             },
@@ -366,9 +367,9 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 2},
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 2},
                 ],
             },
@@ -391,9 +392,9 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'ZoneThatDoesNotExist',
+                    {'zone_name': 'ZoneThatDoesNotExist',
                      'condition': 'held_by_actor', 'value_delta': -100},
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 10},
                 ],
             },
@@ -404,34 +405,32 @@ class TestApplyZoneRulesBehaviour:
             f"applies; got holder={post['holder_controller_id']!r}"
         )
 
-    def test_rule_referencing_non_adjacent_zone_is_skipped(self, browser):
-        """One rule references a REAL zone that is NOT in Delta's
-        adjacent_zones list. That rule must be skipped (single-hop
-        adjacency invariant). The second rule on the real adjacent
-        Epsilon still fires → +10 → Beta wins.
-        Alpha-Investigation is stamped as Beta-held (via
-        extra_beta_holdings) so a helper missing the adjacency guard
-        would apply the -100 rule and Beta would lose. Correct helper
-        skips the non-adjacent rule and Beta wins."""
+    def test_specific_zone_rule_fires_regardless_of_adjacency(self, browser):
+        """Specific-zone rules (with `zone_name`) do NOT require the
+        referenced zone to be adjacent — they reference any zone in the
+        game by name. Alpha-Investigation is NOT in Delta's adjacent_zones
+        list; a single rule referencing it (Beta holds it, held_by_actor
+        +10) must still fire → claim_val = 1 + 10 = 11 → Beta wins.
+        Under the old adjacency-required semantic, this rule would be
+        skipped and Beta would lose. Asserting `== beta_id` uniquely
+        proves the new decoupled semantic."""
         post, beta_id = self._run_scenario(
             browser,
             adjacent_specs=[
-                {'name': 'Epsilon-Controlled', 'held_by_beta': True},
+                {'name': 'Epsilon-Controlled', 'held_by_beta': False},
             ],
             extra_beta_holdings=('Alpha-Investigation',),
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Alpha-Investigation',
-                     'condition': 'held_by_actor', 'value_delta': -100},
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Alpha-Investigation',
                      'condition': 'held_by_actor', 'value_delta': 10},
                 ],
             },
         )
         assert post['holder_controller_id'] == beta_id, (
             f"Expected Beta (id={beta_id}) to hold Delta — non-adjacent "
-            f"rule must be skipped; got holder="
-            f"{post['holder_controller_id']!r}"
+            f"specific-zone rule (+10) must still fire; "
+            f"got holder={post['holder_controller_id']!r}"
         )
 
     def test_rule_with_unknown_condition_is_skipped(self, browser):
@@ -445,10 +444,10 @@ class TestApplyZoneRulesBehaviour:
             adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
             rules_json={
                 'Claim': [
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'not_a_real_condition_value',
                      'value_delta': -100},
-                    {'adjacent_zone_name': 'Epsilon-Controlled',
+                    {'zone_name': 'Epsilon-Controlled',
                      'condition': 'held_by_actor', 'value_delta': 10},
                 ],
             },
@@ -457,6 +456,122 @@ class TestApplyZoneRulesBehaviour:
             f"Expected Beta (id={beta_id}) to hold Delta — unknown-"
             f"condition rule must be skipped; got holder="
             f"{post['holder_controller_id']!r}"
+        )
+
+    def test_adjacent_iterator_accumulates_per_matching_zone(self, browser):
+        """`adjacent_zones: true` iterator fires once per adjacent zone
+        matching the condition. Two zones held by Beta + one not held.
+        held_by_actor +5 → 2 matches → total +10 delta → Beta wins.
+        Without iterator: rule would need to enumerate every zone by name."""
+        post, beta_id = self._run_scenario(
+            browser,
+            adjacent_specs=[
+                {'name': 'Epsilon-Controlled', 'held_by_beta': True},
+                {'name': 'Gamma-Claims',       'held_by_beta': True},
+                {'name': 'Alpha-Investigation','held_by_beta': False},
+            ],
+            rules_json={
+                'Claim': [
+                    {'adjacent_zones': True,
+                     'condition': 'held_by_actor', 'value_delta': 5},
+                ],
+            },
+        )
+        assert post['holder_controller_id'] == beta_id, (
+            f"Expected Beta (id={beta_id}) to hold Delta — 2 matching "
+            f"adjacent zones × +5 = +10 accumulated; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+    def test_adjacent_iterator_zero_matches_gives_no_delta(self, browser):
+        """`adjacent_zones: true` iterator with 0 matches → 0 delta.
+        held_by_actor +100 rule on 3 adjacent zones NONE held by Beta →
+        no rule fires, claim_val stays 1, Beta LOSES."""
+        post, beta_id = self._run_scenario(
+            browser,
+            adjacent_specs=[
+                {'name': 'Epsilon-Controlled', 'held_by_beta': False},
+                {'name': 'Gamma-Claims',       'held_by_beta': False},
+                {'name': 'Alpha-Investigation','held_by_beta': False},
+            ],
+            rules_json={
+                'Claim': [
+                    {'adjacent_zones': True,
+                     'condition': 'held_by_actor', 'value_delta': 100},
+                ],
+            },
+        )
+        assert post['holder_controller_id'] != beta_id, (
+            f"Expected Beta (id={beta_id}) to NOT hold Delta — no adjacent "
+            f"zone matches held_by_actor, so no delta; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+    def test_rule_with_both_shapes_is_skipped(self, browser):
+        """A rule specifying BOTH `zone_name` and `adjacent_zones: true`
+        is malformed — the helper cannot pick a semantic. Skipped with
+        error_log. A well-formed second rule still fires → Beta wins."""
+        post, beta_id = self._run_scenario(
+            browser,
+            adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
+            rules_json={
+                'Claim': [
+                    {'zone_name': 'Epsilon-Controlled',
+                     'adjacent_zones': True,
+                     'condition': 'held_by_actor', 'value_delta': -100},
+                    {'zone_name': 'Epsilon-Controlled',
+                     'condition': 'held_by_actor', 'value_delta': 10},
+                ],
+            },
+        )
+        assert post['holder_controller_id'] == beta_id, (
+            f"Expected Beta (id={beta_id}) to hold Delta — malformed "
+            f"conflicting-shape rule must be skipped; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+    def test_rule_with_neither_shape_is_skipped(self, browser):
+        """A rule specifying NEITHER `zone_name` NOR `adjacent_zones: true`
+        is malformed — no target defined. Skipped with error_log.
+        A well-formed second rule still fires → Beta wins."""
+        post, beta_id = self._run_scenario(
+            browser,
+            adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
+            rules_json={
+                'Claim': [
+                    {'condition': 'held_by_actor', 'value_delta': -100},
+                    {'zone_name': 'Epsilon-Controlled',
+                     'condition': 'held_by_actor', 'value_delta': 10},
+                ],
+            },
+        )
+        assert post['holder_controller_id'] == beta_id, (
+            f"Expected Beta (id={beta_id}) to hold Delta — malformed "
+            f"target-less rule must be skipped; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+    def test_rule_with_adjacent_zones_false_is_skipped(self, browser):
+        """`adjacent_zones: false` (explicit false, not truthy) must fall
+        through to the 'neither shape' branch since the discriminator is
+        strict `=== true`. Skipped with error_log. Well-formed second
+        rule still fires → Beta wins."""
+        post, beta_id = self._run_scenario(
+            browser,
+            adjacent_specs=[{'name': 'Epsilon-Controlled', 'held_by_beta': True}],
+            rules_json={
+                'Claim': [
+                    {'adjacent_zones': False,
+                     'condition': 'held_by_actor', 'value_delta': -100},
+                    {'zone_name': 'Epsilon-Controlled',
+                     'condition': 'held_by_actor', 'value_delta': 10},
+                ],
+            },
+        )
+        assert post['holder_controller_id'] == beta_id, (
+            f"Expected Beta (id={beta_id}) to hold Delta — `adjacent_zones: "
+            f"false` rule must be skipped by strict === true discriminator; "
+            f"got holder={post['holder_controller_id']!r}"
         )
 
 
@@ -639,7 +754,7 @@ class TestJapon1555KyotoGate:
             f"{claim_rules!r}"
         )
         for r in claim_rules:
-            assert r.get('adjacent_zone_name') == 'Plaines du Kansai', (
+            assert r.get('zone_name') == 'Plaines du Kansai', (
                 f"Every Claim rule on Kyoto should reference Plaines du "
                 f"Kansai; got {r!r}"
             )

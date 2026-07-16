@@ -90,19 +90,23 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalculateBaseDefence` (`zones/functions.php`). La formule complète vit dans `calculateSecretLocationDiscoveryDiff`.
 
-### Règles de modification par zones adjacentes (`zones.zone_rules`)
+### Règles de modification contextuelles (`zones.zone_rules`)
 
-**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone en fonction de l'état d'appartenance d'une zone **voisine** (single-hop). Utile pour lier stratégiquement deux zones : imposer un prérequis territorial, récompenser un contrôle contigu, ou pénaliser un prétendant isolé.
+**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **shapes** de règles cohabitent :
+
+- **`zone_name`** — cible une zone spécifique par nom (n'importe où sur la carte, sans contrainte d'adjacence). Utile pour imposer un prérequis territorial précis (gate distant), ou lier des zones stratégiques nommées.
+- **`adjacent_zones: true`** — itère sur toutes les zones voisines (single-hop, via `adjacent_zones`) et applique le `value_delta` pour chaque voisine dont la condition est satisfaite. Utile pour récompenser la cohésion territoriale ou pénaliser un prétendant isolé.
 
 **Schéma JSON :** un objet dont chaque clé est un **type d'application** et dont la valeur est un tableau de règles.
 
 ```json
 {
     "Claim": [
-        {"adjacent_zone_name": "Plaines du Kansai", "condition": "not_held_by_actor", "value_delta": -4},
-        {"adjacent_zone_name": "Plaines du Kansai", "condition": "held_by_actor", "value_delta": 2}
+        {"zone_name": "Plaines du Kansai", "condition": "not_held_by_actor", "value_delta": -4},
+        {"zone_name": "Plaines du Kansai", "condition": "held_by_actor", "value_delta": 2},
+        {"adjacent_zones": true, "condition": "held_by_actor", "value_delta": 1}
     ],
-    "Attack":        [ /* mêmes champs */ ],
+    "Attack":        [ /* mêmes shapes */ ],
     "Defence":       [ /* ... */ ],
     "ZoneDefence":   [ /* ... */ ],
     "DiscoveryDiff": [ /* ... */ ]
@@ -117,34 +121,43 @@ La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalcu
 - **`ZoneDefence`** — modifie la valeur de défense de zone recalculée en fin de tour (`recalculateBaseZoneDefence`).
 - **`DiscoveryDiff`** — modifie la difficulté de découverte (`discovery_diff`) des lieux secrets présents dans la zone.
 
-**Champs d'une règle :**
+**Champs communs :**
 
-- **`adjacent_zone_name`** (string, requis) — nom exact d'une zone qui doit figurer dans la colonne `adjacent_zones` de la zone porteuse. Résolu par lookup SQL sur `zones.name`.
 - **`condition`** (enum, requis) — deux valeurs implémentées :
-  - **`held_by_actor`** — la règle s'applique si l'acteur (le contrôleur pour qui on calcule) **détient** la zone voisine (`holder_controller_id == actor_id`).
-  - **`not_held_by_actor`** — la règle s'applique si l'acteur **ne détient pas** la zone voisine.
-- **`value_delta`** (int, requis) — entier signé ajouté à la valeur retournée par `calculateControllerValue` quand la condition est satisfaite. Peut être négatif (pénalité) ou positif (bonus).
+  - **`held_by_actor`** — la règle s'applique si l'acteur (le contrôleur pour qui on calcule) **détient** la zone évaluée (`holder_controller_id == actor_id`).
+  - **`not_held_by_actor`** — la règle s'applique si l'acteur **ne détient pas** la zone évaluée.
+- **`value_delta`** (int, requis) — entier signé ajouté à la valeur retournée quand la condition est satisfaite. Peut être négatif (pénalité) ou positif (bonus).
 
-**Combinaison additive :** toutes les règles satisfaites contribuent, dans l'ordre du tableau. Le résultat final est `base_value + Σ(value_delta pour chaque règle satisfaite)`. Plusieurs règles peuvent viser la même zone voisine avec des conditions différentes pour couvrir les deux cas (détenue / non détenue).
+**Shape spécifique — `zone_name` :**
 
-**Adjacence à un saut (single-hop) :** la zone référencée par `adjacent_zone_name` **doit** figurer dans la liste `adjacent_zones` de la zone porteuse. Si elle n'y est pas (topologie incohérente ou nom mal saisi), la règle est ignorée avec un `error_log` — la mécanique de calcul ne se casse pas.
+- **`zone_name`** (string, requis) — nom exact de la zone à évaluer. Résolu par lookup SQL sur `zones.name`. **Pas de contrainte d'adjacence** : la zone peut se trouver n'importe où sur la carte.
+- Se déclenche **au plus une fois** (une seule zone évaluée).
 
-> **Important :** `zone_rules` ne fait **pas** de résolution multi-sauts. Chaque règle décrit un lien direct entre deux zones voisines. Pour un effet en chaîne, il faut poser une règle sur chaque zone porteuse concernée.
+**Shape itérateur — `adjacent_zones: true` :**
+
+- **`adjacent_zones`** (bool, requis, doit valoir `true`) — bascule la règle en mode itérateur sur la liste `adjacent_zones` de la zone porteuse.
+- Se déclenche **une fois par voisine satisfaisant la condition** : les `value_delta` s'accumulent (un bonus `+1` avec 3 voisines détenues donne `+3`).
+
+**Discrimination :** la présence de `zone_name` ou de `adjacent_zones: true` détermine le shape. Une règle qui a **les deux** ou **aucun des deux** est ignorée avec un `error_log`.
+
+**Combinaison additive :** toutes les règles satisfaites (des deux shapes) contribuent au résultat final : `base_value + Σ(value_delta pour chaque règle satisfaite)`. L'ordre des règles dans le tableau n'est pas significatif.
 
 **Fail-open — comportements de robustesse :**
 
 - `zone_rules IS NULL` ou JSON invalide → la valeur passe inchangée.
 - `controller_id NULL` (pas d'acteur, calcul générique) → la valeur passe inchangée.
-- `adjacent_zone_name` introuvable dans `zones` → `error_log` + règle ignorée.
-- Zone référencée non-adjacente (absente de `adjacent_zones` de la zone porteuse) → `error_log` + règle ignorée.
+- Règle avec `zone_name` référençant un nom introuvable dans `zones` → `error_log` + règle ignorée.
+- Règle avec `adjacent_zones: true` mais la zone porteuse n'a aucune voisine listée → règle ignorée (aucun match possible, pas de log).
+- Règle avec `zone_name` **et** `adjacent_zones: true` → `error_log` (conflit) + règle ignorée.
+- Règle sans `zone_name` ni `adjacent_zones: true` → `error_log` (indéfinie) + règle ignorée.
 - `condition` inconnue (hors `held_by_actor` / `not_held_by_actor`) → `error_log` + règle ignorée.
-- Règle mal formée (champs `adjacent_zone_name`, `condition` ou `value_delta` manquants) → `error_log` + règle ignorée.
+- Règle mal formée (champs `condition` ou `value_delta` manquants) → `error_log` + règle ignorée.
 
-Le principe est simple : une configuration cassée dégrade la règle concernée mais laisse la valeur de base intacte, plutôt que de faire échouer tout le calcul de tour.
+Le principe est simple : une configuration cassée dégrade la règle concernée mais laisse la valeur de base intacte.
 
-**Point d'intégration :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` lit `zones.zone_rules`, filtre les règles par type d'application, évalue chaque condition contre l'état actuel des zones voisines et cumule les `value_delta` pertinents.
+**Point d'intégration :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` dispatche chaque règle vers `applyZoneRuleSpecific` (pour `zone_name`) ou `applyZoneRuleAdjacent` (pour `adjacent_zones: true`), puis cumule les `value_delta` pertinents.
 
-> **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` référençant `Plaines du Kansai` (`-4` si l'acteur ne la détient pas, `+2` s'il la détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
+> **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` avec `zone_name: "Plaines du Kansai"` (`-4` si l'acteur ne détient pas les plaines, `+2` s'il les détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
 
 **Édition CSV / admin :** la colonne est chargée depuis les CSV de scénario (`setup{ScenarioName}_zones.csv`) via `db_connector.php`. Le JSON doit être valide et échappé selon les règles CSV (guillemets internes doublés). Aucune interface d'édition admin dédiée à `zone_rules` n'existe pour l'instant : la mise au point se fait par édition du CSV puis rechargement du scénario.
 
