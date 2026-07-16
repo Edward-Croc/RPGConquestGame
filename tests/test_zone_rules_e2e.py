@@ -1,10 +1,13 @@
 """Source-presence + runtime-behaviour checks for the zones.zone_rules
-JSON column and its `applyZoneRules` helper (issue #88).
+JSON column and its `applyZoneRules` helper.
 
 `TestZoneRulesSchemaAndLoader` verifies the column is declared in
 MySQL/Postgres schemas and the CSV loader zones column list carries the
 new key. `TestApplyZoneRulesBehaviour` exercises the helper wired into
 `calculateControllerValue` via end-of-turn claim resolution.
+`TestJapon1555KyotoGate` exercises the Plaines du Kansai adjacency gate
+wired into Cité impériale de Kyōto's `zone_rules` on the Japon1555
+scenario CSV.
 """
 import json
 import re
@@ -116,7 +119,7 @@ _ZR_ZONES_TO_RESET = (
 @pytest.mark.db
 class TestApplyZoneRulesBehaviour:
     """Runtime tests for the `applyZoneRules` helper wired into
-    `calculateControllerValue` (issue #88).
+    `calculateControllerValue`.
 
     Each test configures `zones.zone_rules` + `zones.adjacent_zones` on
     Delta-Disputed (the claim target) and adjusts the adjacent zone's
@@ -453,5 +456,307 @@ class TestApplyZoneRulesBehaviour:
         assert post['holder_controller_id'] == beta_id, (
             f"Expected Beta (id={beta_id}) to hold Delta — unknown-"
             f"condition rule must be skipped; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+
+@pytest.fixture(scope="module")
+def japon1555_load(browser):
+    """Module-scoped: load Japon1555 once + set claimMode=worker_leader."""
+    load_minimal_data()
+    load_scenario_via_admin(browser, PHP_BASE_URL, "Japon1555CSV")
+    conn = _db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        f"UPDATE `{GAME_PREFIX}config` SET value='worker_leader' "
+        f"WHERE name='claimMode'"
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    yield
+
+
+@pytest.mark.db
+class TestJapon1555KyotoGate:
+    """Scenario-level tests wiring the Plaines du Kansai adjacency gate
+    into Cité impériale de Kyōto's `zone_rules`.
+
+    Kyoto's CSV row carries a Claim zone_rules block with two rules
+    referencing Plaines du Kansai: `not_held_by_actor` value_delta=-4
+    and `held_by_actor` value_delta=+2. Kyoto's `adjacent_zones` already
+    lists Plaines (id 10) so `applyZoneRules` finds Plaines when the
+    helper walks the actor's Claim rules.
+
+    Baseline math with Ashikaga's 4 Kyoto workers moved to Plaines
+    (defence dropped to 3 = 0 base + 1 holder + 2 owned locations):
+      claim-fails  -- 3 Shikoku claim workers → claim_val=3+2=5, baseline
+                      diff=2 (would succeed); -4 rule → claim_val=1,
+                      diff=-2, claim FAILS (Ashikaga keeps Kyoto).
+      claim-wins   -- 2 Shikoku claim workers → claim_val=2+1=3, baseline
+                      diff=0 (would fail); +2 rule → claim_val=5, diff=2,
+                      claim SUCCEEDS (Shikoku takes Kyoto).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _load(self, japon1555_load):
+        yield
+
+    def _prep_kyoto_claim(self, cur, attacker_id, plaines_holder_id,
+                          ashikaga_id, n_workers):
+        """Reset Kyoto/Plaines holders, evict every Ashikaga worker to
+        Plaines (drops defence to 3), park every attacker worker in
+        Montagnes d'Iyo, then move exactly `n_workers` attacker workers
+        into Kyoto with `action_choice='claim'` for the current turn.
+
+        The clean-slate parking pass prevents leftover workers from a
+        prior test's EOT (still in Kyoto with an auto-created 'passive'
+        row for the new turn) from adding to the attacker's claim_val.
+
+        Returns the Kyoto zone id."""
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` "
+            f"WHERE name='Cité impériale de Kyōto' LIMIT 1"
+        )
+        kyoto_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` "
+            f"WHERE name='Plaines du Kansai' LIMIT 1"
+        )
+        plaines_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}zones` "
+            f"WHERE name='Montagnes d’Iyo' LIMIT 1"
+        )
+        parking_id = cur.fetchone()['id']
+
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}workers` w "
+            f"JOIN `{GAME_PREFIX}controller_worker` cw "
+            f"    ON cw.worker_id=w.id AND cw.controller_id=%s "
+            f"SET w.zone_id=%s "
+            f"WHERE w.zone_id=%s",
+            (ashikaga_id, plaines_id, kyoto_id)
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}workers` w "
+            f"JOIN `{GAME_PREFIX}controller_worker` cw "
+            f"    ON cw.worker_id=w.id AND cw.controller_id=%s "
+            f"SET w.zone_id=%s",
+            (attacker_id, parking_id)
+        )
+
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` "
+            f"SET holder_controller_id=%s, claimer_controller_id=%s "
+            f"WHERE id=%s",
+            (ashikaga_id, ashikaga_id, kyoto_id)
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` "
+            f"SET holder_controller_id=%s, claimer_controller_id=%s "
+            f"WHERE id=%s",
+            (plaines_holder_id, plaines_holder_id, plaines_id)
+        )
+
+        cur.execute(
+            f"SELECT w.id FROM `{GAME_PREFIX}workers` w "
+            f"JOIN `{GAME_PREFIX}controller_worker` cw ON cw.worker_id=w.id "
+            f"WHERE cw.controller_id=%s AND cw.is_primary_controller=1 "
+            f"ORDER BY w.id LIMIT %s",
+            (attacker_id, n_workers)
+        )
+        rows = cur.fetchall()
+        assert len(rows) == n_workers, (
+            f"Need {n_workers} primary attacker workers; found {len(rows)}"
+        )
+        worker_ids = [r['id'] for r in rows]
+
+        for wid in worker_ids:
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}workers` "
+                f"SET zone_id=%s WHERE id=%s",
+                (kyoto_id, wid)
+            )
+
+        cur.execute(
+            f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1"
+        )
+        current_turn = cur.fetchone()['turncounter']
+
+        for wid in worker_ids:
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}worker_actions` "
+                f"(worker_id, controller_id, turn_number, zone_id, "
+                f" action_choice, action_params) "
+                f"VALUES (%s, %s, %s, %s, 'claim', '{{}}') "
+                f"ON DUPLICATE KEY UPDATE "
+                f"zone_id=%s, action_choice='claim', action_params='{{}}', "
+                f"controller_id=%s",
+                (wid, attacker_id, current_turn, kyoto_id,
+                 kyoto_id, attacker_id)
+            )
+        return kyoto_id
+
+    def _run_eot(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        end_turn(page, PHP_BASE_URL)
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_kyoto_has_zone_rules_after_scenario_load(self):
+        """After Japon1555 loads, Kyoto's `zone_rules` JSON must carry a
+        `Claim` list referencing Plaines du Kansai with the ±2 / -4
+        adjacency deltas."""
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT zone_rules FROM `{GAME_PREFIX}zones` "
+            f"WHERE name='Cité impériale de Kyōto' LIMIT 1"
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        assert row is not None, "Cité impériale de Kyōto zone not found"
+        assert row['zone_rules'] is not None, (
+            "zone_rules should be non-NULL after Japon1555 load — "
+            "Kyoto needs the Plaines du Kansai Claim gate wired via the "
+            "zones CSV"
+        )
+        rules = json.loads(row['zone_rules'])
+        assert isinstance(rules, dict), (
+            f"zone_rules should decode to a dict; got {type(rules).__name__}"
+        )
+        assert 'Claim' in rules, (
+            f"zone_rules should carry a 'Claim' key; got keys={list(rules)!r}"
+        )
+        claim_rules = rules['Claim']
+        assert isinstance(claim_rules, list) and len(claim_rules) >= 2, (
+            f"Claim rules should be a list with ≥2 entries; got "
+            f"{claim_rules!r}"
+        )
+        for r in claim_rules:
+            assert r.get('adjacent_zone_name') == 'Plaines du Kansai', (
+                f"Every Claim rule on Kyoto should reference Plaines du "
+                f"Kansai; got {r!r}"
+            )
+        held_rule = next(
+            (r for r in claim_rules if r.get('condition') == 'held_by_actor'),
+            None,
+        )
+        assert held_rule is not None, (
+            f"Missing held_by_actor rule for Plaines du Kansai; got "
+            f"{claim_rules!r}"
+        )
+        assert held_rule.get('value_delta') == 2, (
+            f"held_by_actor value_delta should be +2; got "
+            f"{held_rule.get('value_delta')!r}"
+        )
+        not_held_rule = next(
+            (r for r in claim_rules
+             if r.get('condition') == 'not_held_by_actor'),
+            None,
+        )
+        assert not_held_rule is not None, (
+            f"Missing not_held_by_actor rule for Plaines du Kansai; got "
+            f"{claim_rules!r}"
+        )
+        assert not_held_rule.get('value_delta') == -4, (
+            f"not_held_by_actor value_delta should be -4; got "
+            f"{not_held_rule.get('value_delta')!r}"
+        )
+
+    def test_kyoto_claim_fails_without_plaines(self, browser):
+        """Shikoku attacks Kyoto with 3 claim-workers while NOT holding
+        Plaines du Kansai. Baseline math (no zone_rules) would succeed
+        (claim_val=5 vs defence=3, diff=2 ≥ claimDiff=1). The -4 rule
+        drops claim_val to 1 → diff=-2 → claim FAILS and Ashikaga
+        stays as Kyoto holder."""
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname='Ashikaga (足利)' LIMIT 1"
+        )
+        ashikaga_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname='Shikoku (四国)' LIMIT 1"
+        )
+        attacker_id = cur.fetchone()['id']
+
+        kyoto_id = self._prep_kyoto_claim(
+            cur,
+            attacker_id=attacker_id,
+            plaines_holder_id=ashikaga_id,
+            ashikaga_id=ashikaga_id,
+            n_workers=3,
+        )
+        conn.commit()
+
+        self._run_eot(browser)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT holder_controller_id FROM `{GAME_PREFIX}zones` "
+            f"WHERE id=%s",
+            (kyoto_id,)
+        )
+        post = cur.fetchone()
+        cur.close()
+        conn.close()
+        assert post['holder_controller_id'] == ashikaga_id, (
+            f"Expected Ashikaga (id={ashikaga_id}) to STILL hold Kyoto — "
+            f"the not_held_by_actor -4 rule must fire because Shikoku "
+            f"does not hold Plaines du Kansai; got holder="
+            f"{post['holder_controller_id']!r}"
+        )
+
+    def test_kyoto_claim_succeeds_when_holding_plaines(self, browser):
+        """Shikoku attacks Kyoto with 2 claim-workers while ALSO holding
+        Plaines du Kansai. Baseline math (no zone_rules) would fail
+        (claim_val=3 vs defence=3, diff=0 < claimDiff=1). The +2 rule
+        lifts claim_val to 5 → diff=2 → claim SUCCEEDS and Shikoku
+        becomes Kyoto holder."""
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname='Ashikaga (足利)' LIMIT 1"
+        )
+        ashikaga_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` "
+            f"WHERE lastname='Shikoku (四国)' LIMIT 1"
+        )
+        attacker_id = cur.fetchone()['id']
+
+        kyoto_id = self._prep_kyoto_claim(
+            cur,
+            attacker_id=attacker_id,
+            plaines_holder_id=attacker_id,
+            ashikaga_id=ashikaga_id,
+            n_workers=2,
+        )
+        conn.commit()
+
+        self._run_eot(browser)
+
+        conn.commit()
+        cur.execute(
+            f"SELECT holder_controller_id FROM `{GAME_PREFIX}zones` "
+            f"WHERE id=%s",
+            (kyoto_id,)
+        )
+        post = cur.fetchone()
+        cur.close()
+        conn.close()
+        assert post['holder_controller_id'] == attacker_id, (
+            f"Expected Shikoku (id={attacker_id}) to hold Kyoto — the "
+            f"held_by_actor +2 rule must fire because Shikoku holds "
+            f"Plaines du Kansai; got holder="
             f"{post['holder_controller_id']!r}"
         )
