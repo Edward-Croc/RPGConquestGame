@@ -14,7 +14,7 @@ $prefix = $_SESSION['GAME_PREFIX'];
 $update_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
-    $zoneId = $_POST['zone_id'];
+    $zoneId = (int) $_POST['zone_id'];
     $newClaimer = !empty($_POST['claimer_id']) ? $_POST['claimer_id'] : null;
     $newHolder = !empty($_POST['holder_id']) ? $_POST['holder_id'] : null;
     $adjacentZones = isset($_POST['adjacent_zones']) ? trim($_POST['adjacent_zones']) : '';
