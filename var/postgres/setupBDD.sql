@@ -84,6 +84,7 @@ CREATE TABLE {prefix}zones (
     holder_controller_id INT,   -- id of controller defending the zone
     hide_turn_zero BOOLEAN DEFAULT FALSE, -- JSON storing the hide turns checks
     adjacent_zones text, -- comma-separated zone ids reachable from this zone (map topology)
+    zone_rules JSON DEFAULT NULL, -- per-type adjacent-zone value_delta rules (JSON, see docs)
     FOREIGN KEY (claimer_controller_id) REFERENCES {prefix}controllers (id),
     FOREIGN KEY (holder_controller_id) REFERENCES {prefix}controllers (id)
 );
