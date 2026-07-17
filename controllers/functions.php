@@ -38,7 +38,12 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
             $sql .= sprintf(' %s c.id = \'%s\'', $hasWhere ? 'AND' : 'WHERE', $controller_id);
             $hasWhere = true;
         } else if ($hide_secret_controllers == true){
-            $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            $activeSessionCid = isset($_SESSION['controller']['id']) ? (int)$_SESSION['controller']['id'] : null;
+            if ($activeSessionCid !== null) {
+                $sql .= sprintf(' %s (c.secret_controller IS NOT True OR c.id = %d)', $hasWhere ? 'AND' : 'WHERE', $activeSessionCid);
+            } else {
+                $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            }
             $hasWhere = true;
         }
         if ($exclude_controller_id !== NULL){
