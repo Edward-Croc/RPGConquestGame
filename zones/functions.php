@@ -1055,7 +1055,7 @@ function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        error_log("applyZoneRules: zone fetch failed for zone $zone_id: " . $e->getMessage());
+        game_error_log(__FUNCTION__, 'zone fetch failed', ['zone_id' => $zone_id, 'error' => $e->getMessage()]);
         return $value;
     }
     if (!$row || empty($row['zone_rules'])) {
@@ -1064,7 +1064,7 @@ function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
 
     $rules = json_decode($row['zone_rules'], true);
     if (!is_array($rules)) {
-        error_log("applyZoneRules: invalid JSON in zone_rules on zone $zone_id");
+        game_error_log(__FUNCTION__, 'invalid JSON in zone_rules', ['zone_id' => $zone_id]);
         return $value;
     }
     if (!isset($rules[$type]) || !is_array($rules[$type])) {
@@ -1073,24 +1073,24 @@ function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
 
     foreach ($rules[$type] as $rule) {
         if (!is_array($rule) || !isset($rule['condition'], $rule['value_delta'])) {
-            error_log("applyZoneRules: malformed rule on zone $zone_id for type $type (missing condition/value_delta)");
+            game_error_log(__FUNCTION__, 'malformed rule (missing condition/value_delta)', ['zone_id' => $zone_id, 'type' => $type]);
             continue;
         }
         $condition = (string)$rule['condition'];
         $delta = (int)$rule['value_delta'];
         if ($condition !== 'held_by_actor' && $condition !== 'not_held_by_actor') {
-            error_log("applyZoneRules: unknown condition '$condition' on zone $zone_id");
+            game_error_log(__FUNCTION__, 'unknown condition', ['zone_id' => $zone_id, 'condition' => $condition]);
             continue;
         }
 
         $isSpecific = isset($rule['zone_name']);
         $isAdjacent = (($rule['adjacent_zones'] ?? null) === true);
         if ($isSpecific && $isAdjacent) {
-            error_log("applyZoneRules: rule has both zone_name and adjacent_zones on zone $zone_id");
+            game_error_log(__FUNCTION__, 'rule has both zone_name and adjacent_zones', ['zone_id' => $zone_id]);
             continue;
         }
         if (!$isSpecific && !$isAdjacent) {
-            error_log("applyZoneRules: rule has neither zone_name nor adjacent_zones on zone $zone_id");
+            game_error_log(__FUNCTION__, 'rule has neither zone_name nor adjacent_zones', ['zone_id' => $zone_id]);
             continue;
         }
 
@@ -1116,11 +1116,11 @@ function applyZoneRuleSpecific($pdo, $name, $condition, $delta, $controller_id, 
         $lookup->execute();
         $ref = $lookup->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        error_log("applyZoneRules: lookup failed for '$name' on zone $zone_id: " . $e->getMessage());
+        game_error_log(__FUNCTION__, 'lookup failed', ['zone_id' => $zone_id, 'name' => $name, 'error' => $e->getMessage()]);
         return 0;
     }
     if (!$ref) {
-        error_log("applyZoneRules: zone_name '$name' not found for zone $zone_id");
+        game_error_log(__FUNCTION__, 'zone_name not found', ['zone_id' => $zone_id, 'name' => $name], 'warning');
         return 0;
     }
     $isHeld = ((int)$ref['holder_controller_id'] === (int)$controller_id);
@@ -1149,7 +1149,7 @@ function applyZoneRuleAdjacent($pdo, $adjacent_zones_csv, $condition, $delta, $c
         $lookup->execute($adjacentIds);
         $rows = $lookup->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        error_log("applyZoneRules: adjacent lookup failed for zone $zone_id: " . $e->getMessage());
+        game_error_log(__FUNCTION__, 'adjacent lookup failed', ['zone_id' => $zone_id, 'error' => $e->getMessage()]);
         return 0;
     }
     $total = 0;

@@ -260,7 +260,7 @@ function spendRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool {
 function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costField): bool {
     static $allowed = ['base_building_cost', 'base_moving_cost', 'location_repaire_cost'];
     if (!in_array($costField, $allowed, true)) {
-        error_log(__FUNCTION__.": unknown cost field {$costField}");
+        game_error_log(__FUNCTION__, 'unknown cost field', ['costField' => $costField]);
         return false;
     }
     if (getConfig($pdo, 'ressource_management') !== 'TRUE') return true;
@@ -433,7 +433,7 @@ function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $
         ]);
         return $stmt->rowCount() === 1;
     } catch (PDOException $e) {
-        error_log(__FUNCTION__.": ".$e->getMessage());
+        game_error_log(__FUNCTION__, 'consume ressource failed', ['error' => $e->getMessage()]);
         return false;
     }
 }

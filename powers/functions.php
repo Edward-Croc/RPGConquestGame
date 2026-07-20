@@ -375,10 +375,9 @@ function getRuleCostForPower($pdo, $power, $controller_id, $worker_id, $turn_num
 
     if ($direct_cost !== null && $or_cost !== null){
         if ($direct_cost['ressource_name'] !== $or_cost['ressource_name']){
-            error_log(sprintf(
-                'getRuleCostForPower: cross-resource cost not supported, using direct (direct=%s, or=%s)',
-                $direct_cost['ressource_name'], $or_cost['ressource_name']
-            ));
+            game_error_log(__FUNCTION__, 'cross-resource cost not supported, using direct',
+                ['direct' => $direct_cost['ressource_name'], 'or' => $or_cost['ressource_name']],
+                'warning');
         }
         $or_cost = null;
     }
@@ -387,7 +386,8 @@ function getRuleCostForPower($pdo, $power, $controller_id, $worker_id, $turn_num
 
     $rid = resolveRessourceIdByName($pdo, $cost['ressource_name']);
     if ($rid === null){
-        error_log(sprintf('getRuleCostForPower: ressource not found in ressources_config (name=%s)', $cost['ressource_name']));
+        game_error_log(__FUNCTION__, 'ressource not found in ressources_config',
+            ['ressource_name' => $cost['ressource_name']], 'warning');
         return null;
     }
     return ['ressource_id' => $rid, 'ressource_name' => $cost['ressource_name'], 'amount' => $cost['amount']];
@@ -442,7 +442,7 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
     foreach ($keys as $key => $value){
         if ($key === 'OR') continue;
         if (!in_array($key, $ALLOWED_KEYS, true)){
-            error_log(sprintf('evaluateRuleKeysAllMatch: unknown rule key %s — failing closed', var_export($key, true)));
+            game_error_log(__FUNCTION__, 'unknown rule key — failing closed', ['key' => (string)$key]);
             return false;
         }
 
@@ -480,18 +480,20 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, $turn_number){
         }
         elseif ($key === 'controller_has_ressource'){
             if (!is_array($value)){
-                error_log('controller_has_ressource: malformed rule (not an object)');
+                game_error_log(__FUNCTION__, 'controller_has_ressource: malformed rule (not an object)');
                 return false;
             }
             $rname = $value['ressource_name'] ?? null;
             $rawAmount = $value['amount'] ?? null;
             $amountIsStrictInt = is_int($rawAmount) || (is_string($rawAmount) && ctype_digit($rawAmount));
             if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0){
-                error_log(sprintf('controller_has_ressource: invalid ressource_name or amount (rname=%s, amount=%s)', var_export($rname, true), var_export($rawAmount, true)));
+                game_error_log(__FUNCTION__, 'controller_has_ressource: invalid ressource_name or amount',
+                    ['ressource_name' => var_export($rname, true), 'amount' => var_export($rawAmount, true)]);
                 return false;
             }
             if (array_key_exists('consume', $value) && !is_bool($value['consume'])){
-                error_log(sprintf('controller_has_ressource: consume must be bool if present (got %s)', var_export($value['consume'], true)));
+                game_error_log(__FUNCTION__, 'controller_has_ressource: consume must be bool if present',
+                    ['consume' => var_export($value['consume'], true)]);
                 return false;
             }
             $amount = (int)$rawAmount;
@@ -535,7 +537,7 @@ function resolveRessourceIdByName($pdo, $ressource_name){
         $rid = $stmt->fetchColumn();
         return $rid !== false ? (int)$rid : null;
     } catch (PDOException $e) {
-        error_log('resolveRessourceIdByName: '.$e->getMessage());
+        game_error_log(__FUNCTION__, 'SELECT ressource_id by name failed', ['error' => $e->getMessage()]);
         return null;
     }
 }
