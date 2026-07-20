@@ -3,6 +3,8 @@ $pageName = 'Configuration';
 
 require_once '../base/basePHP.php';
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'configuration_page';  // uncomment to log DEBUG events from this page
+
 $prefix = $_SESSION['GAME_PREFIX'];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -18,15 +20,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':value', $value);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): INSERT config Failed: " . $e->getMessage()."<br />";
+            game_error_log('configuration_page', 'INSERT config failed', ['error' => $e->getMessage()]);
         }
     }
 
     // Check if action is to delete a config value
     if (isset($_POST['delete_config'])) {
-        if ($_SESSION['DEBUG'] == true){
-            echo "delete_config => id: ".$_POST['id'].".<br />";
-        }
+        game_error_log('configuration_page', 'delete_config request', ['id' => $_POST['id']], 'debug');
         try{
             $id = $_POST['id'];
 
@@ -35,15 +35,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':id', $id);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): DELETE config Failed: " . $e->getMessage()."<br />";
+            game_error_log('configuration_page', 'DELETE config failed', ['error' => $e->getMessage()]);
         }
     }
 
     // Check if action is to update a config value
     if (isset($_POST['update_config'])) {
-        if ($_SESSION['DEBUG'] == true){
-            echo "update_config => id: ".$_POST['id']." and value ".$_POST['value'].".<br />";
-        }
+        game_error_log('configuration_page', 'update_config request', ['id' => $_POST['id'], 'value' => $_POST['value']], 'debug');
         try{
             $id = $_POST['id'];
             $value = $_POST['value'];
@@ -54,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bindParam(':value', $value);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): UPDATE config Failed: " . $e->getMessage()."<br />";
+            game_error_log('configuration_page', 'UPDATE config failed', ['error' => $e->getMessage()]);
         }
     }
 }
@@ -64,7 +62,7 @@ try{
     $stmt = $gameReady->query("SELECT * FROM {$prefix}config ORDER BY ID ASC");
     $config_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    echo __FUNCTION__."(): GET config Failed: " . $e->getMessage()."<br />";
+    game_error_log('configuration_page', 'SELECT config failed', ['error' => $e->getMessage()]);
 }
 
 require_once '../base/baseHTML.php';
