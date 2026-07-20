@@ -38,7 +38,10 @@ function game_error_log_tail(int $lines = 2, ?string $prefixFilter = null, ?stri
  *
  * Format : [prefix] [LEVEL] function: message | ctx={json}
  *
- * Toutes les lignes sont ecrites au fichier, quel que soit le niveau.
+ * ERROR + WARNING : toujours ecrits au fichier.
+ * DEBUG : ecrit uniquement si $_SESSION['DEBUG']=true (unlock global admin)
+ *         OU section listee dans $GLOBALS['DEBUG_LOG_SECTIONS'] (opt-in
+ *         par fichier via une ligne commentee en tete).
  * Le passthrough echo sur la page reste conditionne a $_SESSION['DEBUG'].
  *
  * @param string $function  short id (typiquement __FUNCTION__)
@@ -52,6 +55,14 @@ function game_error_log(string $function, string $message, array $context = [], 
     if (!in_array($lvl, ['ERROR', 'WARNING', 'DEBUG'], true)) {
         $lvl = 'ERROR';
     }
+    // DEBUG write gate : ecriture skipe si global DEBUG off ET section non opt-in
+    // via $GLOBALS['DEBUG_LOG_SECTIONS']. ERROR + WARNING ecrivent toujours.
+    if ($lvl === 'DEBUG'
+        && empty($_SESSION['DEBUG'])
+        && !in_array($function, $GLOBALS['DEBUG_LOG_SECTIONS'] ?? [], true)
+    ) {
+        return;
+    }
     // Anti log-injection : neutralise les \r\n dans message + context strings
     $message = strtr($message, ["\r" => ' ', "\n" => ' ']);
     foreach ($context as $k => $v) {
@@ -61,6 +72,6 @@ function game_error_log(string $function, string $message, array $context = [], 
     error_log("[{$prefix}] [{$lvl}] {$function}: {$message}{$ctx}");
 
     if (!empty($_SESSION['DEBUG'])) {
-        echo htmlspecialchars("[{$lvl}] {$function}: {$message}", ENT_QUOTES) . "<br />";
+        echo htmlspecialchars("[{$lvl}] {$function}: {$message}{$ctx}", ENT_QUOTES) . "<br />";
     }
 }
