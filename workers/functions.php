@@ -387,7 +387,7 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
             data-worker-status="%11$s"
         >
             %8$s
-            <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold is-size-5" role="button" style="text-decoration:none;">
+            <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">
                 %2$s %3$s
             </a>
             <span>%6$s %5$s %4$s.</span>
