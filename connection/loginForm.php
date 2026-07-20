@@ -7,6 +7,7 @@ if ( !isset($_SESSION['DEBUG']) ){
 }
 
 require_once '../base/version.php';
+require_once '../base/errorLog.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 
@@ -30,7 +31,7 @@ function getConfig($pdo, $configName) {
         $stmt->execute([':configName' => $configName]);
         return $stmt->fetchColumn();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT config failed', ['configName' => $configName, 'error' => $e->getMessage()]);
         return NULL;
     }
 }
@@ -110,7 +111,7 @@ if (
             echo "No matching record found.";
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Get player failed: " . $e->getMessage()."<br/>";
+        game_error_log(__FUNCTION__, 'SELECT player failed', ['error' => $e->getMessage()]);
         exit();
     }
 }
