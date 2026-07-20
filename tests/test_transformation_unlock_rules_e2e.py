@@ -582,3 +582,116 @@ class TestAdminBypass:
             f"gold before={gold_before} after={_read_amount(alpha, gold)}"
         )
         _set_amount(alpha, gold, 100)
+
+
+# ---------------------------------------------------------------------------
+# Issue #94 regression : gm with a faction selected in session must NOT
+# take the is_privileged escape hatch — the transform/teach_discipline
+# path must re-validate and deduct cost, exactly like a plain player.
+# The escape hatch is intended for pure admin (no faction in session).
+# ---------------------------------------------------------------------------
+
+class TestGmAsFactionEntersNormalPath:
+    """Discovered on Japon1555 playtest : gm acting as Chōsokabe triggered
+    a `consume: true` transform without paying the cost. Root cause : both
+    workers/action.php:170 (teach_discipline) and :196 (transform) bypassed
+    on is_privileged alone. The fix gates the bypass on
+    empty($_SESSION['controller']['id']) so a gm-in-faction session behaves
+    like a normal player."""
+
+    def test_gm_as_faction_transform_deducts_cost(self, browser, base_url):
+        """gm logs in, selects Alpha via accueil.php, triggers an OR-ressource
+        transform (mirrors the Cheval de Takamatsu case). Cost must be
+        deducted — before #94 the bypass swallowed the consume."""
+        alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
+        _set_zone_holder("Gamma-Claims", None)  # force OR to ressource branch
+        _set_amount(alpha, gold, 10)
+        _remove_worker_power("Transform_Subject", "Test OR Zone Or Gold")
+        lpt = _link_power_type_id("Test OR Zone Or Gold")
+        wid = _worker_id_db("Transform_Subject")
+
+        ctx = browser.new_context(); page = ctx.new_page()
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={alpha}&chosir=Choisir")
+        page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&transformation={lpt}&transform=1"
+        )
+        page.wait_for_load_state("load")
+        ctx.close()
+
+        assert _read_amount(alpha, gold) == 9, (
+            f"gm-as-Alpha must go through consume path: expected 9, "
+            f"got {_read_amount(alpha, gold)} (issue #94)"
+        )
+        _set_amount(alpha, gold, 100)
+
+    def test_gm_as_faction_transform_rejected_when_rule_fails(self, browser, base_url):
+        """gm as Alpha with Gold=0 tries the Gold-3 transform. Re-validation
+        must reject — pre-#94 the bypass would have inserted worker_powers."""
+        alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
+        _set_amount(alpha, gold, 0)
+        _remove_worker_power("Transform_Subject", "Test Gold Cost Explicit")
+        lpt = _link_power_type_id("Test Gold Cost Explicit")
+        wid = _worker_id_db("Transform_Subject")
+
+        ctx = browser.new_context(); page = ctx.new_page()
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={alpha}&chosir=Choisir")
+        page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&transformation={lpt}&transform=1"
+        )
+        page.wait_for_load_state("load")
+        body = page.content()
+        ctx.close()
+
+        conn = _db(); cur = conn.cursor()
+        cur.execute(
+            f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}worker_powers` wp "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wp.worker_id "
+            f"WHERE w.lastname='Transform_Subject' AND wp.link_power_type_id=%s",
+            (lpt,),
+        )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+
+        assert row['c'] == 0, (
+            "gm-as-faction must be rejected when rule fails (was bypassed pre-#94)"
+        )
+        assert "plus disponible" in body, "Expected re-validation notification"
+        _set_amount(alpha, gold, 100)
+
+    def test_gm_as_faction_discipline_rejected_when_rule_fails(self, browser, base_url):
+        """Symmetric guard on teach_discipline (workers/action.php:170)."""
+        lpt = _link_power_type_id("Test Discipline Zone Gated")
+        if lpt is None:
+            pytest.skip("Test Discipline Zone Gated not in scenario")
+        alpha = _controller_id("Alpha")
+        _remove_worker_power("Transform_Subject", "Test Discipline Zone Gated")
+        _set_zone_holder("Epsilon-Controlled", None)
+        wid = _worker_id_db("Transform_Subject")
+
+        ctx = browser.new_context(); page = ctx.new_page()
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={alpha}&chosir=Choisir")
+        page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&discipline={lpt}&teach_discipline=1"
+        )
+        page.wait_for_load_state("load")
+        ctx.close()
+
+        conn = _db(); cur = conn.cursor()
+        cur.execute(
+            f"SELECT COUNT(*) AS c FROM `{GAME_PREFIX}worker_powers` wp "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wp.worker_id "
+            f"WHERE w.lastname='Transform_Subject' AND wp.link_power_type_id=%s",
+            (lpt,),
+        )
+        row = cur.fetchone()
+        cur.close(); conn.close()
+        assert row['c'] == 0, (
+            "gm-as-faction crafted teach_discipline GET must NOT insert "
+            "worker_powers when re-validation fails (issue #94)"
+        )
