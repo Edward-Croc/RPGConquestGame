@@ -55,7 +55,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 ? showcontrollerKnownSecrets($gameReady, $_SESSION['controller']['id'], $zone['zone_id'])
                 : '';
             $agentLists = !empty($_SESSION['controller']['id'])
-                ? showZoneAgents($gameReady, $_SESSION['controller']['id'], $zone['zone_id'], $mechanics['turncounter'], $controllerWorkers)
+                ? showZoneAgents($gameReady, $_SESSION['controller']['id'], $zone['zone_id'], $mechanics, $controllerWorkers)
                 : '';
             $ourControl = (!empty($_SESSION['controller']['id']) && $zone['holder_controller_id'] == $_SESSION['controller']['id'])
                 ? '<span class="tag is-danger ml-2">Sous notre contrôle</span><br>'
