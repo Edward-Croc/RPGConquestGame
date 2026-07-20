@@ -29,6 +29,11 @@ require_once '../base/baseHTML.php';
 ?>
 
 <div class="content">
+    <?php
+    $adminRecentErrors = game_error_log_tail(2, $_SESSION['GAME_PREFIX'] ?? null, 'error');
+    $adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
+    ?>
+    <!-- Ligne 1 : Mechanics | Recent errors | BDD management -->
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="mechanics">
             <h1>Mechanics</h1>
@@ -49,6 +54,43 @@ require_once '../base/baseHTML.php';
                 ?>
             </table>
         </div>
+        <div class="config" style="border-left: 5px solid <?= $adminBorderColor ?>; padding-left: 0.75em;">
+            <h1>Recent errors</h1>
+            <p>prefix <code>[<?= htmlspecialchars($_SESSION['GAME_PREFIX'] ?? '') ?>]</code></p>
+            <?php if (empty($adminRecentErrors)): ?>
+                <p style="color: #27ae60;">Aucune erreur recente</p>
+            <?php else: ?>
+                <ul style="font-family: monospace; font-size: 12px; margin: 0.5em 0 0 0;">
+                    <?php foreach ($adminRecentErrors as $line): ?>
+                        <li style="color: #c0392b;"><?= htmlspecialchars($line) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_logs.php">&rarr; Game errors log</a></p>
+        </div>
+        <div class="config">
+                <h1>BDD management : </h1>
+                <?php
+                    // Add button to extract BDD to file.sql or .sql
+                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
+                        <input type="hidden" name="exportBDD" />
+                        <input type="submit" name="submitButton" value="Export BDD to file.sql" />
+                    </form> </p>',
+                    $_SESSION['FOLDER']
+                    );
+                    // Import BDD from file.sql
+                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="importBDD" />
+                        <input type="file" name="bddFile" id="bddFile" />
+                        <input type="submit" name="submitButton" value="Import BDD from file.sql" />
+                    </form> </p>',
+                    $_SESSION['FOLDER']
+                    );
+                ?>
+        </div>
+    </div>
+    <!-- Ligne 2 : Config Management | Management | List (avec Worker list) -->
+    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="config">
             <h1>Config Management</h1>
             <?php echo sprintf( '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
@@ -81,45 +123,19 @@ require_once '../base/baseHTML.php';
                 $_SESSION['FOLDER']
                 ); ?>
         </div>
-    </div>
-    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="config">
                 <h1>List</h1>
                 <?php echo sprintf( '
                 <p> <a href="/%1$s/zones/management_zones.php">Zone control list</a> </p>
                 <p> <a href="/%1$s/zones/management_locations.php">Discovered location list</a> </p>
-                <p> <a href="/%1$s/zones/management_bases.php">Attack on player base list</a> </p>',
+                <p> <a href="/%1$s/zones/management_bases.php">Attack on player base list</a> </p>
+                <p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>',
                 $_SESSION['FOLDER']
                 ); ?>
-        </div>
-        <div class="config">
-                <h1>BDD management : </h1>
-                <?php
-                    // Add button to extract BDD to file.sql or .sql
-                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
-                        <input type="hidden" name="exportBDD" />
-                        <input type="submit" name="submitButton" value="Export BDD to file.sql" />
-                    </form> </p>',
-                    $_SESSION['FOLDER']
-                    );
-                    // Import BDD from file.sql
-                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="importBDD" />
-                        <input type="file" name="bddFile" id="bddFile" />
-                        <input type="submit" name="submitButton" value="Import BDD from file.sql" />
-                    </form> </p>',
-                    $_SESSION['FOLDER']
-                    );
-                ?>
         </div>
     </div>
+    <!-- Ligne 3 : Admin - Create Perfect Agent (pleine largeur) -->
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
-        <div class="config">
-            <h1>Workers</h1>
-            <?php echo sprintf( '<p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>',
-                $_SESSION['FOLDER']
-                ); ?>
-        </div>
         <?php
             // Allow for admin creation of a perfect agent
             require_once '../workers/newPerfectWorker.php';
