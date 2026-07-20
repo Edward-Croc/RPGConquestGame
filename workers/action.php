@@ -167,7 +167,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if (isset($_GET['teach_discipline']) ){
-        if (!empty($_SESSION['is_privileged'])) {
+        if (!empty($_SESSION['is_privileged']) && empty($_SESSION['controller']['id'])) {
             upgradeWorker($gameReady, $worker_id, $_GET['discipline']);
         } else {
             $session_controller_id = $_SESSION['controller']['id'] ?? null;
@@ -193,7 +193,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
     if (isset($_GET['transform'])){
-        if (!empty($_SESSION['is_privileged'])) {
+        if (!empty($_SESSION['is_privileged']) && empty($_SESSION['controller']['id'])) {
             upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
         } else {
             $session_controller_id = $_SESSION['controller']['id'] ?? null;
