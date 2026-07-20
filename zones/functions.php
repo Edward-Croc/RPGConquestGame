@@ -609,12 +609,13 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
  * @param PDO $pdo
  * @param int $controller_id          logged-in controller (self perspective)
  * @param int $zone_id
- * @param int $turn_number            current turn (used for ACTIVE_ACTIONS lookup)
+ * @param array $mechanics : must contain key 'turncounter'
  * @param array $controllerWorkers    pre-fetched getWorkersByController result; caller coalesces NULL to []
  *
  * @return string HTML — '' when both sections empty
  */
-function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_number, array $controllerWorkers): string {
+function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, array $mechanics, array $controllerWorkers): string {
+    $turn_number = (int)$mechanics['turncounter'];
     $friendlies = [];
     $doubles = [];
     foreach ($controllerWorkers as $w) {
@@ -629,27 +630,18 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, int $turn_nu
         }
     }
 
-    $folder = $_SESSION['FOLDER'];
     $out = '';
     if (!empty($friendlies)) {
         $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
         foreach ($friendlies as $w) {
-            $out .= sprintf(
-                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
-                $folder, $w['id'], $w['firstname'], $w['lastname'],
-                $w['total_enquete'], $w['total_attack'], $w['total_defence']
-            );
+            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false) . '</li>';
         }
         $out .= '</ul>';
     }
     if (!empty($doubles)) {
         $out .= '<details><summary>Nos Agents doubles</summary><ul>';
         foreach ($doubles as $w) {
-            $out .= sprintf(
-                '<li><a href="/%s/workers/action.php?worker_id=%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s %s</a> <i>(<strong>%d</strong>, <strong>%d</strong>/<strong>%d</strong>)</i></li>',
-                $folder, $w['id'], $w['firstname'], $w['lastname'],
-                $w['total_enquete'], $w['total_attack'], $w['total_defence']
-            );
+            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false) . '</li>';
         }
         $out .= '</ul></details>';
     }
