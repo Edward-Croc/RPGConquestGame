@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $newClaimer = !empty($_POST['claimer_id']) ? $_POST['claimer_id'] : null;
     $newHolder = !empty($_POST['holder_id']) ? $_POST['holder_id'] : null;
     $adjacentZones = isset($_POST['adjacent_zones']) ? trim($_POST['adjacent_zones']) : '';
+    $isHidden = isset($_POST['is_hidden']) ? 1 : 0;
 
     $zoneRulesRaw = isset($_POST['zone_rules']) ? $_POST['zone_rules'] : '';
     $zoneRulesToStore = null;
@@ -34,8 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     if ($jsonError) {
         $update_msg = "<p style='color: red;'>Zone #$zoneId : JSON invalide, mise à jour annulée.</p>";
     } else {
-        $stmt = $gameReady->prepare("UPDATE {$prefix}zones SET claimer_controller_id = ?, holder_controller_id = ?, adjacent_zones = ?, zone_rules = ? WHERE id = ?");
-        $stmt->execute([$newClaimer, $newHolder, $adjacentZones, $zoneRulesToStore, $zoneId]);
+        $stmt = $gameReady->prepare("UPDATE {$prefix}zones SET claimer_controller_id = ?, holder_controller_id = ?, adjacent_zones = ?, zone_rules = ?, is_hidden = ? WHERE id = ?");
+        $stmt->execute([$newClaimer, $newHolder, $adjacentZones, $zoneRulesToStore, $isHidden, $zoneId]);
         $update_msg = "<p style='color: green;'>Zone #$zoneId mise à jour avec succès.</p>";
     }
 }
@@ -50,6 +51,7 @@ SELECT
     z.description,
     z.adjacent_zones,
     z.zone_rules,
+    z.is_hidden,
     claimer.id AS claimer_id,
     CONCAT(claimer.firstname, ' ', claimer.lastname) AS claimer_name,
     holder.id AS holder_id,
@@ -81,6 +83,7 @@ require_once '../base/baseHTML.php';
             <th>Zones adjacentes</th>
             <th>Adjacent zones (raw)</th>
             <th>Zone rules (JSON)</th>
+            <th>Cachée</th>
             <th></th>
         </tr>
         <?php foreach ($zones as $zone):
@@ -123,6 +126,9 @@ require_once '../base/baseHTML.php';
             </td>
             <td>
                 <textarea name="zone_rules" rows="4" cols="60"><?= htmlspecialchars($zone['zone_rules'] ?? '') ?></textarea>
+            </td>
+            <td>
+                <input type="checkbox" name="is_hidden" value="1" <?= !empty($zone['is_hidden']) ? 'checked' : '' ?>>
             </td>
             <td>
                 <input type="hidden" name="zone_id" value="<?= $zone['id'] ?>">

@@ -154,7 +154,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 c.turn_firstcome_workers
             FROM {$prefix}controllers c
             LEFT JOIN {$prefix}zones z ON z.id = c.origin_zone_id
-            ORDER BY c.lastname
+            ORDER BY c.id
         ")->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($controllers as $controller) {

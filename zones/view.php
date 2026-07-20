@@ -37,7 +37,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         // Display list of Zones
 
         $controllerLastNameDenominatorOf = getConfig($gameReady, 'controllerLastNameDenominatorOf');
+        $sessionCid = isset($_SESSION['controller']['id']) ? (int)$_SESSION['controller']['id'] : null;
+        $bypassVisibility = !empty($_SESSION['is_privileged']) && $sessionCid === null;
         foreach ($zones as $zone) {
+            if (!canControllerSeeZone($gameReady, $zone, $sessionCid, $bypassVisibility)) continue;
             $description = htmlspecialchars($zone['description']);
             $zoneName = htmlspecialchars($zone['name']);
             $zoneId = htmlspecialchars($zone['zone_id']);

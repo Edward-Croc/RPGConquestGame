@@ -38,7 +38,12 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
             $sql .= sprintf(' %s c.id = \'%s\'', $hasWhere ? 'AND' : 'WHERE', $controller_id);
             $hasWhere = true;
         } else if ($hide_secret_controllers == true){
-            $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            $activeSessionCid = isset($_SESSION['controller']['id']) ? (int)$_SESSION['controller']['id'] : null;
+            if ($activeSessionCid !== null) {
+                $sql .= sprintf(' %s (c.secret_controller IS NOT True OR c.id = %d)', $hasWhere ? 'AND' : 'WHERE', $activeSessionCid);
+            } else {
+                $sql .= sprintf(' %s c.secret_controller IS NOT True', $hasWhere ? 'AND' : 'WHERE');
+            }
             $hasWhere = true;
         }
         if ($exclude_controller_id !== NULL){
@@ -229,6 +234,18 @@ function createBase($pdo, $controller_id, $zone_id) {
     $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
 
     $prefix = $_SESSION['GAME_PREFIX'];
+
+    // Reject base builds when the acting controller cannot see the zone.
+    $zoneRows = getZonesArray($pdo, null, null, $zone_id);
+    $zone = $zoneRows[0] ?? null;
+    if ($zone) {
+        $sessionCid = isset($_SESSION['controller']['id']) ? (int)$_SESSION['controller']['id'] : null;
+        $bypassVisibility = !empty($_SESSION['is_privileged']) && $sessionCid === null;
+        if (!canControllerSeeZone($pdo, $zone, (int)$controller_id, $bypassVisibility)) {
+            echo "Zone non accessible.<br />";
+            return false;
+        }
+    }
 
     if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
         echo "Stock insuffisant ou modifié.<br />";
