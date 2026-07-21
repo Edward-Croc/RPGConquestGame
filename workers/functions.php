@@ -5,14 +5,14 @@ define('INACTIVE_ACTIONS', [ 'dead', 'captured', 'trace' ]);
 
 /**
  * Generate a new worker
- * 
+ *
  * @param PDO $pdo : database connection
- * @param int $controller_id
- * @param string $buttonClicked
- * 
- * @return array $newWorker
+ * @param int $controller_id : controller who is recruiting
+ * @param string $buttonClicked : recruitment button key (used to pick origin list)
+ *
+ * @return array : new worker draft with origin/powers filled in
  */
-function generateNewWorker($pdo, $controller_id, $buttonClicked) {
+function generateNewWorker(PDO $pdo, int $controller_id, string $buttonClicked): array {
     $newWorker = array('controller_id' => $controller_id);
 
     $generationOrder = getConfig($pdo, 'generation_order');
@@ -41,16 +41,18 @@ function generateNewWorker($pdo, $controller_id, $buttonClicked) {
  * Update worker action table for a turn and change the action and/or add to the report
  *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param int $turnNumber
- * @param string|null $actionChoice
- * @param string|null $reportAppendArray
- * @param array|null $jsonArray
+ * @param int $workerId : id of the worker whose action row is updated
+ * @param int $turnNumber : turn number of the action row
+ * @param string|null $actionChoice : new action_choice, null to leave unchanged
+ * @param array|null $reportAppendArray : keyed report chunks to append
+ * @param array|null $jsonArray : action_params payload
  *
- * @return bool success
+ * @return bool : true on successful UPDATE, false otherwise
  */
-function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, $reportAppendArray = null, $jsonArray = null) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|null $actionChoice = null, array|null $reportAppendArray = null, array|null $jsonArray = null): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['turnNumber' => $turnNumber, 'actionChoice' => $actionChoice, 'reportAppendArray' => $reportAppendArray, 'jsonArray' => $jsonArray], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $query = "UPDATE {$prefix}worker_actions SET ";
@@ -64,7 +66,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         $updates[] = "action_params = :json";
         $params['json'] = empty($jsonArray) ? '{}' : json_encode($jsonArray);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo  __FUNCTION__."(): Failed to encode JSON: " . json_last_error_msg()."<br />";
+            game_error_log(__FUNCTION__, 'Failed to encode JSON : ' . json_last_error_msg(), ['jsonArray' => $jsonArray], 'error');
             return false;
         }
     }
@@ -76,7 +78,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
-            echo  __FUNCTION__."(): No record found for worker_id $workerId and turn_number $turnNumber.<br />";
+            game_error_log(__FUNCTION__, 'No record found for worker_id ' . $workerId . ' and turn_number ' . $turnNumber, [], 'error');
             return false;
         }
         // Step 2: Decode the JSON report
@@ -84,6 +86,7 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         if (!empty($row['report'])) {
             $report = json_decode($row['report'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
+                game_error_log(__FUNCTION__, 'Failed to decode JSON : ' . json_last_error_msg(), ['row' => $row], 'error');
                 throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
             }
         }
@@ -99,20 +102,20 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
         $updates[] = "report = :report";
         $params['report'] = json_encode($report);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo  __FUNCTION__."(): Failed to encode JSON: " . json_last_error_msg()."<br />";
+            game_error_log(__FUNCTION__, 'Failed to encode JSON : ' . json_last_error_msg(), ['report' => $report], 'error');
             return false;
         }
     }
 
     if (count($updates)>0) {
         $query .= implode(", ", $updates) . " WHERE worker_id = :worker_id AND turn_number = :turn_number";
-        if ($debug) echo sprintf(" query : %s, Params : %s ", $query, var_export($params, true));
+        game_error_log(__FUNCTION__, 'query prepared', ['query' => $query, 'params' => $params], 'debug');
 
         try{
             $stmt = $pdo->prepare($query);
             $stmt->execute($params);
         } catch (PDOException $e) {
-            echo  __FUNCTION__."(): $query failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE worker_actions failed : ' . $e->getMessage(), ['query' => $query, 'params' => $params], 'error');
             return false;
         }
         return true;
@@ -124,11 +127,14 @@ function updateWorkerAction($pdo, $workerId, $turnNumber, $actionChoice = null, 
  * Function to get worker and return as an array
  *
  * @param PDO $pdo : database connection
- * @param array $workerIds
+ * @param array|null $workerIds : worker ids to fetch
  *
- * @return array|null workersArray
+ * @return array|null : workers with powers + actions attached, or NULL on empty/error
  */
-function getWorkers($pdo, $workerIds) {
+function getWorkers(PDO $pdo, array|null $workerIds): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['workerIds' => $workerIds], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     if ( empty($workerIds) ) return NULL;
@@ -170,12 +176,12 @@ function getWorkers($pdo, $workerIds) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT workers failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
     // Fetch the results
     $workersArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
+    game_error_log(__FUNCTION__, 'workersArray fetched', ['workersArray' => $workersArray], 'debug');
 
     $workers_powers = getPowersByWorkers($pdo, $worker_id_str);
 
@@ -206,7 +212,7 @@ function getWorkers($pdo, $workerIds) {
         $workersArray[$key]['powers'] = $workerPowersById[$worker['id']] ?? []; // Add powers or empty array if none
         $workersArray[$key]['actions'] = $workerActionsById[$worker['id']] ?? []; // Add actions or empty array if none
     }
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workersArray %s <br /> <br />", var_export($workersArray,true));
+    game_error_log(__FUNCTION__, 'DONE', ['workersArray' => $workersArray], 'debug');
 
     return $workersArray;
 }
@@ -215,12 +221,15 @@ function getWorkers($pdo, $workerIds) {
  * Get workers linked to a controller (primary OR double-agent), optionally filtered to a single zone.
  *
  * @param PDO $pdo : database connection
- * @param int $controller_id
- * @param int|null $zone_id  when set, restrict to workers currently in this zone
+ * @param int $controller_id : controller whose linked workers to fetch
+ * @param int|null $zone_id : when set, restrict to workers currently in this zone
  *
- * @return array|null workersArray
+ * @return array|null : workers array from getWorkers(), or NULL on error
  */
-function getWorkersByController($pdo, $controller_id, $zone_id = null) {
+function getWorkersByController(PDO $pdo, int $controller_id, int|null $zone_id = null): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['zone_id' => $zone_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $zoneJoin = ($zone_id !== null)
@@ -237,7 +246,7 @@ function getWorkersByController($pdo, $controller_id, $zone_id = null) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT controller_worker failed : ' . $e->getMessage(), ['sql' => $sql, 'controller_id' => $controller_id, 'zone_id' => $zone_id], 'error');
         return NULL;
     }
 
@@ -251,16 +260,14 @@ function getWorkersByController($pdo, $controller_id, $zone_id = null) {
 }
 
 /**
- * Determin current action for worker
+ * Determine current action for worker
  *
- * 
- * @param PDO $pdo : database connection
- * @param int $controller_id
+ * @param array $workerActions : list of worker_actions rows for the worker
+ * @param int $turncounter : current turn number to match against
  *
- * @return array|null workersArray
- *
+ * @return array : the matching action row, or empty array when none found
  */
-function setWorkerCurrentAction($workerActions, $turncounter) {
+function setWorkerCurrentAction(array $workerActions, int $turncounter): array {
     foreach($workerActions as $action) {
         if ( $_SESSION['DEBUG'] == true )
             echo sprintf('workersArray as worker => worker[actions] as action : %s  <br>', var_export($action,true));
@@ -278,15 +285,14 @@ function setWorkerCurrentAction($workerActions, $turncounter) {
 }
 
 /**
- * get Worker satus
- * 
- * @param array $worker : must contain following keys
- * - ['actions'][current_turn_number]['action_choice']
- * - 'is_primary_controller'
- * 
- * @return string 
+ * Get Worker status
+ *
+ * @param array $worker : must contain keys ['actions'][turncounter]['action_choice'] and 'is_primary_controller'
+ * @param array $mechanics : must contain key 'turncounter'
+ *
+ * @return string : one of 'alive', 'double_agent', 'prisoner', 'dead', 'unfound'
  */
-function getWorkerStatus($worker, $mechanics) {
+function getWorkerStatus(array $worker, array $mechanics): string {
     $workerStatus = 'unfound';
     // alive: worker alive and active and that we control
     if (
@@ -322,20 +328,13 @@ function getWorkerStatus($worker, $mechanics) {
  * show Worker view Short version
  *
  * @param PDO $pdo : database connection
- * @param array $worker : must contain following keys
- *   - 'id'
- *   - 'firstname'
- *   - 'lastname'
- *   - 'zone_name'
- *   - 'total_enquete'
- *   - 'total_attack'
- *   - 'total_defence'
- *   - 'actions'
+ * @param array $worker : must contain 'id', 'firstname', 'lastname', 'zone_name', 'total_enquete', 'total_attack', 'total_defence', 'actions'
  * @param array $mechanics : must contain key 'turncounter'
+ * @param bool $showCheckBox : when true, prepend a select checkbox
  *
- * @return string
+ * @return string : rendered HTML fragment
  */
-function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
+function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCheckBox = false): string {
 
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
@@ -418,11 +417,14 @@ function showWorkerShort($pdo, $worker, $mechanics, $showCheckBox = false) {
  * getActionsByWorkers
  *
  * @param PDO $pdo : database connection
- * @param string $worker_id_str
+ * @param string $worker_id_str : comma-separated list of worker ids
  *
- * @return array|null workerActions
+ * @return array|null : worker_actions rows, or NULL on SQL error
  */
-function getActionsByWorkers($pdo, $worker_id_str){
+function getActionsByWorkers(PDO $pdo, string $worker_id_str): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with worker_id_str : ' . $worker_id_str, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "SELECT * FROM {$prefix}worker_actions w
         WHERE worker_id IN ($worker_id_str)
@@ -432,12 +434,12 @@ function getActionsByWorkers($pdo, $worker_id_str){
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT worker_actions failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
     // Fetch the results
     $workerActions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($_SESSION['DEBUG'] == true) echo sprintf("workerActions: %s <br /> <br />", var_export($workerActions,true));
+    game_error_log(__FUNCTION__, 'DONE', ['workerActions' => $workerActions], 'debug');
 
     return $workerActions;
 }
@@ -446,12 +448,15 @@ function getActionsByWorkers($pdo, $worker_id_str){
  * Function get a random Origin for Worker
  *
  * @param PDO $pdo : database connection
- * @param array $newWorker
- * @param string|null $originList
+ * @param array $newWorker : worker draft (may carry power_1/power_2 with origin_list lock)
+ * @param string $buttonClicked : recruitment button key (used for <button>_origin_list config)
  *
- * @return array|null originsArray
+ * @return array|null : worker with origin_id + origin filled in, or NULL on SQL error
  */
-function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
+function randomWorkerOrigin(PDO $pdo, array $newWorker, string $buttonClicked): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with buttonClicked : ' . $buttonClicked, ['newWorker' => $newWorker], 'debug');
+
     $randCommand = 'RANDOM()';
     if ($_SESSION['DBTYPE'] == 'mysql')
         $randCommand = 'RAND()';
@@ -493,7 +498,7 @@ function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT worker_origins failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
 
@@ -503,8 +508,7 @@ function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
     // Store worker_origins in the array
     $newWorker['origin_id'] = $workerOrigins[0]['id'];
     $newWorker['origin'] = $workerOrigins[0]['name'];
-    if ($_SESSION['DEBUG'] == true) 
-        echo sprintf("newWorker: %s <br /> <br />", var_export($newWorker,true));
+    game_error_log(__FUNCTION__, 'DONE', ['newWorker' => $newWorker], 'debug');
 
     return $newWorker;
 }
@@ -513,12 +517,13 @@ function randomWorkerOrigin($pdo, $newWorker, $buttonClicked) {
  * Function get random Name for Worker for originList
  *
  * @param PDO $pdo : database connection
- * @param array $newWorker
+ * @param array $newWorker : worker draft (must carry origin_id)
  *
- * @return array|null nameArray
- *
+ * @return array|null : worker with firstname + lastname filled in, or NULL on SQL error
  */
-function randomWorkerName($pdo, $newWorker) {
+function randomWorkerName(PDO $pdo, array $newWorker): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['newWorker' => $newWorker], 'debug');
 
     // Get 2 random values from worker_names for and origin ID
     $randCommand = 'RANDOM()';
@@ -538,7 +543,7 @@ function randomWorkerName($pdo, $newWorker) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT worker_names failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
 
@@ -555,28 +560,16 @@ function randomWorkerName($pdo, $newWorker) {
 }
 
 /**
- * Function to create worker and assing the controler
+ * Function to create worker and assign the controller
  *
  * @param PDO $pdo : database connection
- * @param array $array : $GET should contain :
- *     "creation"="true"
- *     firstname
- *     lastname
- *     origin
- *     power_hobby
- *     power_metier
- *     origin_id
- *     power_hobby_id
- *     power_metier_id
- *     zone
- *     discipline
- *     transformation
- *     controller_id
+ * @param array $array : must contain firstname, lastname, origin_id, controller_id, zone_id and optionally power_hobby_id, power_metier_id, discipline, transformation
  *
- * @return string workerId
+ * @return string|false : new worker id, existing worker id, or false when required fields are missing / INSERT fails
  */
-function createWorker($pdo, $array) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function createWorker(PDO $pdo, array $array): string|false {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START', ['array' => $array], 'debug');
 
     // If a necessary element of data is missing
     $requiredFields = [
@@ -595,7 +588,7 @@ function createWorker($pdo, $array) {
         foreach ($missing as $label) {
             echo sprintf("Champ obligatoire manquant : %s<br />", $label);
         }
-        if ($debug) echo sprintf("%s() => Unfound necessary element <br>", __FUNCTION__);
+        game_error_log(__FUNCTION__, 'Unfound necessary element', ['missing' => $missing], 'warning');
         return false;
     }
 
@@ -613,7 +606,7 @@ function createWorker($pdo, $array) {
         $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT workers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT workers failed : ' . $e->getMessage(), ['array' => $array], 'error');
         return false;
     }
     $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -629,7 +622,7 @@ function createWorker($pdo, $array) {
         $stmt->bindParam(':zone_id', $array['zone_id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT workers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT workers failed : ' . $e->getMessage(), ['array' => $array], 'error');
         return false;
     }
     // Get the last inserted ID
@@ -649,7 +642,7 @@ function createWorker($pdo, $array) {
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_id' => $array['controller_id']], 'warning');
     }
 
     // Add powers to worker
@@ -659,7 +652,7 @@ function createWorker($pdo, $array) {
     if (!empty($array['discipline']) && $array['discipline'] != "\'\'" ) $link_power_type_id_array[] = $array['discipline'];
     if (!empty($array['transformation']) && $array['transformation'] != "\'\'" ) $link_power_type_id_array[] = $array['transformation'];
     foreach($link_power_type_id_array as $link_power_type_id ) {
-        if ($debug) echo sprintf("%s() => add to worker : %s, link_power_type_id: %s <br>",  __FUNCTION__, $workerId, var_export($link_power_type_id, true));
+        game_error_log(__FUNCTION__, 'add to worker', ['workerId' => $workerId, 'link_power_type_id' => $link_power_type_id], 'debug');
         upgradeWorker($pdo, $workerId, $link_power_type_id, true);
     }
 
@@ -671,7 +664,7 @@ function createWorker($pdo, $array) {
             ':controller_id' => $array['controller_id']
         ]);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE controllers SET recruited_workers  Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE controllers.recruited_workers failed : ' . $e->getMessage(), ['controller_id' => $array['controller_id']], 'warning');
     }
 
     return $workerId;
@@ -681,14 +674,16 @@ function createWorker($pdo, $array) {
  * Function to update Worker with a power
  *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param int $link_power_type_id
- * @param bool $isRecrutment
+ * @param int $workerId : id of the worker receiving the power
+ * @param int $link_power_type_id : id of the link_power_type row to bind
+ * @param bool $isRecrutment : true when called during recruitment (applies on_recrutment effects)
  *
- * @return bool success
+ * @return bool : true on success, false on INSERT / SELECT failure
  */
-function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = false){
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $isRecrutment = false): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['link_power_type_id' => $link_power_type_id, 'isRecrutment' => $isRecrutment], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     try{
@@ -698,7 +693,7 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT worker_powers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT worker_powers failed : ' . $e->getMessage(), ['workerId' => $workerId, 'link_power_type_id' => $link_power_type_id], 'error');
         return false;
     }
 
@@ -714,11 +709,11 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':link_power_type_id' => $link_power_type_id]);
         $power = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($debug) echo sprintf("%s() => power other ? %s ",  __FUNCTION__, var_export($power, true));
+        game_error_log(__FUNCTION__, 'power other fetched', ['power' => $power], 'debug');
 
         if (!empty($power['other'])) {
             $otherJson = json_decode($power['other'], true);
-            if ($debug) echo __FUNCTION__ . "(): otherJson: " . var_export($otherJson, true) . "<br />";
+            game_error_log(__FUNCTION__, 'otherJson decoded', ['otherJson' => $otherJson], 'debug');
 
             if (json_last_error() === JSON_ERROR_NONE && is_array($otherJson)) {
                 // Apply effect if found
@@ -726,7 +721,7 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
             }
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__ . "(): Failed to fetch power effect: " . $e->getMessage() . "<br />";
+        game_error_log(__FUNCTION__, 'SELECT power effect failed : ' . $e->getMessage(), ['link_power_type_id' => $link_power_type_id], 'error');
         return false;
     }
 
@@ -734,22 +729,25 @@ function upgradeWorker($pdo, $workerId, $link_power_type_id, $isRecrutment = fal
 }
 
 /**
+ * Apply the on_recrutment / on_gain side-effects encoded in a power's `other` JSON.
  *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param array $otherJson
- * @param bool $isRecrutment
+ * @param int $workerId : worker receiving the effect
+ * @param array $otherJson : decoded power.other JSON
+ * @param bool $isRecrutment : true when triggered during recruitment
  *
- * @return bool success
+ * @return bool : always true (soft-failure path logs and continues)
  */
-function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = false) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bool $isRecrutment = false): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['otherJson' => $otherJson, 'isRecrutment' => $isRecrutment], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     // If it is a recrutment effect
     if ($isRecrutment && !empty($otherJson['on_recrutment']) && is_array($otherJson['on_recrutment']) ){
         foreach ($otherJson['on_recrutment'] AS $key => $element ){
-            if ($debug) echo sprintf( "%s():key : %s, element: %s<br />",__FUNCTION__, $key, var_export($element, true));
+            game_error_log(__FUNCTION__, 'on_recrutment iteration', ['key' => $key, 'element' => $element], 'debug');
             // If it is an action and we have a type
             if (
                 $key == 'action'
@@ -766,17 +764,17 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
                         $stmtExists = $pdo->prepare($sqlExists);
                         $stmtExists->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
                         if ($stmtExists->fetchColumn() !== false) {
-                            if ($debug) echo __FUNCTION__ . "(): go_traitor skipped — target controller already linked to worker.<br />";
+                            game_error_log(__FUNCTION__, 'go_traitor skipped — target controller already linked to worker', ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'debug');
                         } else {
                             // Add non primary controller for the worker
                             $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
                                     VALUES ( (SELECT id FROM {$prefix}controllers WHERE lastname = :lastname), :worker_id, False)";
-                            if ($debug) echo __FUNCTION__ . "(): sql: " . var_export($sql, true) . "<br />";
+                            game_error_log(__FUNCTION__, 'go_traitor INSERT prepared', ['sql' => $sql], 'debug');
                             $stmt = $pdo->prepare($sql);
                             $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
                         }
                     } catch (PDOException $e) {
-                        echo __FUNCTION__."(): go_traitor => INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+                        game_error_log(__FUNCTION__, 'go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'warning');
                     }
                 }
                 if ( $element['type'] == 'add_opposition' ){
@@ -797,13 +795,17 @@ function applyPowerObtentionEffect($pdo, $workerId, $otherJson, $isRecrutment = 
  * Function add Action to Worker_action table for worker
  *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param int $controllerId
- * @param int $zoneId
+ * @param int $workerId : id of the worker
+ * @param int $controllerId : controller owning the action
+ * @param int $zoneId : zone the action happens in
+ * @param array|null $reportArray : optional report chunks to seed the row
  *
- * @return int|null lastInsertId
+ * @return string|false|null : lastInsertId (string on success, false when no sequence), or null on INSERT failure
  */
-function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray = null){
+function addWorkerAction(PDO $pdo, int $workerId, int $controllerId, int $zoneId, array|null $reportArray = null): string|false|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['controllerId' => $controllerId, 'zoneId' => $zoneId, 'reportArray' => $reportArray], 'debug');
+
     // Get turn nubmer
     $mechanics = getMechanics($pdo);
     $prefix = $_SESSION['GAME_PREFIX'];
@@ -817,7 +819,7 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
         // Encode the report
         $reportJson = json_encode($reportArray);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo "JSON encoding error: " . json_last_error_msg() . "<br />";
+            game_error_log(__FUNCTION__, 'JSON encoding error : ' . json_last_error_msg(), ['reportArray' => $reportArray], 'warning');
         }else{
             $sql = "INSERT
                 INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id, report)
@@ -826,7 +828,7 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
         }
     }
 
-    if (!empty($_SESSION['debug'])) echo __METHOD__."() : insertsqL $sql <br/>";
+    game_error_log(__FUNCTION__, 'insert sql prepared', ['sql' => $sql], 'debug');
 
     try{
         // Insert new controller_worker value into the database
@@ -838,7 +840,7 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
         if (!empty($hasReport)) $stmt->bindParam(':report', $reportJson);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT worker_actions failed : ' . $e->getMessage(), ['sql' => $sql, 'workerId' => $workerId], 'error');
         return null;
     }
     // Get the last inserted ID
@@ -849,11 +851,14 @@ function addWorkerAction($pdo, $workerId, $controllerId, $zoneId, $reportArray =
  * Function to count disciplines of worker
  *
  * @param PDO $pdo : database connection
- * @param array $workerIds
+ * @param array|null $workerIds : optional worker id filter; NULL counts across all workers
  *
- * @return array {int worker_id, int discipline_count}
+ * @return array : rows of {worker_id, discipline_count}, empty on SQL error
  */
-function countWorkerDisciplines($pdo, $workerIds = NULL) {
+function countWorkerDisciplines(PDO $pdo, array|null $workerIds = NULL): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['workerIds' => $workerIds], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = sprintf("SELECT
@@ -878,24 +883,26 @@ function countWorkerDisciplines($pdo, $workerIds = NULL) {
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): Error counting worker disciplines: " . $e->getMessage();
+        game_error_log(__FUNCTION__, 'Error counting worker disciplines : ' . $e->getMessage(), ['workerIds' => $workerIds], 'error');
         return [];
     }
 }
 
 /**
- * Function to assing worker to new zone
+ * Function to assign worker to new zone
  *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param int $zoneId
+ * @param int $workerId : id of the worker being moved
+ * @param int $zoneId : destination zone id
  *
- * @return int|null :
+ * @return int|null : $workerId on success, null when the first UPDATE fails
  */
-function moveWorker($pdo, $workerId, $zoneId) {
-    $debug = $_SESSION['DEBUG'];
+function moveWorker(PDO $pdo, int $workerId, int $zoneId): int|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['zoneId' => $zoneId], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
-    if ($debug) echo __FUNCTION__."(): Step 1 UPDATE workers <br/>";
+    game_error_log(__FUNCTION__, 'Step 1 UPDATE workers', [], 'debug');
     try{
         // UPDATE workers value
         $stmt = $pdo->prepare("UPDATE {$prefix}workers SET zone_id = :zone_id WHERE id = :id ");
@@ -903,11 +910,11 @@ function moveWorker($pdo, $workerId, $zoneId) {
         $stmt->bindParam(':zone_id', $zoneId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE workers failed : ' . $e->getMessage(), ['workerId' => $workerId, 'zoneId' => $zoneId], 'error');
         return null;
     }
 
-    if ($debug) echo __FUNCTION__."(): Step 2 UPDATE worker_actions <br/>";
+    game_error_log(__FUNCTION__, 'Step 2 UPDATE worker_actions', [], 'debug');
     $actions = getWorkerActions($pdo, $workerId);
 
     $mechanics = getMechanics($pdo);
@@ -921,22 +928,26 @@ function moveWorker($pdo, $workerId, $zoneId) {
         $stmt->bindParam(':id', $actions[0]['id'], PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE worker_actions failed : ' . $e->getMessage(), ['workerId' => $workerId, 'zoneId' => $zoneId], 'warning');
     }
-    if ($debug) echo __FUNCTION__."(): DONE <br/>"; 
+    game_error_log(__FUNCTION__, 'DONE with workerId : ' . $workerId, [], 'debug');
 
     return $workerId;
 }
 
 /**
  * get worker action status for turn
- * 
+ *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param int|null $turn_number
- * 
+ * @param int $workerId : id of the worker
+ * @param int|null $turn_number : turn to fetch, or NULL to use mechanics.turncounter
+ *
+ * @return array|null : worker_actions rows for the turn, or NULL on SQL error
  */
-function getWorkerActions($pdo, $workerId, $turn_number = null ){
+function getWorkerActions(PDO $pdo, int $workerId, int|null $turn_number = null): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['turn_number' => $turn_number], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     if (empty($turn_number)) {
@@ -949,33 +960,35 @@ function getWorkerActions($pdo, $workerId, $turn_number = null ){
         AND turn_number = $turn_number
         ORDER BY id DESC
     ";
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql: ".var_export($sql, true)."<br/><br/>";
+    game_error_log(__FUNCTION__, 'sql prepared', ['sql' => $sql], 'debug');
 
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT worker_actions failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
     // Fetch the results
     $workerActions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): workerActions: ".var_export($workerActions, true)."<br/><br/>";
+    game_error_log(__FUNCTION__, 'DONE', ['workerActions' => $workerActions], 'debug');
     return $workerActions;
 }
 
 /**
- * Activates workers depending opn give action
- * 
+ * Activates workers depending on given action
+ *
  * @param PDO $pdo : database connection
- * @param int $workerId
- * @param string $action
- * @param int|array|null $extraVal
- * 
- * @return int $workerId
+ * @param int $workerId : id of the worker being activated
+ * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / hide / passive / investigate)
+ * @param int|array|null $extraVal : per-action payload (worker id list, controller id, or associative array)
+ *
+ * @return int : $workerId (returned even on soft-failure paths)
  */
-function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
+function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null $extraVal = NULL): int {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['action' => $action, 'extraVal' => $extraVal], 'debug');
 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
@@ -983,7 +996,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
     // get worker action status for turn
     $worker_actions = getWorkerActions($pdo, $workerId);
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): worker_action: ".var_export($worker_actions, true)."<br/><br/>";
+    game_error_log(__FUNCTION__, 'worker_action fetched', ['worker_actions' => $worker_actions], 'debug');
     $currentAction = $worker_actions[0];
 
     // Decode the existing JSON into an associative array
@@ -991,18 +1004,16 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
     if (!empty($currentAction['report'])) {
         $currentReport = json_decode($currentAction['report'], true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['report' => $currentAction['report']], 'warning');
         }
     }
     $sql_worker_actions = "UPDATE {$prefix}worker_actions SET ";
-    if ($_SESSION['DEBUG'] == true) echo sprintf("%s(): activate : %s <br/>", __FUNCTION__, $action);
+    game_error_log(__FUNCTION__, 'activate action : ' . $action, [], 'debug');
     $new_action = $action;
     $jsonOutput = '{}';
     switch($action) {
         case 'attack' :
-            if ($_SESSION['DEBUG_ATTACK'] == true){
-                echo sprintf("%s(): attack %s <br/><br/>",__FUNCTION__, var_export($extraVal,true)) ;
-            }
+            game_error_log(__FUNCTION__, 'attack', ['extraVal' => $extraVal], 'debug');
             // Build attack JSON
             $chosenAttackOptions = array();
             foreach ($extraVal as $val){
@@ -1025,14 +1036,14 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             $jsonOutput = json_encode($chosenAttackOptions);
             break;
         case 'claim' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): claim <br/><br/>";
+            game_error_log(__FUNCTION__, 'claim', ['extraVal' => $extraVal], 'debug');
             // Create JSON table
             $jsonOutput = json_encode([
                 'claim_controller_id' => $extraVal
             ]);
             break;
         case 'gift' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): gift <br/><br/>";
+            game_error_log(__FUNCTION__, 'gift', ['extraVal' => $extraVal], 'debug');
 
             // get new controller name
             $newControllerName = getControllerName($pdo, $extraVal);
@@ -1043,11 +1054,11 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
 
             // Create Trace
             if (createTraceWorker($pdo, $workerId, $currentAction['controller_id']) === false) {
-                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+                game_error_log(__FUNCTION__, 'Failed to create trace worker', ['workerId' => $workerId, 'controller_id' => $currentAction['controller_id']], 'warning');
             }
             // Check for existing trace
             if (destroyTraceWorker($pdo, $workerId, $extraVal) === false) {
-                echo __FUNCTION__." (): Failed to destroy trace worker ! <br />";
+                game_error_log(__FUNCTION__, 'Failed to destroy trace worker', ['workerId' => $workerId, 'extraVal' => $extraVal], 'warning');
             }
 
             // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
@@ -1059,7 +1070,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':worker_id' => $workerId
                 ]);
             } catch (PDOException $e) {
-               // echo __FUNCTION__." (): Failed to delete entry from controller_worker table: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'DELETE controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'warning');
             }
             // Set controller_worker controller_id and set worker_actions controller_id where turn_numer = current_turn to $extraVal
             try {
@@ -1080,15 +1091,15 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':turn_number' => $turn_number
                 ]);
             } catch (PDOException $e) {
-                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'gift UPDATE tables failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'error');
             }
             return $workerId;
             break;
         case 'recallDoubleAgent' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): recallDoubleAgent <br/><br/>";
+            game_error_log(__FUNCTION__, 'recallDoubleAgent', ['extraVal' => $extraVal], 'debug');
 
             if (!createTraceWorker($pdo, $workerId, $currentAction['controller_id'])) {
-                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+                game_error_log(__FUNCTION__, 'Failed to create trace worker', ['workerId' => $workerId, 'controller_id' => $currentAction['controller_id']], 'warning');
             }
 
             try {
@@ -1129,12 +1140,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':turn_number' => $turn_number
                 ]);
             } catch (PDOException $e) {
-                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'recallDoubleAgent UPDATE tables failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'error');
             }
 
             break;
         case 'returnPrisoner' :
-            if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): returnPrisoner <br/><br/>";
+            game_error_log(__FUNCTION__, 'returnPrisoner', ['extraVal' => $extraVal], 'debug');
             if (empty($currentReport['life_report'])) $currentReport['life_report'] ='';
             $currentReport['life_report'] .= sprintf(
                 "J'ai été <strong>relâché</strong> par le <strong>réseau %s</strong> vers %s %s.<br />",
@@ -1144,10 +1155,10 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
             );
 
             if (createTraceWorker($pdo, $workerId, $extraVal['recall_controller_id']) === false) {
-                echo __FUNCTION__." (): Failed to create trace worker ! <br />";
+                game_error_log(__FUNCTION__, 'Failed to create trace worker', ['workerId' => $workerId, 'recall_controller_id' => $extraVal['recall_controller_id']], 'warning');
             }
             if (destroyTraceWorker($pdo, $workerId, $extraVal['return_controller_id']) === false) {
-                echo __FUNCTION__." (): Failed to destroy trace worker ! <br />";
+                game_error_log(__FUNCTION__, 'Failed to destroy trace worker', ['workerId' => $workerId, 'return_controller_id' => $extraVal['return_controller_id']], 'warning');
             }
             try {
                 // Update the controller_worker table
@@ -1172,12 +1183,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     ':turn_number' => $turn_number
                 ]);
             } catch (PDOException $e) {
-                echo __FUNCTION__." (): Failed to update tables: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'returnPrisoner UPDATE tables failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'error');
             }
             if ( !empty($extraVal['double_controller_id']) ) {
-                // Clean the secondary controllers' capture-trace 
+                // Clean the secondary controllers' capture-trace
                 if (destroyTraceWorker($pdo, $workerId, $extraVal['double_controller_id']) === false) {
-                    echo __FUNCTION__." (): Failed to destroy secondary capture-trace ! <br />";
+                    game_error_log(__FUNCTION__, 'Failed to destroy secondary capture-trace', ['workerId' => $workerId, 'double_controller_id' => $extraVal['double_controller_id']], 'warning');
                 }
                 try {
                     // Add non primary controller for the worker
@@ -1186,7 +1197,7 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([':extraVal' => $extraVal['double_controller_id'], ':worker_id' => $workerId]);
                 } catch (PDOException $e) {
-                    echo __FUNCTION__."(): returnPrisoner and go_traitor => INSERT controller_worker Failed: " . $e->getMessage()."<br />";
+                    game_error_log(__FUNCTION__, 'returnPrisoner + go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'double_controller_id' => $extraVal['double_controller_id']], 'warning');
                 }
             }
 
@@ -1200,10 +1211,12 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
     $updatedReportJson = json_encode($currentReport);
     if (json_last_error() === JSON_ERROR_NONE) {
         $sql_worker_actions .= ", report = :report ";
-    } else { echo "JSON encoding error: " . json_last_error_msg() . "<br />"; }
+    } else {
+        game_error_log(__FUNCTION__, 'JSON encoding error : ' . json_last_error_msg(), ['currentReport' => $currentReport], 'warning');
+    }
     try{
         $sql_worker_actions .= " WHERE id = :id AND turn_number = :turn_number ";
-        if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): sql_worker_actions : ".var_export($sql_worker_actions, true)." <br/><br/>";
+        game_error_log(__FUNCTION__, 'final sql_worker_actions prepared', ['sql_worker_actions' => $sql_worker_actions], 'debug');
         // Insert new workers value into the database
         $stmt = $pdo->prepare($sql_worker_actions);
         $stmt->bindParam(':id', $worker_actions[0]['id'], PDO::PARAM_INT);
@@ -1211,34 +1224,30 @@ function activateWorker($pdo, $workerId, $action, $extraVal = NULL) {
         $stmt->bindParam(':report', $updatedReportJson, PDO::PARAM_STR);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE workers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE worker_actions failed : ' . $e->getMessage(), ['sql_worker_actions' => $sql_worker_actions, 'workerId' => $workerId], 'error');
     }
     return $workerId;
 }
 
 /**
- * Get the know enemy workers for the controller and the zone
- * 
+ * Get the known enemy workers for the controller and the zone
+ *
  * @param PDO $pdo : database connection
- * @param int $zone_id
- * @param int|null $controller_id
- * 
- * @return array (
- *   -'workers_without_controller'
- *   -'workers_with_controller'
- * 
+ * @param int $zone_id : zone to scope the CKE lookup to
+ * @param int|null $controller_id : optional controller filter (NULL = across all controllers)
+ *
+ * @return array : ['workers_without_controller' => [...], 'workers_with_controller' => [...]], empty on SQL error
  */
-function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
+function getEnemyWorkers(PDO $pdo, int $zone_id, int|null $controller_id = NULL): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with zone_id : ' . $zone_id, ['controller_id' => $controller_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     // Select from controllers_known_enemies by $zone_id, $controller_id
         // return table of :
         // A worker discovered_worker_id with no discovered_controller_id
         // B workers discovered_worker_id with identical discovered_controller_id
             // Optional discovered_controller_name if is associated to a
-    if ($_SESSION['DEBUG_ATTACK'] == true) {
-        echo sprintf("zone_id: %s <br/> " , var_export($zone_id, true));
-        echo sprintf("controller_id: %s <br/> " , var_export($controller_id, true));
-    }
     try {
         // Query for workers with no discovered_controller_id (A)
         $sqlA = sprintf("
@@ -1299,7 +1308,7 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
         ];
 
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): Error fetching enemy workers: " . $e->getMessage();
+        game_error_log(__FUNCTION__, 'Error fetching enemy workers : ' . $e->getMessage(), ['zone_id' => $zone_id, 'controller_id' => $controller_id], 'error');
         return [];
     }
 }
@@ -1307,15 +1316,15 @@ function getEnemyWorkers($pdo, $zone_id, $controller_id = NULL) {
 /**
  * Structured enemy listing for a zone — shared by attack select + zone box.
  *
- * @param PDO $pdo
- * @param int $zone_id
- * @param int $controller_id
- * @param int|null $turn_number  default mechanics.turncounter
- * @param int|null $window       default getConfig('attackTimeWindow'); falls back to $turn_number when empty
+ * @param PDO $pdo : database connection
+ * @param int $zone_id : zone to scope the listing to
+ * @param int $controller_id : viewing controller
+ * @param int|null $turn_number : reference turn; defaults to mechanics.turncounter
+ * @param int|null $window : recency window in turns; defaults to attackTimeWindow config, then $turn_number
  *
- * @return array shape: recent/older → ['unaffiliated' => [...rows], 'networks' => [<cid> => ['name', 'workers' => [...rows]]]]
+ * @return array : shape recent/older → ['unaffiliated' => [...rows], 'networks' => [<cid> => ['name', 'workers' => [...rows]]]]
  */
-function buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number = null, $window = null) {
+function buildEnemyWorkerListing(PDO $pdo, int $zone_id, int $controller_id, int|null $turn_number = null, int|null $window = null): array {
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
@@ -1357,26 +1366,25 @@ function buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number = 
  * Build the HTML select for the known enemy workers for the controller in the zone
  *
  * @param PDO $pdo : database connection
- * @param int $zone_id
- * @param int $controller_id
- * @param int|null $turn_number
+ * @param int $zone_id : zone the listing is scoped to
+ * @param int $controller_id : viewing controller
+ * @param int|null $turn_number : reference turn; defaults to mechanics.turncounter
  *
- * @return string
+ * @return string : rendered HTML <select> block, or '' when the listing is empty
  */
-function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = NULL) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|null $turn_number = NULL): string {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with zone_id : ' . $zone_id, ['controller_id' => $controller_id, 'turn_number' => $turn_number], 'debug');
 
     if (empty($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
     }
-    if ($debug) echo "turn_number : $turn_number <br>";
+    game_error_log(__FUNCTION__, 'turn_number resolved : ' . $turn_number, [], 'debug');
 
     $listing = buildEnemyWorkerListing($pdo, $zone_id, $controller_id, $turn_number);
 
-    if ($_SESSION['DEBUG_ATTACK']) {
-        echo sprintf("listing: %s <br/> ", var_export($listing, true));
-    }
+    game_error_log(__FUNCTION__, 'listing built', ['listing' => $listing], 'debug');
 
     $recent = $listing['recent'];
     $older  = $listing['older'];
@@ -1417,7 +1425,7 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
         ",
         $enemyWorkerOptions
     );
-    if ($_SESSION['DEBUG'] == true) echo __FUNCTION__."(): enemyWorkersSelect: ".var_export($enemyWorkersSelect, true)."<br /><br />";
+    game_error_log(__FUNCTION__, 'DONE', ['enemyWorkersSelect' => $enemyWorkersSelect], 'debug');
 
     return $enemyWorkersSelect;
 }
@@ -1426,44 +1434,43 @@ function showEnemyWorkersSelect($pdo, $zone_id, $controller_id, $turn_number = N
  * Create a copy of the worker and worker_actions tables to the active controller as primary controller
  *  the new worker should be alive and active and the new worker_actions should be empty
  *  if the active controller has a previous copy of the woker it must be destroyed first
- * 
- * @param PDO $pdo : database connection
- * @param int $worker_id
- * @param int $controller_id
- * 
- * @return $new_worker_id
  *
- */ 
-function createTraceWorker($pdo, $worker_id, $controller_id) {
+ * @param PDO $pdo : database connection
+ * @param int $worker_id : source worker to trace-clone
+ * @param int $controller_id : controller receiving the trace worker as primary
+ *
+ * @return string|false : lastInsertId of the new trace worker, or false on transaction rollback
+ */
+function createTraceWorker(PDO $pdo, int $worker_id, int $controller_id): string|false {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');
 
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    if ($debug) echo __FUNCTION__."(): createTraceWorker <br/><br/>";
     try {
         // Begin transaction
         $pdo->beginTransaction();
 
         // Step 1 : Copy the worker table except id
         $query = "
-            INSERT INTO {$prefix}workers (firstname, lastname, origin_id, zone_id) 
+            INSERT INTO {$prefix}workers (firstname, lastname, origin_id, zone_id)
             SELECT firstname, lastname, origin_id, zone_id
             FROM {$prefix}workers WHERE id = :worker_id
         ";
-        if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
+        game_error_log(__FUNCTION__, 'Step 1 prepared', ['query' => $query], 'debug');
         $stmt = $pdo->prepare($query);
         $stmt->bindValue(':worker_id', $worker_id, PDO::PARAM_INT);
         $stmt->execute();
         $new_worker_id = $pdo->lastInsertId();
-        if ($debug) echo sprintf("%s(): Step 1 : new_worker_id = %s <br/><br/>",  __FUNCTION__, $new_worker_id);
+        game_error_log(__FUNCTION__, 'Step 1 new_worker_id : ' . $new_worker_id, [], 'debug');
 
         // Step 2 : Copy the worker_actions table except id, worker_id = new worker_id and action_choice = 'trace'
         $query = "
             INSERT INTO {$prefix}worker_actions (worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, action_choice, action_params, report)
-            SELECT :new_worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, 'trace', action_params, report 
+            SELECT :new_worker_id, turn_number, zone_id, controller_id, enquete_val, attack_val, defence_val, 'trace', action_params, report
             FROM {$prefix}worker_actions WHERE worker_id = :worker_id
         ";
-        if ($debug) echo sprintf("%s(): Step 2 : %s <br/><br/>",  __FUNCTION__, $query);
+        game_error_log(__FUNCTION__, 'Step 2 prepared', ['query' => $query], 'debug');
         $stmt = $pdo->prepare($query);
         $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
         $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
@@ -1475,7 +1482,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
             SELECT :new_worker_id, link_power_type_id
             FROM {$prefix}worker_powers WHERE worker_id = :worker_id
         ";
-        if ($debug) echo sprintf("%s(): Step 3 : %s <br/><br/>",  __FUNCTION__, $query);
+        game_error_log(__FUNCTION__, 'Step 3 prepared', ['query' => $query], 'debug');
         $stmt = $pdo->prepare($query);
         $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
         $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
@@ -1486,7 +1493,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
             INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
             SELECT :controller_id, :new_worker_id, true
         ";
-        if ($debug) echo sprintf("%s(): Step 4 : %s <br/><br/>",  __FUNCTION__, $query);
+        game_error_log(__FUNCTION__, 'Step 4 prepared', ['query' => $query], 'debug');
         $stmt = $pdo->prepare($query);
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
@@ -1497,7 +1504,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
             INSERT INTO {$prefix}workers_trace_links (primary_worker_id, trace_worker_id, controller_id)
             SELECT  :worker_id, :new_worker_id, :controller_id
         ";
-        if ($debug) echo sprintf("%s(): Step 5 : %s <br/><br/>",  __FUNCTION__, $query);
+        game_error_log(__FUNCTION__, 'Step 5 prepared', ['query' => $query], 'debug');
         $stmt = $pdo->prepare($query);
         $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
         $stmt->bindParam(':new_worker_id', $new_worker_id, PDO::PARAM_INT);
@@ -1511,8 +1518,7 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        echo __FUNCTION__." (): Error creating trace worker: " . $e->getMessage();
-        echo  __FUNCTION__."(): Transaction failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'Transaction failed : ' . $e->getMessage(), ['worker_id' => $worker_id, 'controller_id' => $controller_id], 'error');
         return false;
     }
     return $new_worker_id;
@@ -1522,40 +1528,38 @@ function createTraceWorker($pdo, $worker_id, $controller_id) {
 /**
  * Destroy the trace of the worker, the worker_actions tables, the links to the controller as primary controller
  *  the worker links to his powers
- * 
- * @param PDO $pdo : database connection
- * @param int $worker_id
- * @param int $controller_id
- * 
- * @return $success
  *
- */ 
-function destroyTraceWorker($pdo, $worker_id, $controller_id) {
+ * @param PDO $pdo : database connection
+ * @param int $worker_id : primary worker whose trace clone is destroyed
+ * @param int $controller_id : controller that held the trace
+ *
+ * @return bool : true on success (including nothing-to-do), false on transaction rollback
+ */
+function destroyTraceWorker(PDO $pdo, int $worker_id, int $controller_id): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');
 
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
-
-    if ($debug) echo __FUNCTION__."(): destroyTraceWorker <br/><br/>";
 
     // Step 1 : find the trace_worker_id in the workers_trace_links table
     $query = "
         SELECT trace_worker_id FROM {$prefix}workers_trace_links WHERE primary_worker_id = :worker_id AND controller_id = :controller_id
     ";
-    if ($debug) echo sprintf("%s(): Step 1 : %s <br/><br/>",  __FUNCTION__, $query);
+    game_error_log(__FUNCTION__, 'Step 1 prepared', ['query' => $query], 'debug');
     $stmt = $pdo->prepare($query);
     $stmt->bindParam(':worker_id', $worker_id, PDO::PARAM_INT);
     $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
     $stmt->execute();
     $traceWorkers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($debug) echo sprintf("%s(): Step 1 : traceWorkers: %s <br/><br/>",  __FUNCTION__, var_export($traceWorkers, true));
-    if (empty($traceWorkers) && $debug == true ) {
-        echo __FUNCTION__." (): No trace worker found for the primary worker_id: " . $worker_id . " and controller_id: " . $controller_id . "<br />";
+    game_error_log(__FUNCTION__, 'Step 1 traceWorkers fetched', ['traceWorkers' => $traceWorkers], 'debug');
+    if (empty($traceWorkers)) {
+        game_error_log(__FUNCTION__, 'No trace worker found for primary worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');
     }
     if  ($traceWorkers !== false && !empty($traceWorkers)) {
         foreach ($traceWorkers as $traceWorker) {
             try {
                 $trace_worker_id = $traceWorker['trace_worker_id'];
-                if ($debug) echo sprintf("%s(): Step 2 : trace_worker_id: %s <br/><br/>",  __FUNCTION__, $trace_worker_id);
+                game_error_log(__FUNCTION__, 'Step 2 trace_worker_id : ' . $trace_worker_id, [], 'debug');
                 // Begin transaction
                 $pdo->beginTransaction();
 
@@ -1621,8 +1625,7 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                echo __FUNCTION__." (): Error destroying trace worker: " . $e->getMessage();
-                echo  __FUNCTION__."(): Transaction failed: " . $e->getMessage()."<br />";
+                game_error_log(__FUNCTION__, 'Transaction failed : ' . $e->getMessage(), ['worker_id' => $worker_id, 'controller_id' => $controller_id, 'trace_worker_id' => $trace_worker_id ?? null], 'error');
                 return false;
             }
         }
@@ -1632,10 +1635,10 @@ function destroyTraceWorker($pdo, $worker_id, $controller_id) {
 
 /**
  * Sort the worker buckets by the given sort key
- * 
- * @param array &$bucket
- * @param string $sort
- * 
+ *
+ * @param array &$bucket : bucket of worker rows (mutated in place)
+ * @param string $sort : sort key ('zone' | 'investigate' | 'attack' | 'age')
+ *
  * @return void
  */
 function sortWorkerBuckets(array &$bucket, string $sort): void {
@@ -1660,7 +1663,13 @@ function sortWorkerBuckets(array &$bucket, string $sort): void {
  * Mirrors viewAll.php bucket logic so the agent page navigates within
  * the same bucket the user was browsing, in the same sort order.
  *
- * @return array ['prev' => ?int, 'next' => ?int] — null when at edge or unfound
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : viewing controller
+ * @param int $current_worker_id : worker currently displayed
+ * @param string $sort : sort key ('zone' | 'investigate' | 'attack' | 'age')
+ * @param int $turn_number : turn used for status classification
+ *
+ * @return array : ['prev' => ?int, 'next' => ?int] — null entries at bucket edges or when the worker isn't found
  */
 function getPrevNextWorkerIds(PDO $pdo, int $controller_id, int $current_worker_id, string $sort, int $turn_number): array {
     $result = ['prev' => null, 'next' => null];
