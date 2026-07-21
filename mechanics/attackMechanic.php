@@ -7,17 +7,19 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
 /**
  * Search database for all workers in attack mode and return their targets and combat power differences.
- * 
+ *
  * @param PDO $pdo : database connection
- * @param string|null $turn_number
- * @param int|null $attacker_id
- * 
- * @return array $final_attacks_aggregate
- * 
+ * @param int|null $turn_number : turn number (falls back to current turn from mechanics when empty)
+ * @param int|null $attacker_id : optional attacker id filter
+ *
+ * @return array : final_attacks_aggregate — map attacker_id => list of defender comparison rows
  */
-function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) {
-    $debug = false;
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') $debug = true;
+function getAttackerComparisons(PDO $pdo, int|null $turn_number = NULL, int|null $attacker_id = NULL): array {
+    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . ($turn_number ?? 'NULL'), ['attacker_id' => $attacker_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     // Check turn number is selected
@@ -25,7 +27,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
     }
-    if ($debug) echo "turn_number : $turn_number <br>";
+    game_error_log(__FUNCTION__, 'turn_number : ' . $turn_number, [], 'debug');
 
     try{
         // Define the SQL query to get all attackers for the turn
@@ -51,12 +53,11 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         $stmt->bindParam(':turn_number', $turn_number);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Failed to SELECT list of attackers: " . $e->getMessage() . "<br />";
+        game_error_log(__FUNCTION__, 'SELECT list of attackers failed', ['error' => $e->getMessage()]);
     }
 
     $attackersActionArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if ($debug)
-        echo sprintf("attackersActionArray : %s <br/>", var_export($attackersActionArray, true));
+    game_error_log(__FUNCTION__, 'attackersActionArray fetched', ['attackersActionArray' => $attackersActionArray], 'debug');
 
     $attackArray = array();
     // For each attacker we get the targets of the action
@@ -65,7 +66,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             $attackArray[$attackAction['attacker_id']]=array();
             $attackParams = json_decode($attackAction['params'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+                game_error_log(__FUNCTION__, 'JSON decode error', ['error' => json_last_error_msg(), 'attacker_id' => $attackAction['attacker_id']]);
                 $attackParams = array();
             }
             foreach($attackParams AS $param){
@@ -80,11 +81,10 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
                         $stmtNetworkSearch->bindParam(':controller_id', $attackAction['controller_id'], PDO::PARAM_INT);
                         $stmtNetworkSearch->execute();
                     } catch (PDOException $e) {
-                        echo __FUNCTION__."(): Failed to SELECT list of attackers for network : " . $e->getMessage() . "<br />";
+                        game_error_log(__FUNCTION__, 'SELECT list of attackers for network failed', ['error' => $e->getMessage(), 'network_id' => $param['attackID']]);
                     }
                     $networkWorkersList = $stmtNetworkSearch->fetchAll(PDO::FETCH_COLUMN);
-                    if ($debug)
-                        echo sprintf("networkWorkersList : %s <br/>", var_export($networkWorkersList, true));
+                    game_error_log(__FUNCTION__, 'networkWorkersList fetched', ['networkWorkersList' => $networkWorkersList], 'debug');
                     foreach($networkWorkersList AS $worker_id){
                         if (!in_array($worker_id, $attackArray[$attackAction['attacker_id']]) ) {
                             $attackArray[$attackAction['attacker_id']][] = $worker_id;
@@ -100,8 +100,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
         }
     }
 
-    if ($debug)
-        echo sprintf("attackArray : %s <br/>", var_export($attackArray, true));
+    game_error_log(__FUNCTION__, 'attackArray built', ['attackArray' => $attackArray], 'debug');
 
     // Build SQL to compare attacker value to target value
     $sqlValCompare = "
@@ -224,8 +223,7 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
     foreach ($attackArray AS $compared_attacker_id => $defender_ids ) {
         try {
-            if ($debug)
-                echo sprintf("compared_attacker_id : %s => defender_ids : %s <br/>", $compared_attacker_id, var_export($defender_ids, true));
+            game_error_log(__FUNCTION__, 'compared_attacker_id : ' . $compared_attacker_id, ['defender_ids' => $defender_ids], 'debug');
 
             $stmtValCompare = $pdo->prepare(
                 sprintf(
@@ -239,12 +237,11 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
             $stmtValCompare->bindParam(':attacker_id', $compared_attacker_id, PDO::PARAM_INT);
             $stmtValCompare->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."():Failed to SELECT compare attackers to defenders : " . $e->getMessage() . "<br />";
+            game_error_log(__FUNCTION__, 'SELECT compare attackers to defenders failed', ['error' => $e->getMessage(), 'attacker_id' => $compared_attacker_id]);
         }
         if ($stmtValCompare->rowCount() == 0) continue;
         $final_attacks_aggregate[$compared_attacker_id] = $stmtValCompare->fetchAll(PDO::FETCH_ASSOC);
-        if ($debug)
-            echo sprintf("final_attacks_aggregate : %s <br/>", var_export($final_attacks_aggregate[$compared_attacker_id], true));
+        game_error_log(__FUNCTION__, 'final_attacks_aggregate row for attacker : ' . $compared_attacker_id, ['row' => $final_attacks_aggregate[$compared_attacker_id]], 'debug');
     }
     return $final_attacks_aggregate;
 
@@ -252,33 +249,40 @@ function getAttackerComparisons($pdo, $turn_number = NULL, $attacker_id = NULL) 
 
 /**
  * Main function to calculate attack results.
- * 
+ *
  * @param PDO $pdo : database connection
- * @param array $mechanics : mechanics array
- * 
+ * @param array $mechanics : mechanics array (uses turncounter)
+ *
  * @return bool : success
-*/
-function attackMechanic($pdo, $mechanics){
+ */
+function attackMechanic(PDO $pdo, array $mechanics): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+
+    game_error_log(__FUNCTION__, 'START with turncounter : ' . ($mechanics['turncounter'] ?? 'NULL'), [], 'debug');
+
     echo '<div> <h3>  attackMechanic : </h3> ';
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    $debug = strtolower(getConfig($pdo, 'DEBUG_ATTACK')) === 'true';
     $ATTACKDIFF0 = getConfig($pdo, 'ATTACKDIFF0');
     $ATTACKDIFF1 = getConfig($pdo, 'ATTACKDIFF1');
     $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
     $RIPOSTACTIVE = getConfig($pdo, 'RIPOSTACTIVE');
 
-    if ($debug) {
-        echo "ATTACKDIFF0 : $ATTACKDIFF0 <br/>";
-        echo "ATTACKDIFF1 : $ATTACKDIFF1 <br/>";
-        echo "RIPOSTDIFF : $RIPOSTDIFF <br/>";
-        echo "RIPOSTACTIVE : $RIPOSTACTIVE <br/>";
-    }
+    game_error_log(__FUNCTION__, 'config thresholds', [
+        'ATTACKDIFF0' => $ATTACKDIFF0,
+        'ATTACKDIFF1' => $ATTACKDIFF1,
+        'RIPOSTDIFF' => $RIPOSTDIFF,
+        'RIPOSTACTIVE' => $RIPOSTACTIVE,
+    ], 'debug');
 
     $attacksArray = getAttackerComparisons($pdo, $mechanics['turncounter'], NULL);
-    if ($debug)
-        echo sprintf("attacksArray : %s <br/>", var_export($attacksArray, true));
-    if (empty($attacksArray)) { echo 'All is calm </div>'; return true;}
+    game_error_log(__FUNCTION__, 'attacksArray fetched', ['attacksArray' => $attacksArray], 'debug');
+    if (empty($attacksArray)) {
+        echo 'All is calm </div>';
+        game_error_log(__FUNCTION__, 'DONE with return : true (all is calm)', [], 'debug');
+        return true;
+    }
 
     $workerDisappearanceTexts = json_decode(getConfig($pdo,'workerDisappearanceTexts'), true);
     $workerCapturedTexts = json_decode(getConfig($pdo,'workerCapturedTexts'), true);
@@ -292,8 +296,7 @@ function attackMechanic($pdo, $mechanics){
 
     foreach ($attacksArray as $attacker_id => $defenders) {
         // Build report :
-        if ($debug)
-            echo sprintf("attacker_id: %s =>row %s <br/>", $attacker_id, var_export($defenders, true));
+        game_error_log(__FUNCTION__, 'attacker_id : ' . $attacker_id, ['defenders' => $defenders], 'debug');
         if (!is_array($defenders[0])) continue;
 
         echo sprintf("attacker_name: %s <br/>", $defenders[0]['attacker_name']);
@@ -366,7 +369,7 @@ function attackMechanic($pdo, $mechanics){
                                 $tmpDoubleAgentReport = sprintf("<br/> J'était un <strong>agent double %s %s.</strong>", getConfig($pdo,'controllerNameDenominatorOf'), $doubleAgentControllerResult['double_agent_contoller_name']);
                             }
                         } catch (PDOException $e) {
-                            echo __FUNCTION__." (): Error fetching double agent: " . $e->getMessage();
+                            game_error_log(__FUNCTION__, 'SELECT double agent controller failed', ['error' => $e->getMessage()]);
                         }
 
                         $defenderReport['life_report'] = sprintf(
@@ -394,11 +397,11 @@ function attackMechanic($pdo, $mechanics){
                             $stmt->bindParam(':worker_id', $defender['defender_id'], PDO::PARAM_INT);
                             $stmt->execute();
                         } catch (PDOException $e) {
-                            echo __FUNCTION__." (): Error updating controller_worker: " . $e->getMessage();
+                            game_error_log(__FUNCTION__, 'UPDATE controller_worker on capture failed', ['error' => $e->getMessage(), 'defender_id' => $defender['defender_id']]);
                         }
                         // Check for existing trace
                         if (destroyTraceWorker($pdo, $defender['defender_id'], $defender['attacker_controller_id']) === false)
-                            echo __FUNCTION__." (): Failed to destroy trace worker ! <br />";
+                            game_error_log(__FUNCTION__, 'destroyTraceWorker failed', ['defender_id' => $defender['defender_id']], 'warning');
                     }
                 } else {
                     echo $defender['defender_name']. ' Escaped !<br />';
@@ -430,12 +433,11 @@ function attackMechanic($pdo, $mechanics){
                             addWorkerToCKE($pdo, $defender['defender_controller_id'], $defender['attacker_id'], $defender['turn_number'], $defender['zone_id']);
                         }
                     } catch (PDOException $e) {
-                        echo __FUNCTION__." (): Error fetching/inserting enemy workers: " . $e->getMessage();
+                        game_error_log(__FUNCTION__, 'SELECT/INSERT controllers_known_enemies failed', ['error' => $e->getMessage()]);
                     }
                     $defenderReport['life_report'] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s",$defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
                 }
-                if ($debug)
-                    echo sprintf("(survived  : %s <br/>", ($survived ));
+                game_error_log(__FUNCTION__, 'survived : ' . ($survived ? 'true' : 'false'), [], 'debug');
                 if ( $RIPOSTACTIVE!= '0' && $survived  && $defender['riposte_difference'] >= (INT)$RIPOSTDIFF ){
                     $attacker_status = 'dead';
                     echo $defender['defender_name']. ' RIPOSTE ! <br />';
@@ -457,5 +459,6 @@ function attackMechanic($pdo, $mechanics){
     }
 
     echo '<p> attackMechanic: DONE ! </p> </div>';
+    game_error_log(__FUNCTION__, 'DONE with return : true', [], 'debug');
     return true;
 }
