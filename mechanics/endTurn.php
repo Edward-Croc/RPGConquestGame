@@ -5,9 +5,11 @@ require_once '../base/basePHP.php';
 
 require_once '../base/baseHTML.php';
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
+
 $started = toggleMechanicsGamestate($gameReady, $mechanics, true);
 if (!$started) {
-    echo __FUNCTION__."(): Failed to start the game.";
+    game_error_log('endTurn_page', 'toggleMechanicsGamestate failed to start the game', [], 'warning');
     exit();
 }
 
@@ -20,12 +22,12 @@ if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
     if (in_array($mechanics['end_step'], [null, ''])) {
         $ressourcesResult = updateRessources($gameReady, $mechanics);
         if ( !$ressourcesResult){
-            echo __FUNCTION__."(): Failed to update ressources: updateRessources <br />";
+            game_error_log('endTurn_page', 'updateRessources failed', [], 'warning');
             return false;
         }
         $beforeClaimGainResult = ressourceGainMechanic($gameReady, 'before_claim');
         if ( !$beforeClaimGainResult){
-            echo __FUNCTION__."(): Failed to apply before-claim ressource gain rules: ressourceGainMechanic <br />";
+            game_error_log('endTurn_page', 'ressourceGainMechanic before_claim failed', [], 'warning');
             return false;
         }
         changeEndTurnState($gameReady, 'updateRessources', $mechanics);
@@ -69,14 +71,14 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
 
             // Update the report using your existing game context
             if ( !updateWorkerAction($gameReady, $worker['worker_id'], $mechanics['turncounter'], null, $reportAppendArray)){
-                echo __FUNCTION__."(): Failed to update worker action: calculateValsReport <br />";
+                game_error_log('endTurn_page', 'updateWorkerAction failed for calculateValsReport', ['worker_id' => $worker['worker_id']], 'warning');
                 return false;
             }
         }
         changeEndTurnState($gameReady, 'calculateValsReport', $mechanics);
         $mechanics['end_step'] = 'calculateValsReport';
     } else {
-        echo __FUNCTION__."(): endTurn actions Failed: calculateVals <br />";
+        game_error_log('endTurn_page', 'calculateVals failed', [], 'warning');
         return false;
     }
 }
@@ -88,7 +90,7 @@ if ($mechanics['end_step'] == 'calculateValsReport') {
     // check attacks
     $attackResult = attackMechanic($gameReady, $mechanics);
     if ( !$attackResult){
-        echo __FUNCTION__."(): Failed to attack: attackMechanic <br />";
+        game_error_log('endTurn_page', 'attackMechanic failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'attackMechanic', $mechanics);
@@ -99,13 +101,13 @@ if ($mechanics['end_step'] == 'attackMechanic') {
     // recalculate base defence
     $bdrResult = recalculateBaseDefence($gameReady);
     if ( !$bdrResult){
-        echo __FUNCTION__."(): Failed to recalculate base defence: recalculateBaseDefence <br />";
+        game_error_log('endTurn_page', 'recalculateBaseDefence failed', [], 'warning');
         return false;
     }
     // recalculate zone defence (claimMode-aware single source of truth)
     $zdrResult = recalculateZoneDefence($gameReady, $mechanics);
     if ( !$zdrResult){
-        echo __FUNCTION__."(): Failed to recalculate zone defence: recalculateZoneDefence <br />";
+        game_error_log('endTurn_page', 'recalculateZoneDefence failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'recalculateBaseZoneDefence', $mechanics);
@@ -116,7 +118,7 @@ if ($mechanics['end_step'] == 'recalculateBaseZoneDefence') {
     require_once 'locationAttackMechanic.php';
     $locationAttackResult = locationAttackMechanic($gameReady, $mechanics['turncounter']);
     if ( !$locationAttackResult){
-        echo __FUNCTION__."(): Failed to resolve queued location attacks: locationAttackMechanic <br />";
+        game_error_log('endTurn_page', 'locationAttackMechanic failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'locationAttackMechanic', $mechanics);
@@ -127,7 +129,7 @@ if ($mechanics['end_step'] == 'locationAttackMechanic') {
     // check claiming territory
     $claimResult = claimMechanic($gameReady, $mechanics);
     if ( !$claimResult){
-        echo __FUNCTION__."(): Failed to claim: claimMechanic <br />";
+        game_error_log('endTurn_page', 'claimMechanic failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'claimMechanic', $mechanics);
@@ -138,7 +140,7 @@ if ($mechanics['end_step'] == 'claimMechanic') {
     if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
         $afterClaimGainResult = ressourceGainMechanic($gameReady, 'after_claim');
         if ( !$afterClaimGainResult){
-            echo __FUNCTION__."(): Failed to apply after-claim ressource gain rules: ressourceGainMechanic <br />";
+            game_error_log('endTurn_page', 'ressourceGainMechanic after_claim failed', [], 'warning');
             return false;
         }
     }
@@ -150,7 +152,7 @@ if ($mechanics['end_step'] == 'ressourceGainAfterClaim') {
     // check investigations
     $investigateResult = investigateMechanic($gameReady, $mechanics);
     if ( !$investigateResult){
-        echo __FUNCTION__."(): Failed to investigate: investigateMechanic <br />";
+        game_error_log('endTurn_page', 'investigateMechanic failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'investigateMechanic', $mechanics);
@@ -161,7 +163,7 @@ if ($mechanics['end_step'] == 'investigateMechanic') {
     // check locations seach
     $locationsearchResult = locationSearchMechanic($gameReady, $mechanics);
     if ( !$locationsearchResult){
-        echo __FUNCTION__."(): Failed to location search: locationSearchMechanic <br />";
+        game_error_log('endTurn_page', 'locationSearchMechanic failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'locationSearchMechanic', $mechanics);
@@ -174,7 +176,7 @@ if ($mechanics['end_step'] == 'locationSearchMechanic') {
     // create new turn lines
     $turnLinesResult = createNewTurnLines($gameReady, $turn);
     if ( !$turnLinesResult){
-        echo __FUNCTION__."(): Failed to create new turn lines: createNewTurnLines <br />";
+        game_error_log('endTurn_page', 'createNewTurnLines failed', ['turn' => $turn], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'createNewTurnLines', $mechanics);
@@ -184,7 +186,7 @@ if ($mechanics['end_step'] == 'locationSearchMechanic') {
 if ($mechanics['end_step'] == 'createNewTurnLines') {
     $restartRecrutementCount = restartTurnRecrutementCount($gameReady);
     if ( !$restartRecrutementCount){
-        echo __FUNCTION__."(): Failed to restart turn recrutement count: restartTurnRecrutementCount <br />";
+        game_error_log('endTurn_page', 'restartTurnRecrutementCount failed', [], 'warning');
         return false;
     }
     changeEndTurnState($gameReady, 'restartTurnRecrutementCount', $mechanics);
@@ -200,7 +202,7 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id'] ]);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+        game_error_log('endTurn_page', 'UPDATE mechanics failed', ['error' => $e->getMessage()]);
     }
 }
 
