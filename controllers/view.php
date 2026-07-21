@@ -5,6 +5,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     exit();
 }
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'controllers_view_page';  // uncomment to log DEBUG events from this page
+
     // Get zones information
     $zonesArray = getZonesArray($gameReady);
 
@@ -22,7 +24,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
             $stmtPlayers = $gameReady->prepare($sqlPlayers);
             $stmtPlayers->execute();
         } catch (PDOException $e) {
-            echo sprintf("%s(): %s failed:  %s <br />",  __FUNCTION__, $e->getMessage(), $_SESSION['user_id']);
+            game_error_log('controllers_view_page', 'SELECT player failed : ' . $e->getMessage(), ['user_id' => $_SESSION['user_id']], 'error');
         }
         // Fetch the results
         $players = $stmtPlayers->fetchAll(PDO::FETCH_ASSOC);
@@ -144,11 +146,12 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                     </div>
                 </div>';
 
-                if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id']))
+                if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id'])) {
                     $baseMoveHTML = sprintf(
-                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base %s.</div>', 
+                        '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base %s.</div>',
                         moveBaseCostHTML($gameReady, $controllers['id'])
                     );
+                }
 
                 $htmlBase .= '<p>';
                 foreach ($bases as $base ){
