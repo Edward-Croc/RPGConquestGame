@@ -8,6 +8,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ( isset($_POST['resetBDD']) ) {
         // empty controller SESSION
         $_SESSION['controller'] = NULL;
+        // Purge the game error log as part of the full reset (mirrors DB wipe)
+        if (is_writable($GLOBALS['LOG_PATH'])) @file_put_contents($GLOBALS['LOG_PATH'], '');
         destroyAllTables($gameReady);
         $gameReady = gameReady();
     }

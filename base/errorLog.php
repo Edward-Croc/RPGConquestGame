@@ -2,9 +2,7 @@
 // Route les erreurs vers var/logs/game_errors.log. Le dossier doit exister
 // (cree par l'ops au deploiement). Acces public bloque par var/.htaccess.
 
-$gameLogPath = __DIR__ . '/../var/logs/game_errors.log';
-@ini_set('error_log', $gameLogPath);
-
+@ini_set('error_log', $GLOBALS['LOG_PATH']);
 
 /**
  * Retourne les N dernieres lignes du log, plus recentes en premier.
@@ -16,7 +14,7 @@ $gameLogPath = __DIR__ . '/../var/logs/game_errors.log';
  * @return array
  */
 function game_error_log_tail(int $lines = 2, ?string $prefixFilter = null, ?string $levelFilter = null): array {
-    $logPath = __DIR__ . '/../var/logs/game_errors.log';
+    $logPath = $GLOBALS['LOG_PATH'];
     if (!is_readable($logPath)) return [];
     $raw = @file($logPath, FILE_IGNORE_NEW_LINES);
     if ($raw === false) return [];

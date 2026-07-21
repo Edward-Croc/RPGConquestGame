@@ -9,6 +9,9 @@ if ($_SESSION['DEBUG'] == true ){
     echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
+// Set BEFORE errorLog.php require so its ini_set('error_log', ...) picks it up.
+$GLOBALS['LOG_PATH'] = __DIR__ . '/../var/logs/game_errors.log';
+
 require_once '../base/version.php';
 require_once '../base/errorLog.php';
 require_once '../BDD/db_connector.php';
