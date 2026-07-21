@@ -3,18 +3,22 @@
 /**
  * Recupere le nom de la zone
  *
- * @param PDO $pdo
- * @param int $zone_id
+ * @param PDO $pdo : database connection
+ * @param int $zone_id : zone id
  *
+ * @return string|null : zone name or NULL on failure
  */
-function getZoneName($pdo, $zone_id){
+function getZoneName(PDO $pdo, int $zone_id): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with zone_id : ' . $zone_id, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $sql = "SELECT name FROM {$prefix}zones AS z WHERE id=$zone_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT zone name failed', ['zone_id' => $zone_id, 'error' => $e->getMessage()]);
         return NULL;
     }
     // Fetch the results
@@ -25,13 +29,17 @@ function getZoneName($pdo, $zone_id){
 /**
  * Function to get ZONEs and return as an array
  *
- * @param PDO $pdo
- * @param int|null $controller_id
- * @param int|null $zone_id
+ * @param PDO $pdo : database connection
+ * @param int|null $controller_id : filter on claimer controller id
+ * @param int|null $holder_controller_id : filter on holder controller id
+ * @param int|null $zone_id : filter on zone id
  *
- * @return array $zonesArray
+ * @return array|null $zonesArray or NULL on failure
  */
-function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null, $zone_id = null) {
+function getZonesArray(PDO $pdo, int|null $controller_id = null, int|null $holder_controller_id = null, int|null $zone_id = null): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['controller_id' => $controller_id, 'holder_controller_id' => $holder_controller_id, 'zone_id' => $zone_id], 'debug');
+
     $zonesArray = array();
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -73,17 +81,29 @@ function getZonesArray($pdo, $controller_id = null, $holder_controller_id = null
         // Fetch the results
         $zonesArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT zones failed', ['controller_id' => $controller_id, 'holder_controller_id' => $holder_controller_id, 'zone_id' => $zone_id, 'error' => $e->getMessage()]);
         return NULL;
     }
 
     return $zonesArray;
 }
 
-// Unified visibility gate covering both is_hidden (persistent) and hide_turn_zero (turn-0).
-// $bypassVisibility: true only in god-view (privileged session without a controller selected).
-// Otherwise holder/claimer sees their own hidden zones; hide_turn_zero becomes public past turn 0.
-function canControllerSeeZone(PDO $pdo, array $zone, ?int $controller_id, bool $bypassVisibility): bool {
+/**
+ * Unified visibility gate covering both is_hidden (persistent) and hide_turn_zero (turn-0).
+ * $bypassVisibility: true only in god-view (privileged session without a controller selected).
+ * Otherwise holder/claimer sees their own hidden zones; hide_turn_zero becomes public past turn 0.
+ *
+ * @param PDO $pdo : database connection
+ * @param array $zone : zone row (must include is_hidden, hide_turn_zero, holder_controller_id, claimer_controller_id)
+ * @param int|null $controller_id : viewer controller id (null when no controller selected)
+ * @param bool $bypassVisibility : true in god-view (privileged, no controller)
+ *
+ * @return bool : true when the controller may see the zone
+ */
+function canControllerSeeZone(PDO $pdo, array $zone, int|null $controller_id, bool $bypassVisibility): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['zone' => $zone, 'controller_id' => $controller_id, 'bypassVisibility' => $bypassVisibility], 'debug');
+
     if ($bypassVisibility) return true;
     $isHidden = !empty($zone['is_hidden']);
     $hideTurn0 = !empty($zone['hide_turn_zero']);
@@ -104,18 +124,21 @@ function canControllerSeeZone(PDO $pdo, array $zone, ?int $controller_id, bool $
 /**
  * Function to prepare the zone selector from à list of zones
  *
- * @param PDO $pdo
- * @param array $zonesArray
+ * @param PDO $pdo : database connection
+ * @param array $zonesArray : list of zones (as returned by getZonesArray)
  * @param int|null $selectedID : ID of the selected zone (optional)
- * @param bool $showText default: false ->
- * @param bool $place_holder default: false -> Do we start with and empty spot
- * @param bool $hideZones default: false -> Do we hide the zones in the list
+ * @param bool $showText : default false -> render the label above the select
+ * @param bool $place_holder : default false -> start with an empty option
+ * @param bool $hideZones : default false -> filter zones through canControllerSeeZone
  *
- * @return string $showZoneSelect
+ * @return string $showZoneSelect : HTML markup (empty string when zonesArray is empty)
  */
-function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false, $place_holder = false, $hideZones = false) {
-        $mechanics = getMechanics($pdo);
-        $turn_number = $mechanics['turncounter'];
+function showZoneSelect(PDO $pdo, array $zonesArray, int|null $selectedID = null, bool $showText = false, bool $place_holder = false, bool $hideZones = false): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['zonesArray' => $zonesArray, 'selectedID' => $selectedID, 'showText' => $showText, 'place_holder' => $place_holder, 'hideZones' => $hideZones], 'debug');
+
+    $mechanics = getMechanics($pdo);
+    $turn_number = $mechanics['turncounter'];
 
     if (empty($zonesArray)) return '';
 
@@ -151,18 +174,22 @@ function showZoneSelect($pdo, $zonesArray, $selectedID = null, $showText = false
         $zoneOptions
     );
 
-    if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showZoneSelect: ".var_export($showZoneSelect, true)."<br /><br />";
+    game_error_log(__FUNCTION__, 'DONE', ['showZoneSelect' => $showZoneSelect], 'debug');
 
     return $showZoneSelect;
 }
 
-/** Function to get Locations and return as an array
- * @param PDO $pdo
+/**
+ * Function to get Locations and return as an array
  *
- * @return array|null $locationsArray
+ * @param PDO $pdo : database connection
  *
-*/
-function getLocationsArray($pdo) {
+ * @return array|null $locationsArray or NULL on failure
+ */
+function getLocationsArray(PDO $pdo): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
     $locationsArray = array();
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -174,7 +201,7 @@ function getLocationsArray($pdo) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT locations failed', ['error' => $e->getMessage()]);
         return NULL;
     }
 
@@ -191,18 +218,22 @@ function getLocationsArray($pdo) {
 
 /**
  * Function to recalculateZoneDefence
- * @param PDO $pdo
- * @param array $mechanics : mechanics array
  *
- * @return bool
- * 
  * Recompute zones.calculated_defence_val for every zone.
  * Dispatches on claimMode:
  * - 'worker': SQL formula (z.defence_val + COUNT of holder's active workers).
  * - 'worker_leader': calculateControllerValue('ZoneDefence', ...) per zone.
  * - any other value: no-op (echoes "not supported, skipped" and returns true).
+ *
+ * @param PDO $pdo : database connection
+ * @param array $mechanics : mechanics array (must include turncounter)
+ *
+ * @return bool : true on success, false on SQL failure
  */
-function recalculateZoneDefence($pdo, $mechanics) {
+function recalculateZoneDefence(PDO $pdo, array $mechanics): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['mechanics' => $mechanics], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $mode = getConfig($pdo, 'claimMode');
 
@@ -227,7 +258,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
                 $uStmt->execute();
             }
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'worker_leader recompute failed', ['error' => $e->getMessage()]);
             return false;
         }
         echo 'DONE (worker_leader) </p></div>';
@@ -287,7 +318,7 @@ function recalculateZoneDefence($pdo, $mechanics) {
         $stmt->execute();
 
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br />";
+        game_error_log(__FUNCTION__, 'worker recompute failed', ['sql' => $sql, 'error' => $e->getMessage()]);
         return false;
     }
     echo 'DONE </p></div>';
@@ -296,11 +327,15 @@ function recalculateZoneDefence($pdo, $mechanics) {
 
 /**
  * Function to recalculateBaseDefence
- * @param PDO $pdo
  *
- * @return bool
+ * @param PDO $pdo : database connection
+ *
+ * @return bool : true on success, false on SQL failure
  */
-function recalculateBaseDefence($pdo) {
+function recalculateBaseDefence(PDO $pdo): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
     echo "<div><h3>Recalculating base defence</h3><br />";
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -330,10 +365,11 @@ function recalculateBaseDefence($pdo) {
                 ':id' => $base['id']
             ]);
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />$sql<br/>";
+            game_error_log(__FUNCTION__, 'UPDATE locations discovery_diff failed', ['sql' => $sql, 'error' => $e->getMessage()]);
             return false;
         }
 
+        game_error_log(__FUNCTION__, 'Updated base to difficulty', ['controller_id' => $controller_id, 'zone_id' => $zone_id, 'new_diff' => $new_diff], 'debug');
         echo sprintf("Updated base (C: %s, Z: %s) to difficulty: %s<br/>", $controller_id, $zone_id, $new_diff);
     }
     echo "</div>";
@@ -343,16 +379,18 @@ function recalculateBaseDefence($pdo) {
 /**
  * Calculate the value 'DEF, ATK, SEARCH, CLAIM, ZONE_DEFENCE' for the controller, and optionnal zone or location
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param string $type in ['DiscoveryDiff', 'Defence', 'Attack', 'Claim', 'ZoneDefence']
- * @param int $zone_id
- * @param int|null $location_id
+ * @param PDO $pdo : database connection
+ * @param string $type : one of 'DiscoveryDiff' | 'Defence' | 'Attack' | 'Claim' | 'ZoneDefence'
+ * @param int $zone_id : zone id
+ * @param int|null $controller_id : actor controller id (null for anonymous)
+ * @param int|null $location_id : location id (only for DiscoveryDiff / Defence on secret locations)
  *
- * @return int $value
+ * @return int $value : computed value after all rules
  */
-function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, $location_id = null) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function calculateControllerValue(PDO $pdo, string $type, int $zone_id, int|null $controller_id = null, int|null $location_id = null): int {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with type : ' . $type, ['zone_id' => $zone_id, 'controller_id' => $controller_id, 'location_id' => $location_id], 'debug');
 
     $value = 0;
     $prefix = $_SESSION['GAME_PREFIX'];
@@ -360,12 +398,10 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $mechanics = getMechanics($pdo);
     $turn_number = $mechanics['turncounter'];
 
-    if ($debug) echo sprintf("<p> <b>calculateControllerValue (type : %s, zone: %s, controller: %s, location: %s)</b><br>", $type, $zone_id, $controller_id, $location_id);
-
     // Base value
     $base = (int)getConfig($pdo, "base{$type}");
     $value = $base;
-    if ($debug) echo sprintf("%s (base) : %d<br>", $type, $value);
+    game_error_log(__FUNCTION__, sprintf('%s (base) : %d', $type, $value), [], 'debug');
 
     // Add +1 if controller owns or claims the zone
     $zoneStmt = $pdo->prepare("
@@ -377,28 +413,28 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
     $zone = $zoneStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($controller_id !== null) {
-        // Holders & Claimers 
+        // Holders & Claimers
         if ($zone) {
             if ($type === 'Claim') {
                 if ($zone['claimer_controller_id'] == $controller_id && $zone['holder_controller_id'] != $controller_id) {
                     $vrBonus = (int) getConfig($pdo, 'claimVisibleToRealBonus');
                     $value += $vrBonus;
-                    if ($debug) echo sprintf("visibleToRealBonus +%d<br>", $vrBonus);
+                    game_error_log(__FUNCTION__, sprintf('visibleToRealBonus +%d', $vrBonus), [], 'debug');
                 }
             } else {
                 // Si le controller n'est pas 0, '' ou NULL alors on peut comparer aux holders ou claimers
                 if (!empty ($controller_id) && ($zone['holder_controller_id'] == $controller_id || $zone['claimer_controller_id'] == $controller_id)) {
                     $value += 1;
-                    if ($debug) echo sprintf("%s (+zone control) : %d<br>", $type, $value);
+                    game_error_log(__FUNCTION__, sprintf('%s (+zone control) : %d', $type, $value), [], 'debug');
                 }
             }
         }
-    
+
         // Powers
         $powerMultiplier = floatval(getConfig($pdo, "base{$type}AddPowers"));
-        if ($debug) echo sprintf("powerMultiplier : %f<br>", $powerMultiplier);
+        game_error_log(__FUNCTION__, sprintf('powerMultiplier : %f', $powerMultiplier), [], 'debug');
         $maxPowerBonus = (int)getConfig($pdo, "maxBonus{$type}Powers");
-        if ($debug) echo sprintf("maxPowerBonus : %d<br>", $maxPowerBonus);
+        game_error_log(__FUNCTION__, sprintf('maxPowerBonus : %d', $maxPowerBonus), [], 'debug');
         if ($powerMultiplier !== 0) {
             switch ($type){ // 'defence', 'attack' or 'enquete'
                 case 'DiscoveryDiff' :
@@ -422,15 +458,17 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 }
                 if ($maxPowerBonus > 0) $bonus = min($bonus, $maxPowerBonus);
                 $value += $bonus;
-                if ($debug) echo sprintf("%s (+powers) : %d<br>", $type, $value);
-            } else echo sprintf("%s : attribute is NULL <br>", $type);
+                game_error_log(__FUNCTION__, sprintf('%s (+powers) : %d', $type, $value), [], 'debug');
+            } else {
+                game_error_log(__FUNCTION__, sprintf('%s : attribute is NULL', $type), [], 'warning');
+            }
         }
 
         // Workers
         $workerMultiplier = floatval(getConfig($pdo, "base{$type}AddWorkers"));
-        if ($debug) echo sprintf("workerMultiplier : %f<br>", $workerMultiplier);
+        game_error_log(__FUNCTION__, sprintf('workerMultiplier : %f', $workerMultiplier), [], 'debug');
         $maxWorkerBonus = (int)getConfig($pdo, "maxBonus{$type}Workers");
-        if ($debug) echo sprintf("maxWorkerBonus : %d<br>", $maxWorkerBonus);
+        game_error_log(__FUNCTION__, sprintf('maxWorkerBonus : %d', $maxWorkerBonus), [], 'debug');
         if ($workerMultiplier !== 0) {
             $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
             $sql = sprintf('
@@ -442,7 +480,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 AND w.zone_id = :zone_id
                 AND wa.action_choice IN (%2$s)
             ', $prefix, $active_actions);
-            if ($debug) echo sprintf("worker_count sql : %s<br> controller_id: %s, zone_id: %s, turn_number: %s, ", $sql, $controller_id, $zone_id, $turn_number);
+            game_error_log(__FUNCTION__, 'worker_count sql', ['sql' => $sql, 'controller_id' => $controller_id, 'zone_id' => $zone_id, 'turn_number' => $turn_number], 'debug');
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
@@ -450,14 +488,14 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
             $stmt->execute();
 
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($debug) echo sprintf( "result: %s<br>", var_export($result, true));
+            game_error_log(__FUNCTION__, 'worker_count result', ['result' => $result], 'debug');
             $worker_count = $result['worker_count'];
-            if ($debug) echo sprintf( "worker_count: %s<br>", $worker_count);
+            game_error_log(__FUNCTION__, sprintf('worker_count: %s', $worker_count), [], 'debug');
 
             $bonus = ceil($worker_count * $workerMultiplier);
             if ($maxWorkerBonus > 0) $bonus = min($bonus, $maxWorkerBonus);
             $value += $bonus;
-            if ($debug) echo sprintf("%s (+workers) : %d<br>", $type, $value);
+            game_error_log(__FUNCTION__, sprintf('%s (+workers) : %d', $type, $value), [], 'debug');
         }
 
         // Owned-locations term — fires only for 'Claim' and 'ZoneDefence' types
@@ -476,7 +514,7 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 $ownedBonus = ceil($owned_count * $ownedMultiplier);
                 if ($maxOwnedBonus > 0) $ownedBonus = min($ownedBonus, $maxOwnedBonus);
                 $value += $ownedBonus;
-                if ($debug) echo sprintf("%s (+owned_locations) : %d<br>", $type, $value);
+                game_error_log(__FUNCTION__, sprintf('%s (+owned_locations) : %d', $type, $value), [], 'debug');
             }
         }
 
@@ -511,21 +549,21 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 $supporters = max(0, $count - $supportOnNth);
                 $supportBonus = ceil($supporters * $supportMultiplier);
                 $value += $supportBonus;
-                if ($debug) echo sprintf("%s (+supporting_agents %d) : %d<br>", $type, $supporters, $value);
+                game_error_log(__FUNCTION__, sprintf('%s (+supporting_agents %d) : %d', $type, $supporters, $value), [], 'debug');
             }
         }
     } else {
-        if ($debug) echo sprintf("%s : controller_id is NULL <br>", $type);
+        game_error_log(__FUNCTION__, sprintf('%s : controller_id is NULL', $type), [], 'debug');
         $value += getConfig($pdo, "noController{$type}Bonus");
     }
 
-    // Turns / Age for locations 
+    // Turns / Age for locations
     if ($location_id !== NUll) {
         $turnMultiplier = floatval(getConfig($pdo, "base{$type}AddTurns"));
-        if ($debug) echo sprintf("turnMultiplier : %f<br>", $turnMultiplier);
+        game_error_log(__FUNCTION__, sprintf('turnMultiplier : %f', $turnMultiplier), [], 'debug');
         if ($turnMultiplier !== 0) {
             $maxTurnBonus = (int)getConfig($pdo, "maxBonus{$type}Turns");
-            if ($debug) echo sprintf("maxTurnBonus : %d<br>", $maxTurnBonus);
+            game_error_log(__FUNCTION__, sprintf('maxTurnBonus : %d', $maxTurnBonus), [], 'debug');
             $mechanics = getMechanics($pdo);
             $turn_number = $mechanics['turncounter'];
 
@@ -547,55 +585,55 @@ function calculateControllerValue($pdo, $type, $zone_id, $controller_id = null, 
                 $bonus = ceil($turnDiff * $turnMultiplier);
                 if ($maxTurnBonus > 0) $bonus = min($bonus, $maxTurnBonus);
                 $value += $bonus;
-                if ($debug) echo sprintf("%s (+turns) : %d<br>", $type, $value);
+                game_error_log(__FUNCTION__, sprintf('%s (+turns) : %d', $type, $value), [], 'debug');
             }
         }
     }
 
-    if ($debug) echo sprintf("%s pre-rules value : %d<br>", $type, $value);
+    game_error_log(__FUNCTION__, sprintf('%s pre-rules value : %d', $type, $value), [], 'debug');
     $value = applyZoneRules($pdo, $type, $zone_id, $controller_id, $value);
-    if ($debug) echo sprintf("%s final value : %d</p>", $type, $value);
+    game_error_log(__FUNCTION__, sprintf('%s final value : %d', $type, $value), [], 'debug');
     return $value;
 }
 
 /**
- * Calls the calculateSecretLocationDiscoveryDiff function with the 'DiscoveryDiff' type
+ * Calls the calculateControllerValue function with the 'DiscoveryDiff' type
  *
- * @param PDO $pdo
- * @param int $zone_id
- * @param int|null $location_id
- * @param int|null $controller_id
+ * @param PDO $pdo : database connection
+ * @param int $zone_id : zone id
+ * @param int|null $location_id : location id (optional)
+ * @param int|null $controller_id : controller id (optional)
  *
- * @return int $value
+ * @return int $value : computed discovery difficulty
  */
-function calculateSecretLocationDiscoveryDiff($pdo, $zone_id, $location_id = null, $controller_id = null ) {
+function calculateSecretLocationDiscoveryDiff(PDO $pdo, int $zone_id, int|null $location_id = null, int|null $controller_id = null): int {
     return calculateControllerValue($pdo, 'DiscoveryDiff', $zone_id, $controller_id, $location_id);
 }
 
 /**
  * Calls the calculateControllerValue function with the 'Defence' type
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $zone_id
- * @param int $location_id
+ * @param PDO $pdo : database connection
+ * @param int $zone_id : zone id
+ * @param int $location_id : location id
+ * @param int|null $controller_id : controller id (optional)
  *
- * @return int $value
+ * @return int $value : computed defence value
  */
-function calculateSecretLocationDefence($pdo, $zone_id, $location_id, $controller_id = null) {
+function calculateSecretLocationDefence(PDO $pdo, int $zone_id, int $location_id, int|null $controller_id = null): int {
     return calculateControllerValue($pdo, 'Defence', $zone_id, $controller_id, $location_id);
 }
 
 /**
  * Calls the calculateControllerValue function with the 'Attack' type
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $zone_id
+ * @param PDO $pdo : database connection
+ * @param int $zone_id : zone id
+ * @param int|null $controller_id : controller id (optional)
  *
- * @return int $value
+ * @return int $value : computed attack value
  */
-function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
+function calculatecontrollerAttack(PDO $pdo, int $zone_id, int|null $controller_id = null): int {
     return calculateControllerValue($pdo, 'Attack', $zone_id, $controller_id);
 }
 
@@ -615,6 +653,9 @@ function calculatecontrollerAttack($pdo, $zone_id, $controller_id = null) {
  * @return string HTML — '' when both sections empty
  */
 function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, array $mechanics, array $controllerWorkers): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['zone_id' => $zone_id, 'mechanics' => $mechanics, 'controllerWorkers' => $controllerWorkers], 'debug');
+
     $turn_number = (int)$mechanics['turncounter'];
     $friendlies = [];
     $doubles = [];
@@ -694,6 +735,9 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, array $mecha
  * @return string $text
  */
 function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['zone_id' => $zone_id], 'debug');
+
     $returnText = '';
     $prefix = $_SESSION['GAME_PREFIX'];
     // Bases owned by this controller in the zone
@@ -818,6 +862,9 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
  *  ]
  */
 function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $limitByDestroyed = false, bool $limitByReparable = false, bool $excludeOwnLocations = false, bool $excludePendingAttacks = false): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controllerId : ' . $controllerId, ['limitByDestroyed' => $limitByDestroyed, 'limitByReparable' => $limitByReparable, 'excludeOwnLocations' => $excludeOwnLocations, 'excludePendingAttacks' => $excludePendingAttacks], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = sprintf("
         SELECT
@@ -886,6 +933,9 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
  * @return array|null array of controllers know locations
  */
 function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controllerId : ' . $controllerId, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "
         SELECT
@@ -896,7 +946,7 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
             l.name AS location_name,
             l.description AS location_description,
             l.hidden_description AS location_hidden_description,
-            l.can_be_destroyed AS location_can_be_destroyed 
+            l.can_be_destroyed AS location_can_be_destroyed
         FROM {$prefix}locations l
         JOIN {$prefix}zones z ON l.zone_id = z.id
         WHERE l.controller_id = :controller_id
@@ -944,12 +994,17 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
 
 /**
  * Update the location
- * 
+ *
  * @param PDO $pdo : database connection
  * @param array $location : location data
  * @param array $activate_json : activate json data
+ *
+ * @return bool : true on success (row updated), false when nothing to update or on SQL failure
  */
-function updateLocation($pdo, $location, $activate_json) {
+function updateLocation(PDO $pdo, array $location, array $activate_json): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['location' => $location, 'activate_json' => $activate_json], 'debug');
+
     // Extract the update_location data
     $update_location_data = $activate_json['update_location'];
 
@@ -1023,7 +1078,7 @@ function updateLocation($pdo, $location, $activate_json) {
             return true;
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE locations failed', ['location_id' => $location['id'] ?? null, 'error' => $e->getMessage()]);
     }
     return false;
 }
@@ -1043,7 +1098,10 @@ function updateLocation($pdo, $location, $activate_json) {
  *
  * @return int  Value after summing every matching rule's value_delta.
  */
-function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
+function applyZoneRules(PDO $pdo, string $type, int $zone_id, int|null $controller_id, int $value): int {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with type : ' . $type, ['zone_id' => $zone_id, 'controller_id' => $controller_id], 'debug');
+
     if ($controller_id === null) {
         return $value;
     }
@@ -1107,8 +1165,20 @@ function applyZoneRules($pdo, $type, $zone_id, $controller_id, $value) {
 /**
  * Specific-zone rule: fires once if the named zone's holder matches the condition.
  * No adjacency requirement; the rule can reference any zone in the game.
+ *
+ * @param PDO $pdo : database connection
+ * @param string $name : target zone name to look up
+ * @param string $condition : 'held_by_actor' | 'not_held_by_actor'
+ * @param int $delta : value_delta applied when condition matches
+ * @param int $controller_id : actor whose ownership the condition tests
+ * @param int $zone_id : source zone (for log context, not the lookup target)
+ *
+ * @return int : $delta on match, 0 otherwise
  */
-function applyZoneRuleSpecific($pdo, $name, $condition, $delta, $controller_id, $zone_id) {
+function applyZoneRuleSpecific(PDO $pdo, string $name, string $condition, int $delta, int $controller_id, int $zone_id): int {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with name : ' . $name, ['condition' => $condition, 'zone_id' => $zone_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $lookup = $pdo->prepare("SELECT holder_controller_id FROM {$prefix}zones WHERE name = :name LIMIT 1");
@@ -1133,8 +1203,20 @@ function applyZoneRuleSpecific($pdo, $name, $condition, $delta, $controller_id, 
 /**
  * Iterator rule: for each zone in the porting zone's adjacent_zones list,
  * apply delta if the condition matches. Deltas accumulate across matches.
+ *
+ * @param PDO $pdo : database connection
+ * @param string $adjacent_zones_csv : comma-separated list of zone ids
+ * @param string $condition : 'held_by_actor' | 'not_held_by_actor'
+ * @param int $delta : value_delta applied per matching adjacent zone
+ * @param int $controller_id : actor whose ownership the condition tests
+ * @param int $zone_id : source zone (for log context)
+ *
+ * @return int : sum of deltas for all matching adjacents (0 if none)
  */
-function applyZoneRuleAdjacent($pdo, $adjacent_zones_csv, $condition, $delta, $controller_id, $zone_id) {
+function applyZoneRuleAdjacent(PDO $pdo, string $adjacent_zones_csv, string $condition, int $delta, int $controller_id, int $zone_id): int {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with condition : ' . $condition, ['zone_id' => $zone_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $adjacentIds = [];
     foreach (explode(',', (string)$adjacent_zones_csv) as $part) {
