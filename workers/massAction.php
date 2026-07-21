@@ -2,6 +2,8 @@
 
 require_once '../base/basePHP.php';
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'workers_mass_action_page';  // uncomment to log DEBUG events from this page
+
 // Check if the user is logged in
 if (
     (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true)
@@ -28,12 +30,18 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if ($mass_action_requested && !empty($worker_ids)) {
-        if (!is_array($worker_ids)) { http_response_code(403); exit(); }
+        if (!is_array($worker_ids)) {
+            game_error_log('workers_mass_action_page', 'worker_ids not an array', ['worker_ids' => $worker_ids], 'warning');
+            http_response_code(403); exit();
+        }
         $worker_ids = array_map('intval', $worker_ids);
 
         if (empty($_SESSION['is_privileged'])) {
             $session_controller_id = $_SESSION['controller']['id'] ?? null;
-            if (empty($session_controller_id)) { http_response_code(403); exit(); }
+            if (empty($session_controller_id)) {
+                game_error_log('workers_mass_action_page', 'missing session controller_id', [], 'warning');
+                http_response_code(403); exit();
+            }
 
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
@@ -44,10 +52,11 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
                 );
                 $stmt->execute(array_merge([$session_controller_id], $worker_ids));
                 if ((int)$stmt->fetchColumn() !== count($worker_ids)) {
+                    game_error_log('workers_mass_action_page', 'controller_worker ownership mismatch', ['session_controller_id' => $session_controller_id, 'worker_ids' => $worker_ids], 'warning');
                     http_response_code(403); exit();
                 }
             } catch (PDOException $e) {
-                echo __FUNCTION__."(): SELECT controller_worker Failed: " . $e->getMessage()."<br />";
+                game_error_log('workers_mass_action_page', 'SELECT controller_worker failed : ' . $e->getMessage(), ['session_controller_id' => $session_controller_id, 'worker_ids' => $worker_ids], 'error');
                 http_response_code(403); exit();
             }
         }
