@@ -1,7 +1,14 @@
 <?php
 
 
-function getPath ($file) {
+/**
+ * Resolves the directory containing a given config filename.
+ *
+ * @param string $file : config filename with leading slash (e.g. "/var/config.ini")
+ *
+ * @return string|null : matching directory or null when no candidate contains the file
+ */
+function getPath(string $file): string|null {
 
     $path = null;
     $paths = array( __DIR__ ,"..", ".", "/var/www/RPGConquestGame");
@@ -19,12 +26,14 @@ function getPath ($file) {
 }
 
 /**
- * Loads DB config from file or defaults
- * @param string $path
- * @param string $configFile
- * @return array
+ * Loads DB config from file, falling back to defaults for missing keys.
+ *
+ * @param string|null $path : directory containing the config file (nullable when getPath found nothing)
+ * @param string $configFile : config filename with leading slash
+ *
+ * @return array : normalised config array with host/dbname/username/password/db_type/folder/game_prefix
  */
-function loadDBConfig($path, $configFile) {
+function loadDBConfig(string|null $path, string $configFile): array {
     // Default values
     $config = [
         'host' => 'localhost',
@@ -70,11 +79,17 @@ function loadDBConfig($path, $configFile) {
 }
 
 /**
- * Get and Check connection to the database
+ * Opens a PDO connection to the configured database (MySQL or PostgreSQL).
  *
- * @return PDO $pdo
+ * @param string|null $path : directory containing the config file (nullable when getPath found nothing)
+ * @param string $configFile : config filename with leading slash
+ *
+ * @return PDO|null : live PDO handle, or null when the connection failed
  */
-function getDBConnection ($path, $configFile) {
+function getDBConnection(string|null $path, string $configFile): PDO|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with configFile : ' . $configFile, ['path' => $path], 'debug');
+
     $debug = strtolower($_SESSION['DEBUG']) === 'true';
 
     $config = loadDBConfig($path, $configFile);
@@ -97,7 +112,7 @@ function getDBConnection ($path, $configFile) {
             return $pdo;
 
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'Connection failed : ' . $e->getMessage(), ['dbname' => $config['dbname'], 'db_type' => $config['db_type']], 'error');
             return NULL;
         }
     }else{
@@ -114,22 +129,24 @@ function getDBConnection ($path, $configFile) {
             return $pdo;
 
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Connection failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'Connection failed : ' . $e->getMessage(), ['dbname' => $config['dbname'], 'db_type' => $config['db_type']], 'error');
             return NULL;
         }
     }
 }
 
 /**
- * Checks that the database table does exist
+ * Checks that the database table does exist.
  *
- * @param PDO $pdo
- * @param string $tableName
+ * @param PDO $pdo : database connection
+ * @param string $tableName : bare table name (prefix appended internally)
  *
- * @return bool
- *
+ * @return bool|null : true/false when the query ran, null when it threw
  */
-function tableExists($pdo, $tableName) {
+function tableExists(PDO $pdo, string $tableName): bool|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with tableName : ' . $tableName, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $prefixedTableName = $prefix . $tableName;
     try{
@@ -155,20 +172,23 @@ function tableExists($pdo, $tableName) {
             $stmt->execute([':tableName' => $prefixedTableName]);
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): $prefixedTableName failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, $prefixedTableName . ' failed : ' . $e->getMessage(), ['prefixedTableName' => $prefixedTableName], 'error');
         return NULL;
     }
     return $stmt->fetchColumn();
 }
 
 /**
- * Searches and destroys all tables in database
+ * Searches and destroys all tables in the current database schema.
  *
- * @param PDO $pdo
+ * @param PDO $pdo : database connection
  *
- * @return bool
+ * @return bool : true on success, false when a PDO exception was caught
  */
-function destroyAllTables($pdo) {
+function destroyAllTables(PDO $pdo): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['prefix' => $_SESSION['GAME_PREFIX'] ?? null], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     try {
@@ -245,7 +265,7 @@ function destroyAllTables($pdo) {
         // Success message
         echo "All tables in database have been destroyed successfully.<br />";
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error: " . $e->getMessage();
+        game_error_log(__FUNCTION__, 'Error : ' . $e->getMessage(), ['prefix' => $prefix, 'dbtype' => $_SESSION['DBTYPE'] ?? null], 'error');
         return false;
     }
     return true;
@@ -267,12 +287,15 @@ function destroyAllTables($pdo) {
  * time. This walks the controllers CSV after zones are loaded and
  * UPDATEs each row's origin_zone_id based on the zone name in the CSV.
  *
- * @param PDO    $pdo
- * @param string $controllersCsvPath
+ * @param PDO $pdo : database connection
+ * @param string $controllersCsvPath : absolute path to the controllers CSV
  *
- * @return int  count of rows updated
+ * @return int : count of rows updated
  */
-function resolveControllerOriginZones($pdo, $controllersCsvPath) {
+function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controllersCsvPath : ' . $controllersCsvPath, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $fh = fopen($controllersCsvPath, 'r');
     if (!$fh) return 0;
@@ -295,7 +318,7 @@ function resolveControllerOriginZones($pdo, $controllersCsvPath) {
             $upd->execute([':z' => $zoneId, ':n' => $lastname]);
             if ($upd->rowCount() > 0) $count++;
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): {$lastname} → {$zoneName} failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, $lastname . ' -> ' . $zoneName . ' failed : ' . $e->getMessage(), ['lastname' => $lastname, 'zoneName' => $zoneName], 'warning');
         }
     }
     fclose($fh);
@@ -303,7 +326,21 @@ function resolveControllerOriginZones($pdo, $controllersCsvPath) {
     return $count;
 }
 
-function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
+/**
+ * Loads a CSV file into the named table, resolving inline FK lookups
+ * (`table__col->targetCol`) and linkTable_ junction inserts.
+ *
+ * @param PDO $pdo : database connection
+ * @param string $csvFile : absolute path to CSV file
+ * @param string $tableName : target table name (without prefix)
+ * @param array $columns : column headers as declared in the CSV; may include lookup and linkTable_ specs
+ *
+ * @return bool : true on success, false when the file is missing or a fatal PDO exception was caught
+ */
+function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $columns): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with tableName : ' . $tableName, ['csvFile' => $csvFile, 'columns' => $columns], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $prefixedTable = $prefix . $tableName;
 
@@ -387,7 +424,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                         $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
                     }
                 } catch (PDOException $e) {
-                    echo "Warning: Could not build compound lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
+                    game_error_log(__FUNCTION__, 'Could not build compound lookup cache for ' . $targetCol . ' : ' . $e->getMessage(), ['targetCol' => $targetCol, 'lookupTable' => $lookupTable, 'junctionTable' => $jt], 'warning');
                 }
             } else {
                 // Simple lookup
@@ -398,7 +435,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                         $lookupCaches[$targetCol][$row[$lookupNameCol]] = $row['id'];
                     }
                 } catch (PDOException $e) {
-                    echo "Warning: Could not build lookup cache for {$targetCol}: " . $e->getMessage() . "<br />";
+                    game_error_log(__FUNCTION__, 'Could not build lookup cache for ' . $targetCol . ' : ' . $e->getMessage(), ['targetCol' => $targetCol, 'lookupTable' => $lookupTable], 'warning');
                 }
             }
         }
@@ -415,7 +452,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                     $linkTableCaches[$def['csvHeader']][$row[$ltCol]] = $row['id'];
                 }
             } catch (PDOException $e) {
-                echo "Warning: Could not build linkTable cache for {$def['csvHeader']}: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'Could not build linkTable cache for ' . $def['csvHeader'] . ' : ' . $e->getMessage(), ['csvHeader' => $def['csvHeader'], 'lookupTable' => $ltTable], 'warning');
             }
         }
 
@@ -435,7 +472,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
                     }
                 }
             } catch (PDOException $e) {
-                echo "Warning: Could not detect back-ref column for {$def['junctionTable']}: " . $e->getMessage() . "<br />";
+                game_error_log(__FUNCTION__, 'Could not detect back-ref column for ' . $def['junctionTable'] . ' : ' . $e->getMessage(), ['junctionTable' => $def['junctionTable']], 'warning');
             }
         }
         unset($def);
@@ -455,6 +492,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
             }
         } catch (PDOException $e) {
             // proceed without column info — fallback to old behavior
+            game_error_log(__FUNCTION__, 'Could not detect column info for ' . $prefixedTable . ' : ' . $e->getMessage(), ['prefixedTable' => $prefixedTable], 'warning');
         }
 
         // Prepare main insert statement
@@ -555,7 +593,7 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
         echo "CSV file $csvFile loaded successfully ($rowCount rows).<br />";
         return true;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error loading CSV $csvFile: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'Error loading CSV ' . $csvFile . ' : ' . $e->getMessage(), ['csvFile' => $csvFile, 'tableName' => $tableName], 'error');
         return false;
     }
 }
@@ -572,11 +610,15 @@ function loadCSVFile($pdo, $csvFile, $tableName, $columns) {
  *   action_choice, action_params,
  *   powers (pipe-separated list of power names)
  *
- * @param PDO $pdo Database connection
- * @param string $csvFile Path to CSV file
- * @return bool Success status
+ * @param PDO $pdo : database connection
+ * @param string $csvFile : absolute path to advanced-workers CSV
+ *
+ * @return bool : true on success, false when the file is missing or a PDO exception was caught
  */
-function loadWorkersCSV($pdo, $csvFile) {
+function loadWorkersCSV(PDO $pdo, string $csvFile): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with csvFile : ' . $csvFile, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     if (!file_exists($csvFile)) {
@@ -689,20 +731,23 @@ function loadWorkersCSV($pdo, $csvFile) {
         echo "Workers CSV $csvFile loaded successfully ($rowCount rows).<br />";
         return true;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error loading workers CSV $csvFile: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'Error loading workers CSV ' . $csvFile . ' : ' . $e->getMessage(), ['csvFile' => $csvFile], 'error');
         return false;
     }
 }
 
 /**
  * Check that the game is ready:
- *  - databse is accessible
+ *  - database is accessible
  *  - tables are loaded
- *  - load tables if $_POST['config_name'] is set
+ *  - load tables if $_POST['config_name'] is set.
  *
- * @return PDO $pdo
+ * @return PDO|null : live PDO handle when the game is ready, null on failure
  */
-function gameReady() {
+function gameReady(): PDO|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['config_name' => $_POST['config_name'] ?? null], 'debug');
+
     $debug = false;
 
     // Path to the config.ini file
@@ -838,7 +883,7 @@ function gameReady() {
                         $pdo->exec($sql);
                         echo "Auto-assigned all controllers to privileged players.<br />";
                     } catch (PDOException $e) {
-                        echo "Warning: auto-assign privileged players failed: " . $e->getMessage() . "<br />";
+                        game_error_log(__FUNCTION__, 'auto-assign privileged players failed : ' . $e->getMessage(), ['prefix' => $prefix], 'warning');
                     }
 
                     // Load powers from CSV or SQL files for each power type.
@@ -887,7 +932,7 @@ function gameReady() {
                                 $stmt = $pdo->prepare($sql);
                                 $stmt->execute();
                             } catch (PDOException $e) {
-                                echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
                                 return NULL;
                             }
                             $powerTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -898,7 +943,7 @@ function gameReady() {
                                     $stmt = $pdo->prepare($sql);
                                     $stmt->execute();
                                 } catch (PDOException $e) {
-                                    echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                    game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
                                     return NULL;
                                 }
                                 $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -913,7 +958,7 @@ function gameReady() {
                                         $stmt = $pdo->prepare($sql);
                                         $stmt->execute();
                                     } catch (PDOException $e) {
-                                        echo __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                                        game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
                                         return NULL;
                                     }
                                 }
@@ -1024,14 +1069,13 @@ function gameReady() {
                         $synthStmt->rowCount()
                     );
                 } catch (PDOException $e) {
-                    echo __FUNCTION__."(): Post-load CKL synthesis failed: "
-                        . $e->getMessage() . "<br />";
+                    game_error_log(__FUNCTION__, 'Post-load CKL synthesis failed : ' . $e->getMessage(), ['prefix' => $prefix, 'synthTurn' => $synthTurn ?? null], 'warning');
                 }
 
                 echo 'END <br />';
             }
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Check Database failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'Check Database failed : ' . $e->getMessage(), ['dbtype' => $_SESSION['DBTYPE'] ?? null], 'error');
             return null;
         }
     } else {
@@ -1041,7 +1085,12 @@ function gameReady() {
     return $pdo;
 }
 
-function exportBDD() {
+/**
+ * Dumps the current database to a downloadable SQL file via mysqldump / pg_dump.
+ *
+ * @return void : streams the dump to the browser and calls exit on success
+ */
+function exportBDD(): void {
 
     $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
@@ -1089,12 +1138,14 @@ function exportBDD() {
 }
 
 /**
- * Import BDD from file.sql
- * @param PDO $pdo
- * @param string $file
- * @return bool
+ * Import BDD from an uploaded SQL file (destroys existing tables first).
+ *
+ * @param PDO $pdo : database connection
+ * @param array $file : $_FILES entry describing the uploaded .sql file
+ *
+ * @return bool : true when the import command ran, false on upload/type errors
  */
-function importBDD($pdo, $file){
+function importBDD(PDO $pdo, array $file): bool {
 
     if ($file['error'] === UPLOAD_ERR_OK) {
         $tmpFilePath = $file['tmp_name'];
