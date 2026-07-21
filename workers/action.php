@@ -1,6 +1,9 @@
 <?php
 
 require_once '../base/basePHP.php';
+
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'workers_action_page';  // uncomment to log DEBUG events from this page
+
 $pageName = 'workers_action';
 
 // Check if the user is logged in
@@ -47,7 +50,7 @@ if (empty($_SESSION['is_privileged'])) {
             exit();
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT controller_worker Failed: " . $e->getMessage()."<br />";
+        game_error_log('workers_action_page', 'SELECT controller_worker failed : ' . $e->getMessage(), ['worker_id' => $worker_id, 'controller_id' => $session_controller_id], 'error');
         http_response_code(403);
         exit();
     }
