@@ -345,6 +345,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
     $prefixedTable = $prefix . $tableName;
 
     if (!file_exists($csvFile)) {
+        game_error_log(__FUNCTION__, 'CSV file not found : ' . $csvFile, ['csvFile' => $csvFile, 'tableName' => $tableName], 'error');
         echo "CSV file $csvFile not found.<br />";
         return false;
     }
@@ -352,6 +353,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
     try {
         $handle = fopen($csvFile, 'r');
         if ($handle === false) {
+            game_error_log(__FUNCTION__, 'fopen failed on CSV : ' . $csvFile, ['csvFile' => $csvFile, 'tableName' => $tableName], 'error');
             echo "Failed to open CSV file $csvFile.<br />";
             return false;
         }
@@ -622,6 +624,7 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool {
     $prefix = $_SESSION['GAME_PREFIX'];
 
     if (!file_exists($csvFile)) {
+        game_error_log(__FUNCTION__, 'Workers CSV file not found : ' . $csvFile, ['csvFile' => $csvFile], 'error');
         echo "Workers CSV file $csvFile not found.<br />";
         return false;
     }
@@ -629,6 +632,7 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool {
     try {
         $handle = fopen($csvFile, 'r');
         if ($handle === false) {
+            game_error_log(__FUNCTION__, 'fopen failed on workers CSV : ' . $csvFile, ['csvFile' => $csvFile], 'error');
             echo "Failed to open workers CSV $csvFile.<br />";
             return false;
         }
