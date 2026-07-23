@@ -6,33 +6,33 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 }
 
 /**
- *  Remove curly braces and quotes and Split the string by commas into an array
- * 
- * @param string $input
- * 
- * @return array 
- * 
+ * Remove curly braces and quotes and split the string by commas into an array
+ *
+ * @param string|null $input : raw aggregated string (GROUP_CONCAT / ARRAY_AGG may return NULL)
+ *
+ * @return array : trimmed pieces
  */
-function cleanAndSplitString($input) {
+function cleanAndSplitString(string|null $input): array {
     // Remove curly braces and quotes
-    $cleaned = str_replace(['{', '}', '"'], '', $input);
+    $cleaned = str_replace(['{', '}', '"'], '', (string) $input);
     // Split the string by commas into an array
     return array_map('trim', explode(',', $cleaned));
 }
 
 /**
- * gets the comparaison table between the workers on search/investigate and there possible targets
- * 
+ * Gets the comparison table between the workers on search/investigate and their possible targets
+ *
  * @param PDO $pdo : database connection
- * @param string|null $turn_number
- * @param string|null $searcher_id
- * 
- * @return array 
- * 
+ * @param int|null $turn_number : turn number to filter searchers on (falls back to current turn when NULL)
+ * @param int|null $searcher_id : optional single searcher id restriction
+ *
+ * @return array : list of (searcher, found) comparison rows
  */
-function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
+function getSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null $searcher_id = NULL): array|false {
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . ($turn_number ?? 'NULL'), ['searcher_id' => $searcher_id], 'debug');
 
-    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
     if ( !isset($turn_number)) {
@@ -211,13 +211,13 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
     // Whitelisted (asc|desc) — getInvestigateOrder enforces the only safe interpolation surface
     $order = strtoupper(getInvestigateOrder($pdo));
     $sql .= " ORDER BY s.searcher_enquete_val $order, s.searcher_id ASC";
-    if ($debug) echo sprintf("sql : %s <br/>", $sql);
+    game_error_log(__FUNCTION__, 'sql prepared', ['sql' => $sql], 'debug');
     try{
         $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
         $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
-        if ($debug) echo sprintf("turn_number : %s <br/>", $turn_number);
-        if ($debug) echo sprintf("investigate_actions : %s <br/>", $investigate_actions);
-        if ($debug) echo sprintf("active_actions : %s <br/>", $active_actions);
+        game_error_log(__FUNCTION__, 'turn_number : ' . $turn_number, [], 'debug');
+        game_error_log(__FUNCTION__, 'investigate_actions : ' . $investigate_actions, [], 'debug');
+        game_error_log(__FUNCTION__, 'active_actions : ' . $active_actions, [], 'debug');
         $sql = sprintf($sql, $investigate_actions, $active_actions);
 
         // Prepare and execute the statement
@@ -226,9 +226,10 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
         $stmt->execute();
 
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error: " . $e->getMessage();
+        game_error_log(__FUNCTION__, 'SELECT searcher comparisons Failed: ' . $e->getMessage(), ['turn_number' => $turn_number, 'searcher_id' => $searcher_id], 'error');
+        return false;
     }
-    if ($debug) echo sprintf("stmt->rowCount() : %s <br/>", $stmt->rowCount());
+    game_error_log(__FUNCTION__, 'stmt->rowCount() : ' . $stmt->rowCount(), [], 'debug');
 
     // Fetch and return the results
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -238,15 +239,18 @@ function getSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) 
  * Build the per-row HTML chunk for one (searcher, found) pair: variant-aware (no CKE / moved / still-here / upgrade).
  * Returns [reportElement, ckePowersFlag, ckeControllerId, ckeControllerName] — the caller passes the last 3 to addWorkerToCKE.
  *
- * @param PDO $pdo
+ * @param PDO $pdo : database connection
  * @param array $row : one getSearcherComparisons row
  * @param array|null $prevCke : CKE row read before this upsert (NULL = no prior entry)
  * @param array $zoneNameById : map of zone_id => zone name (for the "moved from <zone>" summary)
  * @param array $txtBag : pre-loaded text-config bag (slab templates, variant templates, action labels)
  *
- * @return array
+ * @return array : [reportElement HTML string, ckePowersFlag bool, ckeControllerId int|null, ckeControllerName string|null]
  */
-function buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag) {
+function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, array $zoneNameById, array $txtBag): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'prevCke' => $prevCke], 'debug');
+
     $REPORTDIFF = $txtBag['REPORTDIFF'];
     $enqDiff = (int)$row['enquete_difference'];
 
@@ -440,14 +444,16 @@ function buildInvestigateReportLine($pdo, $row, $prevCke, $zoneNameById, $txtBag
  * @param PDO $pdo : database connection
  * @param array $mechanics : mechanics row
  *
- * @return bool success
+ * @return bool : true when the loop completed
  */
-function investigateMechanic($pdo, $mechanics) {
+function investigateMechanic(PDO $pdo, array $mechanics): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
+
     $turn_number = $mechanics['turncounter'];
     echo '<div> <h3> investigateMechanic : </h3> ';
     echo "turn_number : $turn_number <br>";
-
-    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
 
     $REPORTDIFF = [
         0 => (int)getConfig($pdo, 'REPORTDIFF0'),
@@ -455,12 +461,14 @@ function investigateMechanic($pdo, $mechanics) {
         2 => (int)getConfig($pdo, 'REPORTDIFF2'),
         3 => (int)getConfig($pdo, 'REPORTDIFF3'),
     ];
-    if ($debug) {
-        foreach ($REPORTDIFF as $k => $v) echo "REPORTDIFF$k : $v <br/>";
-    }
+    game_error_log(__FUNCTION__, 'REPORTDIFF thresholds loaded', ['REPORTDIFF' => $REPORTDIFF], 'debug');
 
     $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
-    if ($debug) echo sprintf("investigations : %s <br/>", var_export($investigations, true));
+    if (!is_array($investigations)) {
+        game_error_log(__FUNCTION__, 'getSearcherComparisons returned non-array, aborting EOT step', ['turn_number' => $turn_number]);
+        return false;
+    }
+    game_error_log(__FUNCTION__, 'investigations loaded', ['investigations' => $investigations], 'debug');
 
     $txtBag = [
         'actions' => [
@@ -499,7 +507,7 @@ function investigateMechanic($pdo, $mechanics) {
     $reportArray = [];
 
     foreach ($investigations as $row) {
-        if ($debug) echo "<div><p> row : ".var_export($row, true)."</p>";
+        game_error_log(__FUNCTION__, 'processing row', ['row' => $row], 'debug');
 
         if (empty($reportArray[$row['searcher_id']])) {
             $reportArray[$row['searcher_id']] = sprintf($txtBag['textesStartInvestigate'], $row['zone_name']);
@@ -553,21 +561,21 @@ function investigateMechanic($pdo, $mechanics) {
                     );
                 }
             } catch (PDOException $e) {
-                echo __FUNCTION__."(): Error SELECT controller_id FROM controller_worker Failed: " . $e->getMessage()."<br />";
+                game_error_log(__FUNCTION__, 'SELECT controller_id FROM controller_worker Failed: ' . $e->getMessage(), ['searcher_id' => $row['searcher_id'], 'searcher_controller_id' => $row['searcher_controller_id']], 'error');
             }
         }
-
-        if ($debug) echo "</div>";
     }
 
     foreach ($reportArray as $worker_id => $report) {
         try {
             updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['investigate_report' => $report]);
         } catch (Exception $e) {
-            echo "updateWorkerAction() failed for worker_id $worker_id: " . $e->getMessage() . "<br />";
+            game_error_log(__FUNCTION__, 'updateWorkerAction failed for worker_id ' . $worker_id . ': ' . $e->getMessage(), ['worker_id' => $worker_id, 'turn_number' => $turn_number], 'error');
             break;
         }
     }
+
+    game_error_log(__FUNCTION__, 'DONE with turncounter : ' . $turn_number, ['reportArray_count' => count($reportArray)], 'debug');
 
     echo '<p>investigateMechanic : DONE </p> </div>';
     return true;

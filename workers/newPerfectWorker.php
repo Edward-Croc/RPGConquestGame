@@ -5,6 +5,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     exit();
 }
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'workers_new_perfect_page';  // uncomment to log DEBUG events from this page
+
     $title = 'Admin - Create Perfect Agent';
 
     // Select a controller from controllers
@@ -23,7 +25,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
         $stmt = $gameReady->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log('workers_new_perfect_page', 'worker_names JOIN worker_origins SELECT failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
         return NULL;
     }
     // Fetch the results

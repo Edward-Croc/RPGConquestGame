@@ -7,16 +7,16 @@
  *  - optional exclusion of one controller (e.g. session-active controller for "target" selects)
  *
  * @param PDO $pdo : database connection
- * @param int|null $player_id
- * @param int|null $controller_id
- * @param bool $hide_secret_controllers default: true
+ * @param int|string|null $player_id : player id filter, NULL for none
+ * @param int|null $controller_id : controller id filter, NULL for none
+ * @param bool $hide_secret_controllers : hide secret controllers except the active session one, default: true
  * @param int|null $exclude_controller_id : drops one controller from the result (used to forbid self-target on gift selects)
- *
- * @return array|null
- *
+ * @return array|null : array of controller rows or NULL on error
  */
-// Function to get controllers and return as an array
-function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_secret_controllers = true, $exclude_controller_id = NULL) {
+function getControllers(PDO $pdo, int|string|null $player_id = NULL, int|null $controller_id = NULL, bool $hide_secret_controllers = true, int|null $exclude_controller_id = NULL): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['player_id' => $player_id, 'controller_id' => $controller_id, 'hide_secret_controllers' => $hide_secret_controllers, 'exclude_controller_id' => $exclude_controller_id], 'debug');
+
     $controllersArray = array();
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -54,7 +54,7 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $player_id failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT controllers failed : ' . $e->getMessage(), ['player_id' => $player_id, 'controller_id' => $controller_id], 'error');
         return NULL;
     }
 
@@ -71,37 +71,40 @@ function getControllers($pdo, $player_id = NULL, $controller_id = NULL, $hide_se
 
 /**
  * Get the name of a controller
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * 
- * @return string
+ *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : controller id
+ * @return string|null : "firstname lastname" or NULL on error
  */
-function getControllerName($pdo, $controller_id) {
+function getControllerName(PDO $pdo, int $controller_id): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{ 
+    try{
         $sql = "SELECT  CONCAT(c.firstname, ' ', c.lastname) AS controller_name FROM {$prefix}controllers c WHERE c.id = :controller_id";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':controller_id' => $controller_id]);
         $controller = $stmt->fetch(PDO::FETCH_ASSOC);
         return $controller['controller_name'];
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT controllers Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT controllers failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'error');
         return NULL;
     }
 }
 
 /**
- * Show list of controller options for à controller select field.
- * 
- * @param array $controllers : array of controllers ('id', 'firstname', 'lastname')
+ * Show list of controller options for a controller select field.
+ *
+ * @param array|null $controllers : array of controllers ('id', 'firstname', 'lastname')
  * @param int|null $selectedID : ID of the selected controller (optional)
  * @param string $field_name : name of the select field (default: 'controller_id')
  * @param bool $addEmptySpace : add an empty option at the top of the list (default: false)
- * 
  * @return string : HTML select field
  */
-function showControllerSelect($controllers, $selectedID = null ,$field_name = 'controller_id', $addEmptySpace = false ) {
+function showControllerSelect(array|null $controllers, int|null $selectedID = null, string $field_name = 'controller_id', bool $addEmptySpace = false): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with field_name : ' . $field_name, ['selectedID' => $selectedID, 'addEmptySpace' => $addEmptySpace, 'controllers_count' => is_array($controllers) ? count($controllers) : 0], 'debug');
 
     if (empty($controllers)) return '';
     $controllerOptions = '';
@@ -128,13 +131,21 @@ function showControllerSelect($controllers, $selectedID = null ,$field_name = 'c
         $field_name,
         $controllerOptions
     );
-    if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) echo __FUNCTION__."(): showControllerSelect: ".var_export($showControllerSelect, true)."<br /><br />";
+    game_error_log(__FUNCTION__, 'DONE', ['showControllerSelect' => $showControllerSelect], 'debug');
 
     return $showControllerSelect;
 }
 
-/** This function resets the turn_recruited_workers and turn_firstcome_workers to 0 for every controller */
-function  restartTurnRecrutementCount($pdo){
+/**
+ * Reset turn_recruited_workers and turn_firstcome_workers to 0 for every controller.
+ *
+ * @param PDO $pdo : database connection
+ * @return bool|null : true on success, NULL on error
+ */
+function restartTurnRecrutementCount(PDO $pdo): bool|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "UPDATE {$prefix}controllers SET turn_firstcome_workers=0, turn_recruited_workers=0 WHERE True";
     try{
@@ -143,22 +154,23 @@ function  restartTurnRecrutementCount($pdo){
         $stmt->execute();
         return true;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE controllers failed : ' . $e->getMessage(), [], 'error');
         return NULL;
     }
 }
 
 /**
+ * Check whether a controller may start a first-come worker draft this turn.
  *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : controller id
+ * @return bool : true if turn_firstcome_workers < config threshold
  */
-function canStartFirstCome($pdo, $controller_id) {
+function canStartFirstCome(PDO $pdo, int $controller_id): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
 
     $controllerValues = getControllers($pdo, NULL, $controller_id);
-    if ( $_SESSION['DEBUG'] == true )
-    echo '<p>'
-        .'; turn_firstcome_workers: '. getConfig($pdo, 'turn_firstcome_workers')
-        .'; turn_firstcome_workers :'. $controllerValues[0]['turn_firstcome_workers']
-    .'</p>';
     if (
         (INT)$controllerValues[0]['turn_firstcome_workers'] < (INT)getConfig($pdo, 'turn_firstcome_workers')
     )  return true;
@@ -166,20 +178,20 @@ function canStartFirstCome($pdo, $controller_id) {
 }
 
 /**
+ * Check whether a controller may start a recruitment action this turn.
  *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : controller id
+ * @param int $turnNumber : current turn number
+ * @return bool : true if the controller has a base and remains under the recruit cap
  */
-function canStartRecrutement($pdo, $controller_id, $turnNumber){
+function canStartRecrutement(PDO $pdo, int $controller_id, int $turnNumber): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['turnNumber' => $turnNumber], 'debug');
 
     $controllerValues = getControllers($pdo, NULL, $controller_id);
-    if ( $_SESSION['DEBUG'] == true )
-    echo '<p>hasBase: '. var_export(hasBase($pdo, $controller_id), true)
-        .';turncounter: '. $turnNumber
-        .'; turn_recrutable_workers: '. getConfig($pdo, 'turn_recrutable_workers')
-        .'; start_workers :'. $controllerValues[0]['start_workers']
-        .'; turn_recruited_workers :'. $controllerValues[0]['turn_recruited_workers']
-    .'</p>';
 
-    if (    
+    if (
         count(hasBase($pdo, $controller_id)) > 0
         &&
         ((
@@ -194,14 +206,16 @@ function canStartRecrutement($pdo, $controller_id, $turnNumber){
 }
 
 /**
- * This function returns an array of all bases a controller has or a NULL
+ * Return an array of all bases a controller has, or NULL on error.
  *
  * @param PDO $pdo : database connection
- * @param string : $controller_id 
- *
- * @return array|null : $bases
+ * @param int $controller_id : controller id
+ * @return array|null : base rows joined with zone info, NULL on error
  */
-function hasBase($pdo, $controller_id) {
+function hasBase(PDO $pdo, int $controller_id): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $sql = "SELECT l.*, z.id AS zone_id, z.name AS zone_name FROM {$prefix}locations l
@@ -215,23 +229,23 @@ function hasBase($pdo, $controller_id) {
         $bases = $stmt->fetchALL(PDO::FETCH_ASSOC);
         return $bases;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'error');
     }
     return NULL;
 }
 
 /**
- * Create the base for the controler in zone and return if success
+ * Create the base for the controller in zone and return true on success.
  *
  * @param PDO $pdo : database connection
- * @param int : $controller_id 
- * @param int : $zone_id 
- * 
- * @return bool
- * 
-*/
-function createBase($pdo, $controller_id, $zone_id) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+ * @param int|null $controller_id : controller id (NULL when the caller received no _GET param)
+ * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
+ * @return bool : true on success, false on any guard/insert failure
+ */
+function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['zone_id' => $zone_id], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -254,12 +268,12 @@ function createBase($pdo, $controller_id, $zone_id) {
 
     $controllers = getControllers($pdo, NULL, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
-    if ($debug) echo sprintf("controller_name : %s </br>", $controller_name);
+    game_error_log(__FUNCTION__, 'controller_name : ' . $controller_name, [], 'debug');
 
     $discovery_diff = calculateSecretLocationDiscoveryDiff($pdo, $zone_id, null, $controller_id );
 
     $timeValue = getConfig($pdo, 'timeValue');
-    if ($debug) echo sprintf("timeValue : %s </br>", var_export($timeValue, true));
+    game_error_log(__FUNCTION__, 'timeValue : ' . var_export($timeValue, true), [], 'debug');
 
     $baseName = sprintf(
         getConfig($pdo, 'texteNameBase'),
@@ -291,11 +305,11 @@ function createBase($pdo, $controller_id, $zone_id) {
     ]);
 
         if ($checkStmt->fetchColumn() > 0) {
-            if ($debug) echo "Base already exists for this controller in this zone.<br />";
+            game_error_log(__FUNCTION__, 'Base already exists for this controller in this zone', ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'debug');
             return false;
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'warning');
     }
 
     $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base, location_types) VALUES
@@ -313,7 +327,7 @@ function createBase($pdo, $controller_id, $zone_id) {
         $stmt->execute();
         $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'error');
         return false;
     }
 
@@ -327,16 +341,17 @@ function createBase($pdo, $controller_id, $zone_id) {
 }
 
 /**
- * Changes the base to the new zone
- * 
+ * Move the controller base to the new zone.
+ *
  * @param PDO $pdo : database connection
- * @param int : $base_id 
- * @param int : $zone_id 
- * 
- * @return bool
- * 
+ * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
+ * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
+ * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
+ * @return bool : true on success, false on cost/update failure
  */
-function moveBase($pdo, $base_id, $zone_id, $controller_id) {
+function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with base_id : ' . $base_id, ['zone_id' => $zone_id, 'controller_id' => $controller_id], 'debug');
 
     if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
         echo "Stock insuffisant ou modifié.<br />";
@@ -357,23 +372,23 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         $sel->execute();
         $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT in-flight attacks failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT in-flight attacks failed : ' . $e->getMessage(), ['base_id' => $base_id, 'turn_number' => $turn_number], 'warning');
         $inFlight = [];
     }
     foreach ($inFlight as $row) {
         failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
     }
 
-    // Defensive: ensure any pre-existing base lacking the fortress tag gets it.              
-    try {                                                                                     
+    // Defensive: ensure any pre-existing base lacking the fortress tag gets it.
+    try {
         $stmt = $pdo->prepare("UPDATE {$prefix}locations SET location_types = '[\"fortress\"]'
-            WHERE id = :base_id AND location_types IS NULL");                                            
-        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);                               
-            $stmt->execute();                                                                     
-        } catch (PDOException $e) {                                                               
-            echo __FUNCTION__."(): UPDATE location_types failed: " . $e->getMessage()."<br />";   
+            WHERE id = :base_id AND location_types IS NULL");
+        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            game_error_log(__FUNCTION__, 'UPDATE location_types failed : ' . $e->getMessage(), ['base_id' => $base_id], 'warning');
     }
-  
+
     // update locations set zone_id where controller_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try{
@@ -390,7 +405,7 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
         $deleteStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
         $deleteStmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE locations SET zone_id: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE locations SET zone_id failed : ' . $e->getMessage(), ['base_id' => $base_id, 'zone_id' => $zone_id], 'error');
         return false;
     }
 
@@ -404,15 +419,16 @@ function moveBase($pdo, $base_id, $zone_id, $controller_id) {
 }
 
 /**
- * Affiche les options de sélection pour les bases connues et attaquables par un contrôleur
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * 
- * @return string returnText
- * 
+ * Render the select options for bases known and attackable by a controller.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : attacking controller id
+ * @return string|null : HTML select field or NULL if no attackable location
  */
-function showAttackableControllerKnownLocations($pdo, $controller_id) {
+function showAttackableControllerKnownLocations(PDO $pdo, int $controller_id): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     // Exclude own — controller cannot attack own base.
     $excludePending = in_array(getConfig($pdo, 'locationAttackMode'), ['endTurn'], true);
     $locations = listControllerKnownLocations($pdo, $controller_id, true, false, true, $excludePending);
@@ -443,15 +459,16 @@ function showAttackableControllerKnownLocations($pdo, $controller_id) {
 }
 
 /**
- * Affiche les options de sélection pour les bases connues et réparables par un contrôleur
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * 
- * @return string returnText
- * 
+ * Render the select options for bases known and repairable by a controller.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : owning controller id
+ * @return string|null : HTML select field or NULL if no repairable location
  */
-function showRepairableControllerKnownLocations($pdo, $controller_id) {
+function showRepairableControllerKnownLocations(PDO $pdo, int $controller_id): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $locations = listControllerKnownLocations($pdo, $controller_id, false, true);
     if (empty($locations)) return NULL;
 
@@ -480,17 +497,18 @@ function showRepairableControllerKnownLocations($pdo, $controller_id) {
 }
 
 /**
- * 
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $target_location_id
- * 
- * @return array $return
- * 
+ * Attack a target location (immediate or queued at end of turn).
+ *
+ * @param PDO $pdo : database connection
+ * @param int|null $controller_id : attacking controller id (NULL when the caller received no _GET param)
+ * @param int|null $target_location_id : target location id (NULL when the caller received no _GET param)
+ * @return array|null : outcome ['success', 'message', ...], or NULL on SELECT failure
  */
-function attackLocation($pdo, $controller_id, $target_location_id) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_location_id): array|null {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['target_location_id' => $target_location_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $mode = getConfig($pdo, 'locationAttackMode');
@@ -510,7 +528,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
         $stmt->execute([':id' => $target_location_id]);
         $location = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT location failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id], 'error');
         return NULL;
     }
     if (empty($location)) {
@@ -518,11 +536,11 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     }
 
     $zone_id = $location[0]['zone_id'];
-    if ($debug) echo sprintf("%s() SELECT * FROM locations : %s <br>",__FUNCTION__, var_export($location, true));
+    game_error_log(__FUNCTION__, 'SELECT * FROM locations', ['location' => $location], 'debug');
     $controllerAttack = calculatecontrollerAttack($pdo, $zone_id, $controller_id);
-    if ($debug) echo sprintf("%s() controllerAttack : %s <br>",__FUNCTION__, var_export($controllerAttack, true));
+    game_error_log(__FUNCTION__, 'controllerAttack : ' . var_export($controllerAttack, true), [], 'debug');
     $locationDefence = calculateSecretLocationDefence($pdo, $zone_id, $target_location_id, $location[0]['controller_id']);
-    if ($debug) echo sprintf("%s() locationDefence : %s <br>",__FUNCTION__, var_export($locationDefence, true));
+    game_error_log(__FUNCTION__, 'locationDefence : ' . var_export($locationDefence, true), [], 'debug');
 
     if ($mode === 'endTurn') {
         try {
@@ -550,7 +568,7 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
                 return array('success' => false, 'queued' => false, 'message' => 'Attaque déjà planifiée ce tour.');
             }
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): INSERT controller_location_attacks Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'INSERT controller_location_attacks failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
             return array('success' => false, 'message' => 'Error : Queue Failed');
         }
         return array(
@@ -563,8 +581,22 @@ function attackLocation($pdo, $controller_id, $target_location_id) {
     return resolveLocationAttackEffects($pdo, $location[0], $controller_id, $turn_number, $controllerAttack, $locationDefence);
 }
 
-function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_number, $controllerAttack, $locationDefence) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+/**
+ * Resolve the effects of a location attack (destruction, capture, logs, agent reports).
+ *
+ * @param PDO $pdo : database connection
+ * @param array $location : target location row (must include 'id', 'zone_id', 'controller_id', 'name', 'activate_json', 'zone_name')
+ * @param int $controller_id : attacking controller id
+ * @param int $turn_number : current turn
+ * @param int $controllerAttack : resolved attack value
+ * @param int $locationDefence : resolved defence value
+ * @return array|null : ['success', 'message'], or NULL on DELETE failure
+ */
+function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with target_location_id : ' . ($location['id'] ?? ''), ['controller_id' => $controller_id, 'turn_number' => $turn_number, 'controllerAttack' => $controllerAttack, 'locationDefence' => $locationDefence, 'location' => $location], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $return = array('success' => false, 'message' => '');
     $targetResultText = '';
@@ -572,7 +604,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
     $zone_id = $location['zone_id'];
     $target_location_id = $location['id'];
     $attackLocationDiff = getConfig($pdo, 'attackLocationDiff');
-    if ($debug) echo sprintf("%s() attackLocationDiff : %s <br>",__FUNCTION__, var_export($attackLocationDiff, true));
+    game_error_log(__FUNCTION__, 'attackLocationDiff : ' . var_export($attackLocationDiff, true), [], 'debug');
 
     if (($controllerAttack - $locationDefence) >= $attackLocationDiff){
         $return['success'] = true;
@@ -581,7 +613,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
         // Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.
         $locationAttackSuccessTextsArray = json_decode(getConfig($pdo,'TEXT_LOCATION_ATTACK_SUCCESS'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_SUCCESS'], 'warning');
             $locationAttackSuccessTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.");
         }
         $targetResultText .= sprintf(
@@ -593,7 +625,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
         if (!empty($location['activate_json'])) {
             $activate_json = json_decode($location['activate_json'], true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+                game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['location_id' => $target_location_id, 'activate_json' => $location['activate_json']], 'warning');
                 $activate_json = array();
             }
             $textSuccess = getConfig($pdo, 'textLocationDestroyed');
@@ -635,7 +667,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([':id' => $target_location_id]);
             } catch (PDOException $e) {
-                echo  __FUNCTION__."(): $sql failed: " . $e->getMessage()."<br />";
+                game_error_log(__FUNCTION__, 'DELETE location failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id], 'error');
                 return NULL;
             }
             $targetResultText .= ' Tout a été détruit.';
@@ -643,7 +675,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
     } else {
         $locationAttackFailTextsArray = json_decode(getConfig($pdo,'TEXT_LOCATION_ATTACK_FAIL'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_FAIL'], 'warning');
             $locationAttackFailTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.");
         }
         $targetResultText .= sprintf(
@@ -694,7 +726,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
         $logStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $logStmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT location_attack_logs Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT location_attack_logs failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
         return array('success' => false, 'message' => 'Error : Resultat Save Failed');
     }
 
@@ -710,7 +742,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
     }
     $locationAttackAgentReportArray = json_decode($locationAttackAgentReportJson, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+        game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_AGENT_REPORT_*'], 'warning');
         $locationAttackAgentReportArray = array("Attaque du lieu %s dans %s %s.<br/>");
     }
 
@@ -747,7 +779,7 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
         }
         $locationDefenceAgentReportArray = json_decode($locationDefenceAgentReportJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            echo __FUNCTION__."(): JSON decoding error: " . json_last_error_msg() . "<br />";
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_*'], 'warning');
             $locationDefenceAgentReportArray = array('Défense du lieu %s dans %s contre les agent du réseau %s.<br/>');
         }
 
@@ -770,15 +802,17 @@ function resolveLocationAttackEffects($pdo, $location, $controller_id, $turn_num
 }
 
 /**
- * Changes all Artefacts in the location to the new controllers base.
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $target_location_id
- * 
- * @return string message
+ * Move all artefacts from a captured location to the capturing controller's base.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $location_id : source (captured) location id
+ * @param int $controller_id : capturing controller id
+ * @return array : ['success' => bool, 'message' => string]
  */
-function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
+function captureLocationsArtefacts(PDO $pdo, int $location_id, int $controller_id): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with location_id : ' . $location_id, ['controller_id' => $controller_id], 'debug');
+
     $return = array('success' => true, 'message' => '');
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -810,13 +844,15 @@ function captureLocationsArtefacts($pdo, $location_id, $controller_id) {
 /**
  * Read a single CKE row for (controller, worker). Caller compares prior state (zone_id + level flags) before calling addWorkerToCKE.
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $worker_id
- *
- * @return array|null  associative row, or NULL if no CKE entry exists
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : observing controller id
+ * @param int $worker_id : discovered worker id
+ * @return array|null : associative row, or NULL if no CKE entry exists / on error
  */
-function getCKEEntry($pdo, $controller_id, $worker_id) {
+function getCKEEntry(PDO $pdo, int $controller_id, int $worker_id): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['worker_id' => $worker_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = "SELECT * FROM {$prefix}controllers_known_enemies
@@ -829,42 +865,44 @@ function getCKEEntry($pdo, $controller_id, $worker_id) {
         ]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT controllers_known_enemies failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'worker_id' => $worker_id], 'error');
         return NULL;
     }
     return $row ?: NULL;
 }
 
 /**
+ * Upsert a CKE row for (searcher, worker). Only fills discovered_* columns when the caller passes them truthy.
  *
- * @param PDO $pdo
- * @param int $searcher_controller_id
- * @param int $found_id
- * @param int $turn_number
- * @param int $zone_id
- * @param int|null $discovered_controller_id   monotonic — only persisted if truthy
- * @param string|null $discovered_controller_name   monotonic — only persisted if truthy
- * @param bool $discovered_powers   monotonic — DIFF1 flag (disciplines/transformations/hobby revealed); only persisted if truthy
- *
- * @return int $cke_existing_record_id
- *
+ * @param PDO $pdo : database connection
+ * @param int $searcher_controller_id : observing controller id
+ * @param int $found_worker_id : discovered worker id
+ * @param int $turn_number : turn of discovery
+ * @param int $zone_id : zone id of the sighting
+ * @param int|null $discovered_controller_id : monotonic — only persisted if truthy
+ * @param string|null $discovered_controller_name : monotonic — only persisted if truthy
+ * @param bool $discovered_powers : monotonic — DIFF1 flag (disciplines/transformations/hobby revealed); only persisted if truthy
+ * @return int|string|null : existing/inserted row id (string from lastInsertId), or NULL when the worker is already controlled or on hard-fail
  */
 function addWorkerToCKE(
-        $pdo,
-        $searcher_controller_id,
-        $found_worker_id,
-        $turn_number,
-        $zone_id,
-        $discovered_controller_id = NULL,
-        $discovered_controller_name = NULL,
-        $discovered_powers = false
-    ) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+        PDO $pdo,
+        int $searcher_controller_id,
+        int $found_worker_id,
+        int $turn_number,
+        int $zone_id,
+        int|null $discovered_controller_id = NULL,
+        string|null $discovered_controller_name = NULL,
+        bool $discovered_powers = false
+    ): int|string|null {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with searcher_controller_id : ' . $searcher_controller_id, ['found_worker_id' => $found_worker_id, 'turn_number' => $turn_number, 'zone_id' => $zone_id, 'discovered_controller_id' => $discovered_controller_id, 'discovered_controller_name' => $discovered_controller_name, 'discovered_powers' => $discovered_powers], 'debug');
 
     $cke_existing_record_id = NULL;
+    $count = 0;
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    
+
     try{
         // Only add information to controllers_known_enemies if the worker is not controlled by the target controller
         $sql = "SELECT COUNT(*) AS count FROM {$prefix}controller_worker WHERE controller_id = :searcher_controller_id AND worker_id = :found_worker_id";
@@ -875,10 +913,10 @@ function addWorkerToCKE(
         ]);
         $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error COUNT(*) FROM {$prefix}controller_worker Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'COUNT(*) FROM controller_worker failed : ' . $e->getMessage(), ['searcher_controller_id' => $searcher_controller_id, 'found_worker_id' => $found_worker_id], 'warning');
     }
     if ($count == 1) {
-        if ($debug) echo __FUNCTION__."(): COUNT(*) FROM {$prefix}controller_worker; Worker is already controlled by the target controller<br />";
+        game_error_log(__FUNCTION__, 'Worker is already controlled by the target controller', ['searcher_controller_id' => $searcher_controller_id, 'found_worker_id' => $found_worker_id], 'debug');
         return NULL;
     }
 
@@ -893,9 +931,9 @@ function addWorkerToCKE(
             ':found_worker_id' => $found_worker_id
         ]);
         $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+        game_error_log(__FUNCTION__, 'existingRecord lookup', ['existingRecord' => $existingRecord], 'debug');
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error SELECT id FROM {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT id FROM controllers_known_enemies failed : ' . $e->getMessage(), ['searcher_controller_id' => $searcher_controller_id, 'found_worker_id' => $found_worker_id], 'error');
         return NULL;
     }
 
@@ -911,7 +949,7 @@ function addWorkerToCKE(
                 $discovered_controller_name ? ", discovered_controller_name = :discovered_controller_name" : "",
                 $discovered_powers ? ", discovered_powers = :discovered_powers" : ""
             );
-            if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+            game_error_log(__FUNCTION__, 'UPDATE existingRecord', ['existingRecord' => $existingRecord, 'sql' => $sql], 'debug');
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
@@ -927,7 +965,7 @@ function addWorkerToCKE(
             }
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error UPDATE {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE controllers_known_enemies failed : ' . $e->getMessage(), ['id' => $existingRecord['id'] ?? null, 'searcher_controller_id' => $searcher_controller_id, 'found_worker_id' => $found_worker_id], 'warning');
         }
     } else {
         try{
@@ -935,7 +973,7 @@ function addWorkerToCKE(
             $sql = "INSERT INTO {$prefix}controllers_known_enemies
                 (controller_id, discovered_worker_id, first_discovery_turn, last_discovery_turn, zone_id, discovered_controller_id, discovered_controller_name, discovered_powers)
                 VALUES (:searcher_controller_id, :found_worker_id, :turn_number, :turn_number, :zone_id, :discovered_controller_id, :discovered_controller_name, :discovered_powers)";
-            if ($debug) echo "sql :".var_export($sql, true)." <br>";
+            game_error_log(__FUNCTION__, 'INSERT sql', ['sql' => $sql], 'debug');
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':searcher_controller_id', $searcher_controller_id, PDO::PARAM_INT);
             $stmt->bindParam(':found_worker_id', $found_worker_id, PDO::PARAM_INT);
@@ -947,7 +985,7 @@ function addWorkerToCKE(
             $stmt->execute();
             $cke_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error INSERT INTO {$prefix}controllers_known_enemies Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'INSERT INTO controllers_known_enemies failed : ' . $e->getMessage(), ['searcher_controller_id' => $searcher_controller_id, 'found_worker_id' => $found_worker_id, 'turn_number' => $turn_number, 'zone_id' => $zone_id], 'warning');
         }
     }
     return $cke_existing_record_id;
@@ -956,13 +994,15 @@ function addWorkerToCKE(
 /**
  * Read a single CKL row for (controller, location). Caller compares prior state (found_secret) before calling addLocationToCKL.
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $location_id
- *
- * @return array|null  associative row, or NULL if no CKL entry exists
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : observing controller id
+ * @param int $location_id : known location id
+ * @return array|null : associative row, or NULL if no CKL entry exists / on error
  */
-function getCKLEntry($pdo, $controller_id, $location_id) {
+function getCKLEntry(PDO $pdo, int $controller_id, int $location_id): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['location_id' => $location_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = "SELECT * FROM {$prefix}controller_known_locations
@@ -975,24 +1015,27 @@ function getCKLEntry($pdo, $controller_id, $location_id) {
         ]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Error SELECT FROM {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT controller_known_locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'location_id' => $location_id], 'error');
         return NULL;
     }
     return $row ?: NULL;
 }
 
 /**
+ * Upsert a CKL row for (controller, location). Only fills found_secret when the caller passes it truthy.
  *
- * @param PDO $pdo
- * @param int $controller_id
- * @param int $location_id
- * @param int $turn_number
- *
- * @return int $ckl_existing_record_id
- *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : observing controller id
+ * @param int $location_id : known location id
+ * @param int $turn_number : turn of discovery
+ * @param bool $found_secret : monotonic flag — only persisted if truthy
+ * @return int|string|null : existing/inserted row id (string from lastInsertId), or NULL on hard-fail
  */
-function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $found_secret) {
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function addLocationToCKL(PDO $pdo, int $controller_id, int $location_id, int $turn_number, bool $found_secret): int|string|null {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['location_id' => $location_id, 'turn_number' => $turn_number, 'found_secret' => $found_secret], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $ckl_existing_record_id = NULL;
@@ -1007,7 +1050,7 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
         ':location_id' => $location_id
     ]);
     $existingRecord = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($debug) echo sprintf(" existingRecord: %s<br/> ", var_export($existingRecord,true));
+    game_error_log(__FUNCTION__, 'existingRecord lookup', ['existingRecord' => $existingRecord], 'debug');
 
     if (!empty($existingRecord)) {
         try{
@@ -1027,7 +1070,7 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
             $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error UPDATE {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE controller_known_locations failed : ' . $e->getMessage(), ['id' => $existingRecord['id'] ?? null, 'controller_id' => $controller_id, 'location_id' => $location_id], 'warning');
         }
     } else {
         try{
@@ -1046,21 +1089,23 @@ function addLocationToCKL($pdo, $controller_id, $location_id, $turn_number, $fou
             $insertStmt->execute();
             $ckl_existing_record_id = $pdo->lastInsertId();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): Error INSERT INTO {$prefix}controller_known_locations Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'INSERT INTO controller_known_locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'location_id' => $location_id, 'turn_number' => $turn_number], 'warning');
         }
     }
     return $ckl_existing_record_id;
 }
 
 /**
- * Show the owned artefacts of a controller
- * 
- * @param PDO $pdo
- * @param int $controller_id
- * 
- * @return string
+ * Show the owned artefacts of a controller.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : owning controller id
+ * @return string : HTML fragment listing artefacts
  */
-function showOwnedArtefacts($pdo, $controller_id) {
+function showOwnedArtefacts(PDO $pdo, int $controller_id): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $html = '';
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql ="SELECT artefacts.name, artefacts.description, artefacts.full_description
@@ -1078,15 +1123,18 @@ function showOwnedArtefacts($pdo, $controller_id) {
     return $html;
 }
 
-/** Build HTML to give knowleadge of a worker to a controller
- * 
+/**
+ * Build HTML to give knowledge (agent or location) from one controller to another.
+ *
  * @param PDO $pdo : database connection
- * @param int $controller_id
- * @param int $turn_number
- * 
- * @return string
+ * @param string $origin : 'controller' (player view) or 'admin' (management view)
+ * @param int|null $controller_id : giver controller id, NULL for admin origin
+ * @return string : HTML block with the two gift forms
  */
-function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = NULL) {
+function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|null $controller_id = NULL): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with origin : ' . $origin, ['controller_id' => $controller_id], 'debug');
+
     $html = '';
 
     $returnLink = '/controllers/action.php';
@@ -1229,21 +1277,22 @@ function buildGiveKnowledgeHTML($pdo, $origin = 'controller', $controller_id = N
 }
 
 /**
- * Append a row to information_gift_logs. Silent on error; the caller's
- * actual gift-information action has already succeeded (CKE/CKL row
- * written) and we don't want the log failure to surface as a user-facing
- * error.
+ * Append a row to information_gift_logs. Silent on error; the caller's actual
+ * gift-information action has already succeeded (CKE/CKL row written) and we
+ * don't want the log failure to surface as a user-facing error.
  *
- * @param PDO    $pdo
- * @param int    $giver_id
- * @param int    $recipient_id
- * @param string $target_type 'agent' | 'location'
- * @param int    $target_id   worker_id or location_id
- * @param int    $turn
- *
+ * @param PDO $pdo : database connection
+ * @param int $giver_id : giver controller id
+ * @param int $recipient_id : recipient controller id
+ * @param string $target_type : 'agent' | 'location'
+ * @param int $target_id : worker_id or location_id
+ * @param int $turn : current turn number
  * @return void
  */
-function logInformationGift($pdo, $giver_id, $recipient_id, $target_type, $target_id, $turn) {
+function logInformationGift(PDO $pdo, int $giver_id, int $recipient_id, string $target_type, int $target_id, int $turn): void {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with giver_id : ' . $giver_id, ['recipient_id' => $recipient_id, 'target_type' => $target_type, 'target_id' => $target_id, 'turn' => $turn], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $stmt = $pdo->prepare("INSERT INTO {$prefix}information_gift_logs
@@ -1257,22 +1306,24 @@ function logInformationGift($pdo, $giver_id, $recipient_id, $target_type, $targe
             ':turn'      => (int)$turn,
         ]);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT information_gift_logs failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT information_gift_logs failed : ' . $e->getMessage(), ['giver_id' => $giver_id, 'recipient_id' => $recipient_id, 'target_type' => $target_type, 'target_id' => $target_id, 'turn' => $turn], 'warning');
     }
 }
 
 /**
  * Fetch information gifts received by a controller, newest first.
  * Each row resolves `target_label` via the appropriate table:
- *   target_type='agent'    → worker firstname + lastname
- *   target_type='location' → location name
+ *   target_type='agent'    -> worker firstname + lastname
+ *   target_type='location' -> location name
  *
- * @param PDO $pdo
- * @param int $controller_id
- *
- * @return array each row: ['turn', 'giver', 'target_type', 'target_label']
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : recipient controller id
+ * @return array : rows ['turn', 'giver', 'target_type', 'target_id', 'target_label']
  */
-function getInformationGiftsReceived($pdo, $controller_id) {
+function getInformationGiftsReceived(PDO $pdo, int $controller_id): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = "SELECT
@@ -1288,7 +1339,7 @@ function getInformationGiftsReceived($pdo, $controller_id) {
         $stmt->execute([':recipient' => (int)$controller_id]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT information_gift_logs failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT information_gift_logs failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'error');
         return [];
     }
 

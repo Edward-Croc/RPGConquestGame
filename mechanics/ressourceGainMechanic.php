@@ -9,15 +9,17 @@ if (!defined('RESSOURCE_GAIN_CONDITION_TYPES')) {
 
 /**
  * Apply end-of-turn ressource gain rules whose timing matches $timing.
- * Each rule produces amount × COUNT(matching entities for the controller).
+ * Each rule produces amount x COUNT(matching entities for the controller).
  * Malformed rules are logged and skipped (graceful degradation).
  *
- * @param PDO    $pdo
- * @param string $timing 'before_claim' | 'after_claim'
- *
- * @return bool
+ * @param PDO $pdo : database connection
+ * @param string $timing : 'before_claim' | 'after_claim'
+ * @return bool : true when every UPDATE succeeded (or nothing needed to run)
  */
-function ressourceGainMechanic($pdo, $timing) {
+function ressourceGainMechanic(PDO $pdo, string $timing): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with timing : ' . $timing, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $hasErrors = false;
     echo "<div><h3>ressourceGainMechanic : timing '".htmlspecialchars($timing)."'</h3>";
@@ -33,7 +35,7 @@ function ressourceGainMechanic($pdo, $timing) {
         $stmt->execute();
         $configRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT gain_rules failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT gain_rules failed: ' . $e->getMessage(), ['timing' => $timing], 'error');
         return false;
     }
 
@@ -41,10 +43,10 @@ function ressourceGainMechanic($pdo, $timing) {
     foreach ($configRows as $row) {
         $ressourceId = (int)$row['ressource_id'];
 
-        // Extract the gain rules 
+        // Extract the gain rules
         $rules = json_decode($row['gain_rules'], true);
         if (!is_array($rules)) {
-            echo __FUNCTION__."(): Invalid gain_rules JSON for ressource_id={$ressourceId}, skipping<br />";
+            game_error_log(__FUNCTION__, 'Invalid gain_rules JSON for ressource_id=' . $ressourceId . ', skipping', ['ressourceId' => $ressourceId, 'gain_rules' => $row['gain_rules']], 'error');
             continue;
         }
 
@@ -55,7 +57,7 @@ function ressourceGainMechanic($pdo, $timing) {
             $multiplier = (int)$rule['amount'];
             if ($multiplier === 0) continue;
 
-            // Check if the rule's condition apply's to à controller
+            // Check if the rule's condition apply's to a controller
             // list of ['controller_id' => int, 'match_count' => int]
             $matches = ressourceGainEvaluateCondition($pdo, $rule['condition']);
             // For each contoller found
@@ -74,18 +76,19 @@ function ressourceGainMechanic($pdo, $timing) {
                     $u->execute();
                     // rowCount=0 = controller doesn't own this ressource — legitimate
                     // for sparse scenarios (Japon1555 etc.) where not every controller
-                    // has every ressource_config row. Echo for visibility but don't
-                    // flag as error; abort propagates and breaks the whole EOT.
+                    // has every ressource_config row. Logged as warning for visibility.
                     if ($u->rowCount() === 0) {
-                        echo __FUNCTION__."(): no controller_ressources row for c={$controllerId},r={$ressourceId} (skipped)<br />";
+                        game_error_log(__FUNCTION__, 'no controller_ressources row for c=' . $controllerId . ',r=' . $ressourceId . ' (skipped)', ['controllerId' => $controllerId, 'ressourceId' => $ressourceId, 'gainAmount' => $gainAmount], 'warning');
                     }
                 } catch (PDOException $e) {
                     $hasErrors = true;
-                    echo __FUNCTION__."(): UPDATE failed for c={$controllerId},r={$ressourceId}: ".$e->getMessage()."<br />";
+                    game_error_log(__FUNCTION__, 'UPDATE failed for c=' . $controllerId . ',r=' . $ressourceId . ': ' . $e->getMessage(), ['controllerId' => $controllerId, 'ressourceId' => $ressourceId, 'gainAmount' => $gainAmount], 'error');
                 }
             }
         }
     }
+
+    game_error_log(__FUNCTION__, 'DONE with timing : ' . $timing, ['hasErrors' => $hasErrors], 'debug');
 
     echo "<p>ressourceGainMechanic : DONE</p></div>";
     return !$hasErrors;
@@ -94,12 +97,14 @@ function ressourceGainMechanic($pdo, $timing) {
 /**
  * Validate a single gain rule's structural shape and timing match.
  *
- * @param mixed  $rule
- * @param string $timing
- *
- * @return bool
+ * @param mixed $rule : rule payload from ressources_config.gain_rules JSON
+ * @param string $timing : 'before_claim' | 'after_claim' timing filter
+ * @return bool : true when the rule is well-formed and matches $timing
  */
-function ressourceGainRuleIsValid($rule, $timing) {
+function ressourceGainRuleIsValid(mixed $rule, string $timing): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with timing : ' . $timing, ['rule' => $rule], 'debug');
+
     if (!is_array($rule)) return false;
     if (!isset($rule['amount']) || !is_numeric($rule['amount'])) return false;
     if (!isset($rule['timing']) || $rule['timing'] !== $timing) return false;
@@ -113,12 +118,14 @@ function ressourceGainRuleIsValid($rule, $timing) {
  * Evaluate a condition and return per-controller match counts.
  * Filter keys outside the whitelist are silently dropped.
  *
- * @param PDO   $pdo
- * @param array $condition
- *
- * @return array list of ['controller_id' => int, 'match_count' => int]
+ * @param PDO $pdo : database connection
+ * @param array $condition : condition payload (holds_zone | claims_zone | owns_location_type)
+ * @return array : list of ['controller_id' => int, 'match_count' => int]
  */
-function ressourceGainEvaluateCondition($pdo, array $condition) {
+function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with type : ' . ($condition['type'] ?? 'NULL'), ['condition' => $condition], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $conditionType = $condition['type'];
 
@@ -148,7 +155,7 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): zone SELECT failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'zone SELECT failed: ' . $e->getMessage(), ['condition' => $condition, 'params' => $params], 'error');
             return [];
         }
     }
@@ -178,7 +185,7 @@ function ressourceGainEvaluateCondition($pdo, array $condition) {
             $stmt->execute();
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): location SELECT failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'location SELECT failed: ' . $e->getMessage(), ['condition' => $condition, 'params' => $params], 'error');
             return [];
         }
 

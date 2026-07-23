@@ -433,6 +433,7 @@ class TestApplyZoneRulesBehaviour:
             f"got holder={post['holder_controller_id']!r}"
         )
 
+    @pytest.mark.expects_errors
     def test_rule_with_unknown_condition_is_skipped(self, browser):
         """Rule with an unrecognised `condition` string must be skipped
         (fail-open). A second well-formed rule on the same adjacent
@@ -507,6 +508,7 @@ class TestApplyZoneRulesBehaviour:
             f"{post['holder_controller_id']!r}"
         )
 
+    @pytest.mark.expects_errors
     def test_rule_with_both_shapes_is_skipped(self, browser):
         """A rule specifying BOTH `zone_name` and `adjacent_zones: true`
         is malformed — the helper cannot pick a semantic. Skipped with
@@ -530,6 +532,7 @@ class TestApplyZoneRulesBehaviour:
             f"{post['holder_controller_id']!r}"
         )
 
+    @pytest.mark.expects_errors
     def test_rule_with_neither_shape_is_skipped(self, browser):
         """A rule specifying NEITHER `zone_name` NOR `adjacent_zones: true`
         is malformed — no target defined. Skipped with error_log.
@@ -551,6 +554,7 @@ class TestApplyZoneRulesBehaviour:
             f"{post['holder_controller_id']!r}"
         )
 
+    @pytest.mark.expects_errors
     def test_rule_with_adjacent_zones_false_is_skipped(self, browser):
         """`adjacent_zones: false` (explicit false, not truthy) must fall
         through to the 'neither shape' branch since the discriminator is

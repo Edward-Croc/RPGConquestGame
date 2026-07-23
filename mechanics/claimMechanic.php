@@ -11,7 +11,7 @@ require_once '../controllers/functions.php';
  * @param PDO $pdo : database connection
  * 
  */
-function _claimResolveOnBehalfName($pdo, array $params, int $selfControllerId): string {
+function _claimResolveOnBehalfName(PDO $pdo, array $params, int $selfControllerId): string {
     $claimControllerId = $params['claim_controller_id'] ?? null;
     if ($claimControllerId === 'null') return 'Personne (Sans bannière)';
     if (empty($claimControllerId)) return (string) getControllerName($pdo, $selfControllerId);
@@ -27,7 +27,7 @@ function _claimResolveOnBehalfName($pdo, array $params, int $selfControllerId): 
  * 
  * @return int|null
  */
-function _claimResolveClaimerControllerIdForWrite(array $params, int $selfControllerId) {
+function _claimResolveClaimerControllerIdForWrite(array $params, int $selfControllerId): int|null {
     if (empty($params['claim_controller_id'])) return $selfControllerId;
     if ($params['claim_controller_id'] === 'null') return null;
     return (int) $params['claim_controller_id'];
@@ -62,7 +62,11 @@ function _claimResolveClaimerControllerIdForWrite(array $params, int $selfContro
  *     'observers'             => array,  // active-non-cid workers in zone (worker_id + controller_id rows)
  *   ]
  */
-function claimMechanic($pdo, $mechanics) {
+function claimMechanic(PDO $pdo, array $mechanics): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
+
     $mode = getConfig($pdo, 'claimMode');
     if (!in_array($mode, ['worker', 'worker_leader'], true)) {
         echo "<div><h3>claimMechanic : mode '".htmlspecialchars((string)$mode)."' not supported, skipped</h3></div>";
@@ -70,7 +74,6 @@ function claimMechanic($pdo, $mechanics) {
     }
 
     $turn_number = $mechanics['turncounter'];
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
     echo "<div><h3>claimMechanic (mode: ".htmlspecialchars((string)$mode).") : </h3>";
@@ -122,12 +125,13 @@ function claimMechanic($pdo, $mechanics) {
                 $uStmt->bindValue(':zid', (int)$r['zone_id'], PDO::PARAM_INT);
                 $uStmt->execute();
             } catch (PDOException $e) {
-                echo __FUNCTION__."(): UPDATE zones Failed: " . $e->getMessage()."<br />";
+                game_error_log(__FUNCTION__, 'UPDATE zones failed', ['error' => $e->getMessage(), 'zone_id' => (int)$r['zone_id']]);
             }
         }
     }
 
     echo '<p>claimMechanic : DONE</p></div>';
+    game_error_log(__FUNCTION__, 'DONE', ['resolutions_count' => count($resolutions)], 'debug');
     return true;
 }
 
@@ -147,9 +151,12 @@ function claimMechanic($pdo, $mechanics) {
  * 
  * @return array list of resolution descriptors (see claimMechanic doc)
  */
-function claimByWorkerMath($pdo, $mechanics) {
+function claimByWorkerMath(PDO $pdo, array $mechanics): array {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
+
     $turn_number = $mechanics['turncounter'];
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $DISCRETECLAIMDIFF = (int) getConfig($pdo, 'DISCRETECLAIMDIFF');
@@ -176,10 +183,10 @@ function claimByWorkerMath($pdo, $mechanics) {
         $stmt->execute();
         $claimerArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT claimers failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT claimers failed', ['error' => $e->getMessage()]);
         return [];
     }
-    if ($debug) echo sprintf("claimByWorkerMath(): %d claimers<br>", count($claimerArray));
+    game_error_log(__FUNCTION__, sprintf('%d claimers', count($claimerArray)), [], 'debug');
 
     $allActiveByZone = [];
     $zoneIds = array_values(array_unique(array_column($claimerArray, 'zone_id')));
@@ -198,7 +205,7 @@ function claimByWorkerMath($pdo, $mechanics) {
                 $allActiveByZone[(int)$row['zone_id']][] = $row;
             }
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT active workers by zone failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'SELECT active workers by zone failed', ['error' => $e->getMessage()]);
             return [];
         }
     }
@@ -258,11 +265,9 @@ function claimByWorkerMath($pdo, $mechanics) {
             'observers'              => $observers,
         ];
 
-        if ($debug) {
-            echo sprintf("zone %d c %d w %d : violent=%s success=%s<br>",
-                $zone_id, $claimer_cid, $claimer['claimer_id'],
-                $isViolent ? 'true' : 'false', $success ? 'true' : 'false');
-        }
+        game_error_log(__FUNCTION__, sprintf('zone %d c %d w %d : violent=%s success=%s',
+            $zone_id, $claimer_cid, $claimer['claimer_id'],
+            $isViolent ? 'true' : 'false', $success ? 'true' : 'false'), [], 'debug');
     }
 
     return $resolutions;
@@ -288,9 +293,12 @@ function claimByWorkerMath($pdo, $mechanics) {
  * 
  * @return array list of resolution descriptors (see claimMechanic doc)
  */
-function claimByWorkerLeaderMath($pdo, $mechanics) {
+function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
+
     $turn_number = $mechanics['turncounter'];
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $claimDiff = (int) getConfig($pdo, 'claimDiff');
@@ -311,7 +319,7 @@ function claimByWorkerLeaderMath($pdo, $mechanics) {
         $stmt->execute();
         $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT candidates failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT candidates failed', ['error' => $e->getMessage()]);
         return [];
     }
 
@@ -376,7 +384,7 @@ function claimByWorkerLeaderMath($pdo, $mechanics) {
                 $paramsByLeader[(int)$row['worker_id']] = $row['action_params'];
             }
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT active workers by zone failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'SELECT active workers by zone failed', ['error' => $e->getMessage()]);
             return [];
         }
     }
@@ -394,11 +402,11 @@ function claimByWorkerLeaderMath($pdo, $mechanics) {
             $zStmt->execute();
             $zone = $zStmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): SELECT zones failed: ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'SELECT zones failed', ['error' => $e->getMessage(), 'zone_id' => $zone_id]);
             continue;
         }
         if ((int)$zone['holder_controller_id'] === $cid) {
-            if ($debug) echo sprintf("zone %d c %d : holder == cid, claim path skipped (defender bonus already applied via recalculateZoneDefence supporting term)<br>", $zone_id, $cid);
+            game_error_log(__FUNCTION__, sprintf('zone %d c %d : holder == cid, claim path skipped (defender bonus already applied via recalculateZoneDefence supporting term)', $zone_id, $cid), [], 'debug');
             continue;
         }
         $calculated_defence_val = (int) $zone['calculated_defence_val'];
@@ -411,11 +419,9 @@ function claimByWorkerLeaderMath($pdo, $mechanics) {
 
         $threshold_passed = ($claimVal - $calculated_defence_val) >= $claimDiff;
         $success = $threshold_passed && empty($zoneClaimed[$zone_id]);
-        if ($debug) {
-            $outcome = $success ? 'WIN' : ($threshold_passed ? 'lose (zone already claimed this turn)' : 'lose');
-            echo sprintf("zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s<br>",
-                $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $outcome);
-        }
+        $outcome = $success ? 'WIN' : ($threshold_passed ? 'lose (zone already claimed this turn)' : 'lose');
+        game_error_log(__FUNCTION__, sprintf('zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s',
+            $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $outcome), [], 'debug');
 
         $observers = array_values(array_filter(
             $activeByZone[$zone_id] ?? [],

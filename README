@@ -24,6 +24,10 @@ Installation (Docker — recommended):
  - Start the application:
      cd RPGConquestGame
      docker compose up -d
+ - Grant write access to the log directory for the PHP container user:
+     chmod 777 var/logs/
+   (needed once; the container runs PHP as www-data while checked-out
+   files are owned by your host user)
  - First start builds the PHP image and initializes the database (may take 1-2 minutes).
  - The application is available at: http://localhost:8080/RPGConquestGame/
  - MySQL is accessible at localhost:3307 (user: rpg_user / rpg_pass, database: rpgconquestgame).
@@ -79,12 +83,18 @@ Troubleshooting:
  - Tests fail with "No local MySQL available": pytest connects to
    127.0.0.1:3307 with rpg_user/rpg_pass. Verify the mysql container
    is healthy: `docker compose ps` should show "(healthy)".
+ - "Recent errors" widget on admin.php stays empty despite errors:
+   var/logs/ or var/logs/game_errors.log is not writable by PHP.
+   Fix locally: chmod 777 var/logs/ && chmod 666 var/logs/game_errors.log
+   On shared hosting (OVH etc.), the account user runs PHP so this
+   usually just works — check ownership if it doesn't.
  - Windows-specific setup: see README_setup_windows.md.
 
 Installation (manual):
  - Create a folder called RPGConquestGame and pull the sources to it.
  - Create a config.ini file in the VAR folder and add the parent folder name to it.
  - Setup a database, and add the connection info to the ./var/config.ini file and execute the ./var/setupBDD.sql file.
+ - Ensure var/logs/ is writable by the PHP process user.
  - The base game is set up with a user: gm; pwd: orga.
 
 Preparing a game :

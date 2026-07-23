@@ -17,14 +17,17 @@ if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
 
 /**
  * Start or Pause the game state
- * 
+ *
  * @param PDO $pdo : database connection
  * @param array $mechanics : mechanics array
  * @param bool $start : true to start, false to pause
  *
  * @return bool : success
  */
-function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
+function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with start : ' . var_export($start, true), ['mechanics_id' => $mechanics['id'], 'gamestate' => $mechanics['gamestate']], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
 
     // SQL query to update gamestate
@@ -41,7 +44,7 @@ function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':id' => $mechanics['id']]);
         } catch (PDOException $e) {
-            echo __FUNCTION__."():UPDATE mechanics Failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE mechanics failed', ['error' => $e->getMessage()]);
             return false;
         }
     }
@@ -55,9 +58,9 @@ function toggleMechanicsGamestate($pdo, $mechanics, $start = true) {
  * @param string $state : state to change to
  * @param array $mechanics : mechanics array
  *
- * @return bool : success
+ * @return void
  */
-function changeEndTurnState($pdo, $state, $mechanics) {
+function changeEndTurnState(PDO $pdo, string $state, array $mechanics): void {
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "UPDATE {$prefix}mechanics set end_step = :end_step WHERE id = :id";
     $stmt = $pdo->prepare($sql);
@@ -68,9 +71,8 @@ function changeEndTurnState($pdo, $state, $mechanics) {
  * Build base randomization SQL
  *
  * @return string : SQL string
- *
  */
-function diceSQL() {
+function diceSQL(): string {
     $prefix = $_SESSION['GAME_PREFIX'];
     return sprintf(
         "FLOOR(
@@ -90,9 +92,12 @@ function diceSQL() {
  *
  * @param PDO $pdo : database connection
  *
- * @return int : rollvalue
+ * @return int|null : rollvalue, NULL on SQL failure
  */
-function diceRoll($pdo) {
+function diceRoll(PDO $pdo): int|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
     $diceSQL = diceSQL();
     $sql = "SELECT $diceSQL as roll";
 
@@ -101,7 +106,7 @@ function diceRoll($pdo) {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT diceSQL Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT diceSQL failed', ['error' => $e->getMessage()]);
         return NULL;
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
@@ -111,13 +116,13 @@ function diceRoll($pdo) {
 /**
  * Validate a configurable list of action_choice values and return a SQL-safe IN-list.
  *
- * @param string|null $configValue
- * @param array $allowedActions
- * @param array $defaultActions
+ * @param string|null $configValue : raw config value (may be null / empty)
+ * @param array $allowedActions : whitelist of allowed action_choice values
+ * @param array $defaultActions : fallback list when config is missing / invalid
  *
- * @return string
+ * @return string : comma-separated single-quoted list ready for SQL IN(...)
  */
-function validateActionChoiceListForSql($configValue, $allowedActions, $defaultActions) {
+function validateActionChoiceListForSql(string|null $configValue, array $allowedActions, array $defaultActions): string {
     $parsedActions = [];
     if (!empty($configValue)) {
         $normalized = trim((string)$configValue);
@@ -167,11 +172,11 @@ function validateActionChoiceListForSql($configValue, $allowedActions, $defaultA
 /**
  * Return validated investigation actions for SQL usage.
  *
- * @param PDO $pdo
+ * @param PDO $pdo : database connection
  *
- * @return string
+ * @return string : comma-separated single-quoted action list ready for SQL IN(...)
  */
-function getValidatedInvestigateActionsForSql($pdo) {
+function getValidatedInvestigateActionsForSql(PDO $pdo): string {
     $configuredActions = getConfig($pdo, 'investigateActionsList');
 
     return validateActionChoiceListForSql($configuredActions, WORKER_ACTION_CHOICES_ALLOWED, INVESTIGATE_ACTIONS_DEFAULT);
@@ -180,11 +185,11 @@ function getValidatedInvestigateActionsForSql($pdo) {
 /**
  * Return the investigation processing order ('asc' or 'desc') from config, falling back to 'asc' on unknown values.
  *
- * @param PDO $pdo
+ * @param PDO $pdo : database connection
  *
- * @return string
+ * @return string : 'asc' or 'desc'
  */
-function getInvestigateOrder($pdo) {
+function getInvestigateOrder(PDO $pdo): string {
     $value = strtolower(trim((string) getConfig($pdo, 'investigateOrder')));
     return in_array($value, ['asc', 'desc'], true) ? $value : 'asc';
 }
@@ -196,9 +201,11 @@ function getInvestigateOrder($pdo) {
  * @param array $mechanics : mechanics array
  *
  * @return bool : success
- *
  */
-function calculateVals($pdo, $mechanics){
+function calculateVals(PDO $pdo, array $mechanics): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], [], 'debug');
+
     $turn_number =  $mechanics['turncounter'];
     $prefix = $_SESSION['GAME_PREFIX'];
 
@@ -312,7 +319,7 @@ function calculateVals($pdo, $mechanics){
             $stmt = $pdo->prepare($sql['sql']);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql FAILED : ".$e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE worker_actions val failed', ['error' => $e->getMessage(), 'config' => $sql['config']]);
             return false;
         }
         echo "DONE <br /></p>";
@@ -330,13 +337,14 @@ function calculateVals($pdo, $mechanics){
  * setting dead and captured status
  *
  * @param PDO $pdo : database connection
- * @param string $turn_number
+ * @param int $turn_number : new turn number to build lines for
  *
  * @return bool : success
- *
  */
-function createNewTurnLines($pdo, $turn_number){
-    $debug = strtolower(getConfig($pdo, 'DEBUG')) === 'true';
+function createNewTurnLines(PDO $pdo, int $turn_number): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     echo '<div> <h3>  createNewTurnLines : </h3> ';
     $sqlInsert = "
@@ -359,7 +367,7 @@ function createNewTurnLines($pdo, $turn_number){
         $stmtInsert->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
         $stmtInsert->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__." (): sql INSERT FAILED : ".$e->getMessage()."<br/> sql: $sqlInsert<br/>";
+        game_error_log(__FUNCTION__, 'INSERT worker_actions failed', ['error' => $e->getMessage(), 'sql' => $sqlInsert]);
         return false;
     }
 
@@ -379,7 +387,7 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetInvestigate->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
             $stmtSetInvestigate->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql UPDATE investigate FAILED : ".$e->getMessage()."<br />$sqlSetInvestigate<br/>";
+            game_error_log(__FUNCTION__, 'UPDATE investigate action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetInvestigate]);
             return false;
         }
     }
@@ -399,13 +407,13 @@ function createNewTurnLines($pdo, $turn_number){
             $stmtSetClaim->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
             $stmtSetClaim->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__." (): sql UPDATE claim FAILED : ".$e->getMessage()."<br />$sqlSetClaim<br/>";
+            game_error_log(__FUNCTION__, 'UPDATE claim action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetClaim]);
             return false;
         }
     }
 
     echo '<p>createNewTurnLines : DONE</p> </div>';
 
+    game_error_log(__FUNCTION__, 'DONE with turn_number : ' . $turn_number, [], 'debug');
     return true;
 }
-

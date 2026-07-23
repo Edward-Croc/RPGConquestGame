@@ -7,17 +7,24 @@ if ( !isset($_SESSION['DEBUG']) ){
 
 $pageName = 'index';
 
+// Set BEFORE errorLog.php require so its ini_set('error_log', ...) picks it up.
+$GLOBALS['LOG_PATH'] = __DIR__ . '/var/logs/game_errors.log';
+
+require_once './base/errorLog.php';
 require_once './BDD/db_connector.php';
 
 /**
  * get value from Config by name
- * 
+ *
  * @param PDO $pdo : database connection
- * @param string $configName
- * 
- * @return string|null : value
+ * @param string $configName : config key to look up
+ *
+ * @return string|null : value, or NULL on missing key / PDO error
  */
-function getConfig($pdo, $configName) {
+function getConfig(PDO $pdo, string $configName): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
@@ -25,9 +32,10 @@ function getConfig($pdo, $configName) {
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (string)$val : NULL;
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT value failed : ' . $e->getMessage(), ['configName' => $configName], 'error');
         return NULL;
     }
 }

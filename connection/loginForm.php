@@ -7,20 +7,26 @@ if ( !isset($_SESSION['DEBUG']) ){
 }
 
 require_once '../base/version.php';
+require_once '../base/errorLog.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'login_form_page';  // uncomment to log DEBUG events from this page
 
 /**
- *  Extract configuration value from the database by key
- * copy of getConfig function from basePHP.php because the function is unavailable here
+ * Extract configuration value from the database by key.
+ * Copy of getConfig from basePHP.php because that file is not loaded here
+ * (login page bootstraps before the full session is wired).
  *
  * @param PDO $pdo : database connection
  * @param string $configName : configuration key
- * 
- * @return string|null value
+ *
+ * @return string|null : stored value, or NULL on missing key / PDO error
  */
-function getConfig($pdo, $configName) {
+function getConfig(PDO $pdo, string $configName): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
@@ -28,9 +34,10 @@ function getConfig($pdo, $configName) {
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (string)$val : NULL;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT value failed : ' . $e->getMessage(), ['configName' => $configName], 'error');
         return NULL;
     }
 }
@@ -40,6 +47,7 @@ function getConfig($pdo, $configName) {
 $gameReady = gameReady();
 // Use the return value
 if (!$gameReady) {
+    game_error_log('login_form_page', 'gameReady() returned falsy — DB configuration missing or unreachable', [], 'warning');
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
 }else{
@@ -106,11 +114,12 @@ if (
             exit();
         } else {
             $_SESSION['logged_in'] = false;
+            game_error_log('login_form_page', 'login rejected : no matching player row for submitted credentials', ['username' => $_SESSION['username']], 'warning');
             echo "Login impossible for the player. <br/>";
             echo "No matching record found.";
         }
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): Get player failed: " . $e->getMessage()."<br/>";
+        game_error_log('login_form_page', 'SELECT player failed : ' . $e->getMessage(), ['username' => $_SESSION['username']], 'error');
         exit();
     }
 }

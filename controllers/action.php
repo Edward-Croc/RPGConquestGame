@@ -1,6 +1,9 @@
 <?php
 
 require_once '../base/basePHP.php';
+
+// $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'controllers_action_page';  // uncomment to log DEBUG events from this page
+
 $pageName = 'controllers_action';
 $debug = strtolower($_SESSION['DEBUG']) === 'true';
 
@@ -95,12 +98,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt->bindParam(':cid', $controller_id, PDO::PARAM_INT);
             $stmt->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): DELETE controller_location_attacks Failed: " . $e->getMessage()."<br />";
+            game_error_log('controllers_action_page', 'DELETE controller_location_attacks failed : ' . $e->getMessage(), ['queue_row_id' => $queue_row_id, 'controller_id' => $controller_id], 'error');
         }
     }
     if (isset($_GET['repairLocation'])){
         if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         if (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
+            game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
             echo "Stock insuffisant ou modifié.<br />";
         } else {
             $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
@@ -121,8 +125,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         $enemy_worker_id = $_GET['enemy_worker_id'] ?? '';
 
         if (empty($controller_id) || empty($target_controller_id) || empty($enemy_worker_id)) {
+            game_error_log('controllers_action_page', 'giftInformationAgent aborted : missing controller_id / target_controller_id / enemy_worker_id', ['controller_id' => $controller_id, 'target_controller_id' => $target_controller_id, 'enemy_worker_id' => $enemy_worker_id], 'warning');
             echo '<div class="notification is-warning">Sélection incomplète : faction ou agent manquant.</div>';
         } else if ((int)$controller_id === (int)$target_controller_id) {
+            game_error_log('controllers_action_page', 'giftInformationAgent aborted : self-gift attempt', ['controller_id' => $controller_id, 'target_controller_id' => $target_controller_id, 'enemy_worker_id' => $enemy_worker_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
             $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
@@ -142,8 +148,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         $giver_id = $_GET['controller_id'] ?? ($_SESSION['controller']['id'] ?? '');
 
         if (empty($target_controller_id) || empty($location_id) || empty($giver_id)) {
+            game_error_log('controllers_action_page', 'giftInformationLocation aborted : missing target_controller_id / location_id / giver_id', ['target_controller_id' => $target_controller_id, 'location_id' => $location_id, 'giver_id' => $giver_id], 'warning');
             echo '<div class="notification is-warning">Sélection incomplète : faction ou lieu manquant.</div>';
         } else if ((int)$giver_id === (int)$target_controller_id) {
+            game_error_log('controllers_action_page', 'giftInformationLocation aborted : self-gift attempt', ['giver_id' => $giver_id, 'target_controller_id' => $target_controller_id, 'location_id' => $location_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
             addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);

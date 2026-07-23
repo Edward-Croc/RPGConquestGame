@@ -1,14 +1,17 @@
 <?php
 
 /**
- * Update the ressources for a controller
+ * Update the ressources for a controller.
  *
- * @param PDO $pdo
- * @param array $mechanics
+ * @param PDO   $pdo        : DB connection
+ * @param array $mechanics  : mechanics row (turncounter etc.)
  *
- * @return bool
+ * @return bool true on success
  */
-function updateRessources($pdo, $mechanics) {
+function updateRessources(PDO $pdo, array $mechanics): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['mechanics' => $mechanics], 'debug');
+
     echo '<div> <h3>  updateRessources : </h3> ';
 
     /** Foreach controller :
@@ -51,15 +54,14 @@ function updateRessources($pdo, $mechanics) {
 }
 
 /**
- * Get the ressources for a controller
+ * Get the ressources for a controller.
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return array
- * 
+ * @return array joined controller_ressources + ressources_config rows
  */
-function getRessources($pdo, $controller_id) {
+function getRessources(PDO $pdo, int $controller_id): array {
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "SELECT rc.id as rc_id, rc.*, r.id as ressource_id, r.*
         FROM {$prefix}controller_ressources rc
@@ -81,6 +83,11 @@ function getRessources($pdo, $controller_id) {
  * by the Ressources page so a ressource the controller is about to acquire
  * surfaces ahead of its first non-zero turn. The faction-page recap omits
  * this param and stays strict.
+ *
+ * @param array $ressources    : rows from getRessources
+ * @param array $gainEstimate  : optional map ressource_id => ['total' => int]
+ *
+ * @return array filtered rows (0-indexed)
  */
 function filterVisibleRessources(array $ressources, array $gainEstimate = []): array {
     return array_values(array_filter($ressources, function ($r) use ($gainEstimate) {
@@ -94,14 +101,14 @@ function filterVisibleRessources(array $ressources, array $gainEstimate = []): a
 }
 
 /**
- * Does the controller have enought ressources to build a base ?
+ * Does the controller have enough ressources to build a base ?
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return bool
+ * @return bool true if all base_building_cost fields are covered
  */
-function hasEnoughRessourcesToBuildBase($pdo, $controller_id) {
+function hasEnoughRessourcesToBuildBase(PDO $pdo, int $controller_id): bool {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
@@ -122,6 +129,9 @@ function hasEnoughRessourcesToBuildBase($pdo, $controller_id) {
  * ressource_management is off, or when no ressource carries a positive
  * base_building_cost (nothing to spend).
  *
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
+ *
  * @return bool true on full deduction (or no-op), false on any shortfall.
  */
 function spendRessourcesToBuildBase(PDO $pdo, int $controller_id): bool {
@@ -129,14 +139,14 @@ function spendRessourcesToBuildBase(PDO $pdo, int $controller_id): bool {
 }
 
 /**
- * Get the cost HTML to build a base
+ * Get the cost HTML to build a base.
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return string
+ * @return string HTML fragment listing positive base_building_cost entries
  */
-function buildBaseCostHTML($pdo, $controller_id) {
+function buildBaseCostHTML(PDO $pdo, int $controller_id): string {
     $html = '';
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
@@ -153,14 +163,14 @@ function buildBaseCostHTML($pdo, $controller_id) {
 }
 
 /**
- * Does the controller have enought ressources to move a base ?
+ * Does the controller have enough ressources to move a base ?
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return bool
+ * @return bool true if all base_moving_cost fields are covered
  */
-function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
+function hasEnoughRessourcesToMoveBase(PDO $pdo, int $controller_id): bool {
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
         foreach ($controllerRessources as $controllerRessource) {
@@ -178,6 +188,9 @@ function hasEnoughRessourcesToMoveBase($pdo, $controller_id) {
  * Spend the ressources to move a base. Atomic; rolls back on any shortfall.
  * See spendRessourcesToBuildBase for the contract.
  *
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
+ *
  * @return bool true on full deduction (or no-op), false on any shortfall.
  */
 function spendRessourcesToMoveBase(PDO $pdo, int $controller_id): bool {
@@ -185,14 +198,14 @@ function spendRessourcesToMoveBase(PDO $pdo, int $controller_id): bool {
 }
 
 /**
- * Get the cost HTML to move a base
+ * Get the cost HTML to move a base.
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return string
+ * @return string HTML fragment listing positive base_moving_cost entries
  */
-function moveBaseCostHTML($pdo, $controller_id) {
+function moveBaseCostHTML(PDO $pdo, int $controller_id): string {
     $html = '';
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
@@ -209,14 +222,14 @@ function moveBaseCostHTML($pdo, $controller_id) {
 }
 
 /**
- * Does the controller have enought ressources to repair a location ?
+ * Does the controller have enough ressources to repair a location ?
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return bool
+ * @return bool true if all location_repaire_cost fields are covered
  */
-function hasEnoughRessourcesToRepairLocation($pdo, $controller_id) {
+function hasEnoughRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool {
 
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
@@ -232,12 +245,13 @@ function hasEnoughRessourcesToRepairLocation($pdo, $controller_id) {
 }
 
 /**
- * Spend the ressources to repair a location
+ * Spend the ressources to repair a location. Atomic; rolls back on any shortfall.
+ * See spendRessourcesToBuildBase for the contract.
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return bool
+ * @return bool true on full deduction (or no-op), false on any shortfall.
  */
 function spendRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool {
     return spendRessourcesByCostField($pdo, $controller_id, 'location_repaire_cost');
@@ -254,13 +268,20 @@ function spendRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool {
  * them, so the old "rowCount on no-op UPDATE" noise is impossible by
  * construction.
  *
- * @param string $costField one of: base_building_cost, base_moving_cost,
- *                          location_repaire_cost. Whitelist enforced.
+ * @param PDO    $pdo            : DB connection
+ * @param int    $controller_id  : controller id
+ * @param string $costField      : one of base_building_cost, base_moving_cost,
+ *                                 location_repaire_cost. Whitelist enforced.
+ *
+ * @return bool true on full deduction (or no-op), false on any shortfall.
  */
 function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costField): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['costField' => $costField], 'debug');
+
     static $allowed = ['base_building_cost', 'base_moving_cost', 'location_repaire_cost'];
     if (!in_array($costField, $allowed, true)) {
-        error_log(__FUNCTION__.": unknown cost field {$costField}");
+        game_error_log(__FUNCTION__, 'unknown cost field', ['costField' => $costField]);
         return false;
     }
     if (getConfig($pdo, 'ressource_management') !== 'TRUE') return true;
@@ -285,14 +306,14 @@ function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costFi
 }
 
 /**
- * Get the cost HTML to repair a location
+ * Get the cost HTML to repair a location.
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return string
+ * @return string HTML fragment listing positive location_repaire_cost entries
  */
-function repairLocationCostHTML($pdo, $controller_id) {
+function repairLocationCostHTML(PDO $pdo, int $controller_id): string {
     $html = '';
     if (getConfig($pdo, 'ressource_management') === 'TRUE') {
         $controllerRessources = getRessources($pdo, $controller_id);
@@ -313,12 +334,12 @@ function repairLocationCostHTML($pdo, $controller_id) {
  * $zoneTypeLabel is the resolved `textForZoneType` config ("zone" / "quartier"
  * / "territoire"). Caller fetches it once and passes it in.
  *
- * @param array  $rule
- * @param string $zoneTypeLabel
+ * @param array  $rule           : gain rule structure
+ * @param string $zoneTypeLabel  : resolved zone-type label
  *
- * @return string
+ * @return string natural-French condition rendering
  */
-function gainRuleToText(array $rule, $zoneTypeLabel = 'zone') {
+function gainRuleToText(array $rule, string $zoneTypeLabel = 'zone'): string {
     $type = $rule['condition']['type'] ?? '';
     switch ($type) {
         case 'holds_zone':
@@ -350,12 +371,15 @@ function gainRuleToText(array $rule, $zoneTypeLabel = 'zone') {
  *   'total'        => sum of all rule contributions for this ressource,
  * ].
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
  *
- * @return array
+ * @return array grouped gain estimate, empty on DB error
  */
-function ressourceGainEstimateForController($pdo, $controller_id) {
+function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     require_once __DIR__ . '/../mechanics/ressourceGainMechanic.php';
     $prefix = $_SESSION['GAME_PREFIX'];
     $estimate = [];
@@ -371,7 +395,7 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
         $stmt->execute();
         $configRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT gain_rules failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT gain_rules failed', ['error' => $e->getMessage()]);
         return [];
     }
 
@@ -416,9 +440,17 @@ function ressourceGainEstimateForController($pdo, $controller_id) {
  * Single-row UPDATE with the `WHERE amount >= :amt` guard (TOCTOU-safe).
  * Caller is responsible for the surrounding transaction.
  *
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : controller id
+ * @param int $ressource_id   : ressource id
+ * @param int $amount         : quantity to subtract (must be > 0)
+ *
  * @return bool true on success; false on insufficient amount, missing row, or DB error.
  */
 function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $amount): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['ressource_id' => $ressource_id, 'amount' => $amount], 'debug');
+
     if ($amount <= 0 || $controller_id <= 0 || $ressource_id <= 0) return false;
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
@@ -433,7 +465,7 @@ function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $
         ]);
         return $stmt->rowCount() === 1;
     } catch (PDOException $e) {
-        error_log(__FUNCTION__.": ".$e->getMessage());
+        game_error_log(__FUNCTION__, 'consume ressource failed', ['error' => $e->getMessage()]);
         return false;
     }
 }
@@ -443,13 +475,16 @@ function consumeRessource(PDO $pdo, int $controller_id, int $ressource_id, int $
  * Validates inputs, wraps the decrement / increment / log writes in a
  * transaction so partial failure cannot vanish ressources.
  *
- * @param PDO   $pdo
- * @param int   $giver_id
- * @param array $post  expects 'ressource_id', 'target_controller_id', 'amount'
+ * @param PDO   $pdo       : DB connection
+ * @param int   $giver_id  : giver controller id
+ * @param array $post      : expects 'ressource_id', 'target_controller_id', 'amount'
  *
  * @return array ['success' => bool, 'message' => string]
  */
-function giftRessource($pdo, $giver_id, array $post) {
+function giftRessource(PDO $pdo, int $giver_id, array $post): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with giver_id : ' . $giver_id, ['post' => $post], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $ressource_id = (int)($post['ressource_id'] ?? 0);
     $target_id    = (int)($post['target_controller_id'] ?? 0);
@@ -492,6 +527,7 @@ function giftRessource($pdo, $giver_id, array $post) {
         $stmt = $pdo->query("SELECT turncounter FROM {$prefix}mechanics LIMIT 1");
         $turn = (int)($stmt->fetchColumn() ?: 0);
     } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'gift validation failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'message' => 'Erreur de validation.'];
     }
 
@@ -525,6 +561,7 @@ function giftRessource($pdo, $giver_id, array $post) {
         return ['success' => true, 'message' => sprintf('Don de %d effectué.', $amount)];
     } catch (PDOException $e) {
         $pdo->rollBack();
+        game_error_log(__FUNCTION__, 'gift transaction failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'message' => 'Erreur lors du don.'];
     }
 }
@@ -533,12 +570,15 @@ function giftRessource($pdo, $giver_id, array $post) {
  * Fetch ressource gifts received by a controller, newest first.
  * Each row: ['turn', 'amount', 'giver', 'ressource'].
  *
- * @param PDO $pdo
- * @param int $controller_id
+ * @param PDO $pdo            : DB connection
+ * @param int $controller_id  : recipient controller id
  *
- * @return array
+ * @return array rows ordered by (turn DESC, created_at DESC), empty on DB error
  */
-function getRessourceGiftsReceived($pdo, $controller_id) {
+function getRessourceGiftsReceived(PDO $pdo, int $controller_id): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $sql = "SELECT
@@ -556,7 +596,7 @@ function getRessourceGiftsReceived($pdo, $controller_id) {
         $stmt->execute([':recipient_id' => $controller_id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT ressource_gift_logs failed: ".$e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT ressource_gift_logs failed', ['error' => $e->getMessage()]);
         return [];
     }
 }

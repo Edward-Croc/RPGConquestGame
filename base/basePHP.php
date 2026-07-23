@@ -9,7 +9,11 @@ if ($_SESSION['DEBUG'] == true ){
     echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
+// Set BEFORE errorLog.php require so its ini_set('error_log', ...) picks it up.
+$GLOBALS['LOG_PATH'] = __DIR__ . '/../var/logs/game_errors.log';
+
 require_once '../base/version.php';
+require_once '../base/errorLog.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 require_once '../mechanics/functions.php';
@@ -19,14 +23,17 @@ require_once '../workers/functions.php';
 require_once '../zones/functions.php';
 
 /**
- *  Extract configuration value from the database by key
+ * Extract configuration value from the database by key.
  *
  * @param PDO $pdo : database connection
  * @param string $configName : configuration key
- * 
- * @return string|null $value 
+ *
+ * @return string|null : stored value or NULL on error / missing key
  */
-function getConfig($pdo, $configName) {
+function getConfig(PDO $pdo, string $configName): string|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->prepare("SELECT value
@@ -34,33 +41,33 @@ function getConfig($pdo, $configName) {
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
-        return $stmt->fetchColumn();
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (string)$val : NULL;
     } catch (PDOException $e) {
-        echo  __FUNCTION__."(): $configName failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'PDO error : ' . $e->getMessage(), ['configName' => $configName], 'error');
         return NULL;
     }
 }
 
 /**
- *  Extract elements of mechanics from database
+ * Extract elements of mechanics from database.
  *
  * @param PDO $pdo : database connection
  *
- * @return array|null : $mechanics
+ * @return array|null : first mechanics row (assoc) or NULL on error / empty
  */
-function getMechanics($pdo) {
+function getMechanics(PDO $pdo): array|null {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     try{
         $stmt = $pdo->query("SELECT * FROM {$prefix}mechanics");
         $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if ($_SESSION['DEBUG'] == true){
-            echo "mechanics :  <br />";
-            print_r ($mechanics);
-            echo "<br />";
-        }
+        game_error_log(__FUNCTION__, 'DONE', ['mechanics' => $mechanics], 'debug');
         return $mechanics[0] ?? NULL;
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'PDO error : ' . $e->getMessage(), [], 'error');
         return NULL;
     }
 }

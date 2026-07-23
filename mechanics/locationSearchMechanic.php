@@ -7,15 +7,17 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
 /**
  * gets the comparaison table between the workers on search/investigate and there possible targets locations
- * 
+ *
  * @param PDO $pdo : database connection
- * @param string|null $turn_number
- * @param string|null $searcher_id
- * 
- * @return array 
- * 
+ * @param int|null $turn_number : turn number to filter searchers on
+ * @param int|null $searcher_id : optional single searcher to restrict the comparison to
+ *
+ * @return array : list of (searcher, found_location) comparison rows
  */
-function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id = NULL) {
+function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null $searcher_id = NULL): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, ['searcher_id' => $searcher_id], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
     // Whitelisted (asc|desc) — getInvestigateOrder enforces the only safe interpolation surface
@@ -69,7 +71,7 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
         if (!empty($searcher_id)) $stmt->bindParam(':searcher_id', $searcher_id, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__ . "(): Error: " . $e->getMessage();
+        game_error_log(__FUNCTION__, 'SELECT searchers/locations comparisons Failed: ' . $e->getMessage(), ['turn_number' => $turn_number, 'searcher_id' => $searcher_id], 'error');
         return [];
     }
 
@@ -82,14 +84,17 @@ function getLocationSearcherComparisons($pdo, $turn_number = NULL, $searcher_id 
  * The artefact list is appended VISIBLE (outside the fold) when current investigation reaches LOCATIONARTEFACTSDIFF and artefacts exist.
  * Returns [reportElement, foundSecretFlag] — the caller passes foundSecretFlag to addLocationToCKL when current reached INFORMATIONDIFF.
  *
- * @param PDO $pdo
+ * @param PDO $pdo : database connection
  * @param array $row : one getLocationSearcherComparisons row
  * @param array|null $prevCkl : CKL row read before this upsert (NULL = no prior entry)
  * @param array $txtBag : pre-loaded text-config bag (slab templates, variant templates, diff thresholds)
  *
- * @return array
+ * @return array : [reportElement HTML string, foundSecretFlag bool]
  */
-function buildLocationSearchReportLine($pdo, $row, $prevCkl, $txtBag) {
+function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl, array $txtBag): array {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'prevCkl' => $prevCkl, 'txtBag' => $txtBag], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $NAMEDIFF      = $txtBag['LOCATIONNAMEDIFF'];
     $INFODIFF      = $txtBag['LOCATIONINFORMATIONDIFF'];
@@ -159,19 +164,20 @@ function buildLocationSearchReportLine($pdo, $row, $prevCkl, $txtBag) {
  * Searcher dimension is sorted by SQL ORDER BY (config-driven asc/desc, age tiebreak), so weak-then-strong dedup gives every searcher a chance to discover something new.
  *
  * @param PDO $pdo : database connection
- * @param array $mechanics : mechanics row
+ * @param array $mechanics : mechanics row (needs turncounter)
  *
- * @return bool success
+ * @return bool : true when the loop completed
  */
-function locationSearchMechanic($pdo, $mechanics) {
+function locationSearchMechanic(PDO $pdo, array $mechanics): bool {
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
+
     echo '<div><h3>locationSearchMechanic :</h3>';
     $turn_number = $mechanics['turncounter'];
     echo "turn_number : $turn_number <br>";
 
-    $debug = strtolower(getConfig($pdo, 'DEBUG_REPORT')) === 'true';
-
     $locationsInvestigation = getLocationSearcherComparisons($pdo, $turn_number);
-    if ($debug) echo "<p>locationsInvestigation : " . var_export($locationsInvestigation, true) . "</p>";
+    game_error_log(__FUNCTION__, 'locationsInvestigation loaded', ['locationsInvestigation' => $locationsInvestigation], 'debug');
 
     $LOCATIONNAMEDIFF        = (int) getConfig($pdo, 'LOCATIONNAMEDIFF');
     $LOCATIONINFORMATIONDIFF = (int) getConfig($pdo, 'LOCATIONINFORMATIONDIFF');
@@ -193,7 +199,7 @@ function locationSearchMechanic($pdo, $mechanics) {
     $reportArray = [];
 
     foreach ($locationsInvestigation as $row) {
-        if ($debug) echo "<div><p>row: " . var_export($row, true) . "</p>";
+        game_error_log(__FUNCTION__, 'processing row', ['row' => $row], 'debug');
 
         // First row for this searcher → emit zone preamble + holder context
         if (empty($reportArray[$row['searcher_id']])) {
@@ -240,12 +246,14 @@ function locationSearchMechanic($pdo, $mechanics) {
             addLocationToCKL($pdo, $row['searcher_controller_id'], $row['found_id'], $turn_number, $foundSecretFlag);
         }
 
-        if ($debug) echo "<p>Updated reportArray: " . var_export($reportArray[$row['searcher_id']], true) . "</p></div>";
+        game_error_log(__FUNCTION__, 'updated reportArray for searcher_id ' . $row['searcher_id'], ['report' => $reportArray[$row['searcher_id']]], 'debug');
     }
 
     foreach ($reportArray as $worker_id => $report) {
         updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['secrets_report' => $report]);
     }
+
+    game_error_log(__FUNCTION__, 'DONE with turncounter : ' . $turn_number, ['reportArray_count' => count($reportArray)], 'debug');
 
     echo '<p> locationSearchMechanic : DONE </p> </div>';
     return true;

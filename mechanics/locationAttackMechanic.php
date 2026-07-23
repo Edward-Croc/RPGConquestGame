@@ -5,15 +5,16 @@
  * attacker-only log entry. Used by both the cascade-destroyed branch
  * in locationAttackMechanic() and the cancel-on-move path in moveBase().
  *
- * @param PDO    $pdo
- * @param array  $queue_row controller_location_attacks row (needs id,
- *                          location_name, attacker_controller_id)
- * @param int    $turn_number
- * @param string $reason     'destroyed' | 'moved'
- *
- * @return bool
+ * @param PDO $pdo : database connection
+ * @param array $queue_row : controller_location_attacks row (needs id, location_name, attacker_controller_id)
+ * @param int $turn_number : current turn number
+ * @param string $reason : 'destroyed' | 'moved'
+ * @return bool : true on success, false on DB failure
  */
-function failQueuedLocationAttack($pdo, array $queue_row, $turn_number, $reason) {
+function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, string $reason): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with queue_row_id : ' . $queue_row['id'], ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $textKey = $reason === 'moved' ? 'textLocationAttackMoved' : 'textLocationAttackDestroyed';
     $attackerText = sprintf((string)getConfig($pdo, $textKey), $queue_row['location_name']);
@@ -28,7 +29,7 @@ function failQueuedLocationAttack($pdo, array $queue_row, $turn_number, $reason)
         $u->bindParam(':id', $queue_row['id'], PDO::PARAM_INT);
         $u->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): UPDATE controller_location_attacks Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'UPDATE controller_location_attacks Failed: ' . $e->getMessage(), ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason], 'error');
         return false;
     }
 
@@ -43,7 +44,7 @@ function failQueuedLocationAttack($pdo, array $queue_row, $turn_number, $reason)
         $log->bindParam(':attacker_text', $attackerText, PDO::PARAM_STR);
         $log->execute();
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): INSERT location_attack_logs Failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'INSERT location_attack_logs Failed: ' . $e->getMessage(), ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason, 'attackerText' => $attackerText], 'error');
         return false;
     }
 
@@ -51,13 +52,19 @@ function failQueuedLocationAttack($pdo, array $queue_row, $turn_number, $reason)
 }
 
 /**
+ * Resolve every queued location attack for the given turn: fetch the
+ * queue, compute attacker/defender values, apply effects, and update
+ * the queue row with the outcome. Skips work when locationAttackMode
+ * config is not 'endTurn'.
  *
- * @param PDO $pdo
- * @param int $turn_number
- *
- * @return array $return
+ * @param PDO $pdo : database connection
+ * @param int $turn_number : current turn number
+ * @return bool : true when the loop completed (or mode was skipped), false on DB failure
  */
-function locationAttackMechanic($pdo, $turn_number) {
+function locationAttackMechanic(PDO $pdo, int $turn_number): bool {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
+
     $prefix = $_SESSION['GAME_PREFIX'];
     $mode = getConfig($pdo, 'locationAttackMode');
 
@@ -76,7 +83,7 @@ function locationAttackMechanic($pdo, $turn_number) {
         $stmt->execute();
         $queued = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        echo __FUNCTION__."(): SELECT queued attacks failed: " . $e->getMessage()."<br />";
+        game_error_log(__FUNCTION__, 'SELECT queued attacks failed: ' . $e->getMessage(), ['turn_number' => $turn_number], 'error');
         return false;
     }
 
@@ -114,10 +121,12 @@ function locationAttackMechanic($pdo, $turn_number) {
             $u->bindParam(':id', $row['id'], PDO::PARAM_INT);
             $u->execute();
         } catch (PDOException $e) {
-            echo __FUNCTION__."(): UPDATE queue row failed: " . $e->getMessage()."<br />";
+            game_error_log(__FUNCTION__, 'UPDATE queue row failed: ' . $e->getMessage(), ['row' => $row, 'turn_number' => $turn_number, 'resolvedAttack' => $resolvedAttack, 'resolvedDefence' => $resolvedDefence, 'result' => $result], 'error');
             return false;
         }
     }
+
+    game_error_log(__FUNCTION__, 'DONE with turn_number : ' . $turn_number, ['queued_count' => count($queued)], 'debug');
 
     echo '<p> locationAttackMechanic : DONE </p> </div>';
     return true;
