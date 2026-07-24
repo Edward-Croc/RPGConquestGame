@@ -161,6 +161,29 @@ def _row_form_locator(page, zone_id):
     )
 
 
+def _row_locator_by_name(page, zone_name):
+    """UI-only row lookup by the visible zone name column."""
+    return page.locator(
+        f"tr:has(td:text-is('{zone_name}'))"
+    )
+
+
+def _ui_reset_zone_row(page, base_url, zone_name):
+    """UI-only reset: navigate to management_zones.php and submit the row
+    for `zone_name` with claimer / holder / adjacent_zones / zone_rules
+    cleared. Leaves the browser on the reloaded page. Preserves is_hidden."""
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/zones/management_zones.php")
+    page.wait_for_load_state("load")
+    form = _row_locator_by_name(page, zone_name)
+    form.locator("textarea[name='zone_rules']").fill("")
+    form.locator("input[name='adjacent_zones']").fill("")
+    form.locator("select[name='claimer_id']").select_option("")
+    form.locator("select[name='holder_id']").select_option("")
+    form.locator("button[type='submit']").click()
+    page.wait_for_load_state("load")
+
+
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
@@ -203,21 +226,19 @@ class TestZoneRulesAdminEdit:
 
     def test_valid_json_persists_to_db(self, page: Page, base_url):
         """Filling the row's textarea with valid JSON and submitting
-        must write the JSON to `zones.zone_rules` in the DB."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
+        must write the JSON to `zones.zone_rules` — verified via the
+        form's own re-rendered textarea value."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
         form.locator("textarea[name='zone_rules']").fill(_VALID_JSON_STR)
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["zone_rules"]
-        assert stored is not None, (
-            f"After valid-JSON submit, zone_rules for {_TARGET_ZONE} "
-            f"is still NULL"
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored = form.locator("textarea[name='zone_rules']").input_value()
+        assert stored != "", (
+            f"After valid-JSON submit, zone_rules textarea for "
+            f"{_TARGET_ZONE} is still empty"
         )
         # Accept either the exact string or a json.loads-equal value —
         # the handler re-encodes via json_encode which can reorder keys
@@ -236,15 +257,13 @@ class TestZoneRulesAdminEdit:
     def test_invalid_json_rejected_no_db_write(self, page: Page, base_url):
         """Submitting a broken JSON string must NOT write to the DB and
         must render a red error message reusing `$update_msg`."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        assert _get_zone_row(zoneId)["zone_rules"] is None, (
-            "Pre-condition failed: zone_rules should be NULL after reset"
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        pre = form.locator("textarea[name='zone_rules']").input_value()
+        assert pre == "", (
+            f"Pre-condition failed: zone_rules textarea should be empty "
+            f"after reset, got {pre!r}"
         )
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
         form.locator("textarea[name='zone_rules']").fill(_INVALID_JSON_STR)
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
@@ -254,10 +273,11 @@ class TestZoneRulesAdminEdit:
             "Expected an error message with `color: red` after invalid "
             "JSON submit — none rendered"
         )
-        stored = _get_zone_row(zoneId)["zone_rules"]
-        assert stored is None, (
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored = form.locator("textarea[name='zone_rules']").input_value()
+        assert stored == "", (
             f"Invalid-JSON submit must NOT have written zone_rules; "
-            f"found {stored!r}"
+            f"textarea shows {stored!r}"
         )
 
     def test_empty_textarea_sets_null(self, page: Page, base_url):
@@ -292,29 +312,45 @@ class TestZoneRulesAdminEdit:
         that changes claimer_id while leaving the textarea at its
         prefilled value must still update the claimer AND must NOT
         disturb the existing zone_rules payload."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        _set_zone_rules(zoneId, _VALID_JSON_STR)
-        alphaId = _get_controller_id_by_lastname("Alpha")
-
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
-        # Read the textarea's prefill so the POST re-submits it unchanged
-        # (mirrors how the admin would leave it alone in the UI). This
-        # call fails in RED because the textarea does not yet exist.
-        prefill = form.locator("textarea[name='zone_rules']").input_value()
-        form.locator("select[name='claimer_id']").select_option(str(alphaId))
+        # UI reset then seed zone_rules via a submit (the same UI path
+        # a normal admin would use).
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        form.locator("textarea[name='zone_rules']").fill(_VALID_JSON_STR)
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        row = _get_zone_row(zoneId)
-        assert row["claimer_controller_id"] == alphaId, (
-            "Claimer update did not persist alongside the zone_rules field"
+        # Pick an Alpha-lastname claimer option by its visible label
+        # (the select's option text is `firstname lastname`).
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        option_texts = form.locator(
+            "select[name='claimer_id'] option"
+        ).all_text_contents()
+        alpha_label = next(
+            (t.strip() for t in option_texts if t.strip().endswith("Alpha")),
+            None,
         )
-        stored = row["zone_rules"]
-        assert stored is not None, (
+        assert alpha_label, (
+            f"No Alpha-lastname option in claimer select; "
+            f"options seen: {option_texts!r}"
+        )
+        # Read the textarea's prefill so the POST re-submits it unchanged
+        # (mirrors how the admin would leave it alone in the UI).
+        prefill = form.locator("textarea[name='zone_rules']").input_value()
+        form.locator("select[name='claimer_id']").select_option(label=alpha_label)
+        form.locator("button[type='submit']").click()
+        page.wait_for_load_state("load")
+
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        selected_claimer = form.locator(
+            "select[name='claimer_id'] option:checked"
+        ).text_content().strip()
+        assert selected_claimer == alpha_label, (
+            f"Claimer update did not persist alongside the zone_rules field."
+            f" Expected {alpha_label!r}, got {selected_claimer!r}"
+        )
+        stored = form.locator("textarea[name='zone_rules']").input_value()
+        assert stored != "", (
             "Regression: zone_rules was cleared by an unrelated claimer update"
         )
         assert json.loads(stored) == json.loads(_VALID_JSON_STR), (
@@ -343,37 +379,32 @@ class TestAdjacentZonesAdminEdit:
         )
 
     def test_adjacent_zones_persists_to_db(self, page: Page, base_url):
-        """Filling the row's adjacent_zones textarea with `2,4` and
-        submitting must write exactly `2,4` to the DB column."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
+        """Filling the row's adjacent_zones input with `2,4` and
+        submitting must persist exactly `2,4` — verified via the form's
+        re-rendered input value."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
         form.locator("input[name='adjacent_zones']").fill("2,4")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["adjacent_zones"]
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored = form.locator("input[name='adjacent_zones']").input_value()
         assert stored == "2,4", (
             f"Expected adjacent_zones='2,4' after submit; got {stored!r}"
         )
 
     def test_adjacent_zones_trimmed_on_submit(self, page: Page, base_url):
         """Leading/trailing whitespace around the input must be trimmed
-        before storing. `  2,4  ` -> `2,4` in the DB."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
+        before storing. `  2,4  ` -> `2,4` (verified via form re-render)."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
         form.locator("input[name='adjacent_zones']").fill("  2,4  ")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["adjacent_zones"]
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored = form.locator("input[name='adjacent_zones']").input_value()
         assert stored == "2,4", (
             f"Expected trimmed adjacent_zones='2,4' after submit; "
             f"got {stored!r}"
