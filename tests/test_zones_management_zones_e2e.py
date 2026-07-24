@@ -32,14 +32,10 @@ Run:
 """
 import json
 
-import pymysql
 import pytest
 from playwright.sync_api import Page
 
-from conftest import (
-    GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL, ensure_gm_login,
-)
+from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
 )
@@ -48,117 +44,6 @@ from helpers import (
 _TARGET_ZONE = "Zeta-Unclaimed"
 _VALID_JSON_STR = '{"Claim":{"zone_name":"Foo","value_delta":1}}'
 _INVALID_JSON_STR = "not json {"
-
-
-def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
-
-
-def _get_zone_id(zone_name):
-    """Return the id of the zone with the given name from the DB."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"SELECT id FROM `{GAME_PREFIX}zones` WHERE name=%s LIMIT 1",
-        (zone_name,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    assert row, f"Zone {zone_name!r} not found in TestConfig"
-    return int(row["id"])
-
-
-def _get_zone_row(zone_id):
-    """Return {zone_rules, adjacent_zones, claimer_controller_id,
-    holder_controller_id} for a zone id."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"SELECT zone_rules, adjacent_zones, claimer_controller_id, "
-        f"       holder_controller_id "
-        f"FROM `{GAME_PREFIX}zones` WHERE id=%s",
-        (zone_id,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    return row
-
-
-def _get_controller_id_by_lastname(lastname):
-    """Return a controller id by lastname (used for the claimer regression)."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname=%s LIMIT 1",
-        (lastname,),
-    )
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    assert row, f"Controller lastname={lastname!r} not found"
-    return int(row["id"])
-
-
-def _set_zone_rules(zone_id, value):
-    """Direct DB write of `zone_rules` (raw string or None)."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}zones` SET zone_rules=%s WHERE id=%s",
-        (value, zone_id),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def _set_adjacent_zones(zone_id, value):
-    """Direct DB write of `adjacent_zones` (raw string)."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}zones` SET adjacent_zones=%s WHERE id=%s",
-        (value, zone_id),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def _reset_zone(zone_id):
-    """Wipe zone_rules + claimer + holder + adjacent_zones on the target
-    row so each test starts from a known baseline."""
-    conn = _db_conn()
-    cur = conn.cursor()
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}zones` "
-        f"SET zone_rules=NULL, claimer_controller_id=NULL, "
-        f"    holder_controller_id=NULL, adjacent_zones='' "
-        f"WHERE id=%s",
-        (zone_id,),
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def _row_form_locator(page, zone_id):
-    """Return the row locator for the zone whose hidden zone_id matches.
-
-    Uses `tr:has(...)` rather than `form:has(...)` because the page uses
-    the standard `<tr> <form>...</form> </tr>` pattern (matching
-    ressources/management.php). Chromium's HTML5 parser DOM-evicts the
-    <form> element in that pattern, so form-scoped locators return no
-    matches; scoping by the enclosing <tr> is the reliable path."""
-    return page.locator(
-        f"tr:has(input[name='zone_id'][value='{zone_id}'])"
-    )
 
 
 def _row_locator_by_name(page, zone_name):
@@ -282,27 +167,37 @@ class TestZoneRulesAdminEdit:
 
     def test_empty_textarea_sets_null(self, page: Page, base_url):
         """Pre-seeding zone_rules to a valid JSON and then submitting
-        the row's form with the textarea cleared must NULL the column."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        _set_zone_rules(zoneId, _VALID_JSON_STR)
-        assert _get_zone_row(zoneId)["zone_rules"] is not None, (
-            "Pre-condition failed: zone_rules should be seeded before submit"
+        the row's form with the textarea cleared must NULL the column —
+        verified via the textarea's `data-value-is-null` attribute set
+        by management_zones.php from the PHP `=== null` check."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        # Seed via UI submit
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        form.locator("textarea[name='zone_rules']").fill(_VALID_JSON_STR)
+        form.locator("button[type='submit']").click()
+        page.wait_for_load_state("load")
+
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        seed_null_attr = form.locator(
+            "textarea[name='zone_rules']"
+        ).get_attribute("data-value-is-null")
+        assert seed_null_attr == "false", (
+            "Pre-condition failed: zone_rules should be non-null after "
+            f"seed; data-value-is-null={seed_null_attr!r}"
         )
 
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
         # `fill('')` empties the textarea to simulate the admin clearing it.
         form.locator("textarea[name='zone_rules']").fill("")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["zone_rules"]
-        assert stored is None, (
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored_null_attr = form.locator(
+            "textarea[name='zone_rules']"
+        ).get_attribute("data-value-is-null")
+        assert stored_null_attr == "true", (
             "Empty textarea submit must NULL zone_rules; "
-            f"found {stored!r}"
+            f"data-value-is-null={stored_null_attr!r}"
         )
 
     def test_claimer_holder_update_still_works_alongside_zone_rules(
@@ -414,29 +309,38 @@ class TestAdjacentZonesAdminEdit:
         self, page: Page, base_url
     ):
         """Pre-seed adjacent_zones to `1,2,3`, then submit with the
-        textarea cleared. Result must be an empty string, NOT NULL —
-        the column is TEXT with an empty-string default."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        _set_adjacent_zones(zoneId, "1,2,3")
-        assert _get_zone_row(zoneId)["adjacent_zones"] == "1,2,3", (
-            "Pre-condition failed: adjacent_zones seeded to '1,2,3'"
+        input cleared. Result must be an empty string, NOT NULL — the
+        column is TEXT with an empty-string default. Verified via the
+        input's `data-value-is-null='false'` attribute (PHP `=== null`
+        check exposes the DB-level distinction between `""` and NULL)."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        # Seed via UI submit
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        form.locator("input[name='adjacent_zones']").fill("1,2,3")
+        form.locator("button[type='submit']").click()
+        page.wait_for_load_state("load")
+
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        seeded = form.locator("input[name='adjacent_zones']").input_value()
+        assert seeded == "1,2,3", (
+            f"Pre-condition failed: adjacent_zones should be '1,2,3' "
+            f"after seed; got {seeded!r}"
         )
 
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
         form.locator("input[name='adjacent_zones']").fill("")
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["adjacent_zones"]
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        input_locator = form.locator("input[name='adjacent_zones']")
+        stored = input_locator.input_value()
+        is_null_attr = input_locator.get_attribute("data-value-is-null")
         assert stored == "", (
-            "Empty textarea submit must store '' (empty string), NOT NULL "
-            f"and not the pre-seed. Got {stored!r}"
+            "Empty input submit must store '' (empty string), NOT the "
+            f"pre-seed. Got {stored!r}"
         )
-        assert stored is not None, (
+        assert is_null_attr == "false", (
             "adjacent_zones must NOT be NULL — it is a TEXT column with "
-            "empty-string semantics on clear."
+            f"empty-string semantics on clear. data-value-is-null="
+            f"{is_null_attr!r}"
         )
