@@ -9,6 +9,10 @@ RUN apt-get update \
 # Enable Apache mod_rewrite for future URL routing
 RUN a2enmod rewrite
 
+# Create backup directory and give www-data write access
+RUN mkdir -p /var/backups/rpg && chown www-data:www-data /var/backups/rpg
+WORKDIR /var/www/html
+
 WORKDIR /var/www/html
 
 # Copy and set up the entrypoint script

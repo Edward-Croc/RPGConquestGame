@@ -8,21 +8,22 @@
  *
  * @return string|null : matching directory or null when no candidate contains the file
  */
-function getPath(string $file): string|null {
+function getPath(string $file): string|null
+{
 
     $path = null;
-    $paths = array( __DIR__ ,"..", ".", "/var/www/RPGConquestGame");
-    foreach ( $paths AS $tmpPath ) {
-        if (file_exists ($tmpPath.$file)) {
+    $paths = array(__DIR__, "..", ".", "/var/www/RPGConquestGame");
+    foreach ($paths as $tmpPath) {
+        if (file_exists($tmpPath . $file)) {
             $path = $tmpPath;
             break;
         }
-        if (file_exists ($tmpPath."/..".$file)) {
-            $path = $tmpPath."/..";
+        if (file_exists($tmpPath . "/.." . $file)) {
+            $path = $tmpPath . "/..";
             break;
         }
     }
-    return $path ;
+    return $path;
 }
 
 /**
@@ -33,7 +34,8 @@ function getPath(string $file): string|null {
  *
  * @return array : normalised config array with host/dbname/username/password/db_type/folder/game_prefix
  */
-function loadDBConfig(string|null $path, string $configFile): array {
+function loadDBConfig(string|null $path, string $configFile): array
+{
     // Default values
     $config = [
         'host' => 'localhost',
@@ -57,24 +59,24 @@ function loadDBConfig(string|null $path, string $configFile): array {
 
     // Validate config 
     $notNullList = ['host', 'dbname', 'username', 'password', 'db_type', 'folder'];
-    foreach ( $notNullList as $key ) {
-        if ( !isset($config[$key]) ){
+    foreach ($notNullList as $key) {
+        if (!isset($config[$key])) {
             echo " Config key $key is not set !";
             die();
         }
     }
-    foreach ( $config as $key => $value )
-    if ( $config['db_type'] == 'postgres'){
-        if (strpos( $config['game_prefix'], '.') !== false){
-            // split prefix to elements 
-            $prefixShards = explode('.', $config['game_prefix']);
-            // if there are more than 2 elemet Postgresql will fail 
-            if (count($prefixShards) > 2 ){
-                echo " Table prefix Must never contain more than one '.' !";
-                die();
+    foreach ($config as $key => $value)
+        if ($config['db_type'] == 'postgres') {
+            if (strpos($config['game_prefix'], '.') !== false) {
+                // split prefix to elements
+                $prefixShards = explode('.', $config['game_prefix']);
+                // if there are more than 2 elemet Postgresql will fail
+                if (count($prefixShards) > 2) {
+                    echo " Table prefix Must never contain more than one '.' !";
+                    die();
+                }
             }
         }
-    }
     return $config;
 }
 
@@ -86,7 +88,8 @@ function loadDBConfig(string|null $path, string $configFile): array {
  *
  * @return PDO|null : live PDO handle, or null when the connection failed
  */
-function getDBConnection(string|null $path, string $configFile): PDO|null {
+function getDBConnection(string|null $path, string $configFile): PDO|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with configFile : ' . $configFile, ['path' => $path], 'debug');
 
@@ -98,15 +101,15 @@ function getDBConnection(string|null $path, string $configFile): PDO|null {
     $_SESSION['FOLDER'] = $config['folder'];
     $_SESSION['GAME_PREFIX'] = $config['game_prefix'];
 
-    if ( $config['db_type'] == 'mysql' ) {
+    if ($config['db_type'] == 'mysql') {
         // Attempt to connect to PostgreSQL database
         try {
             $pdo = new PDO(
                 sprintf("mysql:host=%s;dbname=%s", $config['host'], $config['dbname']),
-                $config['username'],  $config['password']
+                $config['username'], $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            if ($debug){
+            if ($debug) {
                 echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
@@ -115,15 +118,15 @@ function getDBConnection(string|null $path, string $configFile): PDO|null {
             game_error_log(__FUNCTION__, 'Connection failed : ' . $e->getMessage(), ['dbname' => $config['dbname'], 'db_type' => $config['db_type']], 'error');
             return NULL;
         }
-    }else{
+    } else {
         // Attempt to connect to PostgreSQL database
         try {
             $pdo = new PDO(
                 sprintf("pgsql:host=%s;dbname=%s", $config['host'], $config['dbname']),
-                $config['username'],  $config['password']
+                $config['username'], $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            if ($debug){
+            if ($debug) {
                 echo sprintf("Connected successfully to database %s.<br />", $config['dbname']);
             }
             return $pdo;
@@ -143,16 +146,17 @@ function getDBConnection(string|null $path, string $configFile): PDO|null {
  *
  * @return bool|null : true/false when the query ran, null when it threw
  */
-function tableExists(PDO $pdo, string $tableName): bool|null {
+function tableExists(PDO $pdo, string $tableName): bool|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with tableName : ' . $tableName, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $prefixedTableName = $prefix . $tableName;
-    try{
-        if ($_SESSION['DBTYPE'] == 'postgres'){
+    try {
+        if ($_SESSION['DBTYPE'] == 'postgres') {
             $tableSchema = 'public';
-            if (strpos($prefix, '.') !== false){
+            if (strpos($prefix, '.') !== false) {
                 $tableSchema = explode('.', $prefix)[0];
             } else {
                 $tableName = $prefixedTableName;
@@ -163,7 +167,7 @@ function tableExists(PDO $pdo, string $tableName): bool|null {
                 WHERE table_name = :tableName AND table_schema = :tableSchema
             )");
             $stmt->execute([':tableName' => $tableName, ':tableSchema' => $tableSchema]);
-        } else if ($_SESSION['DBTYPE'] == 'mysql'){
+        } else if ($_SESSION['DBTYPE'] == 'mysql') {
             $stmt = $pdo->prepare("SELECT EXISTS (
                 SELECT 1
                 FROM information_schema.tables
@@ -185,18 +189,19 @@ function tableExists(PDO $pdo, string $tableName): bool|null {
  *
  * @return bool : true on success, false when a PDO exception was caught
  */
-function destroyAllTables(PDO $pdo): bool {
+function destroyAllTables(PDO $pdo): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', ['prefix' => $_SESSION['GAME_PREFIX'] ?? null], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
     try {
-        if ($_SESSION['DBTYPE'] == 'postgres'){
+        if ($_SESSION['DBTYPE'] == 'postgres') {
 
             $tableSchema = 'public';
             $prefix_sql = '';
-            if (strpos($prefix, '.') !== false){
+            if (strpos($prefix, '.') !== false) {
                 // split prefix to elements 
                 $prefixShards = explode('.', $prefix);
                 $tableSchema = $prefixShards[0];
@@ -211,7 +216,7 @@ function destroyAllTables(PDO $pdo): bool {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':tableSchema' => $tableSchema]);
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
+
             echo "tables: " . var_export($tables, true) . "<br />";
 
             // Drop each table
@@ -220,7 +225,7 @@ function destroyAllTables(PDO $pdo): bool {
                 echo "Table {$tableSchema}.{$prefix}{$table} dropped successfully.<br \>";
             }
         }
-        if ($_SESSION['DBTYPE'] == 'mysql'){
+        if ($_SESSION['DBTYPE'] == 'mysql') {
             $tables = array(
                 'information_gift_logs',
                 'ressource_gift_logs',
@@ -245,7 +250,7 @@ function destroyAllTables(PDO $pdo): bool {
                 'artefacts',
                 'locations',
                 'zones',
-                'controllers', 
+                'controllers',
                 'factions',
                 'players',
                 'mechanics',
@@ -273,7 +278,7 @@ function destroyAllTables(PDO $pdo): bool {
 
 /**
  * Load CSV file and insert data into database table
- * 
+ *
  * @param PDO $pdo Database connection
  * @param string $csvFile Path to CSV file
  * @param string $tableName Target table name (without prefix)
@@ -292,7 +297,8 @@ function destroyAllTables(PDO $pdo): bool {
  *
  * @return int : count of rows updated
  */
-function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int {
+function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controllersCsvPath : ' . $controllersCsvPath, [], 'debug');
 
@@ -300,10 +306,16 @@ function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
     $fh = fopen($controllersCsvPath, 'r');
     if (!$fh) return 0;
     $header = fgetcsv($fh);
-    if (!$header) { fclose($fh); return 0; }
+    if (!$header) {
+        fclose($fh);
+        return 0;
+    }
     $lastCol = array_search('lastname', $header);
     $originCol = array_search('zones__name->origin_zone_id', $header);
-    if ($lastCol === false || $originCol === false) { fclose($fh); return 0; }
+    if ($lastCol === false || $originCol === false) {
+        fclose($fh);
+        return 0;
+    }
     $count = 0;
     while (($row = fgetcsv($fh)) !== false) {
         $lastname = $row[$lastCol] ?? '';
@@ -337,7 +349,8 @@ function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
  *
  * @return bool : true on success, false when the file is missing or a fatal PDO exception was caught
  */
-function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $columns): bool {
+function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $columns): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with tableName : ' . $tableName, ['csvFile' => $csvFile, 'columns' => $columns], 'debug');
 
@@ -377,11 +390,11 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                 list($junctionTable, $junctionCol) = explode('__', $junctionPart);
 
                 $linkTableDefs[] = [
-                    'csvHeader'     => $col,
-                    'lookupTable'   => $lookupTable,
-                    'lookupCol'     => $lookupCol,
+                    'csvHeader' => $col,
+                    'lookupTable' => $lookupTable,
+                    'lookupCol' => $lookupCol,
                     'junctionTable' => $junctionTable,
-                    'junctionCol'   => $junctionCol,
+                    'junctionCol' => $junctionCol,
                 ];
             } elseif (strpos($col, '->') !== false) {
                 list($originCol, $targetPart) = explode('->', $col);
@@ -489,7 +502,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                 $isText = (strpos($type, 'char') !== false || strpos($type, 'text') !== false || strpos($type, 'json') !== false);
                 $columnInfo[$info['Field']] = [
                     'nullable' => $info['Null'] === 'YES',
-                    'is_text'  => $isText,
+                    'is_text' => $isText,
                 ];
             }
         } catch (PDOException $e) {
@@ -538,7 +551,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                     list($csvCol, $targetPart) = explode('->', $col);
                     // For compound lookups, the cache key is {junctionTable}_id
                     if (strpos($targetPart, '__') !== false) {
-                        list($junctionTable, ) = explode('__', $targetPart);
+                        list($junctionTable,) = explode('__', $targetPart);
                         $dbCol = $junctionTable . '_id';
                     } else {
                         $dbCol = $targetPart;
@@ -617,7 +630,8 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
  *
  * @return bool : true on success, false when the file is missing or a PDO exception was caught
  */
-function loadWorkersCSV(PDO $pdo, string $csvFile): bool {
+function loadWorkersCSV(PDO $pdo, string $csvFile): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with csvFile : ' . $csvFile, [], 'debug');
 
@@ -748,23 +762,24 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool {
  *
  * @return PDO|null : live PDO handle when the game is ready, null on failure
  */
-function gameReady(): PDO|null {
+function gameReady(): PDO|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', ['config_name' => $_POST['config_name'] ?? null], 'debug');
 
     $debug = false;
 
     // Path to the config.ini file
-    $configFiles = array ("/var/local_config.ini", "/var/config.ini");
+    $configFiles = array("/var/local_config.ini", "/var/config.ini");
     $path = null;
-    foreach ($configFiles AS $configFile) {
+    foreach ($configFiles as $configFile) {
         $path = getPath($configFile);
         if ($path != null) break;
     }
     $_SESSION['PATH'] = $path;
     $_SESSION['configFile'] = $configFile;
     if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) {
-        echo "Config Path built : " . $path.$configFile . " </ br>";
+        echo "Config Path built : " . $path . $configFile . " </ br>";
         $debug = true;
     }
 
@@ -783,7 +798,7 @@ function gameReady(): PDO|null {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
                 if ($debug)
-                    echo 'dbtype : '.$_SESSION['DBTYPE']."; <br>";
+                    echo 'dbtype : ' . $_SESSION['DBTYPE'] . "; <br>";
                 $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $_SESSION['DBTYPE']);
                 echo "Loading $sqlFile ... ";
                 //$sqlFile = '../BDD/setupBDD.sql';
@@ -807,7 +822,7 @@ function gameReady(): PDO|null {
                 }
                 echo 'END <br />';
 
-                if ( isset($_POST['config_name']) ) {
+                if (isset($_POST['config_name'])) {
                     $fileNames = [
                         'base' => '',
                         'power_types' => ['id', 'name', 'description'],
@@ -824,7 +839,7 @@ function gameReady(): PDO|null {
                         'worker_origins' => ['name'],
                         'worker_names' => ['firstname', 'lastname', 'worker_origins__name->origin_id']
                     ];
-                    foreach ( $fileNames as $fileName => $columns ) {
+                    foreach ($fileNames as $fileName => $columns) {
                         // Post-zones forward-reference fixup: controllers.origin_zone_id
                         // can only resolve after zones are loaded.
                         if ($fileName === 'locations') {
@@ -845,7 +860,7 @@ function gameReady(): PDO|null {
                         if (file_exists($csvFile)) {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
-                            
+
                             if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'config', 'zones'])) {
                                 loadCSVFile($pdo, $csvFile, $fileName, $columns);
                             } else {
@@ -894,9 +909,9 @@ function gameReady(): PDO|null {
                     // CSV files with linkTable_ column handle link_power_type automatically.
                     // SQL fallback uses post-processing to link unlinked powers to their type.
                     $powerFileTypes = [
-                        'hobbys'          => 'Hobby',
-                        'jobs'            => 'Metier',
-                        'disciplines'     => 'Discipline',
+                        'hobbys' => 'Hobby',
+                        'jobs' => 'Metier',
+                        'disciplines' => 'Discipline',
                         'transformations' => 'Transformation',
                     ];
                     $powerCsvColumns = ['name', 'description', 'enquete', 'attack', 'defence', 'other',
@@ -1011,7 +1026,7 @@ function gameReady(): PDO|null {
 
                     if (
                         (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
-                        ||(strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+                        || (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
                         || (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
                         || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
                         || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
@@ -1019,14 +1034,14 @@ function gameReady(): PDO|null {
                         // Check for CSV file first
                         $csvFile = sprintf('%s/var/csv/setup%s_advanced_tests.csv', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
                         $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
-                        
+
                         if (file_exists($csvFile)) {
                             echo "Loading CSV file $csvFile ...<br />";
                             echo 'Start <br />';
                             // Advanced tests CSV files may contain multiple tables, handle as needed
                             echo "CSV file $csvFile found, but specific loader not yet implemented for advanced_tests. Using SQL fallback.<br />";
                         }
-                        
+
                         if (!file_exists($csvFile) && file_exists($sqlFile)) {
                             echo "Loading $sqlFile ...<br />";
                             echo 'Start <br />';
@@ -1090,20 +1105,35 @@ function gameReady(): PDO|null {
 }
 
 /**
- * Dumps the current database to a downloadable SQL file via mysqldump / pg_dump.
+ * Dumps the current database to a SQL file via mysqldump / pg_dump.
+ * In normal mode, streams the file to the browser as a download.
+ * In silent mode, saves the file server-side and returns the path.
  *
- * @return void : streams the dump to the browser and calls exit on success
+ * @param bool $silent : if true, saves to disk quietly instead of streaming to browser
+ *
+ * @return string|null : backup file path in silent mode, null on failure (void in normal mode)
  */
-function exportBDD(): void {
+function exportBDD(bool $silent = false): string|null
+{
 
     $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
     // Output file
-    $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));
-    $exportPath = sys_get_temp_dir() . '/' . $exportFile;
+    if ($silent) {
+        $exportPath = sprintf('/var/backups/rpg/%s_backup_%s.sql',
+            $config['dbname'],
+            date('Ymd_His')
+        );
+        if (!is_dir(dirname($exportPath))) {
+            mkdir(dirname($exportPath), 0755, true);
+        }
+    } else {
+        $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));
+        $exportPath = sys_get_temp_dir() . '/' . $exportFile;
+    }
 
     // export BDD to file via command line
-    if ( $config['db_type'] == 'mysql'){
+    if ($config['db_type'] == 'mysql') {
         $command = sprintf('mysqldump -h %s -u %s -p%s %s > %s',
             escapeshellarg($config['host']),
             escapeshellarg($config['username']),
@@ -1122,22 +1152,32 @@ function exportBDD(): void {
     }
 
     // Run export
-    $output = shell_exec($command);
+    shell_exec($command);
 
     // Check if file was created
     if (file_exists($exportPath)) {
-        // Send file for download
-        header('Content-Type: application/sql');
-        header('Content-Disposition: attachment; filename="' . basename($exportFile) . '"');
-        header('Content-Length: ' . filesize($exportPath));
-        readfile($exportPath);
-        // Optionally delete the file after download
-        unlink($exportPath);
-        exit;
-    } else {
-        echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
-        if ($output) echo "<pre>$output</pre>";
+        if ($silent) {
+            echo sprintf("<p>Backup saved to: %s</p>", htmlspecialchars($exportPath));
+            return $exportPath;
+        } else {
+            // Send file for download
+            header('Content-Type: application/sql');
+            header('Content-Disposition: attachment; filename="' . basename($exportFile) . '"');
+            header('Content-Length: ' . filesize($exportPath));
+            readfile($exportPath);
+            // Optionally delete the file after download
+            unlink($exportPath);
+            exit;
+        }
     }
+    game_error_log('exportBDD', 'Export/backup failed — file not created', ['exportPath' => $exportPath, 'silent' => $silent], 'warning');
+
+    if (!$silent) {
+        echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
+    } else {
+        echo "<p class='has-text-danger'>Warning: backup failed before end of turn.</p>";
+    }
+    return null;
 
 }
 
@@ -1149,18 +1189,19 @@ function exportBDD(): void {
  *
  * @return bool : true when the import command ran, false on upload/type errors
  */
-function importBDD(PDO $pdo, array $file): bool {
+function importBDD(PDO $pdo, array $file): bool
+{
 
     if ($file['error'] === UPLOAD_ERR_OK) {
         $tmpFilePath = $file['tmp_name'];
         $fileType = mime_content_type($tmpFilePath);
         $allowedTypes = ['application/sql', 'text/plain'];
 
-        if (in_array($fileType, $allowedTypes)) {  
+        if (in_array($fileType, $allowedTypes)) {
             $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
             // import BDD from file via command line
-            if ($config['db_type'] == 'mysql'){
+            if ($config['db_type'] == 'mysql') {
                 $command = sprintf('mysql -h %s -u %s -p%s %s < %s',
                     escapeshellarg($config['host']),
                     escapeshellarg($config['username']),

@@ -7,6 +7,7 @@ require_once '../base/baseHTML.php';
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
+exportBDD(true);
 $started = toggleMechanicsGamestate($gameReady, $mechanics, true);
 if (!$started) {
     game_error_log('endTurn_page', 'toggleMechanicsGamestate failed to start the game', [], 'warning');
