@@ -283,6 +283,42 @@ def _row_form_locator(page, zone_id):
     )
 
 
+def _row_locator_by_name(page, zone_name):
+    """UI-only row lookup by the visible zone name column."""
+    return page.locator(
+        f"tr:has(td:text-is('{zone_name}'))"
+    )
+
+
+def _ui_reset_zone_row(page, base_url, zone_name):
+    """UI-only reset: navigate to management_zones.php and submit the row
+    for `zone_name` with claimer / holder / adjacent_zones / zone_rules
+    cleared AND is_hidden unchecked. Leaves the browser on the reloaded page."""
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/zones/management_zones.php")
+    page.wait_for_load_state("load")
+    form = _row_locator_by_name(page, zone_name)
+    form.locator("textarea[name='zone_rules']").fill("")
+    form.locator("input[name='adjacent_zones']").fill("")
+    form.locator("select[name='claimer_id']").select_option("")
+    form.locator("select[name='holder_id']").select_option("")
+    hidden_box = form.locator("input[type='checkbox'][name='is_hidden']")
+    if hidden_box.is_checked():
+        hidden_box.uncheck()
+    form.locator("button[type='submit']").click()
+    page.wait_for_load_state("load")
+
+
+def _ui_seed_is_hidden(page, base_url, zone_name):
+    """UI-only seed: after a reset, tick the row's is_hidden checkbox
+    and submit so the row's is_hidden lands at 1. Leaves the browser on
+    the reloaded page."""
+    form = _row_locator_by_name(page, zone_name)
+    form.locator("input[type='checkbox'][name='is_hidden']").check()
+    form.locator("button[type='submit']").click()
+    page.wait_for_load_state("load")
+
+
 @pytest.fixture(scope="session")
 def base_url():
     return PHP_BASE_URL
@@ -338,49 +374,53 @@ class TestIsHiddenSchemaAndAdmin:
 
     def test_check_is_hidden_persists_to_db(self, page: Page, base_url):
         """Ticking the row's is_hidden checkbox and submitting must
-        write `is_hidden=1` to the DB."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        assert _get_zone_row(zoneId)["is_hidden"] == 0, (
-            "Pre-condition failed: is_hidden should be 0 after reset"
+        persist as checked — verified via the form's re-rendered
+        checkbox state."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        assert not form.locator(
+            "input[type='checkbox'][name='is_hidden']"
+        ).is_checked(), (
+            "Pre-condition failed: is_hidden checkbox should be unchecked "
+            "after reset"
         )
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
         form.locator("input[type='checkbox'][name='is_hidden']").check()
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["is_hidden"]
-        assert stored == 1, (
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored_checked = form.locator(
+            "input[type='checkbox'][name='is_hidden']"
+        ).is_checked()
+        assert stored_checked, (
             f"After checked-checkbox submit, is_hidden for {_TARGET_ZONE} "
-            f"should be 1; got {stored!r}"
+            f"should be checked; got is_checked={stored_checked!r}"
         )
 
     def test_uncheck_is_hidden_persists_to_db(self, page: Page, base_url):
-        """Pre-seed is_hidden=1, load form, leave checkbox UNCHECKED,
-        submit; is_hidden must persist as 0."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        _set_is_hidden(zoneId, 1)
-        assert _get_zone_row(zoneId)["is_hidden"] == 1, (
-            "Pre-condition failed: is_hidden should be 1 after seed"
+        """Pre-seed is_hidden checked via UI, load form, uncheck box,
+        submit; the re-rendered checkbox must be unchecked."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        _ui_seed_is_hidden(page, base_url, _TARGET_ZONE)
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        assert form.locator(
+            "input[type='checkbox'][name='is_hidden']"
+        ).is_checked(), (
+            "Pre-condition failed: is_hidden should be checked after seed"
         )
 
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
         # Uncheck the pre-checked box to simulate the admin clearing it.
         form.locator("input[type='checkbox'][name='is_hidden']").uncheck()
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        stored = _get_zone_row(zoneId)["is_hidden"]
-        assert stored == 0, (
-            f"Unchecked-checkbox submit must persist is_hidden=0; "
-            f"got {stored!r}"
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        stored_checked = form.locator(
+            "input[type='checkbox'][name='is_hidden']"
+        ).is_checked()
+        assert not stored_checked, (
+            f"Unchecked-checkbox submit must persist as unchecked; "
+            f"got is_checked={stored_checked!r}"
         )
 
     def test_is_hidden_regression_with_claimer_update(
@@ -388,28 +428,43 @@ class TestIsHiddenSchemaAndAdmin:
     ):
         """Regression guard: with the new checkbox in place, a POST
         that changes claimer_id while leaving the pre-checked is_hidden
-        alone must update the claimer AND keep is_hidden=1."""
-        zoneId = _get_zone_id(_TARGET_ZONE)
-        _reset_zone(zoneId)
-        _set_is_hidden(zoneId, 1)
-        alphaId = _get_controller_id_by_lastname("Alpha")
+        alone must update the claimer AND keep is_hidden checked."""
+        _ui_reset_zone_row(page, base_url, _TARGET_ZONE)
+        _ui_seed_is_hidden(page, base_url, _TARGET_ZONE)
 
-        ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/zones/management_zones.php")
-        page.wait_for_load_state("load")
-        form = _row_form_locator(page, zoneId)
+        # Pick an Alpha-lastname claimer option by its visible label
+        # (the select's option text is `firstname lastname`).
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        option_texts = form.locator(
+            "select[name='claimer_id'] option"
+        ).all_text_contents()
+        alpha_label = next(
+            (t.strip() for t in option_texts if t.strip().endswith("Alpha")),
+            None,
+        )
+        assert alpha_label, (
+            f"No Alpha-lastname option in claimer select; "
+            f"options seen: {option_texts!r}"
+        )
         # Leave the pre-checked box alone; only change claimer.
-        form.locator("select[name='claimer_id']").select_option(str(alphaId))
+        form.locator("select[name='claimer_id']").select_option(label=alpha_label)
         form.locator("button[type='submit']").click()
         page.wait_for_load_state("load")
 
-        row = _get_zone_row(zoneId)
-        assert row["claimer_controller_id"] == alphaId, (
-            "Claimer update did not persist alongside the is_hidden field"
+        form = _row_locator_by_name(page, _TARGET_ZONE)
+        selected_claimer = form.locator(
+            "select[name='claimer_id'] option:checked"
+        ).text_content().strip()
+        assert selected_claimer == alpha_label, (
+            f"Claimer update did not persist alongside the is_hidden field. "
+            f"Expected {alpha_label!r}, got {selected_claimer!r}"
         )
-        assert row["is_hidden"] == 1, (
+        stored_checked = form.locator(
+            "input[type='checkbox'][name='is_hidden']"
+        ).is_checked()
+        assert stored_checked, (
             "Regression: is_hidden was cleared by an unrelated claimer "
-            f"update; got {row['is_hidden']!r}"
+            f"update; got is_checked={stored_checked!r}"
         )
 
 
