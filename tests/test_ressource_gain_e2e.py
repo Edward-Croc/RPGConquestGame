@@ -28,6 +28,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
+    ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -192,20 +193,6 @@ def _ui_set_controller_ressource(page, controller_ressource_id, amount, amount_s
             "update_ressource": "1",
         },
     )
-
-
-def _ui_current_turn(page):
-    """Parse the current turncounter from the page header, rendered by
-    base/baseHTML.php as `<gameTitle> : <timeValue> <turncounter>`.
-    Assumes the browser is already logged in ; navigates to accueil.php
-    if the caller hasn't already loaded a page with the header."""
-    if not page.url.startswith(PHP_BASE_URL):
-        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
-        page.wait_for_load_state("load")
-    text = page.locator("div.header").first.text_content() or ""
-    m = _re.search(r'(\d+)', text)
-    assert m, f"No turncounter integer in header text: {text!r}"
-    return int(m.group(1))
 
 
 def _ui_read_amount(page, controller_id, ressource_name):
@@ -594,7 +581,7 @@ class TestRessourceGainUnlockTurnSkipsBeforeThreshold:
         gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
         alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
         zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
-        locked_unlock_turn = _ui_current_turn(page) + 1
+        locked_unlock_turn = ui_turn_counter(page) + 1
 
         _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
         _ui_set_zone_holder(page, zone_id, alpha_id)
@@ -641,7 +628,7 @@ class TestRessourceGainUnlockTurnFiresAtThreshold:
         gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
         alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
         zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
-        threshold_unlock_turn = _ui_current_turn(page)
+        threshold_unlock_turn = ui_turn_counter(page)
 
         _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
         _ui_set_zone_holder(page, zone_id, alpha_id)

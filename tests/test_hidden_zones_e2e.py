@@ -347,6 +347,7 @@ class TestIsHiddenSchemaAndAdmin:
     presence, checkbox presence, tick/untick persistence, and the
     claimer-update regression guard."""
 
+    @pytest.mark.db
     def test_is_hidden_column_exists_in_zones_schema(self, page: Page, base_url):
         """After loading TestConfig, DESCRIBE zones must include an
         `is_hidden` column (D89.1 Option A: BOOL DEFAULT FALSE)."""
@@ -468,6 +469,7 @@ class TestIsHiddenSchemaAndAdmin:
         )
 
 
+@pytest.mark.db
 class TestHiddenZoneVisibility:
     """Runtime visibility of `is_hidden=1` zones: only the holder /
     claimer controller and GM see them; other non-privileged
@@ -602,6 +604,7 @@ class TestHiddenZoneVisibility:
         )
 
 
+@pytest.mark.db
 class TestBasePlacementGuard:
     """A crafted `createBase` GET against a hidden zone must be refused
     unless the caller is holder / claimer / GM. Non-holder Alpha is
@@ -726,6 +729,7 @@ class TestShikokuTakedasHiddenZone:
         Japon1555 zone names themselves contain `(...)`."""
         return page.locator("div.section.zones h3.title").all_text_contents()
 
+    @pytest.mark.db
     def test_kai_zone_exists_in_japon1555_scenario(
         self, page: Page, base_url
     ):
