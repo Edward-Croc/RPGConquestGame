@@ -10,6 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [1, 2]
     steps:
       - uses: actions/checkout@v5
 
@@ -31,8 +35,8 @@ jobs:
       - name: Install Playwright Chromium
         run: playwright install --with-deps chromium
 
-      - name: Run pytest
-        run: pytest tests/ -v
+      - name: Run pytest (group ${{ matrix.group }} of 2)
+        run: pytest tests/ -v --splits 2 --group ${{ matrix.group }}
 
       - name: Capture docker logs on failure
         if: failure()
