@@ -1,4 +1,5 @@
 <?php
+
 $noConnection = true;
 require_once '../base/basePHP.php';
 $pageName = 'docConfig';

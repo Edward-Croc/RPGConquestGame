@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Pre-commit hook: verify staged PHP files pass PSR-12 formatting.
+# Enable once per clone with:
+#     git config core.hooksPath .githooks
+
+set -e
+
+# Find php-cs-fixer binary (standalone phar in ~/bin, composer bin, or PATH)
+if command -v php-cs-fixer > /dev/null 2>&1; then
+    FIXER=php-cs-fixer
+elif [ -x "$HOME/bin/php-cs-fixer" ]; then
+    FIXER="$HOME/bin/php-cs-fixer"
+elif [ -x "vendor/bin/php-cs-fixer" ]; then
+    FIXER="vendor/bin/php-cs-fixer"
+else
+    echo "pre-commit: php-cs-fixer not found. Install with:"
+    echo "  wget https://cs.symfony.com/download/php-cs-fixer-v3.phar -O ~/bin/php-cs-fixer && chmod +x ~/bin/php-cs-fixer"
+    echo "Skipping PHP format check."
+    exit 0
+fi
+
+# Collect staged PHP files (added or modified only)
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=AM | grep '\.php$' || true)
+if [ -z "$STAGED_PHP" ]; then
+    exit 0
+fi
+
+# Run in dry-run mode on the staged set. Passing --path-mode=intersection
+# lets us pipe file list without rebuilding the finder scope.
+echo "$STAGED_PHP" | xargs "$FIXER" fix --dry-run --diff --path-mode=intersection --config=.php-cs-fixer.dist.php 2>/dev/null
+STATUS=$?
+
+if [ "$STATUS" -ne 0 ]; then
+    echo ""
+    echo "pre-commit: PSR-12 formatting violations detected in staged PHP files."
+    echo "Fix with:"
+    echo "  $FIXER fix"
+    echo "  git add <files>"
+    exit 1
+fi

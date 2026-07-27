@@ -1,5 +1,6 @@
 <?php
-if ( !isset($_SESSION['DEBUG']) ){
+
+if (!isset($_SESSION['DEBUG'])) {
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
     $_SESSION['DEBUG_REPORT'] = false;
@@ -21,22 +22,23 @@ require_once './BDD/db_connector.php';
  *
  * @return string|null : value, or NULL on missing key / PDO error
  */
-function getConfig(PDO $pdo, string $configName): string|null {
+function getConfig(PDO $pdo, string $configName): string|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         $stmt = $pdo->prepare("SELECT value
             FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (string)$val : NULL;
+        return $val !== false ? (string)$val : null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT value failed : ' . $e->getMessage(), ['configName' => $configName], 'error');
-        return NULL;
+        return null;
     }
 }
 
@@ -46,7 +48,7 @@ $gameReady = gameReady();
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
-}else{
+} else {
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
@@ -54,7 +56,7 @@ if (!$gameReady) {
         $_SESSION['DEBUG_REPORT'] = true;
     }
     $gameTitle = getConfig($gameReady, 'TITLE');
-    if ($_SESSION['DEBUG'] == true){
+    if ($_SESSION['DEBUG'] == true) {
         echo "The game is ready.<br />";
         echo "The gameTitle is : '$gameTitle'.<br />";
     }
@@ -66,6 +68,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: connection/loginForm.php');
     exit();
 }
-    // Redirect the user to the login page if not logged in
-    header('Location: base/accueil.php');
-    exit();
+// Redirect the user to the login page if not logged in
+header('Location: base/accueil.php');
+exit();

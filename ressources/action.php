@@ -1,4 +1,5 @@
 <?php
+
 require_once '../base/basePHP.php';
 
 if (empty($_SESSION['logged_in']) || empty($_SESSION['controller'])) {

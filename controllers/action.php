@@ -18,9 +18,13 @@ if (
 
 // Resolve controller_id from URL (may be empty for bare-GET view flows
 // where the active controller is held in $_SESSION['controller'])
-$controller_id = NULL;
-if ( !empty($_GET['controller_id']) ) $controller_id = $_GET['controller_id'];
-if ($debug) echo "controller_id (guard): ".var_export($controller_id, true)."<br /><br />";
+$controller_id = null;
+if (!empty($_GET['controller_id'])) {
+    $controller_id = $_GET['controller_id'];
+}
+if ($debug) {
+    echo "controller_id (guard): ".var_export($controller_id, true)."<br /><br />";
+}
 
 // Ownership guard fires only on mutating actions; bare GET passes through
 // to view.php so foreign-controller intel views keep working.
@@ -30,7 +34,10 @@ $MUTATING_ACTIONS = [
 ];
 $is_mutating = false;
 foreach ($MUTATING_ACTIONS as $k) {
-    if (isset($_GET[$k])) { $is_mutating = true; break; }
+    if (isset($_GET[$k])) {
+        $is_mutating = true;
+        break;
+    }
 }
 
 if ($is_mutating && empty($_SESSION['is_privileged'])) {
@@ -45,45 +52,67 @@ if ($is_mutating && empty($_SESSION['is_privileged'])) {
     }
 }
 
-if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
-    if ($debug) echo "_GET:".var_export($_GET, true)." <br /> <br />";
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if ($debug) {
+        echo "_GET:".var_export($_GET, true)." <br /> <br />";
+    }
     $prefix = $_SESSION['GAME_PREFIX'];
 
     // ID Getters
-    $controller_id = NULL;
-    if ( !empty($_GET['controller_id']) ) $controller_id = $_GET['controller_id'];
-    if ($debug) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
+    $controller_id = null;
+    if (!empty($_GET['controller_id'])) {
+        $controller_id = $_GET['controller_id'];
+    }
+    if ($debug) {
+        echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
+    }
 
-    $zone_id = NULL;
-    if ( !empty($_GET['zone_id']) ) $zone_id = $_GET['zone_id'];
-    if ($debug) echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
-    
-    $base_id = NULL;
-    if ( !empty($_GET['base_id']) ) $base_id = $_GET['base_id'];
-    if ($debug) echo "base_id: ".var_export($base_id, true)."<br /><br />";
+    $zone_id = null;
+    if (!empty($_GET['zone_id'])) {
+        $zone_id = $_GET['zone_id'];
+    }
+    if ($debug) {
+        echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
+    }
 
-    $target_location_id = NULL;
-    if ( !empty($_GET['target_location_id']) ) $target_location_id = $_GET['target_location_id'];
-    if ($debug) echo "target_location_id: ".var_export($target_location_id, true)."<br /><br />";
+    $base_id = null;
+    if (!empty($_GET['base_id'])) {
+        $base_id = $_GET['base_id'];
+    }
+    if ($debug) {
+        echo "base_id: ".var_export($base_id, true)."<br /><br />";
+    }
+
+    $target_location_id = null;
+    if (!empty($_GET['target_location_id'])) {
+        $target_location_id = $_GET['target_location_id'];
+    }
+    if ($debug) {
+        echo "target_location_id: ".var_export($target_location_id, true)."<br /><br />";
+    }
 
     // Actions
-    if (isset($_GET['createBase'])){
+    if (isset($_GET['createBase'])) {
         createBase($gameReady, $controller_id, $zone_id);
     }
-    if (isset($_GET['moveBase'])){
+    if (isset($_GET['moveBase'])) {
         moveBase($gameReady, $base_id, $zone_id, $controller_id);
     }
-    if (isset($_GET['attackLocation'])){
+    if (isset($_GET['attackLocation'])) {
         $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
         if (!in_array($locationAttackMode, ['immediate', 'endTurn'], true)) {
             http_response_code(403);
             exit();
         }
-        if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
+        if ($debug) {
+            echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
+        }
         $attackLocationResult = attackLocation($gameReady, $controller_id, $target_location_id);
-        if ($debug) echo sprintf('end %s %s<br/>', $attackLocationResult['success'], $attackLocationResult['message']);
+        if ($debug) {
+            echo sprintf('end %s %s<br/>', $attackLocationResult['success'], $attackLocationResult['message']);
+        }
     }
-    if (isset($_GET['cancelLocationAttack'])){
+    if (isset($_GET['cancelLocationAttack'])) {
         $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
         if (!in_array($locationAttackMode, ['endTurn'], true)) {
             http_response_code(403);
@@ -101,8 +130,10 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             game_error_log('controllers_action_page', 'DELETE controller_location_attacks failed : ' . $e->getMessage(), ['queue_row_id' => $queue_row_id, 'controller_id' => $controller_id], 'error');
         }
     }
-    if (isset($_GET['repairLocation'])){
-        if ($debug) echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
+    if (isset($_GET['repairLocation'])) {
+        if ($debug) {
+            echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
+        }
         if (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
             game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
             echo "Stock insuffisant ou modifié.<br />";
@@ -113,13 +144,15 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             $activate_json = json_decode($location['activate_json'], true);
             updateLocation($gameReady, $location, $activate_json);
         }
-        if ($debug) echo sprintf('end <br/>');
+        if ($debug) {
+            echo sprintf('end <br/>');
+        }
     }
 
     // Get Turn Number
     $mechanics = getMechanics($gameReady);
 
-    if (isset($_GET['giftInformationAgent'])){
+    if (isset($_GET['giftInformationAgent'])) {
         $controller_id = $_GET['controller_id'] ?? '';
         $target_controller_id = $_GET['target_controller_id'] ?? '';
         $enemy_worker_id = $_GET['enemy_worker_id'] ?? '';
@@ -127,7 +160,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         if (empty($controller_id) || empty($target_controller_id) || empty($enemy_worker_id)) {
             game_error_log('controllers_action_page', 'giftInformationAgent aborted : missing controller_id / target_controller_id / enemy_worker_id', ['controller_id' => $controller_id, 'target_controller_id' => $target_controller_id, 'enemy_worker_id' => $enemy_worker_id], 'warning');
             echo '<div class="notification is-warning">Sélection incomplète : faction ou agent manquant.</div>';
-        } else if ((int)$controller_id === (int)$target_controller_id) {
+        } elseif ((int)$controller_id === (int)$target_controller_id) {
             game_error_log('controllers_action_page', 'giftInformationAgent aborted : self-gift attempt', ['controller_id' => $controller_id, 'target_controller_id' => $target_controller_id, 'enemy_worker_id' => $enemy_worker_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
@@ -142,7 +175,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Gift Information Location
-    if (isset($_GET['giftInformationLocation'])){
+    if (isset($_GET['giftInformationLocation'])) {
         $target_controller_id = $_GET['target_controller_id'] ?? '';
         $location_id = $_GET['location_id'] ?? '';
         $giver_id = $_GET['controller_id'] ?? ($_SESSION['controller']['id'] ?? '');
@@ -150,7 +183,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
         if (empty($target_controller_id) || empty($location_id) || empty($giver_id)) {
             game_error_log('controllers_action_page', 'giftInformationLocation aborted : missing target_controller_id / location_id / giver_id', ['target_controller_id' => $target_controller_id, 'location_id' => $location_id, 'giver_id' => $giver_id], 'warning');
             echo '<div class="notification is-warning">Sélection incomplète : faction ou lieu manquant.</div>';
-        } else if ((int)$giver_id === (int)$target_controller_id) {
+        } elseif ((int)$giver_id === (int)$target_controller_id) {
             game_error_log('controllers_action_page', 'giftInformationLocation aborted : self-gift attempt', ['giver_id' => $giver_id, 'target_controller_id' => $target_controller_id, 'location_id' => $location_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
@@ -162,5 +195,3 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 
 require_once '../base/baseHTML.php';
 require_once '../controllers/view.php';
-
-

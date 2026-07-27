@@ -7,14 +7,19 @@ require_once '../controllers/functions.php';
  *
  * Mirrors the success-write semantics: unset → claim for self ($selfControllerId),
  * 'null' string sentinel → "Personne (Sans bannière)", real id → controller name.
- * 
+ *
  * @param PDO $pdo : database connection
- * 
+ *
  */
-function _claimResolveOnBehalfName(PDO $pdo, array $params, int $selfControllerId): string {
+function _claimResolveOnBehalfName(PDO $pdo, array $params, int $selfControllerId): string
+{
     $claimControllerId = $params['claim_controller_id'] ?? null;
-    if ($claimControllerId === 'null') return 'Personne (Sans bannière)';
-    if (empty($claimControllerId)) return (string) getControllerName($pdo, $selfControllerId);
+    if ($claimControllerId === 'null') {
+        return 'Personne (Sans bannière)';
+    }
+    if (empty($claimControllerId)) {
+        return (string) getControllerName($pdo, $selfControllerId);
+    }
     return (string) getControllerName($pdo, (int)$claimControllerId);
 }
 
@@ -24,12 +29,17 @@ function _claimResolveOnBehalfName(PDO $pdo, array $params, int $selfControllerI
  * Defaults to $selfControllerId (the claiming controller). The leader's
  * action_params.claim_controller_id overrides it; the 'null' string sentinel
  * means "remove visible claim" (write SQL NULL).
- * 
+ *
  * @return int|null
  */
-function _claimResolveClaimerControllerIdForWrite(array $params, int $selfControllerId): int|null {
-    if (empty($params['claim_controller_id'])) return $selfControllerId;
-    if ($params['claim_controller_id'] === 'null') return null;
+function _claimResolveClaimerControllerIdForWrite(array $params, int $selfControllerId): int|null
+{
+    if (empty($params['claim_controller_id'])) {
+        return $selfControllerId;
+    }
+    if ($params['claim_controller_id'] === 'null') {
+        return null;
+    }
     return (int) $params['claim_controller_id'];
 }
 
@@ -62,9 +72,11 @@ function _claimResolveClaimerControllerIdForWrite(array $params, int $selfContro
  *     'observers'             => array,  // active-non-cid workers in zone (worker_id + controller_id rows)
  *   ]
  */
-function claimMechanic(PDO $pdo, array $mechanics): bool {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+function claimMechanic(PDO $pdo, array $mechanics): bool
+{
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
 
     $mode = getConfig($pdo, 'claimMode');
@@ -93,10 +105,12 @@ function claimMechanic(PDO $pdo, array $mechanics): bool {
             // (co-claimer names) - %3$s
             // (claim_controller_id target name) - %4$s
             foreach ($r['observers'] as $observer) {
-                if (empty($textesView)) continue;
+                if (empty($textesView)) {
+                    continue;
+                }
                 $tpl = $textesView[array_rand($textesView)];
                 $report = sprintf($tpl, $r['leader_name'], $r['zone_name'], $r['co_claimer_names'], $onBehalfName).'<br/>';
-                updateWorkerAction($pdo, (int)$observer['worker_id'], $turn_number, NULL, ['claim_report' => $report]);
+                updateWorkerAction($pdo, (int)$observer['worker_id'], $turn_number, null, ['claim_report' => $report]);
             }
             $observerControllerIds = array_unique(array_column($r['observers'], 'controller_id'));
             foreach ($observerControllerIds as $observerCid) {
@@ -113,7 +127,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool {
         if (!empty($textesSelf)) {
             $tpl = $textesSelf[array_rand($textesSelf)];
             $report = sprintf($tpl, $r['leader_name'], $r['zone_name']);
-            updateWorkerAction($pdo, (int)$r['leader_worker_id'], $turn_number, NULL, ['claim_report' => $report]);
+            updateWorkerAction($pdo, (int)$r['leader_worker_id'], $turn_number, null, ['claim_report' => $report]);
         }
 
         if ($r['success']) {
@@ -148,12 +162,14 @@ function claimMechanic(PDO $pdo, array $mechanics): bool {
  *
  * @param PDO $pdo : database connection
  * @param array $mechanics : mechanics array
- * 
+ *
  * @return array list of resolution descriptors (see claimMechanic doc)
  */
-function claimByWorkerMath(PDO $pdo, array $mechanics): array {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+function claimByWorkerMath(PDO $pdo, array $mechanics): array
+{
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
 
     $turn_number = $mechanics['turncounter'];
@@ -221,10 +237,10 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array {
         $success   = false;
 
         $isFirstAndOnlyForUnclaimedZone = (
-            $claimer['zone_holder_controller_id'] == NULL
+            $claimer['zone_holder_controller_id'] == null
             && empty($zoneClaimed[$zone_id])
-            && ($key - 1 < 0 || $claimerArray[$key-1]['zone_id'] != $claimer['zone_id'])
-            && (empty($claimerArray[$key+1]) || $claimerArray[$key+1]['zone_id'] != $claimer['zone_id'])
+            && ($key - 1 < 0 || $claimerArray[$key - 1]['zone_id'] != $claimer['zone_id'])
+            && (empty($claimerArray[$key + 1]) || $claimerArray[$key + 1]['zone_id'] != $claimer['zone_id'])
         );
 
         if ($isFirstAndOnlyForUnclaimedZone) {
@@ -243,11 +259,13 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array {
         }
 
         $claimerParams = !empty($claimer['claimer_params']) ? json_decode($claimer['claimer_params'], true) : array();
-        if (json_last_error() !== JSON_ERROR_NONE) $claimerParams = array();
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $claimerParams = array();
+        }
 
         $observers = array_values(array_filter(
             $allActiveByZone[$zone_id] ?? [],
-            fn($w) => (int)$w['controller_id'] !== $claimer_cid
+            fn ($w) => (int)$w['controller_id'] !== $claimer_cid
         ));
 
         $resolutions[] = [
@@ -265,9 +283,14 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array {
             'observers'              => $observers,
         ];
 
-        game_error_log(__FUNCTION__, sprintf('zone %d c %d w %d : violent=%s success=%s',
-            $zone_id, $claimer_cid, $claimer['claimer_id'],
-            $isViolent ? 'true' : 'false', $success ? 'true' : 'false'), [], 'debug');
+        game_error_log(__FUNCTION__, sprintf(
+            'zone %d c %d w %d : violent=%s success=%s',
+            $zone_id,
+            $claimer_cid,
+            $claimer['claimer_id'],
+            $isViolent ? 'true' : 'false',
+            $success ? 'true' : 'false'
+        ), [], 'debug');
     }
 
     return $resolutions;
@@ -290,12 +313,14 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array {
  *
  * @param PDO $pdo : database connection
  * @param array $mechanics : mechanics array
- * 
+ *
  * @return array list of resolution descriptors (see claimMechanic doc)
  */
-function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
+function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
+{
+    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
 
     $turn_number = $mechanics['turncounter'];
@@ -357,9 +382,15 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
     }
     $groups = array_values($groupsByKey);
     usort($groups, function ($a, $b) {
-        if ($a['leader_attack_val']  !== $b['leader_attack_val'])  return $b['leader_attack_val']  - $a['leader_attack_val'];
-        if ($a['leader_defence_val'] !== $b['leader_defence_val']) return $b['leader_defence_val'] - $a['leader_defence_val'];
-        if ($a['leader_enquete_val'] !== $b['leader_enquete_val']) return $b['leader_enquete_val'] - $a['leader_enquete_val'];
+        if ($a['leader_attack_val']  !== $b['leader_attack_val']) {
+            return $b['leader_attack_val']  - $a['leader_attack_val'];
+        }
+        if ($a['leader_defence_val'] !== $b['leader_defence_val']) {
+            return $b['leader_defence_val'] - $a['leader_defence_val'];
+        }
+        if ($a['leader_enquete_val'] !== $b['leader_enquete_val']) {
+            return $b['leader_enquete_val'] - $a['leader_enquete_val'];
+        }
         return $a['controller_id'] - $b['controller_id'];
     });
 
@@ -413,19 +444,28 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
 
         $leaderParamsRaw = $paramsByLeader[$leader_id] ?? '';
         $leaderParams = !empty($leaderParamsRaw) ? json_decode($leaderParamsRaw, true) : array();
-        if (json_last_error() !== JSON_ERROR_NONE) $leaderParams = array();
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $leaderParams = array();
+        }
 
         $claimVal = calculateControllerValue($pdo, 'Claim', $zone_id, $cid);
 
         $threshold_passed = ($claimVal - $calculated_defence_val) >= $claimDiff;
         $success = $threshold_passed && empty($zoneClaimed[$zone_id]);
         $outcome = $success ? 'WIN' : ($threshold_passed ? 'lose (zone already claimed this turn)' : 'lose');
-        game_error_log(__FUNCTION__, sprintf('zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s',
-            $zone_id, $cid, $claimVal, $calculated_defence_val, $claimDiff, $outcome), [], 'debug');
+        game_error_log(__FUNCTION__, sprintf(
+            'zone %d c %d : claim_val=%d calculated_defence_val=%d  >=  claimDiff=%d => %s',
+            $zone_id,
+            $cid,
+            $claimVal,
+            $calculated_defence_val,
+            $claimDiff,
+            $outcome
+        ), [], 'debug');
 
         $observers = array_values(array_filter(
             $activeByZone[$zone_id] ?? [],
-            fn($w) => (int)$w['controller_id'] !== $cid
+            fn ($w) => (int)$w['controller_id'] !== $cid
         ));
 
         $claimerWorkerIds = [];
@@ -434,14 +474,16 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
                 $claimerWorkerIds[] = (int)$c['worker_id'];
             }
         }
-        if (empty($claimerWorkerIds)) $claimerWorkerIds = [$leader_id];
+        if (empty($claimerWorkerIds)) {
+            $claimerWorkerIds = [$leader_id];
+        }
 
         $coClaimerIds = array_values(array_diff($claimerWorkerIds, [$leader_id]));
         if (empty($coClaimerIds)) {
             $coClaimerNames = "d'autres agents";
         } else {
             $coClaimerNames = implode(', ', array_map(
-                fn($wid) => (string)($nameByWorkerId[$wid] ?? "?"),
+                fn ($wid) => (string)($nameByWorkerId[$wid] ?? "?"),
                 $coClaimerIds
             ));
         }
@@ -461,7 +503,9 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array {
             'observers'              => $observers,
         ];
 
-        if ($success) $zoneClaimed[$zone_id] = $cid;
+        if ($success) {
+            $zoneClaimed[$zone_id] = $cid;
+        }
     }
 
     return $resolutions;

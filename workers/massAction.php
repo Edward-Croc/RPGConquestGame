@@ -14,25 +14,39 @@ if (
 
 $MASS_ACTIONS = ['mass_move', 'mass_investigate', 'mass_passive', 'mass_hide'];
 
-if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
-    if ($_SESSION['DEBUG'] == true) echo "_GET:".var_export($_GET, true)." <br /> <br />";
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if ($_SESSION['DEBUG'] == true) {
+        echo "_GET:".var_export($_GET, true)." <br /> <br />";
+    }
 
-    $worker_ids = NULL;
-    if ( !empty($_GET['worker_ids']) ) $worker_ids = $_GET['worker_ids'];
-    if ( $_SESSION['DEBUG'] == true ) echo "worker_ids: ".var_export($worker_ids, true)."<br /><br />";
-    $zone_id = NULL;
-    if ( !empty($_GET['zone_id']) ) $zone_id = $_GET['zone_id'];
-    if ( $_SESSION['DEBUG'] == true ) echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
+    $worker_ids = null;
+    if (!empty($_GET['worker_ids'])) {
+        $worker_ids = $_GET['worker_ids'];
+    }
+    if ($_SESSION['DEBUG'] == true) {
+        echo "worker_ids: ".var_export($worker_ids, true)."<br /><br />";
+    }
+    $zone_id = null;
+    if (!empty($_GET['zone_id'])) {
+        $zone_id = $_GET['zone_id'];
+    }
+    if ($_SESSION['DEBUG'] == true) {
+        echo "zone_id: ".var_export($zone_id, true)."<br /><br />";
+    }
 
     $mass_action_requested = false;
     foreach ($MASS_ACTIONS as $k) {
-        if (isset($_GET[$k])) { $mass_action_requested = true; break; }
+        if (isset($_GET[$k])) {
+            $mass_action_requested = true;
+            break;
+        }
     }
 
     if ($mass_action_requested && !empty($worker_ids)) {
         if (!is_array($worker_ids)) {
             game_error_log('workers_mass_action_page', 'worker_ids not an array', ['worker_ids' => $worker_ids], 'warning');
-            http_response_code(403); exit();
+            http_response_code(403);
+            exit();
         }
         $worker_ids = array_map('intval', $worker_ids);
 
@@ -40,7 +54,8 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             $session_controller_id = $_SESSION['controller']['id'] ?? null;
             if (empty($session_controller_id)) {
                 game_error_log('workers_mass_action_page', 'missing session controller_id', [], 'warning');
-                http_response_code(403); exit();
+                http_response_code(403);
+                exit();
             }
 
             try {
@@ -53,11 +68,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
                 $stmt->execute(array_merge([$session_controller_id], $worker_ids));
                 if ((int)$stmt->fetchColumn() !== count($worker_ids)) {
                     game_error_log('workers_mass_action_page', 'controller_worker ownership mismatch', ['session_controller_id' => $session_controller_id, 'worker_ids' => $worker_ids], 'warning');
-                    http_response_code(403); exit();
+                    http_response_code(403);
+                    exit();
                 }
             } catch (PDOException $e) {
                 game_error_log('workers_mass_action_page', 'SELECT controller_worker failed : ' . $e->getMessage(), ['session_controller_id' => $session_controller_id, 'worker_ids' => $worker_ids], 'error');
-                http_response_code(403); exit();
+                http_response_code(403);
+                exit();
             }
         }
 
@@ -65,15 +82,15 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
             foreach ($worker_ids as $worker_id) {
                 moveWorker($gameReady, $worker_id, $zone_id);
             }
-        } else if (isset($_GET['mass_investigate'])) {
+        } elseif (isset($_GET['mass_investigate'])) {
             foreach ($worker_ids as $worker_id) {
                 activateWorker($gameReady, $worker_id, 'investigate');
             }
-        } else if (isset($_GET['mass_passive'])) {
+        } elseif (isset($_GET['mass_passive'])) {
             foreach ($worker_ids as $worker_id) {
                 activateWorker($gameReady, $worker_id, 'passive');
             }
-        } else if (isset($_GET['mass_hide'])) {
+        } elseif (isset($_GET['mass_hide'])) {
             foreach ($worker_ids as $worker_id) {
                 activateWorker($gameReady, $worker_id, 'hide');
             }
@@ -82,5 +99,3 @@ if ( $_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 $_SESSION['DEBUG'] = false;
 require_once '../workers/viewAll.php';
-
-

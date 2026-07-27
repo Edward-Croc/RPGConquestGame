@@ -1,4 +1,5 @@
 <?php
+
 session_start(); // Start the session
 
 // Anonymous direct GET: nothing to log out from. loginForm.php sits in
@@ -20,5 +21,3 @@ session_destroy();
 // Redirect the user to the login page or any other desired page
 header(sprintf('Location: /%s/base/accueil.php', $folder));
 exit();
-
-?>

@@ -11,7 +11,8 @@
  * @param string $reason : 'destroyed' | 'moved'
  * @return bool : true on success, false on DB failure
  */
-function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, string $reason): bool {
+function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, string $reason): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with queue_row_id : ' . $queue_row['id'], ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason], 'debug');
 
@@ -61,7 +62,8 @@ function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, 
  * @param int $turn_number : current turn number
  * @return bool : true when the loop completed (or mode was skipped), false on DB failure
  */
-function locationAttackMechanic(PDO $pdo, int $turn_number): bool {
+function locationAttackMechanic(PDO $pdo, int $turn_number): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
 
@@ -104,8 +106,12 @@ function locationAttackMechanic(PDO $pdo, int $turn_number): bool {
         $resolvedDefence = calculateSecretLocationDefence($pdo, $zone_id, $row['location_id'], $location['controller_id']);
 
         $result = resolveLocationAttackEffects(
-            $pdo, $location, $row['attacker_controller_id'], $turn_number,
-            $resolvedAttack, $resolvedDefence
+            $pdo,
+            $location,
+            $row['attacker_controller_id'],
+            $turn_number,
+            $resolvedAttack,
+            $resolvedDefence
         );
 
         try {

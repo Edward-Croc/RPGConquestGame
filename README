@@ -97,6 +97,19 @@ Installation (manual):
  - Ensure var/logs/ is writable by the PHP process user.
  - The base game is set up with a user: gm; pwd: orga.
 
+Development :
+ - PHP style is enforced via PSR-12 + array-space trim rules. Config in
+   .php-cs-fixer.dist.php.
+ - Install php-cs-fixer once per dev clone:
+     wget https://cs.symfony.com/download/php-cs-fixer-v3.phar -O ~/bin/php-cs-fixer
+     chmod +x ~/bin/php-cs-fixer
+ - Activate the versioned pre-commit hook (blocks commits with style violations):
+     git config core.hooksPath .githooks
+ - Manual format run (all files) :
+     php-cs-fixer fix
+   Dry-run to preview :
+     php-cs-fixer fix --dry-run --diff
+
 Preparing a game :
  - Chose a scenario in the available configurations OR prepare your own configuration. (You can ask for help.)
  - Enjoy !

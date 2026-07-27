@@ -97,7 +97,7 @@ require_once '../base/baseHTML.php';
             <td><?= $log['attacker_name'] ?? 'Inconnu' ?></td>
             <td><?= $log['turn'] ?></td>
             <td><?= $log['success'] ? '✔️ Réussie' : '❌ Échec' ?></td>
-            <td><?= sprintf('%s / %s',  ($log['attack_val']), $log['defence_val'])?></td>
+            <td><?= sprintf('%s / %s', ($log['attack_val']), $log['defence_val'])?></td>
             <td><?= nl2br($log['target_result_text']) ?></td>
             <td><?= nl2br($log['attacker_result_text']) ?></td>
         </tr>
