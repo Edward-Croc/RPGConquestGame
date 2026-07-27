@@ -1,4 +1,5 @@
 <?php
+
 // Route les erreurs vers var/logs/game_errors.log. Le dossier doit exister
 // (cree par l'ops au deploiement). Acces public bloque par var/.htaccess.
 
@@ -13,19 +14,24 @@
  * @param string|null $levelFilter    'error' | 'warning' | 'debug'
  * @return array
  */
-function game_error_log_tail(int $lines = 2, ?string $prefixFilter = null, ?string $levelFilter = null): array {
+function game_error_log_tail(int $lines = 2, ?string $prefixFilter = null, ?string $levelFilter = null): array
+{
     $logPath = $GLOBALS['LOG_PATH'];
-    if (!is_readable($logPath)) return [];
+    if (!is_readable($logPath)) {
+        return [];
+    }
     $raw = @file($logPath, FILE_IGNORE_NEW_LINES);
-    if ($raw === false) return [];
+    if ($raw === false) {
+        return [];
+    }
 
     if ($prefixFilter !== null && $prefixFilter !== '') {
         $needle = "[{$prefixFilter}]";
-        $raw = array_filter($raw, fn($l) => str_contains($l, $needle));
+        $raw = array_filter($raw, fn ($l) => str_contains($l, $needle));
     }
     if ($levelFilter !== null && $levelFilter !== '') {
         $needle = "[" . strtoupper($levelFilter) . "]";
-        $raw = array_filter($raw, fn($l) => str_contains($l, $needle));
+        $raw = array_filter($raw, fn ($l) => str_contains($l, $needle));
     }
 
     return array_reverse(array_slice(array_values($raw), -$lines));
@@ -47,7 +53,8 @@ function game_error_log_tail(int $lines = 2, ?string $prefixFilter = null, ?stri
  * @param array  $context   optional key/value bag serialise en JSON
  * @param string $level     'error' (default) | 'warning' | 'debug'
  */
-function game_error_log(string $function, string $message, array $context = [], string $level = 'error'): void {
+function game_error_log(string $function, string $message, array $context = [], string $level = 'error'): void
+{
     $prefix = $_SESSION['GAME_PREFIX'] ?? 'no-prefix';
     $lvl = strtoupper($level);
     if (!in_array($lvl, ['ERROR', 'WARNING', 'DEBUG'], true)) {
@@ -64,7 +71,9 @@ function game_error_log(string $function, string $message, array $context = [], 
     // Anti log-injection : neutralise les \r\n dans message + context strings
     $message = strtr($message, ["\r" => ' ', "\n" => ' ']);
     foreach ($context as $k => $v) {
-        if (is_string($v)) $context[$k] = strtr($v, ["\r" => ' ', "\n" => ' ']);
+        if (is_string($v)) {
+            $context[$k] = strtr($v, ["\r" => ' ', "\n" => ' ']);
+        }
     }
     $ctx = $context ? ' | ctx=' . json_encode($context, JSON_UNESCAPED_UNICODE) : '';
     error_log("[{$prefix}] [{$lvl}] {$function}: {$message}{$ctx}");

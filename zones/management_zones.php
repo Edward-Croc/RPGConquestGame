@@ -65,7 +65,9 @@ $zoneStmt = $gameReady->query($zoneSql);
 $zones = $zoneStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $zoneNameById = [];
-foreach ($zones as $z) { $zoneNameById[(int)$z['id']] = $z['name']; }
+foreach ($zones as $z) {
+    $zoneNameById[(int)$z['id']] = $z['name'];
+}
 
 require_once '../base/baseHTML.php';
 ?>
@@ -94,9 +96,11 @@ require_once '../base/baseHTML.php';
                 foreach ($ids as $id) {
                     $names[] = $zoneNameById[(int)$id] ?? "#$id";
                 }
-                if ($names) $adjacentNames = implode(', ', $names);
+                if ($names) {
+                    $adjacentNames = implode(', ', $names);
+                }
             }
-        ?>
+            ?>
         <tr> <form method="post" style="display:inline;">
             <td><?= htmlspecialchars($zone['id']) ?></td>
             <td><?= htmlspecialchars($zone['name']) ?></td>

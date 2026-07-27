@@ -55,13 +55,13 @@ if (is_readable($logPath)) {
 $filterPrefix = trim($_GET['prefix'] ?? '');
 if ($filterPrefix !== '') {
     $needle = "[{$filterPrefix}]";
-    $lines = array_values(array_filter($lines, fn($l) => str_contains($l, $needle)));
+    $lines = array_values(array_filter($lines, fn ($l) => str_contains($l, $needle)));
 }
 
 $filterLevel = strtoupper(trim($_GET['level'] ?? ''));
 if (in_array($filterLevel, ['ERROR', 'WARNING', 'DEBUG'], true)) {
     $needle = "[{$filterLevel}]";
-    $lines = array_values(array_filter($lines, fn($l) => str_contains($l, $needle)));
+    $lines = array_values(array_filter($lines, fn ($l) => str_contains($l, $needle)));
 } else {
     $filterLevel = '';
 }
@@ -72,7 +72,8 @@ $LEVEL_COLORS = [
     'DEBUG'   => '#7f8c8d',
 ];
 
-function classify_log_line(string $line, array $colors): string {
+function classify_log_line(string $line, array $colors): string
+{
     foreach ($colors as $lvl => $color) {
         if (str_contains($line, "[{$lvl}]")) {
             return $color;

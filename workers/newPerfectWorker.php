@@ -1,4 +1,5 @@
 <?php
+
 // Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
@@ -7,56 +8,57 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'workers_new_perfect_page';  // uncomment to log DEBUG events from this page
 
-    $title = 'Admin - Create Perfect Agent';
+$title = 'Admin - Create Perfect Agent';
 
-    // Select a controller from controllers
-    $controllerValues = getControllers($gameReady, NULL, NULL, FALSE);
+// Select a controller from controllers
+$controllerValues = getControllers($gameReady, null, null, false);
 
-    // Select a zone from zones
-    $zonesArray = getZonesArray($gameReady);
+// Select a zone from zones
+$zonesArray = getZonesArray($gameReady);
 
-    // Select one origin from worker_origins
-    // Select one firstname and one lastname from worker_names where origin_id = selected origin
-    $prefix = $_SESSION['GAME_PREFIX'];
-    try{
-        // Get all values from worker_names
-        $sql = "SELECT * FROM {$prefix}worker_names wn
+// Select one origin from worker_origins
+// Select one firstname and one lastname from worker_names where origin_id = selected origin
+$prefix = $_SESSION['GAME_PREFIX'];
+try {
+    // Get all values from worker_names
+    $sql = "SELECT * FROM {$prefix}worker_names wn
         JOIN {$prefix}worker_origins wo ON wn.origin_id = wo.id";
-        $stmt = $gameReady->prepare($sql);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        game_error_log('workers_new_perfect_page', 'worker_names JOIN worker_origins SELECT failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
-        return NULL;
-    }
-    // Fetch the results
-    $workerOriginsNames = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $originOptionsCheck = array();
-    $originOptions = '';
-    $firstnameOptions = '';
-    $lastnameOptions = '';
-    foreach ($workerOriginsNames as $workerOriginName) {
-        // Create options for each origin, firstname and lastname
-        // only get each origin once
-        if ( !in_array($workerOriginName['origin_id'], $originOptionsCheck) ) {
-            $originOptionsCheck[] = $workerOriginName['origin_id'];
-            $originOptions .= sprintf(
-                '<option value="%1$s">%2$s</option>',
-                $workerOriginName['origin_id'],
-                $workerOriginName['name']
-            );
-        }
-        $firstnameOptions .= sprintf(
-            '<option value="%1$s">%1$s (%2$s)</option>',
-            $workerOriginName['firstname'],
-            $workerOriginName['name']
-        );
-        $lastnameOptions .= sprintf(
-            '<option value="%1$s">%1$s (%2$s)</option>',
-            $workerOriginName['lastname'],
+    $stmt = $gameReady->prepare($sql);
+    $stmt->execute();
+} catch (PDOException $e) {
+    game_error_log('workers_new_perfect_page', 'worker_names JOIN worker_origins SELECT failed : ' . $e->getMessage(), ['sql' => $sql], 'error');
+    return null;
+}
+// Fetch the results
+$workerOriginsNames = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$originOptionsCheck = array();
+$originOptions = '';
+$firstnameOptions = '';
+$lastnameOptions = '';
+foreach ($workerOriginsNames as $workerOriginName) {
+    // Create options for each origin, firstname and lastname
+    // only get each origin once
+    if (!in_array($workerOriginName['origin_id'], $originOptionsCheck)) {
+        $originOptionsCheck[] = $workerOriginName['origin_id'];
+        $originOptions .= sprintf(
+            '<option value="%1$s">%2$s</option>',
+            $workerOriginName['origin_id'],
             $workerOriginName['name']
         );
     }
-    $showOriginSelect = sprintf('
+    $firstnameOptions .= sprintf(
+        '<option value="%1$s">%1$s (%2$s)</option>',
+        $workerOriginName['firstname'],
+        $workerOriginName['name']
+    );
+    $lastnameOptions .= sprintf(
+        '<option value="%1$s">%1$s (%2$s)</option>',
+        $workerOriginName['lastname'],
+        $workerOriginName['name']
+    );
+}
+$showOriginSelect = sprintf(
+    '
             <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="origin_id" name="origin_id" required>
@@ -66,10 +68,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </div>
         ',
-        'origine',
-        $originOptions
-    );
-    $showFirstnameSelect = sprintf('
+    'origine',
+    $originOptions
+);
+$showFirstnameSelect = sprintf(
+    '
             <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="firstname" name="firstname">
@@ -79,10 +82,11 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </div>
         ',
-        'Firstname',
-        $firstnameOptions
-    );
-    $showLastnameSelect = sprintf('
+    'Firstname',
+    $firstnameOptions
+);
+$showLastnameSelect = sprintf(
+    '
             <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="lastname" name="lastname" required>
@@ -92,17 +96,18 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </div>
         ',
-        'Lastname',
-        $lastnameOptions
-    );
+    'Lastname',
+    $lastnameOptions
+);
 
-    // Select one power_hobby from powers where type_id = 1
-    $powerHobbyArray = getPowersByType($gameReady,'1', null, false);
-    $hobbyOptions = '';
-    foreach ($powerHobbyArray as $powerHobby) {
-        $hobbyOptions .= "<option value='" . htmlspecialchars($powerHobby['link_power_type_id']) . "'>" . htmlspecialchars($powerHobby['power_text']) . "</option>";
-    }
-    $showHobbySelect = sprintf('
+// Select one power_hobby from powers where type_id = 1
+$powerHobbyArray = getPowersByType($gameReady, '1', null, false);
+$hobbyOptions = '';
+foreach ($powerHobbyArray as $powerHobby) {
+    $hobbyOptions .= "<option value='" . htmlspecialchars($powerHobby['link_power_type_id']) . "'>" . htmlspecialchars($powerHobby['power_text']) . "</option>";
+}
+$showHobbySelect = sprintf(
+    '
             <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="power_hobby_id" name="power_hobby_id">
@@ -112,16 +117,17 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </div>
         ',
-        htmlspecialchars(getPowerTypesDescription($gameReady, 'Hobby')),
-        $hobbyOptions
-    );
-    // Select one power_metier from powers where type_id = 2
-    $powerJobArray = getPowersByType($gameReady,'2', null, false);
-    $jobOptions = '';
-    foreach ($powerJobArray as $powerJob) {
-        $jobOptions .= "<option value='" . htmlspecialchars($powerJob['link_power_type_id']) . "'>" . htmlspecialchars($powerJob['power_text']) . "</option>";
-    }
-    $showJobSelect = sprintf('
+    htmlspecialchars(getPowerTypesDescription($gameReady, 'Hobby')),
+    $hobbyOptions
+);
+// Select one power_metier from powers where type_id = 2
+$powerJobArray = getPowersByType($gameReady, '2', null, false);
+$jobOptions = '';
+foreach ($powerJobArray as $powerJob) {
+    $jobOptions .= "<option value='" . htmlspecialchars($powerJob['link_power_type_id']) . "'>" . htmlspecialchars($powerJob['power_text']) . "</option>";
+}
+$showJobSelect = sprintf(
+    '
             <div class="control for-select">
                 <div class="select is-fullwidth">
                     <select id="power_metier_id" name="power_metier_id">
@@ -131,30 +137,31 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </div>
         ',
-        htmlspecialchars(getPowerTypesDescription($gameReady, 'Metier')),
-        $jobOptions
-    );
-    // otionnal Select one power_discipline from powers where type_id = 3
-    $powerDisciplineArray = getPowersByType($gameReady,'3', null, false);
-    // otionnal Select one power_transformation from powers where type_id = 4
-    $powerTransformationArray = getPowersByType($gameReady,'4', null, false);
-    // Submit to workers/action.php with creation = true
-    /*
-    *     "creation"="true"
-    *     controller_id
-    *     firstname
-    *     lastname
-    *     origin
-    *     origin_id
-    *     power_hobby
-    *     power_metier
-    *     power_hobby_id
-    *     power_metier_id
-    *     discipline
-    *     transformation
-    *     zone
-    */
-    $html = sprintf('
+    htmlspecialchars(getPowerTypesDescription($gameReady, 'Metier')),
+    $jobOptions
+);
+// otionnal Select one power_discipline from powers where type_id = 3
+$powerDisciplineArray = getPowersByType($gameReady, '3', null, false);
+// otionnal Select one power_transformation from powers where type_id = 4
+$powerTransformationArray = getPowersByType($gameReady, '4', null, false);
+// Submit to workers/action.php with creation = true
+/*
+*     "creation"="true"
+*     controller_id
+*     firstname
+*     lastname
+*     origin
+*     origin_id
+*     power_hobby
+*     power_metier
+*     power_hobby_id
+*     power_metier_id
+*     discipline
+*     transformation
+*     zone
+*/
+$html = sprintf(
+    '
         <div class="workers">
             <h2> %2$s </h2>
             <form action="/%1$s/workers/action.php" method="GET"><p>
@@ -171,25 +178,24 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
                 </div>
             </p></form>
         </div>',
-        $_SESSION['FOLDER'],
-        $title,
-        $showJobSelect,
-        $showHobbySelect,
-        showDisciplineSelect($gameReady, $powerDisciplineArray, false),
-        showTransformationSelect($gameReady, $powerTransformationArray, false),
-        str_replace(
-            '<select id="zoneSelect" name="zone_id">',
-            '<select id="zoneSelect" name="zone_id" required>',
-            showZoneSelect($gameReady, $zonesArray)
-        ),
-        $showOriginSelect,
-        $showFirstnameSelect,
-        $showLastnameSelect,
-        str_replace(
-            '<select id="controllerSelect" name="controller_id">',
-            '<select id="controllerSelect" name="controller_id" required>',
-            showControllerSelect($controllerValues)
-        )
-    );
-    echo $html;
-?>
+    $_SESSION['FOLDER'],
+    $title,
+    $showJobSelect,
+    $showHobbySelect,
+    showDisciplineSelect($gameReady, $powerDisciplineArray, false),
+    showTransformationSelect($gameReady, $powerTransformationArray, false),
+    str_replace(
+        '<select id="zoneSelect" name="zone_id">',
+        '<select id="zoneSelect" name="zone_id" required>',
+        showZoneSelect($gameReady, $zonesArray)
+    ),
+    $showOriginSelect,
+    $showFirstnameSelect,
+    $showLastnameSelect,
+    str_replace(
+        '<select id="controllerSelect" name="controller_id">',
+        '<select id="controllerSelect" name="controller_id" required>',
+        showControllerSelect($controllerValues)
+    )
+);
+echo $html;

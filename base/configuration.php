@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $name = $_POST['name'];
         $value = $_POST['value'];
 
-        try{
+        try {
             // Insert new config value into the database
             $stmt = $gameReady->prepare("INSERT INTO {$prefix}config (name, value) VALUES (:name, :value)");
             $stmt->bindParam(':name', $name);
@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if action is to delete a config value
     if (isset($_POST['delete_config'])) {
         game_error_log('configuration_page', 'delete_config request', ['id' => $_POST['id']], 'debug');
-        try{
+        try {
             $id = $_POST['id'];
 
             // Delete config value from the database
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if action is to update a config value
     if (isset($_POST['update_config'])) {
         game_error_log('configuration_page', 'update_config request', ['id' => $_POST['id'], 'value' => $_POST['value']], 'debug');
-        try{
+        try {
             $id = $_POST['id'];
             $value = $_POST['value'];
 
@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-try{
+try {
     // Retrieve config values from the database
     $stmt = $gameReady->query("SELECT * FROM {$prefix}config ORDER BY ID ASC");
     $config_values = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -103,6 +103,6 @@ require_once '../base/baseHTML.php';
                 </form>
             </tr>';
         }
-        ?>
+?>
         </table>
         </div>

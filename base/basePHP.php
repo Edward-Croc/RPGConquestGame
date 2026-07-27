@@ -1,11 +1,12 @@
 <?php
+
 ob_start(); // Buffer output so header() redirects work even when warnings are emitted
-if ( !isset($_SESSION['DEBUG']) ){
+if (!isset($_SESSION['DEBUG'])) {
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
 }
 
-if ($_SESSION['DEBUG'] == true ){
+if ($_SESSION['DEBUG'] == true) {
     echo sprintf("_SESSION %s <br />", var_export($_SESSION, true));
 }
 
@@ -30,22 +31,23 @@ require_once '../zones/functions.php';
  *
  * @return string|null : stored value or NULL on error / missing key
  */
-function getConfig(PDO $pdo, string $configName): string|null {
+function getConfig(PDO $pdo, string $configName): string|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         $stmt = $pdo->prepare("SELECT value
             FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (string)$val : NULL;
+        return $val !== false ? (string)$val : null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'PDO error : ' . $e->getMessage(), ['configName' => $configName], 'error');
-        return NULL;
+        return null;
     }
 }
 
@@ -56,19 +58,20 @@ function getConfig(PDO $pdo, string $configName): string|null {
  *
  * @return array|null : first mechanics row (assoc) or NULL on error / empty
  */
-function getMechanics(PDO $pdo): array|null {
+function getMechanics(PDO $pdo): array|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         $stmt = $pdo->query("SELECT * FROM {$prefix}mechanics");
         $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
         game_error_log(__FUNCTION__, 'DONE', ['mechanics' => $mechanics], 'debug');
-        return $mechanics[0] ?? NULL;
+        return $mechanics[0] ?? null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'PDO error : ' . $e->getMessage(), [], 'error');
-        return NULL;
+        return null;
     }
 }
 
@@ -79,7 +82,7 @@ $gameReady = gameReady();
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
-}else{
+} else {
     // Set the session debug status
     $_SESSION['DEBUG'] = false;
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
@@ -100,7 +103,7 @@ if (!$gameReady) {
 
     // Set game title
     $gameTitle = getConfig($gameReady, 'TITLE');
-    if ($_SESSION['DEBUG'] == true){
+    if ($_SESSION['DEBUG'] == true) {
         echo "The game is ready.<br />";
         echo "The gameTitle is : '$gameTitle'.<br />";
     }
@@ -109,11 +112,8 @@ if (!$gameReady) {
     $mechanics = getMechanics($gameReady);
 }
 
-if ($_SESSION['DEBUG'] == true){
+if ($_SESSION['DEBUG'] == true) {
     // print debug values
     echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
     echo "Turn : ".$mechanics['turncounter']."; gamestate : '".$mechanics['gamestate']. "' <br />";
 }
-
-
-?>

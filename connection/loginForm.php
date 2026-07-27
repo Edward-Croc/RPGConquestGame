@@ -1,6 +1,6 @@
 <?php
 ob_start(); // Buffer output so header() redirects work even when DEBUG echoes are emitted
-if ( !isset($_SESSION['DEBUG']) ){
+if (!isset($_SESSION['DEBUG'])) {
     session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
     $_SESSION['DEBUG_REPORT'] = false;
@@ -23,22 +23,23 @@ require_once '../controllers/functions.php';
  *
  * @return string|null : stored value, or NULL on missing key / PDO error
  */
-function getConfig(PDO $pdo, string $configName): string|null {
+function getConfig(PDO $pdo, string $configName): string|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         $stmt = $pdo->prepare("SELECT value
             FROM {$prefix}config
             WHERE name = :configName
         ");
         $stmt->execute([':configName' => $configName]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (string)$val : NULL;
+        return $val !== false ? (string)$val : null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT value failed : ' . $e->getMessage(), ['configName' => $configName], 'error');
-        return NULL;
+        return null;
     }
 }
 
@@ -50,12 +51,12 @@ if (!$gameReady) {
     game_error_log('login_form_page', 'gameReady() returned falsy — DB configuration missing or unreachable', [], 'warning');
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
-}else{
+} else {
     if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
     $gameTitle = getConfig($gameReady, 'TITLE');
-    if ($_SESSION['DEBUG'] == true){
+    if ($_SESSION['DEBUG'] == true) {
         echo "The game is ready.<br />";
         echo "The gameTitle is : '$gameTitle'.<br />";
     }
@@ -65,7 +66,7 @@ if (
     isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
     && isset($_SESSION['username'])
 ) {
-    if ($_SESSION['DEBUG'] == true){
+    if ($_SESSION['DEBUG'] == true) {
         echo "Redirect the user to a logged-in page.<br />";
     }
 
@@ -99,7 +100,7 @@ if (
             $_SESSION['user_id'] = $result['id'];
             $_SESSION['is_privileged'] = $result['is_privileged'];
             $_SESSION['logged_in'] = true;
-            if ($_SESSION['DEBUG'] == true){
+            if ($_SESSION['DEBUG'] == true) {
                 echo "ID: " . $_SESSION['user_id']. ", is_privileged: " . $_SESSION['is_privileged'];
             }
 

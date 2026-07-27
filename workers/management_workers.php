@@ -15,9 +15,9 @@ $workerIds = $gameReady->query("SELECT id FROM {$prefix}workers ORDER BY id")->f
 
 $workers = getWorkers($gameReady, $workerIds);
 
-$powerDisciplineArray = getPowersByType($gameReady,'3', NULL, false);
+$powerDisciplineArray = getPowersByType($gameReady, '3', null, false);
 # echo "powerDisciplineArray : ". var_export($powerDisciplineArray, true)."<br/>";
-$powerTransformationArray = getPowersByType($gameReady,'4', null, false);
+$powerTransformationArray = getPowersByType($gameReady, '4', null, false);
 # echo "powerTransformationArray : ". var_export($powerTransformationArray, true)."<br/>";
 
 require_once '../base/baseHTML.php';
@@ -32,10 +32,11 @@ require_once '../base/baseHTML.php';
             <th>Ongoing action</th>
             <th>Action</th>
         </tr>
-    <?php 
+    <?php
     # echo var_export($workers, true);
-    foreach ($workers as $worker){
-        $workerHtml = sprintf('<tr>
+    foreach ($workers as $worker) {
+        $workerHtml = sprintf(
+            '<tr>
                 <td>%1$s / %11$s </td>
                 <td>%2$s (%4$s)</td>
                 <td>%3$s</td>

@@ -1,4 +1,5 @@
 <?php
+
 // Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
@@ -12,7 +13,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  *
  * @return array : trimmed pieces
  */
-function cleanAndSplitString(string|null $input): array {
+function cleanAndSplitString(string|null $input): array
+{
     // Remove curly braces and quotes
     $cleaned = str_replace(['{', '}', '"'], '', (string) $input);
     // Split the string by commas into an array
@@ -28,14 +30,16 @@ function cleanAndSplitString(string|null $input): array {
  *
  * @return array : list of (searcher, found) comparison rows
  */
-function getSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null $searcher_id = NULL): array|false {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+function getSearcherComparisons(PDO $pdo, int|null $turn_number = null, int|null $searcher_id = null): array|false
+{
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . ($turn_number ?? 'NULL'), ['searcher_id' => $searcher_id], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    if ( !isset($turn_number)) {
+    if (!isset($turn_number)) {
         $mechanics = getMechanics($pdo);
         $turn_number = $mechanics['turncounter'];
         echo "turn_number : $turn_number <br>";
@@ -207,12 +211,14 @@ function getSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null
                 AND s.searcher_controller_id != wa.controller_id
         ";
     }
-    if ( !EMPTY($searcher_id) ) $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
+    if (!empty($searcher_id)) {
+        $sql .= sprintf(" AND s.searcher_id = %d", $searcher_id);
+    }
     // Whitelisted (asc|desc) — getInvestigateOrder enforces the only safe interpolation surface
     $order = strtoupper(getInvestigateOrder($pdo));
     $sql .= " ORDER BY s.searcher_enquete_val $order, s.searcher_id ASC";
     game_error_log(__FUNCTION__, 'sql prepared', ['sql' => $sql], 'debug');
-    try{
+    try {
         $investigate_actions = getValidatedInvestigateActionsForSql($pdo);
         $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
         game_error_log(__FUNCTION__, 'turn_number : ' . $turn_number, [], 'debug');
@@ -247,23 +253,32 @@ function getSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null
  *
  * @return array : [reportElement HTML string, ckePowersFlag bool, ckeControllerId int|null, ckeControllerName string|null]
  */
-function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, array $zoneNameById, array $txtBag): array {
+function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, array $zoneNameById, array $txtBag): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'prevCke' => $prevCke], 'debug');
 
     $REPORTDIFF = $txtBag['REPORTDIFF'];
     $enqDiff = (int)$row['enquete_difference'];
 
-    if      ($enqDiff >= $REPORTDIFF[3]) $currentLevel = 3;
-    elseif  ($enqDiff >= $REPORTDIFF[2]) $currentLevel = 2;
-    elseif  ($enqDiff >= $REPORTDIFF[1]) $currentLevel = 1;
-    elseif  ($enqDiff >= $REPORTDIFF[0]) $currentLevel = 0;
-    else    return ['', false, NULL, NULL];
+    if ($enqDiff >= $REPORTDIFF[3]) {
+        $currentLevel = 3;
+    } elseif ($enqDiff >= $REPORTDIFF[2]) {
+        $currentLevel = 2;
+    } elseif ($enqDiff >= $REPORTDIFF[1]) {
+        $currentLevel = 1;
+    } elseif ($enqDiff >= $REPORTDIFF[0]) {
+        $currentLevel = 0;
+    } else {
+        return ['', false, null, null];
+    }
 
     $disciplines = cleanAndSplitString($row['found_discipline']);
     $discipline_2 = '';
     foreach ($disciplines as $key => $discipline) {
-        if ($key == 0) continue;
+        if ($key == 0) {
+            continue;
+        }
         $discipline_2 .= sprintf(
             $txtBag['textesFoundDisciplines'][array_rand($txtBag['textesFoundDisciplines'])],
             $discipline
@@ -274,20 +289,24 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     $found_transformation = cleanAndSplitString($row['found_transformation']);
     $transformationTextDiff = ['', '', '', ''];
     foreach ($hidden_transformation as $iteration => $diffval) {
-        if ($iteration > 0 && !empty($transformationTextDiff[$diffval]))
+        if ($iteration > 0 && !empty($transformationTextDiff[$diffval])) {
             $transformationTextDiff[$diffval] .= ' et ';
-        if ($diffval == 0 || $diffval == 3)
+        }
+        if ($diffval == 0 || $diffval == 3) {
             $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
-        if ($diffval == 1)
+        }
+        if ($diffval == 1) {
             $transformationTextDiff[$diffval] .= sprintf(
                 $txtBag['textesTransformationDiff1'][array_rand($txtBag['textesTransformationDiff1'])],
                 $found_transformation[$iteration]
             );
-        if ($diffval == 2)
+        }
+        if ($diffval == 2) {
             $transformationTextDiff[$diffval] .= sprintf(
                 $txtBag['textesTransformationDiff2'][array_rand($txtBag['textesTransformationDiff2'])],
                 $found_transformation[$iteration]
             );
+        }
     }
 
     $text_action_ps = $txtBag['actions'][$row['found_action']]['ps'];
@@ -299,7 +318,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
                 $text_action_ps .= ' au nom de personne';
                 $text_action_inf .= ' au nom de personne';
             } else {
-                $controllers = getControllers($pdo, NULL, $found_action_params['claim_controller_id']);
+                $controllers = getControllers($pdo, null, $found_action_params['claim_controller_id']);
                 $claim_suffix = sprintf(' au nom %s %s %s', $txtBag['controllerNameDenominatorThe'], $controllers[0]['firstname'], $controllers[0]['lastname']);
                 $text_action_ps .= $claim_suffix;
                 $text_action_inf .= $claim_suffix;
@@ -313,8 +332,11 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         if (is_array($found_action_params)) {
             foreach ($found_action_params as $param) {
                 if (isset($param['attackScope']) && isset($param['attackID'])) {
-                    if ($param['attackScope'] === 'network') $networkIDs[] = $param['attackID'];
-                    elseif ($param['attackScope'] === 'worker') $workerIDs[] = $param['attackID'];
+                    if ($param['attackScope'] === 'network') {
+                        $networkIDs[] = $param['attackID'];
+                    } elseif ($param['attackScope'] === 'worker') {
+                        $workerIDs[] = $param['attackID'];
+                    }
                 }
             }
         }
@@ -363,7 +385,9 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     if ($needSlab2) {
         $slabs[2] = sprintf(
             $txtBag['textesDiff2'][array_rand($txtBag['textesDiff2'])],
-            $row['found_controller_id'], $transformationTextDiff[2], $discipline_2
+            $row['found_controller_id'],
+            $transformationTextDiff[2],
+            $discipline_2
         );
     }
     if ($needSlab3) {
@@ -375,12 +399,18 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
 
     if (empty($prevCke)) {
         $prevLevel = -1;
-        $prevZone = NULL;
+        $prevZone = null;
     } else {
         $prevLevel = 0;
-        if (!empty($prevCke['discovered_powers']))          $prevLevel = max($prevLevel, 1);
-        if (!empty($prevCke['discovered_controller_id']))   $prevLevel = max($prevLevel, 2);
-        if (!empty($prevCke['discovered_controller_name'])) $prevLevel = max($prevLevel, 3);
+        if (!empty($prevCke['discovered_powers'])) {
+            $prevLevel = max($prevLevel, 1);
+        }
+        if (!empty($prevCke['discovered_controller_id'])) {
+            $prevLevel = max($prevLevel, 2);
+        }
+        if (!empty($prevCke['discovered_controller_name'])) {
+            $prevLevel = max($prevLevel, 3);
+        }
         $prevZone = (int)$prevCke['zone_id'];
     }
     $currentZone = (int)$row['zone_id'];
@@ -391,9 +421,11 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     if ($prevLevel == -1) {
         // No prior CKE — full text (current behaviour)
         $visibleSlabs = [];
-        for ($i = 0; $i <= $currentLevel; $i++) $visibleSlabs[] = $slabs[$i];
+        for ($i = 0; $i <= $currentLevel; $i++) {
+            $visibleSlabs[] = $slabs[$i];
+        }
         $reportElement = '<p>'.implode(' ', $visibleSlabs).'</p>';
-    } elseif ($prevZone !== NULL && $prevZone !== $currentZone) {
+    } elseif ($prevZone !== null && $prevZone !== $currentZone) {
         // Moved — summary + full known text folded
         $prevZoneName = $zoneNameById[$prevZone] ?? ('zone #'.$prevZone);
         $movedTpl = $txtBag['textesAgentMoved'][array_rand($txtBag['textesAgentMoved'])];
@@ -401,7 +433,9 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         $maxLevel = max($currentLevel, $prevLevel);
         $foldedSlabs = [];
         for ($i = 0; $i <= $maxLevel; $i++) {
-            if (isset($slabs[$i])) $foldedSlabs[] = $slabs[$i];
+            if (isset($slabs[$i])) {
+                $foldedSlabs[] = $slabs[$i];
+            }
         }
         $reportElement = '<details><summary>'.$summary.'</summary><p>'.implode(' ', $foldedSlabs).'</p></details>';
     } elseif ($currentLevel <= $prevLevel) {
@@ -410,7 +444,9 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         $summary = sprintf($stillTpl, $foundName, $txtBag['textForZoneType']);
         $foldedSlabs = [];
         for ($i = 0; $i <= $prevLevel; $i++) {
-            if (isset($slabs[$i])) $foldedSlabs[] = $slabs[$i];
+            if (isset($slabs[$i])) {
+                $foldedSlabs[] = $slabs[$i];
+            }
         }
         $reportElement = '<details><summary>'.$summary.'</summary><p>'.implode(' ', $foldedSlabs).'</p></details>';
     } else {
@@ -418,10 +454,14 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         $upgradeTpl = $txtBag['textesAgentUpgradeInfo'][array_rand($txtBag['textesAgentUpgradeInfo'])];
         $upgradeText = sprintf($upgradeTpl, $foundName);
         $newSlabs = [];
-        for ($i = $prevLevel + 1; $i <= $currentLevel; $i++) $newSlabs[] = $slabs[$i];
+        for ($i = $prevLevel + 1; $i <= $currentLevel; $i++) {
+            $newSlabs[] = $slabs[$i];
+        }
         $oldSlabs = [];
         for ($i = 0; $i <= $prevLevel; $i++) {
-            if (isset($slabs[$i])) $oldSlabs[] = $slabs[$i];
+            if (isset($slabs[$i])) {
+                $oldSlabs[] = $slabs[$i];
+            }
         }
         $upgradePClass = !empty($oldSlabs) ? ' class="mb-0"' : '';
         $reportElement = '<p'.$upgradePClass.'>'.$upgradeText.' '.implode(' ', $newSlabs).'</p>';
@@ -431,8 +471,8 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     }
 
     $ckePowersFlag       = ($currentLevel >= 1);
-    $ckeControllerId     = ($currentLevel >= 2) ? $row['found_controller_id'] : NULL;
-    $ckeControllerName   = ($currentLevel >= 3) ? $row['found_controller_name'] : NULL;
+    $ckeControllerId     = ($currentLevel >= 2) ? $row['found_controller_id'] : null;
+    $ckeControllerName   = ($currentLevel >= 3) ? $row['found_controller_name'] : null;
 
     return [$reportElement, $ckePowersFlag, $ckeControllerId, $ckeControllerName];
 }
@@ -446,9 +486,11 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
  *
  * @return bool : true when the loop completed
  */
-function investigateMechanic(PDO $pdo, array $mechanics): bool {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+function investigateMechanic(PDO $pdo, array $mechanics): bool
+{
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
 
     $turn_number = $mechanics['turncounter'];
@@ -463,7 +505,7 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool {
     ];
     game_error_log(__FUNCTION__, 'REPORTDIFF thresholds loaded', ['REPORTDIFF' => $REPORTDIFF], 'debug');
 
-    $investigations = getSearcherComparisons($pdo, $turn_number, NULL);
+    $investigations = getSearcherComparisons($pdo, $turn_number, null);
     if (!is_array($investigations)) {
         game_error_log(__FUNCTION__, 'getSearcherComparisons returned non-array, aborting EOT step', ['turn_number' => $turn_number]);
         return false;
@@ -482,7 +524,7 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool {
         ],
         'textesStartInvestigate'              => getConfig($pdo, 'textesStartInvestigate'),
         'textesDiff01Array'                   => json_decode(getConfig($pdo, 'textesDiff01Array'), true),
-        'textesDiff01TransformationDiff0Array'=> json_decode(getConfig($pdo, 'textesDiff01TransformationDiff0Array'), true),
+        'textesDiff01TransformationDiff0Array' => json_decode(getConfig($pdo, 'textesDiff01TransformationDiff0Array'), true),
         'textesDiff2'                         => json_decode(getConfig($pdo, 'textesDiff2'), true),
         'textesDiff3'                         => json_decode(getConfig($pdo, 'textesDiff3'), true),
         'textesFoundDisciplines'              => json_decode(getConfig($pdo, 'textesFoundDisciplines'), true),
@@ -568,7 +610,7 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool {
 
     foreach ($reportArray as $worker_id => $report) {
         try {
-            updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['investigate_report' => $report]);
+            updateWorkerAction($pdo, $worker_id, $turn_number, null, ['investigate_report' => $report]);
         } catch (Exception $e) {
             game_error_log(__FUNCTION__, 'updateWorkerAction failed for worker_id ' . $worker_id . ': ' . $e->getMessage(), ['worker_id' => $worker_id, 'turn_number' => $turn_number], 'error');
             break;

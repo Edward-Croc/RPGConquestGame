@@ -16,7 +16,8 @@ if (!defined('RESSOURCE_GAIN_CONDITION_TYPES')) {
  * @param string $timing : 'before_claim' | 'after_claim'
  * @return bool : true when every UPDATE succeeded (or nothing needed to run)
  */
-function ressourceGainMechanic(PDO $pdo, string $timing): bool {
+function ressourceGainMechanic(PDO $pdo, string $timing): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with timing : ' . $timing, [], 'debug');
 
@@ -52,10 +53,16 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool {
 
         foreach ($rules as $rule) {
             // Check if rule is correctly written
-            if (!ressourceGainRuleIsValid($rule, $timing)) continue;
-            if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) continue;
+            if (!ressourceGainRuleIsValid($rule, $timing)) {
+                continue;
+            }
+            if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) {
+                continue;
+            }
             $multiplier = (int)$rule['amount'];
-            if ($multiplier === 0) continue;
+            if ($multiplier === 0) {
+                continue;
+            }
 
             // Check if the rule's condition apply's to a controller
             // list of ['controller_id' => int, 'match_count' => int]
@@ -64,7 +71,9 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool {
             foreach ($matches as $match) {
                 $controllerId = (int)$match['controller_id'];
                 $matchCount = (int)$match['match_count'];
-                if ($matchCount <= 0) continue;
+                if ($matchCount <= 0) {
+                    continue;
+                }
                 $gainAmount = $multiplier * $matchCount;
                 try {
                     $u = $pdo->prepare("UPDATE {$prefix}controller_ressources
@@ -101,16 +110,29 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool {
  * @param string $timing : 'before_claim' | 'after_claim' timing filter
  * @return bool : true when the rule is well-formed and matches $timing
  */
-function ressourceGainRuleIsValid(mixed $rule, string $timing): bool {
+function ressourceGainRuleIsValid(mixed $rule, string $timing): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with timing : ' . $timing, ['rule' => $rule], 'debug');
 
-    if (!is_array($rule)) return false;
-    if (!isset($rule['amount']) || !is_numeric($rule['amount'])) return false;
-    if (!isset($rule['timing']) || $rule['timing'] !== $timing) return false;
-    if (!isset($rule['condition']['type'])) return false;
-    if (!in_array($rule['condition']['type'], RESSOURCE_GAIN_CONDITION_TYPES, true)) return false;
-    if (isset($rule['unlock_turn']) && (!is_numeric($rule['unlock_turn']) || (int)$rule['unlock_turn'] < 0)) return false;
+    if (!is_array($rule)) {
+        return false;
+    }
+    if (!isset($rule['amount']) || !is_numeric($rule['amount'])) {
+        return false;
+    }
+    if (!isset($rule['timing']) || $rule['timing'] !== $timing) {
+        return false;
+    }
+    if (!isset($rule['condition']['type'])) {
+        return false;
+    }
+    if (!in_array($rule['condition']['type'], RESSOURCE_GAIN_CONDITION_TYPES, true)) {
+        return false;
+    }
+    if (isset($rule['unlock_turn']) && (!is_numeric($rule['unlock_turn']) || (int)$rule['unlock_turn'] < 0)) {
+        return false;
+    }
     return true;
 }
 
@@ -122,7 +144,8 @@ function ressourceGainRuleIsValid(mixed $rule, string $timing): bool {
  * @param array $condition : condition payload (holds_zone | claims_zone | owns_location_type)
  * @return array : list of ['controller_id' => int, 'match_count' => int]
  */
-function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array {
+function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with type : ' . ($condition['type'] ?? 'NULL'), ['condition' => $condition], 'debug');
 
@@ -165,7 +188,9 @@ function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array {
         $extras = [];
         $params = [];
         foreach (RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST as $allowedKey) {
-            if ($allowedKey === 'location_type') continue;
+            if ($allowedKey === 'location_type') {
+                continue;
+            }
             if (isset($condition[$allowedKey])) {
                 $sqlColumn = $allowedKey === 'location_id' ? 'id' : $allowedKey;
                 $extras[] = "l.{$sqlColumn} = :{$allowedKey}";
@@ -194,7 +219,9 @@ function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array {
         foreach ($rows as $row) {
             if ($requiredTag !== null) {
                 $tags = json_decode($row['location_types'] ?? '[]', true);
-                if (!is_array($tags) || !in_array($requiredTag, $tags, true)) continue;
+                if (!is_array($tags) || !in_array($requiredTag, $tags, true)) {
+                    continue;
+                }
             }
             $cid = (int)$row['controller_id'];
             $counts[$cid] = ($counts[$cid] ?? 0) + 1;

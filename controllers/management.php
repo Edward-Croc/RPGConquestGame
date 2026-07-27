@@ -79,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-    if (isset($_GET['giftInformationAgent'])){
+    if (isset($_GET['giftInformationAgent'])) {
         //  Get Turn Number
         $mechanics = getMechanics($gameReady);
         $zone_id = $_GET['zone_id'];
@@ -88,7 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
         addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
     }
-    if (isset($_GET['giftInformationLocation'])){
+    if (isset($_GET['giftInformationLocation'])) {
         //  Get Turn Number
         $mechanics = getMechanics($gameReady);
         $target_controller_id = $_GET['target_controller_id'];
@@ -157,19 +157,20 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
             ORDER BY c.id
         ")->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($controllers as $controller) {
-            // Fetch players for this controller
-            $players = $gameReady->prepare("
+foreach ($controllers as $controller) {
+    // Fetch players for this controller
+    $players = $gameReady->prepare("
                 SELECT p.username 
                 FROM {$prefix}player_controller pc
                 JOIN {$prefix}players p ON pc.player_id = p.id
                 WHERE pc.controller_id = :controller_id
                 ORDER BY p.username
             ");
-            $players->execute(['controller_id' => $controller['id']]);
-            $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
+    $players->execute(['controller_id' => $controller['id']]);
+    $playerList = $players->fetchAll(PDO::FETCH_COLUMN);
 
-            echo sprintf('<tr class="controller-row" data-controller-id="%1$s" data-controller-name="%2$s">
+    echo sprintf(
+        '<tr class="controller-row" data-controller-id="%1$s" data-controller-name="%2$s">
                 <td data-field="lastname">%1$s - %2$s</td>
                 <td data-field="secret_controller">%3$s</td>
                 <td data-field="can_build_base">%4$s</td>
@@ -197,18 +198,18 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
                 </form>
                 </td>
                 </tr>',
-                intval($controller['id']),
-                $controller['lastname'],
-                (isset($controller['secret_controller']) && $controller['secret_controller'] ? '✔️ Yes' : '❌ No'),
-                (isset($controller['can_build_base']) && $controller['can_build_base'] ? '✔️ Yes' : '❌ No'),
-                $controller['recruited_workers'],
-                $controller['turn_recruited_workers'],
-                $controller['turn_firstcome_workers'],
-                implode(', ', $playerList),
-                htmlspecialchars($controller['origin_zone_name'] ?? '—')
-            );
-        }
-        ?>
+        intval($controller['id']),
+        $controller['lastname'],
+        (isset($controller['secret_controller']) && $controller['secret_controller'] ? '✔️ Yes' : '❌ No'),
+        (isset($controller['can_build_base']) && $controller['can_build_base'] ? '✔️ Yes' : '❌ No'),
+        $controller['recruited_workers'],
+        $controller['turn_recruited_workers'],
+        $controller['turn_firstcome_workers'],
+        implode(', ', $playerList),
+        htmlspecialchars($controller['origin_zone_name'] ?? '—')
+    );
+}
+?>
     </table>
     <?php echo buildGiveKnowledgeHTML($gameReady, 'admin'); ?>
 </div>

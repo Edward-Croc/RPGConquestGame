@@ -24,7 +24,8 @@ if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
  *
  * @return bool : success
  */
-function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true): bool {
+function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with start : ' . var_export($start, true), ['mechanics_id' => $mechanics['id'], 'gamestate' => $mechanics['gamestate']], 'debug');
 
@@ -39,7 +40,7 @@ function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true
         $sql = "UPDATE {$prefix}mechanics SET gamestate = 0 WHERE id = :id ";
     }
     if (!empty($sql)) {
-        try{
+        try {
             // Prepare and execute SQL query
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':id' => $mechanics['id']]);
@@ -60,7 +61,8 @@ function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true
  *
  * @return void
  */
-function changeEndTurnState(PDO $pdo, string $state, array $mechanics): void {
+function changeEndTurnState(PDO $pdo, string $state, array $mechanics): void
+{
     $prefix = $_SESSION['GAME_PREFIX'];
     $sql = "UPDATE {$prefix}mechanics set end_step = :end_step WHERE id = :id";
     $stmt = $pdo->prepare($sql);
@@ -72,7 +74,8 @@ function changeEndTurnState(PDO $pdo, string $state, array $mechanics): void {
  *
  * @return string : SQL string
  */
-function diceSQL(): string {
+function diceSQL(): string
+{
     $prefix = $_SESSION['GAME_PREFIX'];
     return sprintf(
         "FLOOR(
@@ -94,20 +97,21 @@ function diceSQL(): string {
  *
  * @return int|null : rollvalue, NULL on SQL failure
  */
-function diceRoll(PDO $pdo): int|null {
+function diceRoll(PDO $pdo): int|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', [], 'debug');
 
     $diceSQL = diceSQL();
     $sql = "SELECT $diceSQL as roll";
 
-    try{
+    try {
         // Prepare and execute SQL query
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT diceSQL failed', ['error' => $e->getMessage()]);
-        return NULL;
+        return null;
     }
     $roll = $stmt->fetchALL(PDO::FETCH_ASSOC);
     return $roll[0]['roll'];
@@ -122,7 +126,8 @@ function diceRoll(PDO $pdo): int|null {
  *
  * @return string : comma-separated single-quoted list ready for SQL IN(...)
  */
-function validateActionChoiceListForSql(string|null $configValue, array $allowedActions, array $defaultActions): string {
+function validateActionChoiceListForSql(string|null $configValue, array $allowedActions, array $defaultActions): string
+{
     $parsedActions = [];
     if (!empty($configValue)) {
         $normalized = trim((string)$configValue);
@@ -176,7 +181,8 @@ function validateActionChoiceListForSql(string|null $configValue, array $allowed
  *
  * @return string : comma-separated single-quoted action list ready for SQL IN(...)
  */
-function getValidatedInvestigateActionsForSql(PDO $pdo): string {
+function getValidatedInvestigateActionsForSql(PDO $pdo): string
+{
     $configuredActions = getConfig($pdo, 'investigateActionsList');
 
     return validateActionChoiceListForSql($configuredActions, WORKER_ACTION_CHOICES_ALLOWED, INVESTIGATE_ACTIONS_DEFAULT);
@@ -189,7 +195,8 @@ function getValidatedInvestigateActionsForSql(PDO $pdo): string {
  *
  * @return string : 'asc' or 'desc'
  */
-function getInvestigateOrder(PDO $pdo): string {
+function getInvestigateOrder(PDO $pdo): string
+{
     $value = strtolower(trim((string) getConfig($pdo, 'investigateOrder')));
     return in_array($value, ['asc', 'desc'], true) ? $value : 'asc';
 }
@@ -202,7 +209,8 @@ function getInvestigateOrder(PDO $pdo): string {
  *
  * @return bool : success
  */
-function calculateVals(PDO $pdo, array $mechanics): bool {
+function calculateVals(PDO $pdo, array $mechanics): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], [], 'debug');
 
@@ -247,13 +255,14 @@ function calculateVals(PDO $pdo, array $mechanics): bool {
         $strActions = str_replace("'", "", $config);
         // Now split
         $actions = explode(",", $strActions);
-        foreach ( $actions AS $action ) {
+        foreach ($actions as $action) {
             // get flat bonus from config
             $bonusColumn = strtoupper(sprintf("%s_%s_flat_bonus", $action, $elements[0]));
             $flatBonusConfig = getConfig($pdo, $bonusColumn);
             echo sprintf("Get Config for %s : %s <br /> ", $bonusColumn, $flatBonusConfig);
             if (!empty($flatBonusConfig)) {
-                $flatBonusSQL .= sprintf("
+                $flatBonusSQL .= sprintf(
+                    "
                     + CASE
                         WHEN wa1.action_choice = '%s'
                         THEN %s
@@ -265,7 +274,8 @@ function calculateVals(PDO $pdo, array $mechanics): bool {
             }
         }
         // Build of base SQL request with the conditionnal bonus
-        $valSQL = sprintf("%s_val = (
+        $valSQL = sprintf(
+            "%s_val = (
             COALESCE((
                 SELECT SUM(p.%s)
                 FROM {$prefix}workers AS w
@@ -298,12 +308,14 @@ function calculateVals(PDO $pdo, array $mechanics): bool {
         );
 
         // get list of actions to calibrate
-        if (!empty($config)){
+        if (!empty($config)) {
             // add to list of updates
             $sqlArray[] = array(
-                'sql'=> sprintf(
+                'sql' => sprintf(
                     "UPDATE {$prefix}worker_actions wa1 SET %1\$s WHERE turn_number = %2\$s AND action_choice IN (%3\$s)",
-                    $valSQL, $turn_number, $config
+                    $valSQL,
+                    $turn_number,
+                    $config
                 ),
                 'config' => $config
             );
@@ -313,7 +325,7 @@ function calculateVals(PDO $pdo, array $mechanics): bool {
 
     // Execute SQLs
     foreach ($sqlArray as $sql) {
-        echo sprintf("<p>DO SQL for %s : <br /> %s <br>",  $sql['config'],  $sql['sql'] );
+        echo sprintf("<p>DO SQL for %s : <br /> %s <br>", $sql['config'], $sql['sql']);
         try {
             // Prepare and execute SQL query
             $stmt = $pdo->prepare($sql['sql']);
@@ -341,7 +353,8 @@ function calculateVals(PDO $pdo, array $mechanics): bool {
  *
  * @return bool : success
  */
-function createNewTurnLines(PDO $pdo, int $turn_number): bool {
+function createNewTurnLines(PDO $pdo, int $turn_number): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
 
@@ -364,7 +377,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool {
     try {
         $stmtInsert = $pdo->prepare($sqlInsert);
         $stmtInsert->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-        $stmtInsert->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+        $stmtInsert->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
         $stmtInsert->execute();
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'INSERT worker_actions failed', ['error' => $e->getMessage(), 'sql' => $sqlInsert]);
@@ -372,7 +385,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool {
     }
 
     $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
-    if (!$config_continuing_investigate_action){
+    if (!$config_continuing_investigate_action) {
         $sqlSetInvestigate = "
             UPDATE {$prefix}worker_actions wa1
             JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
@@ -384,7 +397,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool {
         try {
             $stmtSetInvestigate = $pdo->prepare($sqlSetInvestigate);
             $stmtSetInvestigate->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetInvestigate->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+            $stmtSetInvestigate->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
             $stmtSetInvestigate->execute();
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'UPDATE investigate action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetInvestigate]);
@@ -392,7 +405,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool {
         }
     }
     $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
-        if (!$config_continuing_claimed_action){
+    if (!$config_continuing_claimed_action) {
         $sqlSetClaim = "
             UPDATE {$prefix}worker_actions wa1
             JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
@@ -404,7 +417,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool {
         try {
             $stmtSetClaim = $pdo->prepare($sqlSetClaim);
             $stmtSetClaim->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetClaim->bindValue(':turn_number_n_1', ((INT)$turn_number-1), PDO::PARAM_INT);
+            $stmtSetClaim->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
             $stmtSetClaim->execute();
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'UPDATE claim action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetClaim]);
