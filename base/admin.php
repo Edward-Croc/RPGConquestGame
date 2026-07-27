@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (isset($_POST['exportBDD'])) {
         // Export BDD to file.sql
-        exportBDD($gameReady);
+        exportBDD();
     }
 
     if (isset($_POST['importBDD'])) {
