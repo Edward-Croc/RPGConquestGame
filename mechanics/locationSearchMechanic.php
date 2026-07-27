@@ -1,4 +1,5 @@
 <?php
+
 // Include-only page — block direct HTTP access.
 if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     http_response_code(403);
@@ -14,7 +15,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  *
  * @return array : list of (searcher, found_location) comparison rows
  */
-function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, int|null $searcher_id = NULL): array {
+function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = null, int|null $searcher_id = null): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, ['searcher_id' => $searcher_id], 'debug');
 
@@ -68,7 +70,9 @@ function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, 
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-        if (!empty($searcher_id)) $stmt->bindParam(':searcher_id', $searcher_id, PDO::PARAM_INT);
+        if (!empty($searcher_id)) {
+            $stmt->bindParam(':searcher_id', $searcher_id, PDO::PARAM_INT);
+        }
         $stmt->execute();
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT searchers/locations comparisons Failed: ' . $e->getMessage(), ['turn_number' => $turn_number, 'searcher_id' => $searcher_id], 'error');
@@ -91,7 +95,8 @@ function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = NULL, 
  *
  * @return array : [reportElement HTML string, foundSecretFlag bool]
  */
-function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl, array $txtBag): array {
+function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl, array $txtBag): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'prevCkl' => $prevCkl, 'txtBag' => $txtBag], 'debug');
 
@@ -101,10 +106,15 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
     $ARTEFACTSDIFF = $txtBag['LOCATIONARTEFACTSDIFF'];
     $enqDiff = (int) $row['enquete_difference'];
 
-    if      ($enqDiff >= $ARTEFACTSDIFF) $currentLevel = 2;
-    elseif  ($enqDiff >= $INFODIFF)      $currentLevel = 1;
-    elseif  ($enqDiff >= $NAMEDIFF)      $currentLevel = 0;
-    else    return ['', false];
+    if ($enqDiff >= $ARTEFACTSDIFF) {
+        $currentLevel = 2;
+    } elseif ($enqDiff >= $INFODIFF) {
+        $currentLevel = 1;
+    } elseif ($enqDiff >= $NAMEDIFF) {
+        $currentLevel = 0;
+    } else {
+        return ['', false];
+    }
 
     $foundName = $row['found_name'];
     $hasSecretText = !empty($row['found_hidden_description']);
@@ -168,8 +178,11 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
  *
  * @return bool : true when the loop completed
  */
-function locationSearchMechanic(PDO $pdo, array $mechanics): bool {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+function locationSearchMechanic(PDO $pdo, array $mechanics): bool
+{
+    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+        $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
 
     echo '<div><h3>locationSearchMechanic :</h3>';
@@ -228,7 +241,9 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool {
         }
 
         // Skip own locations
-        if ($row['searcher_controller_id'] == $row['location_controller']) continue;
+        if ($row['searcher_controller_id'] == $row['location_controller']) {
+            continue;
+        }
 
         $prevCkl = getCKLEntry($pdo, $row['searcher_controller_id'], $row['found_id']);
 
@@ -250,7 +265,7 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool {
     }
 
     foreach ($reportArray as $worker_id => $report) {
-        updateWorkerAction($pdo, $worker_id, $turn_number, NULL, ['secrets_report' => $report]);
+        updateWorkerAction($pdo, $worker_id, $turn_number, null, ['secrets_report' => $report]);
     }
 
     game_error_log(__FUNCTION__, 'DONE with turncounter : ' . $turn_number, ['reportArray_count' => count($reportArray)], 'debug');

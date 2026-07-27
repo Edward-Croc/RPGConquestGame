@@ -8,9 +8,13 @@ if (
 ) {
     $debug = strtolower($_SESSION['DEBUG']) === 'true';
     // GET CONTROLLER_ID and controllers list so page does not fail.
-    if ($debug) echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
-    $controllers = getControllers($gameReady, NULL, $_GET['controller_id']);
-    if ($debug) echo "controllers:". var_export($controllers, true).'<br/><br/>';
+    if ($debug) {
+        echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
+    }
+    $controllers = getControllers($gameReady, null, $_GET['controller_id']);
+    if ($debug) {
+        echo "controllers:". var_export($controllers, true).'<br/><br/>';
+    }
     $_SESSION['controller'] =  $controllers[0];
     $controller_id = $controllers[0]['id'];
 }
@@ -24,7 +28,7 @@ require_once '../controllers/view.php';
 ?>
 <div class="content flex"><?php
     require_once '../zones/view.php';
-    require_once '../workers/viewAll.php';
+require_once '../workers/viewAll.php';
 ?></div>
 
 <script>

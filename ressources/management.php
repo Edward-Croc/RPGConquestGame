@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 require_once '../base/basePHP.php';
 
@@ -45,19 +45,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch controllers and ressources
 $controllerRessources = $gameReady->query(
-        "SELECT rc.id as rc_id, r.id as ressource_id, rc.*, r.*, c.*
+    "SELECT rc.id as rc_id, r.id as ressource_id, rc.*, r.*, c.*
         FROM {$prefix}controller_ressources rc
         JOIN {$prefix}ressources_config r ON rc.ressource_id = r.id
         JOIN {$prefix}controllers c ON rc.controller_id = c.id
-        ORDER BY rc.controller_id DESC")->fetchAll(PDO::FETCH_ASSOC);
+        ORDER BY rc.controller_id DESC"
+)->fetchAll(PDO::FETCH_ASSOC);
 
 require_once '../base/baseHTML.php';
 
-/**    
+/**
   *  Show ressources_config table
   */
-  $ressourcesConfig = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
-  ?> 
+$ressourcesConfig = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+?> 
   <div class="management">
         <h1>Ressources Config</h1>
         <table border="1" cellpadding="5">
@@ -110,7 +111,8 @@ require_once '../base/baseHTML.php';
             <th>Actions</th>
         </tr>
         <?php foreach ($controllerRessources as $controllerRessource) {
-            echo sprintf('<tr> <form method="POST" style="display:inline;">
+            echo sprintf(
+                '<tr> <form method="POST" style="display:inline;">
                     <td>%2$s</td>
                     <td>%3$s</td>
                     <td> <input type="number" name="amount" value="%4$s"> </td>
@@ -123,18 +125,18 @@ require_once '../base/baseHTML.php';
 
                     </td>
                 </form> </tr>',
-                    $controllerRessource['rc_id'],
-                    $controllerRessource['firstname'] . ' ' . $controllerRessource['lastname'],
-                    $controllerRessource['ressource_name'],
-                    $controllerRessource['amount'],
-                    $controllerRessource['amount_stored'],
-                    $controllerRessource['end_turn_gain']
-                );
+                $controllerRessource['rc_id'],
+                $controllerRessource['firstname'] . ' ' . $controllerRessource['lastname'],
+                $controllerRessource['ressource_name'],
+                $controllerRessource['amount'],
+                $controllerRessource['amount_stored'],
+                $controllerRessource['end_turn_gain']
+            );
         }
-        ?>
+?>
     </table>
 </div>
-<?php 
+<?php
 
 /**
  *  2nd Add an existing ressource to a controller that does not have it
@@ -145,8 +147,8 @@ require_once '../base/baseHTML.php';
  */
 
  $ressources = $gameReady->query("SELECT * FROM {$prefix}ressources_config ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
- $controllers = $gameReady->query("SELECT * FROM {$prefix}controllers ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
- ?>
+$controllers = $gameReady->query("SELECT * FROM {$prefix}controllers ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+?>
  <div class='management'>
     <h1>Add Ressource to Controller</h1>
     <form method="POST">

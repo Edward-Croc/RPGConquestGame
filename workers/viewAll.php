@@ -6,15 +6,23 @@ if (empty($pageName)) {
     require_once '../base/baseHTML.php';
 }
 
-if ($_SESSION['DEBUG'] == true) echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
+if ($_SESSION['DEBUG'] == true) {
+    echo "_SESSION: ".var_export($_SESSION, true)."<br /><br />";
+}
 
-if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
+if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
-    if ( $_SESSION['DEBUG'] == true ) echo "_SESSION['controller']['id']: ".var_export($_SESSION['controller']['id'], true)."<br /><br />";
-    if ( empty($controller_id) ) $controller_id = $_SESSION['controller']['id'];
-    if ( $_SESSION['DEBUG'] == true ) echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
+    if ($_SESSION['DEBUG'] == true) {
+        echo "_SESSION['controller']['id']: ".var_export($_SESSION['controller']['id'], true)."<br /><br />";
+    }
+    if (empty($controller_id)) {
+        $controller_id = $_SESSION['controller']['id'];
+    }
+    if ($_SESSION['DEBUG'] == true) {
+        echo "controller_id: ".var_export($controller_id, true)."<br /><br />";
+    }
 
-    $validSorts = ['age','zone','investigate','attack'];
+    $validSorts = ['age', 'zone', 'investigate', 'attack'];
     if (in_array($_GET['sort'] ?? '', $validSorts, true)) {
         $sort = $_GET['sort'];
         $_SESSION['workers_view_sort'] = $sort;
@@ -23,18 +31,20 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
     }
 
     echo "<div class='section workers'>";
-        $recruitButton = "";
-        if (canStartRecrutement($gameReady, $controller_id, (INT)$mechanics['turncounter'])){
-            $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur' class='button is-link'>";
-        } elseif (empty(hasBase($gameReady, $controller_id))) {
-            $recruitButton = "<span class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</span>";
-        }
+    $recruitButton = "";
+    if (canStartRecrutement($gameReady, $controller_id, (int)$mechanics['turncounter'])) {
+        $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur' class='button is-link'>";
+    } elseif (empty(hasBase($gameReady, $controller_id))) {
+        $recruitButton = "<span class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</span>";
+    }
 
-        $firstComeButton = "";
-        if (canStartFirstCome($gameReady, $controller_id))
-            $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu' class='button is-info'>";
+    $firstComeButton = "";
+    if (canStartFirstCome($gameReady, $controller_id)) {
+        $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu' class='button is-info'>";
+    }
 
-        echo sprintf("
+    echo sprintf(
+        "
             <h1 class='title is-2'>Agents</h1>
             <form action='/%s/workers/new.php' method='GET' class='box mb-5'>
                 <h3 class='title is-4'>Recrutement :</h3>
@@ -44,23 +54,24 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     <div class='control'>%s</div>
                 </div>
             </form>",
-            $_SESSION['FOLDER'],
-            $controller_id,
-            $firstComeButton,
-            $recruitButton
-        );
+        $_SESSION['FOLDER'],
+        $controller_id,
+        $firstComeButton,
+        $recruitButton
+    );
 
-        $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
-        $sortOptionsHtml = '';
-        foreach ($sortLabels as $value => $label) {
-            $sortOptionsHtml .= sprintf(
-                '<option value="%s"%s>%s</option>',
-                $value,
-                ($sort === $value) ? ' selected' : '',
-                $label
-            );
-        }
-        echo sprintf("
+    $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
+    $sortOptionsHtml = '';
+    foreach ($sortLabels as $value => $label) {
+        $sortOptionsHtml .= sprintf(
+            '<option value="%s"%s>%s</option>',
+            $value,
+            ($sort === $value) ? ' selected' : '',
+            $label
+        );
+    }
+    echo sprintf(
+        "
             <form action='/%s/workers/viewAll.php' method='GET' class='box mb-5'>
                 <h3 class='title is-4'>Tri :</h3>
                 <div class='field is-grouped is-grouped-multiline'>
@@ -74,66 +85,75 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                     </div>
                 </div>
             </form>",
-            $_SESSION['FOLDER'],
-            $sortOptionsHtml
-        );
+        $_SESSION['FOLDER'],
+        $sortOptionsHtml
+    );
 
-        $workersArray = getWorkersByController($gameReady, $controller_id);
+    $workersArray = getWorkersByController($gameReady, $controller_id);
 
-        if ( $_SESSION['DEBUG'] == true )
-            echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
-        if ( !empty($workersArray) ) {
-            $liveWorkerArray = array();
-            $doubleAgentWorkerArray = array();
-            $prisonersWorkerArray = array();
-            $deadWorkerArray = array();
-            foreach ($workersArray as $worker){
-                if ( $worker['controller_id'] != $controller_id) continue;
-                if ( $_SESSION['DEBUG'] == true ) echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'],true));
-
-                // liveWorkerArray : worker alive and active and that we control
-                if (
-                    in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
-                    && $worker['is_primary_controller']
-                ) {
-                    $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true);
-                    $liveWorkerArray[] = $worker;
-                } else {
-                    $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
-                }
-
-                //doubleAgentWorkerArray : worker alive and active that we don't control
-                if ( in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS) && !$worker['is_primary_controller'] )
-                    $doubleAgentWorkerArray[] = $worker;
-
-                //prisonersWorkerArray : worker alive and not active that we do control are our prisonners
-                if (
-                    $worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured' 
-                    && $worker['is_primary_controller']
-                )
-                    $prisonersWorkerArray[] = $worker;
-
-                // deadWorkerArray : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control) 
-                if (
-                    in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)
-                    && !($worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured')
-                )
-                    $deadWorkerArray[] = $worker;
+    if ($_SESSION['DEBUG'] == true) {
+        echo "workersArray: ".var_export($workersArray, true)."<br /><br />";
+    }
+    if (!empty($workersArray)) {
+        $liveWorkerArray = array();
+        $doubleAgentWorkerArray = array();
+        $prisonersWorkerArray = array();
+        $deadWorkerArray = array();
+        foreach ($workersArray as $worker) {
+            if ($worker['controller_id'] != $controller_id) {
+                continue;
+            }
+            if ($_SESSION['DEBUG'] == true) {
+                echo sprintf('mechanics[turncounter] : %s  <br>', var_export($mechanics['turncounter'], true));
             }
 
-            sortWorkerBuckets($liveWorkerArray, $sort);
-            sortWorkerBuckets($doubleAgentWorkerArray, $sort);
-            sortWorkerBuckets($prisonersWorkerArray, $sort);
-            sortWorkerBuckets($deadWorkerArray, $sort);
+            // liveWorkerArray : worker alive and active and that we control
+            if (
+                in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
+                && $worker['is_primary_controller']
+            ) {
+                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true);
+                $liveWorkerArray[] = $worker;
+            } else {
+                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
+            }
 
-            if (!empty($liveWorkerArray)) {
-                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
-                // Mass worker action form
-                echo sprintf("<form action='/%s/workers/massAction.php' method='GET' class='mb-4'>", $_SESSION['FOLDER']);
-                foreach ($liveWorkerArray as $worker) {
-                    echo $worker['view'];
-                }
-                echo sprintf('
+            //doubleAgentWorkerArray : worker alive and active that we don't control
+            if (in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS) && !$worker['is_primary_controller']) {
+                $doubleAgentWorkerArray[] = $worker;
+            }
+
+            //prisonersWorkerArray : worker alive and not active that we do control are our prisonners
+            if (
+                $worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured'
+                && $worker['is_primary_controller']
+            ) {
+                $prisonersWorkerArray[] = $worker;
+            }
+
+            // deadWorkerArray : our dead (worker not alive) or our workers prisonner of others (worker alive and not active that we do not control)
+            if (
+                in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)
+                && !($worker['actions'][$mechanics['turncounter']]['action_choice'] == 'captured')
+            ) {
+                $deadWorkerArray[] = $worker;
+            }
+        }
+
+        sortWorkerBuckets($liveWorkerArray, $sort);
+        sortWorkerBuckets($doubleAgentWorkerArray, $sort);
+        sortWorkerBuckets($prisonersWorkerArray, $sort);
+        sortWorkerBuckets($deadWorkerArray, $sort);
+
+        if (!empty($liveWorkerArray)) {
+            echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
+            // Mass worker action form
+            echo sprintf("<form action='/%s/workers/massAction.php' method='GET' class='mb-4'>", $_SESSION['FOLDER']);
+            foreach ($liveWorkerArray as $worker) {
+                echo $worker['view'];
+            }
+            echo sprintf(
+                '
                 <div class="control"><strong>Zone cible (pour déplacement uniquement) :</strong></div>
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                     %s
@@ -147,38 +167,38 @@ if ( !empty($_SESSION['controller']) ||  !empty($controller_id) ) {
                         <input type="submit" name="mass_investigate" value="%3$s" class="button is-info">
                         <input type="submit" name="mass_passive" value="%2$s" class="button is-warning">
                         <input type="submit" name="mass_hide" value="%4$s" class="button is-danger">
-                </div></div>', 
+                </div></div>',
                 showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true), // %1$s
                 ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %2$s
                 ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %3$s
                 ucfirst(getConfig($gameReady, 'txt_inf_hide')) // %4$s
-                );
-                echo "</form></div>";
-            }
-
-            if ( !empty($doubleAgentWorkerArray )) {
-                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents doubles :</h3>";
-                foreach ($doubleAgentWorkerArray as $worker) {
-                    echo $worker['view'];
-                }
-                echo "</div>";
-            }
-
-            if ( !empty($prisonersWorkerArray )) {
-                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Prisonniers :</h3>";
-                foreach ($prisonersWorkerArray as $worker) {
-                    echo $worker['view'];
-                }
-                echo "</div>";
-            }
-
-            if ( !empty($deadWorkerArray )) {
-                echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Anciens agents :</h3>";
-                foreach ($deadWorkerArray as $worker) {
-                    echo $worker['view'];
-                }
-                echo "</div>";
-            }
+            );
+            echo "</form></div>";
         }
+
+        if (!empty($doubleAgentWorkerArray)) {
+            echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents doubles :</h3>";
+            foreach ($doubleAgentWorkerArray as $worker) {
+                echo $worker['view'];
+            }
+            echo "</div>";
+        }
+
+        if (!empty($prisonersWorkerArray)) {
+            echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Prisonniers :</h3>";
+            foreach ($prisonersWorkerArray as $worker) {
+                echo $worker['view'];
+            }
+            echo "</div>";
+        }
+
+        if (!empty($deadWorkerArray)) {
+            echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Anciens agents :</h3>";
+            foreach ($deadWorkerArray as $worker) {
+                echo $worker['view'];
+            }
+            echo "</div>";
+        }
+    }
     echo "</div>"; // closing class='workers'
 }

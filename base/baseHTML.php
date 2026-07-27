@@ -36,80 +36,81 @@ if (
             ucfirst(getConfig($gameReady, 'timeValue')),
             $mechanics['turncounter']
         );
-        if ( isset($_SESSION['controller']) )
-            echo sprintf ("  %s %s (%s) des %s ", $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
-    ?></div>
+if (isset($_SESSION['controller'])) {
+    echo sprintf("  %s %s (%s) des %s ", $_SESSION['controller']['firstname'], $_SESSION['controller']['lastname'], $_SESSION['controller']['id'], $_SESSION['controller']['faction_name']);
+}
+?></div>
     <!-- Sidebar MENU -->
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="toggleSidebar()">&times;</a>
         <?php
-        $folder = $_SESSION['FOLDER'];
-        $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
-        $isPrivileged = $_SESSION['is_privileged'] ?? false;
+    $folder = $_SESSION['FOLDER'];
+$isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+$isPrivileged = $_SESSION['is_privileged'] ?? false;
 
-        if (!$isLoggedIn && !empty($noConnection)) {
-            $sysClass = ($pageName === 'systemPresentation') ? ' class="select"' : '';
-            echo "<a href='/$folder/base/systemPresentation.php'$sysClass>Le Système</a>";
-            echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
-        } else {
-            // Define main links
-            $links = [
-                'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
-                'controllers_action' => ['label' => 'Ma Faction', 'path' => 'controllers/action.php'],
-                'view_workers' => ['label' => 'Agents de la faction', 'path' => 'workers/viewAll.php'],
-            ];
-            if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
-                $links['ressources_view'] = ['label' => 'Ressources', 'path' => 'ressources/view.php'];
-            }
-            $links['zones_action'] = ['label' => 'Les Zones', 'path' => 'zones/action.php'];
-            $links['systemPresentation'] = ['label' => 'Le Système', 'path' => 'base/systemPresentation.php'];
+if (!$isLoggedIn && !empty($noConnection)) {
+    $sysClass = ($pageName === 'systemPresentation') ? ' class="select"' : '';
+    echo "<a href='/$folder/base/systemPresentation.php'$sysClass>Le Système</a>";
+    echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
+} else {
+    // Define main links
+    $links = [
+        'accueil' => ['label' => 'Accueil', 'path' => 'base/accueil.php'],
+        'controllers_action' => ['label' => 'Ma Faction', 'path' => 'controllers/action.php'],
+        'view_workers' => ['label' => 'Agents de la faction', 'path' => 'workers/viewAll.php'],
+    ];
+    if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
+        $links['ressources_view'] = ['label' => 'Ressources', 'path' => 'ressources/view.php'];
+    }
+    $links['zones_action'] = ['label' => 'Les Zones', 'path' => 'zones/action.php'];
+    $links['systemPresentation'] = ['label' => 'Le Système', 'path' => 'base/systemPresentation.php'];
 
-            foreach ($links as $key => $info) {
-                $selectedClass = ($pageName === $key) ? ' class="select"' : '';
-                echo "<a href='/$folder/{$info['path']}'$selectedClass>{$info['label']}</a>";
-            }
+    foreach ($links as $key => $info) {
+        $selectedClass = ($pageName === $key) ? ' class="select"' : '';
+        echo "<a href='/$folder/{$info['path']}'$selectedClass>{$info['label']}</a>";
+    }
 
-            // Privileged user section
-            if ($isPrivileged) {
-                $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
-                echo "<a href='/$folder/mechanics/endTurn.php' id='endTurnBtn' class='sidebar-btn'>$btnText</a>";
+    // Privileged user section
+    if ($isPrivileged) {
+        $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
+        echo "<a href='/$folder/mechanics/endTurn.php' id='endTurnBtn' class='sidebar-btn'>$btnText</a>";
 
-                $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
-                echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
-            }
+        $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
+        echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
+    }
 
-            // Logout button
-            echo "<a href='/$folder/connection/logout.php' class='logout-btn'>Logout</a>";
-        }
-        ?>
+    // Logout button
+    echo "<a href='/$folder/connection/logout.php' class='logout-btn'>Logout</a>";
+}
+?>
     </div>
     <!-- Sidebar Toggle Button -->
     <?php
-        echo '<span class="openbtn" onclick="toggleSidebar()"> ☰ </span>';
+echo '<span class="openbtn" onclick="toggleSidebar()"> ☰ </span>';
 
-    require_once '../base/baseScript.php';
+require_once '../base/baseScript.php';
 
-    // Register the footer emission for end-of-script — content rendered
-    // after this include lands inside <body>; the shutdown function then
-    // closes the document with the version footer. Skipped on redirect
-    // responses (where headers were already sent and we don't want HTML).
-    register_shutdown_function(function() {
-        if (!headers_sent()) {
-            $contentType = '';
-            foreach (headers_list() as $h) {
-                if (stripos($h, 'Content-Type:') === 0) {
-                    $contentType = $h;
-                    break;
-                }
-            }
-            // Default Content-Type is text/html when nothing was set; if
-            // anything non-HTML was set explicitly, skip the footer.
-            if ($contentType && stripos($contentType, 'text/html') === false) {
-                return;
+// Register the footer emission for end-of-script — content rendered
+// after this include lands inside <body>; the shutdown function then
+// closes the document with the version footer. Skipped on redirect
+// responses (where headers were already sent and we don't want HTML).
+register_shutdown_function(function () {
+    if (!headers_sent()) {
+        $contentType = '';
+        foreach (headers_list() as $h) {
+            if (stripos($h, 'Content-Type:') === 0) {
+                $contentType = $h;
+                break;
             }
         }
-        require_once __DIR__ . '/baseHTMLFooter.php';
-    });
+        // Default Content-Type is text/html when nothing was set; if
+        // anything non-HTML was set explicitly, skip the footer.
+        if ($contentType && stripos($contentType, 'text/html') === false) {
+            return;
+        }
+    }
+    require_once __DIR__ . '/baseHTMLFooter.php';
+});
 ?>
     <div id="endTurnModal" class="modal">
         <div class="modal-background"></div>

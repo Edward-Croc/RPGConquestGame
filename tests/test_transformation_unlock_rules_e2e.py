@@ -191,6 +191,7 @@ def _click_transform_via_get(browser, base_url, worker_lastname, power_name,
 # Direct controller_has_ressource gate
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestRessourceGate:
     """Direct check controller_has_ressource: power visible iff controller has
     at least the required amount."""
@@ -231,6 +232,7 @@ class TestRessourceGate:
 # consume opt-out semantics (default-deduct)
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestConsumeBehavior:
     """Default behaviour: rule deducts unless explicit consume:false."""
 
@@ -278,6 +280,7 @@ class TestConsumeBehavior:
 # OR composition: zone-or-pay
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestORComposition:
     """First-match-wins on OR with cheaper-branch-first ordering: the zone
     branch is consulted first; if it matches, no deduction. Otherwise the
@@ -339,6 +342,7 @@ class TestORComposition:
 # direct + OR composition + cross-resource warning
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestDirectAndORComposition:
     """A rule can have both direct controller_has_ressource AND an OR
     branch carrying its own cost. Direct takes precedence; cross-resource
@@ -418,6 +422,7 @@ class TestMalformedAmount:
 # Commit-time re-validation closes the display-vs-commit security gap
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestCommitRevalidation:
     """A crafted GET that bypasses the form must be rejected at commit if
     the chosen power's rule no longer passes (or the worker is not in the
@@ -541,6 +546,7 @@ class TestCommitRevalidation:
 # Privileged admin path bypasses re-validation AND cost
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestAdminBypass:
     """gm has is_privileged → re-validation block short-circuited.
     Crafted GET that would 'plus disponible' for a player succeeds for gm,
@@ -591,6 +597,7 @@ class TestAdminBypass:
 # The escape hatch is intended for pure admin (no faction in session).
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestGmAsFactionEntersNormalPath:
     """Discovered on Japon1555 playtest : gm acting as Chōsokabe triggered
     a `consume: true` transform without paying the cost. Root cause : both

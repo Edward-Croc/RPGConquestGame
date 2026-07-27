@@ -14,16 +14,16 @@ function getPath(string $file): string|null
     $path = null;
     $paths = array(__DIR__, "..", ".", "/var/www/RPGConquestGame");
     foreach ($paths as $tmpPath) {
-        if (file_exists($tmpPath . $file)) {
+        if (file_exists($tmpPath.$file)) {
             $path = $tmpPath;
             break;
         }
-        if (file_exists($tmpPath . "/.." . $file)) {
-            $path = $tmpPath . "/..";
+        if (file_exists($tmpPath."/..".$file)) {
+            $path = $tmpPath."/..";
             break;
         }
     }
-    return $path;
+    return $path ;
 }
 
 /**
@@ -57,7 +57,7 @@ function loadDBConfig(string|null $path, string $configFile): array
         }
     }
 
-    // Validate config 
+    // Validate config
     $notNullList = ['host', 'dbname', 'username', 'password', 'db_type', 'folder'];
     foreach ($notNullList as $key) {
         if (!isset($config[$key])) {
@@ -65,7 +65,7 @@ function loadDBConfig(string|null $path, string $configFile): array
             die();
         }
     }
-    foreach ($config as $key => $value)
+    foreach ($config as $key => $value) {
         if ($config['db_type'] == 'postgres') {
             if (strpos($config['game_prefix'], '.') !== false) {
                 // split prefix to elements
@@ -77,6 +77,7 @@ function loadDBConfig(string|null $path, string $configFile): array
                 }
             }
         }
+    }
     return $config;
 }
 
@@ -106,7 +107,8 @@ function getDBConnection(string|null $path, string $configFile): PDO|null
         try {
             $pdo = new PDO(
                 sprintf("mysql:host=%s;dbname=%s", $config['host'], $config['dbname']),
-                $config['username'], $config['password']
+                $config['username'],
+                $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             if ($debug) {
@@ -116,14 +118,15 @@ function getDBConnection(string|null $path, string $configFile): PDO|null
 
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'Connection failed : ' . $e->getMessage(), ['dbname' => $config['dbname'], 'db_type' => $config['db_type']], 'error');
-            return NULL;
+            return null;
         }
     } else {
         // Attempt to connect to PostgreSQL database
         try {
             $pdo = new PDO(
                 sprintf("pgsql:host=%s;dbname=%s", $config['host'], $config['dbname']),
-                $config['username'], $config['password']
+                $config['username'],
+                $config['password']
             );
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             if ($debug) {
@@ -133,7 +136,7 @@ function getDBConnection(string|null $path, string $configFile): PDO|null
 
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'Connection failed : ' . $e->getMessage(), ['dbname' => $config['dbname'], 'db_type' => $config['db_type']], 'error');
-            return NULL;
+            return null;
         }
     }
 }
@@ -167,7 +170,7 @@ function tableExists(PDO $pdo, string $tableName): bool|null
                 WHERE table_name = :tableName AND table_schema = :tableSchema
             )");
             $stmt->execute([':tableName' => $tableName, ':tableSchema' => $tableSchema]);
-        } else if ($_SESSION['DBTYPE'] == 'mysql') {
+        } elseif ($_SESSION['DBTYPE'] == 'mysql') {
             $stmt = $pdo->prepare("SELECT EXISTS (
                 SELECT 1
                 FROM information_schema.tables
@@ -177,7 +180,7 @@ function tableExists(PDO $pdo, string $tableName): bool|null
         }
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, $prefixedTableName . ' failed : ' . $e->getMessage(), ['prefixedTableName' => $prefixedTableName], 'error');
-        return NULL;
+        return null;
     }
     return $stmt->fetchColumn();
 }
@@ -202,11 +205,12 @@ function destroyAllTables(PDO $pdo): bool
             $tableSchema = 'public';
             $prefix_sql = '';
             if (strpos($prefix, '.') !== false) {
-                // split prefix to elements 
+                // split prefix to elements
                 $prefixShards = explode('.', $prefix);
                 $tableSchema = $prefixShards[0];
-                if (isset($prefixShards[1]))
+                if (isset($prefixShards[1])) {
                     $prefix_sql = " AND table_name LIKE '{$prefixShards[1]}%'";
+                }
 
             } else {
                 $prefix_sql = " AND table_name LIKE '{$prefix}%'";
@@ -304,7 +308,9 @@ function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $fh = fopen($controllersCsvPath, 'r');
-    if (!$fh) return 0;
+    if (!$fh) {
+        return 0;
+    }
     $header = fgetcsv($fh);
     if (!$header) {
         fclose($fh);
@@ -320,21 +326,29 @@ function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
     while (($row = fgetcsv($fh)) !== false) {
         $lastname = $row[$lastCol] ?? '';
         $zoneName = $row[$originCol] ?? '';
-        if ($lastname === '' || $zoneName === '') continue;
+        if ($lastname === '' || $zoneName === '') {
+            continue;
+        }
         try {
             $zoneStmt = $pdo->prepare("SELECT id FROM {$prefix}zones WHERE name = :n LIMIT 1");
             $zoneStmt->execute([':n' => $zoneName]);
             $zoneId = $zoneStmt->fetchColumn();
-            if (!$zoneId) continue;
+            if (!$zoneId) {
+                continue;
+            }
             $upd = $pdo->prepare("UPDATE {$prefix}controllers SET origin_zone_id = :z WHERE lastname = :n");
             $upd->execute([':z' => $zoneId, ':n' => $lastname]);
-            if ($upd->rowCount() > 0) $count++;
+            if ($upd->rowCount() > 0) {
+                $count++;
+            }
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, $lastname . ' -> ' . $zoneName . ' failed : ' . $e->getMessage(), ['lastname' => $lastname, 'zoneName' => $zoneName], 'warning');
         }
     }
     fclose($fh);
-    if ($count > 0) echo "resolveControllerOriginZones: updated $count controller origin_zone_id rows.<br />";
+    if ($count > 0) {
+        echo "resolveControllerOriginZones: updated $count controller origin_zone_id rows.<br />";
+    }
     return $count;
 }
 
@@ -390,11 +404,11 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                 list($junctionTable, $junctionCol) = explode('__', $junctionPart);
 
                 $linkTableDefs[] = [
-                    'csvHeader' => $col,
-                    'lookupTable' => $lookupTable,
-                    'lookupCol' => $lookupCol,
+                    'csvHeader'     => $col,
+                    'lookupTable'   => $lookupTable,
+                    'lookupCol'     => $lookupCol,
                     'junctionTable' => $junctionTable,
-                    'junctionCol' => $junctionCol,
+                    'junctionCol'   => $junctionCol,
                 ];
             } elseif (strpos($col, '->') !== false) {
                 list($originCol, $targetPart) = explode('->', $col);
@@ -502,7 +516,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                 $isText = (strpos($type, 'char') !== false || strpos($type, 'text') !== false || strpos($type, 'json') !== false);
                 $columnInfo[$info['Field']] = [
                     'nullable' => $info['Null'] === 'YES',
-                    'is_text' => $isText,
+                    'is_text'  => $isText,
                 ];
             }
         } catch (PDOException $e) {
@@ -517,7 +531,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
         $sql = "INSERT INTO {$prefixedTable} ({$columnList}) VALUES ({$placeholders})";
         $upsertTables = ['config', 'power_types'];
         if (in_array($tableName, $upsertTables)) {
-            $updateCols = array_map(fn($col) => "{$col}=VALUES({$col})", $dbColumns);
+            $updateCols = array_map(fn ($col) => "{$col}=VALUES({$col})", $dbColumns);
             $sql .= " ON DUPLICATE KEY UPDATE " . implode(',', $updateCols);
         }
         $stmt = $pdo->prepare($sql);
@@ -551,7 +565,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                     list($csvCol, $targetPart) = explode('->', $col);
                     // For compound lookups, the cache key is {junctionTable}_id
                     if (strpos($targetPart, '__') !== false) {
-                        list($junctionTable,) = explode('__', $targetPart);
+                        list($junctionTable, ) = explode('__', $targetPart);
                         $dbCol = $junctionTable . '_id';
                     } else {
                         $dbCol = $targetPart;
@@ -589,7 +603,9 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
             foreach ($linkTableDefs as $def) {
                 $csvHeader = $def['csvHeader'];
                 $lookupValue = $rowData[$csvHeader] ?? '';
-                if ($lookupValue === '') continue;
+                if ($lookupValue === '') {
+                    continue;
+                }
 
                 if (isset($linkTableCaches[$csvHeader][$lookupValue])) {
                     $lookupId = $linkTableCaches[$csvHeader][$lookupValue];
@@ -733,7 +749,9 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool
             if ($powersList !== '') {
                 foreach (explode('|', $powersList) as $powerName) {
                     $powerName = trim($powerName);
-                    if ($powerName === '') continue;
+                    if ($powerName === '') {
+                        continue;
+                    }
                     if (isset($linkPowerCache[$powerName])) {
                         $insertPower->execute([$workerId, $linkPowerCache[$powerName]]);
                     } else {
@@ -774,31 +792,36 @@ function gameReady(): PDO|null
     $path = null;
     foreach ($configFiles as $configFile) {
         $path = getPath($configFile);
-        if ($path != null) break;
+        if ($path != null) {
+            break;
+        }
     }
     $_SESSION['PATH'] = $path;
     $_SESSION['configFile'] = $configFile;
     if (!empty($_SESSION['DEBUG']) && $_SESSION['DEBUG'] == true) {
-        echo "Config Path built : " . $path . $configFile . " </ br>";
+        echo "Config Path built : " . $path.$configFile . " </ br>";
         $debug = true;
     }
 
     $pdo = getDBConnection($path, $configFile);
-    if ($debug)
+    if ($debug) {
         echo "getDBConnection: </ br>";
+    }
     if ($pdo != null) {
         try {
             // Check if table exists
             $tableName = 'players';
             $exists = tableExists($pdo, $tableName);
 
-            if ($debug)
+            if ($debug) {
                 echo "tableExists players: " . $exists . " </ br>";
+            }
             if (!$exists) {
                 echo "Table '$tableName' Does not exist. Loading Database...<br />";
 
-                if ($debug)
-                    echo 'dbtype : ' . $_SESSION['DBTYPE'] . "; <br>";
+                if ($debug) {
+                    echo 'dbtype : '.$_SESSION['DBTYPE']."; <br>";
+                }
                 $sqlFile = sprintf('%s/var/%s/setupBDD.sql', $path, $_SESSION['DBTYPE']);
                 echo "Loading $sqlFile ... ";
                 //$sqlFile = '../BDD/setupBDD.sql';
@@ -874,7 +897,7 @@ function gameReady(): PDO|null
                                     echo "SQL file $sqlFile executed successfully.<br />";
                                 }
                             }
-                        } else if (file_exists($sqlFile)) {
+                        } elseif (file_exists($sqlFile)) {
                             // Load SQL file if CSV doesn't exist
                             echo "Loading $sqlFile ...<br />";
                             echo 'Start <br />';
@@ -909,9 +932,9 @@ function gameReady(): PDO|null
                     // CSV files with linkTable_ column handle link_power_type automatically.
                     // SQL fallback uses post-processing to link unlinked powers to their type.
                     $powerFileTypes = [
-                        'hobbys' => 'Hobby',
-                        'jobs' => 'Metier',
-                        'disciplines' => 'Discipline',
+                        'hobbys'          => 'Hobby',
+                        'jobs'            => 'Metier',
+                        'disciplines'     => 'Discipline',
                         'transformations' => 'Transformation',
                     ];
                     $powerCsvColumns = ['name', 'description', 'enquete', 'attack', 'defence', 'other',
@@ -952,7 +975,7 @@ function gameReady(): PDO|null
                                 $stmt->execute();
                             } catch (PDOException $e) {
                                 game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
-                                return NULL;
+                                return null;
                             }
                             $powerTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             if (!empty($powerTypes)) {
@@ -963,7 +986,7 @@ function gameReady(): PDO|null
                                     $stmt->execute();
                                 } catch (PDOException $e) {
                                     game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
-                                    return NULL;
+                                    return null;
                                 }
                                 $powers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 if (!empty($powers)) {
@@ -978,7 +1001,7 @@ function gameReady(): PDO|null
                                         $stmt->execute();
                                     } catch (PDOException $e) {
                                         game_error_log(__FUNCTION__, $sql . ' failed : ' . $e->getMessage(), ['sql' => $sql, 'powerTypeName' => $powerTypeName], 'error');
-                                        return NULL;
+                                        return null;
                                     }
                                 }
                                 echo "SQL INSERT link_power_type for $powerTypeName executed successfully.<br />";
@@ -992,8 +1015,12 @@ function gameReady(): PDO|null
                     if (file_exists($csvFile)) {
                         echo "Loading CSV file $csvFile ...<br />";
                         echo 'Start <br />';
-                        loadCSVFile($pdo, $csvFile, 'faction_powers',
-                            ['factions__name->faction_id', 'powers__name->link_power_type__power_id']);
+                        loadCSVFile(
+                            $pdo,
+                            $csvFile,
+                            'faction_powers',
+                            ['factions__name->faction_id', 'powers__name->link_power_type__power_id']
+                        );
                         echo "CSV file $csvFile loaded successfully.<br />";
                     } elseif (file_exists($sqlFile)) {
                         echo "Loading $sqlFile ...<br />";
@@ -1014,7 +1041,7 @@ function gameReady(): PDO|null
                         echo "Loading CSV file $csvFile ...<br />";
                         echo 'Start <br />';
                         loadWorkersCSV($pdo, $csvFile);
-                    } else if (file_exists($sqlFile)) {
+                    } elseif (file_exists($sqlFile)) {
                         echo 'Start <br />';
                         $sqlQueries = file_get_contents($sqlFile);
                         $sqlQueries = str_replace('{prefix}', $_SESSION['GAME_PREFIX'], $sqlQueries);
@@ -1051,7 +1078,7 @@ function gameReady(): PDO|null
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";
-                        } else if (!file_exists($csvFile) && !file_exists($sqlFile)) {
+                        } elseif (!file_exists($csvFile) && !file_exists($sqlFile)) {
                             echo "Neither CSV nor SQL file found for advanced_tests.<br />";
                         }
                     }
@@ -1099,19 +1126,18 @@ function gameReady(): PDO|null
         }
     } else {
         echo 'Impssible de se connecter a la base de donnée.';
-        if ($path == null) echo 'Aucun fichier de configuration trouvée.';
+        if ($path == null) {
+            echo 'Aucun fichier de configuration trouvée.';
+        }
     }
     return $pdo;
 }
 
 /**
  * Dumps the current database to a SQL file via mysqldump / pg_dump.
- * In normal mode, streams the file to the browser as a download.
- * In silent mode, saves the file server-side and returns the path.
  *
- * @param bool $silent : if true, saves to disk quietly instead of streaming to browser
- *
- * @return string|null : backup file path in silent mode, null on failure (void in normal mode)
+ * @param bool $silent : if true, write to /var/backups/rpg and return the path (no download / no exit) ; if false, stream the dump to the browser and exit on success
+ * @return string|null : backup file path in silent mode, null on failure (void semantics in normal mode)
  */
 function exportBDD(bool $silent = false): string|null
 {
@@ -1120,7 +1146,8 @@ function exportBDD(bool $silent = false): string|null
 
     // Output file
     if ($silent) {
-        $exportPath = sprintf('/var/backups/rpg/%s_backup_%s.sql',
+        $exportPath = sprintf(
+            '/var/backups/rpg/%s_backup_%s.sql',
             $config['dbname'],
             date('Ymd_His')
         );
@@ -1134,7 +1161,8 @@ function exportBDD(bool $silent = false): string|null
 
     // export BDD to file via command line
     if ($config['db_type'] == 'mysql') {
-        $command = sprintf('mysqldump -h %s -u %s -p%s %s > %s',
+        $command = sprintf(
+            'mysqldump -h %s -u %s -p%s %s > %s',
             escapeshellarg($config['host']),
             escapeshellarg($config['username']),
             escapeshellarg($config['password']),
@@ -1142,7 +1170,8 @@ function exportBDD(bool $silent = false): string|null
             escapeshellarg($exportPath)
         );
     } else {
-        $command = sprintf('PGPASSWORD=%s pg_dump -h %s -U %s -F p %s > %s',
+        $command = sprintf(
+            'PGPASSWORD=%s pg_dump -h %s -U %s -F p %s > %s',
             escapeshellarg($config['password']),
             escapeshellarg($config['host']),
             escapeshellarg($config['username']),
@@ -1202,7 +1231,8 @@ function importBDD(PDO $pdo, array $file): bool
 
             // import BDD from file via command line
             if ($config['db_type'] == 'mysql') {
-                $command = sprintf('mysql -h %s -u %s -p%s %s < %s',
+                $command = sprintf(
+                    'mysql -h %s -u %s -p%s %s < %s',
                     escapeshellarg($config['host']),
                     escapeshellarg($config['username']),
                     escapeshellarg($config['password']),
@@ -1210,7 +1240,8 @@ function importBDD(PDO $pdo, array $file): bool
                     escapeshellarg($tmpFilePath)
                 );
             } else {
-                $command = sprintf('PGPASSWORD=%s psql -h %s -U %s -d %s -f %s',
+                $command = sprintf(
+                    'PGPASSWORD=%s psql -h %s -U %s -d %s -f %s',
                     escapeshellarg($config['password']),
                     escapeshellarg($config['host']),
                     escapeshellarg($config['username']),
@@ -1223,7 +1254,9 @@ function importBDD(PDO $pdo, array $file): bool
             destroyAllTables($pdo);
             // Run import
             $output = shell_exec($command);
-            if ($output) echo "<pre>$output</pre>";
+            if ($output) {
+                echo "<pre>$output</pre>";
+            }
             // Success message
             echo "<div class='notification is-success'>Import completed successfully.</div>";
             return true;

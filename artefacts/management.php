@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['artefact_id']
         ]);
     }
-    
+
 }
 
 // Fetch artefacts
@@ -83,7 +83,8 @@ require_once '../base/baseHTML.php';
                     $loc['display_name']
                 );
             endforeach;
-            echo sprintf('<tr>
+            echo sprintf(
+                '<tr>
                 <td>%1$s</td>
                 <td>%2$s</td>
                 <td>%3$s</td>
@@ -122,7 +123,7 @@ require_once '../base/baseHTML.php';
                 $art['full_description']
             );
         endforeach;
-        ?>
+?>
     </table>
 
     <h2>Add New Artefact</h2>

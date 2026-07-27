@@ -5,21 +5,23 @@ require_once '../base/basePHP.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    if ( isset($_POST['resetBDD']) ) {
+    if (isset($_POST['resetBDD'])) {
         // empty controller SESSION
-        $_SESSION['controller'] = NULL;
+        $_SESSION['controller'] = null;
         // Purge the game error log as part of the full reset (mirrors DB wipe)
-        if (is_writable($GLOBALS['LOG_PATH'])) @file_put_contents($GLOBALS['LOG_PATH'], '');
+        if (is_writable($GLOBALS['LOG_PATH'])) {
+            @file_put_contents($GLOBALS['LOG_PATH'], '');
+        }
         destroyAllTables($gameReady);
         $gameReady = gameReady();
     }
 
-    if ( isset($_POST['exportBDD']) ) {
+    if (isset($_POST['exportBDD'])) {
         // Export BDD to file.sql
         exportBDD($gameReady);
     }
 
-    if ( isset($_POST['importBDD']) ) {
+    if (isset($_POST['importBDD'])) {
         echo "======= ".var_export($_FILES["bddFile"]["name"], true)." =======<br>";
         // Import BDD from file.sql
         importBDD($gameReady, $_FILES["bddFile"]);
@@ -33,8 +35,8 @@ require_once '../base/baseHTML.php';
 <div class="content">
     <?php
     $adminRecentErrors = game_error_log_tail(2, $_SESSION['GAME_PREFIX'] ?? null, 'error');
-    $adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
-    ?>
+$adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
+?>
     <!-- Ligne 1 : Mechanics | Recent errors | BDD management -->
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="mechanics">
@@ -46,14 +48,14 @@ require_once '../base/baseHTML.php';
                     <th> Value </th>
                 </tr>
                 <?php
-                // Display config values in a table
-                foreach ($mechanics as $key => $value) {
+            // Display config values in a table
+            foreach ($mechanics as $key => $value) {
                 echo" <tr>
                     <td> $key </td>
                     <td> $value </td>
                 </tr>";
-                }
-                ?>
+            }
+?>
             </table>
         </div>
         <div class="config" style="border-left: 5px solid <?= $adminBorderColor ?>; padding-left: 0.75em;">
@@ -74,31 +76,36 @@ require_once '../base/baseHTML.php';
                 <h1>BDD management : </h1>
                 <?php
                     // Add button to extract BDD to file.sql or .sql
-                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post">
-                        <input type="hidden" name="exportBDD" />
-                        <input type="submit" name="submitButton" value="Export BDD to file.sql" />
-                    </form> </p>',
-                    $_SESSION['FOLDER']
+                    echo sprintf(
+                        '<p> <form action="/%s/base/admin.php" method="post">
+                            <input type="hidden" name="exportBDD" />
+                            <input type="submit" name="submitButton" value="Export BDD to file.sql" />
+                        </form> </p>',
+                        $_SESSION['FOLDER']
                     );
-                    // Import BDD from file.sql
-                    echo sprintf('<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="importBDD" />
-                        <input type="file" name="bddFile" id="bddFile" />
-                        <input type="submit" name="submitButton" value="Import BDD from file.sql" />
-                    </form> </p>',
-                    $_SESSION['FOLDER']
-                    );
-                ?>
+// Import BDD from file.sql
+echo sprintf(
+    '<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="importBDD" />
+                            <input type="file" name="bddFile" id="bddFile" />
+                            <input type="submit" name="submitButton" value="Import BDD from file.sql" />
+                        </form> </p>',
+    $_SESSION['FOLDER']
+);
+?>
         </div>
     </div>
     <!-- Ligne 2 : Config Management | Management | List (avec Worker list) -->
     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
         <div class="config">
             <h1>Config Management</h1>
-            <?php echo sprintf( '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
-                $_SESSION['FOLDER']
-            );
-            echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">',  $_SESSION['FOLDER']); ?>
+                <?php
+    echo sprintf(
+        '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
+        $_SESSION['FOLDER']
+    );
+echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">', $_SESSION['FOLDER']);
+?>
                 <h2> FULL Reset : <br />
                     <select id="configSelect" name="config_name">
                         <optgroup label="Config via CSV">
@@ -118,21 +125,21 @@ require_once '../base/baseHTML.php';
         </div>
         <div class="config">
                 <h1>Management</h1>
-                <?php echo sprintf( '
+                <?php echo sprintf('
                 <p> <a href="/%1$s/controllers/management.php">Player-Controllers</a> </p>
                 <p> <a href="/%1$s/artefacts/management.php">Artefacts</a> </p>
                 <p> <a href="/%1$s/ressources/management.php">Ressources</a> </p>',
-                $_SESSION['FOLDER']
+                    $_SESSION['FOLDER']
                 ); ?>
         </div>
         <div class="config">
                 <h1>List</h1>
-                <?php echo sprintf( '
+                <?php echo sprintf('
                 <p> <a href="/%1$s/zones/management_zones.php">Zone control list</a> </p>
                 <p> <a href="/%1$s/zones/management_locations.php">Discovered location list</a> </p>
                 <p> <a href="/%1$s/zones/management_bases.php">Attack on player base list</a> </p>
                 <p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>',
-                $_SESSION['FOLDER']
+                    $_SESSION['FOLDER']
                 ); ?>
         </div>
     </div>
@@ -141,7 +148,7 @@ require_once '../base/baseHTML.php';
         <?php
             // Allow for admin creation of a perfect agent
             require_once '../workers/newPerfectWorker.php';
-        ?>
+?>
     </div>
 </div>
 

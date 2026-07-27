@@ -168,6 +168,7 @@ def _db():
     )
 
 
+@pytest.mark.db
 class TestPossessionORShape:
     """Regression on Vampire1966CSV's Possession power. Pre-fix the
     on_transformation.OR was a single object, which PHP iterated as

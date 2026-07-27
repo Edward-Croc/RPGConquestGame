@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Get the description for a power_type
  *
@@ -6,22 +7,23 @@
  * @param string $name : power_type name
  * @return string|null : description
  */
-function getPowerTypesDescription(PDO $pdo, string $name): string|null {
+function getPowerTypesDescription(PDO $pdo, string $name): string|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with name : ' . $name, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         $stmt = $pdo->prepare("SELECT description
             FROM {$prefix}power_types
             WHERE name = :name
         ");
         $stmt->execute([':name' => $name]);
         $val = $stmt->fetchColumn();
-        return $val !== false ? (string)$val : NULL;
+        return $val !== false ? (string)$val : null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT description failed', ['name' => $name, 'error' => $e->getMessage()]);
-        return NULL;
+        return null;
     }
 }
 
@@ -31,14 +33,16 @@ function getPowerTypesDescription(PDO $pdo, string $name): string|null {
  * @param bool $short : short format flag
  * @return string : SQL fragment
  */
-function getSQLPowerText(bool $short = true): string {
+function getSQLPowerText(bool $short = true): string
+{
     $sql = "CONCAT(p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')') AS power_text";
     if (!$short) {
         $sql = "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', p.description) AS power_text";
-        if ($_SESSION['DBTYPE'] == 'mysql')
+        if ($_SESSION['DBTYPE'] == 'mysql') {
             $sql = "CONCAT('<strong>', p.name, ' (', p.enquete, ', ', p.attack, '/', p.defence, ')</strong> ', IFNULL(p.description,'')) AS power_text";
+        }
     }
-    
+
     return $sql;
 }
 
@@ -49,7 +53,8 @@ function getSQLPowerText(bool $short = true): string {
  * @param int|string $worker_id_str : one worker id or comma-separated ids for the IN clause
  * @return array : worker_powers rows
  */
-function getPowersByWorkers(PDO $pdo, int|string $worker_id_str): array {
+function getPowersByWorkers(PDO $pdo, int|string $worker_id_str): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with worker_id_str : ' . $worker_id_str, [], 'debug');
 
@@ -90,7 +95,8 @@ function getPowersByWorkers(PDO $pdo, int|string $worker_id_str): array {
  * @param array $newWorker : worker being built
  * @return array|null : $newWorker with power_<type> filled, or NULL on SQL error
  */
-function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|null {
+function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with type : ' . $type, ['newWorker' => $newWorker], 'debug');
 
@@ -117,9 +123,10 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
     );
 
     $prefix = $_SESSION['GAME_PREFIX'];
-    try{
+    try {
         // Get x random values from powers for a power_type
-        $sql = sprintf("SELECT p.*, %s FROM {$prefix}powers AS p
+        $sql = sprintf(
+            "SELECT p.*, %s FROM {$prefix}powers AS p
             INNER JOIN {$prefix}link_power_type lpt ON lpt.power_id = p.id
             WHERE lpt.power_type_id = %s %s ORDER BY %s LIMIT 1",
             $power_text,
@@ -131,7 +138,7 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
         $stmt->execute([':turn' => $turn_number]);
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT random power failed', ['sql' => $sql, 'error' => $e->getMessage()]);
-        return NULL;
+        return null;
     }
 
     // Fetch the results
@@ -153,7 +160,8 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
  * @param bool $add_base : whether to add basePowerNames from config
  * @return array|null : $powerArray
  */
-function getPowersByType(PDO $pdo, string $type_list, int|null $controller_id = NULL, bool $add_base = true): array|null {
+function getPowersByType(PDO $pdo, string $type_list, int|null $controller_id = null, bool $add_base = true): array|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with type_list : ' . $type_list, ['controller_id' => $controller_id, 'add_base' => $add_base], 'debug');
 
@@ -161,24 +169,27 @@ function getPowersByType(PDO $pdo, string $type_list, int|null $controller_id = 
     $power_text = getSQLPowerText();
 
     $basePowerNames = '';
-    if ( $add_base ){
+    if ($add_base) {
         $configBasePowerNames = getConfig($pdo, 'basePowerNames');
-        if ( !empty($configBasePowerNames) ) {
+        if (!empty($configBasePowerNames)) {
             $basePowerNames = $configBasePowerNames;
         }
     }
 
     $conditions = '';
     if ($controller_id != "" || $basePowerNames != "") {
-        $conditions = sprintf("AND ( %s %s %s)",
-        $basePowerNames != "" ? "sp.name IN ($basePowerNames)" : '',
-        ($controller_id != "" && $basePowerNames != "") ? "OR" : '',
-        $controller_id != "" ? "sc.id IN ($controller_id)" : '');
+        $conditions = sprintf(
+            "AND ( %s %s %s)",
+            $basePowerNames != "" ? "sp.name IN ($basePowerNames)" : '',
+            ($controller_id != "" && $basePowerNames != "") ? "OR" : '',
+            $controller_id != "" ? "sc.id IN ($controller_id)" : ''
+        );
     }
 
     $prefix = $_SESSION['GAME_PREFIX'];
     // Get all powers from a type_list
-    $sql = sprintf("SELECT p.*, %3\$s, lpt.id as link_power_type_id
+    $sql = sprintf(
+        "SELECT p.*, %3\$s, lpt.id as link_power_type_id
         FROM {$prefix}powers AS p
         JOIN {$prefix}link_power_type AS lpt ON lpt.power_id = p.id
         WHERE p.id IN (
@@ -197,12 +208,12 @@ function getPowersByType(PDO $pdo, string $type_list, int|null $controller_id = 
     );
     game_error_log(__FUNCTION__, 'SQL', ['sql' => $sql], 'debug');
 
-    try{
+    try {
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT powers by type failed', ['sql' => $sql, 'error' => $e->getMessage()]);
-        return NULL;
+        return null;
     }
 
     // Fetch the results
@@ -219,11 +230,14 @@ function getPowersByType(PDO $pdo, string $type_list, int|null $controller_id = 
  *
  * @return string: $showDisciplineSelect
  */
-function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showText = true): string {
+function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showText = true): string
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', ['powerDisciplineArray' => $powerDisciplineArray, 'showText' => $showText], 'debug');
 
-    if (empty($powerDisciplineArray)) return '';
+    if (empty($powerDisciplineArray)) {
+        return '';
+    }
 
     $disciplinesOptions = '';
     foreach ($powerDisciplineArray as $powerDiscipline) {
@@ -232,7 +246,8 @@ function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showT
 
     $label = $showText ? getPowerTypesDescription($pdo, 'Discipline').' :' : '';
 
-    $showDisciplineSelect = sprintf('
+    $showDisciplineSelect = sprintf(
+        '
             %s
             <div class="control for-select">
                 <div class="select is-fullwidth">
@@ -256,7 +271,7 @@ function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showT
 /**
  * Filter a list of powers by JSON-driven unlock rules at `[$state_text]`.
  * Pure-check: never mutates DB. Delegates per-power gating to findMatchingBranch.
- * 
+ *
  * @param PDO $pdo : database connection
  * @param array $powerArray : power array
  * @param int $controller_id : controller id
@@ -265,37 +280,41 @@ function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showT
  * @param string $state_text : state text
  * @return array|null surviving powers (NULL when empty)
  */
-function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null {
-    if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
+function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null
+{
+    if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
+    }
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['powerArray' => $powerArray, 'worker_id' => $worker_id, 'turn_number' => $turn_number, 'state_text' => $state_text], 'debug');
 
     $workersPowersList = array();
-    if (!empty($worker_id)){
+    if (!empty($worker_id)) {
         $workersPowersArray = getPowersByWorkers($pdo, $worker_id);
-        foreach ($workersPowersArray as $workerPower){
+        foreach ($workersPowersArray as $workerPower) {
             $workersPowersList[] = $workerPower['id'];
         }
     }
 
-    foreach ( $powerArray AS $key => $power ) {
-        if (!empty($worker_id) && in_array($power['id'], $workersPowersList, true)){
+    foreach ($powerArray as $key => $power) {
+        if (!empty($worker_id) && in_array($power['id'], $workersPowersList, true)) {
             game_error_log(__FUNCTION__, 'kill power(' . $key . ') — already possessed', [], 'debug');
             unset($powerArray[$key]);
             continue;
         }
 
         $powerConditions = json_decode($power['other'] ?? '', true);
-        if (!is_array($powerConditions)) continue;
+        if (!is_array($powerConditions)) {
+            continue;
+        }
 
         $match = findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text);
-        if (!$match['keep']){
+        if (!$match['keep']) {
             game_error_log(__FUNCTION__, 'kill power(' . $key . ')', [], 'debug');
             unset($powerArray[$key]);
         }
     }
 
-    return empty($powerArray) ? NULL : $powerArray ;
+    return empty($powerArray) ? null : $powerArray ;
 }
 
 /**
@@ -311,7 +330,8 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
  * @param string $state_text : state text
  * @return array ['keep' => bool, 'matching_branch' => ?array]
  */
-function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array {
+function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['powerConditions' => $powerConditions, 'worker_id' => $worker_id, 'turn_number' => $turn_number, 'state_text' => $state_text], 'debug');
 
@@ -319,48 +339,54 @@ function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id
 
     $result = ['keep' => true, 'matching_branch' => null];
 
-    if (empty($powerConditions[$state_text])) return $result;
+    if (empty($powerConditions[$state_text])) {
+        return $result;
+    }
     $rule = $powerConditions[$state_text];
 
-    if (gettype($rule) === 'string' && strtolower($rule) === 'false'){
+    if (gettype($rule) === 'string' && strtolower($rule) === 'false') {
         $result['keep'] = false;
         return $result;
     }
-    if (!is_array($rule)) return $result;
+    if (!is_array($rule)) {
+        return $result;
+    }
 
     $cacheKey = "{$controller_id}_{$worker_id}_{$turn_number}";
-    if (!isset($contextCache[$cacheKey])){
+    if (!isset($contextCache[$cacheKey])) {
         $contextCache[$cacheKey] = buildRuleEvaluationContext($pdo, $controller_id, $worker_id);
     }
     $context = $contextCache[$cacheKey];
 
     $direct = $rule;
     $orBranches = null;
-    if (array_key_exists('OR', $direct)){
+    if (array_key_exists('OR', $direct)) {
         $orBranches = $direct['OR'];
         unset($direct['OR']);
     }
 
-    if (!evaluateRuleKeysAllMatch($direct, $context, $turn_number)){
+    if (!evaluateRuleKeysAllMatch($direct, $context, $turn_number)) {
         $result['keep'] = false;
         return $result;
     }
 
-    if ($orBranches !== null){
-        if (!is_array($orBranches) || array_keys($orBranches) !== range(0, count($orBranches) - 1)){
+    if ($orBranches !== null) {
+        if (!is_array($orBranches) || array_keys($orBranches) !== range(0, count($orBranches) - 1)) {
             // OR must be array-of-objects, not single object
             $result['keep'] = false;
             return $result;
         }
         $matched = null;
-        foreach ($orBranches as $branch){
-            if (!is_array($branch)) continue;
-            if (evaluateRuleKeysAllMatch($branch, $context, $turn_number)){
+        foreach ($orBranches as $branch) {
+            if (!is_array($branch)) {
+                continue;
+            }
+            if (evaluateRuleKeysAllMatch($branch, $context, $turn_number)) {
                 $matched = $branch;
                 break;
             }
         }
-        if ($matched === null){
+        if ($matched === null) {
             $result['keep'] = false;
             return $result;
         }
@@ -377,7 +403,7 @@ function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id
  * both the direct-level controller_has_ressource and the matched OR branch
  * (via findMatchingBranch). Direct precedence on cross-resource collision +
  * error_log warning. Returns null when no deducting cost applies.
- * 
+ *
  * @param PDO $pdo : database connection
  * @param array $power : power to evaluate
  * @param int $controller_id : controller id
@@ -386,41 +412,57 @@ function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id
  * @param string $state_text : state text
  * @return array|null ['ressource_id' => int, 'ressource_name' => string, 'amount' => int]
  */
-function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null {
+function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['power' => $power, 'worker_id' => $worker_id, 'state_text' => $state_text], 'debug');
 
-    if (empty($power['other'])) return null;
+    if (empty($power['other'])) {
+        return null;
+    }
     $powerConditions = json_decode($power['other'], true);
-    if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) return null;
+    if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) {
+        return null;
+    }
     $rule = $powerConditions[$state_text];
 
     // Gate via the shared matcher first; no cost if the rule does not pass.
     $match = findMatchingBranch($pdo, $powerConditions, $controller_id, $worker_id, $turn_number, $state_text);
-    if (!$match['keep']) return null;
+    if (!$match['keep']) {
+        return null;
+    }
 
     $direct_cost = extractRessourceCostFromRule($rule['controller_has_ressource'] ?? null);
 
     $or_cost = null;
-    if (isset($rule['OR']) && is_array($match['matching_branch'])){
+    if (isset($rule['OR']) && is_array($match['matching_branch'])) {
         $or_cost = extractRessourceCostFromRule($match['matching_branch']['controller_has_ressource'] ?? null);
     }
 
-    if ($direct_cost !== null && $or_cost !== null){
-        if ($direct_cost['ressource_name'] !== $or_cost['ressource_name']){
-            game_error_log(__FUNCTION__, 'cross-resource cost not supported, using direct',
+    if ($direct_cost !== null && $or_cost !== null) {
+        if ($direct_cost['ressource_name'] !== $or_cost['ressource_name']) {
+            game_error_log(
+                __FUNCTION__,
+                'cross-resource cost not supported, using direct',
                 ['direct' => $direct_cost['ressource_name'], 'or' => $or_cost['ressource_name']],
-                'warning');
+                'warning'
+            );
         }
         $or_cost = null;
     }
     $cost = $direct_cost ?? $or_cost;
-    if ($cost === null) return null;
+    if ($cost === null) {
+        return null;
+    }
 
     $rid = resolveRessourceIdByName($pdo, $cost['ressource_name']);
-    if ($rid === null){
-        game_error_log(__FUNCTION__, 'ressource not found in ressources_config',
-            ['ressource_name' => $cost['ressource_name']], 'warning');
+    if ($rid === null) {
+        game_error_log(
+            __FUNCTION__,
+            'ressource not found in ressources_config',
+            ['ressource_name' => $cost['ressource_name']],
+            'warning'
+        );
         return null;
     }
     return ['ressource_id' => $rid, 'ressource_name' => $cost['ressource_name'], 'amount' => $cost['amount']];
@@ -435,21 +477,24 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
  * @param int|null $worker_id : worker id, or NULL when no worker context
  * @return array : ['worker', 'controllersArray', 'zonesArray', 'zonesArrayHolder', 'ressourcesArray']
  */
-function buildRuleEvaluationContext(PDO $pdo, int $controller_id, int|null $worker_id): array {
+function buildRuleEvaluationContext(PDO $pdo, int $controller_id, int|null $worker_id): array
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['worker_id' => $worker_id], 'debug');
 
     $worker = null;
-    if (!empty($worker_id)){
+    if (!empty($worker_id)) {
         $workersArray = getWorkers($pdo, [$worker_id]);
-        if (!empty($workersArray[0])) $worker = $workersArray[0];
+        if (!empty($workersArray[0])) {
+            $worker = $workersArray[0];
+        }
     }
     $controllersArray = [];
     $zonesArray = [];
     $zonesArrayHolder = [];
     $ressourcesArray = [];
-    if (!empty($controller_id)){
-        $controllersArray = getControllers($pdo, NULL, $controller_id);
+    if (!empty($controller_id)) {
+        $controllersArray = getControllers($pdo, null, $controller_id);
         $zonesArray = getZonesArray($pdo, $controller_id, null, null);
         $zonesArrayHolder = getZonesArray($pdo, null, $controller_id, null);
         $ressourcesArray = getRessources($pdo, $controller_id);
@@ -468,13 +513,14 @@ function buildRuleEvaluationContext(PDO $pdo, int $controller_id, int|null $work
  * Fail-closed on unknown keys: a typo like `controller_has_resource` (English
  * single-`s` spelling) would otherwise unlock the power instead of hiding it.
  * When the rule grammar is extended, add the new key here.
- * 
+ *
  * @param array $keys : keys to evaluate
  * @param array $context : context to evaluate the keys
  * @param int $turn_number : turn number
  * @return bool true if all keys match, false otherwise
  */
-function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number): bool {
+function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number): bool
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, ['keys_count' => count($keys), 'context' => $context], 'debug');
 
@@ -488,71 +534,98 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
     $zonesArrayHolder = $context['zonesArrayHolder'];
     $ressourcesArray = $context['ressourcesArray'];
 
-    foreach ($keys as $key => $value){
-        if ($key === 'OR') continue;
-        if (!in_array($key, $ALLOWED_KEYS, true)){
+    foreach ($keys as $key => $value) {
+        if ($key === 'OR') {
+            continue;
+        }
+        if (!in_array($key, $ALLOWED_KEYS, true)) {
             game_error_log(__FUNCTION__, 'unknown rule key — failing closed', ['key' => (string)$key], 'debug');
             return false;
         }
 
-        if ($key === 'age'){
-            if (!empty($worker) && !empty($worker['age']) && ((int)$value > (int)$worker['age'])) return false;
-        }
-        elseif ($key === 'worker_is_alive'){
-            if (!empty($worker) && isset($worker['actions'][$turn_number]['action_choice'])){
+        if ($key === 'age') {
+            if (!empty($worker) && !empty($worker['age']) && ((int)$value > (int)$worker['age'])) {
+                return false;
+            }
+        } elseif ($key === 'worker_is_alive') {
+            if (!empty($worker) && isset($worker['actions'][$turn_number]['action_choice'])) {
                 $should_be_alive = ($value != "0");
                 $is_alive = in_array($worker['actions'][$turn_number]['action_choice'], ACTIVE_ACTIONS);
-                if ($is_alive !== $should_be_alive) return false;
-            }
-        }
-        elseif ($key === 'unlock_turn'){
-            if ((int)$value > (int)$turn_number) return false;
-        }
-        elseif ($key === 'controller_faction'){
-            if (!empty($value) && !empty($controllersArray) && $value !== $controllersArray[0]['faction_name']) return false;
-        }
-        elseif ($key === 'controller_has_zone'){
-            if (empty($value)) continue;
-            $found = false;
-            foreach ($zonesArray as $zone){
-                if ($zone['name'] === $value){ $found = true; break; }
-            }
-            if (!$found){
-                foreach ($zonesArrayHolder as $zone){
-                    if ($zone['name'] === $value){ $found = true; break; }
+                if ($is_alive !== $should_be_alive) {
+                    return false;
                 }
             }
-            if (!$found) return false;
-        }
-        elseif ($key === 'worker_in_zone'){
-            if (!empty($value) && !empty($worker) && ($worker['zone_name'] ?? null) !== $value) return false;
-        }
-        elseif ($key === 'controller_has_ressource'){
-            if (!is_array($value)){
+        } elseif ($key === 'unlock_turn') {
+            if ((int)$value > (int)$turn_number) {
+                return false;
+            }
+        } elseif ($key === 'controller_faction') {
+            if (!empty($value) && !empty($controllersArray) && $value !== $controllersArray[0]['faction_name']) {
+                return false;
+            }
+        } elseif ($key === 'controller_has_zone') {
+            if (empty($value)) {
+                continue;
+            }
+            $found = false;
+            foreach ($zonesArray as $zone) {
+                if ($zone['name'] === $value) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                foreach ($zonesArrayHolder as $zone) {
+                    if ($zone['name'] === $value) {
+                        $found = true;
+                        break;
+                    }
+                }
+            }
+            if (!$found) {
+                return false;
+            }
+        } elseif ($key === 'worker_in_zone') {
+            if (!empty($value) && !empty($worker) && ($worker['zone_name'] ?? null) !== $value) {
+                return false;
+            }
+        } elseif ($key === 'controller_has_ressource') {
+            if (!is_array($value)) {
                 game_error_log(__FUNCTION__, 'controller_has_ressource: malformed rule (not an object)');
                 return false;
             }
             $rname = $value['ressource_name'] ?? null;
             $rawAmount = $value['amount'] ?? null;
             $amountIsStrictInt = is_int($rawAmount) || (is_string($rawAmount) && ctype_digit($rawAmount));
-            if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0){
-                game_error_log(__FUNCTION__, 'controller_has_ressource: invalid ressource_name or amount',
-                    ['ressource_name' => var_export($rname, true), 'amount' => var_export($rawAmount, true)], 'debug');
+            if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0) {
+                game_error_log(
+                    __FUNCTION__,
+                    'controller_has_ressource: invalid ressource_name or amount',
+                    ['ressource_name' => var_export($rname, true), 'amount' => var_export($rawAmount, true)],
+                    'debug'
+                );
                 return false;
             }
-            if (array_key_exists('consume', $value) && !is_bool($value['consume'])){
-                game_error_log(__FUNCTION__, 'controller_has_ressource: consume must be bool if present',
-                    ['consume' => var_export($value['consume'], true)], 'debug');
+            if (array_key_exists('consume', $value) && !is_bool($value['consume'])) {
+                game_error_log(
+                    __FUNCTION__,
+                    'controller_has_ressource: consume must be bool if present',
+                    ['consume' => var_export($value['consume'], true)],
+                    'debug'
+                );
                 return false;
             }
             $amount = (int)$rawAmount;
             $found = false;
-            foreach ($ressourcesArray as $r){
-                if (($r['ressource_name'] ?? null) === $rname && (int)($r['amount'] ?? 0) >= $amount){
-                    $found = true; break;
+            foreach ($ressourcesArray as $r) {
+                if (($r['ressource_name'] ?? null) === $rname && (int)($r['amount'] ?? 0) >= $amount) {
+                    $found = true;
+                    break;
                 }
             }
-            if (!$found) return false;
+            if (!$found) {
+                return false;
+            }
         }
     }
     return true;
@@ -565,16 +638,25 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
  * @param array|null $ressourceRule : controller_has_ressource sub-object, or null
  * @return array|null : ['ressource_name' => string, 'amount' => int]
  */
-function extractRessourceCostFromRule(array|null $ressourceRule): array|null {
-    if (!is_array($ressourceRule)) return null;
-    if (array_key_exists('consume', $ressourceRule)){
-        if (!is_bool($ressourceRule['consume'])) return null;
-        if ($ressourceRule['consume'] === false) return null;
+function extractRessourceCostFromRule(array|null $ressourceRule): array|null
+{
+    if (!is_array($ressourceRule)) {
+        return null;
+    }
+    if (array_key_exists('consume', $ressourceRule)) {
+        if (!is_bool($ressourceRule['consume'])) {
+            return null;
+        }
+        if ($ressourceRule['consume'] === false) {
+            return null;
+        }
     }
     $rname = $ressourceRule['ressource_name'] ?? null;
     $rawAmount = $ressourceRule['amount'] ?? null;
     $amountIsStrictInt = is_int($rawAmount) || (is_string($rawAmount) && ctype_digit($rawAmount));
-    if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0) return null;
+    if (!is_string($rname) || $rname === '' || !$amountIsStrictInt || (int)$rawAmount <= 0) {
+        return null;
+    }
     return ['ressource_name' => $rname, 'amount' => (int)$rawAmount];
 }
 
@@ -584,7 +666,8 @@ function extractRessourceCostFromRule(array|null $ressourceRule): array|null {
  * @param string $ressource_name : ressource name
  * @return int|null ressource id
  */
-function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|null {
+function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|null
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with ressource_name : ' . $ressource_name, [], 'debug');
 
@@ -608,11 +691,14 @@ function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|null {
  * @param bool $showText : whether to show the leading label, default true
  * @return string : $showTransformationSelect
  */
-function showTransformationSelect(PDO $pdo, array $powerTransformationArray, bool $showText = true): string {
+function showTransformationSelect(PDO $pdo, array $powerTransformationArray, bool $showText = true): string
+{
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', ['powerTransformationArray' => $powerTransformationArray, 'showText' => $showText], 'debug');
 
-    if (empty($powerTransformationArray)) return '';
+    if (empty($powerTransformationArray)) {
+        return '';
+    }
 
     $transformationsOptions = '';
     foreach ($powerTransformationArray as $powerTransformation) {
@@ -621,7 +707,8 @@ function showTransformationSelect(PDO $pdo, array $powerTransformationArray, boo
 
     $label = $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '';
 
-    $showTransformationSelect = sprintf('
+    $showTransformationSelect = sprintf(
+        '
             %s
             <div class="control for-select">
                 <div class="select is-fullwidth">
