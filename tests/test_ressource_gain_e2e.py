@@ -28,6 +28,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
+    ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -38,14 +39,6 @@ def _db_conn():
         password=MYSQL_PASSWORD, database=MYSQL_DB,
         charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
     )
-
-
-def _current_turn():
-    conn = _db_conn(); cur = conn.cursor()
-    cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
-    row = cur.fetchone()
-    cur.close(); conn.close()
-    return int(row['turncounter'])
 
 
 @pytest.fixture(scope="session")
@@ -588,7 +581,7 @@ class TestRessourceGainUnlockTurnSkipsBeforeThreshold:
         gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
         alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
         zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
-        locked_unlock_turn = _current_turn() + 1
+        locked_unlock_turn = ui_turn_counter(page) + 1
 
         _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
         _ui_set_zone_holder(page, zone_id, alpha_id)
@@ -635,7 +628,7 @@ class TestRessourceGainUnlockTurnFiresAtThreshold:
         gold_config_id = _ui_resolve_ressource_config_id(page, "Gold")
         alpha_gold_rc_id = _ui_resolve_controller_ressource_id(page, "Alpha", "Gold")
         zone_id = _ui_resolve_zone_id(page, "Alpha-Investigation")
-        threshold_unlock_turn = _current_turn()
+        threshold_unlock_turn = ui_turn_counter(page)
 
         _ui_set_controller_ressource(page, alpha_gold_rc_id, amount=0)
         _ui_set_zone_holder(page, zone_id, alpha_id)

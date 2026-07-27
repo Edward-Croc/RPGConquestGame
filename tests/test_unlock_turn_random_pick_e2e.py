@@ -154,6 +154,7 @@ def _advance_one_turn(browser):
 # Turn 0 — gated power excluded, baseline appears
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class Test01ExcludedAtTurnZero:
     """`unlock_turn: 2` means locked at turns 0..1. At turn 0 the gated
     power must never appear; a baseline ungated power must appear."""
@@ -186,6 +187,7 @@ class Test01ExcludedAtTurnZero:
 # Turn 1 — gated power still excluded
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class Test02ExcludedAtTurnOne:
     """Boundary case: turn 1 is one below the unlock_turn=2 threshold,
     so exclusion still holds."""
@@ -214,6 +216,7 @@ class Test02ExcludedAtTurnOne:
 # Turn 2 — gated power eligible (inclusive threshold)
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class Test03EligibleAtThreshold:
     """At turn 2 (== unlock_turn value), the gated power becomes eligible."""
 
@@ -241,6 +244,7 @@ class Test03EligibleAtThreshold:
 # Turn 3 — eligibility holds above threshold
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class Test04EligibleAboveThreshold:
     """Above unlock_turn, eligibility holds — no regression at turn 3."""
 

@@ -122,10 +122,10 @@ require_once '../base/baseHTML.php';
             </td>
             <td data-field="adjacent_zones"><?= htmlspecialchars($adjacentNames) ?></td>
             <td>
-                <input type="text" name="adjacent_zones" size="20" value="<?= htmlspecialchars($zone['adjacent_zones'] ?? '') ?>">
+                <input type="text" name="adjacent_zones" data-value-is-null="<?= $zone['adjacent_zones'] === null ? 'true' : 'false' ?>" size="20" value="<?= htmlspecialchars($zone['adjacent_zones'] ?? '') ?>">
             </td>
             <td>
-                <textarea name="zone_rules" rows="4" cols="60"><?= htmlspecialchars($zone['zone_rules'] ?? '') ?></textarea>
+                <textarea name="zone_rules" data-value-is-null="<?= $zone['zone_rules'] === null ? 'true' : 'false' ?>" rows="4" cols="60"><?= htmlspecialchars($zone['zone_rules'] ?? '') ?></textarea>
             </td>
             <td>
                 <input type="checkbox" name="is_hidden" value="1" <?= !empty($zone['is_hidden']) ? 'checked' : '' ?>>

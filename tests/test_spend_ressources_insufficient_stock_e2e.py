@@ -168,6 +168,7 @@ def _controller_ids(browser):
 # createBase
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestBuildBaseInsufficientStock:
     """createBase must abort cleanly when stock < base_building_cost: no new
     locations row, no ressource decrement, notification rendered."""
@@ -244,6 +245,7 @@ class TestBuildBaseInsufficientStock:
 # moveBase
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestMoveBaseInsufficientStock:
     """moveBase must abort cleanly when stock < base_moving_cost: locations
     row stays in original zone, no ressource decrement, notification rendered."""
@@ -325,6 +327,7 @@ class TestMoveBaseInsufficientStock:
 # repairLocation
 # ---------------------------------------------------------------------------
 
+@pytest.mark.db
 class TestRepairLocationInsufficientStock:
     """repairLocation must abort cleanly when stock < location_repaire_cost:
     locations row unchanged, no ressource decrement, notification rendered."""
