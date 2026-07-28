@@ -1146,13 +1146,15 @@ function exportBDD(bool $silent = false): string|null
 
     // Output file
     if ($silent) {
+        $backupDir = __DIR__ . '/../var/backups';
         $exportPath = sprintf(
-            '/var/backups/rpg/%s_backup_%s.sql',
+            '%s/%s_backup_%s.sql',
+            $backupDir,
             $config['dbname'],
             date('Ymd_His')
         );
-        if (!is_dir(dirname($exportPath))) {
-            mkdir(dirname($exportPath), 0755, true);
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
         }
     } else {
         $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));

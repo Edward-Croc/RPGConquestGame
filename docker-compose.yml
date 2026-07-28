@@ -33,7 +33,6 @@ services:
       # Secondary test game — URL: /RPGConquestGameTest2, prefix: game_test2_ (same source, different config)
       - .:/var/www/html/RPGConquestGameTest2
       - ./docker/local_config_game_test2.ini:/var/www/html/RPGConquestGameTest2/var/local_config.ini:ro
-      - ./backups:/var/backups/rpg
     environment:
       DB_HOST: mysql
       DB_NAME: rpgconquestgame

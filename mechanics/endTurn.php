@@ -8,10 +8,11 @@ require_once '../base/baseHTML.php';
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
-if (is_dir('/var/backups/rpg') && is_writable('/var/backups/rpg')) {
+$backupDir = __DIR__ . '/../var/backups';
+if (is_dir($backupDir) && is_writable($backupDir)) {
     exportBDD(true);
 } else {
-    game_error_log('endTurn_page', 'Skipping auto-backup — /var/backups/rpg not writable', [], 'warning');
+    game_error_log('endTurn_page', 'Skipping auto-backup — var/backups not writable', ['backupDir' => $backupDir], 'warning');
 }
 $started = toggleMechanicsGamestate($gameReady, $mechanics, true);
 if (!$started) {

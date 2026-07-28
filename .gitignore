@@ -6,7 +6,7 @@ infinitybasefiles
 __pycache__/
 .pytest_cache/
 .php-cs-fixer.cache
-backups/
+var/backups/
 
 # Repo-local override: vendored libraries under lib/ are tracked
 # (some user-global excludesfile entries ignore `lib`).
