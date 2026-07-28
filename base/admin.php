@@ -93,6 +93,7 @@ echo sprintf(
     $_SESSION['FOLDER']
 );
 ?>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php">&rarr; DB backups</a></p>
         </div>
     </div>
     <!-- Ligne 2 : Config Management | Management | List (avec Worker list) -->
