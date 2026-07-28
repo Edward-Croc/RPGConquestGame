@@ -8,7 +8,11 @@ require_once '../base/baseHTML.php';
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
-exportBDD(true);
+if (is_dir('/var/backups/rpg') && is_writable('/var/backups/rpg')) {
+    exportBDD(true);
+} else {
+    game_error_log('endTurn_page', 'Skipping auto-backup — /var/backups/rpg not writable', [], 'warning');
+}
 $started = toggleMechanicsGamestate($gameReady, $mechanics, true);
 if (!$started) {
     game_error_log('endTurn_page', 'toggleMechanicsGamestate failed to start the game', [], 'warning');
