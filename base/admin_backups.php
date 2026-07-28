@@ -96,6 +96,11 @@ require_once '../base/baseHTML.php';
     <?php if (empty($backups)): ?>
         <p><em>No backup files found.</em></p>
     <?php else: ?>
+        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php" method="post" style="margin-bottom: 1em;">
+            <input type="hidden" name="purge_all" value="1" />
+            <button type="submit" class="button is-danger" onclick="return confirm('Purge ALL <?= count($backups) ?> backup files ? This cannot be undone.');">Purge all backups</button>
+        </form>
+
         <table class="table is-striped">
             <thead>
                 <tr>
@@ -122,11 +127,6 @@ require_once '../base/baseHTML.php';
                 <?php endforeach; ?>
             </tbody>
         </table>
-
-        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php" method="post" style="margin-top: 1em;">
-            <input type="hidden" name="purge_all" value="1" />
-            <button type="submit" class="button is-danger" onclick="return confirm('Purge ALL <?= count($backups) ?> backup files ? This cannot be undone.');">Purge all backups</button>
-        </form>
     <?php endif; ?>
 
     <p style="margin-top: 1em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin.php">&larr; Back to admin</a></p>
