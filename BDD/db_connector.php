@@ -360,10 +360,11 @@ function resolveControllerOriginZones(PDO $pdo, string $controllersCsvPath): int
  * @param string $csvFile : absolute path to CSV file
  * @param string $tableName : target table name (without prefix)
  * @param array $columns : column headers as declared in the CSV; may include lookup and linkTable_ specs
+ * @param array $knownForwardRefs : columns whose FK lookup is expected to fail on first pass (later resolved by a post-load fixup like resolveControllerOriginZones). Warning is suppressed for these ; value silently stays NULL.
  *
  * @return bool : true on success, false when the file is missing or a fatal PDO exception was caught
  */
-function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $columns): bool
+function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $columns, array $knownForwardRefs = []): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with tableName : ' . $tableName, ['csvFile' => $csvFile, 'columns' => $columns], 'debug');
@@ -574,9 +575,12 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                     if (isset($lookupCaches[$dbCol][$lookupValue])) {
                         $values[] = $lookupCaches[$dbCol][$lookupValue];
                     } else {
-                        if ($lookupValue !== '') {
+                        if ($lookupValue !== '' && !in_array($col, $knownForwardRefs, true)) {
                             echo "Warning: Lookup value '{$lookupValue}' not found for {$col} in row " . ($rowCount + 1) . ".<br />";
                             echo "from: " . var_export($rowData, true) . "<br />";
+                        } elseif ($lookupValue !== '') {
+                            // Known forward-ref : a post-load fixup will resolve this ; keep silent but log for audit.
+                            game_error_log(__FUNCTION__, 'Forward-ref skipped', ['tableName' => $tableName, 'col' => $col, 'lookupValue' => $lookupValue, 'row' => $rowCount + 1], 'debug');
                         }
                         $values[] = null;
                     }
@@ -885,7 +889,10 @@ function gameReady(): PDO|null
                             echo 'Start <br />';
 
                             if (in_array($fileName, ['power_types', 'factions', 'players', 'controllers', 'player_controller', 'ressources_config', 'controller_ressources', 'locations', 'artefacts', 'worker_origins', 'worker_names', 'config', 'zones'])) {
-                                loadCSVFile($pdo, $csvFile, $fileName, $columns);
+                                // controllers.origin_zone_id references zones which load AFTER controllers ;
+                                // the resolveControllerOriginZones post-load fixup runs before locations to fill it in.
+                                $knownForwardRefs = ($fileName === 'controllers') ? ['zones__name->origin_zone_id'] : [];
+                                loadCSVFile($pdo, $csvFile, $fileName, $columns, $knownForwardRefs);
                             } else {
                                 // For base and zones, they contain complex SQL with subqueries
                                 // CSV support for these would require more complex handling
