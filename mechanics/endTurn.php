@@ -4,6 +4,19 @@ $pageName = 'End Turn';
 
 require_once '../base/basePHP.php';
 
+// Privileged-only: EOT triggers state mutation (mysqldump, mechanic steps) so
+// non-gm sessions must not reach it.
+if (empty($_SESSION['is_privileged'])) {
+    game_error_log(
+        'endTurn_page',
+        'Non-privileged EOT bypass attempt',
+        ['user_id' => $_SESSION['user_id'] ?? null],
+        'warning'
+    );
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 require_once '../base/baseHTML.php';
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
