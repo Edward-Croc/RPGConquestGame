@@ -34,6 +34,18 @@ def table_row_count(table_name):
     return count
 
 
+def null_column_count(table_name: str, column: str) -> int:
+    """Count rows in a prefixed table where the given column IS NULL."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        f"SELECT COUNT(*) as c FROM `{GAME_PREFIX}{table_name}` WHERE `{column}` IS NULL"
+    )
+    count = cursor.fetchone()["c"]
+    conn.close()
+    return count
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -245,6 +257,15 @@ class TestCSVLoadViaAdmin:
         assert "<b>Warning</b>" not in page_html, \
             "PHP warnings found on page after Japon1555CSV reset"
 
+        # Issue #103 : the controllers CSV has forward-refs to zones (loaded later).
+        # The loader must NOT emit a "Warning: Lookup value not found" for the
+        # zones__name->origin_zone_id column — resolveControllerOriginZones
+        # fixes it up after zones are loaded.
+        assert "Warning: Lookup value" not in page_html, (
+            "Issue #103 regression : forward-reference warnings should be "
+            "suppressed for known-forward-ref columns"
+        )
+
         # Verify CSV load success messages with exact row counts
         zones_n = csv_row_count("setupJapon1555CSV_zones.csv")
         assert "setupJapon1555CSV_worker_origins.csv loaded successfully (13 rows)" in page_html, \
@@ -279,6 +300,13 @@ class TestCSVLoadViaAdmin:
         assert table_row_count("workers") == 9, \
             "Japon1555CSV advanced should create exactly 9 workers"
 
+        # Issue #103 : after the resolveControllerOriginZones post-load fixup,
+        # every controller must have its origin_zone_id populated.
+        assert null_column_count("controllers", "origin_zone_id") == 0, (
+            "Issue #103 regression : controllers with NULL origin_zone_id "
+            "after Japon1555CSV load — resolveControllerOriginZones fixup broken"
+        )
+
         # Verify page header reflects Japon1555 scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
         logged_in_page.wait_for_load_state("networkidle")
@@ -306,6 +334,13 @@ class TestCSVLoadViaAdmin:
         # No PHP warnings should appear on the page
         assert "<b>Warning</b>" not in page_html, \
             "PHP warnings found on page after Vampire1966CSV reset"
+
+        # Issue #103 : forward-reference warnings must be suppressed for
+        # controllers.origin_zone_id (resolved by post-load fixup).
+        assert "Warning: Lookup value" not in page_html, (
+            "Issue #103 regression : forward-reference warnings should be "
+            "suppressed for known-forward-ref columns"
+        )
 
         # Verify CSV load success messages with exact row counts
         assert "setupVampire1966CSV_worker_origins.csv loaded successfully (12 rows)" in page_html, \
@@ -339,6 +374,13 @@ class TestCSVLoadViaAdmin:
         # Workers from advanced.csv (3 rows × 1 worker each)
         assert table_row_count("workers") == 3, \
             "Vampire1966CSV advanced should create exactly 3 workers"
+
+        # Issue #103 : after the resolveControllerOriginZones post-load fixup,
+        # every controller must have its origin_zone_id populated.
+        assert null_column_count("controllers", "origin_zone_id") == 0, (
+            "Issue #103 regression : controllers with NULL origin_zone_id "
+            "after Vampire1966CSV load — resolveControllerOriginZones fixup broken"
+        )
 
         # Verify page header reflects Vampire1966 scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
