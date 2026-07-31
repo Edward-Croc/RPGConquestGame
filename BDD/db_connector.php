@@ -1134,18 +1134,32 @@ function gameReady(): PDO|null
 }
 
 /**
- * Dumps the current database to a downloadable SQL file via mysqldump / pg_dump.
+ * Dumps the current database to a SQL file via mysqldump / pg_dump.
  *
- * @return void : streams the dump to the browser and calls exit on success
+ * @param bool $silent : if true, write to /var/backups/rpg and return the path (no download / no exit) ; if false, stream the dump to the browser and exit on success
+ * @return string|null : backup file path in silent mode, null on failure (void semantics in normal mode)
  */
-function exportBDD(): void
+function exportBDD(bool $silent = false): string|null
 {
 
     $config = loadDBConfig($_SESSION['PATH'], $_SESSION['configFile']);
 
     // Output file
-    $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));
-    $exportPath = sys_get_temp_dir() . '/' . $exportFile;
+    if ($silent) {
+        $backupDir = __DIR__ . '/../var/backups';
+        $exportPath = sprintf(
+            '%s/%s_backup_%s.sql',
+            $backupDir,
+            $config['dbname'],
+            date('Ymd_His')
+        );
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
+        }
+    } else {
+        $exportFile = sprintf('%s_export_%s.sql', $config['dbname'], date('Ymd_His'));
+        $exportPath = sys_get_temp_dir() . '/' . $exportFile;
+    }
 
     // export BDD to file via command line
     if ($config['db_type'] == 'mysql') {
@@ -1169,24 +1183,32 @@ function exportBDD(): void
     }
 
     // Run export
-    $output = shell_exec($command);
+    shell_exec($command);
 
     // Check if file was created
     if (file_exists($exportPath)) {
-        // Send file for download
-        header('Content-Type: application/sql');
-        header('Content-Disposition: attachment; filename="' . basename($exportFile) . '"');
-        header('Content-Length: ' . filesize($exportPath));
-        readfile($exportPath);
-        // Optionally delete the file after download
-        unlink($exportPath);
-        exit;
-    } else {
-        echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
-        if ($output) {
-            echo "<pre>$output</pre>";
+        if ($silent) {
+            echo sprintf("<p>Backup saved to: %s</p>", htmlspecialchars($exportPath));
+            return $exportPath;
+        } else {
+            // Send file for download
+            header('Content-Type: application/sql');
+            header('Content-Disposition: attachment; filename="' . basename($exportFile) . '"');
+            header('Content-Length: ' . filesize($exportPath));
+            readfile($exportPath);
+            // Optionally delete the file after download
+            unlink($exportPath);
+            exit;
         }
     }
+    game_error_log('exportBDD', 'Export/backup failed — file not created', ['exportPath' => $exportPath, 'silent' => $silent], 'warning');
+
+    if (!$silent) {
+        echo "<div class='notification is-danger'>Export failed. Check server permissions and availability.</div>";
+    } else {
+        echo "<p class='has-text-danger'>Warning: backup failed before end of turn.</p>";
+    }
+    return null;
 
 }
 

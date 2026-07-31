@@ -20,7 +20,7 @@ from conftest import (
 
 
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
+    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -373,3 +373,81 @@ class TestBDDImport:
         page.wait_for_load_state("networkidle")
         hidden = page.locator("input[type='hidden'][name='importBDD']")
         assert hidden.count() >= 1, "importBDD hidden input should exist"
+
+
+# ---------------------------------------------------------------------------
+# Tests: auto-backup at end-turn + admin_backups.php management page
+# ---------------------------------------------------------------------------
+
+class TestBDDBackupAutoOnEndTurn:
+    """Verify that end-turn writes a fresh backup file to var/backups
+    and that the admin backup management page lists / can delete it.
+
+    Class-scoped fixture purges existing backups and runs one end-turn
+    so both tests share a clean baseline (no per-test EOT cost)."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def _fresh_backup_state(self, browser, base_url):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+
+        # Purge all existing backups (Purge-all button click)
+        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        page.wait_for_load_state("load")
+        purge_form = page.locator("form:has(input[name='purge_all'])")
+        if purge_form.count() >= 1:
+            page.on("dialog", lambda d: d.accept())
+            purge_form.locator("button[type='submit']").click()
+            page.wait_for_load_state("load")
+
+        # One EOT triggers exportBDD(true) at endTurn.php top, dumps to
+        # var/backups. Both tests then read the resulting listing.
+        end_turn(page, base_url)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_backup_file_appears_after_end_turn(self, page: Page, base_url):
+        """After the class fixture's purge + end-turn, at least one
+        .sql row must appear in the admin backups table."""
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        page.wait_for_load_state("load")
+        sql_rows = page.locator("tbody tr:has(td:has-text('.sql'))")
+        assert sql_rows.count() >= 1, (
+            "After one end-turn, at least one .sql backup file should be "
+            "listed on admin_backups.php ; got 0 rows"
+        )
+
+    def test_delete_button_removes_row(self, page: Page, base_url):
+        """Deleting a backup via the per-row Delete button must remove
+        it from the listing on the reloaded page."""
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        page.wait_for_load_state("load")
+        sql_rows_before = page.locator(
+            "tbody tr:has(td:has-text('.sql'))"
+        ).count()
+        assert sql_rows_before >= 1, (
+            "Pre-condition failed: no backup rows to delete "
+            "(class fixture should have created at least one)"
+        )
+
+        # Accept the JS confirm() dialog then click the first row's
+        # Delete button.
+        page.on("dialog", lambda d: d.accept())
+        first_delete = page.locator(
+            "tbody tr:has(td:has-text('.sql'))"
+        ).first.locator("form button.is-danger")
+        first_delete.click()
+        page.wait_for_load_state("load")
+
+        sql_rows_after = page.locator(
+            "tbody tr:has(td:has-text('.sql'))"
+        ).count()
+        assert sql_rows_after == sql_rows_before - 1, (
+            f"Delete must remove exactly 1 row ; before={sql_rows_before}, "
+            f"after={sql_rows_after}"
+        )
