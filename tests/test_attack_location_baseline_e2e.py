@@ -1052,6 +1052,88 @@ class TestAttackModeDisabled:
         )
 
 
+class TestAgentAttackDefenceModeHidesControllerAttacks:
+    """Issue #73 — `locationAttackMode = agent_attack_defence` disables ALL
+    controller-level location attacks. This class asserts every controller-
+    side attack surface is gated off:
+
+    - controller view (`controllers/action.php`) — `Attaquer` form hidden
+    - zone view (`base/accueil.php` → `showcontrollerKnownSecrets`) — per-base
+      `Mener une équipe d'attaque sur place` button hidden (this was a
+      pre-existing gap in `zones/functions.php:868` — the button rendered
+      regardless of `locationAttackMode`; now gated to `['immediate','endTurn']`)
+    - `attackLocation` URL → 403 (already covered for unknown modes;
+      re-asserted here for the enum value)
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def agent_mode_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+
+        _switch_controller(page, "Foxtrot")
+
+        # Controller view — top-of-page Attaquer form
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        controller_view_attack_btn_count = page.locator("input[name='attackLocation']").count()
+
+        # Zone view via accueil.php — per-base 'Mener une équipe' button
+        # (the previously-ungated button in zones/functions.php:868)
+        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
+        page.wait_for_load_state("load")
+        accueil_attack_btn_count = page.locator("input[name='attackLocation']").count()
+
+        # URL 403 check
+        attack_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&target_location_id={echo_base_id}"
+            f"&controller_id={foxtrot_id}"
+        )
+        attack_url_status = attack_url_resp.status if attack_url_resp else None
+
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._controller_view_attack_btn_count = controller_view_attack_btn_count
+        type(self)._accueil_attack_btn_count = accueil_attack_btn_count
+        type(self)._attack_url_status = attack_url_status
+        yield
+
+    def test_attack_form_hidden_on_controller_view(self):
+        assert self._controller_view_attack_btn_count == 0, (
+            f"Attaquer form should be hidden on controllers/action.php "
+            f"when locationAttackMode = agent_attack_defence; "
+            f"got {self._controller_view_attack_btn_count}"
+        )
+
+    def test_attack_button_hidden_on_accueil_zone_view(self):
+        """Regression : zones/functions.php:868 (showcontrollerKnownSecrets)
+        used to render the per-base attack button regardless of
+        locationAttackMode. Now gated to ['immediate','endTurn']."""
+        assert self._accueil_attack_btn_count == 0, (
+            f"Per-base attack button should be hidden on base/accueil.php "
+            f"when locationAttackMode = agent_attack_defence; "
+            f"got {self._accueil_attack_btn_count} (zones/functions.php:868 gap)"
+        )
+
+    def test_attackLocation_url_returns_403(self):
+        assert self._attack_url_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode = "
+            f"agent_attack_defence; got {self._attack_url_status}"
+        )
+
+
 # Still @pytest.mark.db — belt-and-buckle DB class. Verifies internal
 # queue resolution state (controller_location_attacks.success flag,
 # resolved_turn timestamp) and defender-invisible log details

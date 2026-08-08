@@ -863,7 +863,11 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
                 ((int)$base['found_secret'] == 1) ? $base['hidden_description'] : ''
             );
 
-            if ($base['can_be_destroyed'] && hasBase($pdo, $controller_id)) {
+            $locationAttackMode = getConfig($pdo, 'locationAttackMode');
+            if ($base['can_be_destroyed']
+                && hasBase($pdo, $controller_id)
+                && in_array($locationAttackMode, ['immediate', 'endTurn'], true)
+            ) {
                 $returnText .= sprintf(
                     '
                     <form action="/%s/controllers/action.php" method="GET">

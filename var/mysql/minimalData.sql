@@ -126,7 +126,7 @@ VALUES
     ('maxBonusDiscoveryDiffPowers', 5, 'Maximum bonus obtainable from power presence' ),
     ('maxBonusDiscoveryDiffWorkers', 4, 'Maximum bonus obtainable from worker presence' ),
     ('maxBonusDiscoveryDiffTurns', 3, 'Maximum bonus obtainable from age of base' ),
-    ('locationAttackMode', 'immediate', 'Where/when controller location attacks resolve: immediate | endTurn | worker' ),
+    ('locationAttackMode', 'immediate', 'Where/when location attacks resolve: immediate | endTurn | agent_attack_defence' ),
     ('attackLocationOutcomeBandwidth', 2, 'Half-width of the faible-chances band for the queued-attack prediction' ),
     ('baseAttack', 0, 'Base attack value for bases' ),
     ('baseAttackAddPowers', 1, 'Base attack value Power presence ponderation 0 for no' ),
