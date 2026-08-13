@@ -643,6 +643,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
  *   zones__name->zone_id,
  *   controllers__lastname->controller_id,
  *   action_choice, action_params,
+ *   report (optional JSON — seeds worker_actions.report at turn 0, e.g. life_report lore),
  *   powers (pipe-separated list of power names)
  *
  * @param PDO $pdo : database connection
@@ -706,8 +707,8 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool
         );
         $insertAction = $pdo->prepare(
             "INSERT INTO {$prefix}worker_actions
-             (worker_id, controller_id, turn_number, zone_id, action_choice, action_params)
-             VALUES (?, ?, 0, ?, ?, ?)"
+             (worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report)
+             VALUES (?, ?, 0, ?, ?, ?, ?)"
         );
         $insertPower = $pdo->prepare(
             "INSERT INTO {$prefix}worker_powers (worker_id, link_power_type_id) VALUES (?, ?)"
@@ -746,6 +747,7 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool
                 $workerId, $controllerId, $zoneId,
                 $data['action_choice'] ?? 'passive',
                 $data['action_params'] ?? '{}',
+                $data['report'] ?? '{}',
             ]);
 
             // 4. Insert worker_powers (pipe-separated list)

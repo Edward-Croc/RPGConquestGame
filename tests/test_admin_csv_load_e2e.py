@@ -21,7 +21,7 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, csv_row_count
+from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, csv_row_count, worker_report_html
 
 
 def table_row_count(table_name):
@@ -299,6 +299,23 @@ class TestCSVLoadViaAdmin:
         # Workers from advanced.csv (9 rows × 1 worker each)
         assert table_row_count("workers") == 9, \
             "Japon1555CSV advanced should create exactly 9 workers"
+
+        # Issue #106 : advanced.csv now seeds worker_actions.report at turn 0
+        # for the 9 NPC workers (life_report lore texts previously lost in
+        # SQL→CSV migration). Verify via UI on Iwao (worker_id=1 as first row
+        # of advanced.csv on fresh AUTO_INCREMENT; controller_id=1 as first row
+        # of controllers.csv = Shikoku). workers/action.php:591-592 renders
+        # life_report under "Changements". Avoid worker_report_html helper
+        # because ui_all_workers can't parse CJK-in-parens firstnames.
+        safe_goto(logged_in_page, f"{base_url}/base/accueil.php?controller_id=1&chosir=Choisir")
+        logged_in_page.wait_for_load_state("networkidle")
+        safe_goto(logged_in_page, f"{base_url}/workers/action.php?worker_id=1")
+        logged_in_page.wait_for_load_state("networkidle")
+        iwao_html = logged_in_page.content()
+        assert "岩男" in iwao_html and "homme-rocher" in iwao_html, (
+            "Issue #106 regression : Iwao's seeded life_report should render "
+            "on his worker view page after Japon1555CSV load"
+        )
 
         # Issue #103 : after the resolveControllerOriginZones post-load fixup,
         # every controller must have its origin_zone_id populated.
