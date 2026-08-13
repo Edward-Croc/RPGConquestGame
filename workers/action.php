@@ -65,7 +65,8 @@ if (empty($_SESSION['is_privileged'])) {
 // Blocking trace and dead workers from changing action illogicaly
 $MUTATING_ACTIONS = ['move', 'attack', 'hide', 'passive', 'investigate',
     'claim', 'gift', 'recallDoubleAgent', 'returnPrisoner',
-    'teach_discipline', 'transform'
+    'teach_discipline', 'transform',
+    'attackLocation', 'defendLocation'
 ];
 $is_mutating = false;
 foreach ($MUTATING_ACTIONS as $k) {
@@ -174,6 +175,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if (isset($_GET['attack'])) {
         activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
+    }
+    if (isset($_GET['attackLocation']) || isset($_GET['defendLocation'])) {
+        $mode = getConfig($gameReady, 'locationAttackMode');
+        if ($mode !== 'agent_attack_defence') {
+            http_response_code(403);
+            exit();
+        }
+        $target_location_id = !empty($_GET['target_location_id']) ? (int)$_GET['target_location_id'] : 0;
+        if ($target_location_id <= 0) {
+            http_response_code(400);
+            exit();
+        }
+        $agent_action = isset($_GET['attackLocation']) ? 'attack_location' : 'defend_location';
+        activateWorker($gameReady, $worker_id, $agent_action, $target_location_id);
     }
     if (isset($_GET['hide'])) {
         activateWorker($gameReady, $worker_id, 'hide');

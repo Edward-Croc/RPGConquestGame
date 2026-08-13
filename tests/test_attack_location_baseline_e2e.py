@@ -48,10 +48,12 @@ from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
     PHP_BASE_URL, ensure_gm_login,
 )
+import json
+
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_controller_id,
+    ui_controller_id, ui_worker_action_state, ui_workers_by_lastname,
 )
 
 
@@ -1131,6 +1133,126 @@ class TestAgentAttackDefenceModeHidesControllerAttacks:
         assert self._attack_url_status == 403, (
             f"attackLocation URL should 403 when locationAttackMode = "
             f"agent_attack_defence; got {self._attack_url_status}"
+        )
+
+
+class TestAgentAttackDefenceActionDispatcher:
+    """Issue #73 Step 3 — verify that workers/action.php dispatcher wires
+    attackLocation / defendLocation URL params into worker_actions with:
+      - action_choice = 'attack_location' or 'defend_location'
+      - action_params = {"location_id": N}
+
+    Only fires when locationAttackMode = agent_attack_defence. Other modes
+    (or missing target_location_id) return 403 / 400 respectively.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def dispatcher_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+
+        chain_a_id = ui_workers_by_lastname(page, "Chain_A")[0]["id"]
+        chain_b_id = ui_workers_by_lastname(page, "Chain_B")[0]["id"]
+
+        # 1. attackLocation URL → action_choice = attack_location
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+            f"&target_location_id={echo_base_id}"
+        )
+        page.wait_for_load_state("load")
+        chain_a_state = ui_worker_action_state(page, "Chain_A")
+
+        # 2. defendLocation URL → action_choice = defend_location
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_b_id}&defendLocation=1"
+            f"&target_location_id={echo_base_id}"
+        )
+        page.wait_for_load_state("load")
+        chain_b_state = ui_worker_action_state(page, "Chain_B")
+
+        # 3. Wrong mode → 403
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        wrong_mode_resp = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+            f"&target_location_id={echo_base_id}"
+        )
+        wrong_mode_status = wrong_mode_resp.status if wrong_mode_resp else None
+
+        # 4. Missing target → 400 (still under agent_attack_defence mode)
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+        missing_target_resp = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+        )
+        missing_target_status = missing_target_resp.status if missing_target_resp else None
+
+        # Reset Chain_A + Chain_B to passive so downstream tests don't inherit
+        # attack_location/defend_location action_choice (unsupported by
+        # locationAttackMechanic until Step 5).
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&passive=1"
+        )
+        page.wait_for_load_state("load")
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_b_id}&passive=1"
+        )
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._chain_a_state = chain_a_state
+        type(self)._chain_b_state = chain_b_state
+        type(self)._wrong_mode_status = wrong_mode_status
+        type(self)._missing_target_status = missing_target_status
+        type(self)._echo_base_id = echo_base_id
+        yield
+
+    def test_attackLocation_sets_action_choice(self):
+        assert self._chain_a_state['action_choice'] == 'attack_location', (
+            f"Expected action_choice='attack_location', "
+            f"got '{self._chain_a_state['action_choice']}'"
+        )
+        params = json.loads(self._chain_a_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id}, got {params}"
+        )
+
+    def test_defendLocation_sets_action_choice(self):
+        assert self._chain_b_state['action_choice'] == 'defend_location', (
+            f"Expected action_choice='defend_location', "
+            f"got '{self._chain_b_state['action_choice']}'"
+        )
+        params = json.loads(self._chain_b_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id}, got {params}"
+        )
+
+    def test_wrong_mode_returns_403(self):
+        assert self._wrong_mode_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode != "
+            f"agent_attack_defence; got {self._wrong_mode_status}"
+        )
+
+    def test_missing_target_returns_400(self):
+        assert self._missing_target_status == 400, (
+            f"attackLocation URL should 400 when target_location_id missing; "
+            f"got {self._missing_target_status}"
         )
 
 

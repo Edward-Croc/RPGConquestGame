@@ -1,6 +1,6 @@
 <?php
 
-define('ACTIVE_ACTIONS', ['passive', 'investigate', 'attack', 'claim', 'hide']);
+define('ACTIVE_ACTIONS', ['passive', 'investigate', 'attack', 'claim', 'hide', 'attack_location', 'defend_location']);
 define('INACTIVE_ACTIONS', ['dead', 'captured', 'trace']);
 
 /**
@@ -95,7 +95,7 @@ function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|nul
             }
         }
         // Step 3: Append the new element to the specified key
-        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
+        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report', 'location_attack_report'];
         foreach ($reportTypes as $reportType) {
             if (!empty($reportAppendArray[$reportType])) {
                 if (empty($report[$reportType])) {
@@ -1098,6 +1098,11 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
             $jsonOutput = json_encode([
                 'claim_controller_id' => $extraVal
             ]);
+            break;
+        case 'attack_location':
+        case 'defend_location':
+            game_error_log(__FUNCTION__, $action, ['extraVal' => $extraVal], 'debug');
+            $jsonOutput = json_encode(['location_id' => (int)$extraVal]);
             break;
         case 'gift':
             game_error_log(__FUNCTION__, 'gift', ['extraVal' => $extraVal], 'debug');
