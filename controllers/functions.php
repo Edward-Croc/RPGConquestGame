@@ -1166,7 +1166,7 @@ function showOwnedArtefacts(PDO $pdo, int $controller_id): string
         foreach ($artefacts as $artefact) {
             $locationLabel = !empty($artefact['location_name']) ? $artefact['location_name'] : 'sans lieu';
             $html .= sprintf(
-                '<li><strong>%s</strong> (Location : %s) : %s %s</li>',
+                '<li><strong>%s</strong> (Lieu : %s) : %s %s</li>',
                 $artefact['name'],
                 $locationLabel,
                 $artefact['description'],
