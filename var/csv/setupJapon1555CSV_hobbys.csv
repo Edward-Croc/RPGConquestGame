@@ -34,7 +34,7 @@ Kakute (角手) – Anneau à pointes,", souvent empoisonnées, porté pour des 
 Hankyū (半弓) — Arc court,", pratique pour le combat rapproché ou en terrain dense, souvent utilisé par les fantassins",0,1,1,,Hobby
 Kusarigama (鎖鎌) — Arme composée d’une faucille attachée à une chaîne lestée,", utilisée pour désarmer et piéger l’ennemi",0,1,1,,Hobby
 Jitte (十手) – Arme de police,", utilisée pour parer les lames et capturer sans tuer",0,1,1,,Hobby
-Teppō (鉄砲) – Une arquebuse méche,", des prototypes artisanaux circulaient en version expérimentale dès la fin du 14e siècle",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Hobby
+Teppō (鉄砲) – Une arquebuse à mèche,", des prototypes artisanaux circulaient en version expérimentale dès la fin du 14e siècle",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Hobby
 Katana (刀) – L’arme emblématique du samouraï,", symbole d’honneur et de rang, mais peu pratique pour les agents discrets",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Hobby
 Yumi (弓) — Grand arc asymétrique utilisé par les samouraïs,", redouté pour sa portée et sa précision à cheval comme à pied",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Hobby
 Yari (槍) — Lance droite à pointe effilée,", polyvalente en formation comme en duel, arme principale de nombreux ashigaru",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Hobby
