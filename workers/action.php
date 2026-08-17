@@ -188,6 +188,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit();
         }
         $agent_action = isset($_GET['attackLocation']) ? 'attack_location' : 'defend_location';
+        // re-validate against the same helpers as the UI select (single source
+        // of truth for zone/ownership/attackability). Privileged bypass.
+        if (empty($_SESSION['is_privileged'])) {
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $stmtWZ = $gameReady->prepare("SELECT zone_id FROM {$prefix}workers WHERE id = :wid LIMIT 1");
+            $stmtWZ->execute([':wid' => $worker_id]);
+            $worker_zone_id = (int)$stmtWZ->fetchColumn();
+            $ctrlId = (int)$_SESSION['controller']['id'];
+            $set = ($agent_action === 'attack_location')
+                ? listControllerKnownLocations($gameReady, $ctrlId, true, false, true, false)
+                : listControllerLinkedLocations($gameReady, $ctrlId);
+            $validIds = array_column($set[$worker_zone_id]['locations'] ?? [], 'id');
+            if (!in_array($target_location_id, array_map('intval', $validIds), true)) {
+                http_response_code(403);
+                exit();
+            }
+        }
         activateWorker($gameReady, $worker_id, $agent_action, $target_location_id);
     }
     if (isset($_GET['hide'])) {
