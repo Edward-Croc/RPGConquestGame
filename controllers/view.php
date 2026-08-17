@@ -270,7 +270,7 @@ if (isset($_SESSION['controller'])) {
 
     $ownedArtefacts = showOwnedArtefacts($gameReady, $controllers['id']);
     if (!empty($ownedArtefacts)) {
-        echo sprintf('<h4 class="title is-5 mt-5">%s</h4><p>%s</p>', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
+        echo sprintf('<h4 class="title is-5 mt-5">%s</h4>%s', getConfig($gameReady, 'textOwnedArtefacts'), $ownedArtefacts);
     }
 
     echo '<h4 class="title is-5 mt-5">Vos lieux découverts:</h4>';
