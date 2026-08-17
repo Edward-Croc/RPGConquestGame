@@ -240,9 +240,9 @@ if (isset($_SESSION['controller'])) {
     }
     echo $htmlBase;
 
-    $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
     $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
     if (in_array($locationAttackMode, ['immediate', 'endTurn'], true) && hasBase($gameReady, $controllers['id'])) {
+        $showAttackableControllerKnownLocations = showAttackableControllerKnownLocations($gameReady, $controllers['id']);
         if ($showAttackableControllerKnownLocations !== null) {
             echo sprintf(
                 '<form action="/%3$s/controllers/action.php" method="GET" class="mb-4">
