@@ -856,7 +856,7 @@ function gameReady(): PDO|null
                         'base' => '',
                         'power_types' => ['id', 'name', 'description'],
                         'factions' => ['name'],
-                        'players' => ['username', 'passwd', 'is_privileged'],
+                        'players' => ['username', 'passwd', 'is_privileged', 'url'],
                         'controllers' => ['firstname', 'lastname', 'ia_type', 'zones__name->origin_zone_id', 'secret_controller', 'url', 'story', 'can_build_base', 'start_workers', 'turn_recruited_workers', 'turn_firstcome_workers', 'factions__name->faction_id', 'factions__name->fake_faction_id'],
                         'player_controller' => ['players__username->player_id', 'controllers__lastname->controller_id'],
                         'ressources_config' => ['ressource_name', 'presentation', 'stored_text', 'is_rollable', 'is_stored', 'base_building_cost', 'base_moving_cost', 'location_repaire_cost', 'gain_rules', 'hide_when_zero'],
