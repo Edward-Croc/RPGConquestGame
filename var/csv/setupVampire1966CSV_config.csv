@@ -7,7 +7,6 @@ PRESENTATION,"<p>Le 6 novembre 1966, l’Arno inonde une grande partie du centre
         </p>",Presentation text
 basePowerNames,"'Célérité', 'Endurance', 'Puissance'",List of Powers accessible to all workers
 continuing_investigate_action,false,Does the investigate action stay active
-continuing_claimed_action,false,Does the claim action stay active
 textLocationPillaged,"Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.",Text for location pillaged
 textLocationNotDestroyed,"Le lieu %s n’a pas été détruit, nos excuses.",Text for location not destroyed
 ressource_management,FALSE,Ressource management configuration

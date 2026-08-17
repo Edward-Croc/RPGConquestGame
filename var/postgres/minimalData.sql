@@ -23,6 +23,7 @@ VALUES
     ('PRESENTATION', '', 'Presentation text'),
     ('IntrigueOrga', '', 'Organisation info'),
     ('basePowerNames', '''power1'',''power2''', 'List of Powers accessible to all workers'),
+    -- worker creation
     ('turn_recrutable_workers', '1', 'Number of workers recrutable per turn'),
     ('turn_firstcome_workers', '1', 'Number of worker recrutable by firstcome pick per turn'),
     ('first_come_nb_choices', '1', 'Number of worker options presented for 1st come recrutment'),
@@ -35,6 +36,7 @@ VALUES
     ('age_discipline', '{"age": ["2"]}', 'If disciplines can be gained with AGE'),
     ('age_transformation', '{"action": "check"}', 'If transformation can be gained with AGE'),
     ('owner_knows_own_base_secret', 'TRUE', 'On base creation / scenario load, seed controller_known_locations with found_secret=TRUE so owners auto-know their own base secrets. Set FALSE for fog-of-war setups where the owner must learn their own base secret separately.'),
+    -- worker rolls
     ('MINROLL', '1', 'Minimum Roll for an active worker'),
     ('MAXROLL', '6', 'Maximum Roll for a an active worker'),
     ('PASSIVEVAL', '3', 'Value for passive actions'),
@@ -43,13 +45,15 @@ VALUES
     ('DEFENCE_ZONE_BONUS', '1', 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
     ('HIDE_ENQUETE_FLAT_BONUS', '4', 'Bonus to the investigate value if the worker is using hide'),
     ('HIDE_DEFENCE_FLAT_BONUS', '1', 'Bonus to the investigate value if the worker is using hide'),
-    ('investigateActionsList', '''passive'',''investigate''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
+    -- passive, investigate, attack, claim, captured, dead, trace, defend_location, attack_location
+    ('investigateActionsList', '''passive'',''investigate'',''defend_location''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide'',''attack_location'',''defend_location''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
-    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active defense actions'),
+    ('passiveAttackActions', '''passive'',''investigate'',''hide'',''defend_location''', 'Liste of passive attack actions'),
+    ('activeAttackActions', '''attack'',''claim'',''attack_location''', 'Liste of active attack actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide'',''attack_location''', 'Liste of passive defence actions'),
+    ('activeDefenceActions', '''defend_location''', 'Liste of active defense actions'),
+    -- Diff vals for investigation results
     ('REPORTDIFF0', '-1', 'Value for Level 0 information'),
     ('REPORTDIFF1', '1', 'Value for Level 1 information'),
     ('REPORTDIFF2', '2', 'Value for Level 2 information'),
@@ -57,6 +61,7 @@ VALUES
     ('LOCATIONNAMEDIFF', '0', 'Value for Location Name'),
     ('LOCATIONINFORMATIONDIFF', '1', 'Value for Location Information'),
     ('LOCATIONARTEFACTSDIFF', '2', 'Value for Location Artefact discovery'),
+    -- Attack choices
     ('attackTimeWindow', '1', 'Number of turns a discovered worker is attackable after being lost'),
     ('canAttackNetwork', '1', 'If 0 then only workers ar shown, > 0 then workers are sorted by networks when network is known = REPORTDIFF2 obtained '),
     ('LIMIT_ATTACK_BY_ZONE', '0', 'If 0 then attack happens if worker leave zone, > 0 then attack is limited to workers in zone'),
@@ -64,6 +69,7 @@ VALUES
     ('ATTACKDIFF1', '3', 'Value for Capture'),
     ('RIPOSTACTIVE', '1', 'Activate Ripost when attacked'),
     ('RIPOSTDIFF', '2', 'Value for Successful Ripost'),
+    -- Diff vals in claim results
     ('DISCRETECLAIMDIFF', '2', 'Value for discrete claim'),
     ('VIOLENTCLAIMDIFF', '0', 'Value for violent claim'),
     ('claimMode', 'worker', 'Zone claim resolution mode. worker | worker_leader | controller (v1 ships worker + worker_leader only)'),
@@ -82,11 +88,14 @@ VALUES
     ('maxBonusZoneDefenceWorkers', '0', 'Cap on worker bonus for zone defence (0 = no cap)'),
     ('maxBonusZoneDefenceOwnedLocations', '0', 'Cap on owned-location bonus for zone defence (0 = no cap)'),
     ('noControllerZoneDefenceBonus', '3', 'Fixed defence bonus when holder_controller_id IS NULL'),
+    -- action text in report config
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
     ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
     ('txt_ps_hide', 'se cache', 'Text for hide action'),
     ('txt_ps_attack', 'attaque', 'Text for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
+    ('txt_ps_attack_location', 'attaque le lieu', 'Text for attack_location action'),
+    ('txt_ps_defend_location', 'défend le lieu', 'Text for defend_location action'),
     ('txt_ps_captured', 'a disparu', 'Text for captured action'),
     ('txt_ps_dead', 'a disparu', 'Text for dead action'),
     ('txt_ps_prisoner', 'est un.e agent %s %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
@@ -96,16 +105,23 @@ VALUES
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
+    ('txt_inf_attack_location', 'attaquer le lieu', 'Text for attack_location action'),
+    ('txt_inf_defend_location', 'défendre le lieu', 'Text for defend_location action'),
     ('txt_inf_captured', 'a été capturé', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
+    -- Investigation report redundancy
     ('investigateOrder', 'asc', 'Order of investigation processing (asc/desc by searcher_enquete_val). asc lets weaker investigators discover first.'),
     ('textesAgentStillHere', '["L''agent %1$s est toujours présent dans ce %2$s."]', 'Templates (JSON array) for the "agent already known" report variant. %1$s = agent name, %2$s = textForZoneType config value (e.g. "territoire", "quartier", "zone").'),
     ('textesAgentMoved', '["L''agent %1$s, repéré précédemment dans %2$s, s''est déplacé ici."]', 'Templates (JSON array) for the "agent moved" report variant. %1$s = agent name, %2$s = previous zone name.'),
     ('textesAgentUpgradeInfo', '["Nous avons obtenu de nouvelles informations concernant %1$s :"]', 'Templates (JSON array) for the "new info on agent" report variant. %1$s = agent name.'),
     ('textesAgentReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known agent info.'),
     ('textesLocationStillHere', '["Le lieu %1$s est toujours là."]', 'Templates (JSON array) for the "location still here" report variant. %1$s = location name.'),
+    -- Action End turn effects
     ('continuing_investigate_action', '1', 'Does the investigate action stay active'),
-    ('continuing_claimed_action', '1', 'Does the claim action stay active'),
+    ('continuing_claim_action', '1', 'Does the claim action stay active'),
+    ('continuing_attack_location_action', '0', 'Does the attack_location action stay active'),
+    ('continuing_defend_location_action', '1', 'Does the defend_location action stay active'),
+    -- Base information
     ('baseDiscoveryDiff', '3', 'Base discovery value for bases'),
     ('baseDiscoveryDiffAddPowers', '1', 'Base discovery value Power presence ponderation 0 for no'),
     ('baseDiscoveryDiffAddWorkers', '1', 'Base discovery value worker presence ponderation 0 for no'),
@@ -136,6 +152,7 @@ VALUES
     ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
     ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
+    -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')
 ON CONFLICT (name) DO NOTHING;
 

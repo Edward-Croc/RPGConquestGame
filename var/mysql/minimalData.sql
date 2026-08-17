@@ -48,14 +48,14 @@ VALUES
     ('DEFENCE_ZONE_BONUS', 1, 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
     ('HIDE_ENQUETE_FLAT_BONUS', 4, 'Bonus to the investigate value if the worker is using hide'),
     ('HIDE_DEFENCE_FLAT_BONUS', 1, 'Bonus to the investigate value if the worker is using hide'),
-    -- passive, investigate, attack, claim, captured, dead
-    ('investigateActionsList', '''passive'',''investigate''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
-    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide''', 'Liste of passive investigation actions'),
+    -- passive, investigate, attack, claim, captured, dead, trace, defend_location, attack_location
+    ('investigateActionsList', '''passive'',''investigate'',''defend_location''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
+    ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide'',''attack_location'',''defend_location''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
-    ('passiveAttackActions', '''passive'',''investigate'',''hide''', 'Liste of passive attack actions'),
-    ('activeAttackActions', '''attack'',''claim''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '', 'Liste of active defense actions'),
+    ('passiveAttackActions', '''passive'',''investigate'',''hide'',''defend_location''', 'Liste of passive attack actions'),
+    ('activeAttackActions', '''attack'',''claim'',''attack_location''', 'Liste of active attack actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide'',''attack_location''', 'Liste of passive defence actions'),
+    ('activeDefenceActions', '''defend_location''', 'Liste of active defense actions'),
     -- Diff vals for investigation results
     ('REPORTDIFF0', -1, 'Value for Level 0 information'),
     ('REPORTDIFF1', 1, 'Value for Level 1 information'),
@@ -97,6 +97,8 @@ VALUES
     ('txt_ps_hide', 'se cache', 'Text for hide action'),
     ('txt_ps_attack', 'attaque', 'Text for attack action'),
     ('txt_ps_claim', 'revendique le quartier', 'Text for claim action'),
+    ('txt_ps_attack_location', 'attaque le lieu', 'Text for attack_location action'),
+    ('txt_ps_defend_location', 'défend le lieu', 'Text for defend_location action'),
     ('txt_ps_captured', 'a disparu', 'Text for captured action'),
     ('txt_ps_dead', 'a disparu', 'Text for dead action'),
     ('txt_ps_prisoner', 'est un.e agent %s %s que nous avons fait.e prisonnier.e', 'Text for beeing prisoner'),
@@ -106,9 +108,11 @@ VALUES
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
     ('txt_inf_attack', 'attaquer', 'Text for attack action'),
     ('txt_inf_claim', 'revendiquer le quartier', 'Text for claim action'),
+    ('txt_inf_attack_location', 'attaquer le lieu', 'Text for attack_location action'),
+    ('txt_inf_defend_location', 'défendre le lieu', 'Text for defend_location action'),
     ('txt_inf_captured', 'a été capturé', 'Text for captured action'),
     ('txt_inf_dead', 'est mort', 'Text for dead action'),
-    -- Investigation report redundancy (Issue #63)
+    -- Investigation report redundancy
     ('investigateOrder', 'asc', 'Order of investigation processing (asc/desc by searcher_enquete_val). asc lets weaker investigators discover first.'),
     ('textesAgentStillHere', '["L''agent %1$s est toujours présent dans ce %2$s."]', 'Templates (JSON array) for the "agent already known" report variant. %1$s = agent name, %2$s = textForZoneType config value (e.g. "territoire", "quartier", "zone").'),
     ('textesAgentMoved', '["L''agent %1$s, repéré précédemment dans %2$s, s''est déplacé ici."]', 'Templates (JSON array) for the "agent moved" report variant. %1$s = agent name, %2$s = previous zone name.'),
@@ -117,7 +121,9 @@ VALUES
     ('textesLocationStillHere', '["Le lieu %1$s est toujours là."]', 'Templates (JSON array) for the "location still here" report variant. %1$s = location name.'),
     -- Action End turn effects
     ('continuing_investigate_action', 1, 'Does the investigate action stay active' ),
-    ('continuing_claimed_action', 1, 'Does the claim action stay active' ),
+    ('continuing_claim_action', 1, 'Does the claim action stay active' ),
+    ('continuing_attack_location_action', 0, 'Does the attack_location action stay active' ),
+    ('continuing_defend_location_action', 1, 'Does the defend_location action stay active' ),
     -- Base information
     ('baseDiscoveryDiff', 3, 'Base discovery value for bases' ),
     ('baseDiscoveryDiffAddPowers', 1, 'Base discovery value Power presence ponderation 0 for no' ),

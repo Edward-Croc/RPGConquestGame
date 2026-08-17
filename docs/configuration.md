@@ -198,7 +198,7 @@ Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMecha
 
 ##### Actions et flux
 
-*Section à compléter dans un commit suivant.* Couvrira : `continuing_investigate_action` et les comportements de continuité d'actions d'un tour au suivant (l'entrée `continuing_claimed_action` est déjà documentée dans la section Modes de résolution).
+*Section à compléter dans un commit suivant.* Couvrira : `continuing_investigate_action` et les comportements de continuité d'actions d'un tour au suivant (l'entrée `continuing_claim_action` est déjà documentée dans la section Modes de résolution).
 
 #### Famille `claimMode` — résolution des revendications de zone
 
@@ -210,7 +210,7 @@ Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMecha
 
 Toute autre valeur (faute de frappe, mode futur non développé) désactive le mécanisme de revendication.
 
-**Clés communes à tous les modes :** `continuing_claimed_action` (= 1, l'action reste active au tour suivant), `txt_ps_claim` et `txt_inf_claim` (textes affichés), et les listes d'actions `passiveInvestigateActions` / `activeAttackActions` / `passiveDefenceActions` qui contiennent toutes la valeur `'claim'`.
+**Clés communes à tous les modes :** `continuing_claim_action` (= 1, l'action reste active au tour suivant), `txt_ps_claim` et `txt_inf_claim` (textes affichés), et les listes d'actions `passiveInvestigateActions` / `activeAttackActions` / `passiveDefenceActions` qui contiennent toutes la valeur `'claim'`.
 
 #### Famille `locationAttackMode` — attaque de lieu (locations)
 

@@ -384,43 +384,34 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
         return false;
     }
 
-    $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
-    if (!$config_continuing_investigate_action) {
-        $sqlSetInvestigate = "
-            UPDATE {$prefix}worker_actions wa1
-            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
-            SET wa1.action_choice = 'passive'
-            WHERE wa1.turn_number = :turn_number
-            AND wa2.action_choice = 'investigate'
-            AND wa2.turn_number = :turn_number_n_1
-        ";
-        try {
-            $stmtSetInvestigate = $pdo->prepare($sqlSetInvestigate);
-            $stmtSetInvestigate->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetInvestigate->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
-            $stmtSetInvestigate->execute();
-        } catch (PDOException $e) {
-            game_error_log(__FUNCTION__, 'UPDATE investigate action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetInvestigate]);
-            return false;
+    // Reset non-continuing actions to 'passive' on new turn creation.
+    // Map : action_choice -> config key that controls whether it persists.
+    $continuingActions = [
+        'investigate' => 'continuing_investigate_action',
+        'claim' => 'continuing_claim_action',
+        'attack_location' => 'continuing_attack_location_action',
+        'defend_location' => 'continuing_defend_location_action',
+    ];
+    foreach ($continuingActions as $action => $configKey) {
+        if (getConfig($pdo, $configKey)) {
+            continue;
         }
-    }
-    $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
-    if (!$config_continuing_claimed_action) {
-        $sqlSetClaim = "
+        $sqlReset = "
             UPDATE {$prefix}worker_actions wa1
             JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
             SET wa1.action_choice = 'passive'
             WHERE wa1.turn_number = :turn_number
-            AND wa2.action_choice = 'claim'
+            AND wa2.action_choice = :action
             AND wa2.turn_number = :turn_number_n_1
         ";
         try {
-            $stmtSetClaim = $pdo->prepare($sqlSetClaim);
-            $stmtSetClaim->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetClaim->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
-            $stmtSetClaim->execute();
+            $stmtReset = $pdo->prepare($sqlReset);
+            $stmtReset->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+            $stmtReset->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
+            $stmtReset->bindValue(':action', $action, PDO::PARAM_STR);
+            $stmtReset->execute();
         } catch (PDOException $e) {
-            game_error_log(__FUNCTION__, 'UPDATE claim action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetClaim]);
+            game_error_log(__FUNCTION__, "UPDATE {$action} action_choice failed", ['error' => $e->getMessage(), 'sql' => $sqlReset]);
             return false;
         }
     }
