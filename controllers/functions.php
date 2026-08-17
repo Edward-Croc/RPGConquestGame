@@ -1154,7 +1154,7 @@ function showOwnedArtefacts(PDO $pdo, int $controller_id): string
 
     $html = '';
     $prefix = $_SESSION['GAME_PREFIX'];
-    $sql = "SELECT artefacts.name, artefacts.description, artefacts.full_description
+    $sql = "SELECT artefacts.name, artefacts.description, artefacts.full_description, locations.name AS location_name
         FROM {$prefix}artefacts artefacts
         JOIN {$prefix}locations locations ON artefacts.location_id = locations.id
         WHERE locations.controller_id = ?";
@@ -1162,9 +1162,18 @@ function showOwnedArtefacts(PDO $pdo, int $controller_id): string
     $stmt->execute([$controller_id]);
     $artefacts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if (!empty($artefacts)) {
+        $html .= '<ul>';
         foreach ($artefacts as $artefact) {
-            $html .= sprintf('<strong>%s</strong> : %s %s</li>', $artefact['name'], $artefact['description'], $artefact['full_description']);
+            $locationLabel = !empty($artefact['location_name']) ? $artefact['location_name'] : 'sans lieu';
+            $html .= sprintf(
+                '<li><strong>%s</strong> (Lieu : %s) : %s %s</li>',
+                $artefact['name'],
+                $locationLabel,
+                $artefact['description'],
+                $artefact['full_description']
+            );
         }
+        $html .= '</ul>';
     }
     return $html;
 }
