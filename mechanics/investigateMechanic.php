@@ -309,8 +309,9 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         }
     }
 
-    $text_action_ps = $txtBag['actions'][$row['found_action']]['ps'];
-    $text_action_inf = $txtBag['actions'][$row['found_action']]['inf'];
+    $actionEntry = $txtBag['actions'][$row['found_action']] ?? [];
+    $text_action_ps = $actionEntry['ps'] ?? $row['found_action'];
+    $text_action_inf = $actionEntry['inf'] ?? $row['found_action'];
     if ($row['found_action'] == 'claim' && $row['found_action_params'] != '{}') {
         $found_action_params = json_decode($row['found_action_params'], true);
         if (is_array($found_action_params)) {
@@ -512,16 +513,15 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool
     }
     game_error_log(__FUNCTION__, 'investigations loaded', ['investigations' => $investigations], 'debug');
 
+    $actionsMap = [];
+    foreach (array_merge(ACTIVE_ACTIONS, INACTIVE_ACTIONS) as $action) {
+        $actionsMap[$action] = [
+            'ps' => getConfig($pdo, 'txt_ps_' . $action),
+            'inf' => getConfig($pdo, 'txt_inf_' . $action),
+        ];
+    }
     $txtBag = [
-        'actions' => [
-            'hide'        => ['ps' => getConfig($pdo, 'txt_ps_hide'),        'inf' => getConfig($pdo, 'txt_inf_hide')],
-            'passive'     => ['ps' => getConfig($pdo, 'txt_ps_passive'),     'inf' => getConfig($pdo, 'txt_inf_passive')],
-            'investigate' => ['ps' => getConfig($pdo, 'txt_ps_investigate'), 'inf' => getConfig($pdo, 'txt_inf_investigate')],
-            'attack'      => ['ps' => getConfig($pdo, 'txt_ps_attack'),      'inf' => getConfig($pdo, 'txt_inf_attack')],
-            'claim'       => ['ps' => getConfig($pdo, 'txt_ps_claim'),       'inf' => getConfig($pdo, 'txt_inf_claim')],
-            'captured'    => ['ps' => getConfig($pdo, 'txt_ps_captured'),    'inf' => getConfig($pdo, 'txt_inf_captured')],
-            'dead'        => ['ps' => getConfig($pdo, 'txt_ps_dead'),        'inf' => getConfig($pdo, 'txt_inf_dead')],
-        ],
+        'actions' => $actionsMap,
         'textesStartInvestigate'              => getConfig($pdo, 'textesStartInvestigate'),
         'textesDiff01Array'                   => json_decode(getConfig($pdo, 'textesDiff01Array'), true),
         'textesDiff01TransformationDiff0Array' => json_decode(getConfig($pdo, 'textesDiff01TransformationDiff0Array'), true),

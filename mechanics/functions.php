@@ -9,7 +9,7 @@ require_once '../mechanics/locationSearchMechanic.php';
 require_once '../mechanics/ressourceGainMechanic.php';
 
 if (!defined('WORKER_ACTION_CHOICES_ALLOWED')) {
-    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'captured', 'dead', 'trace']);
+    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'attack_location', 'defend_location', 'captured', 'dead', 'trace']);
 }
 if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
     define('INVESTIGATE_ACTIONS_DEFAULT', ['passive', 'investigate']);

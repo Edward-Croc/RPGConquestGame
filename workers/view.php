@@ -302,14 +302,11 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     }
 
                     // defendable set : own locations in worker's zone
-                    $prefixDef = $_SESSION['GAME_PREFIX'];
-                    $defStmt = $gameReady->prepare(
-                        "SELECT id, name FROM {$prefixDef}locations
-                         WHERE controller_id = :cid AND zone_id = :zid
-                         ORDER BY id"
-                    );
-                    $defStmt->execute([':cid' => $controller_id, ':zid' => $worker['zone_id']]);
-                    $defendableInZone = $defStmt->fetchAll(PDO::FETCH_ASSOC);
+                    $linkedLocations = listControllerLinkedLocations($gameReady, $controller_id);
+                    $defendableInZone = [];
+                    if (!empty($linkedLocations) && isset($linkedLocations[$worker['zone_id']])) {
+                        $defendableInZone = $linkedLocations[$worker['zone_id']]['locations'] ?? [];
+                    }
                     if (!empty($defendableInZone)) {
                         $defendOptions = '';
                         foreach ($defendableInZone as $loc) {
@@ -670,6 +667,9 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     }
                     if (!empty($currentReport['attack_report'])) {
                         echo '<p><h4 class="subtitle is-6"> Attaques : </h4> '.$currentReport['attack_report'].'</p>';
+                    }
+                    if (!empty($currentReport['location_attack_report'])) {
+                        echo '<p><h4 class="subtitle is-6"> Attaque de lieu : </h4> '.$currentReport['location_attack_report'].'</p>';
                     }
                     if (!empty($currentReport['investigate_report'])) {
                         echo '<p><h4 class="subtitle is-6"> Mes investigations : </h4> '.$currentReport['investigate_report'].'</p>';
