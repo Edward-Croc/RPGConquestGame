@@ -119,6 +119,8 @@ VALUES
     -- Action End turn effects
     ('continuing_investigate_action', '1', 'Does the investigate action stay active'),
     ('continuing_claim_action', '1', 'Does the claim action stay active'),
+    ('continuing_attack_action', '0', 'Does the attack action stay active'),
+    ('continuing_hide_action', '1', 'Does the hide action stay active'),
     ('continuing_attack_location_action', '0', 'Does the attack_location action stay active'),
     ('continuing_defend_location_action', '1', 'Does the defend_location action stay active'),
     -- Base information

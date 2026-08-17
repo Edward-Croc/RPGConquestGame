@@ -389,6 +389,8 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
     $continuingActions = [
         'investigate' => 'continuing_investigate_action',
         'claim' => 'continuing_claim_action',
+        'attack' => 'continuing_attack_action',
+        'hide' => 'continuing_hide_action',
         'attack_location' => 'continuing_attack_location_action',
         'defend_location' => 'continuing_defend_location_action',
     ];
