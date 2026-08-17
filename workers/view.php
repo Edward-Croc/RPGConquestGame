@@ -264,21 +264,97 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     );
                 }
 
+                // build agent_attack_defence location action HTML when locationAttackMode = agent_attack_defence.
+                $locationActionHTML = '';
+                if (getConfig($gameReady, 'locationAttackMode') === 'agent_attack_defence') {
+                    // attackable set (same flags as showAttackableControllerKnownLocations)
+                    $attackable = listControllerKnownLocations($gameReady, $controller_id, true, false, true, false);
+                    $attackableInZone = [];
+                    if (!empty($attackable) && isset($attackable[$worker['zone_id']])) {
+                        $attackableInZone = $attackable[$worker['zone_id']]['locations'] ?? [];
+                    }
+                    if (!empty($attackableInZone)) {
+                        $attackOptions = '';
+                        foreach ($attackableInZone as $loc) {
+                            $attackOptions .= sprintf(
+                                '<option value="%d">%s</option>',
+                                (int)$loc['id'],
+                                htmlspecialchars($loc['name'])
+                            );
+                        }
+                        $locationActionHTML .= sprintf(
+                            '
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Attaquer le lieu :
+                            </div>
+                            <div class="control for-select">
+                                <div class="select is-fullwidth">
+                                    <select name="target_location_id">%1$s</select>
+                                </div>
+                            </div>
+                            <div class="control">
+                                <input type="submit" name="attackLocation" value="Attaquer le lieu" class="button is-danger">
+                            </div>
+                        </div>',
+                            $attackOptions
+                        );
+                    }
+
+                    // defendable set : own locations in worker's zone
+                    $prefixDef = $_SESSION['GAME_PREFIX'];
+                    $defStmt = $gameReady->prepare(
+                        "SELECT id, name FROM {$prefixDef}locations
+                         WHERE controller_id = :cid AND zone_id = :zid
+                         ORDER BY id"
+                    );
+                    $defStmt->execute([':cid' => $controller_id, ':zid' => $worker['zone_id']]);
+                    $defendableInZone = $defStmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (!empty($defendableInZone)) {
+                        $defendOptions = '';
+                        foreach ($defendableInZone as $loc) {
+                            $defendOptions .= sprintf(
+                                '<option value="%d">%s</option>',
+                                (int)$loc['id'],
+                                htmlspecialchars($loc['name'])
+                            );
+                        }
+                        $locationActionHTML .= sprintf(
+                            '
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                Défendre le lieu :
+                            </div>
+                            <div class="control for-select">
+                                <div class="select is-fullwidth">
+                                    <select name="target_location_id">%1$s</select>
+                                </div>
+                            </div>
+                            <div class="control">
+                                <input type="submit" name="defendLocation" value="Défendre le lieu" class="button is-info">
+                            </div>
+                        </div>',
+                            $defendOptions
+                        );
+                    }
+                }
+
                 $actionHTML .= sprintf(
                     '<div class="box actions">
                     <form action="/%9$s/workers/action.php" method="GET">
                         <input type="hidden" name="worker_id" value=%1$s>
-                        <h3 class="title is-5">Actions :</h3> 
+                        <h3 class="title is-5">Actions :</h3>
                         <div class="field">
                             <label> <strong> Action de mise en place pour la fin de %13$s :</strong> %12$s</label>
                             <div class="control">
                                 <input type="submit" name="investigate" value="%10$s" class="button is-info">
-                                <input type="submit" name="passive" value="%4$s" class="button is-warning"> 
+                                <input type="submit" name="passive" value="%4$s" class="button is-warning">
                                 <input type="submit" name="hide" value="%11$s" class="button is-danger"><br />
                             </div>
                         </div>
                         %14$s
                         %3$s
+                        %15$s
                         <label class="label"><strong>Actions immédiates :</strong></label>
                         %7$s
                         <div class="field is-grouped is-grouped-multiline">
@@ -315,7 +391,8 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %11$s
                     $workerActionText, // %12$s
                     ucfirst(getConfig($gameReady, 'timeValue')), // %13$s
-                    $claimActionHTML // %14$s
+                    $claimActionHTML, // %14$s
+                    $locationActionHTML // %15$s
                 );
             }
 
