@@ -276,14 +276,14 @@ class TestCSVLoadViaAdmin:
             f"Expected zones CSV to load {zones_n} rows"
         assert "setupJapon1555CSV_hobbys.csv loaded successfully (47 rows)" in page_html, \
             "Expected hobbys CSV to load 47 rows"
-        assert "setupJapon1555CSV_jobs.csv loaded successfully (46 rows)" in page_html, \
-            "Expected jobs CSV to load 46 rows"
+        assert "setupJapon1555CSV_jobs.csv loaded successfully (47 rows)" in page_html, \
+            "Expected jobs CSV to load 47 rows"
         assert "setupJapon1555CSV_factions.csv loaded successfully (11 rows)" in page_html, \
             "Expected factions CSV to load 11 rows"
         assert "setupJapon1555CSV_locations.csv loaded successfully (48 rows)" in page_html, \
             "Expected locations CSV to load 48 rows"
-        assert "setupJapon1555CSV_advanced.csv loaded successfully (9 rows)" in page_html, \
-            "Expected advanced workers CSV to load 9 rows"
+        assert "setupJapon1555CSV_advanced.csv loaded successfully (12 rows)" in page_html, \
+            "Expected advanced workers CSV to load 12 rows"
 
         # Verify DB row counts
         assert table_row_count("worker_origins") == 13, \
@@ -296,12 +296,12 @@ class TestCSVLoadViaAdmin:
             "Japon1555CSV should load exactly 11 factions"
         assert table_row_count("locations") == 48, \
             "Japon1555CSV should load exactly 48 locations"
-        # Workers from advanced.csv (9 rows × 1 worker each)
-        assert table_row_count("workers") == 9, \
-            "Japon1555CSV advanced should create exactly 9 workers"
+        # Workers from advanced.csv (12 rows × 1 worker each — 9 original + 3 Bansō sōhei)
+        assert table_row_count("workers") == 12, \
+            "Japon1555CSV advanced should create exactly 12 workers"
 
         # Issue #106 : advanced.csv now seeds worker_actions.report at turn 0
-        # for the 9 NPC workers (life_report lore texts previously lost in
+        # for the 12 NPC workers (life_report lore texts previously lost in
         # SQL→CSV migration). Verify via UI on Iwao (worker_id=1 as first row
         # of advanced.csv on fresh AUTO_INCREMENT; controller_id=1 as first row
         # of controllers.csv = Shikoku). workers/action.php:591-592 renders
