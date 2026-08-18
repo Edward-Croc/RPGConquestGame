@@ -82,6 +82,18 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
             }
 
             $workerActionInfo = '';
+            if (in_array($currentAction['action_choice'], array('attack_location', 'defend_location'))) {
+                $params = json_decode($currentAction['action_params'] ?? '{}', true);
+                if (json_last_error() === JSON_ERROR_NONE && !empty($params['location_id'])) {
+                    $prefix = $_SESSION['GAME_PREFIX'];
+                    $stmtLocName = $gameReady->prepare("SELECT name FROM {$prefix}locations WHERE id = :lid LIMIT 1");
+                    $stmtLocName->execute([':lid' => (int)$params['location_id']]);
+                    $locName = $stmtLocName->fetchColumn();
+                    if (!empty($locName)) {
+                        $workerActionInfo .= ' <strong>' . htmlspecialchars($locName) . '</strong>';
+                    }
+                }
+            }
             if (in_array($currentAction['action_choice'], array('attack', 'claim'))) {
                 if ($_SESSION['DEBUG'] == true) {
                     $workerActionInfo .= ' Action spéciale en cours : <strong>'.$currentAction['action_choice'].'</strong> '. $currentAction['action_params'];
