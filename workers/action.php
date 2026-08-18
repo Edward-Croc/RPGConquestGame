@@ -196,10 +196,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmtWZ->execute([':wid' => $worker_id]);
             $worker_zone_id = (int)$stmtWZ->fetchColumn();
             $ctrlId = (int)$_SESSION['controller']['id'];
-            $set = ($agent_action === 'attack_location')
-                ? listControllerKnownLocations($gameReady, $ctrlId, true, false, true, false)
-                : listControllerLinkedLocations($gameReady, $ctrlId);
-            $validIds = array_column($set[$worker_zone_id]['locations'] ?? [], 'id');
+            $attackableSet = listControllerKnownLocations($gameReady, $ctrlId, true, false, true, false);
+            $attackableIds = array_column($attackableSet[$worker_zone_id]['locations'] ?? [], 'id');
+            if ($agent_action === 'attack_location') {
+                $validIds = $attackableIds;
+            } else {
+                $ownSet = listControllerLinkedLocations($gameReady, $ctrlId);
+                $ownIds = array_column($ownSet[$worker_zone_id]['locations'] ?? [], 'id');
+                $validIds = array_unique(array_merge($ownIds, $attackableIds));
+            }
             if (!in_array($target_location_id, array_map('intval', $validIds), true)) {
                 http_response_code(403);
                 exit();

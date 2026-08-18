@@ -313,20 +313,44 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                         );
                     }
 
-                    // defendable set : own locations in worker's zone
-                    $linkedLocations = listControllerLinkedLocations($gameReady, $controller_id);
-                    $defendableInZone = [];
-                    if (!empty($linkedLocations) && isset($linkedLocations[$worker['zone_id']])) {
-                        $defendableInZone = $linkedLocations[$worker['zone_id']]['locations'] ?? [];
+                    // defendable set : UNION of own locations + attackable to be able toi defend allies
+                    $ownLinked = listControllerLinkedLocations($gameReady, $controller_id);
+                    $ownInZone = [];
+                    $ownIdsInZone = [];
+                    if (!empty($ownLinked) && isset($ownLinked[$worker['zone_id']])) {
+                        $ownInZone = $ownLinked[$worker['zone_id']]['locations'] ?? [];
+                        foreach ($ownInZone as $ol) {
+                            $ownIdsInZone[(int)$ol['id']] = true;
+                        }
                     }
-                    if (!empty($defendableInZone)) {
-                        $defendOptions = '';
-                        foreach ($defendableInZone as $loc) {
-                            $defendOptions .= sprintf(
+                    // $attackableInZone was already computed above for the attack select.
+                    $cklInZone = $attackableInZone;
+                    if (!empty($ownInZone) || !empty($cklInZone)) {
+                        $ownOptions = '';
+                        foreach ($ownInZone as $loc) {
+                            $ownOptions .= sprintf(
                                 '<option value="%d">%s</option>',
                                 (int)$loc['id'],
                                 htmlspecialchars($loc['name'])
                             );
+                        }
+                        $otherOptions = '';
+                        foreach ($cklInZone as $loc) {
+                            if (isset($ownIdsInZone[(int)$loc['id']])) {
+                                continue;
+                            }
+                            $otherOptions .= sprintf(
+                                '<option value="%d">%s</option>',
+                                (int)$loc['id'],
+                                htmlspecialchars($loc['name'])
+                            );
+                        }
+                        $optgroups = '';
+                        if ($ownOptions !== '') {
+                            $optgroups .= '<optgroup label="Nos lieux">' . $ownOptions . '</optgroup>';
+                        }
+                        if ($otherOptions !== '') {
+                            $optgroups .= '<optgroup label="Autres lieux connus">' . $otherOptions . '</optgroup>';
                         }
                         $locationActionHTML .= sprintf(
                             '
@@ -343,7 +367,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                                 <input type="submit" name="defendLocation" value="Défendre le lieu" class="button is-info">
                             </div>
                         </div>',
-                            $defendOptions
+                            $optgroups
                         );
                     }
                 }
