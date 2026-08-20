@@ -347,6 +347,194 @@ function getWorkerStatus(array $worker, array $mechanics): string
 }
 
 /**
+ * build the « au nom de X » (claim) or « contre les réseaux X, Y et contre Prénom Nom » (attack)
+ * insert that follows the action verb — resolves controller & worker names via DB
+ *
+ * @param PDO $pdo : database connection
+ * @param string $actionChoice : action_choice value driving the shape
+ * @param string|null $actionParamsJson : action_params JSON blob
+ *
+ * @return string : rendered fragment (empty when action is not claim/attack or params are missing)
+ */
+function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionParamsJson): string
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with actionChoice : ' . $actionChoice, ['actionParamsJson' => $actionParamsJson], 'debug');
+
+    if (!in_array($actionChoice, ['attack', 'claim'], true)) {
+        return '';
+    }
+    $params = [];
+    if (!empty($actionParamsJson)) {
+        $decoded = json_decode((string) $actionParamsJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            game_error_log(__FUNCTION__, 'json_decode failed on action_params : ' . json_last_error_msg(), ['actionChoice' => $actionChoice, 'actionParamsJson' => $actionParamsJson], 'warning');
+        } elseif (is_array($decoded)) {
+            $params = $decoded;
+        }
+    }
+    $info = '';
+    if ($actionChoice === 'claim') {
+        if (!empty($params['claim_controller_id']) && ($params['claim_controller_id'] != 'null')) {
+            $controllers = getControllers($pdo, null, $params['claim_controller_id']);
+            if (!empty($controllers[0]['lastname'])) {
+                $info .= sprintf(' au nom de <strong>%s</strong>', $controllers[0]['lastname']);
+            }
+        }
+        return $info;
+    }
+    // attack
+    $attackedWorkerIds = [];
+    $attackedNetworkIds = [];
+    foreach ($params as $value) {
+        if (!empty($value['attackScope']) && $value['attackScope'] === 'worker') {
+            $attackedWorkerIds[] = $value['attackID'];
+        }
+        if (!empty($value['attackScope']) && $value['attackScope'] === 'network') {
+            $attackedNetworkIds[] = $value['attackID'];
+        }
+    }
+    if (empty($attackedNetworkIds) && empty($attackedWorkerIds)) {
+        return '';
+    }
+    $info .= ' contre ';
+    if (!empty($attackedNetworkIds)) {
+        $info .= 'les réseaux ' . implode(', ', $attackedNetworkIds);
+    }
+    if (!empty($attackedWorkerIds)) {
+        if (!empty($attackedNetworkIds)) {
+            $info .= ' et contre ';
+        }
+        $workersArray = getWorkers($pdo, $attackedWorkerIds);
+        foreach ($workersArray as $k => $w) {
+            $info .= sprintf(
+                '%s %s%s',
+                $w['firstname'],
+                $w['lastname'],
+                ($k < (count($workersArray) - 1)) ? ', ' : ''
+            );
+        }
+    }
+    return $info;
+}
+
+/**
+ * build the localized « <verb> [<info>] dans le <zone-type> <link-zone> [qui est sous la bannière …] . » phrase
+ *
+ * verb assembly mirrors workers/view.php's textActionUpdated : base txt_ps_ config,
+ * enriched for double_agent (« et a infiltré le réseau X Y ») or replaced for prisoner
+ *
+ * @param PDO $pdo : database connection
+ * @param int $workerId : worker id (used to look up primary controller for double_agent verb)
+ * @param string $actionChoice : action_choice value driving the base txt_ps_ config
+ * @param string|null $actionParamsJson : action_params JSON blob (only read for prisoner override)
+ * @param string $workerStatus : 'alive' | 'double_agent' | 'prisoner' | other (only first three affect verb)
+ * @param string $extraInfo : optional inline extras between verb and zone-type (target names for attaque/revendication, empty otherwise)
+ * @param string $zoneName : zone display name (raw, will be htmlspecialchars'd)
+ * @param int $zoneId : zone id (used to build the anchor href)
+ * @param int $viewerControllerId : controller id whose banner is "ours"
+ * @param int|null $claimerControllerId : zone claimer's controller id, NULL if unclaimed
+ * @param string|null $claimerLastname : claimer controller's lastname (raw, will be htmlspecialchars'd)
+ *
+ * @return string : rendered HTML fragment ending with a period
+ */
+function buildWorkerZoneActionPhrase(
+    PDO $pdo,
+    int $workerId,
+    string $actionChoice,
+    ?string $actionParamsJson,
+    string $workerStatus,
+    string $extraInfo,
+    string $zoneName,
+    int $zoneId,
+    int $viewerControllerId,
+    ?int $claimerControllerId,
+    ?string $claimerLastname,
+    bool $firstPerson = false
+): string {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['actionChoice' => $actionChoice, 'workerStatus' => $workerStatus, 'firstPerson' => $firstPerson], 'debug');
+
+    // Prefer 1st-person variant when the caller asks for it (archived life_report
+    // is a subject-less sentence). Fallback to 3rd-person on missing config.
+    // If the action_choice has no txt_ps_ entry (e.g. 'trace'), fall back to workerStatus.
+    $verbKey = ($firstPerson ? 'txt_ps_1p_' : 'txt_ps_') . $actionChoice;
+    $verb = (string) getConfig($pdo, $verbKey);
+    if ($verb === '' && $firstPerson) {
+        $verb = (string) getConfig($pdo, 'txt_ps_' . $actionChoice);
+    }
+    if ($verb === '' && $workerStatus !== '') {
+        $statusKey = ($firstPerson ? 'txt_ps_1p_' : 'txt_ps_') . $workerStatus;
+        $verb = (string) getConfig($pdo, $statusKey);
+        if ($verb === '' && $firstPerson) {
+            $verb = (string) getConfig($pdo, 'txt_ps_' . $workerStatus);
+        }
+    }
+    if ($workerStatus === 'double_agent') {
+        $prefix = $_SESSION['GAME_PREFIX'];
+        $sql = "SELECT cw.controller_id
+                FROM {$prefix}controller_worker AS cw
+                WHERE cw.worker_id = :worker_id
+                AND cw.is_primary_controller = :is_primary_controller
+                LIMIT 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':worker_id' => $workerId,
+            ':is_primary_controller' => 1,
+        ]);
+        $infiltrated = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($infiltrated[0])) {
+            $doubleAgentTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_double_agent' : 'txt_ps_double_agent'));
+            if ($doubleAgentTpl === '' && $firstPerson) {
+                $doubleAgentTpl = (string) getConfig($pdo, 'txt_ps_double_agent');
+            }
+            $verb .= sprintf(
+                ' et ' . $doubleAgentTpl,
+                getConfig($pdo, 'controllerNameDenominatorOf'),
+                getControllerName($pdo, $infiltrated[0])
+            );
+        }
+    } elseif ($workerStatus === 'prisoner') {
+        $params = json_decode((string) $actionParamsJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            game_error_log(__FUNCTION__, 'json_decode failed on prisoner action_params : ' . json_last_error_msg(), ['workerId' => $workerId, 'actionParamsJson' => $actionParamsJson], 'warning');
+            $params = [];
+        }
+        $prisonerTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_prisoner' : 'txt_ps_prisoner'));
+        if ($prisonerTpl === '' && $firstPerson) {
+            $prisonerTpl = (string) getConfig($pdo, 'txt_ps_prisoner');
+        }
+        $verb = sprintf(
+            $prisonerTpl,
+            getConfig($pdo, 'controllerNameDenominatorOf'),
+            getControllerName($pdo, $params['original_controller_id'] ?? 0)
+        );
+    }
+    $phrase = sprintf(
+        '<strong>%s</strong>%s dans le %s <a href="/%s/zones/action.php#zone-%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s</a>',
+        ucfirst($verb),
+        ($extraInfo === '') ? '' : ' ' . $extraInfo,
+        getConfig($pdo, 'textForZoneType'),
+        $_SESSION['FOLDER'],
+        $zoneId,
+        htmlspecialchars($zoneName)
+    );
+    if (!empty($claimerControllerId)) {
+        if ((int) $claimerControllerId === (int) $viewerControllerId) {
+            $phrase .= ' qui est sous notre bannière';
+        } else {
+            $phrase .= sprintf(
+                ' qui est sous la bannière %s %s',
+                getConfig($pdo, 'controllerLastNameDenominatorOf'),
+                htmlspecialchars($claimerLastname ?? '')
+            );
+        }
+    }
+    $phrase .= '.';
+    return $phrase;
+}
+
+/**
  * show Worker view Short version
  *
  * @param PDO $pdo : database connection
