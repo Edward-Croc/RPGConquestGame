@@ -88,7 +88,7 @@ VALUES
     ('maxBonusZoneDefenceWorkers', '0', 'Cap on worker bonus for zone defence (0 = no cap)'),
     ('maxBonusZoneDefenceOwnedLocations', '0', 'Cap on owned-location bonus for zone defence (0 = no cap)'),
     ('noControllerZoneDefenceBonus', '3', 'Fixed defence bonus when holder_controller_id IS NULL'),
-    -- action text in report config
+    -- action text in report config — passive tense
     ('txt_ps_passive', 'surveille', 'Text for passive action'),
     ('txt_ps_investigate', 'enquête', 'Text for investigate action'),
     ('txt_ps_hide', 'se cache', 'Text for hide action'),
@@ -110,6 +110,9 @@ VALUES
     ('txt_ps_1p_dead', 'je suis mort.e', 'First-person text for dead action'),
     ('txt_ps_1p_prisoner', 'je suis un.e agent %s %s prisonnier.e', 'First-person text for beeing prisoner'),
     ('txt_ps_1p_double_agent', 'j''ai infiltré le réseau %s %s', 'First-person text for being infiltrator'),
+    ('txt_ps_1p_attack_location', 'j''attaque le lieu', 'First-person text for attack_location action'),
+    ('txt_ps_1p_defend_location', 'je défends le lieu', 'First-person text for defend_location action'),
+    -- action text in report infinitive tense config
     ('txt_inf_passive', 'surveiller', 'Text for passive action'),
     ('txt_inf_investigate', 'enquêter', 'Text for investigate action'),
     ('txt_inf_hide', 'se cacher', 'Text for hide action'),
