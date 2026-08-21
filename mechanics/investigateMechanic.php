@@ -353,6 +353,21 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
             $text_action_inf .= $suffix;
         }
     }
+    if (($row['found_action'] == 'attack_location' || $row['found_action'] == 'defend_location') && $row['found_action_params'] != '{}') {
+        $found_action_params = json_decode($row['found_action_params'], true);
+        // attack_location / defend_location => target location name
+        if (is_array($found_action_params) && !empty($found_action_params['location_id'])) {
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $stmt = $pdo->prepare("SELECT name FROM {$prefix}locations WHERE id = :lid LIMIT 1");
+            $stmt->execute([':lid' => (int) $found_action_params['location_id']]);
+            $locName = $stmt->fetchColumn();
+            if (!empty($locName)) {
+                $suffix = ' ' . htmlspecialchars($locName);
+                $text_action_ps .= $suffix;
+                $text_action_inf .= $suffix;
+            }
+        }
+    }
 
     $originTexte = '';
     if (!in_array($row['found_worker_origin_id'], explode(',', $txtBag['local_origin_list']))) {

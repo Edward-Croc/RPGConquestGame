@@ -184,8 +184,12 @@ def phrase_snapshot(browser):
         end_turn(page, base_url=PHP_BASE_URL)
 
         # 7. Snapshot POST-EOT HTML (life_report visible in worker view)
+        #    Artefact_Searcher_Echo (Echo, investigate, same zone Theta-Artefacts
+        #    as the 2 Foxtrot workers) is added here to cover its
+        #    investigate_report — sub-step 5.A.I, issue #73.
         for name in ["Chain_B", "Searcher_1",
-                     "Artefact_Worker_Foxtrot", "Gift_Source_Foxtrot"]:
+                     "Artefact_Worker_Foxtrot", "Gift_Source_Foxtrot",
+                     "Artefact_Searcher_Echo"]:
             _post_eot_html[name] = worker_report_html(page, name, base_url=PHP_BASE_URL)
 
         yield
@@ -325,3 +329,49 @@ class TestEOTLifeReport:
             "« sous la bannière » missing from Chain_B archived life_report"
         )
         assert "Alpha" in html
+
+
+class TestInvestigateReportTargetSuffix:
+    """Sub-step 5.A.I, issue #73 : an investigator's report must name the
+    location targeted by an attack_location / defend_location enemy worker,
+    not just say « attaque le lieu » with no target.
+
+    Artefact_Searcher_Echo (Echo, investigate) shares zone Theta-Artefacts
+    with Artefact_Worker_Foxtrot (attack_location -> Echo-Base) and
+    Gift_Source_Foxtrot (defend_location -> Foxtrot-Outpost). Both are
+    detected on the same end-turn already triggered by the module fixture.
+
+    TestConfig's textesDiff01Array is the debug key-value template
+    (`action_ps - %4$s; action_inf - %5$s`), so the anchor below is exact
+    and immune to the array_rand phrasing variants used by real scenarios.
+    Anchoring on the `action_ps - `/`action_inf - ` label + verb + target
+    together avoids the false-positive risk flagged in
+    TestLivePhrase.test_attack_location_verb_and_target : Echo owns
+    Echo-Base, so its own action.php page also renders a bare
+    « Echo-Base » <option> in the defend-location dropdown."""
+
+    def test_investigate_report_names_attack_location_target(self):
+        """Echo's investigate report must contain the attacker's verb + Echo-Base."""
+        html = _post_eot_html["Artefact_Searcher_Echo"]
+        assert "action_ps - attaque le lieu Echo-Base" in html, (
+            "investigate report missing verb+target anchor for attack_location "
+            "on Echo-Base — investigateMechanic.php attack_location/defend_location "
+            "branch regression ?"
+        )
+        assert "action_inf - attaquer le lieu Echo-Base" in html, (
+            "investigate report missing infinitive verb+target anchor for "
+            "attack_location on Echo-Base"
+        )
+
+    def test_investigate_report_names_defend_location_target(self):
+        """Echo's investigate report must contain the defender's verb + Foxtrot-Outpost."""
+        html = _post_eot_html["Artefact_Searcher_Echo"]
+        assert "action_ps - défend le lieu Foxtrot-Outpost" in html, (
+            "investigate report missing verb+target anchor for defend_location "
+            "on Foxtrot-Outpost — investigateMechanic.php attack_location/defend_location "
+            "branch regression ?"
+        )
+        assert "action_inf - défendre le lieu Foxtrot-Outpost" in html, (
+            "investigate report missing infinitive verb+target anchor for "
+            "defend_location on Foxtrot-Outpost"
+        )
