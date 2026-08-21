@@ -361,19 +361,25 @@ function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionPa
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with actionChoice : ' . $actionChoice, ['actionParamsJson' => $actionParamsJson], 'debug');
 
+    // Exit before Json decode if action does not have special text
     if (!in_array($actionChoice, ['attack', 'claim'], true)) {
         return '';
     }
+
     $params = [];
     if (!empty($actionParamsJson)) {
         $decoded = json_decode((string) $actionParamsJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             game_error_log(__FUNCTION__, 'json_decode failed on action_params : ' . json_last_error_msg(), ['actionChoice' => $actionChoice, 'actionParamsJson' => $actionParamsJson], 'warning');
+            return '';
         } elseif (is_array($decoded)) {
             $params = $decoded;
         }
     }
+
     $info = '';
+
+    // claim action => in name of
     if ($actionChoice === 'claim') {
         if (!empty($params['claim_controller_id']) && ($params['claim_controller_id'] != 'null')) {
             $controllers = getControllers($pdo, null, $params['claim_controller_id']);
@@ -381,40 +387,41 @@ function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionPa
                 $info .= sprintf(' au nom de <strong>%s</strong>', $controllers[0]['lastname']);
             }
         }
-        return $info;
-    }
-    // attack
-    $attackedWorkerIds = [];
-    $attackedNetworkIds = [];
-    foreach ($params as $value) {
-        if (!empty($value['attackScope']) && $value['attackScope'] === 'worker') {
-            $attackedWorkerIds[] = $value['attackID'];
+
+        // attack action => against
+    } elseif ($actionChoice === 'attack') {
+        $attackedWorkerIds = [];
+        $attackedNetworkIds = [];
+        foreach ($params as $value) {
+            if (!empty($value['attackScope']) && $value['attackScope'] === 'worker') {
+                $attackedWorkerIds[] = $value['attackID'];
+            }
+            if (!empty($value['attackScope']) && $value['attackScope'] === 'network') {
+                $attackedNetworkIds[] = $value['attackID'];
+            }
         }
-        if (!empty($value['attackScope']) && $value['attackScope'] === 'network') {
-            $attackedNetworkIds[] = $value['attackID'];
-        }
-    }
-    if (empty($attackedNetworkIds) && empty($attackedWorkerIds)) {
-        return '';
-    }
-    $info .= ' contre ';
-    if (!empty($attackedNetworkIds)) {
-        $info .= 'les réseaux ' . implode(', ', $attackedNetworkIds);
-    }
-    if (!empty($attackedWorkerIds)) {
+
         if (!empty($attackedNetworkIds)) {
-            $info .= ' et contre ';
+            $info .= ' contre les réseaux ' . implode(', ', $attackedNetworkIds);
         }
-        $workersArray = getWorkers($pdo, $attackedWorkerIds);
-        foreach ($workersArray as $k => $w) {
-            $info .= sprintf(
-                '%s %s%s',
-                $w['firstname'],
-                $w['lastname'],
-                ($k < (count($workersArray) - 1)) ? ', ' : ''
-            );
+        if (!empty($attackedWorkerIds)) {
+            if (!empty($attackedNetworkIds)) {
+                $info .= ' et contre ';
+            } else {
+                $info .= ' contre ';
+            }
+            $workersArray = getWorkers($pdo, $attackedWorkerIds);
+            foreach ($workersArray as $k => $w) {
+                $info .= sprintf(
+                    '%s %s%s',
+                    $w['firstname'],
+                    $w['lastname'],
+                    ($k < (count($workersArray) - 1)) ? ', ' : ''
+                );
+            }
         }
     }
+
     return $info;
 }
 
@@ -470,6 +477,8 @@ function buildWorkerZoneActionPhrase(
             $verb = (string) getConfig($pdo, 'txt_ps_' . $workerStatus);
         }
     }
+
+    // Build text for double_agent
     if ($workerStatus === 'double_agent') {
         $prefix = $_SESSION['GAME_PREFIX'];
         $sql = "SELECT cw.controller_id
@@ -482,6 +491,7 @@ function buildWorkerZoneActionPhrase(
             ':worker_id' => $workerId,
             ':is_primary_controller' => 1,
         ]);
+        // Append the infiltrated Controller name to the action
         $infiltrated = $stmt->fetchAll(PDO::FETCH_COLUMN);
         if (!empty($infiltrated[0])) {
             $doubleAgentTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_double_agent' : 'txt_ps_double_agent'));
@@ -494,6 +504,8 @@ function buildWorkerZoneActionPhrase(
                 getControllerName($pdo, $infiltrated[0])
             );
         }
+
+        // Build text for prisoner
     } elseif ($workerStatus === 'prisoner') {
         $params = json_decode((string) $actionParamsJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -504,12 +516,15 @@ function buildWorkerZoneActionPhrase(
         if ($prisonerTpl === '' && $firstPerson) {
             $prisonerTpl = (string) getConfig($pdo, 'txt_ps_prisoner');
         }
+        // Append the original controller name to the captor
         $verb = sprintf(
             $prisonerTpl,
             getConfig($pdo, 'controllerNameDenominatorOf'),
             getControllerName($pdo, $params['original_controller_id'] ?? 0)
         );
     }
+
+    // Build final sentence
     $phrase = sprintf(
         '<strong>%s</strong>%s dans le %s <a href="/%s/zones/action.php#zone-%d" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%s</a>',
         ucfirst($verb),
@@ -519,6 +534,8 @@ function buildWorkerZoneActionPhrase(
         $zoneId,
         htmlspecialchars($zoneName)
     );
+
+    // Append zone banner to info.
     if (!empty($claimerControllerId)) {
         if ((int) $claimerControllerId === (int) $viewerControllerId) {
             $phrase .= ' qui est sous notre bannière';
@@ -531,6 +548,7 @@ function buildWorkerZoneActionPhrase(
         }
     }
     $phrase .= '.';
+
     return $phrase;
 }
 
