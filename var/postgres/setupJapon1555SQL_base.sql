@@ -5,6 +5,7 @@ UPDATE {prefix}config SET value =  '1,2,3,4,5,6' WHERE name = 'local_origin_list
 UPDATE {prefix}config SET value =  '1' WHERE name = 'recrutement_disciplines';
 UPDATE {prefix}config SET value =  '{"age": ["2","4","6"]}' WHERE name = 'age_discipline';
 UPDATE {prefix}config SET value =  'revendique la province' WHERE name = 'txt_ps_claim';
+UPDATE {prefix}config SET value =  'je revendique la province' WHERE name = 'txt_ps_1p_claim';
 UPDATE {prefix}config SET value =  'revendiquer la province' WHERE name = 'txt_inf_claim';
 
 -- MAP INFO

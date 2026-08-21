@@ -64,11 +64,19 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
         $inactive_actions = "'".implode("','", INACTIVE_ACTIONS)."'";
         // Add calculated values to worker report
         $sql = sprintf(
-            "SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val
+            "SELECT w.id AS worker_id, wa.enquete_val AS enquete_val, wa.attack_val AS attack_val, wa.defence_val AS defence_val,
+                    wa.action_choice, wa.action_params,
+                    w.zone_id, z.name AS zone_name, z.claimer_controller_id,
+                    c.lastname AS claimer_lastname,
+                    cw.controller_id AS owner_controller_id
             FROM {$prefix}workers w
             JOIN {$prefix}worker_actions wa ON wa.worker_id = w.id AND turn_number = :turn_number
+            JOIN {$prefix}zones z ON z.id = w.zone_id
+            LEFT JOIN {$prefix}controllers c ON c.id = z.claimer_controller_id
+            LEFT JOIN {$prefix}controller_worker cw ON cw.worker_id = w.id AND cw.is_primary_controller = %s
             WHERE wa.action_choice NOT IN (%s)
             ",
+            ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1',
             $inactive_actions
         );
         $stmt = $gameReady->prepare($sql);
@@ -84,15 +92,36 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
             $attack = $worker['attack_val'];
             $defense = $worker['defence_val'];
 
+            $workerExtraInfo = buildWorkerActionInfo(
+                $gameReady,
+                (string) $worker['action_choice'],
+                $worker['action_params'] ?? null
+            );
+            $actionPhrase = buildWorkerZoneActionPhrase(
+                $gameReady,
+                (int) $worker['worker_id'],
+                (string) $worker['action_choice'],
+                $worker['action_params'] ?? null,
+                'alive',
+                $workerExtraInfo,
+                (string) $worker['zone_name'],
+                (int) $worker['zone_id'],
+                (int) ($worker['owner_controller_id'] ?? 0),
+                empty($worker['claimer_controller_id']) ? null : (int) $worker['claimer_controller_id'],
+                $worker['claimer_lastname'] ?? null,
+                true
+            );
+
             // Format the life report string
             $reportAppendArray = [
                 'life_report' => sprintf(
-                    "<strong>%s %s</strong> j'ai <strong>%s</strong> en investigation et <strong>%s/%s</strong> en attaque/défense.",
+                    " <strong>%s %s</strong> j'ai <strong>%s</strong> en investigation et <strong>%s/%s</strong> en attaque/défense. <br/>%s",
                     ucfirst($timeDenominatorThis),
                     $timeValue,
                     $investigation,
                     $attack,
-                    $defense
+                    $defense,
+                    $actionPhrase
                 )
             ];
 

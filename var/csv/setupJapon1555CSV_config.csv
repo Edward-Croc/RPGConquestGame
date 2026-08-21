@@ -279,6 +279,7 @@
 ]","Phrases pour ajout au rapport des agents participant à la défense en cas d’échec de la défense"
 "map_alt","Carte de Shikoku","Map alt text for Shikoku"
 "txt_ps_claim","revendique la province","Texte de l'action 'claim' à la 3e personne (Shikoku)"
+"txt_ps_1p_claim","je revendique la province","Texte de l'action 'claim' à la 1ère personne (Shikoku)"
 "txt_inf_claim","revendiquer la province","Texte de l'action 'claim' à l'infinitif (Shikoku)"
 "controllerNameDenominatorThe","le ","Article du nom du contrôleur (Shikoku)"
 "controllerNameDenominatorOf","du","Particule 'de' pour le nom complet du contrôleur (Shikoku)"

@@ -39,142 +39,30 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
             $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
 
-            $textActionUpdated = getConfig($gameReady, 'txt_ps_'.$currentAction['action_choice']);
-            // change action text if prisoner or double agent
-            if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
-                $prefix = $_SESSION['GAME_PREFIX'];
-                // for double agent get name of infiltrated network
-                if ($workerStatus == 'double_agent') {
-                    $sql = "SELECT cw.controller_id
-                    FROM {$prefix}controller_worker AS cw
-                    WHERE cw.worker_id = :worker_id
-                    AND cw.is_primary_controller = :is_primary_controller
-                    LIMIT 1";
-                    //  ORDER BY controller_worker.id
-                    $stmt = $gameReady->prepare($sql);
-                    $stmt->execute([
-                        ':worker_id' => $worker['id'],
-                        ':is_primary_controller' => 1
-                    ]);
-                    $infiltrated_controller_id = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                    $infiltrated_controller_name = getControllerName($gameReady, $infiltrated_controller_id[0]);
-
-                    $textActionUpdated .= sprintf(
-                        ' et ' . getConfig($gameReady, 'txt_ps_'.$workerStatus),
-                        getConfig($gameReady, 'controllerNameDenominatorOf'),
-                        $infiltrated_controller_name
-                    );
-                }
-                // for prisonner get name of original controller
-                if ($workerStatus == 'prisoner') {
-                    $params = json_decode($currentAction['action_params'], true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                    }
-                    $controller_name = getControllerName($gameReady, $params['original_controller_id']);
-
-                    $textActionUpdated = sprintf(
-                        getConfig($gameReady, 'txt_ps_'.$workerStatus),
-                        getConfig($gameReady, 'controllerNameDenominatorOf'),
-                        $controller_name
-                    );
-                }
-            }
-
-            $workerActionInfo = '';
-            if (in_array($currentAction['action_choice'], array('attack_location', 'defend_location'))) {
-                $params = json_decode($currentAction['action_params'] ?? '{}', true);
-                if (json_last_error() === JSON_ERROR_NONE && !empty($params['location_id'])) {
-                    $prefix = $_SESSION['GAME_PREFIX'];
-                    $stmtLocName = $gameReady->prepare("SELECT name FROM {$prefix}locations WHERE id = :lid LIMIT 1");
-                    $stmtLocName->execute([':lid' => (int)$params['location_id']]);
-                    $locName = $stmtLocName->fetchColumn();
-                    if (!empty($locName)) {
-                        $workerActionInfo .= ' <strong>' . htmlspecialchars($locName) . '</strong>';
-                    }
-                }
-            }
-            if (in_array($currentAction['action_choice'], array('attack', 'claim'))) {
-                if ($_SESSION['DEBUG'] == true) {
-                    $workerActionInfo .= ' Action spéciale en cours : <strong>'.$currentAction['action_choice'].'</strong> '. $currentAction['action_params'];
-                }
-
-                $params = array();
-                if (!empty($currentAction['action_params'])) {
-                    $params = json_decode($currentAction['action_params'], true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                    }
-                }
-                if ($currentAction['action_choice'] == 'claim') {
-                    if (!empty($params['claim_controller_id']) && ($params['claim_controller_id'] != "null")) {
-                        $controllers = getControllers($gameReady, null, $params['claim_controller_id']);
-                        $workerActionInfo .= sprintf(
-                            ' au nom de <strong>%1$s</strong>',
-                            $controllers[0]['lastname'],
-                        );
-                    }
-                }
-                if ($currentAction['action_choice'] == 'attack') {
-                    $attackedWorkerIds = array();
-                    foreach ($params as $key => $value) {
-                        if ($_SESSION['DEBUG'] == true) {
-                            echo sprintf(" Paramètre %s => %s ; ", $key, var_export($value, true));
-                        }
-                        if (!empty($value['attackScope']) && ($value['attackScope'] == "worker")) {
-                            $attackedWorkerIds[] = $value['attackID'];
-                        }
-                        if (!empty($value['attackScope']) && ($value['attackScope'] == "network")) {
-                            $attackedNetworkIds[] = $value['attackID'];
-                        }
-                    }
-                    $workerActionInfo .= ' contre ';
-                    if (!empty($attackedNetworkIds)) {
-                        $workerActionInfo .= "les réseaux ".implode(', ', $attackedNetworkIds);
-                    }
-                    // $attackedWorkerIds has elements
-                    if (!empty($attackedWorkerIds)) {
-                        if (!empty($attackedNetworkIds)) {
-                            $workerActionInfo .= ' et contre ';
-                        }
-                        $workersArray = getWorkers($gameReady, $attackedWorkerIds);
-                        foreach ($workersArray as $k => $w) {
-                            $workerActionInfo .= sprintf(
-                                '%1$s %2$s %3$s',
-                                $w['firstname'],
-                                $w['lastname'],
-                                ($k < (count($workersArray) - 1)) ? ', ' : ''
-                            );
-                        }
-                    }
-                }
-
-            }
+            $workerActionInfo = buildWorkerActionInfo(
+                $gameReady,
+                (string) ($currentAction['action_choice'] ?? ''),
+                $currentAction['action_params'] ?? null
+            );
+            // get zone value by  $worker['zone_id'] and use to get controller name
+            $zonesArray = getZonesArray($gameReady, null, null, $worker['zone_id']);
+            $workerActionText = ' ' . buildWorkerZoneActionPhrase(
+                $gameReady,
+                (int) $worker['id'],
+                (string) $currentAction['action_choice'],
+                $currentAction['action_params'] ?? null,
+                $workerStatus,
+                $workerActionInfo,
+                (string) $worker['zone_name'],
+                (int) $worker['zone_id'],
+                (int) $controller_id,
+                empty($zonesArray[0]['claimer_controller_id']) ? null : (int) $zonesArray[0]['claimer_controller_id'],
+                $zonesArray[0]['claimer_lastname'] ?? null
+            );
             if ($_SESSION['DEBUG'] == true) {
                 echo "workerActionText: ".var_export($workerActionText, true)."<br /><br />";
             }
 
-            // build worker action presentation texte :
-            $workerActionText = sprintf(
-                ' <strong> %1$s </strong> %4$s dans le %3$s <a href="/%5$s/zones/action.php#zone-%6$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">%2$s</a>',
-                ucfirst($textActionUpdated), // %1$s
-                $worker['zone_name'], // %2$s
-                getConfig($gameReady, 'textForZoneType'), // %3$s
-                $workerActionInfo, // %4$s
-                $_SESSION['FOLDER'], // %5$s
-                $worker['zone_id'] // %6$s
-            );
-
-            // get zone value by  $worker['zone_id'] and use to get controller name
-            $zonesArray = getZonesArray($gameReady, null, null, $worker['zone_id']);
-            if (!empty($zonesArray[0]['claimer_controller_id'])) {
-                if ($zonesArray[0]['claimer_controller_id'] == $controller_id) {
-                    $workerActionText .= ' qui est sous notre bannière';
-                } else {
-                    $workerActionText .= sprintf(' qui est sous la bannière %s %s', getConfig($gameReady, "controllerLastNameDenominatorOf"), $zonesArray[0]['claimer_lastname']);
-                }
-            }
-            $workerActionText .= '.';
             $zoneOwner = false;
             if (!empty($zonesArray[0]['holder_controller_id']) && $zonesArray[0]['holder_controller_id'] == $controller_id) {
                 $zoneOwner = true;
@@ -667,7 +555,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 $worker['firstname'], // %2$s
                 $worker['lastname'], // %3$s
                 $workerActionText, // %4$s
-                ucfirst($textActionUpdated), // %5$s --- IGNORE ---
+                '', // %5$s (dead slot, kept to preserve numbered positions)
                 $worker['total_enquete'], // %6$s
                 $worker['total_attack'], // %7$s
                 $worker['total_defence'], // %8$s
