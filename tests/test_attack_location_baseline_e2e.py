@@ -1164,7 +1164,7 @@ class TestAgentAttackDefenceActionDispatcher:
             page,
             f"{PHP_BASE_URL}/workers/action.php"
             f"?worker_id={chain_a_id}&attackLocation=1"
-            f"&target_location_id={echo_base_id}"
+            f"&attack_target_location_id={echo_base_id}"
         )
         page.wait_for_load_state("load")
         chain_a_state = ui_worker_action_state(page, "Chain_A")
@@ -1174,7 +1174,7 @@ class TestAgentAttackDefenceActionDispatcher:
             page,
             f"{PHP_BASE_URL}/workers/action.php"
             f"?worker_id={chain_b_id}&defendLocation=1"
-            f"&target_location_id={echo_base_id}"
+            f"&defend_target_location_id={echo_base_id}"
         )
         page.wait_for_load_state("load")
         chain_b_state = ui_worker_action_state(page, "Chain_B")
@@ -1184,7 +1184,7 @@ class TestAgentAttackDefenceActionDispatcher:
         wrong_mode_resp = page.goto(
             f"{PHP_BASE_URL}/workers/action.php"
             f"?worker_id={chain_a_id}&attackLocation=1"
-            f"&target_location_id={echo_base_id}"
+            f"&attack_target_location_id={echo_base_id}"
         )
         wrong_mode_status = wrong_mode_resp.status if wrong_mode_resp else None
 
@@ -1251,8 +1251,137 @@ class TestAgentAttackDefenceActionDispatcher:
 
     def test_missing_target_returns_400(self):
         assert self._missing_target_status == 400, (
-            f"attackLocation URL should 400 when target_location_id missing; "
+            f"attackLocation URL should 400 when attack_target_location_id missing; "
             f"got {self._missing_target_status}"
+        )
+
+
+class TestAgentAttackDefenceFormCollision:
+    """Regression for the reported bug: workers/view.php rendered the
+    "Attaquer le lieu" AND "Défendre le lieu" <select> both with
+    name='target_location_id'. Both values were POSTed together on any
+    submit, and PHP kept only the LAST one — so clicking "Attaquer le
+    lieu" after picking a different defend-target recorded the DEFEND
+    selection as the attack target. Fixed by splitting the names into
+    attack_target_location_id / defend_target_location_id (workers/view.php)
+    and reading the button-appropriate one in workers/action.php.
+
+    Attacker: Artefact_Searcher_Echo (Echo, Theta-Artefacts). CKL-seeded
+    for Foxtrot-Outpost + Test-Future-Location so the attack select has
+    2 distinct non-own options; the defend select additionally carries
+    Echo-Base (Echo's own location, always present regardless of its
+    can_be_destroyed flag — listControllerLinkedLocations has no such
+    filter) for a 3rd distinct option. Foxtrot-Outpost and
+    Test-Future-Location are untouched by every other class in this
+    file, so their can_be_destroyed=1 seed state is not at risk of
+    flip-state leakage from earlier tests (unlike Echo-Base)."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def collision_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+
+            echo_base_id = _location_id_via_management(page, "Echo-Base")
+            foxtrot_outpost_id = _location_id_via_management(page, "Foxtrot-Outpost")
+            future_loc_id = _location_id_via_management(page, "Test-Future-Location")
+
+            _seed_ckl_admin(page, "Echo", "Foxtrot-Outpost")
+            _seed_ckl_admin(page, "Echo", "Test-Future-Location")
+
+            echo_searcher_id = ui_workers_by_lastname(page, "Artefact_Searcher_Echo")[0]["id"]
+
+            _switch_controller(page, "Echo")
+            safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}")
+            page.wait_for_load_state("load")
+
+            attack_select = page.locator("select[name='attack_target_location_id']")
+            defend_select = page.locator("select[name='defend_target_location_id']")
+            selects_rendered = attack_select.count() == 1 and defend_select.count() == 1
+
+            # Test 1 : attack=Foxtrot-Outpost (A), defend=Echo-Base (B, distinct)
+            # click Attaquer le lieu -> result must be A, not B.
+            attack_select.select_option(value=str(foxtrot_outpost_id))
+            defend_select.select_option(value=str(echo_base_id))
+            page.locator("input[name='attackLocation']").click()
+            page.wait_for_load_state("load")
+            attack_click_state = ui_worker_action_state(page, "Artefact_Searcher_Echo")
+
+            # Test 2 : attack=Test-Future-Location (C), defend=Echo-Base (D, distinct)
+            # click Défendre le lieu -> result must be D, not C.
+            safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}")
+            page.wait_for_load_state("load")
+            attack_select2 = page.locator("select[name='attack_target_location_id']")
+            defend_select2 = page.locator("select[name='defend_target_location_id']")
+            attack_select2.select_option(value=str(future_loc_id))
+            defend_select2.select_option(value=str(echo_base_id))
+            page.locator("input[name='defendLocation']").click()
+            page.wait_for_load_state("load")
+            defend_click_state = ui_worker_action_state(page, "Artefact_Searcher_Echo")
+
+            # Reset the worker to passive so no downstream test/module
+            # inherits an attack_location/defend_location action_choice.
+            safe_goto(
+                page,
+                f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}&passive=1"
+            )
+            page.wait_for_load_state("load")
+
+            assert_no_collected_php_errors(page)
+        finally:
+            try:
+                ensure_gm_login(page, PHP_BASE_URL)
+                _set_config_via_ui(page, "locationAttackMode", "endTurn")
+            except Exception:
+                # best-effort teardown — never mask the original setup/test failure
+                pass
+            context.close()
+
+        type(self)._selects_rendered = selects_rendered
+        type(self)._echo_base_id = echo_base_id
+        type(self)._foxtrot_outpost_id = foxtrot_outpost_id
+        type(self)._future_loc_id = future_loc_id
+        type(self)._attack_click_state = attack_click_state
+        type(self)._defend_click_state = defend_click_state
+        yield
+
+    def test_both_selects_render_with_distinct_names(self):
+        assert self._selects_rendered, (
+            "workers/view.php must render both "
+            "select[name='attack_target_location_id'] and "
+            "select[name='defend_target_location_id'] on the worker view"
+        )
+
+    def test_attack_click_records_attack_selection_not_defend(self):
+        """Clicking 'Attaquer le lieu' must record the ATTACK select's
+        value, even when the DEFEND select holds a different location."""
+        assert self._attack_click_state['action_choice'] == 'attack_location', (
+            f"Expected action_choice='attack_location', "
+            f"got '{self._attack_click_state['action_choice']}'"
+        )
+        params = json.loads(self._attack_click_state['action_params'] or '{}')
+        assert params.get('location_id') == self._foxtrot_outpost_id, (
+            f"Expected location_id={self._foxtrot_outpost_id} (attack select's "
+            f"Foxtrot-Outpost), got {params} — form collision would have "
+            f"leaked the defend select's Echo-Base ({self._echo_base_id}) instead"
+        )
+
+    def test_defend_click_records_defend_selection_not_attack(self):
+        """Clicking 'Défendre le lieu' must record the DEFEND select's
+        value, even when the ATTACK select holds a different location."""
+        assert self._defend_click_state['action_choice'] == 'defend_location', (
+            f"Expected action_choice='defend_location', "
+            f"got '{self._defend_click_state['action_choice']}'"
+        )
+        params = json.loads(self._defend_click_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id} (defend select's "
+            f"Echo-Base), got {params} — form collision would have leaked "
+            f"the attack select's Test-Future-Location ({self._future_loc_id}) instead"
         )
 
 

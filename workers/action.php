@@ -182,7 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             http_response_code(403);
             exit();
         }
-        $target_location_id = !empty($_GET['target_location_id']) ? (int)$_GET['target_location_id'] : 0;
+        $target_location_id = isset($_GET['attackLocation'])
+            ? (int)($_GET['attack_target_location_id'] ?? 0)
+            : (int)($_GET['defend_target_location_id'] ?? 0);
         if ($target_location_id <= 0) {
             http_response_code(400);
             exit();

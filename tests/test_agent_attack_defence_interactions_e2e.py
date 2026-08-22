@@ -101,10 +101,11 @@ def _queue_location_action(page, worker_id, action, target_location_id):
     workers/action.php are bypassed — same shortcut
     TestAgentAttackDefenceActionDispatcher (baseline file) relies on."""
     param = 'attackLocation' if action == 'attack_location' else 'defendLocation'
+    field = 'attack_target_location_id' if action == 'attack_location' else 'defend_target_location_id'
     safe_goto(
         page,
         f"{PHP_BASE_URL}/workers/action.php"
-        f"?worker_id={worker_id}&{param}=1&target_location_id={target_location_id}"
+        f"?worker_id={worker_id}&{param}=1&{field}={target_location_id}"
     )
     page.wait_for_load_state("load")
 

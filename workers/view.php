@@ -190,7 +190,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                             </div>
                             <div class="control for-select">
                                 <div class="select is-fullwidth">
-                                    <select name="target_location_id">%1$s</select>
+                                    <select name="attack_target_location_id">%1$s</select>
                                 </div>
                             </div>
                             <div class="control">
@@ -248,7 +248,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                             </div>
                             <div class="control for-select">
                                 <div class="select is-fullwidth">
-                                    <select name="target_location_id">%1$s</select>
+                                    <select name="defend_target_location_id">%1$s</select>
                                 </div>
                             </div>
                             <div class="control">

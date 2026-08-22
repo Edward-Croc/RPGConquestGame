@@ -162,7 +162,7 @@ def phrase_snapshot(browser):
         safe_goto(
             page,
             f"{PHP_BASE_URL}/workers/action.php?worker_id={awf['id']}"
-            f"&attackLocation=1&target_location_id={echo_base_id}"
+            f"&attackLocation=1&attack_target_location_id={echo_base_id}"
         )
         page.wait_for_load_state("load")
 
@@ -170,7 +170,7 @@ def phrase_snapshot(browser):
         safe_goto(
             page,
             f"{PHP_BASE_URL}/workers/action.php?worker_id={gsf['id']}"
-            f"&defendLocation=1&target_location_id={foxtrot_outpost_id}"
+            f"&defendLocation=1&defend_target_location_id={foxtrot_outpost_id}"
         )
         page.wait_for_load_state("load")
 
