@@ -52,7 +52,7 @@ import json
 
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
-    register_php_error_listener, assert_no_collected_php_errors,
+    register_php_error_listener, assert_no_collected_php_errors, set_config_via_ui,
     ui_controller_id, ui_worker_action_state, ui_workers_by_lastname,
 )
 
@@ -159,25 +159,8 @@ def _read_queue_rows_for_attacker(attacker_id):
 
 
 def _set_config_via_ui(page, name, value):
-    """Set a config row's value via /base/configuration.php POST.
-
-    HTTP-only equivalent of UPDATE config SET value=? WHERE name=?. Used
-    so the locationAttackMode flip is observable from any deployment
-    (local OR remote demo where direct DB access isn't available).
-    """
-    safe_goto(page, f"{PHP_BASE_URL}/base/configuration.php")
-    page.wait_for_load_state("load")
-    target_row = None
-    for row in page.locator("tr:has(form)").all():
-        name_cell = row.locator("td").nth(1)
-        if name_cell.inner_text().strip() == name:
-            target_row = row
-            break
-    if target_row is None:
-        raise AssertionError(f"Config row {name!r} not found on /base/configuration.php")
-    target_row.locator("input[name='value']").fill(value)
-    target_row.locator("input[name='update_config']").click()
-    page.wait_for_load_state("load")
+    """Thin wrapper kept for this file's existing call sites."""
+    set_config_via_ui(page, name, value, base_url=PHP_BASE_URL)
 
 
 def _foxtrot_can_attack_echo_base(page, echo_base_id):

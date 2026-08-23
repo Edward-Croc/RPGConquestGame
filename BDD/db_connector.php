@@ -233,6 +233,7 @@ function destroyAllTables(PDO $pdo): bool
             $tables = array(
                 'information_gift_logs',
                 'ressource_gift_logs',
+                'worker_combat_logs',
                 'controller_ressources',
                 'ressources_config',
                 'controller_location_attacks',

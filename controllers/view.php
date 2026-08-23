@@ -190,13 +190,12 @@ if (isset($_SESSION['controller'])) {
         $htmlBase .= '</p>';
     }
     // Incoming attacks across all turns — tabbed (latest first), empty turns skipped.
-    $incomingStmt = $gameReady->prepare("
-                SELECT * FROM {$prefix}location_attack_logs
-                WHERE target_controller_id = :controller_id
-                ORDER BY turn DESC, id DESC
-            ");
-    $incomingStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
-    $incomingAttacks = $incomingStmt->fetchAll(PDO::FETCH_ASSOC);
+    $incomingAttacks = getLocationAttackLogs(
+        $gameReady,
+        ['target_controller_id' => (int) $_SESSION['controller']['id']],
+        'turn',
+        'desc'
+    );
     if (!empty($incomingAttacks)) {
         $timeWord = (string)getConfig($gameReady, 'timeValue');
         $byTurn = [];
@@ -275,13 +274,12 @@ if (isset($_SESSION['controller'])) {
 
     echo '<h4 class="title is-5 mt-5">Vos lieux découverts:</h4>';
     // Outgoing attacks across all turns — tabbed (latest first), empty turns skipped.
-    $outgoingStmt = $gameReady->prepare("
-                SELECT * FROM {$prefix}location_attack_logs
-                WHERE attacker_id = :controller_id
-                ORDER BY turn DESC, id DESC
-            ");
-    $outgoingStmt->execute(['controller_id' => $_SESSION['controller']['id']]);
-    $outgoingAttacks = $outgoingStmt->fetchAll(PDO::FETCH_ASSOC);
+    $outgoingAttacks = getLocationAttackLogs(
+        $gameReady,
+        ['attacker_id' => (int) $_SESSION['controller']['id']],
+        'turn',
+        'desc'
+    );
 
     $queuedStmt = $gameReady->prepare("
                 SELECT cla.id AS queue_row_id, cla.queued_turn, cla.defence_val_snapshot,

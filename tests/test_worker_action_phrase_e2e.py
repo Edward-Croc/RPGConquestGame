@@ -30,7 +30,7 @@ from playwright.sync_api import Page
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
-    register_php_error_listener, safe_goto, ui_controller_id,
+    register_php_error_listener, safe_goto, set_config_via_ui, ui_controller_id,
     ui_workers_by_lastname, worker_report_html,
 )
 
@@ -70,15 +70,8 @@ _post_eot_html: dict = {}
 
 
 def _set_config_via_ui(page, name, value):
-    safe_goto(page, f"{PHP_BASE_URL}/base/configuration.php")
-    page.wait_for_load_state("load")
-    for row in page.locator("tr:has(form)").all():
-        if row.locator("td").nth(1).inner_text().strip() == name:
-            row.locator("input[name='value']").fill(value)
-            row.locator("input[name='update_config']").click()
-            page.wait_for_load_state("load")
-            return
-    raise AssertionError(f"Config row {name!r} not found")
+    """Thin wrapper kept for this file's existing call sites."""
+    set_config_via_ui(page, name, value, base_url=PHP_BASE_URL)
 
 
 def _location_id_via_management(page, location_name):

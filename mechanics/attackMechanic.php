@@ -266,6 +266,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
  *   - controller_worker ownership swap on capture
  *   - createTraceWorker + destroyTraceWorker (incl. double-agent trace)
  *   - addWorkerToCKE on failed attack
+ *   - worker_combat_logs : a row opened on entry, closed with the outcome on exit
  *   - Emits <br/> progress text via echo
  *
  * @param PDO $pdo : database connection
@@ -312,6 +313,9 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics): array
     $kill = false;
     $capture = false;
     $riposte_kill = false;
+
+    // Open the combat log row before any side-effect; closed at the end of the function.
+    $combatLogId = logWorkerCombat($pdo, $defender);
 
     // if defender is alive, check if attack is successful and update defender status
     if ($defender['attack_difference'] >= (int)$ATTACKDIFF0) {
@@ -450,6 +454,9 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics): array
     }
     updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport);
     updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status, $defenderReport, $defender_json);
+
+    // Closed after both reports are written, so a throw above leaves the row unresolved.
+    logWorkerCombatUpdate($pdo, $combatLogId, resolveWorkerCombatOutcome($kill, $capture, $riposte_kill));
 
     game_error_log(__FUNCTION__, 'DONE', ['kill' => $kill, 'capture' => $capture, 'riposte_kill' => $riposte_kill], 'debug');
     return ['kill' => $kill, 'capture' => $capture, 'riposte_kill' => $riposte_kill];
