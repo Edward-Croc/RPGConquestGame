@@ -720,45 +720,18 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
         );
     }
 
-    try {
-        $target_controller_id = (!empty($location['controller_id'])) ? $location['controller_id'] : null;
-        $logSql = "
-            INSERT INTO {$prefix}location_attack_logs (
-                target_controller_id,
-                location_name,
-                attacker_id,
-                attack_val,
-                defence_val,
-                turn,
-                success,
-                target_result_text,
-                attacker_result_text
-            )
-            VALUES (
-                :target_controller_id,
-                :location_name,
-                :attacker_id,
-                :attack_val,
-                :defence_val,
-                :turn_number,
-                :success,
-                :target_result_text,
-                :attacker_result_text
-            )
-        ";
-        $logStmt = $pdo->prepare($logSql);
-        $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
-        $logStmt->bindParam(':location_name', $location['name'], PDO::PARAM_STR);
-        $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
-        $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
-        $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
-        $logStmt->bindParam(':target_result_text', $targetResultText, PDO::PARAM_STR);
-        $logStmt->bindParam(':attacker_result_text', $return['message'], PDO::PARAM_STR);
-        $logStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-        $logStmt->execute();
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'INSERT location_attack_logs failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
+    if (!logLocationAttack($pdo, [
+        'location_name'        => $location['name'],
+        'attacker_id'          => (int) $controller_id,
+        'target_controller_id' => (!empty($location['controller_id'])) ? (int) $location['controller_id'] : null,
+        'attack_val'           => (int) $controllerAttack,
+        'defence_val'          => (int) $locationDefence,
+        'turn'                 => (int) $turn_number,
+        'success'              => (bool) $return['success'],
+        'target_result_text'   => $targetResultText,
+        'attacker_result_text' => $return['message'],
+    ])) {
+        game_error_log(__FUNCTION__, 'logLocationAttack failed', ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
         return array('success' => false, 'message' => 'Error : Resultat Save Failed');
     }
 

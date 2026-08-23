@@ -34,18 +34,15 @@ function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, 
         return false;
     }
 
-    try {
-        $log = $pdo->prepare("INSERT INTO {$prefix}location_attack_logs
-            (target_controller_id, location_name, attacker_id, attack_val, defence_val,
-             turn, success, target_result_text, attacker_result_text)
-            VALUES (NULL, :location_name, :attacker_id, 0, 0, :turn, 0, '', :attacker_text)");
-        $log->bindParam(':location_name', $queue_row['location_name'], PDO::PARAM_STR);
-        $log->bindParam(':attacker_id', $queue_row['attacker_controller_id'], PDO::PARAM_INT);
-        $log->bindParam(':turn', $turn_number, PDO::PARAM_INT);
-        $log->bindParam(':attacker_text', $attackerText, PDO::PARAM_STR);
-        $log->execute();
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'INSERT location_attack_logs Failed: ' . $e->getMessage(), ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason, 'attackerText' => $attackerText], 'error');
+    if (!logLocationAttack($pdo, [
+        'location_name'        => $queue_row['location_name'],
+        'attacker_id'          => (int) $queue_row['attacker_controller_id'],
+        'target_controller_id' => null,
+        'turn'                 => $turn_number,
+        'success'              => false,
+        'attacker_result_text' => $attackerText,
+    ])) {
+        game_error_log(__FUNCTION__, 'logLocationAttack failed', ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason, 'attackerText' => $attackerText], 'error');
         return false;
     }
 
