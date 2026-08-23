@@ -108,6 +108,12 @@ def combat_logs_scenario(browser):
         yield
     finally:
         context.close()
+        # Two end_turns leave dead workers and an advanced turn counter. Files
+        # using ensure_scenario_loaded() skip their own reload when TestConfig
+        # is already current, so reload unconditionally here.
+        if DB_AVAILABLE:
+            load_minimal_data()
+        load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
 
 class TestWorkerCombatLogsStructure:

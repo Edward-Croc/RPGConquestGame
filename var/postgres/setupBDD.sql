@@ -175,34 +175,6 @@ CREATE TABLE {prefix}location_attack_logs (
     FOREIGN KEY (attacker_id) REFERENCES {prefix}controllers (id) -- Link to controllers table
 );
 
--- One row per attacker-defender pair; outcome IS NULL means the combat never resolved.
-CREATE TABLE {prefix}worker_combat_logs (
-    id SERIAL PRIMARY KEY,
-    turn INT NOT NULL,
-    zone_id INT REFERENCES {prefix}zones (id),
-    zone_name TEXT,
-    attacker_id INT NOT NULL,
-    attacker_name TEXT,
-    attacker_controller_id INT REFERENCES {prefix}controllers (id),
-    defender_id INT NOT NULL,
-    defender_name TEXT,
-    defender_controller_id INT REFERENCES {prefix}controllers (id),
-    attacker_attack_val INT DEFAULT 0,
-    attacker_defence_val INT DEFAULT 0,
-    defender_attack_val INT DEFAULT 0,
-    defender_defence_val INT DEFAULT 0,
-    attack_difference INT DEFAULT 0,
-    riposte_difference INT DEFAULT 0,
-    location_id INT,
-    location_name TEXT,
-    outcome VARCHAR(32) DEFAULT NULL,
-    attempt INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_worker_combat_logs_turn ON {prefix}worker_combat_logs (turn);
-CREATE INDEX idx_worker_combat_logs_attacker_id ON {prefix}worker_combat_logs (attacker_id);
-CREATE INDEX idx_worker_combat_logs_defender_id ON {prefix}worker_combat_logs (defender_id);
 
 CREATE TABLE {prefix}information_gift_logs (
     id SERIAL PRIMARY KEY,
@@ -417,3 +389,32 @@ CREATE TABLE {prefix}ressource_gift_logs (
     turn INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- One row per attacker-defender pair; outcome IS NULL means the combat never resolved.
+CREATE TABLE {prefix}worker_combat_logs (
+    id SERIAL PRIMARY KEY,
+    turn INT NOT NULL,
+    zone_id INT REFERENCES {prefix}zones (id),
+    zone_name TEXT,
+    attacker_id INT NOT NULL REFERENCES {prefix}workers (id),
+    attacker_name TEXT,
+    attacker_controller_id INT REFERENCES {prefix}controllers (id),
+    defender_id INT NOT NULL REFERENCES {prefix}workers (id),
+    defender_name TEXT,
+    defender_controller_id INT REFERENCES {prefix}controllers (id),
+    attacker_attack_val INT DEFAULT 0,
+    attacker_defence_val INT DEFAULT 0,
+    defender_attack_val INT DEFAULT 0,
+    defender_defence_val INT DEFAULT 0,
+    attack_difference INT DEFAULT 0,
+    riposte_difference INT DEFAULT 0,
+    location_id INT,
+    location_name TEXT,
+    outcome VARCHAR(32) DEFAULT NULL,
+    attempt INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_worker_combat_logs_turn ON {prefix}worker_combat_logs (turn);
+CREATE INDEX idx_worker_combat_logs_attacker_id ON {prefix}worker_combat_logs (attacker_id);
+CREATE INDEX idx_worker_combat_logs_defender_id ON {prefix}worker_combat_logs (defender_id);
