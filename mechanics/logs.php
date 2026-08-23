@@ -6,8 +6,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
     exit();
 }
 
-// Booleans bind via PDO::PARAM_BOOL — the execute([...]) array form would send ''
-// to a Postgres BOOLEAN. LIMIT is concatenated, never bound. No placeholder repeats.
+// Booleans bind PARAM_BOOL, LIMIT is concatenated, and no placeholder repeats.
 
 if (!defined('WORKER_COMBAT_OUTCOMES_ALLOWED')) {
     define('WORKER_COMBAT_OUTCOMES_ALLOWED', ['miss', 'kill', 'capture', 'riposte_kill', 'mutual_kill']);
@@ -75,8 +74,7 @@ function logWorkerCombat(PDO $pdo, array $defender): int|null
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    // The row must survive a crash between the two phases, so it must not sit
-    // in a caller-owned transaction that a rollback would erase.
+    // An ambient rollback would erase the row before phase two can close it.
     if ($pdo->inTransaction()) {
         game_error_log(__FUNCTION__, 'called inside an open transaction — the log row is not crash-durable', ['attacker_id' => $defender['attacker_id'] ?? null], 'warning');
     }

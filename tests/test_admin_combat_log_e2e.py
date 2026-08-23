@@ -292,12 +292,7 @@ class TestAdminCombatLogUnresolvedInvariants:
             f"data-resolved=\"0\" rows ({len(unresolved_rows)})"
         )
         if count == 0:
-            # This scenario's EOT resolves every combat before rendering,
-            # so the unresolved path can't be provoked from the UI -- it
-            # is only reachable by aborting attackMechanic mid-loop
-            # (e.g. a fatal error between logWorkerCombat() and
-            # logWorkerCombatUpdate()). The invariants above still hold
-            # vacuously; this branch just documents why count==0 here.
+            # Unresolved rows need attackMechanic aborted mid-loop, unreachable from the UI.
             assert unresolved_rows == []
 
 

@@ -233,14 +233,17 @@ class TestBasesSortControl:
         ensure_gm_login(page, PHP_BASE_URL)
         rows = _scrape_bases_table_after(page, "")
         assert rows
-        for r in rows:
-            assert "&lt;br" not in r['target_html'], (
-                f"target_result_text cell must not HTML-escape a literal "
-                f"<br>; got {r['target_html']!r}"
+        # Only rows whose text produced a line break can tell raw from escaped.
+        cells = [c for r in rows for c in (r['target_html'], r['attacker_html'])
+                 if "<br" in c or "&lt;br" in c]
+        if not cells:
+            pytest.skip(
+                "no logged result text contains a line break, so nl2br() is a "
+                "no-op here and the raw-vs-escaped distinction is unobservable"
             )
-            assert "&lt;br" not in r['attacker_html'], (
-                f"attacker_result_text cell must not HTML-escape a "
-                f"literal <br>; got {r['attacker_html']!r}"
+        for cell in cells:
+            assert "&lt;br" not in cell, (
+                f"result-text cell must not HTML-escape its line break; got {cell!r}"
             )
 
 

@@ -177,7 +177,6 @@ CREATE TABLE {prefix}location_attack_logs (
     FOREIGN KEY (attacker_id) REFERENCES {prefix}controllers (id) -- Link to controllers table
 );
 
-
 CREATE TABLE {prefix}information_gift_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     giver_controller_id INT NOT NULL,
