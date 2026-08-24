@@ -445,8 +445,8 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics): array
         // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
         $defenderReport['life_report'] = sprintf(
             $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
-            getConfig($pdo, ' timeDenominatorThe'),
-            getConfig($pdo, ' timeDenominatorOf'),
+            getConfig($pdo, 'timeDenominatorThe'),
+            getConfig($pdo, 'timeDenominatorOf'),
             getConfig($pdo, 'timeValue'),
             $mechanics['turncounter']
         );
