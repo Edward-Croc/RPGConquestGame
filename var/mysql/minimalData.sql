@@ -169,6 +169,9 @@ VALUES
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
     ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
     ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
+    ('locationOverwhelmMode', 'multipliby', 'agent_attack_defence : how surviving attackers are compared to surviving defenders to decide a location falls. morethan | multipliby. Unknown values fall back to multipliby.'),
+    ('locationOverwhelmValue', 2, 'agent_attack_defence : operand of locationOverwhelmMode. multipliby : attackers > defenders * value. morethan : attackers > defenders + value.'),
+    ('textLocationUnreachable', '["Je n''ai jamais pu atteindre le lieu."]', 'agent_attack_defence : life_report line for a double agent ordered to attack a location owned by their secret master. They never join the fight.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')

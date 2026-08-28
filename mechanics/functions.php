@@ -203,6 +203,20 @@ function getInvestigateOrder(PDO $pdo): string
 }
 
 /**
+ * Return how surviving attackers are compared to surviving defenders when deciding
+ * whether a location falls, falling back to 'multipliby' on unknown values.
+ *
+ * @param PDO $pdo : database connection
+ *
+ * @return string : 'morethan' or 'multipliby'
+ */
+function getLocationOverwhelmMode(PDO $pdo): string
+{
+    $value = strtolower(trim((string) getConfig($pdo, 'locationOverwhelmMode')));
+    return in_array($value, ['morethan', 'multipliby'], true) ? $value : 'multipliby';
+}
+
+/**
  * Calculates the final values for each worker depending on their chosen action.
  *
  * @param PDO $pdo : database connection

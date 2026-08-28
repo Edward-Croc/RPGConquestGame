@@ -63,7 +63,8 @@ function resolveWorkerCombatOutcome(bool $kill, bool $capture, bool $riposte_kil
  * @param array $defender : row from getAttackerComparisons() — needs attacker_id,
  *   attacker_name, attacker_controller_id, defender_id, defender_name,
  *   defender_controller_id, zone_id, turn_number, attack_difference,
- *   riposte_difference
+ *   riposte_difference. Optional location_id / location_name are set by the
+ *   agent_attack_defence location combats and stay NULL for ordinary duels.
  *
  * @return int|null : the row id, or NULL when the row could not be written
  */
@@ -118,6 +119,8 @@ function logWorkerCombat(PDO $pdo, array $defender): int|null
     $zoneId = !empty($defender['zone_id']) ? (int) $defender['zone_id'] : null;
     $attackerControllerId = !empty($defender['attacker_controller_id']) ? (int) $defender['attacker_controller_id'] : null;
     $defenderControllerId = !empty($defender['defender_controller_id']) ? (int) $defender['defender_controller_id'] : null;
+    // Only location combats carry these; an ordinary duel leaves both NULL.
+    $locationId = !empty($defender['location_id']) ? (int) $defender['location_id'] : null;
 
     try {
         $stmt = $pdo->prepare("INSERT INTO {$prefix}worker_combat_logs
@@ -126,13 +129,15 @@ function logWorkerCombat(PDO $pdo, array $defender): int|null
              defender_id, defender_name, defender_controller_id,
              attacker_attack_val, attacker_defence_val,
              defender_attack_val, defender_defence_val,
-             attack_difference, riposte_difference, attempt)
+             attack_difference, riposte_difference,
+             location_id, location_name, attempt)
             VALUES (:turn, :zone_id, :zone_name,
              :attacker_id, :attacker_name, :attacker_controller_id,
              :defender_id, :defender_name, :defender_controller_id,
              :attacker_attack_val, :attacker_defence_val,
              :defender_attack_val, :defender_defence_val,
-             :attack_difference, :riposte_difference, :attempt)");
+             :attack_difference, :riposte_difference,
+             :location_id, :location_name, :attempt)");
         $stmt->bindValue(':turn', $turn, PDO::PARAM_INT);
         $stmt->bindValue(':zone_id', $zoneId, $zoneId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindValue(':zone_name', $defender['zone_name'] ?? null, PDO::PARAM_STR);
@@ -148,6 +153,8 @@ function logWorkerCombat(PDO $pdo, array $defender): int|null
         $stmt->bindValue(':defender_defence_val', (int) ($defender['defender_defence_val'] ?? 0), PDO::PARAM_INT);
         $stmt->bindValue(':attack_difference', (int) ($defender['attack_difference'] ?? 0), PDO::PARAM_INT);
         $stmt->bindValue(':riposte_difference', (int) ($defender['riposte_difference'] ?? 0), PDO::PARAM_INT);
+        $stmt->bindValue(':location_id', $locationId, $locationId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':location_name', $defender['location_name'] ?? null, PDO::PARAM_STR);
         $stmt->bindValue(':attempt', $attempt, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
