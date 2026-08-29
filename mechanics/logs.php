@@ -388,8 +388,9 @@ function getWorkerCombatLogFilterOptions(PDO $pdo): array
  * react to a failed log differently.
  *
  * @param PDO $pdo : database connection
- * @param array $data : location_name, attacker_id, turn and success are required;
- *   target_controller_id (default NULL), attack_val / defence_val (default 0),
+ * @param array $data : location_name, turn and success are required;
+ *   attacker_id and target_controller_id (both default NULL — an empty attacker_id
+ *   means nobody is credited), attack_val / defence_val (default 0),
  *   target_result_text / attacker_result_text (default '') are optional
  *
  * @return bool : true when the row was written
@@ -402,6 +403,8 @@ function logLocationAttack(PDO $pdo, array $data): bool
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $targetControllerId = !empty($data['target_controller_id']) ? (int) $data['target_controller_id'] : null;
+    // NULL means nobody is credited; a 0 would violate the foreign key instead.
+    $attackerId = !empty($data['attacker_id']) ? (int) $data['attacker_id'] : null;
     $success = !empty($data['success']);
 
     try {
@@ -412,7 +415,7 @@ function logLocationAttack(PDO $pdo, array $data): bool
              :turn, :success, :target_result_text, :attacker_result_text)");
         $stmt->bindValue(':target_controller_id', $targetControllerId, $targetControllerId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindValue(':location_name', (string) ($data['location_name'] ?? ''), PDO::PARAM_STR);
-        $stmt->bindValue(':attacker_id', (int) ($data['attacker_id'] ?? 0), PDO::PARAM_INT);
+        $stmt->bindValue(':attacker_id', $attackerId, $attackerId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindValue(':attack_val', (int) ($data['attack_val'] ?? 0), PDO::PARAM_INT);
         $stmt->bindValue(':defence_val', (int) ($data['defence_val'] ?? 0), PDO::PARAM_INT);
         $stmt->bindValue(':turn', (int) ($data['turn'] ?? 0), PDO::PARAM_INT);
