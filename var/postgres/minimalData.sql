@@ -45,14 +45,15 @@ VALUES
     ('DEFENCE_ZONE_BONUS', '1', 'Bonus à la valeur défense si le worker est dans une zone contrôlée'),
     ('HIDE_ENQUETE_FLAT_BONUS', '4', 'Bonus to the investigate value if the worker is using hide'),
     ('HIDE_DEFENCE_FLAT_BONUS', '1', 'Bonus to the investigate value if the worker is using hide'),
+    ('DEFEND_LOCATION_DEFENCE_FLAT_BONUS', '1', 'Bonus to the investigate value if the worker is using defend_location'),
     -- passive, investigate, attack, claim, captured, dead, trace, defend_location, attack_location
     ('investigateActionsList', '''passive'',''investigate'',''defend_location''', 'Action choices that actually run investigation against enemy workers (filter inside investigateMechanic). Distinct from passive/active*InvestigateActions which only pick D6-vs-PASSIVEVAL for enquete_val computation.'),
     ('passiveInvestigateActions', '''passive'',''attack'',''captured'',''hide'',''attack_location'',''defend_location''', 'Liste of passive investigation actions'),
     ('activeInvestigateActions', '''investigate'',''claim''', 'Liste of active investigation actions'),
     ('passiveAttackActions', '''passive'',''investigate'',''hide'',''defend_location''', 'Liste of passive attack actions'),
     ('activeAttackActions', '''attack'',''claim'',''attack_location''', 'Liste of active attack actions'),
-    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide'',''attack_location''', 'Liste of passive defence actions'),
-    ('activeDefenceActions', '''defend_location''', 'Liste of active defense actions'),
+    ('passiveDefenceActions', '''passive'',''investigate'',''attack'',''claim'',''captured'',''hide'',''attack_location'',''defend_location''', 'Liste of passive defence actions'),
+    ('activeDefenceActions', '', 'Liste of active defense actions'),
     -- Diff vals for investigation results
     ('REPORTDIFF0', '-1', 'Value for Level 0 information'),
     ('REPORTDIFF1', '1', 'Value for Level 1 information'),
@@ -169,6 +170,9 @@ VALUES
     ('locationOverwhelmMode', 'multipliby', 'agent_attack_defence : how surviving attackers are compared to surviving defenders to decide a location falls. morethan | multipliby. Unknown values fall back to multipliby.'),
     ('locationOverwhelmValue', 2, 'agent_attack_defence : operand of locationOverwhelmMode. multipliby : attackers > defenders * value. morethan : attackers > defenders + value.'),
     ('textLocationUnreachable', '["Je n''ai jamais pu atteindre le lieu."]', 'agent_attack_defence : life_report line for a double agent ordered to attack a location owned by their secret master. They never join the fight.'),
+    ('locationAttackCreditMode', 'networks', 'agent_attack_defence : how the target_result_text names the assailants. networks = list the attacking network ids. agents = name each agent, attributing a network only for those the owner has already identified. Unknown values fall back to networks.'),
+    ('TEXT_LOCATION_ATTACK_SUCCESS', '["Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès."]', 'Pool shown to the location owner when the attack succeeds. %1$s = location name, %2$s = the assailants, worded per locationAttackCreditMode.'),
+    ('TEXT_LOCATION_ATTACK_FAIL', '["Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils ne semblent pas avoir atteint leur objectif."]', 'Pool shown to the location owner when the attack fails. Same placeholders as TEXT_LOCATION_ATTACK_SUCCESS.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')

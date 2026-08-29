@@ -239,6 +239,7 @@
     "" Nous pouvons retourner cette information contre son maître et nous y attaquer au lieu pour le détruire."",
     "" Il est possible d’organiser une mission pour détruire ce lieu.""
 ]","Phrases pour signaler qu’une localisation peut être détruite"
+"locationAttackCreditMode","agents","agents = name each agent, attributing a network only for those the owner has already identified"
 "TEXT_LOCATION_ATTACK_SUCCESS","[
     ""Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont malheureusement franchi les portes."",
     ""Les bannières du réseau %2$s flottent désormais sur %1$s. Nos défenseur·euse·s ont été submergé·e·s.""

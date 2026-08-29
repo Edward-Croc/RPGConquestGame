@@ -24,27 +24,32 @@ Combat math (TestConfig)
   Thresholds: ATTACKDIFF0=1 (kill), ATTACKDIFF1=3 (capture), RIPOSTDIFF=2,
   RIPOSTACTIVE=1. Agent stats are the ones documented in test_agent_combat_e2e.py.
 
+  One correction on top of that table: defend_location is a PASSIVE defence action
+  carrying DEFEND_LOCATION_DEFENCE_FLAT_BONUS = 1, so a defender's defence_val is
+  its documented value PLUS ONE. Attackers get no such bonus.
+
 Groups built in the single resolved turn, with the arithmetic that makes each
 outcome deterministic:
 
-  Test-Future-Location  Chain_E a=6 vs Chain_B d=5    → 6−5=1  kill
-                        riposte 4−5=−1, no riposte    → 1 alive vs 0 → falls
-                        Claim_Atk_1 also targets it but dies earlier to an
-                        ordinary attack, so it never joins the group (D17).
+  Test-Future-Location  Chain_A a=8 vs Chain_B d=5+1=6 → 8−6=2  kill
+                        riposte 4−7=−3, no riposte      → 1 alive vs 0 → falls
+                        Chain_G also targets it but dies earlier to an ordinary
+                        attack from Claim_Def_1 (4−2=2), so it never joins the
+                        group (D17).
 
-  Echo-Base             Inv_Atk_1 a=8 vs Inv_Def_2 d=3 → 8−3=5  capture
-                                     vs Inv_Def_1 d=2 → 8−2=6  capture
-                        one attacker, two rows          → 1 alive vs 0 → falls
+  Echo-Base             Inv_Atk_1 a=8 vs Inv_Def_2 d=3+1 → 8−4=4  capture
+                                     vs Inv_Def_1 d=2+1 → 8−3=5  capture
+                        one attacker, two rows            → 1 alive vs 0 → falls
 
   Foxtrot-Outpost       Claim_Atk_2 d=4 vs Counter_Def a=6 → riposte 6−4=2 kills
                         Counter_Atk d=2 vs Counter_Def a=6 → riposte 6−2=4 kills
-                        attack side 4−5=−1 both times, so no defender death
+                        attack side 4−6=−2 both times, so no defender death
                                                         → 0 alive vs 1 → holds
 
-  Civic-Site            three 3/3/3 attackers vs Even_Def 3/3/3
-                        3−3=0 misses, riposte 3−3=0     → 3 alive vs 1 → falls
+  Civic-Site            three 3/3/3 attackers vs Even_Def d=3+1=4
+                        3−4=−1 misses, riposte 3−3=0    → 3 alive vs 1 → falls
 
-  Location A            Inv_Atk_2 a=4, Chain_F a=3 vs Chain_C d=4
+  Location A            Inv_Atk_2 a=4, Chain_F a=3 vs Chain_C d=4+1=5
                         misses, riposte 4−4=0           → 2 alive vs 1 → holds
 
 The last two bracket the multipliby threshold: 3 > 1×2 falls, 2 > 1×2 holds.
@@ -78,7 +83,7 @@ from helpers import (
 
 # Location name -> (attacker lastnames, defender lastnames), in the order queued.
 GROUPS = {
-    "Test-Future-Location": (["Chain_E", "Claim_Atk_1"], ["Chain_B"]),
+    "Test-Future-Location": (["Chain_A", "Chain_G"], ["Chain_B"]),
     "Echo-Base":            (["Inv_Atk_1"], ["Inv_Def_1", "Inv_Def_2"]),
     "Foxtrot-Outpost":      (["Claim_Atk_2", "Counter_Atk"], ["Counter_Def"]),
     "Civic-Site":           (["Chain_D", "Even_Atk", "Claim_Def_2"], ["Even_Def"]),
@@ -148,12 +153,13 @@ def location_combat_state(browser):
                 ui_defend_location(page, lastname, location_ids[name],
                                    base_url=PHP_BASE_URL)
 
-        # D17 : Claim_Atk_1 holds attack_location but dies to an ordinary attack
-        # first, so it must never reach the ladder. Chain_A a=8 vs its d=7 gives
-        # exactly ATTACKDIFF0. Click-driven to honour the once-per-file rule.
-        ui_attack_click(page, "Chain_A", "Claim_Atk_1", base_url=PHP_BASE_URL)
-        _state["worker_ids"]["Chain_A"] = ui_worker_id(page, "Chain_A",
-                                                       base_url=PHP_BASE_URL)
+        # D17 : Chain_G holds attack_location but dies to an ordinary attack
+        # first, so it must never reach the ladder. Claim_Def_1 a=4 vs its d=2
+        # gives 2, inside [ATTACKDIFF0, ATTACKDIFF1[. Click-driven to honour the
+        # once-per-file rule.
+        ui_attack_click(page, "Claim_Def_1", "Chain_G", base_url=PHP_BASE_URL)
+        _state["worker_ids"]["Claim_Def_1"] = ui_worker_id(page, "Claim_Def_1",
+                                                           base_url=PHP_BASE_URL)
 
         end_turn(page)
         _state["verdicts"] = _verdicts_from_end_turn(page.content())
@@ -198,11 +204,11 @@ class TestLocationCombatIsLogged:
     def test_single_pair_produces_one_row_carrying_the_location(self):
         rows = _rows_for("Test-Future-Location")
         assert len(rows) == 1, f"expected exactly one duel, got {rows}"
-        assert rows[0]["attacker_worker_id"] == _wid("Chain_E")
+        assert rows[0]["attacker_worker_id"] == _wid("Chain_A")
         assert rows[0]["defender_worker_id"] == _wid("Chain_B")
 
     def test_computed_outcome_is_a_plain_kill(self):
-        # 6 - 5 = 1 : at ATTACKDIFF0, below ATTACKDIFF1, so death without capture.
+        # 8 - 6 = 2 : above ATTACKDIFF0, below ATTACKDIFF1, so death without capture.
         assert _rows_for("Test-Future-Location")[0]["outcome"] == "kill"
 
     def test_every_row_is_resolved(self):
@@ -325,10 +331,10 @@ class TestGroupIsolation:
                 )
 
     def test_an_agent_killed_earlier_in_the_turn_never_fights(self):
-        # D17 : Claim_Atk_1 queued attack_location but Chain_A killed it during
+        # D17 : Chain_G queued attack_location but Claim_Def_1 killed it during
         # attackMechanic, so its action_choice no longer matches the grouping
         # filter and it produces no location duel.
-        assert all(r["attacker_worker_id"] != _wid("Claim_Atk_1")
+        assert all(r["attacker_worker_id"] != _wid("Chain_G")
                    for r in _state["logs"])
 
 
