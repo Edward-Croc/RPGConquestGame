@@ -25,6 +25,8 @@ Cette section couvre les clés qui pilotent les calculs partagés entre tous les
 
 **`HIDE_ENQUETE_FLAT_BONUS`** (= 4), **`HIDE_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plats ajoutés à `enquete_val` et `defence_val` quand l'agent choisit l'action `hide`. L'action « se cacher » renforce la défense de l'agent et complique sa détection par les enquêtes ennemies (la valeur d'enquête sert alors de résistance, pas d'investigation), au prix de ne pas attaquer ce tour.
 
+**`DEFEND_LOCATION_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plat ajouté à `defence_val` quand l'agent choisit `defend_location`. Défendre un lieu est une action de défense **passive** : l'agent ne tire pas de dé, il reçoit `PASSIVEVAL` plus ce bonus, ce qui rend la défense d'une place forte fiable plutôt qu'aléatoire. Le nom de la clé suit le gabarit `{ACTION}_{AXE}_FLAT_BONUS` que `calculateVals` construit ; une clé absente vaut zéro, ce qui est le cas de toutes les autres combinaisons action/axe.
+
 #### Listes d'actions actives et passives
 
 Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`, `attack_val` et `defence_val` de chaque agent en début de tour. Pour chaque axe (enquête, attaque, défense), l'`action_choice` choisi par l'agent détermine si la valeur correspondante est obtenue par un **jet de dé aléatoire** (action listée comme `active`) ou par la **valeur fixe `PASSIVEVAL`** (action listée comme `passive`). Une action absente des deux listes d'un axe donne `0` sur cet axe.
@@ -35,8 +37,8 @@ Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`,
 - **`activeInvestigateActions`** (= `'investigate','claim'`) — Actions dont la valeur d'enquête est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
 - **`passiveAttackActions`** (= `'passive','investigate','hide','defend_location'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
 - **`activeAttackActions`** (= `'attack','claim','attack_location'`) — Actions dont la valeur d'attaque est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
-- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide','attack_location'`) — Actions dont la valeur de défense est `PASSIVEVAL`.
-- **`activeDefenceActions`** (= `'defend_location'`) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Seul `defend_location` y figure : défendre un lieu est la seule action qui fait tirer un dé de défense.
+- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide','attack_location','defend_location'`) — Actions dont la valeur de défense est `PASSIVEVAL`. `defend_location` y figure et reçoit en plus `DEFEND_LOCATION_DEFENCE_FLAT_BONUS`.
+- **`activeDefenceActions`** (= `''`, vide par défaut) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Vide signifie qu'aucune action ne fait tirer un dé de défense : toutes les valeurs de défense sont fixes.
 
 Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses. L'action `claim` apparaît dans les deux axes actifs (`enquete` et `attack`) — c'est volontaire : revendiquer génère un jet pour les deux valeurs, ce qui rend l'agent compétitif quand le `claimMode='worker'` les compare à la défense de la zone.
 
@@ -225,7 +227,6 @@ Toute autre valeur (faute de frappe, mode futur non développé) désactive le m
   - **Verdict.** Le lieu tombe quand les attaquants survivants dépassent **strictement** un seuil calculé sur les défenseurs survivants : **`locationOverwhelmMode`** (= `multipliby`) choisit la forme — `multipliby` → `défenseurs × locationOverwhelmValue`, `morethan` → `défenseurs + locationOverwhelmValue` — et **`locationOverwhelmValue`** (= 2) en donne l'opérande. La comparaison stricte règle aussi le cas dégénéré : personne contre personne, le lieu tient. Avec les valeurs par défaut, il faut donc trois attaquants survivants contre un défenseur survivant.
   - Chaque duel est tracé dans `worker_combat_logs` avec son lieu, consultable et filtrable sur la page d'administration *Agent combat log*.
 
-  *État de livraison* : la résolution des combats et le calcul du verdict sont en place. L'application du verdict au lieu (destruction via `resolveLocationAttackEffects`) et la narration joueur restent à livrer — voir issue #73, étapes 5.D et 5.F.
 
 Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
