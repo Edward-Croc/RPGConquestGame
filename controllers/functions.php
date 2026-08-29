@@ -606,7 +606,7 @@ function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_loca
         );
     }
 
-    return resolveLocationAttackEffects($pdo, $location[0], $controller_id, $turn_number, $controllerAttack, $locationDefence);
+    return resolveControllerLocationAttackEffects($pdo, $location[0], $controller_id, $turn_number, $controllerAttack, $locationDefence);
 }
 
 /**
@@ -620,7 +620,7 @@ function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_loca
  * @param int $locationDefence : resolved defence value
  * @return array|null : ['success', 'message'], or NULL on DELETE failure
  */
-function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null
+function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null
 {
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;

@@ -107,7 +107,7 @@ function locationAttackMechanic(PDO $pdo, int $turn_number): bool
         $resolvedAttack = calculatecontrollerAttack($pdo, $zone_id, $row['attacker_controller_id']);
         $resolvedDefence = calculateSecretLocationDefence($pdo, $zone_id, $row['location_id'], $location['controller_id']);
 
-        $result = resolveLocationAttackEffects(
+        $result = resolveControllerLocationAttackEffects(
             $pdo,
             $location,
             $row['attacker_controller_id'],
