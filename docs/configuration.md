@@ -29,14 +29,14 @@ Cette section couvre les clés qui pilotent les calculs partagés entre tous les
 
 Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`, `attack_val` et `defence_val` de chaque agent en début de tour. Pour chaque axe (enquête, attaque, défense), l'`action_choice` choisi par l'agent détermine si la valeur correspondante est obtenue par un **jet de dé aléatoire** (action listée comme `active`) ou par la **valeur fixe `PASSIVEVAL`** (action listée comme `passive`). Une action absente des deux listes d'un axe donne `0` sur cet axe.
 
-> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres clés. Par exemple, la recherche d'agents ennemis n'est exécutée que pour les `action_choice` listés dans **`investigateActionsList`** (= `'passive','investigate'`). Cette clé est indépendante des six listes ci-dessous.
+> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres clés. Par exemple, la recherche d'agents ennemis n'est exécutée que pour les `action_choice` listés dans **`investigateActionsList`** (= `'passive','investigate','defend_location'`). Cette clé est indépendante des six listes ci-dessous.
 
-- **`passiveInvestigateActions`** (= `'passive','attack','captured','hide'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`.
+- **`passiveInvestigateActions`** (= `'passive','attack','captured','hide','attack_location','defend_location'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`. Les deux actions de lieu y figurent, ce qui donne à leurs agents un `enquete_val` réel — c'est lui qui sert d'initiative au combat de lieu.
 - **`activeInvestigateActions`** (= `'investigate','claim'`) — Actions dont la valeur d'enquête est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
-- **`passiveAttackActions`** (= `'passive','investigate','hide'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
-- **`activeAttackActions`** (= `'attack','claim'`) — Actions dont la valeur d'attaque est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
-- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide'`) — Actions dont la valeur de défense est `PASSIVEVAL`.
-- **`activeDefenceActions`** (= `''`, vide par défaut) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Vide signifie que toutes les valeurs de défense sont fixes.
+- **`passiveAttackActions`** (= `'passive','investigate','hide','defend_location'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
+- **`activeAttackActions`** (= `'attack','claim','attack_location'`) — Actions dont la valeur d'attaque est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
+- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide','attack_location'`) — Actions dont la valeur de défense est `PASSIVEVAL`.
+- **`activeDefenceActions`** (= `'defend_location'`) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Seul `defend_location` y figure : défendre un lieu est la seule action qui fait tirer un dé de défense.
 
 Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses. L'action `claim` apparaît dans les deux axes actifs (`enquete` et `attack`) — c'est volontaire : revendiquer génère un jet pour les deux valeurs, ce qui rend l'agent compétitif quand le `claimMode='worker'` les compare à la défense de la zone.
 
@@ -46,7 +46,7 @@ Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses
 
 **`LOCATIONNAMEDIFF`** (= 0), **`LOCATIONINFORMATIONDIFF`** (= 1), **`LOCATIONARTEFACTSDIFF`** (= 2) — Seuils de différence `enquete_val − discovery_diff` pour les niveaux de découverte d'un lieu secret : nom du lieu, description / informations secrètes, présence d'artefacts récupérables. Augmenter ces seuils rend les enquêtes de zone moins rentables.
 
-> **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
+> **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate','defend_location'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
 
 ### Réduction de la redondance des rapports d'enquête
 
@@ -233,7 +233,7 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
 **Spécifique `endTurn` :** textes d'échec d'arrivée `textLocationAttackDestroyed` (cible détruite par une attaque antérieure) et `textLocationAttackMoved` (cible déplacée avant résolution) — visibles uniquement par l'attaquant.
 
-**Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus le texte **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
+**Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible — liste JSON de formulations, tirée au sort comme les autres pools de texte, avec repli sur une phrase en dur si le JSON est invalide. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
 
 ## 3. Recrutement et progression des Agents (workers)
 

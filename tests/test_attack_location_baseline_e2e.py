@@ -53,7 +53,7 @@ import json
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors, set_config_via_ui,
-    ui_controller_id, ui_worker_action_state, ui_workers_by_lastname,
+    ui_controller_id, ui_location_id, ui_worker_action_state, ui_workers_by_lastname,
 )
 
 
@@ -79,17 +79,8 @@ def load_test_config(browser):
 
 
 def _location_id_via_management(page, location_name):
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    html = page.content()
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        html, re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for '{location_name}' not found")
-    return int(m.group(1))
+    """Thin wrapper kept for this file's existing call sites."""
+    return ui_location_id(page, location_name, base_url=PHP_BASE_URL)
 
 
 def _controller_id_via_management(page, controller_lastname):

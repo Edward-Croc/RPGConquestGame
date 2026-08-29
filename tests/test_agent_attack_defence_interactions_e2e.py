@@ -54,7 +54,6 @@ remain valid, resolvable combat targets, not that their bonuses differ.
 Run:
     python3 -m pytest tests/test_agent_attack_defence_interactions_e2e.py -v
 """
-import re
 
 import pytest
 from playwright.sync_api import Page
@@ -63,7 +62,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    clear_ui_caches, ui_attack, ui_attack_click, ui_worker_id,
+    clear_ui_caches, ui_attack, ui_attack_click, ui_location_id, ui_worker_id,
     ui_worker_action_state, worker_report_html,
 )
 
@@ -82,17 +81,8 @@ def _set_config_via_ui(page, name, value):
 
 
 def _location_id_via_management(page, location_name):
-    """Scrape a location's id off zones/management_locations.php."""
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        page.content(), re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for '{location_name}' not found")
-    return int(m.group(1))
+    """Thin wrapper kept for this file's existing call sites."""
+    return ui_location_id(page, location_name, base_url=PHP_BASE_URL)
 
 
 def _queue_location_action(page, worker_id, action, target_location_id):
