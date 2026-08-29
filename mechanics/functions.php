@@ -414,12 +414,15 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
             continue;
         }
         $sqlReset = "
-            UPDATE {$prefix}worker_actions wa1
-            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
-            SET wa1.action_choice = 'passive'
-            WHERE wa1.turn_number = :turn_number
-            AND wa2.action_choice = :action
-            AND wa2.turn_number = :turn_number_n_1
+            UPDATE {$prefix}worker_actions
+            SET action_choice = 'passive'
+            WHERE turn_number = :turn_number
+            AND worker_id IN (
+                SELECT worker_id FROM (
+                    SELECT worker_id FROM {$prefix}worker_actions
+                    WHERE turn_number = :turn_number_n_1 AND action_choice = :action
+                ) AS previous_turn
+            )
         ";
         try {
             $stmtReset = $pdo->prepare($sqlReset);
