@@ -812,23 +812,29 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
 }
 
 /**
- * Move all artefacts from a captured location to the capturing controller's base.
+ * Move all artefacts from a captured location to the capturing controller's safest holding.
+ *
+ * The destination is the controller's own destructible location with the highest
+ * discovery_diff. A ruined stronghold — swapped to can_be_destroyed = 0 — is therefore
+ * no longer a valid destination, and a controller owning none at all captures nothing.
  *
  * @param PDO $pdo : database connection
  * @param int $location_id : source (captured) location id
  * @param int $controller_id : capturing controller id
- * @return array : ['success' => bool, 'message' => string]
+ * @return array : ['success' => bool, 'message' => string, 'count' => int artefacts moved]
  */
 function captureLocationsArtefacts(PDO $pdo, int $location_id, int $controller_id): array
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with location_id : ' . $location_id, ['controller_id' => $controller_id], 'debug');
 
-    $return = array('success' => true, 'message' => '');
+    $return = array('success' => true, 'message' => '', 'count' => 0);
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    // Step 1: Get base location of the controller
-    $stmt = $pdo->prepare("SELECT id FROM {$prefix}locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
+    // Step 1: Get the safest holding of the controller — a ruined stronghold no longer stores anything
+    $stmt = $pdo->prepare("SELECT id FROM {$prefix}locations
+        WHERE controller_id = ? AND can_be_destroyed = TRUE
+        ORDER BY discovery_diff DESC, id ASC LIMIT 1");
     $stmt->execute([$controller_id]);
     $baseLocation = $stmt->fetchColumn();
 
@@ -842,8 +848,9 @@ function captureLocationsArtefacts(PDO $pdo, int $location_id, int $controller_i
     $stmt = $pdo->prepare("UPDATE {$prefix}artefacts SET location_id = ? WHERE location_id = ?");
     $stmt->execute([$baseLocation, $location_id]);
 
-    // Step 3: Optional — count how many artefacts moved
+    // Step 3: Count how many artefacts moved — drives the location_attack_logs credit
     $count = $stmt->rowCount();
+    $return['count'] = $count;
 
     if ($count > 0) {
         $return['message'] = " Nous avons ramené des prisonniers du raid.";
