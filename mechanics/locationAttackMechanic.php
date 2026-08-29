@@ -34,14 +34,15 @@ function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, 
         return false;
     }
 
-    if (!logLocationAttack($pdo, [
-        'location_name'        => $queue_row['location_name'],
-        'attacker_id'          => (int) $queue_row['attacker_controller_id'],
-        'target_controller_id' => null,
-        'turn'                 => $turn_number,
-        'success'              => false,
-        'attacker_result_text' => $attackerText,
-    ])) {
+    if (!logLocationAttack(
+        $pdo,
+        (string) $queue_row['location_name'],
+        $turn_number,
+        false,
+        (int) $queue_row['attacker_controller_id'],
+        null,
+        $attackerText
+    )) {
         game_error_log(__FUNCTION__, 'logLocationAttack failed', ['queue_row' => $queue_row, 'turn_number' => $turn_number, 'reason' => $reason, 'attackerText' => $attackerText], 'error');
         return false;
     }

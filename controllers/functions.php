@@ -720,17 +720,18 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
         );
     }
 
-    if (!logLocationAttack($pdo, [
-        'location_name'        => $location['name'],
-        'attacker_id'          => (int) $controller_id,
-        'target_controller_id' => (!empty($location['controller_id'])) ? (int) $location['controller_id'] : null,
-        'attack_val'           => (int) $controllerAttack,
-        'defence_val'          => (int) $locationDefence,
-        'turn'                 => (int) $turn_number,
-        'success'              => (bool) $return['success'],
-        'target_result_text'   => $targetResultText,
-        'attacker_result_text' => $return['message'],
-    ])) {
+    if (!logLocationAttack(
+        $pdo,
+        (string) $location['name'],
+        (int) $turn_number,
+        (bool) $return['success'],
+        (int) $controller_id,
+        (!empty($location['controller_id'])) ? (int) $location['controller_id'] : null,
+        (string) $return['message'],
+        $targetResultText,
+        (int) $controllerAttack,
+        (int) $locationDefence
+    )) {
         game_error_log(__FUNCTION__, 'logLocationAttack failed', ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
         return array('success' => false, 'message' => 'Error : Resultat Save Failed');
     }

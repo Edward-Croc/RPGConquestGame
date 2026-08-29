@@ -388,24 +388,34 @@ function getWorkerCombatLogFilterOptions(PDO $pdo): array
  * react to a failed log differently.
  *
  * @param PDO $pdo : database connection
- * @param array $data : location_name, turn and success are required;
- *   attacker_id and target_controller_id (both default NULL — an empty attacker_id
- *   means nobody is credited), attack_val / defence_val (default 0),
- *   target_result_text / attacker_result_text (default '') are optional
+ * @param string $location_name : name of the attacked location
+ * @param int $turn : turn the attack resolved on
+ * @param bool $success : true when the attack achieved its goal
+ * @param int|null $attacker_id : controller credited with the attack, NULL to credit nobody
+ * @param int|null $target_controller_id : owner of the location, NULL when unowned
+ * @param string $attacker_result_text : line shown to the attacker
+ * @param string $target_result_text : line shown to the owner
+ * @param int $attack_val : resolved attack value
+ * @param int $defence_val : resolved defence value
  *
  * @return bool : true when the row was written
  */
-function logLocationAttack(PDO $pdo, array $data): bool
-{
+function logLocationAttack(
+    PDO $pdo,
+    string $location_name,
+    int $turn,
+    bool $success,
+    int|null $attacker_id = null,
+    int|null $target_controller_id = null,
+    string $attacker_result_text = '',
+    string $target_result_text = '',
+    int $attack_val = 0,
+    int $defence_val = 0
+): bool {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
-    game_error_log(__FUNCTION__, 'START with location_name : ' . ($data['location_name'] ?? 'null'), ['attacker_id' => $data['attacker_id'] ?? null, 'turn' => $data['turn'] ?? null, 'success' => $data['success'] ?? null], 'debug');
+    game_error_log(__FUNCTION__, 'START with location_name : ' . $location_name, ['attacker_id' => $attacker_id, 'turn' => $turn, 'success' => $success], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
-
-    $targetControllerId = !empty($data['target_controller_id']) ? (int) $data['target_controller_id'] : null;
-    // NULL means nobody is credited; a 0 would violate the foreign key instead.
-    $attackerId = !empty($data['attacker_id']) ? (int) $data['attacker_id'] : null;
-    $success = !empty($data['success']);
 
     try {
         $stmt = $pdo->prepare("INSERT INTO {$prefix}location_attack_logs
@@ -413,18 +423,19 @@ function logLocationAttack(PDO $pdo, array $data): bool
              turn, success, target_result_text, attacker_result_text)
             VALUES (:target_controller_id, :location_name, :attacker_id, :attack_val, :defence_val,
              :turn, :success, :target_result_text, :attacker_result_text)");
-        $stmt->bindValue(':target_controller_id', $targetControllerId, $targetControllerId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->bindValue(':location_name', (string) ($data['location_name'] ?? ''), PDO::PARAM_STR);
-        $stmt->bindValue(':attacker_id', $attackerId, $attackerId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->bindValue(':attack_val', (int) ($data['attack_val'] ?? 0), PDO::PARAM_INT);
-        $stmt->bindValue(':defence_val', (int) ($data['defence_val'] ?? 0), PDO::PARAM_INT);
-        $stmt->bindValue(':turn', (int) ($data['turn'] ?? 0), PDO::PARAM_INT);
+        $stmt->bindValue(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':location_name', $location_name, PDO::PARAM_STR);
+        // NULL credits nobody; a 0 would violate the foreign key instead.
+        $stmt->bindValue(':attacker_id', $attacker_id, $attacker_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindValue(':attack_val', $attack_val, PDO::PARAM_INT);
+        $stmt->bindValue(':defence_val', $defence_val, PDO::PARAM_INT);
+        $stmt->bindValue(':turn', $turn, PDO::PARAM_INT);
         $stmt->bindValue(':success', $success, PDO::PARAM_BOOL);
-        $stmt->bindValue(':target_result_text', (string) ($data['target_result_text'] ?? ''), PDO::PARAM_STR);
-        $stmt->bindValue(':attacker_result_text', (string) ($data['attacker_result_text'] ?? ''), PDO::PARAM_STR);
+        $stmt->bindValue(':target_result_text', $target_result_text, PDO::PARAM_STR);
+        $stmt->bindValue(':attacker_result_text', $attacker_result_text, PDO::PARAM_STR);
         $stmt->execute();
     } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'INSERT location_attack_logs failed : ' . $e->getMessage(), ['data' => $data], 'error');
+        game_error_log(__FUNCTION__, 'INSERT location_attack_logs failed : ' . $e->getMessage(), ['location_name' => $location_name, 'turn' => $turn, 'attacker_id' => $attacker_id], 'error');
         return false;
     }
 
