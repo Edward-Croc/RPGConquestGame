@@ -640,16 +640,17 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
         $return['success'] = true;
         $destroy = true;
 
-        // Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.
+        // %2$s carries the whole assailant clause, so both attack modes share one template.
+        $attackerClause = sprintf('des agents du réseau %s', $controller_id);
         $locationAttackSuccessTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_SUCCESS'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_SUCCESS'], 'warning');
-            $locationAttackSuccessTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.");
+            $locationAttackSuccessTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès.");
         }
         $targetResultText .= sprintf(
             $locationAttackSuccessTextsArray[array_rand($locationAttackSuccessTextsArray)],
             $location['name'],
-            $controller_id
+            $attackerClause
         );
 
         // Do actions depending on JSON for location
@@ -704,15 +705,16 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
             $targetResultText .= ' Tout a été détruit.';
         }
     } else {
+        $attackerClause = sprintf('des agents du réseau %s', $controller_id);
         $locationAttackFailTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_FAIL'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_FAIL'], 'warning');
-            $locationAttackFailTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.");
+            $locationAttackFailTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils ne semblent pas avoir atteint leur objectif.");
         }
         $targetResultText .= sprintf(
             $locationAttackFailTextsArray[array_rand($locationAttackFailTextsArray)],
             $location['name'],
-            $controller_id
+            $attackerClause
         );
         $return['message'] = sprintf(
             getConfig($pdo, 'textLocationNotDestroyed'),

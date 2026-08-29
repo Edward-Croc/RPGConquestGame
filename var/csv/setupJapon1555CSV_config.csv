@@ -241,11 +241,11 @@
 ]","Phrases pour signaler qu’une localisation peut être détruite"
 "locationAttackCreditMode","agents","agents = name each agent, attributing a network only for those the owner has already identified"
 "TEXT_LOCATION_ATTACK_SUCCESS","[
-    ""Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont malheureusement franchi les portes."",
-    ""Les bannières du réseau %2$s flottent désormais sur %1$s. Nos défenseur·euse·s ont été submergé·e·s.""
+    ""Notre %1$s a été attaqué.e, par %2$s. Ils ont malheureusement franchi les portes."",
+    ""Les bannières des assaillants flottent désormais sur %1$s. Nos défenseur·euse·s ont été submergé·e·s par %2$s.""
 ]","Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée"
 "TEXT_LOCATION_ATTACK_FAIL","[
-    ""Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Heureusement, ils n’ont pas atteint leur objectif.""
+    ""Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils n’ont pas atteint leur objectif.""
 ]","Phrases pour signaler au defenseur qu’une localisation as été attaquer sans succée"
 "TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS","[
     ""J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a été un succès.<br/>"",

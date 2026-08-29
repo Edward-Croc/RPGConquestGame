@@ -372,15 +372,15 @@ VALUES
 INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s : nom du lieu attaqué 
--- %2$s: identifiant du réseau attaquant
+-- %2$s: phrase désignant les assaillants, construite selon locationAttackCreditMode
 ('TEXT_LOCATION_ATTACK_SUCCESS', '[
-    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s. Ils ont franchi les portes avec succès."
+    "Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès."
 ]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée')
 
 -- %1$s: nom du lieu attaqué 
--- %2$s: identifiant du réseau attaquant
+-- %2$s: phrase désignant les assaillants, construite selon locationAttackCreditMode
 , ('TEXT_LOCATION_ATTACK_FAIL', '[
-    "Notre %1$s a été attaqué.e, par des agents du réseau %2$s.  Heureusement, ils ne semblent pas avoir atteint leur objectif."
+    "Notre %1$s a été attaqué.e, par %2$s.  Heureusement, ils ne semblent pas avoir atteint leur objectif."
 ]', 'Phrases pour signaler au defenseur qu’une localisation pas été attaquer sans succée')
 
 -- %1$s: nom du lieu attaqué 
