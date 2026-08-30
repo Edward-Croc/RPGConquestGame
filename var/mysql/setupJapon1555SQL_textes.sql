@@ -433,4 +433,4 @@ VALUES
     "Je peux témoigner que nous avons échoué à défendre %1$s contre les agents du réseau %3$s dans la région %2$s.<br/>",
     "%1$s a été attaqué par des hommes de %3$s, malgré ma présence dans la région %2$s nous n’avons pas pu repousser cette attaque.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec de la défense')
-;
+ON DUPLICATE KEY UPDATE value=VALUES(value), description=VALUES(description);

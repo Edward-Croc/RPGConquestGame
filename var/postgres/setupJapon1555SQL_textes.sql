@@ -412,4 +412,4 @@ VALUES
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons échoué.<br/>",
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons été battus.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec')
-;
+ON CONFLICT (name) DO UPDATE SET value=EXCLUDED.value, description=EXCLUDED.description;
