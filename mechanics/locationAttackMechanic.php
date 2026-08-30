@@ -307,40 +307,50 @@ function buildLocationCombatPair(array $attacker, array $defender, array $locati
 }
 
 /**
- * Count how many of the given workers are still active this turn.
+ * Return the combatants still active this turn, as a subset of the input rows.
+ *
+ * Rows are returned rather than a count so the caller keeps their controller_id
+ * and enquete_val, which the spoils ranking needs without a second query.
  *
  * @param PDO $pdo : database connection
- * @param array $workerIds : worker ids to test
+ * @param array $combatants : combatant rows from getAgentLocationActionGroups()
  * @param int $turn_number : current turn number
  *
- * @return int : workers whose action_choice is not in INACTIVE_ACTIONS
+ * @return array : the rows whose action_choice is not in INACTIVE_ACTIONS
  */
-function countActiveLocationCombatants(PDO $pdo, array $workerIds, int $turn_number): int
+function getActiveLocationCombatants(PDO $pdo, array $combatants, int $turn_number): array
 {
-    if (empty($workerIds)) {
-        return 0;
+    if (empty($combatants)) {
+        return [];
     }
 
     $prefix = $_SESSION['GAME_PREFIX'];
     // Cast every id so the interpolated list can only ever be integers.
-    $idList = implode(',', array_map('intval', $workerIds));
+    $idList = implode(',', array_map('intval', array_column($combatants, 'worker_id')));
 
     try {
-        $stmt = $pdo->prepare("SELECT action_choice
+        $stmt = $pdo->prepare("SELECT worker_id, action_choice
             FROM {$prefix}worker_actions
             WHERE turn_number = :turn_number AND worker_id IN ({$idList})");
         $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'SELECT survivor action_choice failed: ' . $e->getMessage(), ['worker_ids' => $workerIds, 'turn_number' => $turn_number], 'warning');
-        return 0;
+        game_error_log(__FUNCTION__, 'SELECT survivor action_choice failed: ' . $e->getMessage(), ['turn_number' => $turn_number], 'warning');
+        return [];
     }
 
-    $active = 0;
+    $activeIds = [];
     foreach ($rows as $row) {
         if (!in_array($row['action_choice'], INACTIVE_ACTIONS, true)) {
-            $active++;
+            $activeIds[(int) $row['worker_id']] = true;
+        }
+    }
+
+    $active = [];
+    foreach ($combatants as $combatant) {
+        if (isset($activeIds[(int) $combatant['worker_id']])) {
+            $active[] = $combatant;
         }
     }
 
@@ -423,8 +433,9 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
             $a++;
         }
 
-        $aliveAttackers = countActiveLocationCombatants($pdo, array_column($attackers, 'worker_id'), $turn_number);
-        $aliveDefenders = countActiveLocationCombatants($pdo, array_column($defenders, 'worker_id'), $turn_number);
+        $aliveAttackerRows = getActiveLocationCombatants($pdo, $attackers, $turn_number);
+        $aliveAttackers = count($aliveAttackerRows);
+        $aliveDefenders = count(getActiveLocationCombatants($pdo, $defenders, $turn_number));
         // A missing key must not collapse the threshold to zero and hand over the location.
         $configured = getConfig($pdo, 'locationOverwhelmValue');
         $value = is_numeric($configured) ? (int) $configured : 2;
