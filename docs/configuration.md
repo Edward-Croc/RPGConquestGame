@@ -64,7 +64,7 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 #### Ancienneté d'un lieu
 
-Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Elle est apposée dès le palier nom, donc à tous les niveaux de découverte ; un enquêteur qui n'atteint pas `LOCATIONNAMEDIFF` ne voit rien du tout.
+Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `TEXT_LOCATION_CAN_BE_DESTROYED` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
 
 L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_repaired` :
 
