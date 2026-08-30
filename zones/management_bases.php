@@ -120,7 +120,14 @@ foreach ($sortLabels as $value => $label) {
             <th>attacker_result_text</th>
         </tr>
         <?php foreach ($logs as $log): ?>
-        <tr>
+        <tr
+            class="attack-log-row"
+            data-attack-log-id="<?= (int) $log['id'] ?>"
+            data-location-name="<?= htmlspecialchars($log['location_name'] ?? '', ENT_QUOTES) ?>"
+            data-turn="<?= (int) $log['turn'] ?>"
+            data-success="<?= $log['success'] ? '1' : '0' ?>"
+            data-attacker-controller-id="<?= empty($log['attacker_id']) ? '' : (int) $log['attacker_id'] ?>"
+        >
             <td><?= (int) $log['id'] ?></td>
             <td><?= htmlspecialchars($log['location_name'] ?? '', ENT_QUOTES) ?></td>
             <td><?= htmlspecialchars($log['attacker_name'] ?? 'Inconnu', ENT_QUOTES) ?></td>

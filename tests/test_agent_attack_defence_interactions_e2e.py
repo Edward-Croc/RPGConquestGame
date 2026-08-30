@@ -27,13 +27,14 @@ needed here either.
 Combat math (TestConfig defaults, MINROLL=MAXROLL=3 so the dice roll used
 by activeDefenceActions is numerically identical to PASSIVEVAL used by
 passiveDefenceActions — see the note below):
-  Chain_A (Alpha) 8/8/7, Chain_B (Beta) 7/4/5, Chain_C (Charlie) 6/4/4,
+  Inv_Atk_1 (Alpha) 7/9/7, Chain_A (Alpha) 8/8/7, Chain_B (Beta) 7/4/5,
+  Chain_C (Charlie) 6/4/4,
   Chain_D (Delta) 3/3/3 — full power breakdown in
   test_agent_combat_e2e.py's module docstring.
   attack_difference = attacker.attack_val - defender.defence_val
   ATTACKDIFF0=1 (kill), ATTACKDIFF1=3 (capture)
 
-  Pair 1 (defend_location target) : Chain_A (atk=8) attacks Chain_B
+  Pair 1 (defend_location target) : Inv_Atk_1 (atk=9) attacks Chain_B
     (defend_location, def=5). diff=3 >= ATTACKDIFF1=3 -> CAPTURE.
   Pair 2 (attack_location target) : Chain_C (atk=4) attacks Chain_D
     (attack_location, def=3). diff=1 >= ATTACKDIFF0=1, < 3 -> KILL.
@@ -146,14 +147,14 @@ def interactions_state(browser):
         chain_d_id = ui_worker_id(page, 'Chain_D', base_url=PHP_BASE_URL)
         chain_e_id = ui_worker_id(page, 'Chain_E', base_url=PHP_BASE_URL)
 
-        # 5.A.II pair 1 : Chain_B defends Echo-Base ; Chain_A attacks Chain_B.
+        # 5.A.II pair 1 : Chain_B defends Echo-Base ; Inv_Atk_1 attacks Chain_B.
         _queue_location_action(page, chain_b_id, 'defend_location', echo_base_id)
         _state['chain_b_pre_eot_state'] = ui_worker_action_state(
             page, 'Chain_B', base_url=PHP_BASE_URL
         )
         # First attack in this file -> via the rendered 'Attaquer' button
         # (once-per-file rule); subsequent attacks reuse the URL-driver.
-        ui_attack_click(page, 'Chain_A', 'Chain_B')
+        ui_attack_click(page, 'Inv_Atk_1', 'Chain_B')
 
         # 5.A.II pair 2 : Chain_D attacks (queues attack_location on)
         # Echo-Base ; Chain_C attacks Chain_D.
@@ -170,7 +171,7 @@ def interactions_state(browser):
         # Turn 1 -> 2 : resolves combat + investigation.
         end_turn(page, PHP_BASE_URL)
 
-        _state['chain_a_report'] = worker_report_html(page, 'Chain_A', base_url=PHP_BASE_URL)
+        _state['chain_a_report'] = worker_report_html(page, 'Inv_Atk_1', base_url=PHP_BASE_URL)
         _state['chain_b_state'] = ui_worker_action_state(page, 'Chain_B', base_url=PHP_BASE_URL)
         _state['chain_c_report'] = worker_report_html(page, 'Chain_C', base_url=PHP_BASE_URL)
         _state['chain_d_state'] = ui_worker_action_state(page, 'Chain_D', base_url=PHP_BASE_URL)
@@ -217,12 +218,12 @@ class TestAgentAttackDefenceTargetCrossMechanic:
         )
 
     def test_attack_against_defend_location_target_captures(self):
-        """Chain_A (atk=8) vs Chain_B (defend_location, def=5) :
+        """Inv_Atk_1 (atk=9) vs Chain_B (defend_location, def=5+1=6) :
         diff=3 >= ATTACKDIFF1=3 -> CAPTURE. Proves defend_location is not
         silently excluded as a combat target."""
         html = _state['chain_a_report']
         assert 'Captured' in html and 'Chain_B' in html, (
-            "Chain_A's report should mention capturing Chain_B "
+            "Inv_Atk_1's report should mention capturing Chain_B "
             "(defend_location target) -- attackMechanic regression?"
         )
         assert _worker_is_downed(_state['chain_b_state']), (
