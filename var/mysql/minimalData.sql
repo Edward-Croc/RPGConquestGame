@@ -158,6 +158,12 @@ VALUES
     ('textLocationAttackResolved', 'Attaque sur %s en fin de tour %d : %s.', 'End-of-turn resolved-attack message. Placeholders. location name, resolved_turn, outcome text'),
     ('textLocationAttackDestroyed', 'Le lieu %1$s a été détruit avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack arrives after a prior attack in the same turn destroyed the target. Placeholder: %1$s = location name.'),
     ('textLocationAttackMoved', 'Le lieu %1$s avait été déplacé avant notre arrivée.', 'Attacker-only log line when an end-turn queued attack is cancelled because the target base moved before resolution. Placeholder: %1$s = location name.'),
+    ('textLocationAgeOriginal', '["Ce %1$s a été construit %2$s."]', 'Location discovery : pool for a place that never changed state. %1$s = location name, %2$s = the age clause.'),
+    ('textLocationAgeRuined', '["Ce %1$s a été détruit par une attaque %2$s."]', 'Location discovery : pool for a place currently in ruins, awaiting repair. Same placeholders.'),
+    ('textLocationAgeRestored', '["Ce %1$s a été relevé de ses ruines %2$s."]', 'Location discovery : pool for a place that was ruined then restored. Same placeholders.'),
+    ('textLocationAgeLongAgo', '["il y a des années"]', 'Location discovery : age clause for a place that has always been there (setup_turn 0 and never updated).'),
+    ('textLocationAgeThisTurn', '["ce %1$s"]', 'Location discovery : age clause for a change made this very turn. %1$s = timeValue.'),
+    ('textLocationAgeTurnsAgo', '["il y a %1$d %2$s"]', 'Location discovery : age clause with the elapsed turn count. %1$d = turns, %2$s = timeValue.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')
