@@ -217,6 +217,20 @@ function getLocationOverwhelmMode(PDO $pdo): string
 }
 
 /**
+ * Return how the location attack report names the assailants, falling back to
+ * 'networks' on unknown values.
+ *
+ * @param PDO $pdo : database connection
+ *
+ * @return string : 'networks' or 'agents'
+ */
+function getLocationAttackCreditMode(PDO $pdo): string
+{
+    $value = strtolower(trim((string) getConfig($pdo, 'locationAttackCreditMode')));
+    return in_array($value, ['networks', 'agents'], true) ? $value : 'networks';
+}
+
+/**
  * Calculates the final values for each worker depending on their chosen action.
  *
  * @param PDO $pdo : database connection
