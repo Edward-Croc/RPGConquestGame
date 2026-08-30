@@ -132,12 +132,12 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
         if ((int) $row['found_can_be_destroyed'] == 1) {
             $descBody .= $txtBag['locationDestroyableText'][array_rand($txtBag['locationDestroyableText'])];
         }
+        // State disclosure : gated with the destroyable text, never at the name tier.
+        $descBody .= ' ' . buildLocationAgeSentence($row, $txtBag);
     } else {
         $nameTpl = $txtBag['locationNameText'][array_rand($txtBag['locationNameText'])];
         $descBody = sprintf($nameTpl, $foundName);
     }
-
-    $descBody .= ' ' . buildLocationAgeSentence($row, $txtBag);
 
     $artefactsHtml = '';
     if ($currentLevel >= 2) {
