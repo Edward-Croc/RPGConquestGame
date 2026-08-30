@@ -410,6 +410,12 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         $attackers = excludeLocationCombatSaboteurs($pdo, $group['attackers'], $location, $turn_number);
         $defenders = $group['defenders'];
 
+        // Defenders alone are not an assault : no verdict, no log, no owner report.
+        if (empty($attackers)) {
+            game_error_log(__FUNCTION__, 'no attacker reached location_id ' . $locationId, ['defenders' => count($defenders)], 'debug');
+            continue;
+        }
+
         echo sprintf(
             '<p>%s : %d attaquant(s) contre %d défenseur(s)</p>',
             htmlspecialchars((string) $location['name']),
@@ -461,7 +467,7 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         );
 
         $participants = array_merge($group['attackers'], $group['defenders']);
-        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $falls, $turn_number)) {
+        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $aliveDefenders, $falls, $turn_number)) {
             return false;
         }
     }
@@ -691,12 +697,13 @@ function resetWorkersTargetingLocation(PDO $pdo, array $participants, int $turn_
  * @param array $engagedAttackers : attackers that reached the place, dead ones included
  * @param array $allParticipants : every combatant of the group, saboteurs included
  * @param array $aliveAttackers : attacker rows still active after the ladder
+ * @param int $aliveDefenderCount : defenders still active after the ladder
  * @param bool $falls : the verdict computed by resolveAgentLocationCombat()
  * @param int $turn_number : current turn number
  *
  * @return bool : false only on a DB failure that must abort the end of turn
  */
-function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAttackers, array $allParticipants, array $aliveAttackers, bool $falls, int $turn_number): bool
+function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAttackers, array $allParticipants, array $aliveAttackers, int $aliveDefenderCount, bool $falls, int $turn_number): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with location_id : ' . $location['id'], ['falls' => $falls, 'turn_number' => $turn_number], 'debug');
@@ -721,7 +728,8 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
             $targetControllerId,
             sprintf((string) getConfig($pdo, 'textLocationNotDestroyed'), $locationName),
             sprintf(locationAttackText($pdo, false), $locationName, $attackerClause),
-            $aliveCount
+            $aliveCount,
+            $aliveDefenderCount
         );
     }
 
@@ -777,7 +785,8 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
         $targetControllerId,
         $attackerText,
         $targetText,
-        $aliveCount
+        $aliveCount,
+        $aliveDefenderCount
     );
 }
 
