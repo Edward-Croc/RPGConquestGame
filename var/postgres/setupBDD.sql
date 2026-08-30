@@ -99,7 +99,8 @@ CREATE TABLE {prefix}locations (
     description text NOT NULL,
     hidden_description text DEFAULT NULL,
     zone_id INT,
-    setup_turn INT DEFAULT 0, -- Turn in which the location was created
+    setup_turn INT DEFAULT 0, -- Turn in which the location was created, or last changed state
+    is_updated_location BOOLEAN DEFAULT FALSE, -- TRUE once the location changed state at least once
     discovery_diff INT DEFAULT 0,
     controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed BOOLEAN DEFAULT FALSE,

@@ -331,8 +331,11 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'warning');
     }
 
-    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, can_be_destroyed, is_base, location_types) VALUES
-        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, True, True, '[\"fortress\"]')";
+    $mechanics = getMechanics($pdo);
+    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+
+    $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, setup_turn, can_be_destroyed, is_base, location_types) VALUES
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, :setup_turn, True, True, '[\"fortress\"]')";
     try {
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -343,6 +346,7 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         $stmt->bindParam(':hidden_description', $hidden_description, PDO::PARAM_STR);
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
+        $stmt->bindParam(':setup_turn', $turn_number, PDO::PARAM_INT);
         $stmt->execute();
         $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {
@@ -351,8 +355,6 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
     }
 
     // Owner must know own base — CKL-joined panels otherwise hide it.
-    $mechanics = getMechanics($pdo);
-    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
     $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
     addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
 

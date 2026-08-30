@@ -487,17 +487,17 @@ La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le
         "future_location": {
             "name": "Camp de la révolte Takeda (武田)", "discovery_diff": 7,
             "is_base": 1,
-            "can_be_destroyed": 0, "can_be_repaired": 1, "save_to_json": "TRUE",
+            "can_be_destroyed": 1, "can_be_repaired": 0, "save_to_json": "TRUE",
             "description": "Un camp militaire de la révolte Takeda (武田), clairement établi sur la plaine du Kansai. Reste à déterminer s’ils nourrissent encore des intentions belliqueuses envers le Shōgun. (Si vous souhaitez entrer en contact avec le clan Takeda, adressez-vous à un orga !)"
         }
     }}'
 );
 
-INSERT INTO {prefix}locations (name, description, discovery_diff, can_be_destroyed, can_be_repaired, zone_id, controller_id, activate_json) VALUES
+INSERT INTO {prefix}locations (name, description, discovery_diff, can_be_destroyed, can_be_repaired, is_updated_location, zone_id, controller_id, activate_json) VALUES
     ('Ruines du Daihō-ji (大宝寺)',
         'Le Daihō-ji (大宝寺), 44ème temple du pèlerinage de Shikoku, n’a que quelques piliers carbonisés qui subsistent, noirs et fissurés par les flammes. Ici, les pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent gravée d’inscriptions latines.
 Les paysans parlent d’un prêtre chrétien et de l’Inquisition jésuite elle-même. Mais les recherches menées par les Yamabushi locaux (milices et petits samouraïs vassaux) n’ont rien révélé de probant. (Peut-être pouvons-nous restaurer ce lieu ?)',
-         5, 0, 1, (SELECT ID FROM {prefix}zones WHERE name = 'Montagnes d’Iyo'), NULL,
+         5, 0, 1, True, (SELECT ID FROM {prefix}zones WHERE name = 'Montagnes d’Iyo'), NULL,
         '{"update_location": {
                 "name": "Temple Daihō-ji (大宝寺)", "discovery_diff": 6,
                 "can_be_destroyed": 1, "can_be_repaired": 0,
