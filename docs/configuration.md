@@ -64,6 +64,38 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 - **`textesAgentReminderLabel`** (= `Rappel des informations connues`) — étiquette du `<summary>` qui replie les slabs déjà connus dans la variante « upgrade ».
 - **`textesLocationStillHere`** (= `["Le lieu %1$s est toujours là."]`) — résumé pour un lieu déjà répertorié dans `controller_known_locations` sans nouvelle découverte. `%1$s` = nom du lieu.
 
+#### Ancienneté d'un lieu
+
+Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `TEXT_LOCATION_CAN_BE_DESTROYED` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
+
+L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_repaired` :
+
+| `is_updated_location` | `can_be_repaired` | Clé utilisée |
+|---|---|---|
+| `0` | — | `textLocationAgeOriginal` — le lieu n'a jamais changé d'état |
+| `1` | `1` | `textLocationAgeRuined` — en ruine, en attente de réparation |
+| `1` | `0` | `textLocationAgeRestored` — ruiné puis relevé |
+
+- **`textLocationAgeOriginal`** (= `["Ce %1$s a été construit %2$s."]`)
+- **`textLocationAgeRuined`** (= `["Ce %1$s a été détruit par une attaque %2$s."]`)
+- **`textLocationAgeRestored`** (= `["Ce %1$s a été relevé de ses ruines %2$s."]`)
+
+Pour ces trois clés, `%1$s` = nom du lieu et `%2$s` = la locution d'âge ci-dessous.
+
+L'âge est lu sur `setup_turn`, avec une sentinelle : le tour `0` se lit « depuis toujours » **sauf** si le lieu a réellement changé d'état.
+
+| `setup_turn` | `is_updated_location` | Lecture |
+|---|---|---|
+| `0` | `0` | `textLocationAgeLongAgo` |
+| `0` | `1` | datée — `ThisTurn` au tour du changement, puis `TurnsAgo` |
+| `> 0` | — | datée, par l'écart au tour courant |
+
+- **`textLocationAgeLongAgo`** (= `["il y a des années"]`) — aucun placeholder.
+- **`textLocationAgeThisTurn`** (= `["ce %1$s"]`) — `%1$s` = `timeValue`.
+- **`textLocationAgeTurnsAgo`** (= `["il y a %1$d %2$s"]`) — `%1$d` = nombre de tours écoulés, `%2$s` = `timeValue`.
+
+Un pool absent ou illisible produit une phrase vide et une entrée `warning` au journal, sans casser le rapport.
+
 ### Combat entre agents
 
 **`ATTACKDIFF0`** (= 1), **`ATTACKDIFF1`** (= 3) — Seuils de différence `attack_val − defence_val` pour les résultats d'attaque. En-dessous de `ATTACKDIFF0` : échec (la cible apprend le nom de l'attaquant). À partir de `ATTACKDIFF0` : élimination de la cible. À partir de `ATTACKDIFF1` : capture vivante (le contrôleur obtient l'accès aux rapports). Augmenter `ATTACKDIFF1` rend les captures plus rares.
@@ -91,6 +123,10 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 **`maxBonusDiscoveryDiffPowers`** (= 5), **`maxBonusDiscoveryDiffWorkers`** (= 4), **`maxBonusDiscoveryDiffTurns`** (= 3) — Plafonds par composante. Au-delà du plafond, la composante est tronquée. Mettre un plafond à `0` retire la limite (attention : peut produire des bases impossibles à découvrir).
 
 La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalculateBaseDefence` (`zones/functions.php`). La formule complète vit dans `calculateSecretLocationDiscoveryDiff`.
+
+**`{prefix}locations.setup_turn` et `{prefix}locations.is_updated_location`** — `setup_turn` porte le tour de la dernière mise en place du lieu. Il est estampillé par `createBase` (construction), `updateLocation` (tout changement d'état) et `moveBase` (déménagement) ; les lieux de décor seedés restent à `0`, ce qui leur conserve l'écart maximal. `is_updated_location` vaut `false` à la construction et passe à `true` au premier changement d'état : seul `updateLocation` le lève, un déménagement ne le touche pas.
+
+Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, `Defence` et `DiscoveryDiff`. Un changement d'état remet donc l'ancienneté à zéro **sur les deux axes** — un lieu fraîchement construit, ruiné ou déplacé est à la fois plus fragile et plus facile à découvrir, jusqu'à ce qu'il ait de nouveau vieilli.
 
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
@@ -235,6 +271,8 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 **Spécifique `endTurn` :** textes d'échec d'arrivée `textLocationAttackDestroyed` (cible détruite par une attaque antérieure) et `textLocationAttackMoved` (cible déplacée avant résolution) — visibles uniquement par l'attaquant.
 
 **Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible — liste JSON de formulations, tirée au sort comme les autres pools de texte, avec repli sur une phrase en dur si le JSON est invalide. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
+
+**Ancienneté du lieu :** le terme `baseDefenceAddTurns` se calcule sur `{prefix}locations.setup_turn`, désormais estampillé à chaque construction, changement d'état et déménagement (voir « Difficulté de découverte des places fortes »). Un lieu neuf ou fraîchement ruiné n'a donc plus le bonus d'ancienneté maximal qu'il recevait quand la colonne restait à `0`.
 
 ## 3. Recrutement et progression des Agents (workers)
 

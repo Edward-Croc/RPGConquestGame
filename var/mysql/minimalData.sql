@@ -176,6 +176,12 @@ VALUES
     ('locationAttackCreditMode', 'networks', 'agent_attack_defence : how the target_result_text names the assailants. networks = list the attacking network ids. agents = name each agent, attributing a network only for those the owner has already identified. Unknown values fall back to networks.'),
     ('TEXT_LOCATION_ATTACK_SUCCESS', '["Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès."]', 'Pool shown to the location owner when the attack succeeds. %1$s = location name, %2$s = the assailants, worded per locationAttackCreditMode.'),
     ('TEXT_LOCATION_ATTACK_FAIL', '["Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils ne semblent pas avoir atteint leur objectif."]', 'Pool shown to the location owner when the attack fails. Same placeholders as TEXT_LOCATION_ATTACK_SUCCESS.'),
+    ('textLocationAgeOriginal', '["Ce %1$s a été construit %2$s."]', 'Location discovery : pool for a place that never changed state. %1$s = location name, %2$s = the age clause.'),
+    ('textLocationAgeRuined', '["Ce %1$s a été détruit par une attaque %2$s."]', 'Location discovery : pool for a place currently in ruins, awaiting repair. Same placeholders.'),
+    ('textLocationAgeRestored', '["Ce %1$s a été relevé de ses ruines %2$s."]', 'Location discovery : pool for a place that was ruined then restored. Same placeholders.'),
+    ('textLocationAgeLongAgo', '["il y a des années"]', 'Location discovery : age clause for a place that has always been there (setup_turn 0 and never updated).'),
+    ('textLocationAgeThisTurn', '["ce %1$s"]', 'Location discovery : age clause for a change made this very turn. %1$s = timeValue.'),
+    ('textLocationAgeTurnsAgo', '["il y a %1$d %2$s"]', 'Location discovery : age clause with the elapsed turn count. %1$d = turns, %2$s = timeValue.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')

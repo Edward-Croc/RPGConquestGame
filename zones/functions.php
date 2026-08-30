@@ -1117,6 +1117,12 @@ function updateLocation(PDO $pdo, array $location, array $activate_json): bool
     }
     // Add the activate_json to the set clauses
     $set_clauses[] = "activate_json = :activate_json";
+    // Any state change resets the age and marks the location as no longer original.
+    $set_clauses[] = "setup_turn = :setup_turn";
+    $set_clauses[] = "is_updated_location = :is_updated_location";
+    $mechanics = getMechanics($pdo);
+    $setup_turn = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    $isUpdated = true;
     $prefix = $_SESSION['GAME_PREFIX'];
     // Update the location
     try {
@@ -1130,6 +1136,8 @@ function updateLocation(PDO $pdo, array $location, array $activate_json): bool
                 }
             }
             $stmt->bindValue(':activate_json', $encoded_activate_json, PDO::PARAM_STR);
+            $stmt->bindValue(':setup_turn', $setup_turn, PDO::PARAM_INT);
+            $stmt->bindValue(':is_updated_location', $isUpdated, PDO::PARAM_BOOL);
             $stmt->bindParam(':id', $params[':id'], PDO::PARAM_INT);
             $stmt->execute();
             return true;

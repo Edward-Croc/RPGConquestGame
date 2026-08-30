@@ -53,6 +53,9 @@ function getLocationSearcherComparisons(PDO $pdo, int|null $turn_number = null, 
             l.description AS found_description,
             l.hidden_description AS found_hidden_description,
             l.can_be_destroyed AS found_can_be_destroyed,
+            l.can_be_repaired AS found_can_be_repaired,
+            l.setup_turn AS found_setup_turn,
+            l.is_updated_location AS found_is_updated_location,
             l.controller_id AS location_controller,
             CONCAT(lc.firstname, ' ', lc.lastname) AS location_controller_name,
             (s.searcher_enquete_val - l.discovery_diff) AS enquete_difference
@@ -122,16 +125,18 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
 
     if ($currentLevel >= 1) {
         $descTpl = $txtBag['locationDescText'][array_rand($txtBag['locationDescText'])];
-        $descbody = sprintf($descTpl, $foundName, $row['found_description']);
+        $descBody = sprintf($descTpl, $foundName, $row['found_description']);
         if ($foundSecretFlag) {
-            $descbody .= "<br />" . $row['found_hidden_description'];
+            $descBody .= "<br />" . $row['found_hidden_description'];
         }
         if ((int) $row['found_can_be_destroyed'] == 1) {
-            $descbody .= $txtBag['locationDestroyableText'][array_rand($txtBag['locationDestroyableText'])];
+            $descBody .= $txtBag['locationDestroyableText'][array_rand($txtBag['locationDestroyableText'])];
         }
+        // State disclosure : gated with the destroyable text, never at the name tier.
+        $descBody .= ' ' . buildLocationAgeSentence($row, $txtBag);
     } else {
         $nameTpl = $txtBag['locationNameText'][array_rand($txtBag['locationNameText'])];
-        $descbody = sprintf($nameTpl, $foundName);
+        $descBody = sprintf($nameTpl, $foundName);
     }
 
     $artefactsHtml = '';
@@ -153,16 +158,16 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
     }
 
     if (empty($prevCkl)) {
-        $coreElement = "<p>" . $descbody . "</p>";
+        $coreElement = "<p>" . $descBody . "</p>";
     } else {
         $prevSecret = !empty($prevCkl['found_secret']);
         $newSecret = (!$prevSecret) && $foundSecretFlag;
         if ($newSecret) {
-            $coreElement = "<p>" . $descbody . "</p>";
+            $coreElement = "<p>" . $descBody . "</p>";
         } else {
             $stillTpl = $txtBag['textesLocationStillHere'][array_rand($txtBag['textesLocationStillHere'])];
             $summary = sprintf($stillTpl, $foundName);
-            $coreElement = '<details><summary>' . $summary . '</summary><p>' . $descbody . '</p></details>';
+            $coreElement = '<details><summary>' . $summary . '</summary><p>' . $descBody . '</p></details>';
         }
     }
 
@@ -204,6 +209,14 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool
         'locationDescText'            => json_decode(getConfig($pdo, 'TEXT_LOCATION_DISCOVERED_DESCRIPTION'), true),
         'locationDestroyableText'     => json_decode(getConfig($pdo, 'TEXT_LOCATION_CAN_BE_DESTROYED'), true),
         'textesLocationStillHere'     => json_decode(getConfig($pdo, 'textesLocationStillHere'), true),
+        'textLocationAgeOriginal'     => json_decode(getConfig($pdo, 'textLocationAgeOriginal'), true),
+        'textLocationAgeRuined'       => json_decode(getConfig($pdo, 'textLocationAgeRuined'), true),
+        'textLocationAgeRestored'     => json_decode(getConfig($pdo, 'textLocationAgeRestored'), true),
+        'textLocationAgeLongAgo'      => json_decode(getConfig($pdo, 'textLocationAgeLongAgo'), true),
+        'textLocationAgeThisTurn'     => json_decode(getConfig($pdo, 'textLocationAgeThisTurn'), true),
+        'textLocationAgeTurnsAgo'     => json_decode(getConfig($pdo, 'textLocationAgeTurnsAgo'), true),
+        'timeValue'                   => (string) getConfig($pdo, 'timeValue'),
+        'turn_number'                 => $turn_number,
     ];
 
     $textForZoneType = getConfig($pdo, 'textForZoneType');
@@ -272,4 +285,66 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool
 
     echo '<p> locationSearchMechanic : DONE </p> </div>';
     return true;
+}
+
+/**
+ * Build the sentence telling since when a location stands, or that it was razed.
+ *
+ * State comes from is_updated_location combined with can_be_repaired : never changed,
+ * currently in ruins, or restored. Age comes from setup_turn, with turn 0 reading as
+ * "always been there" unless the place has actually changed state.
+ *
+ * @param array $row : location row carrying found_name, found_setup_turn,
+ *   found_is_updated_location and found_can_be_repaired
+ * @param array $txtBag : loaded text pools plus timeValue and turn_number
+ *
+ * @return string : the rendered sentence
+ */
+function buildLocationAgeSentence(array $row, array $txtBag): string
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'txtBag' => $txtBag], 'debug');
+
+    $isUpdated = !empty($row['found_is_updated_location']);
+    $setupTurn = (int) ($row['found_setup_turn'] ?? 0);
+    $turnNumber = (int) ($txtBag['turn_number'] ?? 0);
+    $timeValue = (string) ($txtBag['timeValue'] ?? '');
+
+    if (!$isUpdated) {
+        $stateKey = 'textLocationAgeOriginal';
+    } elseif (!empty($row['found_can_be_repaired'])) {
+        $stateKey = 'textLocationAgeRuined';
+    } else {
+        $stateKey = 'textLocationAgeRestored';
+    }
+
+    // Turn 0 reads as immemorial, unless the place actually changed state there.
+    if ($setupTurn === 0 && !$isUpdated) {
+        $ageClause = pickLocationAgeText($txtBag, 'textLocationAgeLongAgo');
+    } elseif ($turnNumber <= $setupTurn) {
+        $ageClause = sprintf(pickLocationAgeText($txtBag, 'textLocationAgeThisTurn'), $timeValue);
+    } else {
+        $ageClause = sprintf(pickLocationAgeText($txtBag, 'textLocationAgeTurnsAgo'), $turnNumber - $setupTurn, $timeValue);
+    }
+
+    return sprintf(pickLocationAgeText($txtBag, $stateKey), $row['found_name'], $ageClause);
+}
+
+/**
+ * Pick one line from a text pool, falling back to an empty template when unseeded.
+ *
+ * @param array $txtBag : loaded text pools
+ * @param string $key : pool name
+ *
+ * @return string : a sprintf template
+ */
+function pickLocationAgeText(array $txtBag, string $key): string
+{
+    $pool = $txtBag[$key] ?? null;
+    if (empty($pool) || !is_array($pool)) {
+        game_error_log(__FUNCTION__, 'missing or unusable text pool : ' . $key, [], 'warning');
+        return '';
+    }
+
+    return (string) $pool[array_rand($pool)];
 }

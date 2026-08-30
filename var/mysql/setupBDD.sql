@@ -101,7 +101,8 @@ CREATE TABLE {prefix}locations (
     description TEXT NOT NULL,
     hidden_description TEXT DEFAULT NULL,
     zone_id INT,
-    setup_turn INT DEFAULT 0, -- Turn in which the location was created
+    setup_turn INT DEFAULT 0, -- Turn in which the location was created, or last changed state
+    is_updated_location TINYINT(1) DEFAULT 0, -- TRUE once the location changed state at least once
     discovery_diff INT DEFAULT 0,
     controller_id INT DEFAULT NULL, -- Owner of secret location
     can_be_destroyed TINYINT(1) DEFAULT 0,
