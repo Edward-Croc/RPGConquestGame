@@ -78,7 +78,7 @@ from helpers import (
     ui_attack_click, ui_attack_location, ui_combat_filter_options,
     ui_combat_logs, ui_combat_unresolved_count, ui_config_value,
     ui_controller_id, ui_defend_location, ui_location_id,
-    ui_recruit_perfect_worker, ui_worker_id, worker_report_html,
+    ui_recruit_perfect_worker, ui_worker_id, worker_report_html, worker_report_section,
 )
 
 # Location name -> (attacker lastnames, defender lastnames), in the order queued.
@@ -230,13 +230,22 @@ class TestLocationCombatIsLogged:
 class TestLadderProgression:
     """A killer keeps going; a riposte rotates the attacker."""
 
-    def test_one_attacker_walks_two_defenders(self):
+    def test_one_attacker_walks_two_defenders(self, page: Page):
         rows = _rows_for("Echo-Base")
         assert len(rows) == 2, f"expected two duels for one attacker, got {rows}"
         assert {r["attacker_worker_id"] for r in rows} == {_wid("Inv_Atk_1")}
         assert {r["defender_worker_id"] for r in rows} == {
             _wid("Inv_Def_1"), _wid("Inv_Def_2")
         }
+        # Those two duels are a location assault, so they are filed under
+        # « Attaque de lieu » and not among ordinary agent attacks.
+        html = worker_report_html(page, "Inv_Atk_1", base_url=PHP_BASE_URL)
+        assert worker_report_section(html, "Attaque de lieu :"), (
+            "Inv_Atk_1 fought two location duels and must have that report section"
+        )
+        assert "Inv_Def_1" not in worker_report_section(html, "Attaques :"), (
+            "a location duel must not be filed in the agent-attack section"
+        )
 
     def test_both_of_those_duels_are_captures(self):
         # 8 - 3 and 8 - 2 both clear ATTACKDIFF1 = 3.

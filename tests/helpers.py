@@ -1365,6 +1365,20 @@ def ui_move_click(page: Page, lastname: str, zone_name: str,
     page.wait_for_load_state("load")
 
 
+def worker_report_section(html: str, heading: str) -> str:
+    """Return one section of a worker's report page, sliced on its <h4> heading.
+
+    workers/view.php prints each report key as `<h4 …>HEADING</h4> body`, so a
+    section runs from its heading to the next one. Use it to assert WHERE a line
+    was filed, not merely that the page contains it somewhere.
+    """
+    start = html.find(heading)
+    if start < 0:
+        return ""
+    nxt = html.find("<h4", start)
+    return html[start:nxt] if nxt > 0 else html[start:]
+
+
 def worker_report_html(page: Page, lastname: str, base_url: str = None):
     """Navigate to a worker's action.php page and return the HTML content.
 

@@ -61,7 +61,7 @@ from helpers import (
     ui_investigate, ui_investigate_click,
     ui_claim, ui_claim_click,
     ui_move, ui_move_click,
-    worker_report_html, cached_faction_sections, ui_worker_action_state,
+    worker_report_html, worker_report_section, cached_faction_sections, ui_worker_action_state,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -261,8 +261,11 @@ class TestBaseCombat:
         view shows 'A disparu' (txt_ps_captured) and no action form.
         """
         html = worker_report_html(page, 'Inv_Atk_1')
-        assert 'Captured' in html and 'Inv_Def_1' in html, \
-            "Attacker report should mention capture of Inv_Def_1"
+        # Scoped to the section : an ordinary assassination must not be filed
+        # under « Attaque de lieu », which is where location duels now go.
+        section = worker_report_section(html, 'Attaques :')
+        assert 'Captured' in section and 'Inv_Def_1' in section, \
+            "Capture of Inv_Def_1 should be filed in the agent-attack section"
         assert _ui_worker_is_downed(page, 'Inv_Def_1'), \
             "Inv_Def_1 view should show 'A disparu' (captured) and no action form"
 
@@ -273,8 +276,9 @@ class TestBaseCombat:
         view shows 'A disparu' (txt_ps_dead) and no action form.
         """
         html = worker_report_html(page, 'Inv_Atk_2')
-        assert 'succeeded' in html and 'Inv_Def_2' in html, \
-            "Attacker report should mention successful attack on Inv_Def_2"
+        section = worker_report_section(html, 'Attaques :')
+        assert 'succeeded' in section and 'Inv_Def_2' in section, \
+            "Successful attack on Inv_Def_2 should be filed in the agent-attack section"
         assert _ui_worker_is_downed(page, 'Inv_Def_2'), \
             "Inv_Def_2 view should show 'A disparu' (dead) and no action form"
 
@@ -286,8 +290,9 @@ class TestBaseCombat:
         still shows 'Surveille' (txt_ps_passive) and the action form.
         """
         html = worker_report_html(page, 'Even_Atk')
-        assert 'failed' in html and 'Even_Def' in html, \
-            "Attacker report should mention failed attack on Even_Def"
+        section = worker_report_section(html, 'Attaques :')
+        assert 'failed' in section and 'Even_Def' in section, \
+            "Failed attack on Even_Def should be filed in the agent-attack section"
         assert _ui_worker_is_passive(page, 'Even_Def'), \
             "Even_Def should still be passive (Surveille) after the failed attack"
 
@@ -300,8 +305,9 @@ class TestBaseCombat:
         view shows 'A disparu' (dead); defender stays 'Surveille' (passive).
         """
         html = worker_report_html(page, 'Counter_Atk')
-        assert 'countered' in html and 'Counter_Def' in html, \
-            "Attacker report should mention counter-attack from Counter_Def"
+        section = worker_report_section(html, 'Attaques :')
+        assert 'countered' in section and 'Counter_Def' in section, \
+            "Counter-attack from Counter_Def should be filed in the agent-attack section"
         assert _ui_worker_is_downed(page, 'Counter_Atk'), \
             "Counter_Atk should be dead (A disparu) after being countered"
         assert _ui_worker_is_passive(page, 'Counter_Def'), \
