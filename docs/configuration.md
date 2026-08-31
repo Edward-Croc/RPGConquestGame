@@ -76,9 +76,9 @@ L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_r
 | `1` | `1` | `textLocationAgeRuined` — en ruine, en attente de réparation |
 | `1` | `0` | `textLocationAgeRestored` — ruiné puis relevé |
 
-- **`textLocationAgeOriginal`** (= `["Ce %1$s a été construit %2$s."]`)
-- **`textLocationAgeRuined`** (= `["Ce %1$s a été détruit par une attaque %2$s."]`)
-- **`textLocationAgeRestored`** (= `["Ce %1$s a été relevé de ses ruines %2$s."]`)
+- **`textLocationAgeOriginal`** (= `["Ce.tte %1$s a été construit.e %2$s."]`)
+- **`textLocationAgeRuined`** (= `["Ce.tte %1$s a été détruit.e par une attaque %2$s."]`)
+- **`textLocationAgeRestored`** (= `["Ce.tte %1$s a été relevé.e de ses ruines %2$s."]`)
 
 Pour ces trois clés, `%1$s` = nom du lieu et `%2$s` = la locution d'âge ci-dessous.
 

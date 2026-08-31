@@ -12,7 +12,7 @@ The sentence is built from two pools (`buildLocationAgeSentence`):
   age    — textLocationAgeLongAgo / ThisTurn / TurnsAgo, chosen from setup_turn
 
 With the minimalData seeds and TestConfig's `timeValue = Tour` that renders as
-"Ce <name> a été construit il y a des années." and its variants.
+"Ce.tte <name> a été construit.e il y a des années." and its variants.
 
 Reading the reports
   A worker's page accumulates its reports turn after turn, so a phrase written on
@@ -207,11 +207,11 @@ class TestScenery:
     """setup_turn 0 with no state change reads as immemorial."""
 
     def test_a_seeded_place_has_always_been_there(self):
-        assert "Ce Location A a été construit il y a des années." in _state["t1"]
+        assert "Ce.tte Location A a été construit.e il y a des années." in _state["t1"]
 
     def test_a_base_built_during_setup_is_scenery_too(self):
         # Built at turn 0, so the sentinel rule applies and it must NOT be dated.
-        assert f"Ce {_state['base_name']} a été construit il y a des années." in _state["t1"], (
+        assert f"Ce.tte {_state['base_name']} a été construit.e il y a des années." in _state["t1"], (
             "a base built at turn 0 must read as scenery, not as freshly built"
         )
 
@@ -226,7 +226,7 @@ class TestTierBoundary:
     """
 
     def test_the_description_tier_gets_the_sentence(self):
-        assert "Ce Location A a été construit il y a des années." in _state["t1_desc_tier"], (
+        assert "Ce.tte Location A a été construit.e il y a des années." in _state["t1_desc_tier"], (
             "a searcher clearing LOCATIONINFORMATIONDIFF must read the age sentence"
         )
 
@@ -236,13 +236,13 @@ class TestTierBoundary:
         assert "Location A" in _state["t1_name_tier"], (
             "Finder_5 should still reach the name tier on Location A"
         )
-        assert "Ce Location A a été" not in _state["t1_name_tier"], (
+        assert "Ce.tte Location A a été" not in _state["t1_name_tier"], (
             "the name tier must not disclose the location's state"
         )
 
     def test_an_undiscovered_place_is_not_named(self):
         # Paired with its positive : without it, this passes when nothing is emitted.
-        assert "a été construit" in _state["t1"], "Finder_1 should get age sentences"
+        assert "a été construit.e" in _state["t1"], "Finder_1 should get age sentences"
         assert "Civic-Site" not in _state["t1"], (
             "the age sentence must not surface a place the searcher never found"
         )
@@ -252,12 +252,12 @@ class TestRuined:
     """A place swapped into ruins says so, and says when."""
 
     def test_the_ruin_declares_itself(self):
-        assert f"Ce {RUINED_NAME} a été détruit par une attaque" in _state["t2"], (
+        assert f"Ce.tte {RUINED_NAME} a été détruit.e par une attaque" in _state["t2"], (
             "updateLocation must flip the wording to the ruined pool"
         )
 
     def test_the_change_is_dated_to_its_own_turn(self):
-        assert f"Ce {RUINED_NAME} a été détruit par une attaque ce Tour." in _state["t2"], (
+        assert f"Ce.tte {RUINED_NAME} a été détruit.e par une attaque ce Tour." in _state["t2"], (
             "a state change must be dated to the turn it happened, not to turn 0"
         )
 
@@ -267,8 +267,8 @@ class TestRuined:
         # buys. Stated on the ruined name to stay monotone against the page's
         # accumulated older reports, and paired with its positive so it cannot pass
         # when no sentence is emitted at all.
-        assert f"Ce {RUINED_NAME} a été détruit par une attaque" in _state["t2"]
-        assert f"Ce {RUINED_NAME} a été construit" not in _state["t2"], (
+        assert f"Ce.tte {RUINED_NAME} a été détruit.e par une attaque" in _state["t2"]
+        assert f"Ce.tte {RUINED_NAME} a été construit.e" not in _state["t2"], (
             "a place that changed state must have left the 'original' pool"
         )
 
@@ -277,7 +277,7 @@ class TestAgeing:
     """The elapsed-turn clause counts up."""
 
     def test_one_turn_later_it_is_dated_in_turns(self):
-        assert f"Ce {RUINED_NAME} a été détruit par une attaque il y a 1 Tour." in _state["t3"], (
+        assert f"Ce.tte {RUINED_NAME} a été détruit.e par une attaque il y a 1 Tour." in _state["t3"], (
             "the age clause must switch from 'ce Tour' to the elapsed-turn form"
         )
 
@@ -297,14 +297,14 @@ class TestRestored:
     """Repairing a ruin moves it to the restored pool, not back to original."""
 
     def test_the_restored_place_declares_itself(self):
-        assert "a été relevé de ses ruines" in _state["t4"], (
+        assert "a été relevé.e de ses ruines" in _state["t4"], (
             "a place ruined then restored must use the restored pool"
         )
 
     def test_the_restore_is_dated_to_its_own_turn(self):
         # is_updated_location is one-way, so the restore reads from the restored
         # pool and carries the turn it happened on, never the immemorial clause.
-        assert "Ce Test-Future-Location a été relevé de ses ruines ce Tour." in _state["t4"], (
+        assert "Ce.tte Test-Future-Location a été relevé.e de ses ruines ce Tour." in _state["t4"], (
             "the restore must use the restored pool and be dated to its own turn"
         )
 
@@ -313,12 +313,12 @@ class TestMove:
     """moveBase resets the age but not the state."""
 
     def test_a_moved_base_still_reads_as_built(self):
-        assert f"Ce {_state['base_name']} a été construit" in _state["t5"], (
+        assert f"Ce.tte {_state['base_name']} a été construit.e" in _state["t5"], (
             "a move changes where the base is, not what happened to it"
         )
 
     def test_a_moved_base_is_no_longer_scenery(self):
-        assert f"Ce {_state['base_name']} a été construit ce Tour." in _state["t5"], (
+        assert f"Ce.tte {_state['base_name']} a été construit.e ce Tour." in _state["t5"], (
             "moveBase stamps setup_turn, so the base stops being immemorial"
         )
 
