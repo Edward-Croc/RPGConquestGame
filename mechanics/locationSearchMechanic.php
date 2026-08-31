@@ -207,7 +207,7 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool
         'LOCATIONARTEFACTSDIFF'       => $LOCATIONARTEFACTSDIFF,
         'locationNameText'            => json_decode(getConfig($pdo, 'textLocationDiscoveredName'), true),
         'locationDescText'            => json_decode(getConfig($pdo, 'textLocationDiscoveredDescription'), true),
-        'locationDestroyableText'     => json_decode(getConfig($pdo, 'textLocationCanBeDestroyed'), true),
+        'locationDestroyableText'     => json_decode(getConfig($pdo, 'textLocationDiscoveredDestroyable'), true),
         'textesLocationStillHere'     => json_decode(getConfig($pdo, 'textesLocationStillHere'), true),
         'textLocationAgeOriginal'     => json_decode(getConfig($pdo, 'textLocationAgeOriginal'), true),
         'textLocationAgeRuined'       => json_decode(getConfig($pdo, 'textLocationAgeRuined'), true),

@@ -362,7 +362,7 @@ VALUES
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
-('textLocationCanBeDestroyed', '[
+('textLocationDiscoveredDestroyable', '[
     " Nous pouvons retourner cette information contre son maître et nous y attaquer.",
     " Il est possible d’organiser une mission pour faire disparaître ce problème."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')

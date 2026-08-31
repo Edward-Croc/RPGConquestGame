@@ -235,7 +235,7 @@
     ""Le mystère est levé : un.e <strong>%s</strong> se trouve dans cette zone. %s"",
     ""Les données concordent : un.e <strong>%s</strong> est bien associé.e à cet endroit. %s""
 ]","Phrases pour décrire une localisation après enquête"
-"textLocationCanBeDestroyed","[
+"textLocationDiscoveredDestroyable","[
     "" Nous pouvons retourner cette information contre son maître et nous y attaquer au lieu pour le détruire."",
     "" Il est possible d’organiser une mission pour détruire ce lieu.""
 ]","Phrases pour signaler qu’une localisation peut être détruite"

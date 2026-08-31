@@ -43,7 +43,7 @@
 "counterAttackTexts","[""<p>Counter-attacked <strong>%1$s</strong>.</p>""]","Counter attack text"
 "textLocationDiscoveredName","[""Location discovered: %s""]","Location discovered name"
 "textLocationDiscoveredDescription","[""Details: %1$s - %2$s""]","Location discovered description"
-"textLocationCanBeDestroyed","[""This location can be destroyed.""]","Location destructible text"
+"textLocationDiscoveredDestroyable","[""This location can be destroyed.""]","Location destructible text"
 "textLocationAssaultOwnerSuccess","[""Location attack on %s succeeded.""]","Location attack success"
 "textLocationAssaultOwnerFail","[""Location attack on %s failed.""]","Location attack fail"
 "textLocationAssaultAgentSuccess","[""Agent report: location attack success.""]","Agent report location success"
