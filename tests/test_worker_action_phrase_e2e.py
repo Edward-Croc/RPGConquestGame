@@ -131,6 +131,14 @@ def phrase_snapshot(browser):
         # 1. Enable agent_attack_defence mode for attack_location/defend_location
         _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
 
+        # 1b. Keep every assaulted location standing. This file asserts on report
+        #     PHRASING, not on combat outcomes, and a location that falls is deleted
+        #     or renamed before the reports are read — its name then cannot appear.
+        #     'morethan' is required : with no defender, 'multipliby' yields a
+        #     threshold of 0 * value = 0, so any surviving attacker still carries it.
+        _set_config_via_ui(page, "locationOverwhelmMode", "morethan")
+        _set_config_via_ui(page, "locationOverwhelmValue", "99")
+
         # 2. Seed CKL for Foxtrot → Echo-Base (so attack_location URL is accepted)
         echo_base_id = _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
         foxtrot_outpost_id = _location_id_via_management(page, "Foxtrot-Outpost")
@@ -195,6 +203,8 @@ def phrase_snapshot(browser):
         try:
             ensure_gm_login(page, PHP_BASE_URL)
             _set_config_via_ui(page, "locationAttackMode", "endTurn")
+            _set_config_via_ui(page, "locationOverwhelmMode", "multipliby")
+            _set_config_via_ui(page, "locationOverwhelmValue", "2")
             _set_zone_claimer_via_ui(page, "Alpha-Investigation", None)
             _set_zone_claimer_via_ui(page, "Beta-Combat", None)
         except Exception:
