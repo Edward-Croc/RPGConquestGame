@@ -110,6 +110,25 @@ def _attack_logs(page, base_url=PHP_BASE_URL):
     return rows
 
 
+def _verdict_for(html, location_id):
+    """Read the <p data-location-verdict=…> paragraph for one location.
+
+    `taken` is the half the combat-test file cannot exercise: no falling location
+    there has a winner able to hold the spoils, so it only ever sees taken=0.
+    """
+    m = re.search(
+        r'data-location-verdict="(falls|holds)"\s+'
+        rf'data-location-id="{location_id}"\s+'
+        r'data-alive-attackers="(\d+)"\s+'
+        r'data-alive-defenders="(\d+)"\s+'
+        r'data-location-taken="([01])"',
+        html,
+    )
+    assert m, f"no verdict paragraph found for location {location_id}"
+    return {"verdict": m.group(1), "alive_attackers": int(m.group(2)),
+            "alive_defenders": int(m.group(3)), "taken": m.group(4) == "1"}
+
+
 def _log_for(location_name):
     matching = [r for r in _state["attack_logs"] if r["location_name"] == location_name]
     assert len(matching) == 1, f"expected exactly one log row for {location_name}, got {matching}"
@@ -172,6 +191,7 @@ def outcome_state(browser):
         ui_attack_location(page, "Chain_D", targets["Location A"], base_url=PHP_BASE_URL)
 
         end_turn(page)
+        _state["eot_html"] = page.content()
 
         _state["locations_after"] = _location_names(page)
         _state["attack_logs"] = _attack_logs(page)
@@ -268,6 +288,26 @@ class TestLoggedCombatValues:
         assert _log_for(_state["alpha_base"])["values"] == "3 / 1", (
             "attack_val / defence_val must carry the surviving attacker and "
             "defender counts"
+        )
+
+
+class TestVerdictAndTaken:
+    """A won fight with an eligible winner must report the place as taken."""
+
+    def test_the_taken_place_is_reported_as_taken(self):
+        v = _verdict_for(_state["eot_html"], _state["targets"][_state["alpha_base"]])
+        assert v["verdict"] == "falls", "three survivors against one carries the place"
+        assert v["taken"] is True, (
+            "Foxtrot owns a destructible location, so the spoils have a destination "
+            "and the place really changes hands — this is the case a hardcoded "
+            "data-location-taken=0 would slip past"
+        )
+
+    def test_a_won_fight_without_a_holder_is_not_taken(self):
+        # Delta owns nothing destructible, so Location A's assault wins nothing.
+        v = _verdict_for(_state["eot_html"], _state["targets"]["Location A"])
+        assert v["taken"] is False, (
+            "no eligible winner means the place is not taken, whatever the fight said"
         )
 
 

@@ -272,6 +272,15 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
 **Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible — liste JSON de formulations, tirée au sort comme les autres pools de texte, avec repli sur une phrase en dur si le JSON est invalide. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
 
+**Le nom du lieu ciblé est révélé à l'enquêteur — voulu.** Quand un enquêteur repère un agent dont l'action est `attack_location` ou `defend_location`, le rapport nomme le lieu visé (`mechanics/investigateMechanic.php`), **sans vérifier** que le contrôleur de l'enquêteur ait jamais découvert ce lieu. Voir un agent donner l'assaut renseigne sur ce qu'il assaille.
+
+Deux limites qui bornent la fuite :
+
+- le nom seul est divulgué, jamais la description, le secret ni les artefacts ;
+- **aucune entrée n'est écrite dans `controller_known_locations`** : c'est une mention ponctuelle dans un rapport, pas une découverte. Les paliers `LOCATIONNAMEDIFF` / `LOCATIONINFORMATIONDIFF` / `LOCATIONARTEFACTSDIFF` restent entièrement à franchir par l'enquête de lieu.
+
+Le nom passe par `htmlspecialchars` avant affichage.
+
 **Rapports d'attaque de lieu.** Deux familles de pools, distinguées par leur **destinataire** — c'est ce que porte le segment `Owner` / `Agent` de leur nom. Ne pas les confondre avec `textLocationAttackOutcome*`, qui sont les **prédictions** affichées à l'attaquant avant résolution.
 
 - **`textLocationAssaultOwnerSuccess`** / **`textLocationAssaultOwnerFail`** — vus par le **propriétaire** du lieu attaqué. `%1$s` = nom du lieu, `%2$s` = les assaillants, formulés selon `locationAttackCreditMode`. Seedés dans les deux `minimalData.sql`.

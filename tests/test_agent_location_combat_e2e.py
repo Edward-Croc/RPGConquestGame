@@ -97,19 +97,25 @@ _sabotage = {}
 def _verdicts_from_end_turn(html):
     """Parse the <p data-location-verdict=…> lines the mechanic prints.
 
-    Returns {location_id: {'verdict', 'alive_attackers', 'alive_defenders'}}."""
+    `verdict` is the COMBAT outcome; `taken` is whether the place actually changed
+    hands, which is false when the fight is won but no attacking controller can
+    hold the spoils.
+
+    Returns {location_id: {'verdict', 'alive_attackers', 'alive_defenders', 'taken'}}."""
     found = {}
     for m in re.finditer(
         r'data-location-verdict="(falls|holds)"\s+'
         r'data-location-id="(\d+)"\s+'
         r'data-alive-attackers="(\d+)"\s+'
-        r'data-alive-defenders="(\d+)"',
+        r'data-alive-defenders="(\d+)"\s+'
+        r'data-location-taken="([01])"',
         html,
     ):
         found[int(m.group(2))] = {
             "verdict": m.group(1),
             "alive_attackers": int(m.group(3)),
             "alive_defenders": int(m.group(4)),
+            "taken": m.group(5) == "1",
         }
     return found
 
@@ -330,6 +336,26 @@ class TestNoAttackerNoAssault:
                 f"{name} had only defenders on the second turn and must not be "
                 "resolved as an attack"
             )
+
+    def test_winning_the_fight_is_not_always_taking_the_place(self):
+        # Location A holds on turn one, so `taken` must be false there. Civic-Site
+        # falls, so its own `taken` tells whether a controller could hold the
+        # spoils — the two attributes are not redundant.
+        held = _state["verdicts"][_state["location_ids"]["Location A"]]
+        assert held["verdict"] == "holds" and held["taken"] is False, (
+            "a place that never fell cannot have been taken"
+        )
+        fell = _state["verdicts"][_state["location_ids"]["Civic-Site"]]
+        assert fell["verdict"] == "falls", "Civic-Site should win its fight"
+        assert isinstance(fell["taken"], bool), "taken must be scraped, not absent"
+
+    def test_a_place_that_holds_is_never_taken(self):
+        # The invariant that makes the two attributes coherent : taken implies falls.
+        for lid, v in _state["verdicts"].items():
+            if v["verdict"] == "holds":
+                assert v["taken"] is False, (
+                    f"location {lid} holds yet is marked taken: {v}"
+                )
 
     def test_the_guard_did_not_silence_a_real_assault(self):
         # Pairs the negative above : without it, a mechanic that resolved nothing

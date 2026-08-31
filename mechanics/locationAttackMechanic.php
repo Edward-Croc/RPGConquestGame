@@ -452,22 +452,35 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         // Strict comparison also settles nobody-versus-nobody : the location holds.
         $falls = $aliveAttackers > $threshold;
 
-        game_error_log(__FUNCTION__, 'verdict for location_id ' . $locationId . ' : ' . ($falls ? 'falls' : 'holds'), ['alive_attackers' => $aliveAttackers, 'alive_defenders' => $aliveDefenders, 'mode' => getLocationOverwhelmMode($pdo), 'value' => getConfig($pdo, 'locationOverwhelmValue')], 'debug');
+        // Winning the fight is not taking the place : the spoils need a destination.
+        $winnerId = $falls ? rankLocationSpoilsControllers($pdo, $aliveAttackerRows) : null;
+        $taken = $falls && $winnerId !== null;
+
+        game_error_log(__FUNCTION__, 'verdict for location_id ' . $locationId . ' : ' . ($falls ? 'falls' : 'holds'), ['alive_attackers' => $aliveAttackers, 'alive_defenders' => $aliveDefenders, 'taken' => $taken, 'winner_id' => $winnerId, 'mode' => getLocationOverwhelmMode($pdo), 'value' => getConfig($pdo, 'locationOverwhelmValue')], 'debug');
+
+        if ($taken) {
+            $outcomeText = 'le lieu tombe';
+        } elseif ($falls) {
+            $outcomeText = 'le lieu tient : aucun assaillant ne peut emporter le butin';
+        } else {
+            $outcomeText = 'le lieu tient';
+        }
 
         echo sprintf(
-            '<p data-location-verdict="%s" data-location-id="%d" data-alive-attackers="%d" data-alive-defenders="%d">%s : %d attaquant(s) vivant(s) contre %d défenseur(s) — %s</p>',
+            '<p data-location-verdict="%s" data-location-id="%d" data-alive-attackers="%d" data-alive-defenders="%d" data-location-taken="%d">%s : %d attaquant(s) vivant(s) contre %d défenseur(s) — %s</p>',
             $falls ? 'falls' : 'holds',
             $locationId,
             $aliveAttackers,
             $aliveDefenders,
+            $taken ? 1 : 0,
             htmlspecialchars((string) $location['name']),
             $aliveAttackers,
             $aliveDefenders,
-            $falls ? 'le lieu tombe' : 'le lieu tient'
+            $outcomeText
         );
 
         $participants = array_merge($group['attackers'], $group['defenders']);
-        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $aliveDefenders, $falls, $turn_number)) {
+        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $aliveDefenders, $falls, $winnerId, $turn_number)) {
             return false;
         }
     }
@@ -699,11 +712,12 @@ function resetWorkersTargetingLocation(PDO $pdo, array $participants, int $turn_
  * @param array $aliveAttackers : attacker rows still active after the ladder
  * @param int $aliveDefenderCount : defenders still active after the ladder
  * @param bool $falls : the verdict computed by resolveAgentLocationCombat()
+ * @param int|null $winnerId : controller that carries off the spoils, NULL when none can
  * @param int $turn_number : current turn number
  *
  * @return bool : false only on a DB failure that must abort the end of turn
  */
-function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAttackers, array $allParticipants, array $aliveAttackers, int $aliveDefenderCount, bool $falls, int $turn_number): bool
+function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAttackers, array $allParticipants, array $aliveAttackers, int $aliveDefenderCount, bool $falls, int|null $winnerId, int $turn_number): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with location_id : ' . $location['id'], ['falls' => $falls, 'turn_number' => $turn_number], 'debug');
@@ -714,7 +728,6 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
     $attackerClause = buildLocationAttackerClause($pdo, $engagedAttackers, $location);
     $aliveCount = count($aliveAttackers);
 
-    $winnerId = $falls ? rankLocationSpoilsControllers($pdo, $aliveAttackers) : null;
     if ($winnerId === null) {
         if ($falls) {
             game_error_log(__FUNCTION__, 'no attacking controller can stash the spoils, the location holds', ['location_id' => $location['id']], 'warning');
