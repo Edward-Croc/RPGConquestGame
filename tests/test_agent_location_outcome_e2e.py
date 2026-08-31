@@ -75,7 +75,7 @@ from helpers import (
     load_scenario_via_admin, register_php_error_listener,
     assert_no_collected_php_errors, safe_goto, set_config_via_ui,
     ui_attack_location, ui_controller_id, ui_defend_location, ui_location_id,
-    ui_worker_action_state, ui_zone_id,
+    ui_worker_action_state, ui_zone_id, worker_report_html,
 )
 
 SWAPPED_NAME = "Test-Future-Location-Ruined"
@@ -197,6 +197,9 @@ def outcome_state(browser):
         _state["attack_logs"] = _attack_logs(page)
         _state["even_def_after"] = ui_worker_action_state(page, "Even_Def",
                                                           base_url=PHP_BASE_URL)
+        # Echo's searcher sits in Theta-Artefacts, where the swapped place stands.
+        _state["searcher_report"] = worker_report_html(page, "Artefact_Searcher_Echo",
+                                                       base_url=PHP_BASE_URL)
 
         assert_no_collected_php_errors(page)
         yield
@@ -239,6 +242,42 @@ class TestLocationSwapped:
 
     def test_the_swap_is_logged_as_a_success(self):
         assert _log_for("Test-Future-Location")["success"] is True
+
+
+class TestSwappedPlaceReportedAsRuined:
+    """The place the assault swapped is described as a ruin, dated to the assault.
+
+    Theta-Artefacts holds the swapped place and Echo's Artefact_Searcher_Echo
+    investigates there every turn. Test-Future-Location has discovery_diff 0 and
+    the searcher rolls a fixed 3 plus its power sums, so its enquete difference
+    clears LOCATIONINFORMATIONDIFF = 1 and the report reaches the description
+    tier — the only tier that discloses state.
+
+    The swap runs in locationAttackMechanic and the report in
+    locationSearchMechanic, both inside the same end of turn against the same
+    turncounter, so setup_turn equals the reporting turn and the age clause is
+    "ce Tour" (timeValue = Tour).
+
+    Two properties of the swap payload this test silently rides on, either of
+    which would break it for a reason unrelated to what it checks :
+      can_be_repaired = 1, which is what selects the ruined pool over the
+        restored one (locationSearchMechanic picks on that flag) ;
+      no controller_id, so the place stays unowned — credited to Echo, the
+        searcher's own controller, the report would be suppressed entirely.
+    """
+
+    def test_the_searcher_calls_the_stormed_place_a_ruin_of_this_turn(self):
+        report = _state["searcher_report"]
+        assert (f"Ce.tte {SWAPPED_NAME} a été détruit.e par une attaque ce Tour."
+                in report), (
+            "an agent assault that swaps a place must stamp its turn and its ruined "
+            "state, so the next discovery report reads from the ruined age pool"
+        )
+        # Paired with the positive : the swapped name only exists from the assault
+        # on, so it must never have carried an "original" sentence.
+        assert f"Ce.tte {SWAPPED_NAME} a été construit.e" not in report, (
+            "a place swapped by an assault must have left the 'original' pool"
+        )
 
 
 class TestLocationPillaged:
