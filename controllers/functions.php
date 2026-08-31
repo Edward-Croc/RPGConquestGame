@@ -644,9 +644,9 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
 
         // %2$s carries the whole assailant clause, so both attack modes share one template.
         $attackerClause = sprintf('des agents du réseau %s', $controller_id);
-        $locationAttackSuccessTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_SUCCESS'), true);
+        $locationAttackSuccessTextsArray = json_decode(getConfig($pdo, 'textLocationAssaultOwnerSuccess'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_SUCCESS'], 'warning');
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultOwnerSuccess'], 'warning');
             $locationAttackSuccessTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès.");
         }
         $targetResultText .= sprintf(
@@ -708,9 +708,9 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
         }
     } else {
         $attackerClause = sprintf('des agents du réseau %s', $controller_id);
-        $locationAttackFailTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_FAIL'), true);
+        $locationAttackFailTextsArray = json_decode(getConfig($pdo, 'textLocationAssaultOwnerFail'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_FAIL'], 'warning');
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultOwnerFail'], 'warning');
             $locationAttackFailTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils ne semblent pas avoir atteint leur objectif.");
         }
         $targetResultText .= sprintf(
@@ -746,13 +746,13 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
         $defenseText = sprintf(' défendu par le réseau %s', $location['controller_id']);
     }
     if ($return['success']) {
-        $locationAttackAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS');
+        $locationAttackAgentReportJson = getConfig($pdo, 'textLocationAssaultAgentSuccess');
     } else {
-        $locationAttackAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL');
+        $locationAttackAgentReportJson = getConfig($pdo, 'textLocationAssaultAgentFail');
     }
     $locationAttackAgentReportArray = json_decode($locationAttackAgentReportJson, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_AGENT_REPORT_*'], 'warning');
+        game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultAgent*'], 'warning');
         $locationAttackAgentReportArray = array("Attaque du lieu %s dans %s %s.<br/>");
     }
 
@@ -786,13 +786,13 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
     }
     if ($location['controller_id']) {
         if (!$return['success']) {
-            $locationDefenceAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS');
+            $locationDefenceAgentReportJson = getConfig($pdo, 'textLocationDefenceAgentSuccess');
         } else {
-            $locationDefenceAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL');
+            $locationDefenceAgentReportJson = getConfig($pdo, 'textLocationDefenceAgentFail');
         }
         $locationDefenceAgentReportArray = json_decode($locationDefenceAgentReportJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_*'], 'warning');
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationDefenceAgent*'], 'warning');
             $locationDefenceAgentReportArray = array('Défense du lieu %s dans %s contre les agent du réseau %s.<br/>');
         }
 

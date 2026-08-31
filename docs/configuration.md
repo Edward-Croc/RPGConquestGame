@@ -66,7 +66,7 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 #### Ancienneté d'un lieu
 
-Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `TEXT_LOCATION_CAN_BE_DESTROYED` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
+Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `textLocationCanBeDestroyed` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
 
 L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_repaired` :
 
@@ -271,6 +271,13 @@ Toute autre valeur désactive le mécanisme d'attaque de lieu.
 **Spécifique `endTurn` :** textes d'échec d'arrivée `textLocationAttackDestroyed` (cible détruite par une attaque antérieure) et `textLocationAttackMoved` (cible déplacée avant résolution) — visibles uniquement par l'attaquant.
 
 **Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible — liste JSON de formulations, tirée au sort comme les autres pools de texte, avec repli sur une phrase en dur si le JSON est invalide. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
+
+**Rapports d'attaque de lieu.** Deux familles de pools, distinguées par leur **destinataire** — c'est ce que porte le segment `Owner` / `Agent` de leur nom. Ne pas les confondre avec `textLocationAttackOutcome*`, qui sont les **prédictions** affichées à l'attaquant avant résolution.
+
+- **`textLocationAssaultOwnerSuccess`** / **`textLocationAssaultOwnerFail`** — vus par le **propriétaire** du lieu attaqué. `%1$s` = nom du lieu, `%2$s` = les assaillants, formulés selon `locationAttackCreditMode`. Seedés dans les deux `minimalData.sql`.
+- **`textLocationAssaultAgentSuccess`** / **`textLocationAssaultAgentFail`** — vus par les **agents** ayant participé à l'assaut. Seedés uniquement par les fichiers de scénario, pas par `minimalData.sql` : un scénario qui les omet obtient un pool nul, journalisé en `warning` par `resolveControllerLocationAttackEffects`, et le rapport correspondant est vide.
+
+**`locationAttackCreditMode`** (= `networks`) — Détermine comment les assaillants sont nommés dans le texte du propriétaire. `networks` : liste les numéros de réseau attaquants. `agents` : nomme chaque agent, en n'attribuant un réseau que pour ceux que le propriétaire a déjà identifiés. Toute autre valeur retombe sur `networks`.
 
 **Ancienneté du lieu :** le terme `baseDefenceAddTurns` se calcule sur `{prefix}locations.setup_turn`, désormais estampillé à chaque construction, changement d'état et déménagement (voir « Difficulté de découverte des places fortes »). Un lieu neuf ou fraîchement ruiné n'a donc plus le bonus d'ancienneté maximal qu'il recevait quand la colonne restait à `0`.
 

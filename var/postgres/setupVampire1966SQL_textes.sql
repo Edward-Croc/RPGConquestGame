@@ -330,19 +330,19 @@ VALUES
 INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s = nom de la localisation
-('TEXT_LOCATION_DISCOVERED_NAME', '[
+('textLocationDiscoveredName', '[
     "Nous avons identifié une installation appelée %s.",
     "Des signes pointent vers une présence suspecte à l’endroit de %s."
 ]', 'Phrases pour signaler qu’une localisation a été découverte (nom uniquement)'),
 
 -- %s = description de la localisation
-('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
+('textLocationDiscoveredDescription', '[
     " Description : %s.",
     " Détails révélés : %s"
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
-('TEXT_LOCATION_CAN_BE_DESTROYED', '[
+('textLocationCanBeDestroyed', '[
     " Cette localisation peut être ciblée pour destruction.",
     " Il est possible d’organiser une opération pour la detruire."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')

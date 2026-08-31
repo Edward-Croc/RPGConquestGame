@@ -800,7 +800,7 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
  */
 function locationAttackText(PDO $pdo, bool $success): string
 {
-    $key = $success ? 'TEXT_LOCATION_ATTACK_SUCCESS' : 'TEXT_LOCATION_ATTACK_FAIL';
+    $key = $success ? 'textLocationAssaultOwnerSuccess' : 'textLocationAssaultOwnerFail';
     $pool = json_decode((string) getConfig($pdo, $key), true);
     if (json_last_error() !== JSON_ERROR_NONE || empty($pool)) {
         game_error_log(__FUNCTION__, 'JSON decoding error, falling back', ['config_key' => $key], 'warning');

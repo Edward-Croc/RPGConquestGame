@@ -339,7 +339,7 @@ VALUES
 INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %s = nom de la localisation
-('TEXT_LOCATION_DISCOVERED_NAME', '[
+('textLocationDiscoveredName', '[
     "Nous avons identifié une information intéressante : un.e <strong>%s</strong> serait présent.e dans la zone.",
     "Des signes pointent vers la présence d’un.e <strong>%s</strong>, nous devons enquêter davantage à ce sujet.",
     "Il semblerait qu’un.e <strong>%s</strong> se trouve dans cette région, il faudra s’en assurer.",
@@ -351,7 +351,7 @@ VALUES
 
 -- %s = nom de la localisation
 -- %s = description de la localisation
-('TEXT_LOCATION_DISCOVERED_DESCRIPTION', '[
+('textLocationDiscoveredDescription', '[
     "Information intéressante : un.e <strong>%s</strong> est présent.e dans la zone. %s",
     "Nous avons confirmé la présence d’un.e <strong>%s</strong>. Nous avons enquêté davantage et découvert que : %s",
     "Après enquête, il s’avère qu’un.e <strong>%s</strong> est bien lié.e à cette localisation. %s",
@@ -362,7 +362,7 @@ VALUES
 ]', 'Phrases pour décrire une localisation après enquête'),
 
 -- Aucun paramètre : simple indication de la possibilité de destruction
-('TEXT_LOCATION_CAN_BE_DESTROYED', '[
+('textLocationCanBeDestroyed', '[
     " Nous pouvons retourner cette information contre son maître et nous y attaquer.",
     " Il est possible d’organiser une mission pour faire disparaître ce problème."
 ]', 'Phrases pour signaler qu’une localisation peut être détruite')
@@ -373,34 +373,34 @@ INSERT INTO {prefix}config (name, value, description)
 VALUES
 -- %1$s : nom du lieu attaqué 
 -- %2$s: phrase désignant les assaillants, construite selon locationAttackCreditMode
-('TEXT_LOCATION_ATTACK_SUCCESS', '[
+('textLocationAssaultOwnerSuccess', '[
     "Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès."
 ]', 'Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée')
 
 -- %1$s: nom du lieu attaqué 
 -- %2$s: phrase désignant les assaillants, construite selon locationAttackCreditMode
-, ('TEXT_LOCATION_ATTACK_FAIL', '[
+, ('textLocationAssaultOwnerFail', '[
     "Notre %1$s a été attaqué.e, par %2$s.  Heureusement, ils ne semblent pas avoir atteint leur objectif."
 ]', 'Phrases pour signaler au defenseur qu’une localisation pas été attaquer sans succée')
 
 -- %1$s: nom du lieu attaqué 
 -- %2$s: nom de la zone contenant le lieu attaqué
 -- %3$s: texte donnant le réseau défenseur si existant
-, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS', '[
+, ('textLocationAssaultAgentSuccess', '[
     "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a été un succès.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas de succès')
 
 -- %1$s: nom du lieu attaqué 
 -- %2$s: nom de la zone contenant le lieu attaqué
 -- %3$s: texte donnant le réseau défenseur si existant
-, ('TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL', '[
+, ('textLocationAssaultAgentFail', '[
     "J’ai participé à l’attaque de %1$s dans %2$s %3$s, l’attaque a échoué.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à l’attaque en cas d’échec')
 
 -- %1$s: nom du lieu attaqué
 -- %2$s: nom de la zone contenant le lieu attaqué
 -- %3$s: numéro du réseau attaquant
-, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS', '[
+, ('textLocationDefenceAgentSuccess', '[
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, la défense a été un succès.<br/>",
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons réussi à nous défendre.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à la défense en cas de succès')
@@ -408,7 +408,7 @@ VALUES
 -- %1$s: nom du lieu attaqué 
 -- %2$s: nom de la zone contenant le lieu attaqué
 -- %3$s: numéro du réseau attaquant
-, ('TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL', '[
+, ('textLocationDefenceAgentFail', '[
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons échoué.<br/>",
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons été battus.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec')
