@@ -429,7 +429,8 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         $d = 0;
         while ($a < $attackerCount && $d < $defenderCount) {
             $pair = buildLocationCombatPair($attackers[$a], $defenders[$d], $location, $turn_number);
-            $outcome = resolveWorkerCombat($pdo, $pair, ['turncounter' => $turn_number]);
+            // A location duel belongs in its own report section, not among agent attacks.
+            $outcome = resolveWorkerCombat($pdo, $pair, ['turncounter' => $turn_number], 'location_attack_report', 'location_attack_report');
 
             if (!empty($outcome['kill'])) {
                 $d++;
