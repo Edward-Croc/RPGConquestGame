@@ -106,15 +106,17 @@ def _toggle_destruction_first_match(page, name_substring):
             f"'{name_substring}' not found on management_locations.php"
         )
     location_id = int(m.group(1))
-    page.evaluate(
-        f"""
-        const inp = document.querySelector(
-            'input[name="toggle_destruction"][value="{location_id}"]'
-        );
-        if (inp && inp.form) inp.form.submit();
-        """
-    )
-    page.wait_for_load_state("load")
+    # form.submit() navigates asynchronously, so wait_for_load_state alone returns
+    # on the page still displayed. expect_navigation waits for the POST to land.
+    with page.expect_navigation(wait_until="load"):
+        page.evaluate(
+            f"""
+            const inp = document.querySelector(
+                'input[name="toggle_destruction"][value="{location_id}"]'
+            );
+            if (inp && inp.form) inp.form.submit();
+            """
+        )
     return location_id
 
 

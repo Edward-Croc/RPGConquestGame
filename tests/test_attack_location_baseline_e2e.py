@@ -181,16 +181,18 @@ def _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id):
     page.wait_for_load_state("load")
     # toggle button lives inside a display:none span; submit the form
     # via JS since playwright's actionability check fails on zero-box.
-    page.evaluate(
-        "id => {"
-        "  const inp = document.querySelector("
-        "    `input[name='toggle_destruction'][value='${id}']`"
-        "  );"
-        "  if (inp && inp.form) inp.form.submit();"
-        "}",
-        echo_base_id,
-    )
-    page.wait_for_load_state("load")
+    # form.submit() navigates asynchronously, so wait_for_load_state alone returns
+    # on the page still displayed. expect_navigation waits for the POST to land.
+    with page.expect_navigation(wait_until="load"):
+        page.evaluate(
+            "id => {"
+            "  const inp = document.querySelector("
+            "    `input[name='toggle_destruction'][value='${id}']`"
+            "  );"
+            "  if (inp && inp.form) inp.form.submit();"
+            "}",
+            echo_base_id,
+        )
     _switch_controller(page, "Foxtrot")
     safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
     page.wait_for_load_state("load")

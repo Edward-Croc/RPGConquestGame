@@ -36,8 +36,13 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_controller_id,
+    set_config_via_ui, ui_controller_id,
 )
+
+
+def _set_config_via_ui(page, name, value):
+    """Thin wrapper so the fixture reads without repeating base_url."""
+    set_config_via_ui(page, name, value, base_url=PHP_BASE_URL)
 
 
 def _row_locator_by_name(page, base_name):
@@ -131,6 +136,15 @@ def bases_sort_scenario(browser):
     try:
         ensure_gm_login(page, PHP_BASE_URL)
 
+        # Give the outcome templates a literal <br /> so the result-text cells
+        # carry markup. Without it nl2br() is a no-op on these single-line seeds
+        # and test_result_text_cells_are_not_html_escaped skips itself. A literal
+        # tag is used rather than a newline : /base/configuration.php edits the
+        # value through an <input>, which cannot hold one.
+        _set_config_via_ui(page, "textLocationDestroyed", 'Le lieu %s a été détruit.<br />Selon votre bon vouloir.')
+        _set_config_via_ui(page, "textLocationPillaged", "Le lieu %s a été pillé.<br />Nous n'avons pas pu le détruire.")
+        _set_config_via_ui(page, "textLocationNotDestroyed", "Le lieu %s n'a pas été détruit.<br />Nos excuses.")
+
         echo_base_id = _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
         _attack_location_via_ui(page, "Foxtrot", echo_base_id)
 
@@ -140,6 +154,16 @@ def bases_sort_scenario(browser):
         assert_no_collected_php_errors(page)
         yield
     finally:
+        # Restore the minimalData defaults : a following module that skips the
+        # scenario reload would otherwise inherit the markup templates.
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            _set_config_via_ui(page, "textLocationDestroyed", 'Le lieu %s a été détruit selon votre bon vouloir.')
+            _set_config_via_ui(page, "textLocationPillaged", "Le lieu %s a été pillé, mais nous n'avons pas pu le détruire.")
+            _set_config_via_ui(page, "textLocationNotDestroyed", "Le lieu %s n'a pas été détruit, nos excuses.")
+        except Exception:
+            # best-effort teardown — never mask the original setup/test failure
+            pass
         context.close()
 
 

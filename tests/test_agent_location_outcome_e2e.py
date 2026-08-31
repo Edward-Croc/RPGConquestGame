@@ -103,6 +103,7 @@ def _attack_logs(page, base_url=PHP_BASE_URL):
             "location_name": row.get_attribute("data-location-name"),
             "turn": int(row.get_attribute("data-turn")),
             "success": row.get_attribute("data-success") == "1",
+            "values": row.locator("td").nth(5).inner_text().strip(),
             "attacker_controller_id": int(attacker) if attacker else None,
             "attacker_text": row.locator("td").nth(7).inner_text(),
         })
@@ -254,6 +255,20 @@ class TestNoEligibleWinner:
             "Delta owns no destructible location, so the attack cannot succeed"
         )
         assert log["attacker_controller_id"] is None
+
+
+class TestLoggedCombatValues:
+    """The log records both survivor counts, not just the attackers'."""
+
+    def test_both_sides_of_the_tally_are_logged(self):
+        # Alpha's base was stormed by three attackers that all survived, against
+        # one defender that also survived — the exact pair that produced the
+        # verdict. defence_val used to default to 0, rendering "3 / 0" and making
+        # a 3-against-1 indistinguishable from a 3-against-nobody.
+        assert _log_for(_state["alpha_base"])["values"] == "3 / 1", (
+            "attack_val / defence_val must carry the surviving attacker and "
+            "defender counts"
+        )
 
 
 class TestSpoilsRanking:

@@ -311,6 +311,34 @@ class TestOverwhelmMode:
         assert _state["location_ids"]["Civic-Site"] in _state["verdicts_morethan"]
 
 
+class TestNoAttackerNoAssault:
+    """Defenders with nobody attacking them are not an assault.
+
+    The second turn re-queued only Civic-Site's attackers. attack_location does
+    not persist (continuing_attack_location_action = 0) while defend_location does
+    (continuing_defend_location_action = 1), so every other group reaches the
+    mechanic with a live defender and zero attackers. Before the guard in
+    locationAttackMechanic those groups still produced a verdict and a
+    location_attack_logs row telling the owner they had been attacked, every turn
+    they defended."""
+
+    def test_a_defended_place_with_no_attacker_gets_no_verdict(self):
+        # Both held turn one with one surviving defender, so both carry a
+        # persisting defender and no attacker into turn two.
+        for name in ("Foxtrot-Outpost", "Location A"):
+            assert _state["location_ids"][name] not in _state["verdicts_morethan"], (
+                f"{name} had only defenders on the second turn and must not be "
+                "resolved as an attack"
+            )
+
+    def test_the_guard_did_not_silence_a_real_assault(self):
+        # Pairs the negative above : without it, a mechanic that resolved nothing
+        # at all would satisfy the assertion.
+        assert _state["location_ids"]["Civic-Site"] in _state["verdicts_morethan"], (
+            "Civic-Site kept its attackers and must still be resolved"
+        )
+
+
 class TestGroupIsolation:
     """Locations resolved in the same turn do not leak into each other."""
 
