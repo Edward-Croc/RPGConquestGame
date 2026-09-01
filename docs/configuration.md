@@ -266,6 +266,13 @@ Toute autre valeur (faute de frappe, mode futur non développé) désactive le m
 
 Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
+**Où atterrit le butin — vaut pour les trois modes.** Quand une attaque de lieu réussit, `captureLocationsArtefacts()` (`controllers/functions.php`) déplace les artefacts du lieu pris vers un lieu du vainqueur. La destination n'est **pas** sa base : c'est le premier de ses lieux **destructibles**, trié par `discovery_diff` décroissant puis par `id` croissant — donc le plus difficile à découvrir d'abord.
+
+Deux conséquences à connaître :
+
+- un contrôleur qui ne possède **aucun** lieu destructible ne peut rien emporter. En mode `agent_attack_defence` le lieu reste alors debout et l'attaque est journalisée en échec, même si le combat a été gagné — c'est l'écart entre `falls` et `taken` décrit plus bas.
+- le critère a changé : il était `is_base = TRUE`. Les scénarios où un contrôleur possède plusieurs lieux destructibles voient donc les prisonniers arriver ailleurs que dans sa base, y compris dans les modes `immediate` et `endTurn`.
+
 **Clés communes aux trois modes implémentés :** les familles de formules `baseAttack*`, `baseDefence*`, `baseDiscoveryDiff*` (utilisée aussi pour la découverte de lieux), ainsi que les textes `textLocationDestroyed`, `textLocationPillaged`, `textLocationNotDestroyed`, `textOwnedArtefacts`.
 
 **Spécifique `endTurn` :** textes d'échec d'arrivée `textLocationAttackDestroyed` (cible détruite par une attaque antérieure) et `textLocationAttackMoved` (cible déplacée avant résolution) — visibles uniquement par l'attaquant.
@@ -284,9 +291,57 @@ Le nom passe par `htmlspecialchars` avant affichage.
 **Rapports d'attaque de lieu.** Deux familles de pools, distinguées par leur **destinataire** — c'est ce que porte le segment `Owner` / `Agent` de leur nom. Ne pas les confondre avec `textLocationAttackOutcome*`, qui sont les **prédictions** affichées à l'attaquant avant résolution.
 
 - **`textLocationAssaultOwnerSuccess`** / **`textLocationAssaultOwnerFail`** — vus par le **propriétaire** du lieu attaqué. `%1$s` = nom du lieu, `%2$s` = les assaillants, formulés selon `locationAttackCreditMode`. Seedés dans les deux `minimalData.sql`.
-- **`textLocationAssaultAgentSuccess`** / **`textLocationAssaultAgentFail`** — vus par les **agents** ayant participé à l'assaut. Seedés uniquement par les fichiers de scénario, pas par `minimalData.sql` : un scénario qui les omet obtient un pool nul, journalisé en `warning` par `resolveControllerLocationAttackEffects`, et le rapport correspondant est vide.
+- **`textLocationAssaultAgentSuccess`** / **`textLocationAssaultAgentFail`** et **`textLocationDefenceAgentSuccess`** / **`textLocationDefenceAgentFail`** — vus par les **agents** ayant participé à l'assaut ou à la défense. `%1$s` = nom du lieu, `%2$s` = nom de la zone, `%3$s` = un troisième argument **qui diffère selon la famille** (voir ci-dessous). Seedés uniquement par les fichiers de scénario, pas par `minimalData.sql` : un scénario qui les omet obtient un pool nul, journalisé en `warning`, et le rapport correspondant est vide ou retombe sur un gabarit en dur selon le mode.
 
 **`locationAttackCreditMode`** (= `networks`) — Détermine comment les assaillants sont nommés dans le texte du propriétaire. `networks` : liste les numéros de réseau attaquants. `agents` : nomme chaque agent, en n'attribuant un réseau que pour ceux que le propriétaire a déjà identifiés. Toute autre valeur retombe sur `networks`.
+
+##### Rapports d'agent en mode `agent_attack_defence`
+
+En mode `agent_attack_defence`, l'assaut est mené par des agents et non par un contrôleur : chaque participant reçoit donc son propre compte rendu de l'issue de l'assaut, écrit par `writeLocationAgentReports()` (`mechanics/locationAttackMechanic.php`). Ces lignes sont rangées dans la clé de rapport **`location_attack_report`**, affichée sur la fiche d'agent sous le titre « Attaque de lieu : » — séparément des duels eux-mêmes, qui restent dans `attack_report`. Avant cette séparation, les duels de lieu se mélangeaient aux attaques ordinaires et aucun participant n'apprenait comment l'assaut s'était terminé.
+
+**Qui écrit quoi.** Deux verdicts distincts pilotent le choix du pool, et c'est leur écart qui justifie l'existence des pools `NoHolder` :
+
+- `falls` — le **verdict de l'échelle de duels** : les attaquants survivants dépassent le seuil `locationOverwhelm*`. C'est la victoire au combat.
+- `taken` — l'assaut a **réellement produit son effet** sur la place : `falls` est vrai **et** `rankLocationSpoilsControllers` a trouvé un réseau assaillant capable d'héberger le butin, c'est-à-dire possédant au moins un lieu `can_be_destroyed` où mener les prisonniers. Sans cette destination, le butin ne bouge pas, aucun effet n'est appliqué au lieu, et la place reste debout malgré la défaite de ses défenseurs (une entrée `warning` est journalisée).
+
+À noter : `taken` ne veut pas dire « détruite ». Un lieu indestructible (`can_be_destroyed` à faux, ou `indestructible` dans son `activate_json`) est **pillé** et reste à son propriétaire, mais il compte pour `taken` — ses défenseurs lisent donc bien `textLocationDefenceAgentFail`. Formuler ces pools en termes de défaite et de butin perdu plutôt que de place rasée.
+
+| Situation | Attaquant | Défenseur |
+|---|---|---|
+| Agent mort pendant l'échelle | *aucune ligne* | *aucune ligne* |
+| `falls` sans `taken` (personne où mettre le butin) | `textLocationAssaultAgentNoHolder` | `textLocationDefenceAgentNoHolder` |
+| `taken` — l'assaut aboutit | `textLocationAssaultAgentSuccess` | **`textLocationDefenceAgentFail`** |
+| Ni `falls` ni `taken` — la place tient | `textLocationAssaultAgentFail` | `textLocationDefenceAgentSuccess` |
+| Agent que l'échelle n'a jamais apparié | `textLocationAssaultAgentUnengaged` **en préfixe** | `textLocationDefenceAgentUnengaged` **en préfixe** |
+| Des artefacts ont réellement changé de lieu | `textLocationAgentSpoils*` **en suffixe** | `textLocationAgentSpoils*` **en suffixe** |
+
+**Polarité — le point qui piège à la relecture.** Le succès est celui de *l'assaut*, jamais celui du lecteur. Un assaut qui produit son effet — destruction, échange ou simple pillage — est donc le succès de l'attaquant **et l'échec du défenseur** : c'est bien **`textLocationDefenceAgentFail`** qui part quand l'assaut a réussi, et `textLocationDefenceAgentSuccess` quand il a échoué. La même convention règne déjà sur le chemin contrôleur (`resolveControllerLocationAttackEffects`).
+
+**Ordre de composition.** Le rapport d'un agent est assemblé dans cet ordre, et un agent mort n'en reçoit aucun morceau :
+
+1. la ligne « jamais apparié » (`*Unengaged`), **seulement** si l'échelle ne l'a opposé à personne ;
+2. la ligne d'issue — `*NoHolder` ou l'un des quatre `*Success` / `*Fail` ; ce sont des branches exclusives, jamais deux à la fois ;
+3. la ligne de butin (`textLocationAgentSpoils*`), **seulement** si des artefacts ont réellement été déplacés.
+
+Un agent que personne n'a affronté lit donc deux phrases : d'abord qu'il n'a pas combattu, ensuite comment l'assaut s'est terminé. Aucune écriture n'a lieu si l'ensemble reste vide.
+
+**Placeholders.** Les six nouvelles clés ne reçoivent que les arguments listés ci-dessous — jamais le troisième argument des quatre pools d'issue. Y écrire un `%3$s` (ou un `%2$s` dans un pool `Spoils*`) fait lever `sprintf` en PHP 8 et casse la fin de tour : s'en tenir strictement au contrat de chaque clé.
+
+| Clé | Placeholders |
+|---|---|
+| **`textLocationAssaultAgentNoHolder`** (= `["J'ai participé à la prise de %1$s dans %2$s, mais nous n'avions nulle part où mener les prisonniers : la place nous a filé entre les doigts.<br/>"]`) | `%1$s` = nom du lieu, `%2$s` = nom de la zone |
+| **`textLocationDefenceAgentNoHolder`** (= `["Notre %1$s dans %2$s a été attaqué.e et nous avons cédé, mais les assaillants n'ont rien pu emporter.<br/>"]`) | idem |
+| **`textLocationAssaultAgentUnengaged`** (= `["J'étais du raid sur %1$s dans %2$s, mais tout s'est joué sans moi.<br/>"]`) | idem |
+| **`textLocationDefenceAgentUnengaged`** (= `["Notre %1$s dans %2$s a été attaqué.e ; je tenais mon poste, personne n'est venu jusqu'à moi.<br/>"]`) | idem |
+| **`textLocationAgentSpoilsSelf`** (= `["Les prisonniers sont repartis avec nous.<br/>"]`) | **aucun** — apposé quand le lecteur appartient au réseau vainqueur |
+| **`textLocationAgentSpoilsOther`** (= `["Les prisonniers sont repartis avec le réseau %1$s.<br/>"]`) | `%1$s` = numéro du réseau vainqueur |
+
+**Le troisième argument des quatre pools d'issue.** Les deux familles préexistantes ne reçoivent pas la même chose en `%3$s`, et c'est une source d'erreur classique quand on rédige un scénario :
+
+- **`textLocationAssaultAgent*`** — une **clause déjà rédigée** « ` défendu par le réseau N` », espace initiale comprise, vide quand le lieu n'appartient à personne. À coller directement dans la phrase, sans article ni préposition.
+- **`textLocationDefenceAgent*`** — le ou les **numéros de réseau attaquants**, bruts. En mode `agent_attack_defence` c'est une **liste jointe par des virgules** : un assaut d'agents peut réunir plusieurs réseaux devant la même place, alors que le chemin contrôleur n'en passait jamais qu'un seul. Une formulation du type « du réseau %3$s » doit donc rester lisible au pluriel.
+
+**Seedage — scénario uniquement.** Comme les quatre pools d'agent qui les précèdent, ces six clés ne sont **pas** dans `minimalData.sql`. Elles sont seedées par `var/csv/setupTestConfig_config.csv` (anglais), `var/csv/setupJapon1555CSV_config.csv`, `var/mysql/setupJapon1555SQL_textes.sql` et `var/postgres/setupJapon1555SQL_textes.sql` (français). Une clé manquante ou dont le JSON est illisible ne casse rien : `pickLocationAgentText()` journalise un `warning` « missing or unusable text pool » et retourne un gabarit vide, donc la ligne correspondante est simplement absente du rapport — contrairement au chemin contrôleur, qui lui retombe sur une phrase en dur. Le partage de responsabilité entre socle et scénario fait l'objet de la question ouverte **#120** « `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d'appel porter un repli ? » ; si elle se tranche en faveur du socle, ces six clés y descendront.
 
 **Ancienneté du lieu :** le terme `baseDefenceAddTurns` se calcule sur `{prefix}locations.setup_turn`, désormais estampillé à chaque construction, changement d'état et déménagement (voir « Difficulté de découverte des places fortes »). Un lieu neuf ou fraîchement ruiné n'a donc plus le bonus d'ancienneté maximal qu'il recevait quand la colonne restait à `0`.
 
