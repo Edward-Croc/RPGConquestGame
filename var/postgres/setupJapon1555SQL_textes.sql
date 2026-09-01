@@ -412,4 +412,22 @@ VALUES
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons échoué.<br/>",
     "J’ai participé à la défense de %1$s dans %2$s contre les agent du réseau %3$s, nous avons été battus.<br/>"
 ]', 'Phrases pour ajout au rapport des agents participant à la défense en cas d’échec')
+, ('textLocationAssaultAgentNoHolder', '[
+    "J’ai participé à la prise de %1$s dans %2$s, mais nous n’avions nulle part où mener les prisonniers : la place nous a filé entre les doigts.<br/>"
+]', 'Phrases pour le rapport des agents attaquants quand le combat est gagné mais qu’aucun réseau assaillant ne peut abriter le butin. %1$s = lieu, %2$s = zone.')
+, ('textLocationDefenceAgentNoHolder', '[
+    "Notre %1$s dans %2$s a été attaqué.e et nous avons cédé, mais les assaillants n’ont rien pu emporter.<br/>"
+]', 'Idem côté défense : la place est perdue au combat mais reste debout faute de destination pour le butin. %1$s = lieu, %2$s = zone.')
+, ('textLocationAssaultAgentUnengaged', '[
+    "J’étais du raid sur %1$s dans %2$s, mais tout s’est joué sans moi.<br/>"
+]', 'Phrases pour un agent attaquant que l’échelle des duels n’a jamais apparié. %1$s = lieu, %2$s = zone.')
+, ('textLocationDefenceAgentUnengaged', '[
+    "Notre %1$s dans %2$s a été attaqué.e ; je tenais mon poste, personne n’est venu jusqu’à moi.<br/>"
+]', 'Phrases pour un agent défenseur que l’échelle des duels n’a jamais apparié. %1$s = lieu, %2$s = zone.')
+, ('textLocationAgentSpoilsSelf', '[
+    "Les prisonniers sont repartis avec nous.<br/>"
+]', 'Ajout au rapport quand des artefacts ont bougé et que le lecteur appartient au réseau vainqueur. Aucun placeholder.')
+, ('textLocationAgentSpoilsOther', '[
+    "Les prisonniers sont repartis avec le réseau %1$s.<br/>"
+]', 'Ajout au rapport quand des artefacts ont bougé et qu’un autre réseau les emporte. %1$s = numéro du réseau vainqueur.')
 ON CONFLICT (name) DO UPDATE SET value=EXCLUDED.value, description=EXCLUDED.description;
