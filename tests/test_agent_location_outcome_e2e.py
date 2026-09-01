@@ -76,6 +76,7 @@ from helpers import (
     assert_no_collected_php_errors, safe_goto, set_config_via_ui,
     ui_attack_location, ui_controller_id, ui_defend_location, ui_location_id,
     ui_worker_action_state, ui_zone_id, worker_report_html,
+    worker_report_section,
 )
 
 SWAPPED_NAME = "Test-Future-Location-Ruined"
@@ -200,6 +201,13 @@ def outcome_state(browser):
         # Echo's searcher sits in Theta-Artefacts, where the swapped place stands.
         _state["searcher_report"] = worker_report_html(page, "Artefact_Searcher_Echo",
                                                        base_url=PHP_BASE_URL)
+        # Civic-Site fell to three attackers with no defender at all, and it holds
+        # an artefact : the one group that exercises both the never-engaged line and
+        # the spoils credit, from either side of the winning network.
+        _state["report_winner_side"] = worker_report_html(page, "Chain_F",
+                                                          base_url=PHP_BASE_URL)
+        _state["report_other_side"] = worker_report_html(page, "Chain_E",
+                                                         base_url=PHP_BASE_URL)
 
         assert_no_collected_php_errors(page)
         yield
@@ -338,7 +346,7 @@ class TestVerdictAndTaken:
         assert v["verdict"] == "falls", "three survivors against one carries the place"
         assert v["taken"] is True, (
             "Foxtrot owns a destructible location, so the spoils have a destination "
-            "and the place really changes hands — this is the case a hardcoded "
+            "and the assault produces its effect — this is the case a hardcoded "
             "data-location-taken=0 would slip past"
         )
 
@@ -347,6 +355,45 @@ class TestVerdictAndTaken:
         v = _verdict_for(_state["eot_html"], _state["targets"]["Location A"])
         assert v["taken"] is False, (
             "no eligible winner means the place is not taken, whatever the fight said"
+        )
+
+
+class TestAgentReports:
+    """What the agents themselves are told about the assault they joined.
+
+    Civic-Site makes this observable : three attackers and no defender, so the
+    ladder pairs nobody and each of them is "unengaged"; it carries an artefact,
+    so the spoils really move; and its attackers span two networks — Foxtrot who
+    wins the loot and Echo who does not.
+    """
+
+    def _section(self, key):
+        return worker_report_section(_state[key], "Attaque de lieu :")
+
+    def test_an_agent_who_never_fought_is_told_so(self):
+        assert "never engaged" in self._section("report_winner_side"), (
+            "nobody defended Civic-Site, so its attackers fought no one and must be "
+            "told rather than left with a silent report"
+        )
+
+    def test_the_outcome_reaches_the_agent(self):
+        assert "location attack success" in self._section("report_winner_side"), (
+            "a surviving attacker must learn the assault carried the place"
+        )
+
+    def test_the_winning_network_is_credited_as_us(self):
+        assert "taken by us" in self._section("report_winner_side"), (
+            "Chain_F belongs to Foxtrot, who carried off the spoils"
+        )
+
+    def test_another_network_is_credited_by_its_number(self):
+        section = self._section("report_other_side")
+        assert f"taken by network {_state['foxtrot_cid']}" in section, (
+            "Chain_E belongs to Echo, so the loot left with someone else and the "
+            "report must say which network took it"
+        )
+        assert "taken by us" not in section, (
+            "Echo did not take the spoils and must not read that it did"
         )
 
 

@@ -120,6 +120,26 @@ def _verdicts_from_end_turn(html):
     return found
 
 
+def _assert_no_outcome_line(page, lastname):
+    """A combatant out of the fight keeps its duel lines and learns nothing more.
+
+    Paired with a positive : without it, the negatives below would also pass on a
+    mechanic that wrote no report at all.
+    """
+    html = worker_report_html(page, lastname, base_url=PHP_BASE_URL)
+    section = worker_report_section(html, "Attaque de lieu :")
+    assert section, f"{lastname} fought a location duel and must have that section"
+    # Every outcome pool TestConfig seeds, NoHolder included : leaving one out is
+    # how the captured-defender half of this check first passed for the wrong reason.
+    for line in ("location attack success", "location attack fail",
+                 "location defended", "location fell", "never engaged",
+                 "nowhere to hold it", "they took nothing",
+                 "taken by us", "taken by network"):
+        assert line not in section, (
+            f"{lastname} left the fight before it ended and must not read {line!r}"
+        )
+
+
 @pytest.fixture(scope="module", autouse=True)
 def location_combat_state(browser):
     """Queue five independent location groups, resolve them in one end of turn.
@@ -247,9 +267,12 @@ class TestLadderProgression:
             "a location duel must not be filed in the agent-attack section"
         )
 
-    def test_both_of_those_duels_are_captures(self):
+    def test_both_of_those_duels_are_captures(self, page: Page):
         # 8 - 3 and 8 - 2 both clear ATTACKDIFF1 = 3.
         assert [r["outcome"] for r in _rows_for("Echo-Base")] == ["capture", "capture"]
+        # A captured defender is out of the fight before it ends : it keeps the duel
+        # it lived through and is told nothing of the outcome.
+        _assert_no_outcome_line(page, "Inv_Def_1")
 
     def test_defender_order_follows_enquete_initiative(self):
         # Inv_Def_2 enquete 3 engages before Inv_Def_1 enquete 2.
@@ -258,7 +281,7 @@ class TestLadderProgression:
             _wid("Inv_Def_2"), _wid("Inv_Def_1")
         ]
 
-    def test_riposte_spends_the_attacker_and_keeps_the_defender(self):
+    def test_riposte_spends_the_attacker_and_keeps_the_defender(self, page: Page):
         rows = sorted(_rows_for("Foxtrot-Outpost"), key=lambda r: r["id"])
         assert len(rows) == 2, f"expected two duels against one defender, got {rows}"
         assert {r["defender_worker_id"] for r in rows} == {_wid("Counter_Def")}
@@ -266,6 +289,7 @@ class TestLadderProgression:
             _wid("Claim_Atk_2"), _wid("Counter_Atk")
         ]
         assert [r["outcome"] for r in rows] == ["riposte_kill", "riposte_kill"]
+        _assert_no_outcome_line(page, "Counter_Atk")
 
 
 class TestVerdict:
