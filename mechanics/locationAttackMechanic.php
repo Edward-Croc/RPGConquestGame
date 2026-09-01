@@ -705,6 +705,118 @@ function resetWorkersTargetingLocation(PDO $pdo, array $participants, int $turn_
 }
 
 /**
+ * Tell every surviving participant how the assault ended, and who took the prisoners.
+ *
+ * One line per agent, appended after its duel lines in the same report section.
+ * An agent the ladder never paired gets an extra line saying so first. The dead
+ * write nothing. The spoils sentence names the winning network, or "us" when the
+ * reader belongs to it, and is only appended when artefacts actually moved.
+ *
+ * @param PDO $pdo : database connection
+ * @param array $location : hydrated location row (needs name, zone_name)
+ * @param array $attackers : attacker rows that reached the place, dead ones included
+ * @param array $defenders : defender rows, dead ones included
+ * @param array $aliveIds : worker_id => true for everyone still active
+ * @param array $engaged : worker_id => true for everyone who fought at least one duel
+ * @param bool $taken : the assault produced its effect — razed, swapped or merely
+ *   pillaged. NOT the same as changing owner : a pillaged place keeps its controller.
+ * @param bool $falls : the combat verdict, true even when nobody could hold the place
+ * @param int|null $winnerId : controller that carried off the spoils
+ * @param int $artefactCount : artefacts that really moved
+ * @param int $turn_number : current turn number
+ *
+ * @return void
+ */
+function writeLocationAgentReports(PDO $pdo, array $location, array $attackers, array $defenders, array $aliveIds, array $engaged, bool $taken, bool $falls, int|null $winnerId, int $artefactCount, int $turn_number): void
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with location_id : ' . $location['id'], ['taken' => $taken, 'falls' => $falls, 'winner_id' => $winnerId, 'artefacts' => $artefactCount], 'debug');
+
+    $locationName = (string) $location['name'];
+    $zoneName = (string) ($location['zone_name'] ?? '');
+    // Third placeholder : the assault pools name the defending network, the defence
+    // pools name the attacking ones. Both keep the contract the seeds already use.
+    $defenceClause = !empty($location['controller_id'])
+        ? sprintf(' défendu par le réseau %s', $location['controller_id'])
+        : '';
+    $attackerNetworks = array_values(array_unique(array_map(
+        static fn (array $r): int => (int) $r['controller_id'],
+        $attackers
+    )));
+    $attackerClause = implode(', ', $attackerNetworks);
+
+    foreach ([['attack', $attackers], ['defend', $defenders]] as [$side, $rows]) {
+        foreach ($rows as $row) {
+            $workerId = (int) $row['worker_id'];
+            if (empty($aliveIds[$workerId])) {
+                continue;
+            }
+            $report = '';
+            if (empty($engaged[$workerId])) {
+                $report .= sprintf(
+                    pickLocationAgentText($pdo, $side === 'attack'
+                        ? 'textLocationAssaultAgentUnengaged'
+                        : 'textLocationDefenceAgentUnengaged'),
+                    $locationName,
+                    $zoneName
+                );
+            }
+            if ($falls && !$taken) {
+                // Won the fight, nowhere to put the spoils : its own outcome.
+                $report .= sprintf(
+                    pickLocationAgentText($pdo, $side === 'attack'
+                        ? 'textLocationAssaultAgentNoHolder'
+                        : 'textLocationDefenceAgentNoHolder'),
+                    $locationName,
+                    $zoneName
+                );
+            } else {
+                // The place changing hands is the attacker's success, the defender's failure.
+                $key = $side === 'attack'
+                    ? ($taken ? 'textLocationAssaultAgentSuccess' : 'textLocationAssaultAgentFail')
+                    : ($taken ? 'textLocationDefenceAgentFail' : 'textLocationDefenceAgentSuccess');
+                $report .= sprintf(
+                    pickLocationAgentText($pdo, $key),
+                    $locationName,
+                    $zoneName,
+                    $side === 'attack' ? $defenceClause : $attackerClause
+                );
+            }
+            // Only when artefacts really moved : the reader is told who took them.
+            if ($artefactCount > 0 && $winnerId !== null) {
+                $report .= ((int) $row['controller_id'] === $winnerId)
+                    ? pickLocationAgentText($pdo, 'textLocationAgentSpoilsSelf')
+                    : sprintf(pickLocationAgentText($pdo, 'textLocationAgentSpoilsOther'), $winnerId);
+            }
+            if ($report !== '') {
+                updateWorkerAction($pdo, $workerId, $turn_number, null, ['location_attack_report' => $report]);
+            }
+        }
+    }
+
+    game_error_log(__FUNCTION__, 'DONE with location_id : ' . $location['id'], [], 'debug');
+}
+
+/**
+ * Pick one line from a location-agent text pool, empty when the key is unusable.
+ *
+ * @param PDO $pdo : database connection
+ * @param string $key : config key holding a JSON list of templates
+ *
+ * @return string : a sprintf template, '' when the pool is missing or malformed
+ */
+function pickLocationAgentText(PDO $pdo, string $key): string
+{
+    $pool = json_decode((string) getConfig($pdo, $key), true);
+    if (empty($pool) || !is_array($pool)) {
+        game_error_log(__FUNCTION__, 'missing or unusable text pool : ' . $key, [], 'warning');
+        return '';
+    }
+
+    return (string) $pool[array_rand($pool)];
+}
+
+/**
  * Apply the location combat verdict : plunder, outcome, log, and freeing of orphans.
  *
  * The spoils go to the attacking network with the most survivors, the place is razed,
@@ -748,6 +860,8 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $attackers
         if ($falls) {
             game_error_log(__FUNCTION__, 'no attacking controller can stash the spoils, the location holds', ['location_id' => $location['id']], 'warning');
         }
+        writeLocationAgentReports($pdo, $location, $attackers, $defenderRows, $aliveIds, $engaged, false, $falls, null, 0, $turn_number);
+
         return logLocationAttack(
             $pdo,
             $locationName,
@@ -803,6 +917,8 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $attackers
     }
 
     game_error_log(__FUNCTION__, 'DONE with location_id : ' . $location['id'], ['winner_id' => $winnerId, 'destroyed' => $destroyed, 'swapped' => $swapped, 'pillaged' => $pillaged, 'artefacts' => $captureResult['count']], 'debug');
+
+    writeLocationAgentReports($pdo, $location, $attackers, $defenderRows, $aliveIds, $engaged, true, $falls, $winnerId, (int) $captureResult['count'], $turn_number);
 
     // attacker_id stays NULL unless artefacts actually moved.
     return logLocationAttack(
