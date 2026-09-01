@@ -427,7 +427,11 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         $defenderCount = count($defenders);
         $a = 0;
         $d = 0;
+        // Worker ids that traded at least one blow : the rest never met anyone.
+        $engaged = [];
         while ($a < $attackerCount && $d < $defenderCount) {
+            $engaged[(int) $attackers[$a]['worker_id']] = true;
+            $engaged[(int) $defenders[$d]['worker_id']] = true;
             $pair = buildLocationCombatPair($attackers[$a], $defenders[$d], $location, $turn_number);
             // A location duel belongs in its own report section, not among agent attacks.
             $outcome = resolveWorkerCombat($pdo, $pair, ['turncounter' => $turn_number], 'location_attack_report', 'location_attack_report');
@@ -442,13 +446,14 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
 
         $aliveAttackerRows = getActiveLocationCombatants($pdo, $attackers, $turn_number);
         $aliveAttackers = count($aliveAttackerRows);
-        $aliveDefenders = count(getActiveLocationCombatants($pdo, $defenders, $turn_number));
+        $aliveDefenderRows = getActiveLocationCombatants($pdo, $defenders, $turn_number);
+        $aliveDefenderCount = count($aliveDefenderRows);
         // A missing key must not collapse the threshold to zero and hand over the location.
         $configured = getConfig($pdo, 'locationOverwhelmValue');
         $value = is_numeric($configured) ? (int) $configured : 2;
         $threshold = getLocationOverwhelmMode($pdo) === 'morethan'
-            ? $aliveDefenders + $value
-            : $aliveDefenders * $value;
+            ? $aliveDefenderCount + $value
+            : $aliveDefenderCount * $value;
 
         // Strict comparison also settles nobody-versus-nobody : the location holds.
         $falls = $aliveAttackers > $threshold;
@@ -457,7 +462,7 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
         $winnerId = $falls ? rankLocationSpoilsControllers($pdo, $aliveAttackerRows) : null;
         $taken = $falls && $winnerId !== null;
 
-        game_error_log(__FUNCTION__, 'verdict for location_id ' . $locationId . ' : ' . ($falls ? 'falls' : 'holds'), ['alive_attackers' => $aliveAttackers, 'alive_defenders' => $aliveDefenders, 'taken' => $taken, 'winner_id' => $winnerId, 'mode' => getLocationOverwhelmMode($pdo), 'value' => getConfig($pdo, 'locationOverwhelmValue')], 'debug');
+        game_error_log(__FUNCTION__, 'verdict for location_id ' . $locationId . ' : ' . ($falls ? 'falls' : 'holds'), ['alive_attackers' => $aliveAttackers, 'alive_defenders' => $aliveDefenderCount, 'taken' => $taken, 'winner_id' => $winnerId, 'mode' => getLocationOverwhelmMode($pdo), 'value' => getConfig($pdo, 'locationOverwhelmValue')], 'debug');
 
         if ($taken) {
             $outcomeText = 'le lieu tombe';
@@ -472,16 +477,16 @@ function resolveAgentLocationCombat(PDO $pdo, int $turn_number): bool
             $falls ? 'falls' : 'holds',
             $locationId,
             $aliveAttackers,
-            $aliveDefenders,
+            $aliveDefenderCount,
             $taken ? 1 : 0,
             htmlspecialchars((string) $location['name']),
             $aliveAttackers,
-            $aliveDefenders,
+            $aliveDefenderCount,
             $outcomeText
         );
 
         $participants = array_merge($group['attackers'], $group['defenders']);
-        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $aliveDefenders, $falls, $winnerId, $turn_number)) {
+        if (!resolveAgentLocationOutcome($pdo, $location, $attackers, $participants, $aliveAttackerRows, $aliveDefenderRows, $engaged, $falls, $winnerId, $turn_number)) {
             return false;
         }
     }
@@ -708,25 +713,35 @@ function resetWorkersTargetingLocation(PDO $pdo, array $participants, int $turn_
  *
  * @param PDO $pdo : database connection
  * @param array $location : hydrated location row (needs id, name, controller_id, activate_json)
- * @param array $engagedAttackers : attackers that reached the place, dead ones included
+ * @param array $attackers : attackers that reached the place — post saboteur
+ *   exclusion, dead ones included. Not the same as $engaged, which is who fought.
  * @param array $allParticipants : every combatant of the group, saboteurs included
  * @param array $aliveAttackers : attacker rows still active after the ladder
- * @param int $aliveDefenderCount : defenders still active after the ladder
+ * @param array $aliveDefenders : defender rows still active after the ladder
+ * @param array $engaged : worker_id => true for everyone who fought at least one duel
  * @param bool $falls : the verdict computed by resolveAgentLocationCombat()
  * @param int|null $winnerId : controller that carries off the spoils, NULL when none can
  * @param int $turn_number : current turn number
  *
  * @return bool : false only on a DB failure that must abort the end of turn
  */
-function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAttackers, array $allParticipants, array $aliveAttackers, int $aliveDefenderCount, bool $falls, int|null $winnerId, int $turn_number): bool
+function resolveAgentLocationOutcome(PDO $pdo, array $location, array $attackers, array $allParticipants, array $aliveAttackers, array $aliveDefenders, array $engaged, bool $falls, int|null $winnerId, int $turn_number): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with location_id : ' . $location['id'], ['falls' => $falls, 'turn_number' => $turn_number], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $locationName = (string) $location['name'];
+    $aliveIds = [];
+    foreach (array_merge($aliveAttackers, $aliveDefenders) as $row) {
+        $aliveIds[(int) $row['worker_id']] = true;
+    }
+    $defenderRows = array_values(array_filter(
+        $allParticipants,
+        static fn (array $r): bool => ($r['action_choice'] ?? '') === 'defend_location'
+    ));
     $targetControllerId = !empty($location['controller_id']) ? (int) $location['controller_id'] : null;
-    $attackerClause = buildLocationAttackerClause($pdo, $engagedAttackers, $location);
+    $attackerClause = buildLocationAttackerClause($pdo, $attackers, $location);
     $aliveCount = count($aliveAttackers);
 
     if ($winnerId === null) {
@@ -743,7 +758,7 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
             sprintf((string) getConfig($pdo, 'textLocationNotDestroyed'), $locationName),
             sprintf(locationAttackText($pdo, false), $locationName, $attackerClause),
             $aliveCount,
-            $aliveDefenderCount
+            count($aliveDefenders)
         );
     }
 
@@ -800,7 +815,7 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $engagedAt
         $attackerText,
         $targetText,
         $aliveCount,
-        $aliveDefenderCount
+        count($aliveDefenders)
     );
 }
 
