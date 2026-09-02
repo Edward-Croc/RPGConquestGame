@@ -228,7 +228,7 @@ Sa présence confirme l’implantation secrète du christianisme à Tokushima et
 -- Temples des Yokais
 INSERT INTO {prefix}locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description, activate_json) VALUES
      -- Feu - Teppō
-    ('Vieux temple des colines de Kubokawa', 8, True, (SELECT ID FROM {prefix}zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM {prefix}controllers WHERE lastname = 'Shikoku (四国)'),
+    ('Vieux temple des collines de Kubokawa', 8, True, (SELECT ID FROM {prefix}zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM {prefix}controllers WHERE lastname = 'Shikoku (四国)'),
         'Accroché aux flancs escarpés de la côte sud de Kōchi, un petit sanctuaire noircit repose au bord d’une ancienne veine de fer oubliée.
 Au loin, dans la vallée, les marteaux des forgerons résonnent comme une prière sourde.
 Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait sursauter les corbeaux.

@@ -253,7 +253,7 @@ Ce lieu sert également de relais discret pour faire entrer armes, livres et mes
 -- Temples des Yokais
 INSERT INTO {prefix}locations (name, discovery_diff, can_be_destroyed, zone_id, controller_id, description, activate_json ) VALUES
      -- Feu - Teppō
-    ('Vieux temple des colines de Kubokawa', 8, 1, (SELECT ID FROM {prefix}zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM {prefix}controllers WHERE lastname = 'Shikoku (四国)'),
+    ('Vieux temple des collines de Kubokawa', 8, 1, (SELECT ID FROM {prefix}zones WHERE name = 'Cap sud de Tosa'),  (SELECT ID FROM {prefix}controllers WHERE lastname = 'Shikoku (四国)'),
         'Accroché aux flancs escarpés de la côte sud de Tosa, un petit sanctuaire noirci repose au bord d’une ancienne veine de fer oubliée.
 Au loin, dans la vallée, les marteaux des forgerons de Kuroshio résonnent comme une prière sourde.
 Mais chaque nuit, une odeur de poudre flotte dans l’air, et un claquement sec — sec comme un tir — fait envoler les corbeaux.
