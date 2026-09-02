@@ -13,8 +13,8 @@ import pytest
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
-    register_php_error_listener, assert_no_collected_php_errors,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as,
+    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -95,6 +95,24 @@ def _seed_ckl_admin(page, recipient_id, location_id):
         f"&location_id={location_id}"
     )
     page.wait_for_load_state("load")
+
+
+def _open_gift_details(page):
+    """The gift block is a closed-by-default <details>; open it so the
+    forms inside become visible to Playwright."""
+    summary = page.locator("details summary").filter(
+        has_text="Donner des informations"
+    ).first
+    if summary.count() > 0:
+        summary.click()
+
+
+def _hidden_controller_id_values(page, form_selector):
+    """Return the value of every hidden controller_id input in the form."""
+    inputs = page.locator(
+        f"{form_selector} input[type='hidden'][name='controller_id']"
+    ).all()
+    return [i.get_attribute("value") for i in inputs]
 
 
 # ---------------------------------------------------------------------------
@@ -334,3 +352,96 @@ class TestInformationAdminTransactionsTable:
 
     def test_admin_section_present(self):
         assert "Information Transactions" in self._admin_content
+
+
+class TestPlayerGiftLocationNonPrivileged:
+    """A non-privileged owner must be able to submit the location-gift form.
+
+    Both gift forms are method="GET", so action.php's ownership guard only
+    sees controller_id when the form carries it as a hidden field. The
+    location form used to omit it, which made every player submission 403."""
+
+    _location_name = "Echo-Base"
+    _location_form = "form:has(input[name='giftInformationLocation'])"
+    _agent_form = "form:has(input[name='giftInformationAgent'])"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gift_state(self, browser):
+        admin_ctx = browser.new_context()
+        admin = admin_ctx.new_page()
+        register_php_error_listener(admin)
+        ensure_gm_login(admin, PHP_BASE_URL)
+        alpha_id = _resolve_controller_id_via_ui(admin, "Alpha")
+        charlie_id = _resolve_controller_id_via_ui(admin, "Charlie")
+        location_id = _resolve_location_id_via_ui(admin, self._location_name)
+        # Alpha owns no location, so seed its CKL to populate the gift dropdown.
+        _seed_ckl_admin(admin, alpha_id, location_id)
+        assert_no_collected_php_errors(admin)
+
+        player_ctx = browser.new_context()
+        player = player_ctx.new_page()
+        register_php_error_listener(player)
+        login_as(player, PHP_BASE_URL, "single_player", "test")
+        safe_goto(player, f"{PHP_BASE_URL}/controllers/action.php?controller_id={alpha_id}")
+        player.wait_for_load_state("load")
+        _open_gift_details(player)
+
+        location_hidden = _hidden_controller_id_values(player, self._location_form)
+        agent_hidden = _hidden_controller_id_values(player, self._agent_form)
+
+        player.locator(
+            f"{self._location_form} select[name='target_controller_id']"
+        ).select_option(value=charlie_id)
+        player.locator(
+            f"{self._location_form} select[name='location_id']"
+        ).select_option(value=location_id)
+        with player.expect_response(
+            lambda response: "giftInformationLocation" in response.url
+        ) as response_info:
+            player.locator(
+                f"{self._location_form} input[name='giftInformationLocation']"
+            ).click()
+        status = response_info.value.status
+        player.wait_for_load_state("load")
+        assert_no_collected_php_errors(player)
+        player_ctx.close()
+
+        _set_active_via_ui(admin, "Charlie")
+        charlie_content = _faction_view(admin)
+        assert_no_collected_php_errors(admin)
+        admin_ctx.close()
+
+        type(self)._alpha_id = alpha_id
+        type(self)._location_hidden = location_hidden
+        type(self)._agent_hidden = agent_hidden
+        type(self)._status = status
+        type(self)._charlie_content = charlie_content
+        yield
+
+    def test_location_form_carries_hidden_controller_id(self):
+        assert self._location_hidden == [self._alpha_id], (
+            f"Location gift form must carry exactly one hidden controller_id "
+            f"input holding the giver id {self._alpha_id!r}; got {self._location_hidden!r}"
+        )
+
+    def test_agent_form_carries_hidden_controller_id(self):
+        assert self._agent_hidden == [self._alpha_id], (
+            f"Agent gift form must carry exactly one hidden controller_id "
+            f"input holding the giver id {self._alpha_id!r}; got {self._agent_hidden!r}"
+        )
+
+    def test_submission_not_forbidden(self):
+        assert self._status != 403, (
+            "Non-privileged owner submitting the location gift form must not "
+            "hit the ownership guard"
+        )
+        assert self._status == 200, \
+            f"Location gift submission must render; got {self._status}"
+
+    def test_recipient_faction_received_the_location(self):
+        assert self._location_name in self._charlie_content, (
+            f"Charlie's faction page must mention the gifted location "
+            f"{self._location_name!r} after the player-path gift"
+        )
+        assert "vous a transmis" in self._charlie_content
+        assert "Alpha" in self._charlie_content
