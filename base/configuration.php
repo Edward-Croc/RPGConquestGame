@@ -69,7 +69,8 @@ require_once '../base/baseHTML.php';
 
 ?>
         <div class="config">
-            <p>Documentation : <a href="/<?php echo htmlspecialchars($_SESSION['FOLDER']); ?>/base/docConfig.php">Guide de configuration</a> — référence des clés de configuration et des modes du système.</p>
+            <p>Documentation : <a href="/<?php echo htmlspecialchars($_SESSION['FOLDER']); ?>/base/docConfig.php">Guide de configuration</a>
+                — <a href="/<?php echo htmlspecialchars($_SESSION['FOLDER']); ?>/base/admin_csv.php">CSV scénarios (download / check)</a></p>
         </div>
         <div  class="config">
             <form method="post">

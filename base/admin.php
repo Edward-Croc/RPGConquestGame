@@ -102,7 +102,9 @@ echo sprintf(
             <h1>Config Management</h1>
                 <?php
     echo sprintf(
-        '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>',
+        '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>
+                <p> <a href="/%1$s/base/docConfig.php">Guide de configuration</a> </p>
+                <p> <a href="/%1$s/base/admin_csv.php">CSV scénarios (download / check)</a> </p>',
         $_SESSION['FOLDER']
     );
 echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">', $_SESSION['FOLDER']);

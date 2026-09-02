@@ -7,6 +7,7 @@ $pageName = 'docConfig';
 require_once '../base/baseHTML.php';
 require_once '../lib/parsedown.php';
 
+
 $prefix_display = !empty($_SESSION['GAME_PREFIX']) ? $_SESSION['GAME_PREFIX'] : '{prefix}';
 $md = file_get_contents(__DIR__ . '/../docs/configuration.md');
 $md = str_replace('{prefix}', $prefix_display, $md);
@@ -23,4 +24,10 @@ $html = preg_replace_callback(
     $html
 );
 
-echo '<div class="docConfig section">' . $html . '</div>';
+$folder = $_SESSION['FOLDER'] ?? '';
+$adminCsvNote = '';
+if (!empty($_SESSION['is_privileged']) && $folder !== '') {
+    $adminCsvNote = '<p class="box"><a href="/' . htmlspecialchars($folder) . '/base/admin_csv.php">→ CSV scénarios (download / check par section_key)</a></p>';
+}
+
+echo $adminCsvNote . '<div class="docConfig section">' . $html . '</div>';

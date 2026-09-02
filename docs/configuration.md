@@ -1,15 +1,122 @@
 # Documentation de configuration
 
-**Public visé :** organisateurs/admins de soirées enquête utilisant le système RPG Game Conquest, et auteurs de scénarios qui éditent la table `{prefix}config`.
+Guide pratique pour préparer et ajuster un scénario : CSV de setup, clés `{prefix}config`, et exemples existants.
 
-**Note de lecture :** les **clés de configuration** (`claimMode`, `claimDiff`, etc.) sont stockées dans la table `{prefix}config` et modifiables via l'admin ; les valeurs par défaut sont notées entre parenthèses. Les **variables calculées** (`claim_val`, `calculated_defence_val`, etc.) sont recalculées à chaque tour à partir des configs et de l'état du jeu — elles ne sont pas modifiables directement, on les mentionne uniquement pour expliquer comment les configs s'y combinent. Pour les clés énumérées (modes), toute valeur non implémentée désactive le mécanisme correspondant.
+## Démarrage rapide — construire un CSV de config
 
+**Public :** organisateurs / admins de soirées enquête, et auteurs de scénarios qui éditent `{prefix}config` (admin live ou CSV de setup).
 
-## 1. Textes affichés
+### Format du fichier
+
+1. Créez `var/csv/setup{NomScenario}_config.csv`.
+2. Première ligne exactement :
+
+```csv
+name,value,description
+```
+
+3. Une ligne par clé à **surcharger**. Tout le reste vient de `minimalData.sql`.
+4. Guillemets CSV standards : champs avec virgules ou retours ligne entre guillemets ; guillemets internes doublés (`""`).
+5. Les listes d’actions SQL gardent leurs apostrophes : `"'investigate','claim'"`.
+6. Les pools de texte sont souvent du JSON dans une cellule : `"[""Phrase %1$s.""]"`.
+
+### Recette minimale
+
+| Besoin | Clés à poser en premier |
+|---|---|
+| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt` |
+| Vocabulaire | `textForZoneType`, `timeValue`, dénominateurs `timeDenominator*` / `controllerNameDenominator*` |
+| Mode conquête | `claimMode` (`worker` ou `worker_leader`) |
+| Mode attaque de lieu | `locationAttackMode` (`immediate`, `endTurn`, ou `agent_attack_defence`) |
+| Économie | `ressource_management` + CSV `*_ressources_config.csv` / `*_controller_ressources.csv` |
+| Recrutement | `turn_recrutable_workers`, listes d’origines, `age_discipline` |
+
+### Bonnes pratiques
+
+- Partez d’un CSV existant (TestConfig pour un socle court, Japon1555 pour un scénario riche).
+- Ne recopiez pas toutes les clés : surchargez seulement ce qui change le ressenti du scénario.
+- Testez un reset admin avec votre `config_name` avant la soirée.
+- Pour les règles de zone / tags de lieux / gains, ce sont **d’autres CSV** (`*_zones.csv`, `*_locations.csv`, `*_ressources_config.csv`), pas la table `config`.
+
+**Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
+
+## Exemples CSV à télécharger / comparer
+
+Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`base/admin_csv.php`, compte privilégié).
+
+| Scénario | Fichier config | Ressources | Autres tables utiles |
+|---|---|---|---|
+| **TestConfig** (tests) | `setupTestConfig_config.csv` | `setupTestConfig_ressources_config.csv` | zones, locations, controllers, advanced… |
+| **Japon1555CSV** (Shikoku 1555) | `setupJapon1555CSV_config.csv` | `setupJapon1555CSV_ressources_config.csv` | zones (`zone_rules`, `is_hidden`), locations, powers… |
+| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | *(pas de CSV ressources — `ressource_management=FALSE`)* | zones, locations, controllers… |
+
+**En-tête config obligatoire :** `name,value,description`
+
+Les valeurs absentes d’un CSV scénario restent celles de `var/{mysql|postgres}/minimalData.sql` (chargées avant le CSV, puis upsert).
+
+### Comment vérifier une section
+
+1. Ouvrir **Admin → CSV scénarios (download / check)** (`base/admin_csv.php`).
+2. Choisir un fichier `*_config.csv` et un `section_key` (ex. `location_attack`).
+3. Lire les clés **trouvées** vs **absentes** (souvent OK si le défaut `minimalData` suffit).
+4. Télécharger le CSV pour le comparer à votre brouillon local.
+
+## Index des clés par `section_key`
+
+Le champ `section_key` est **uniquement documentaire** : il n’apparaît pas dans les CSV ni dans la table `{prefix}config`.
+La carte complète vit dans [`docs/config_section_map.json`](config_section_map.json) ; le panneau admin peut vérifier un CSV config contre une section.
+
+### `texts` — Textes affichés
+
+Titre, présentation, dénominateurs, libellés d'actions, pools de rapports.
+
+Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`
+
+### `engine` — Moteur de jeu (calculs partagés)
+
+Dés, bonus, listes active/passive, seuils d'enquête et de combat entre agents, difficulté de découverte.
+
+Clés : `MINROLL`, `MAXROLL`, `PASSIVEVAL`, `ENQUETE_ZONE_BONUS`, `ATTACK_ZONE_BONUS`, `DEFENCE_ZONE_BONUS`, `HIDE_ENQUETE_FLAT_BONUS`, `HIDE_DEFENCE_FLAT_BONUS`, `DEFEND_LOCATION_DEFENCE_FLAT_BONUS`, `passiveInvestigateActions`, `activeInvestigateActions`, `passiveAttackActions`, `activeAttackActions`, `passiveDefenceActions`, `activeDefenceActions`, `investigateActionsList`, `investigateOrder`, `REPORTDIFF0`, `REPORTDIFF1`, `REPORTDIFF2`, `REPORTDIFF3`, `LOCATIONNAMEDIFF`, `LOCATIONINFORMATIONDIFF`, `LOCATIONARTEFACTSDIFF`, `ATTACKDIFF0`, `ATTACKDIFF1`, `attackTimeWindow`, `canAttackNetwork`, `RIPOSTACTIVE`, `RIPOSTDIFF`, `LIMIT_ATTACK_BY_ZONE`, `baseDiscoveryDiff`, `baseDiscoveryDiffAddPowers`, `baseDiscoveryDiffAddWorkers`, `baseDiscoveryDiffAddTurns`, `maxBonusDiscoveryDiffPowers`, `maxBonusDiscoveryDiffWorkers`, `maxBonusDiscoveryDiffTurns`, `continuing_investigate_action`, `continuing_attack_action`, `continuing_hide_action`, `continuing_claim_action`, `continuing_attack_location_action`, `continuing_defend_location_action`
+
+### `claim` — Revendications de zone (claimMode)
+
+Mode de résolution des revendications et formules associées.
+
+Clés : `claimMode`, `DISCRETECLAIMDIFF`, `VIOLENTCLAIMDIFF`, `baseClaim`, `baseClaimAddWorkers`, `baseClaimAddOwnedLocations`, `baseClaimAddSupporting`, `maxBonusClaimWorkers`, `maxBonusClaimOwnedLocations`, `claimDiff`, `claimVisibleToRealBonus`, `baseZoneDefence`, `baseZoneDefenceAddWorkers`, `baseZoneDefenceAddOwnedLocations`, `baseZoneDefenceAddSupporting`, `maxBonusZoneDefenceWorkers`, `maxBonusZoneDefenceOwnedLocations`, `noControllerZoneDefenceBonus`
+
+### `location_attack` — Attaque de lieu (locationAttackMode)
+
+Modes immediate / endTurn / agent_attack_defence, formules d'attaque/défense de lieu, textes d'assaut.
+
+Clés : `locationAttackMode`, `attackLocationDiff`, `attackLocationOutcomeBandwidth`, `baseAttack`, `baseAttackAddPowers`, `baseAttackAddWorkers`, `baseDefence`, `baseDefenceAddPowers`, `baseDefenceAddWorkers`, `baseDefenceAddTurns`, `maxBonusDefenceTurns`, `noControllerDefenceBonus`, `locationOverwhelmMode`, `locationOverwhelmValue`, `locationAttackCreditMode`, `textLocationDestroyed`, `textLocationPillaged`, `textLocationNotDestroyed`, `textOwnedArtefacts`, `textLocationAttackQueued`, `textLocationAttackOutcomeFail`, `textLocationAttackOutcomeWeak`, `textLocationAttackOutcomeProbable`, `textLocationAttackResolved`, `textLocationAttackDestroyed`, `textLocationAttackMoved`, `textLocationUnreachable`, `textLocationAssaultOwnerSuccess`, `textLocationAssaultOwnerFail`, `textLocationAssaultAgentSuccess`, `textLocationAssaultAgentFail`, `textLocationDefenceAgentSuccess`, `textLocationDefenceAgentFail`, `textLocationAssaultAgentNoHolder`, `textLocationDefenceAgentNoHolder`, `textLocationAssaultAgentUnengaged`, `textLocationDefenceAgentUnengaged`, `textLocationAgentSpoilsSelf`, `textLocationAgentSpoilsOther`
+
+### `workers` — Recrutement et progression des agents
+
+Slots de recrutement, origines, disciplines, transformations, secrets de base.
+
+Clés : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_nb_choices`, `first_come_origin_list`, `recrutement_nb_choices`, `recrutement_origin_list`, `local_origin_list`, `recrutement_disciplines`, `recrutement_transformation`, `age_discipline`, `age_transformation`, `owner_knows_own_base_secret`
+
+### `resources` — Ressources
+
+Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).
+
+Clés : `ressource_management`
+
+### `debug` — Débogage
+
+Flags de debug et insertion de valeurs de test.
+
+Clés : `DEBUG`, `DEBUG_REPORT`, `DEBUG_ATTACK`, `DEBUG_TRANSFORM`, `ACTIVATE_TESTS`
+
+## Référence détaillée
+
+Les sections suivantes détaillent le comportement. Chaque bloc porte un `section_key` pour croiser l’index et le panneau CSV.
+
+### `texts` — Textes affichés
 
 *Section à compléter dans un commit suivant.* Couvrira : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, les familles `txt_ps_*` et `txt_inf_*`, les dénominateurs (`controllerNameDenominator*`, `timeDenominator*`), `textForZoneType`, `timeValue`, `map_file`, `map_alt`.
 
-## 2. Moteur de jeu (autres calculs)
+### `engine` — Moteur de jeu (calculs partagés)
 
 Cette section couvre les clés qui pilotent les calculs partagés entre tous les modes : valeurs de base des actions d'agent, bonus contextuels, listes d'actions, seuils de découverte, combat entre agents et difficulté des places fortes. Ces clés s'appliquent quelles que soient les valeurs de `claimMode` et `locationAttackMode`.
 
@@ -130,7 +237,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
 
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
-**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **shapes** de règles cohabitent :
+**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **formes** de règles cohabitent :
 
 - **`zone_name`** — cible une zone spécifique par nom (n'importe où sur la carte, sans contrainte d'adjacence). Utile pour imposer un prérequis territorial précis (gate distant), ou lier des zones stratégiques nommées.
 - **`adjacent_zones: true`** — itère sur toutes les zones voisines (single-hop, via `adjacent_zones`) et applique le `value_delta` pour chaque voisine dont la condition est satisfaite. Utile pour récompenser la cohésion territoriale ou pénaliser un prétendant isolé.
@@ -144,7 +251,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
         {"zone_name": "Plaines du Kansai", "condition": "held_by_actor", "value_delta": 2},
         {"adjacent_zones": true, "condition": "held_by_actor", "value_delta": 1}
     ],
-    "Attack":        [ /* mêmes shapes */ ],
+    "Attack":        [ /* mêmes formes */ ],
     "Defence":       [ /* ... */ ],
     "ZoneDefence":   [ /* ... */ ],
     "DiscoveryDiff": [ /* ... */ ]
@@ -166,21 +273,21 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
   - **`not_held_by_actor`** — la règle s'applique si l'acteur **ne détient pas** la zone évaluée.
 - **`value_delta`** (int, requis) — entier signé ajouté à la valeur retournée quand la condition est satisfaite. Peut être négatif (pénalité) ou positif (bonus).
 
-**Shape spécifique — `zone_name` :**
+**Forme spécifique — `zone_name` :**
 
 - **`zone_name`** (string, requis) — nom exact de la zone à évaluer. Résolu par lookup SQL sur `zones.name`. **Pas de contrainte d'adjacence** : la zone peut se trouver n'importe où sur la carte.
 - Se déclenche **au plus une fois** (une seule zone évaluée).
 
-**Shape itérateur — `adjacent_zones: true` :**
+**Forme itérateur — `adjacent_zones: true` :**
 
 - **`adjacent_zones`** (bool, requis, doit valoir `true`) — bascule la règle en mode itérateur sur la liste `adjacent_zones` de la zone porteuse.
 - Se déclenche **une fois par voisine satisfaisant la condition** : les `value_delta` s'accumulent (un bonus `+1` avec 3 voisines détenues donne `+3`).
 
-**Discrimination :** la présence de `zone_name` ou de `adjacent_zones: true` détermine le shape. Une règle qui a **les deux** ou **aucun des deux** est ignorée avec un `error_log`.
+**Comment choisir le type de règle :** la présence de `zone_name` ou de `adjacent_zones: true` détermine la forme. Une règle qui a **les deux** ou **aucun des deux** est ignorée avec un `error_log`.
 
-**Combinaison additive :** toutes les règles satisfaites (des deux shapes) contribuent au résultat final : `base_value + Σ(value_delta pour chaque règle satisfaite)`. L'ordre des règles dans le tableau n'est pas significatif.
+**Combinaison additive :** toutes les règles satisfaites (des deux formes) contribuent au résultat final : `base_value + Σ(value_delta pour chaque règle satisfaite)`. L'ordre des règles dans le tableau n'est pas significatif.
 
-**Fail-open — comportements de robustesse :**
+**Si une règle est cassée (comportement tolérant) :**
 
 - `zone_rules IS NULL` → la valeur passe inchangée (aucun log).
 - JSON invalide (parse fail) → `error_log` + la valeur passe inchangée.
@@ -194,7 +301,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
 
 Le principe est simple : une configuration cassée dégrade la règle concernée mais laisse la valeur de base intacte.
 
-**Point d'intégration :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` dispatche chaque règle vers `applyZoneRuleSpecific` (pour `zone_name`) ou `applyZoneRuleAdjacent` (pour `adjacent_zones: true`), puis cumule les `value_delta` pertinents.
+**Où c'est appliqué dans le code :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` dispatche chaque règle vers `applyZoneRuleSpecific` (pour `zone_name`) ou `applyZoneRuleAdjacent` (pour `adjacent_zones: true`), puis cumule les `value_delta` pertinents.
 
 > **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` avec `zone_name: "Plaines du Kansai"` (`-4` si l'acteur ne détient pas les plaines, `+2` s'il les détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
 
@@ -207,7 +314,7 @@ Le principe est simple : une configuration cassée dégrade la règle concernée
 - **`hide_turn_zero`** — cache la zone uniquement au tour 0 (comportement legacy, indépendant).
 - **`is_hidden`** — cache la zone en permanence, seulement révélée aux acteurs légitimes.
 
-**Contrat de visibilité (`canControllerSeeZone`, `zones/functions.php`) :**
+**Règles de visibilité (`canControllerSeeZone`, `zones/functions.php`) :**
 
 - GM (`$_SESSION['is_privileged']`) → voit toutes les zones, y compris les cachées.
 - Zone non cachée (`is_hidden = 0`) → tout le monde la voit (le filtre `hide_turn_zero` reste actif au tour 0).
@@ -238,7 +345,7 @@ Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMecha
 
 *Section à compléter dans un commit suivant.* Couvrira : `continuing_investigate_action` et les comportements de continuité d'actions d'un tour au suivant (l'entrée `continuing_claim_action` est déjà documentée dans la section Modes de résolution).
 
-#### Famille `claimMode` — résolution des revendications de zone
+### `claim` — Famille `claimMode` — résolution des revendications de zone
 
 **`claimMode`** — Détermine comment le système résout les revendications de zone à la fin du tour. Valeurs implémentées :
 
@@ -250,7 +357,7 @@ Toute autre valeur (faute de frappe, mode futur non développé) désactive le m
 
 **Clés communes à tous les modes :** `continuing_claim_action` (= 1, l'action reste active au tour suivant), `txt_ps_claim` et `txt_inf_claim` (textes affichés), et les listes d'actions `passiveInvestigateActions` / `activeAttackActions` / `passiveDefenceActions` qui contiennent toutes la valeur `'claim'`.
 
-#### Famille `locationAttackMode` — attaque de lieu (locations)
+### `location_attack` — Famille `locationAttackMode` — attaque de lieu (locations)
 
 **`locationAttackMode`** — Détermine où et quand les attaques de lieu (place forte, etc.) sont résolues. Valeurs implémentées :
 
@@ -315,7 +422,7 @@ En mode `agent_attack_defence`, l'assaut est mené par des agents et non par un 
 | Agent que l'échelle n'a jamais apparié | `textLocationAssaultAgentUnengaged` **en préfixe** | `textLocationDefenceAgentUnengaged` **en préfixe** |
 | Des artefacts ont réellement changé de lieu | `textLocationAgentSpoils*` **en suffixe** | `textLocationAgentSpoils*` **en suffixe** |
 
-**Polarité — le point qui piège à la relecture.** Le succès est celui de *l'assaut*, jamais celui du lecteur. Un assaut qui produit son effet — destruction, échange ou simple pillage — est donc le succès de l'attaquant **et l'échec du défenseur** : c'est bien **`textLocationDefenceAgentFail`** qui part quand l'assaut a réussi, et `textLocationDefenceAgentSuccess` quand il a échoué. La même convention règne déjà sur le chemin contrôleur (`resolveControllerLocationAttackEffects`).
+**Attention — sens de Success / Fail :** Le succès est celui de *l'assaut*, jamais celui du lecteur. Un assaut qui produit son effet — destruction, échange ou simple pillage — est donc le succès de l'attaquant **et l'échec du défenseur** : c'est bien **`textLocationDefenceAgentFail`** qui part quand l'assaut a réussi, et `textLocationDefenceAgentSuccess` quand il a échoué. La même convention règne déjà sur le chemin contrôleur (`resolveControllerLocationAttackEffects`).
 
 **Ordre de composition.** Le rapport d'un agent est assemblé dans cet ordre, et un agent mort n'en reçoit aucun morceau :
 
@@ -341,11 +448,11 @@ Un agent que personne n'a affronté lit donc deux phrases : d'abord qu'il n'a pa
 - **`textLocationAssaultAgent*`** — une **clause déjà rédigée** « ` défendu par le réseau N` », espace initiale comprise, vide quand le lieu n'appartient à personne. À coller directement dans la phrase, sans article ni préposition.
 - **`textLocationDefenceAgent*`** — le ou les **numéros de réseau attaquants**, bruts. En mode `agent_attack_defence` c'est une **liste jointe par des virgules** : un assaut d'agents peut réunir plusieurs réseaux devant la même place, alors que le chemin contrôleur n'en passait jamais qu'un seul. Une formulation du type « du réseau %3$s » doit donc rester lisible au pluriel.
 
-**Seedage — scénario uniquement.** Comme les quatre pools d'agent qui les précèdent, ces six clés ne sont **pas** dans `minimalData.sql`. Elles sont seedées par `var/csv/setupTestConfig_config.csv` (anglais), `var/csv/setupJapon1555CSV_config.csv`, `var/mysql/setupJapon1555SQL_textes.sql` et `var/postgres/setupJapon1555SQL_textes.sql` (français). Une clé manquante ou dont le JSON est illisible ne casse rien : `pickLocationAgentText()` journalise un `warning` « missing or unusable text pool » et retourne un gabarit vide, donc la ligne correspondante est simplement absente du rapport — contrairement au chemin contrôleur, qui lui retombe sur une phrase en dur. Le partage de responsabilité entre socle et scénario fait l'objet de la question ouverte **#120** « `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d'appel porter un repli ? » ; si elle se tranche en faveur du socle, ces six clés y descendront.
+**Valeurs fournies par le scénario uniquement.** Comme les quatre pools d'agent qui les précèdent, ces six clés ne sont **pas** dans `minimalData.sql`. Elles sont seedées par `var/csv/setupTestConfig_config.csv` (anglais), `var/csv/setupJapon1555CSV_config.csv`, `var/mysql/setupJapon1555SQL_textes.sql` et `var/postgres/setupJapon1555SQL_textes.sql` (français). Une clé manquante ou dont le JSON est illisible ne casse rien : `pickLocationAgentText()` journalise un `warning` « missing or unusable text pool » et retourne un gabarit vide, donc la ligne correspondante est simplement absente du rapport — contrairement au chemin contrôleur, qui lui retombe sur une phrase en dur. Le partage de responsabilité entre socle et scénario fait l'objet de la question ouverte **#120** « `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d'appel porter un repli ? » ; si elle se tranche en faveur du socle, ces six clés y descendront.
 
 **Ancienneté du lieu :** le terme `baseDefenceAddTurns` se calcule sur `{prefix}locations.setup_turn`, désormais estampillé à chaque construction, changement d'état et déménagement (voir « Difficulté de découverte des places fortes »). Un lieu neuf ou fraîchement ruiné n'a donc plus le bonus d'ancienneté maximal qu'il recevait quand la colonne restait à `0`.
 
-## 3. Recrutement et progression des Agents (workers)
+### `workers` — Recrutement et progression des agents
 
 *Section à compléter dans un commit suivant.* Couvrira : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_*`, `recrutement_*`, `age_discipline`, `age_transformation`, `owner_knows_own_base_secret`.
 
@@ -424,7 +531,7 @@ La même clé `unlock_turn` peut aussi être utilisée dans les règles `on_age`
 
 Vérifiez simplement qu'il reste toujours au moins un Métier et un Hobby tirables à chaque tour atteignable. Si tous les powers d'un type sont verrouillés, le recrutement ne pourra pas proposer de tirage valide.
 
-## 4. Ressources
+### `resources` — Ressources
 
 Cette section décrit le système économique : coûts d'action, gain forfaitaire de fin de tour, puis gains conditionnels selon l'état du jeu.
 
@@ -548,7 +655,7 @@ Le don passe par `ressources/action.php` qui appelle l'helper `giftRessource()` 
 
 La page admin `ressources/management.php` reçoit en bas une section **Ressource Transactions** qui liste tous les enregistrements de `ressource_gift_logs` triés du plus récent au plus ancien (utile pour suivre ou enquêter sur les échanges).
 
-## 5. Journal des dons d'informations entre factions
+### Dons d’informations entre factions
 
 Le système permet à un contrôleur de transmettre à une autre faction visible la connaissance d'un agent (`giftInformationAgent`) ou d'un lieu (`giftInformationLocation`) découvert. Ces actions écrivent directement dans `controllers_known_enemies` / `controller_known_locations` pour donner au destinataire la même connaissance que le donneur.
 
@@ -575,6 +682,18 @@ Pour permettre le suivi et l'enquête sur ces échanges, chaque don exécuté pa
 
 `controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
 
-## 6. Débogage
+### `debug` — Débogage
 
 *Section à compléter dans un commit suivant.* Couvrira : `DEBUG`, `DEBUG_REPORT`, `DEBUG_ATTACK`, `DEBUG_TRANSFORM`, `ACTIVATE_TESTS`.
+
+## Notes pour mainteneurs
+
+Cette annexe regroupe les détails d’implémentation utiles au code, pas à la rédaction d’un scénario.
+
+- **Import CSV** : `BDD/db_connector.php` charge `setup{config_name}_{table}.csv` avec upsert pour `config` et `power_types`.
+- **Carte documentaire** : `docs/config_section_map.json` (pas importée).
+- **Panneau admin** : `base/admin_csv.php` — download + check d’en-tête / `section_key`.
+- **Guide rendu HTML** : `base/docConfig.php` (Parsedown sur ce fichier).
+- **Logs / fail-open** : règles `zone_rules` invalides, pools texte illisibles, `gain_rules` mal formées → log + valeur de base intacte ou phrase vide selon le site d’appel.
+- **Question ouverte #120** : `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d’appel porter un repli ?
+- Les noms internes de fichiers / fonctions (`calculateVals`, `resolveWorkerCombat`, `writeLocationAgentReports`, etc.) sont cités dans la référence détaillée quand ils aident à tracer un bug ; un auteur de CSV peut les ignorer.
