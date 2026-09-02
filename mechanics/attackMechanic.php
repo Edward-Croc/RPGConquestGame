@@ -449,14 +449,16 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
         $riposte_kill = true;
         echo $defender['defender_name']. ' RIPOSTE ! <br />';
         $attackerReport[$attackerReportKey] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
+        // The agent that vanishes is the attacker, so its own controller reads the loss.
         // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
-        $defenderReport[$defenderReportKey] = sprintf(
+        $attackerReport['life_report'] = sprintf(
             $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
             getConfig($pdo, 'timeDenominatorThe'),
             getConfig($pdo, 'timeDenominatorOf'),
             getConfig($pdo, 'timeValue'),
             $mechanics['turncounter']
         );
+        // Appends to the escape line the else branch always wrote, instead of erasing it.
         $defenderReport[$defenderReportKey] .= sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller ?? ''));
     }
     updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport);
