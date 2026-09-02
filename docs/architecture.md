@@ -36,14 +36,17 @@ puis rend son HTML via `base/baseHTML.php`.
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
    schéma et recharge un scénario si `$_POST['config_name']` est posté.
-3. Le point d'entrée lit ses paramètres, applique sa **garde de propriété** — un
+3. Une page d'administration place sa **garde `is_privileged`** juste après
+   `basePHP.php`, avant tout handler : la garde de `baseHTML.php` (étape 5)
+   n'exige que `logged_in` et n'est évaluée qu'après l'exécution des POST.
+4. Le point d'entrée lit ses paramètres, applique sa **garde de propriété** — un
    non-privilégié ne peut pas agir pour un autre contrôleur — puis aiguille sur
    l'action demandée.
-4. **`base/baseHTML.php`** rend l'en-tête et la barre latérale. Il refuse d'être
+5. **`base/baseHTML.php`** rend l'en-tête et la barre latérale. Il refuse d'être
    appelé directement (comparaison `realpath`) et redirige vers la connexion si la
    session n'est pas authentifiée, sauf si `$noConnection` est posé — le drapeau
    des pages de login et de logout.
-5. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
+6. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
    si la page se termine tôt.
 
 Deux bases sont supportées, **MySQL et PostgreSQL**, choisies par

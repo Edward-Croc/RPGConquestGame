@@ -3,6 +3,12 @@ $pageName = 'admin';
 
 require_once '../base/basePHP.php';
 
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (isset($_POST['resetBDD'])) {
