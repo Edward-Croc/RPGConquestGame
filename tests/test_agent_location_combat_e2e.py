@@ -78,7 +78,8 @@ from helpers import (
     ui_attack_click, ui_attack_location, ui_combat_filter_options,
     ui_combat_logs, ui_combat_unresolved_count, ui_config_value,
     ui_controller_id, ui_defend_location, ui_location_id,
-    ui_recruit_perfect_worker, ui_worker_id, worker_report_html, worker_report_section,
+    ui_recruit_perfect_worker, ui_worker_id, ui_workers_by_lastname,
+    worker_report_html, worker_report_section,
 )
 
 # Location name -> (attacker lastnames, defender lastnames), in the order queued.
@@ -273,6 +274,18 @@ class TestLadderProgression:
         # A captured defender is out of the fight before it ends : it keeps the duel
         # it lived through and is told nothing of the outcome.
         _assert_no_outcome_line(page, "Inv_Def_1")
+        # 5.G : the ladder reuses resolveWorkerCombat, so a capture on a location
+        # assault must leave a trace worker exactly as an ordinary capture does.
+        # Nothing else asserts this on the location path.
+        rows = ui_workers_by_lastname(page, "Inv_Def_1")
+        assert len(rows) == 2, (
+            f"Inv_Def_1 was captured defending a location and should have a captured "
+            f"row plus a trace row, got {rows}"
+        )
+        actions = sorted(r["action_choice"] for r in rows)
+        assert "trace" in actions, (
+            f"capturing on the location path must create a trace worker, got {actions}"
+        )
 
     def test_defender_order_follows_enquete_initiative(self):
         # Inv_Def_2 enquete 3 engages before Inv_Def_1 enquete 2.

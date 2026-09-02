@@ -313,6 +313,23 @@ class TestBaseCombat:
         assert _ui_worker_is_passive(page, 'Counter_Def'), \
             "Counter_Def should remain passive (Surveille) after countering"
 
+        # The agent that vanishes on a riposte is the ATTACKER, so its own
+        # controller reads the loss. It used to land on the defender, who read the
+        # disappearance of someone else in the first person.
+        assert 'has disappeared' in worker_report_section(html, 'Changements :'), \
+            "the dead attacker must be told its own agent vanished"
+
+        # And the defender keeps the escape line it earned : the disappearance text
+        # used to overwrite it, so a riposte erased « but escaped » entirely.
+        defender = worker_report_section(
+            worker_report_html(page, 'Counter_Def'), 'Changements :')
+        assert 'but escaped' in defender, \
+            "the defender's escape line must survive its own riposte"
+        assert 'Counter-attacked' in defender, \
+            "the defender must also read its counter-attack"
+        assert 'has disappeared' not in defender, \
+            "the attacker's disappearance must not be filed on the defender"
+
     def test_passive_worker_view_renders_french_text(self, page: Page, base_url):
         """Smoke test for the txt_ps_passive config + ucfirst rendering chain.
         Even_Def survived as passive on turn 1, so their action.php page
