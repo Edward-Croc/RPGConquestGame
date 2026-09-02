@@ -354,7 +354,7 @@ function calculateVals(PDO $pdo, array $mechanics): bool
 
     // Execute SQLs
     foreach ($sqlArray as $sql) {
-        echo sprintf("<p>DO SQL for %s : <br /> %s <br>", $sql['config'], $sql['sql']);
+        game_error_log(__FUNCTION__, 'DO SQL for ' . $sql['config'], ['sql' => $sql['sql']], 'debug');
         try {
             // Prepare and execute SQL query
             $stmt = $pdo->prepare($sql['sql']);
@@ -363,7 +363,7 @@ function calculateVals(PDO $pdo, array $mechanics): bool
             game_error_log(__FUNCTION__, 'UPDATE worker_actions val failed', ['error' => $e->getMessage(), 'config' => $sql['config']]);
             return false;
         }
-        echo "DONE <br /></p>";
+        game_error_log(__FUNCTION__, 'DONE SQL', ['sql' => $sql['sql']], 'debug');
     }
 
     echo '</div>';
