@@ -319,14 +319,15 @@ class TestBaseCombat:
         assert 'has disappeared' in worker_report_section(html, 'Changements :'), \
             "the dead attacker must be told its own agent vanished"
 
-        # And the defender keeps the escape line it earned : the disappearance text
-        # used to overwrite it, so a riposte erased « but escaped » entirely.
+        # A riposte REPLACES the escape line the attack-failed branch wrote : one
+        # cannot both have fled and have stood to counter. The positive assertion
+        # below guards the negative one from passing on an empty report.
         defender = worker_report_section(
             worker_report_html(page, 'Counter_Def'), 'Changements :')
-        assert 'but escaped' in defender, \
-            "the defender's escape line must survive its own riposte"
         assert 'Counter-attacked' in defender, \
-            "the defender must also read its counter-attack"
+            "the defender must read its counter-attack"
+        assert 'but escaped' not in defender, \
+            "the counter-attack must replace the escape line, not append to it"
         assert 'has disappeared' not in defender, \
             "the attacker's disappearance must not be filed on the defender"
 
