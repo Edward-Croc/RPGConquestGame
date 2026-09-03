@@ -7,7 +7,6 @@ PRESENTATION,"<p>Le 6 novembre 1966, l’Arno inonde une grande partie du centre
         </p>",Presentation text
 basePowerNames,"'Célérité', 'Endurance', 'Puissance'",List of Powers accessible to all workers
 continuing_investigate_action,false,Does the investigate action stay active
-continuing_claimed_action,false,Does the claim action stay active
 textLocationPillaged,"Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.",Text for location pillaged
 textLocationNotDestroyed,"Le lieu %s n’a pas été détruit, nos excuses.",Text for location not destroyed
 ressource_management,FALSE,Ressource management configuration
@@ -204,15 +203,15 @@ texteDescriptionBase,"Nous avons trouvé le repaire de %1$s des %2$s. Ses servit
     ""<p>Je me suis retrouvé.e face à %1$s, mais après avoir survécu à son attaque, ma riposte a scellé son destin.</p>"",
     ""<p>Après une attaque brutale de %1$s, ma survie et ma riposte ont fait en sorte qu’iel n’ait plus rien à revendiquer.</p>""
 ]","Texts for the worker who was atacked an the successfully countered"
-"TEXT_LOCATION_DISCOVERED_NAME","[
+"textLocationDiscoveredName","[
     ""Nous avons identifié une installation appelée %s."",
     ""Des signes pointent vers une présence suspecte à l’endroit de %s.""
 ]","Phrases pour signaler qu’une localisation a été découverte (nom uniquement)"
-"TEXT_LOCATION_DISCOVERED_DESCRIPTION","[
+"textLocationDiscoveredDescription","[
     "" Description : %s."",
     "" Détails révélés : %s""
 ]","Phrases pour décrire une localisation après enquête"
-"TEXT_LOCATION_CAN_BE_DESTROYED","[
+"textLocationDiscoveredDestroyable","[
     "" Cette localisation peut être ciblée pour destruction."",
     "" Il est possible d’organiser une opération pour la detruire.""
 ]","Phrases pour signaler qu’une localisation peut être détruite"

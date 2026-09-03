@@ -1,6 +1,6 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
 Sōjutsu (槍術) – Art de la lance (Yari),", l’utilisation du yari à pied ou à cheval",0,1,1,,Discipline
-Kyūjutsu (弓術) – Art du tir à l’arc,", ancien kyūdō)",0,2,0,,Discipline
+Kyūjutsu (弓術) – Art du tir à l’arc,", ancien kyūdō",0,2,0,,Discipline
 Shodō (書道) – Calligraphie,", le maniement du pinceau, reflet de l’esprit",1,1,0,,Discipline
 Kadō / Ikebana (華道 / 生け花) – Art floral,", pratiqué pour l’harmonie intérieure",1,0,1,,Discipline
 Kenjutsu (剣術) – Art du sabre,", la pratique du katana en combat",0,2,1,,Discipline

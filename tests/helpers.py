@@ -218,6 +218,29 @@ def ensure_scenario_loaded(browser, base_url: str, scenario_name: str):
     return True
 
 
+def set_config_via_ui(page: Page, name: str, value: str, base_url: str = None):
+    """Set a config row's value via /base/configuration.php POST.
+
+    HTTP-only equivalent of UPDATE config SET value=? WHERE name=?, so
+    tests using this can run under UI_ONLY=1 against a remote deployment.
+    Promoted from the private copies duplicated in
+    test_worker_action_phrase_e2e.py and test_attack_location_baseline_e2e.py
+    once a third file needed the same POST-a-config-row pattern."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/base/configuration.php")
+    page.wait_for_load_state("load")
+    target_row = None
+    for row in page.locator("tr:has(form)").all():
+        if row.locator("td").nth(1).inner_text().strip() == name:
+            target_row = row
+            break
+    if target_row is None:
+        raise AssertionError(f"Config row {name!r} not found on /base/configuration.php")
+    target_row.locator("input[name='value']").fill(value)
+    target_row.locator("input[name='update_config']").click()
+    page.wait_for_load_state("load")
+
+
 # ---------------------------------------------------------------------------
 # UI-only ID-lookup helpers
 #
@@ -225,6 +248,107 @@ def ensure_scenario_loaded(browser, base_url: str, scenario_name: str):
 # them can run under UI_ONLY=1 against a remote deployment. All assume the
 # caller is logged in as gm (they do NOT re-login).
 # ---------------------------------------------------------------------------
+
+def ui_combat_logs(page: Page, base_url: str = None, worker_id: int = None,
+                    turn: int = None, location_id: int = None):
+    """Scrape /workers/management_combat.php combat-log rows into dicts,
+    rather than querying the DB, so tests using this can run under
+    UI_ONLY=1. Builds the filter query string from any non-None args.
+
+    Returns a list of dicts (DOM order preserved) with keys: id, turn,
+    outcome (str or None), resolved (bool), attempt, attacker_worker_id,
+    attacker_controller_id (or None), defender_worker_id,
+    defender_controller_id (or None), zone_id (or None), location_id
+    (or None), class_attr (raw class attribute, for combat-unresolved
+    checks), issue_text (visible Issue-cell text)."""
+    url = base_url or PHP_BASE_URL
+    params = []
+    if worker_id is not None:
+        params.append(f"worker={worker_id}")
+    if turn is not None:
+        params.append(f"turn={turn}")
+    if location_id is not None:
+        params.append(f"location={location_id}")
+    qs = ("?" + "&".join(params)) if params else ""
+    safe_goto(page, f"{url}/workers/management_combat.php{qs}")
+    _wait_loaded(page, "[data-combat-log]")
+
+    def _int_attr(row, name):
+        v = row.get_attribute(name)
+        return int(v) if v not in (None, "") else None
+
+    rows = []
+    for row in page.locator("tr.combat-row").all():
+        outcome = row.get_attribute("data-outcome")
+        rows.append({
+            "id": _int_attr(row, "data-combat-log-id"),
+            "turn": _int_attr(row, "data-turn"),
+            "outcome": outcome if outcome else None,
+            "resolved": row.get_attribute("data-resolved") == "1",
+            "attempt": _int_attr(row, "data-attempt"),
+            "attacker_worker_id": _int_attr(row, "data-attacker-worker-id"),
+            "attacker_controller_id": _int_attr(row, "data-attacker-controller-id"),
+            "defender_worker_id": _int_attr(row, "data-defender-worker-id"),
+            "defender_controller_id": _int_attr(row, "data-defender-controller-id"),
+            "zone_id": _int_attr(row, "data-zone-id"),
+            "location_id": _int_attr(row, "data-location-id"),
+            "class_attr": row.get_attribute("class") or "",
+            "issue_text": (row.locator("td").nth(6).inner_text() or "").strip(),
+        })
+    return rows
+
+
+def ui_combat_unresolved_count(page: Page, base_url: str = None, **filters) -> int:
+    """Return the int value of [data-unresolved-count] on
+    /workers/management_combat.php, rather than querying the DB, so tests
+    using this can run under UI_ONLY=1. Accepts the same filter kwargs as
+    ui_combat_logs (worker_id, turn, location_id)."""
+    url = base_url or PHP_BASE_URL
+    params = []
+    if filters.get("worker_id") is not None:
+        params.append(f"worker={filters['worker_id']}")
+    if filters.get("turn") is not None:
+        params.append(f"turn={filters['turn']}")
+    if filters.get("location_id") is not None:
+        params.append(f"location={filters['location_id']}")
+    qs = ("?" + "&".join(params)) if params else ""
+    safe_goto(page, f"{url}/workers/management_combat.php{qs}")
+    _wait_loaded(page, "[data-unresolved-count]")
+    value = page.locator("[data-unresolved-count]").first.get_attribute("data-unresolved-count")
+    return int(value)
+
+
+def ui_combat_filter_options(page: Page, base_url: str = None):
+    """Scrape the combat-log filter <select> option values on
+    /workers/management_combat.php, rather than querying the DB, so tests
+    using this can run under UI_ONLY=1.
+
+    Returns {'workers': [...], 'turns': [...], 'locations': [...],
+    'has_location_filter': bool} of option `value`s (leading empty-value
+    "all" option excluded). 'locations' is empty and
+    'has_location_filter' is False when select[name='location'] is not
+    rendered (gated to locationAttackMode == 'agent_attack_defence')."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/workers/management_combat.php")
+    _wait_loaded(page, "[data-combat-log]")
+
+    def _values(select_name):
+        return [
+            v for v in (
+                opt.get_attribute("value")
+                for opt in page.locator(f"select[name='{select_name}'] option").all()
+            )
+            if v
+        ]
+
+    has_location_filter = page.locator("select[name='location']").count() > 0
+    return {
+        "workers": _values("worker"),
+        "turns": _values("turn"),
+        "locations": _values("location") if has_location_filter else [],
+        "has_location_filter": has_location_filter,
+    }
+
 
 def ui_controller_id(page: Page, lastname: str, base_url: str = None):
     """Return the controller id matching `lastname` by scraping the
@@ -795,6 +919,131 @@ def ui_attack_click(page: Page, attacker_lastname: str, target_lastname: str,
     page.wait_for_load_state("load")
 
 
+def ui_config_value(page: Page, name: str, base_url: str = None):
+    """Read one config value off /base/configuration.php, so a test can assert
+    against the seeded text instead of hardcoding a copy of it.
+
+    Mirrors how set_config_via_ui locates a row: match the second cell against
+    the key name, then read the row's value input."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/base/configuration.php")
+    page.wait_for_load_state("load")
+    for row in page.locator("tr:has(form)").all():
+        cells = row.locator("td")
+        if cells.count() < 2:
+            continue
+        if cells.nth(1).inner_text().strip() == name:
+            return row.locator("input[name='value']").input_value()
+    raise AssertionError(f"Config row {name!r} not found on /base/configuration.php")
+
+
+def ui_select_option_id(page: Page, select_selector: str, text_match: str):
+    """Return the value of the first option of a <select> whose label contains
+    text_match. Reads whatever page is currently open."""
+    for opt in page.locator(f"{select_selector} option").all():
+        txt = (opt.inner_text() or "").strip()
+        val = opt.get_attribute("value") or ""
+        if text_match in txt and val:
+            return int(val)
+    raise AssertionError(
+        f"Option containing '{text_match}' not found in {select_selector}"
+    )
+
+
+def ui_recruit_perfect_worker(page: Page, controller_id: int, zone_name: str,
+                              lastname: str, hobby_label: str, metier_label: str,
+                              firstname: str = "combat", origin_label: str = "origine Accessible",
+                              base_url: str = None):
+    """Recruit one worker with chosen hobby and metier through the gm-only
+    perfect-worker creation URL, and return its worker id.
+
+    Option ids are scraped from the form the gm admin page includes, so the
+    URL stays valid even when seed order changes the ids. Recruiting is how
+    on_recrutment power effects such as go_traitor fire; CSV-seeded workers
+    never trigger them."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/base/admin.php")
+    page.wait_for_load_state("networkidle")
+    hobby_id = ui_select_option_id(page, "select#power_hobby_id", hobby_label)
+    metier_id = ui_select_option_id(page, "select#power_metier_id", metier_label)
+    origin_id = ui_select_option_id(page, "select#origin_id", origin_label)
+    zone_id = ui_zone_id(page, zone_name, base_url=url)
+    safe_goto(page,
+        f"{url}/workers/action.php"
+        f"?creation=true"
+        f"&controller_id={controller_id}"
+        f"&zone_id={zone_id}"
+        f"&origin_id={origin_id}"
+        f"&firstname={firstname}"
+        f"&lastname={lastname}"
+        f"&power_hobby_id={hobby_id}"
+        f"&power_metier_id={metier_id}"
+        f"&chosir=Recruter+et+Affecter"
+    )
+    page.wait_for_load_state("load")
+    return ui_worker_id(page, lastname, base_url=url)
+
+
+def ui_location_id(page: Page, location_name: str, base_url: str = None):
+    """Scrape a location's id off zones/management_locations.php.
+
+    Promoted from the private copies duplicated in
+    test_attack_location_baseline_e2e.py and
+    test_agent_attack_defence_interactions_e2e.py once a third file needed
+    the same scrape.
+
+    Anchors on the delete_id input, which every location block renders. The
+    promoted copies anchored on toggle_destruction, which only destroyable
+    locations render — asking for a non-destroyable one silently returned the
+    next location's id."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(page, f"{url}/zones/management_locations.php")
+    page.wait_for_load_state("load")
+    m = re.search(
+        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
+        rf'.*?name="delete_id"\s+value="(\d+)"',
+        page.content(), re.DOTALL,
+    )
+    if not m:
+        raise AssertionError(f"location_id for '{location_name}' not found")
+    return int(m.group(1))
+
+
+def _queue_location_action(page: Page, lastname: str, param: str, field: str,
+                           target_location_id: int, base_url: str = None):
+    """Shared URL-driver body for ui_attack_location / ui_defend_location."""
+    url = base_url or PHP_BASE_URL
+    wid = _cached_wid(page, lastname, base_url)
+    safe_goto(page,
+        f"{url}/workers/action.php"
+        f"?worker_id={wid}&{param}=1&{field}={target_location_id}"
+    )
+    page.wait_for_load_state("load")
+
+
+def ui_attack_location(page: Page, lastname: str, target_location_id: int,
+                       base_url: str = None):
+    """Queue an attack_location action via workers/action.php URL endpoint.
+
+    Requires locationAttackMode == 'agent_attack_defence' — action.php
+    returns 403 otherwise. A gm session is privileged, so the ownership and
+    target re-validation gates are bypassed; that shortcut lets a worker
+    target a location outside its own zone, which the rendered form never
+    offers."""
+    _queue_location_action(page, lastname, "attackLocation",
+                           "attack_target_location_id", target_location_id,
+                           base_url)
+
+
+def ui_defend_location(page: Page, lastname: str, target_location_id: int,
+                       base_url: str = None):
+    """Queue a defend_location action via workers/action.php URL endpoint.
+    Same mode requirement and gm shortcut as ui_attack_location."""
+    _queue_location_action(page, lastname, "defendLocation",
+                           "defend_target_location_id", target_location_id,
+                           base_url)
+
+
 def ui_investigate(page: Page, lastname: str, base_url: str = None):
     """Queue an investigate action via workers/action.php URL endpoint."""
     url = base_url or PHP_BASE_URL
@@ -1114,6 +1363,20 @@ def ui_move_click(page: Page, lastname: str, zone_name: str,
     page.locator("select[name='zone_id']").first.select_option(value=str(zid))
     page.locator("input[name='move']").click()
     page.wait_for_load_state("load")
+
+
+def worker_report_section(html: str, heading: str) -> str:
+    """Return one section of a worker's report page, sliced on its <h4> heading.
+
+    workers/view.php prints each report key as `<h4 …>HEADING</h4> body`, so a
+    section runs from its heading to the next one. Use it to assert WHERE a line
+    was filed, not merely that the page contains it somewhere.
+    """
+    start = html.find(heading)
+    if start < 0:
+        return ""
+    nxt = html.find("<h4", start)
+    return html[start:nxt] if nxt > 0 else html[start:]
 
 
 def worker_report_html(page: Page, lastname: str, base_url: str = None):

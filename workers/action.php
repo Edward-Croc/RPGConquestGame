@@ -65,7 +65,8 @@ if (empty($_SESSION['is_privileged'])) {
 // Blocking trace and dead workers from changing action illogicaly
 $MUTATING_ACTIONS = ['move', 'attack', 'hide', 'passive', 'investigate',
     'claim', 'gift', 'recallDoubleAgent', 'returnPrisoner',
-    'teach_discipline', 'transform'
+    'teach_discipline', 'transform',
+    'attackLocation', 'defendLocation'
 ];
 $is_mutating = false;
 foreach ($MUTATING_ACTIONS as $k) {
@@ -174,6 +175,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     if (isset($_GET['attack'])) {
         activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
+    }
+    if (isset($_GET['attackLocation']) || isset($_GET['defendLocation'])) {
+        $mode = getConfig($gameReady, 'locationAttackMode');
+        if ($mode !== 'agent_attack_defence') {
+            http_response_code(403);
+            exit();
+        }
+        $target_location_id = isset($_GET['attackLocation'])
+            ? (int)($_GET['attack_target_location_id'] ?? 0)
+            : (int)($_GET['defend_target_location_id'] ?? 0);
+        if ($target_location_id <= 0) {
+            http_response_code(400);
+            exit();
+        }
+        $agent_action = isset($_GET['attackLocation']) ? 'attack_location' : 'defend_location';
+        // re-validate against the same helpers as the UI select (single source
+        // of truth for zone/ownership/attackability). Privileged bypass.
+        if (empty($_SESSION['is_privileged'])) {
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $stmtWZ = $gameReady->prepare("SELECT zone_id FROM {$prefix}workers WHERE id = :wid LIMIT 1");
+            $stmtWZ->execute([':wid' => $worker_id]);
+            $worker_zone_id = (int)$stmtWZ->fetchColumn();
+            $ctrlId = (int)$_SESSION['controller']['id'];
+            $attackableSet = listControllerKnownLocations($gameReady, $ctrlId, true, false, true, false);
+            $attackableIds = array_column($attackableSet[$worker_zone_id]['locations'] ?? [], 'id');
+            if ($agent_action === 'attack_location') {
+                $validIds = $attackableIds;
+            } else {
+                $ownSet = listControllerLinkedLocations($gameReady, $ctrlId);
+                $ownIds = array_column($ownSet[$worker_zone_id]['locations'] ?? [], 'id');
+                $validIds = array_unique(array_merge($ownIds, $attackableIds));
+            }
+            if (!in_array($target_location_id, array_map('intval', $validIds), true)) {
+                http_response_code(403);
+                exit();
+            }
+        }
+        activateWorker($gameReady, $worker_id, $agent_action, $target_location_id);
     }
     if (isset($_GET['hide'])) {
         activateWorker($gameReady, $worker_id, 'hide');

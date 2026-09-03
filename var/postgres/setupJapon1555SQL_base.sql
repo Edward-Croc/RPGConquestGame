@@ -329,7 +329,7 @@ INSERT INTO {prefix}powers ( name, enquete, attack, defence, description) VALUES
     ('Sōjutsu (槍術) – Art de la lance (Yari)', 0, 1,1,
       ', l’utilisation du yari à pied ou à cheval' )
     ,('Kyūjutsu (弓術) – Art du tir à l’arc', 0, 2,0,
-      ', ancien kyūdō)' )
+      ', ancien kyūdō' )
     ,('Shodō (書道) – Calligraphie', 1, 1,0,
       ', le maniement du pinceau, reflet de l’esprit' )
     ,('Kadō / Ikebana (華道 / 生け花) – Art floral', 1, 0,1,

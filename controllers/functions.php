@@ -608,7 +608,7 @@ function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_loca
         );
     }
 
-    return resolveLocationAttackEffects($pdo, $location[0], $controller_id, $turn_number, $controllerAttack, $locationDefence);
+    return resolveControllerLocationAttackEffects($pdo, $location[0], $controller_id, $turn_number, $controllerAttack, $locationDefence);
 }
 
 /**
@@ -622,7 +622,7 @@ function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_loca
  * @param int $locationDefence : resolved defence value
  * @return array|null : ['success', 'message'], or NULL on DELETE failure
  */
-function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null
+function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null
 {
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
@@ -642,16 +642,17 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
         $return['success'] = true;
         $destroy = true;
 
-        // Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.
-        $locationAttackSuccessTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_SUCCESS'), true);
+        // %2$s carries the whole assailant clause, so both attack modes share one template.
+        $attackerClause = sprintf('des agents du réseau %s', $controller_id);
+        $locationAttackSuccessTextsArray = json_decode(getConfig($pdo, 'textLocationAssaultOwnerSuccess'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_SUCCESS'], 'warning');
-            $locationAttackSuccessTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s. Ils ont franchi les portes avec succès.");
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultOwnerSuccess'], 'warning');
+            $locationAttackSuccessTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Ils ont franchi les portes avec succès.");
         }
         $targetResultText .= sprintf(
             $locationAttackSuccessTextsArray[array_rand($locationAttackSuccessTextsArray)],
             $location['name'],
-            $controller_id
+            $attackerClause
         );
 
         // Do actions depending on JSON for location
@@ -706,15 +707,16 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
             $targetResultText .= ' Tout a été détruit.';
         }
     } else {
-        $locationAttackFailTextsArray = json_decode(getConfig($pdo, 'TEXT_LOCATION_ATTACK_FAIL'), true);
+        $attackerClause = sprintf('des agents du réseau %s', $controller_id);
+        $locationAttackFailTextsArray = json_decode(getConfig($pdo, 'textLocationAssaultOwnerFail'), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_FAIL'], 'warning');
-            $locationAttackFailTextsArray = array("Notre %s a été attaqué.e, par des agents du réseau %s.  Heureusement, ils ne semblent pas avoir atteint leur objectif.");
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultOwnerFail'], 'warning');
+            $locationAttackFailTextsArray = array("Notre %1$s a été attaqué.e, par %2$s. Heureusement, ils ne semblent pas avoir atteint leur objectif.");
         }
         $targetResultText .= sprintf(
             $locationAttackFailTextsArray[array_rand($locationAttackFailTextsArray)],
             $location['name'],
-            $controller_id
+            $attackerClause
         );
         $return['message'] = sprintf(
             getConfig($pdo, 'textLocationNotDestroyed'),
@@ -722,45 +724,19 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
         );
     }
 
-    try {
-        $target_controller_id = (!empty($location['controller_id'])) ? $location['controller_id'] : null;
-        $logSql = "
-            INSERT INTO {$prefix}location_attack_logs (
-                target_controller_id,
-                location_name,
-                attacker_id,
-                attack_val,
-                defence_val,
-                turn,
-                success,
-                target_result_text,
-                attacker_result_text
-            )
-            VALUES (
-                :target_controller_id,
-                :location_name,
-                :attacker_id,
-                :attack_val,
-                :defence_val,
-                :turn_number,
-                :success,
-                :target_result_text,
-                :attacker_result_text
-            )
-        ";
-        $logStmt = $pdo->prepare($logSql);
-        $logStmt->bindParam(':target_controller_id', $target_controller_id, $target_controller_id === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $logStmt->bindParam(':attacker_id', $controller_id, PDO::PARAM_INT);
-        $logStmt->bindParam(':location_name', $location['name'], PDO::PARAM_STR);
-        $logStmt->bindParam(':attack_val', $controllerAttack, PDO::PARAM_INT);
-        $logStmt->bindParam(':defence_val', $locationDefence, PDO::PARAM_INT);
-        $logStmt->bindParam(':success', $return['success'], PDO::PARAM_BOOL);
-        $logStmt->bindParam(':target_result_text', $targetResultText, PDO::PARAM_STR);
-        $logStmt->bindParam(':attacker_result_text', $return['message'], PDO::PARAM_STR);
-        $logStmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
-        $logStmt->execute();
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'INSERT location_attack_logs failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
+    if (!logLocationAttack(
+        $pdo,
+        (string) $location['name'],
+        (int) $turn_number,
+        (bool) $return['success'],
+        (int) $controller_id,
+        (!empty($location['controller_id'])) ? (int) $location['controller_id'] : null,
+        (string) $return['message'],
+        $targetResultText,
+        (int) $controllerAttack,
+        (int) $locationDefence
+    )) {
+        game_error_log(__FUNCTION__, 'logLocationAttack failed', ['target_location_id' => $target_location_id, 'controller_id' => $controller_id, 'turn_number' => $turn_number], 'error');
         return array('success' => false, 'message' => 'Error : Resultat Save Failed');
     }
 
@@ -770,13 +746,13 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
         $defenseText = sprintf(' défendu par le réseau %s', $location['controller_id']);
     }
     if ($return['success']) {
-        $locationAttackAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_ATTACK_AGENT_REPORT_SUCCESS');
+        $locationAttackAgentReportJson = getConfig($pdo, 'textLocationAssaultAgentSuccess');
     } else {
-        $locationAttackAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_ATTACK_AGENT_REPORT_FAIL');
+        $locationAttackAgentReportJson = getConfig($pdo, 'textLocationAssaultAgentFail');
     }
     $locationAttackAgentReportArray = json_decode($locationAttackAgentReportJson, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_ATTACK_AGENT_REPORT_*'], 'warning');
+        game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationAssaultAgent*'], 'warning');
         $locationAttackAgentReportArray = array("Attaque du lieu %s dans %s %s.<br/>");
     }
 
@@ -810,13 +786,13 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
     }
     if ($location['controller_id']) {
         if (!$return['success']) {
-            $locationDefenceAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_SUCCESS');
+            $locationDefenceAgentReportJson = getConfig($pdo, 'textLocationDefenceAgentSuccess');
         } else {
-            $locationDefenceAgentReportJson = getConfig($pdo, 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_FAIL');
+            $locationDefenceAgentReportJson = getConfig($pdo, 'textLocationDefenceAgentFail');
         }
         $locationDefenceAgentReportArray = json_decode($locationDefenceAgentReportJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'TEXT_LOCATION_DEFENCE_AGENT_REPORT_*'], 'warning');
+            game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationDefenceAgent*'], 'warning');
             $locationDefenceAgentReportArray = array('Défense du lieu %s dans %s contre les agent du réseau %s.<br/>');
         }
 
@@ -841,23 +817,29 @@ function resolveLocationAttackEffects(PDO $pdo, array $location, int $controller
 }
 
 /**
- * Move all artefacts from a captured location to the capturing controller's base.
+ * Move all artefacts from a captured location to the capturing controller's safest holding.
+ *
+ * The destination is the controller's own destructible location with the highest
+ * discovery_diff. A ruined stronghold — swapped to can_be_destroyed = 0 — is therefore
+ * no longer a valid destination, and a controller owning none at all captures nothing.
  *
  * @param PDO $pdo : database connection
  * @param int $location_id : source (captured) location id
  * @param int $controller_id : capturing controller id
- * @return array : ['success' => bool, 'message' => string]
+ * @return array : ['success' => bool, 'message' => string, 'count' => int artefacts moved]
  */
 function captureLocationsArtefacts(PDO $pdo, int $location_id, int $controller_id): array
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with location_id : ' . $location_id, ['controller_id' => $controller_id], 'debug');
 
-    $return = array('success' => true, 'message' => '');
+    $return = array('success' => true, 'message' => '', 'count' => 0);
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    // Step 1: Get base location of the controller
-    $stmt = $pdo->prepare("SELECT id FROM {$prefix}locations WHERE controller_id = ? AND is_base = TRUE LIMIT 1");
+    // Step 1: Get the safest holding of the controller — a ruined stronghold no longer stores anything
+    $stmt = $pdo->prepare("SELECT id FROM {$prefix}locations
+        WHERE controller_id = ? AND can_be_destroyed = TRUE
+        ORDER BY discovery_diff DESC, id ASC LIMIT 1");
     $stmt->execute([$controller_id]);
     $baseLocation = $stmt->fetchColumn();
 
@@ -871,8 +853,9 @@ function captureLocationsArtefacts(PDO $pdo, int $location_id, int $controller_i
     $stmt = $pdo->prepare("UPDATE {$prefix}artefacts SET location_id = ? WHERE location_id = ?");
     $stmt->execute([$baseLocation, $location_id]);
 
-    // Step 3: Optional — count how many artefacts moved
+    // Step 3: Count how many artefacts moved — drives the location_attack_logs credit
     $count = $stmt->rowCount();
+    $return['count'] = $count;
 
     if ($count > 0) {
         $return['message'] = " Nous avons ramené des prisonniers du raid.";

@@ -6,10 +6,11 @@ require_once '../mechanics/claimMechanic.php';
 require_once '../mechanics/investigateMechanic.php';
 require_once '../mechanics/locationAttackMechanic.php';
 require_once '../mechanics/locationSearchMechanic.php';
+require_once '../mechanics/logs.php';
 require_once '../mechanics/ressourceGainMechanic.php';
 
 if (!defined('WORKER_ACTION_CHOICES_ALLOWED')) {
-    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'captured', 'dead', 'trace']);
+    define('WORKER_ACTION_CHOICES_ALLOWED', ['passive', 'investigate', 'attack', 'claim', 'hide', 'attack_location', 'defend_location', 'captured', 'dead', 'trace']);
 }
 if (!defined('INVESTIGATE_ACTIONS_DEFAULT')) {
     define('INVESTIGATE_ACTIONS_DEFAULT', ['passive', 'investigate']);
@@ -202,6 +203,34 @@ function getInvestigateOrder(PDO $pdo): string
 }
 
 /**
+ * Return how surviving attackers are compared to surviving defenders when deciding
+ * whether a location falls, falling back to 'multipliby' on unknown values.
+ *
+ * @param PDO $pdo : database connection
+ *
+ * @return string : 'morethan' or 'multipliby'
+ */
+function getLocationOverwhelmMode(PDO $pdo): string
+{
+    $value = strtolower(trim((string) getConfig($pdo, 'locationOverwhelmMode')));
+    return in_array($value, ['morethan', 'multipliby'], true) ? $value : 'multipliby';
+}
+
+/**
+ * Return how the location attack report names the assailants, falling back to
+ * 'networks' on unknown values.
+ *
+ * @param PDO $pdo : database connection
+ *
+ * @return string : 'networks' or 'agents'
+ */
+function getLocationAttackCreditMode(PDO $pdo): string
+{
+    $value = strtolower(trim((string) getConfig($pdo, 'locationAttackCreditMode')));
+    return in_array($value, ['networks', 'agents'], true) ? $value : 'networks';
+}
+
+/**
  * Calculates the final values for each worker depending on their chosen action.
  *
  * @param PDO $pdo : database connection
@@ -325,7 +354,7 @@ function calculateVals(PDO $pdo, array $mechanics): bool
 
     // Execute SQLs
     foreach ($sqlArray as $sql) {
-        echo sprintf("<p>DO SQL for %s : <br /> %s <br>", $sql['config'], $sql['sql']);
+        game_error_log(__FUNCTION__, 'DO SQL for ' . $sql['config'], ['sql' => $sql['sql']], 'debug');
         try {
             // Prepare and execute SQL query
             $stmt = $pdo->prepare($sql['sql']);
@@ -334,7 +363,6 @@ function calculateVals(PDO $pdo, array $mechanics): bool
             game_error_log(__FUNCTION__, 'UPDATE worker_actions val failed', ['error' => $e->getMessage(), 'config' => $sql['config']]);
             return false;
         }
-        echo "DONE <br /></p>";
     }
 
     echo '</div>';
@@ -384,43 +412,39 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
         return false;
     }
 
-    $config_continuing_investigate_action = getConfig($pdo, 'continuing_investigate_action');
-    if (!$config_continuing_investigate_action) {
-        $sqlSetInvestigate = "
-            UPDATE {$prefix}worker_actions wa1
-            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
-            SET wa1.action_choice = 'passive'
-            WHERE wa1.turn_number = :turn_number
-            AND wa2.action_choice = 'investigate'
-            AND wa2.turn_number = :turn_number_n_1
-        ";
-        try {
-            $stmtSetInvestigate = $pdo->prepare($sqlSetInvestigate);
-            $stmtSetInvestigate->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetInvestigate->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
-            $stmtSetInvestigate->execute();
-        } catch (PDOException $e) {
-            game_error_log(__FUNCTION__, 'UPDATE investigate action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetInvestigate]);
-            return false;
+    // Reset non-continuing actions to 'passive' on new turn creation.
+    // Map : action_choice -> config key that controls whether it persists.
+    $continuingActions = [
+        'investigate' => 'continuing_investigate_action',
+        'claim' => 'continuing_claim_action',
+        'attack' => 'continuing_attack_action',
+        'hide' => 'continuing_hide_action',
+        'attack_location' => 'continuing_attack_location_action',
+        'defend_location' => 'continuing_defend_location_action',
+    ];
+    foreach ($continuingActions as $action => $configKey) {
+        if (getConfig($pdo, $configKey)) {
+            continue;
         }
-    }
-    $config_continuing_claimed_action = getConfig($pdo, 'continuing_claimed_action');
-    if (!$config_continuing_claimed_action) {
-        $sqlSetClaim = "
-            UPDATE {$prefix}worker_actions wa1
-            JOIN {$prefix}worker_actions wa2 ON wa1.worker_id = wa2.worker_id
-            SET wa1.action_choice = 'passive'
-            WHERE wa1.turn_number = :turn_number
-            AND wa2.action_choice = 'claim'
-            AND wa2.turn_number = :turn_number_n_1
+        $sqlReset = "
+            UPDATE {$prefix}worker_actions
+            SET action_choice = 'passive'
+            WHERE turn_number = :turn_number
+            AND worker_id IN (
+                SELECT worker_id FROM (
+                    SELECT worker_id FROM {$prefix}worker_actions
+                    WHERE turn_number = :turn_number_n_1 AND action_choice = :action
+                ) AS previous_turn
+            )
         ";
         try {
-            $stmtSetClaim = $pdo->prepare($sqlSetClaim);
-            $stmtSetClaim->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
-            $stmtSetClaim->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
-            $stmtSetClaim->execute();
+            $stmtReset = $pdo->prepare($sqlReset);
+            $stmtReset->bindValue(':turn_number', $turn_number, PDO::PARAM_INT);
+            $stmtReset->bindValue(':turn_number_n_1', ((int)$turn_number - 1), PDO::PARAM_INT);
+            $stmtReset->bindValue(':action', $action, PDO::PARAM_STR);
+            $stmtReset->execute();
         } catch (PDOException $e) {
-            game_error_log(__FUNCTION__, 'UPDATE claim action_choice failed', ['error' => $e->getMessage(), 'sql' => $sqlSetClaim]);
+            game_error_log(__FUNCTION__, "UPDATE {$action} action_choice failed", ['error' => $e->getMessage(), 'sql' => $sqlReset]);
             return false;
         }
     }

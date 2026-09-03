@@ -204,15 +204,17 @@ def _toggle_destruction_admin(page, location_name):
     page navigation that follows is observed identically to a real click."""
     location_id = _location_id_via_management(page, location_name)
     # Already on management_locations.php from the lookup above.
-    page.evaluate(
-        f"""
-        const inp = document.querySelector(
-            'input[name="toggle_destruction"][value="{location_id}"]'
-        );
-        if (inp && inp.form) inp.form.submit();
-        """
-    )
-    page.wait_for_load_state("load")
+    # form.submit() navigates asynchronously, so wait_for_load_state alone returns
+    # on the page still displayed. expect_navigation waits for the POST to land.
+    with page.expect_navigation(wait_until="load"):
+        page.evaluate(
+            f"""
+            const inp = document.querySelector(
+                'input[name="toggle_destruction"][value="{location_id}"]'
+            );
+            if (inp && inp.form) inp.form.submit();
+            """
+        )
     return location_id
 
 

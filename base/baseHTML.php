@@ -118,7 +118,7 @@ register_shutdown_function(function () {
             <header class="modal-card-head">
                 <p class="modal-card-title">Confirm</p>
             </header>
-            <section class="modal-card-body">
+            <section class="modal-card-body" id="endTurnModalBody">
                 <p>Are you sure ?</p>
             </section>
             <footer class="modal-card-foot">
@@ -139,6 +139,19 @@ register_shutdown_function(function () {
         }
 
         function confirmEndTurn() {
+            // The turn resolves for tens of seconds while the page streams : leaving
+            // the buttons live let a second click fire a second end of turn.
+            const yes = document.getElementById('endTurnModalYes');
+            const no = document.getElementById('endTurnModalNo');
+            if (yes.disabled) {
+                return;
+            }
+            yes.disabled = true;
+            no.disabled = true;
+            yes.classList.add('is-loading');
+            document.getElementById('endTurnModalBody').innerHTML =
+                '<progress class="progress is-small is-primary" max="100"></progress>'
+                + '<p>Résolution du tour en cours, merci de patienter…</p>';
             window.location.href = document.getElementById('endTurnBtn').href;
         }
 
@@ -149,7 +162,12 @@ register_shutdown_function(function () {
             endTurnBtn.addEventListener('click', openEndTurnModal);
             document.getElementById('endTurnModalNo').addEventListener('click', closeEndTurnModal);
             document.getElementById('endTurnModalYes').addEventListener('click', confirmEndTurn);
-            document.querySelector('#endTurnModal .modal-background').addEventListener('click', closeEndTurnModal);
+            document.querySelector('#endTurnModal .modal-background').addEventListener('click', function () {
+                // Dismissing mid-resolution would expose the button again.
+                if (!document.getElementById('endTurnModalYes').disabled) {
+                    closeEndTurnModal();
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', initEndTurnConfirmation);

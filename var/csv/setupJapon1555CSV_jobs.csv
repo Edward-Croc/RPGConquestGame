@@ -32,6 +32,7 @@ Nyūdō (入道) – Samouraï retiré,", dans la voie monastique, servant comme
 Onna-bugeisha (女武芸者) – Femme samouraï,", entraînée au combat, parfois en charge de la garde rapprochée",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Metier
 Monogashira (物頭) – Officier en chef,", d’un détachement armé, chargé de la sécurité ou de missions spéciales",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Metier
 Sōhei (僧兵) – Moine-soldat,", à la fois religieux et combattant pour le temple ou le seigneur",-1,2,1,"{""on_random_pick"": {""unlock_turn"": 1}}",Metier
+Bansō (番僧) – Moine de garde,", sentinelle du temple, entraîné à défendre les portes et les cloîtres jusqu’à sa mort debout",0,0,2,"{""on_random_pick"": {""unlock_turn"": 2}}",Metier
 Naishi (内侍) – Dame de compagnie,", au service de l’épouse ou des filles du daimyō",1,1,-1,,Metier
 Shinobi (忍び) – Espion et agent furtif,", maître de l’infiltration, du sabotage ou de l’assassinat",1,1,-1,,Metier
 Tsukai (使い) – Messager rapide,", souvent à cheval, transmettant des ordres urgents",1,1,-1,,Metier

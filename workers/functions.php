@@ -1,6 +1,6 @@
 <?php
 
-define('ACTIVE_ACTIONS', ['passive', 'investigate', 'attack', 'claim', 'hide']);
+define('ACTIVE_ACTIONS', ['passive', 'investigate', 'attack', 'claim', 'hide', 'attack_location', 'defend_location']);
 define('INACTIVE_ACTIONS', ['dead', 'captured', 'trace']);
 
 /**
@@ -95,7 +95,7 @@ function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|nul
             }
         }
         // Step 3: Append the new element to the specified key
-        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report'];
+        $reportTypes = ['life_report', 'attack_report', 'investigate_report', 'claim_report', 'secrets_report', 'location_attack_report'];
         foreach ($reportTypes as $reportType) {
             if (!empty($reportAppendArray[$reportType])) {
                 if (empty($report[$reportType])) {
@@ -362,7 +362,7 @@ function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionPa
     game_error_log(__FUNCTION__, 'START with actionChoice : ' . $actionChoice, ['actionParamsJson' => $actionParamsJson], 'debug');
 
     // Exit before Json decode if action does not have special text
-    if (!in_array($actionChoice, ['attack', 'claim'], true)) {
+    if (!in_array($actionChoice, ['attack', 'claim', 'attack_location', 'defend_location'], true)) {
         return '';
     }
 
@@ -418,6 +418,19 @@ function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionPa
                     $w['lastname'],
                     ($k < (count($workersArray) - 1)) ? ', ' : ''
                 );
+            }
+        }
+
+        // attack_location / defend_location => target location name
+        // TODO #110 : replace inline SELECT by shared getLocationName helper
+    } elseif ($actionChoice === 'attack_location' || $actionChoice === 'defend_location') {
+        if (!empty($params['location_id'])) {
+            $prefix = $_SESSION['GAME_PREFIX'];
+            $stmt = $pdo->prepare("SELECT name FROM {$prefix}locations WHERE id = :lid LIMIT 1");
+            $stmt->execute([':lid' => (int) $params['location_id']]);
+            $locName = $stmt->fetchColumn();
+            if (!empty($locName)) {
+                $info .= ' <strong>' . htmlspecialchars($locName) . '</strong>';
             }
         }
     }
@@ -1304,6 +1317,11 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
             $jsonOutput = json_encode([
                 'claim_controller_id' => $extraVal
             ]);
+            break;
+        case 'attack_location':
+        case 'defend_location':
+            game_error_log(__FUNCTION__, $action, ['extraVal' => $extraVal], 'debug');
+            $jsonOutput = json_encode(['location_id' => (int)$extraVal]);
             break;
         case 'gift':
             game_error_log(__FUNCTION__, 'gift', ['extraVal' => $extraVal], 'debug');

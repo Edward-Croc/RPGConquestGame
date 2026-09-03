@@ -48,10 +48,12 @@ from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
     PHP_BASE_URL, ensure_gm_login,
 )
+import json
+
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
-    register_php_error_listener, assert_no_collected_php_errors,
-    ui_controller_id,
+    register_php_error_listener, assert_no_collected_php_errors, set_config_via_ui,
+    ui_controller_id, ui_location_id, ui_worker_action_state, ui_workers_by_lastname,
 )
 
 
@@ -77,17 +79,8 @@ def load_test_config(browser):
 
 
 def _location_id_via_management(page, location_name):
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    html = page.content()
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        html, re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for '{location_name}' not found")
-    return int(m.group(1))
+    """Thin wrapper kept for this file's existing call sites."""
+    return ui_location_id(page, location_name, base_url=PHP_BASE_URL)
 
 
 def _controller_id_via_management(page, controller_lastname):
@@ -157,25 +150,8 @@ def _read_queue_rows_for_attacker(attacker_id):
 
 
 def _set_config_via_ui(page, name, value):
-    """Set a config row's value via /base/configuration.php POST.
-
-    HTTP-only equivalent of UPDATE config SET value=? WHERE name=?. Used
-    so the locationAttackMode flip is observable from any deployment
-    (local OR remote demo where direct DB access isn't available).
-    """
-    safe_goto(page, f"{PHP_BASE_URL}/base/configuration.php")
-    page.wait_for_load_state("load")
-    target_row = None
-    for row in page.locator("tr:has(form)").all():
-        name_cell = row.locator("td").nth(1)
-        if name_cell.inner_text().strip() == name:
-            target_row = row
-            break
-    if target_row is None:
-        raise AssertionError(f"Config row {name!r} not found on /base/configuration.php")
-    target_row.locator("input[name='value']").fill(value)
-    target_row.locator("input[name='update_config']").click()
-    page.wait_for_load_state("load")
+    """Thin wrapper kept for this file's existing call sites."""
+    set_config_via_ui(page, name, value, base_url=PHP_BASE_URL)
 
 
 def _foxtrot_can_attack_echo_base(page, echo_base_id):
@@ -205,16 +181,18 @@ def _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id):
     page.wait_for_load_state("load")
     # toggle button lives inside a display:none span; submit the form
     # via JS since playwright's actionability check fails on zero-box.
-    page.evaluate(
-        "id => {"
-        "  const inp = document.querySelector("
-        "    `input[name='toggle_destruction'][value='${id}']`"
-        "  );"
-        "  if (inp && inp.form) inp.form.submit();"
-        "}",
-        echo_base_id,
-    )
-    page.wait_for_load_state("load")
+    # form.submit() navigates asynchronously, so wait_for_load_state alone returns
+    # on the page still displayed. expect_navigation waits for the POST to land.
+    with page.expect_navigation(wait_until="load"):
+        page.evaluate(
+            "id => {"
+            "  const inp = document.querySelector("
+            "    `input[name='toggle_destruction'][value='${id}']`"
+            "  );"
+            "  if (inp && inp.form) inp.form.submit();"
+            "}",
+            echo_base_id,
+        )
     _switch_controller(page, "Foxtrot")
     safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
     page.wait_for_load_state("load")
@@ -1049,6 +1027,337 @@ class TestAttackModeDisabled:
         `['endTurn']`."""
         assert re.search(r"locationAttackMechanic : mode 'foobar'.*not supported, skipped", self._eot_html), (
             "EOT page should contain the locationAttackMechanic skip-warning"
+        )
+
+
+class TestAgentAttackDefenceModeHidesControllerAttacks:
+    """Issue #73 — `locationAttackMode = agent_attack_defence` disables ALL
+    controller-level location attacks. This class asserts every controller-
+    side attack surface is gated off:
+
+    - controller view (`controllers/action.php`) — `Attaquer` form hidden
+    - zone view (`base/accueil.php` → `showcontrollerKnownSecrets`) — per-base
+      `Mener une équipe d'attaque sur place` button hidden (this was a
+      pre-existing gap in `zones/functions.php:868` — the button rendered
+      regardless of `locationAttackMode`; now gated to `['immediate','endTurn']`)
+    - `attackLocation` URL → 403 (already covered for unknown modes;
+      re-asserted here for the enum value)
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def agent_mode_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+        foxtrot_id = _controller_id_via_management(page, "Foxtrot")
+
+        _ensure_echo_base_destroyable_via_ui(page, echo_base_id, foxtrot_id)
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+
+        _switch_controller(page, "Foxtrot")
+
+        # Controller view — top-of-page Attaquer form
+        safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+        page.wait_for_load_state("load")
+        controller_view_attack_btn_count = page.locator("input[name='attackLocation']").count()
+
+        # Zone view via accueil.php — per-base 'Mener une équipe' button
+        # (the previously-ungated button in zones/functions.php:868)
+        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
+        page.wait_for_load_state("load")
+        accueil_attack_btn_count = page.locator("input[name='attackLocation']").count()
+
+        # URL 403 check
+        attack_url_resp = page.goto(
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?attackLocation=1&target_location_id={echo_base_id}"
+            f"&controller_id={foxtrot_id}"
+        )
+        attack_url_status = attack_url_resp.status if attack_url_resp else None
+
+        ensure_gm_login(page, PHP_BASE_URL)
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._controller_view_attack_btn_count = controller_view_attack_btn_count
+        type(self)._accueil_attack_btn_count = accueil_attack_btn_count
+        type(self)._attack_url_status = attack_url_status
+        yield
+
+    def test_attack_form_hidden_on_controller_view(self):
+        assert self._controller_view_attack_btn_count == 0, (
+            f"Attaquer form should be hidden on controllers/action.php "
+            f"when locationAttackMode = agent_attack_defence; "
+            f"got {self._controller_view_attack_btn_count}"
+        )
+
+    def test_attack_button_hidden_on_accueil_zone_view(self):
+        """Regression : zones/functions.php:868 (showcontrollerKnownSecrets)
+        used to render the per-base attack button regardless of
+        locationAttackMode. Now gated to ['immediate','endTurn']."""
+        assert self._accueil_attack_btn_count == 0, (
+            f"Per-base attack button should be hidden on base/accueil.php "
+            f"when locationAttackMode = agent_attack_defence; "
+            f"got {self._accueil_attack_btn_count} (zones/functions.php:868 gap)"
+        )
+
+    def test_attackLocation_url_returns_403(self):
+        assert self._attack_url_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode = "
+            f"agent_attack_defence; got {self._attack_url_status}"
+        )
+
+
+class TestAgentAttackDefenceActionDispatcher:
+    """Issue #73 Step 3 — verify that workers/action.php dispatcher wires
+    attackLocation / defendLocation URL params into worker_actions with:
+      - action_choice = 'attack_location' or 'defend_location'
+      - action_params = {"location_id": N}
+
+    Only fires when locationAttackMode = agent_attack_defence. Other modes
+    (or missing target_location_id) return 403 / 400 respectively.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def dispatcher_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+        echo_base_id = _location_id_via_management(page, "Echo-Base")
+
+        chain_a_id = ui_workers_by_lastname(page, "Chain_A")[0]["id"]
+        chain_b_id = ui_workers_by_lastname(page, "Chain_B")[0]["id"]
+
+        # 1. attackLocation URL → action_choice = attack_location
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+            f"&attack_target_location_id={echo_base_id}"
+        )
+        page.wait_for_load_state("load")
+        chain_a_state = ui_worker_action_state(page, "Chain_A")
+
+        # 2. defendLocation URL → action_choice = defend_location
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_b_id}&defendLocation=1"
+            f"&defend_target_location_id={echo_base_id}"
+        )
+        page.wait_for_load_state("load")
+        chain_b_state = ui_worker_action_state(page, "Chain_B")
+
+        # 3. Wrong mode → 403
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        wrong_mode_resp = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+            f"&attack_target_location_id={echo_base_id}"
+        )
+        wrong_mode_status = wrong_mode_resp.status if wrong_mode_resp else None
+
+        # 4. Missing target → 400 (still under agent_attack_defence mode)
+        _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+        missing_target_resp = page.goto(
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&attackLocation=1"
+        )
+        missing_target_status = missing_target_resp.status if missing_target_resp else None
+
+        # Reset Chain_A + Chain_B to passive so downstream tests don't inherit
+        # attack_location/defend_location action_choice (unsupported by
+        # locationAttackMechanic until Step 5).
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_a_id}&passive=1"
+        )
+        page.wait_for_load_state("load")
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/workers/action.php"
+            f"?worker_id={chain_b_id}&passive=1"
+        )
+        page.wait_for_load_state("load")
+
+        _set_config_via_ui(page, "locationAttackMode", "immediate")
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        type(self)._chain_a_state = chain_a_state
+        type(self)._chain_b_state = chain_b_state
+        type(self)._wrong_mode_status = wrong_mode_status
+        type(self)._missing_target_status = missing_target_status
+        type(self)._echo_base_id = echo_base_id
+        yield
+
+    def test_attackLocation_sets_action_choice(self):
+        assert self._chain_a_state['action_choice'] == 'attack_location', (
+            f"Expected action_choice='attack_location', "
+            f"got '{self._chain_a_state['action_choice']}'"
+        )
+        params = json.loads(self._chain_a_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id}, got {params}"
+        )
+
+    def test_defendLocation_sets_action_choice(self):
+        assert self._chain_b_state['action_choice'] == 'defend_location', (
+            f"Expected action_choice='defend_location', "
+            f"got '{self._chain_b_state['action_choice']}'"
+        )
+        params = json.loads(self._chain_b_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id}, got {params}"
+        )
+
+    def test_wrong_mode_returns_403(self):
+        assert self._wrong_mode_status == 403, (
+            f"attackLocation URL should 403 when locationAttackMode != "
+            f"agent_attack_defence; got {self._wrong_mode_status}"
+        )
+
+    def test_missing_target_returns_400(self):
+        assert self._missing_target_status == 400, (
+            f"attackLocation URL should 400 when attack_target_location_id missing; "
+            f"got {self._missing_target_status}"
+        )
+
+
+class TestAgentAttackDefenceFormCollision:
+    """Regression for the reported bug: workers/view.php rendered the
+    "Attaquer le lieu" AND "Défendre le lieu" <select> both with
+    name='target_location_id'. Both values were POSTed together on any
+    submit, and PHP kept only the LAST one — so clicking "Attaquer le
+    lieu" after picking a different defend-target recorded the DEFEND
+    selection as the attack target. Fixed by splitting the names into
+    attack_target_location_id / defend_target_location_id (workers/view.php)
+    and reading the button-appropriate one in workers/action.php.
+
+    Attacker: Artefact_Searcher_Echo (Echo, Theta-Artefacts). CKL-seeded
+    for Foxtrot-Outpost + Test-Future-Location so the attack select has
+    2 distinct non-own options; the defend select additionally carries
+    Echo-Base (Echo's own location, always present regardless of its
+    can_be_destroyed flag — listControllerLinkedLocations has no such
+    filter) for a 3rd distinct option. Foxtrot-Outpost and
+    Test-Future-Location are untouched by every other class in this
+    file, so their can_be_destroyed=1 seed state is not at risk of
+    flip-state leakage from earlier tests (unlike Echo-Base)."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def collision_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+
+            echo_base_id = _location_id_via_management(page, "Echo-Base")
+            foxtrot_outpost_id = _location_id_via_management(page, "Foxtrot-Outpost")
+            future_loc_id = _location_id_via_management(page, "Test-Future-Location")
+
+            _seed_ckl_admin(page, "Echo", "Foxtrot-Outpost")
+            _seed_ckl_admin(page, "Echo", "Test-Future-Location")
+
+            echo_searcher_id = ui_workers_by_lastname(page, "Artefact_Searcher_Echo")[0]["id"]
+
+            _switch_controller(page, "Echo")
+            safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}")
+            page.wait_for_load_state("load")
+
+            attack_select = page.locator("select[name='attack_target_location_id']")
+            defend_select = page.locator("select[name='defend_target_location_id']")
+            selects_rendered = attack_select.count() == 1 and defend_select.count() == 1
+
+            # Test 1 : attack=Foxtrot-Outpost (A), defend=Echo-Base (B, distinct)
+            # click Attaquer le lieu -> result must be A, not B.
+            attack_select.select_option(value=str(foxtrot_outpost_id))
+            defend_select.select_option(value=str(echo_base_id))
+            page.locator("input[name='attackLocation']").click()
+            page.wait_for_load_state("load")
+            attack_click_state = ui_worker_action_state(page, "Artefact_Searcher_Echo")
+
+            # Test 2 : attack=Test-Future-Location (C), defend=Echo-Base (D, distinct)
+            # click Défendre le lieu -> result must be D, not C.
+            safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}")
+            page.wait_for_load_state("load")
+            attack_select2 = page.locator("select[name='attack_target_location_id']")
+            defend_select2 = page.locator("select[name='defend_target_location_id']")
+            attack_select2.select_option(value=str(future_loc_id))
+            defend_select2.select_option(value=str(echo_base_id))
+            page.locator("input[name='defendLocation']").click()
+            page.wait_for_load_state("load")
+            defend_click_state = ui_worker_action_state(page, "Artefact_Searcher_Echo")
+
+            # Reset the worker to passive so no downstream test/module
+            # inherits an attack_location/defend_location action_choice.
+            safe_goto(
+                page,
+                f"{PHP_BASE_URL}/workers/action.php?worker_id={echo_searcher_id}&passive=1"
+            )
+            page.wait_for_load_state("load")
+
+            assert_no_collected_php_errors(page)
+        finally:
+            try:
+                ensure_gm_login(page, PHP_BASE_URL)
+                _set_config_via_ui(page, "locationAttackMode", "endTurn")
+            except Exception:
+                # best-effort teardown — never mask the original setup/test failure
+                pass
+            context.close()
+
+        type(self)._selects_rendered = selects_rendered
+        type(self)._echo_base_id = echo_base_id
+        type(self)._foxtrot_outpost_id = foxtrot_outpost_id
+        type(self)._future_loc_id = future_loc_id
+        type(self)._attack_click_state = attack_click_state
+        type(self)._defend_click_state = defend_click_state
+        yield
+
+    def test_both_selects_render_with_distinct_names(self):
+        assert self._selects_rendered, (
+            "workers/view.php must render both "
+            "select[name='attack_target_location_id'] and "
+            "select[name='defend_target_location_id'] on the worker view"
+        )
+
+    def test_attack_click_records_attack_selection_not_defend(self):
+        """Clicking 'Attaquer le lieu' must record the ATTACK select's
+        value, even when the DEFEND select holds a different location."""
+        assert self._attack_click_state['action_choice'] == 'attack_location', (
+            f"Expected action_choice='attack_location', "
+            f"got '{self._attack_click_state['action_choice']}'"
+        )
+        params = json.loads(self._attack_click_state['action_params'] or '{}')
+        assert params.get('location_id') == self._foxtrot_outpost_id, (
+            f"Expected location_id={self._foxtrot_outpost_id} (attack select's "
+            f"Foxtrot-Outpost), got {params} — form collision would have "
+            f"leaked the defend select's Echo-Base ({self._echo_base_id}) instead"
+        )
+
+    def test_defend_click_records_defend_selection_not_attack(self):
+        """Clicking 'Défendre le lieu' must record the DEFEND select's
+        value, even when the ATTACK select holds a different location."""
+        assert self._defend_click_state['action_choice'] == 'defend_location', (
+            f"Expected action_choice='defend_location', "
+            f"got '{self._defend_click_state['action_choice']}'"
+        )
+        params = json.loads(self._defend_click_state['action_params'] or '{}')
+        assert params.get('location_id') == self._echo_base_id, (
+            f"Expected location_id={self._echo_base_id} (defend select's "
+            f"Echo-Base), got {params} — form collision would have leaked "
+            f"the attack select's Test-Future-Location ({self._future_loc_id}) instead"
         )
 
 

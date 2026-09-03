@@ -1,15 +1,122 @@
 # Documentation de configuration
 
-**Public visé :** organisateurs/admins de soirées enquête utilisant le système RPG Game Conquest, et auteurs de scénarios qui éditent la table `{prefix}config`.
+Guide pratique pour préparer et ajuster un scénario : CSV de setup, clés `{prefix}config`, et exemples existants.
 
-**Note de lecture :** les **clés de configuration** (`claimMode`, `claimDiff`, etc.) sont stockées dans la table `{prefix}config` et modifiables via l'admin ; les valeurs par défaut sont notées entre parenthèses. Les **variables calculées** (`claim_val`, `calculated_defence_val`, etc.) sont recalculées à chaque tour à partir des configs et de l'état du jeu — elles ne sont pas modifiables directement, on les mentionne uniquement pour expliquer comment les configs s'y combinent. Pour les clés énumérées (modes), toute valeur non implémentée désactive le mécanisme correspondant.
+## Démarrage rapide — construire un CSV de config
 
+**Public :** organisateurs / admins de soirées enquête, et auteurs de scénarios qui éditent `{prefix}config` (admin live ou CSV de setup).
 
-## 1. Textes affichés
+### Format du fichier
+
+1. Créez `var/csv/setup{NomScenario}_config.csv`.
+2. Première ligne exactement :
+
+```csv
+name,value,description
+```
+
+3. Une ligne par clé à **surcharger**. Tout le reste vient de `minimalData.sql`.
+4. Guillemets CSV standards : champs avec virgules ou retours ligne entre guillemets ; guillemets internes doublés (`""`).
+5. Les listes d’actions SQL gardent leurs apostrophes : `"'investigate','claim'"`.
+6. Les pools de texte sont souvent du JSON dans une cellule : `"[""Phrase %1$s.""]"`.
+
+### Recette minimale
+
+| Besoin | Clés à poser en premier |
+|---|---|
+| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt` |
+| Vocabulaire | `textForZoneType`, `timeValue`, dénominateurs `timeDenominator*` / `controllerNameDenominator*` |
+| Mode conquête | `claimMode` (`worker` ou `worker_leader`) |
+| Mode attaque de lieu | `locationAttackMode` (`immediate`, `endTurn`, ou `agent_attack_defence`) |
+| Économie | `ressource_management` + CSV `*_ressources_config.csv` / `*_controller_ressources.csv` |
+| Recrutement | `turn_recrutable_workers`, listes d’origines, `age_discipline` |
+
+### Bonnes pratiques
+
+- Partez d’un CSV existant (TestConfig pour un socle court, Japon1555 pour un scénario riche).
+- Ne recopiez pas toutes les clés : surchargez seulement ce qui change le ressenti du scénario.
+- Testez un reset admin avec votre `config_name` avant la soirée.
+- Pour les règles de zone / tags de lieux / gains, ce sont **d’autres CSV** (`*_zones.csv`, `*_locations.csv`, `*_ressources_config.csv`), pas la table `config`.
+
+**Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
+
+## Exemples CSV à télécharger / comparer
+
+Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`base/admin_csv.php`, compte privilégié).
+
+| Scénario | Fichier config | Ressources | Autres tables utiles |
+|---|---|---|---|
+| **TestConfig** (tests) | `setupTestConfig_config.csv` | `setupTestConfig_ressources_config.csv` | zones, locations, controllers, advanced… |
+| **Japon1555CSV** (Shikoku 1555) | `setupJapon1555CSV_config.csv` | `setupJapon1555CSV_ressources_config.csv` | zones (`zone_rules`, `is_hidden`), locations, powers… |
+| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | *(pas de CSV ressources — `ressource_management=FALSE`)* | zones, locations, controllers… |
+
+**En-tête config obligatoire :** `name,value,description`
+
+Les valeurs absentes d’un CSV scénario restent celles de `var/{mysql|postgres}/minimalData.sql` (chargées avant le CSV, puis upsert).
+
+### Comment vérifier une section
+
+1. Ouvrir **Admin → CSV scénarios (download / check)** (`base/admin_csv.php`).
+2. Choisir un fichier `*_config.csv` et un `section_key` (ex. `location_attack`).
+3. Lire les clés **trouvées** vs **absentes** (souvent OK si le défaut `minimalData` suffit).
+4. Télécharger le CSV pour le comparer à votre brouillon local.
+
+## Index des clés par `section_key`
+
+Le champ `section_key` est **uniquement documentaire** : il n’apparaît pas dans les CSV ni dans la table `{prefix}config`.
+La carte complète vit dans [`docs/config_section_map.json`](config_section_map.json) ; le panneau admin peut vérifier un CSV config contre une section.
+
+### `texts` — Textes affichés
+
+Titre, présentation, dénominateurs, libellés d'actions, pools de rapports.
+
+Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`
+
+### `engine` — Moteur de jeu (calculs partagés)
+
+Dés, bonus, listes active/passive, seuils d'enquête et de combat entre agents, difficulté de découverte.
+
+Clés : `MINROLL`, `MAXROLL`, `PASSIVEVAL`, `ENQUETE_ZONE_BONUS`, `ATTACK_ZONE_BONUS`, `DEFENCE_ZONE_BONUS`, `HIDE_ENQUETE_FLAT_BONUS`, `HIDE_DEFENCE_FLAT_BONUS`, `DEFEND_LOCATION_DEFENCE_FLAT_BONUS`, `passiveInvestigateActions`, `activeInvestigateActions`, `passiveAttackActions`, `activeAttackActions`, `passiveDefenceActions`, `activeDefenceActions`, `investigateActionsList`, `investigateOrder`, `REPORTDIFF0`, `REPORTDIFF1`, `REPORTDIFF2`, `REPORTDIFF3`, `LOCATIONNAMEDIFF`, `LOCATIONINFORMATIONDIFF`, `LOCATIONARTEFACTSDIFF`, `ATTACKDIFF0`, `ATTACKDIFF1`, `attackTimeWindow`, `canAttackNetwork`, `RIPOSTACTIVE`, `RIPOSTDIFF`, `LIMIT_ATTACK_BY_ZONE`, `baseDiscoveryDiff`, `baseDiscoveryDiffAddPowers`, `baseDiscoveryDiffAddWorkers`, `baseDiscoveryDiffAddTurns`, `maxBonusDiscoveryDiffPowers`, `maxBonusDiscoveryDiffWorkers`, `maxBonusDiscoveryDiffTurns`, `continuing_investigate_action`, `continuing_attack_action`, `continuing_hide_action`, `continuing_claim_action`, `continuing_attack_location_action`, `continuing_defend_location_action`
+
+### `claim` — Revendications de zone (claimMode)
+
+Mode de résolution des revendications et formules associées.
+
+Clés : `claimMode`, `DISCRETECLAIMDIFF`, `VIOLENTCLAIMDIFF`, `baseClaim`, `baseClaimAddWorkers`, `baseClaimAddOwnedLocations`, `baseClaimAddSupporting`, `maxBonusClaimWorkers`, `maxBonusClaimOwnedLocations`, `claimDiff`, `claimVisibleToRealBonus`, `baseZoneDefence`, `baseZoneDefenceAddWorkers`, `baseZoneDefenceAddOwnedLocations`, `baseZoneDefenceAddSupporting`, `maxBonusZoneDefenceWorkers`, `maxBonusZoneDefenceOwnedLocations`, `noControllerZoneDefenceBonus`
+
+### `location_attack` — Attaque de lieu (locationAttackMode)
+
+Modes immediate / endTurn / agent_attack_defence, formules d'attaque/défense de lieu, textes d'assaut.
+
+Clés : `locationAttackMode`, `attackLocationDiff`, `attackLocationOutcomeBandwidth`, `baseAttack`, `baseAttackAddPowers`, `baseAttackAddWorkers`, `baseDefence`, `baseDefenceAddPowers`, `baseDefenceAddWorkers`, `baseDefenceAddTurns`, `maxBonusDefenceTurns`, `noControllerDefenceBonus`, `locationOverwhelmMode`, `locationOverwhelmValue`, `locationAttackCreditMode`, `textLocationDestroyed`, `textLocationPillaged`, `textLocationNotDestroyed`, `textOwnedArtefacts`, `textLocationAttackQueued`, `textLocationAttackOutcomeFail`, `textLocationAttackOutcomeWeak`, `textLocationAttackOutcomeProbable`, `textLocationAttackResolved`, `textLocationAttackDestroyed`, `textLocationAttackMoved`, `textLocationUnreachable`, `textLocationAssaultOwnerSuccess`, `textLocationAssaultOwnerFail`, `textLocationAssaultAgentSuccess`, `textLocationAssaultAgentFail`, `textLocationDefenceAgentSuccess`, `textLocationDefenceAgentFail`, `textLocationAssaultAgentNoHolder`, `textLocationDefenceAgentNoHolder`, `textLocationAssaultAgentUnengaged`, `textLocationDefenceAgentUnengaged`, `textLocationAgentSpoilsSelf`, `textLocationAgentSpoilsOther`
+
+### `workers` — Recrutement et progression des agents
+
+Slots de recrutement, origines, disciplines, transformations, secrets de base.
+
+Clés : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_nb_choices`, `first_come_origin_list`, `recrutement_nb_choices`, `recrutement_origin_list`, `local_origin_list`, `recrutement_disciplines`, `recrutement_transformation`, `age_discipline`, `age_transformation`, `owner_knows_own_base_secret`
+
+### `resources` — Ressources
+
+Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).
+
+Clés : `ressource_management`
+
+### `debug` — Débogage
+
+Flags de debug et insertion de valeurs de test.
+
+Clés : `DEBUG`, `DEBUG_REPORT`, `DEBUG_ATTACK`, `DEBUG_TRANSFORM`, `ACTIVATE_TESTS`
+
+## Référence détaillée
+
+Les sections suivantes détaillent le comportement. Chaque bloc porte un `section_key` pour croiser l’index et le panneau CSV.
+
+### `texts` — Textes affichés
 
 *Section à compléter dans un commit suivant.* Couvrira : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, les familles `txt_ps_*` et `txt_inf_*`, les dénominateurs (`controllerNameDenominator*`, `timeDenominator*`), `textForZoneType`, `timeValue`, `map_file`, `map_alt`.
 
-## 2. Moteur de jeu (autres calculs)
+### `engine` — Moteur de jeu (calculs partagés)
 
 Cette section couvre les clés qui pilotent les calculs partagés entre tous les modes : valeurs de base des actions d'agent, bonus contextuels, listes d'actions, seuils de découverte, combat entre agents et difficulté des places fortes. Ces clés s'appliquent quelles que soient les valeurs de `claimMode` et `locationAttackMode`.
 
@@ -25,18 +132,20 @@ Cette section couvre les clés qui pilotent les calculs partagés entre tous les
 
 **`HIDE_ENQUETE_FLAT_BONUS`** (= 4), **`HIDE_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plats ajoutés à `enquete_val` et `defence_val` quand l'agent choisit l'action `hide`. L'action « se cacher » renforce la défense de l'agent et complique sa détection par les enquêtes ennemies (la valeur d'enquête sert alors de résistance, pas d'investigation), au prix de ne pas attaquer ce tour.
 
+**`DEFEND_LOCATION_DEFENCE_FLAT_BONUS`** (= 1) — Bonus plat ajouté à `defence_val` quand l'agent choisit `defend_location`. Défendre un lieu est une action de défense **passive** : l'agent ne tire pas de dé, il reçoit `PASSIVEVAL` plus ce bonus, ce qui rend la défense d'une place forte fiable plutôt qu'aléatoire. Le nom de la clé suit le gabarit `{ACTION}_{AXE}_FLAT_BONUS` que `calculateVals` construit ; une clé absente vaut zéro, ce qui est le cas de toutes les autres combinaisons action/axe.
+
 #### Listes d'actions actives et passives
 
 Les six clés suivantes ne pilotent **que le calcul des valeurs** `enquete_val`, `attack_val` et `defence_val` de chaque agent en début de tour. Pour chaque axe (enquête, attaque, défense), l'`action_choice` choisi par l'agent détermine si la valeur correspondante est obtenue par un **jet de dé aléatoire** (action listée comme `active`) ou par la **valeur fixe `PASSIVEVAL`** (action listée comme `passive`). Une action absente des deux listes d'un axe donne `0` sur cet axe.
 
-> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres clés. Par exemple, la recherche d'agents ennemis n'est exécutée que pour les `action_choice` listés dans **`investigateActionsList`** (= `'passive','investigate'`). Cette clé est indépendante des six listes ci-dessous.
+> **Important :** ces listes ne déterminent **pas** quels agents effectuent réellement une enquête, une attaque ou une défense — ces comportements sont pilotés par d'autres clés. Par exemple, la recherche d'agents ennemis n'est exécutée que pour les `action_choice` listés dans **`investigateActionsList`** (= `'passive','investigate','defend_location'`). Cette clé est indépendante des six listes ci-dessous.
 
-- **`passiveInvestigateActions`** (= `'passive','attack','captured','hide'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`.
+- **`passiveInvestigateActions`** (= `'passive','attack','captured','hide','attack_location','defend_location'`) — Actions dont la valeur d'enquête est `PASSIVEVAL`. Les deux actions de lieu y figurent, ce qui donne à leurs agents un `enquete_val` réel — c'est lui qui sert d'initiative au combat de lieu.
 - **`activeInvestigateActions`** (= `'investigate','claim'`) — Actions dont la valeur d'enquête est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
-- **`passiveAttackActions`** (= `'passive','investigate','hide'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
-- **`activeAttackActions`** (= `'attack','claim'`) — Actions dont la valeur d'attaque est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
-- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide'`) — Actions dont la valeur de défense est `PASSIVEVAL`.
-- **`activeDefenceActions`** (= `''`, vide par défaut) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Vide signifie que toutes les valeurs de défense sont fixes.
+- **`passiveAttackActions`** (= `'passive','investigate','hide','defend_location'`) — Actions dont la valeur d'attaque est `PASSIVEVAL` (utilisée pour les ripostes).
+- **`activeAttackActions`** (= `'attack','claim','attack_location'`) — Actions dont la valeur d'attaque est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus.
+- **`passiveDefenceActions`** (= `'passive','investigate','attack','claim','captured','hide','attack_location','defend_location'`) — Actions dont la valeur de défense est `PASSIVEVAL`. `defend_location` y figure et reçoit en plus `DEFEND_LOCATION_DEFENCE_FLAT_BONUS`.
+- **`activeDefenceActions`** (= `''`, vide par défaut) — Actions dont la valeur de défense est tirée aléatoirement entre `MINROLL` et `MAXROLL` inclus. Vide signifie qu'aucune action ne fait tirer un dé de défense : toutes les valeurs de défense sont fixes.
 
 Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses. L'action `claim` apparaît dans les deux axes actifs (`enquete` et `attack`) — c'est volontaire : revendiquer génère un jet pour les deux valeurs, ce qui rend l'agent compétitif quand le `claimMode='worker'` les compare à la défense de la zone.
 
@@ -46,7 +155,7 @@ Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses
 
 **`LOCATIONNAMEDIFF`** (= 0), **`LOCATIONINFORMATIONDIFF`** (= 1), **`LOCATIONARTEFACTSDIFF`** (= 2) — Seuils de différence `enquete_val − discovery_diff` pour les niveaux de découverte d'un lieu secret : nom du lieu, description / informations secrètes, présence d'artefacts récupérables. Augmenter ces seuils rend les enquêtes de zone moins rentables.
 
-> **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
+> **Important :** la recherche d'information (rapports d'enquête sur agents ennemis et découverte de lieux secrets) n'est effectuée que pour les actions listées dans **`investigateActionsList`** (= `'passive','investigate','defend_location'`). Le filtre est appliqué dans `mechanics/investigateMechanic.php` (agents) et `mechanics/locationSearchMechanic.php` (lieux).
 
 ### Réduction de la redondance des rapports d'enquête
 
@@ -64,7 +173,7 @@ Quand un enquêteur redécouvre un agent ou un lieu déjà connu de son contrôl
 
 #### Ancienneté d'un lieu
 
-Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `TEXT_LOCATION_CAN_BE_DESTROYED` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
+Chaque rapport de découverte de lieu se termine par une phrase d'ancienneté, construite en deux morceaux par `buildLocationAgeSentence` (`mechanics/locationSearchMechanic.php`) : un **verbe d'état**, puis une **locution d'âge**. Parce qu'elle divulgue l'**état** du lieu, elle est apposée au palier description (`LOCATIONINFORMATIONDIFF`), au même rang que `textLocationDiscoveredDestroyable` : un enquêteur qui n'atteint que `LOCATIONNAMEDIFF` obtient le nom seul, et en dessous il ne voit rien du tout.
 
 L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_repaired` :
 
@@ -74,9 +183,9 @@ L'état est lu sur `{prefix}locations.is_updated_location` combiné à `can_be_r
 | `1` | `1` | `textLocationAgeRuined` — en ruine, en attente de réparation |
 | `1` | `0` | `textLocationAgeRestored` — ruiné puis relevé |
 
-- **`textLocationAgeOriginal`** (= `["Ce %1$s a été construit %2$s."]`)
-- **`textLocationAgeRuined`** (= `["Ce %1$s a été détruit par une attaque %2$s."]`)
-- **`textLocationAgeRestored`** (= `["Ce %1$s a été relevé de ses ruines %2$s."]`)
+- **`textLocationAgeOriginal`** (= `["Ce.tte %1$s a été construit.e %2$s."]`)
+- **`textLocationAgeRuined`** (= `["Ce.tte %1$s a été détruit.e par une attaque %2$s."]`)
+- **`textLocationAgeRestored`** (= `["Ce.tte %1$s a été relevé.e de ses ruines %2$s."]`)
 
 Pour ces trois clés, `%1$s` = nom du lieu et `%2$s` = la locution d'âge ci-dessous.
 
@@ -128,7 +237,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
 
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
-**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **shapes** de règles cohabitent :
+**`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **formes** de règles cohabitent :
 
 - **`zone_name`** — cible une zone spécifique par nom (n'importe où sur la carte, sans contrainte d'adjacence). Utile pour imposer un prérequis territorial précis (gate distant), ou lier des zones stratégiques nommées.
 - **`adjacent_zones: true`** — itère sur toutes les zones voisines (single-hop, via `adjacent_zones`) et applique le `value_delta` pour chaque voisine dont la condition est satisfaite. Utile pour récompenser la cohésion territoriale ou pénaliser un prétendant isolé.
@@ -142,7 +251,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
         {"zone_name": "Plaines du Kansai", "condition": "held_by_actor", "value_delta": 2},
         {"adjacent_zones": true, "condition": "held_by_actor", "value_delta": 1}
     ],
-    "Attack":        [ /* mêmes shapes */ ],
+    "Attack":        [ /* mêmes formes */ ],
     "Defence":       [ /* ... */ ],
     "ZoneDefence":   [ /* ... */ ],
     "DiscoveryDiff": [ /* ... */ ]
@@ -164,21 +273,21 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
   - **`not_held_by_actor`** — la règle s'applique si l'acteur **ne détient pas** la zone évaluée.
 - **`value_delta`** (int, requis) — entier signé ajouté à la valeur retournée quand la condition est satisfaite. Peut être négatif (pénalité) ou positif (bonus).
 
-**Shape spécifique — `zone_name` :**
+**Forme spécifique — `zone_name` :**
 
 - **`zone_name`** (string, requis) — nom exact de la zone à évaluer. Résolu par lookup SQL sur `zones.name`. **Pas de contrainte d'adjacence** : la zone peut se trouver n'importe où sur la carte.
 - Se déclenche **au plus une fois** (une seule zone évaluée).
 
-**Shape itérateur — `adjacent_zones: true` :**
+**Forme itérateur — `adjacent_zones: true` :**
 
 - **`adjacent_zones`** (bool, requis, doit valoir `true`) — bascule la règle en mode itérateur sur la liste `adjacent_zones` de la zone porteuse.
 - Se déclenche **une fois par voisine satisfaisant la condition** : les `value_delta` s'accumulent (un bonus `+1` avec 3 voisines détenues donne `+3`).
 
-**Discrimination :** la présence de `zone_name` ou de `adjacent_zones: true` détermine le shape. Une règle qui a **les deux** ou **aucun des deux** est ignorée avec un `error_log`.
+**Comment choisir le type de règle :** la présence de `zone_name` ou de `adjacent_zones: true` détermine la forme. Une règle qui a **les deux** ou **aucun des deux** est ignorée avec un `error_log`.
 
-**Combinaison additive :** toutes les règles satisfaites (des deux shapes) contribuent au résultat final : `base_value + Σ(value_delta pour chaque règle satisfaite)`. L'ordre des règles dans le tableau n'est pas significatif.
+**Combinaison additive :** toutes les règles satisfaites (des deux formes) contribuent au résultat final : `base_value + Σ(value_delta pour chaque règle satisfaite)`. L'ordre des règles dans le tableau n'est pas significatif.
 
-**Fail-open — comportements de robustesse :**
+**Si une règle est cassée (comportement tolérant) :**
 
 - `zone_rules IS NULL` → la valeur passe inchangée (aucun log).
 - JSON invalide (parse fail) → `error_log` + la valeur passe inchangée.
@@ -192,7 +301,7 @@ Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, 
 
 Le principe est simple : une configuration cassée dégrade la règle concernée mais laisse la valeur de base intacte.
 
-**Point d'intégration :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` dispatche chaque règle vers `applyZoneRuleSpecific` (pour `zone_name`) ou `applyZoneRuleAdjacent` (pour `adjacent_zones: true`), puis cumule les `value_delta` pertinents.
+**Où c'est appliqué dans le code :** l'ajustement est appliqué à la fin de `calculateControllerValue` (`zones/functions.php`), **après** tous les autres termes du calcul (base, zone_control, powers, workers, owned_locations, supporting, turns). La fonction `applyZoneRules` dispatche chaque règle vers `applyZoneRuleSpecific` (pour `zone_name`) ou `applyZoneRuleAdjacent` (pour `adjacent_zones: true`), puis cumule les `value_delta` pertinents.
 
 > **Exemple concret :** dans le scénario Japon1555, `Cité impériale de Kyōto` porte deux règles `Claim` avec `zone_name: "Plaines du Kansai"` (`-4` si l'acteur ne détient pas les plaines, `+2` s'il les détient). Un prétendant doit donc établir sa présence dans les plaines avant d'espérer conquérir la capitale.
 
@@ -205,7 +314,7 @@ Le principe est simple : une configuration cassée dégrade la règle concernée
 - **`hide_turn_zero`** — cache la zone uniquement au tour 0 (comportement legacy, indépendant).
 - **`is_hidden`** — cache la zone en permanence, seulement révélée aux acteurs légitimes.
 
-**Contrat de visibilité (`canControllerSeeZone`, `zones/functions.php`) :**
+**Règles de visibilité (`canControllerSeeZone`, `zones/functions.php`) :**
 
 - GM (`$_SESSION['is_privileged']`) → voit toutes les zones, y compris les cachées.
 - Zone non cachée (`is_hidden = 0`) → tout le monde la voit (le filtre `hide_turn_zero` reste actif au tour 0).
@@ -234,9 +343,9 @@ Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMecha
 
 ##### Actions et flux
 
-*Section à compléter dans un commit suivant.* Couvrira : `continuing_investigate_action` et les comportements de continuité d'actions d'un tour au suivant (l'entrée `continuing_claimed_action` est déjà documentée dans la section Modes de résolution).
+*Section à compléter dans un commit suivant.* Couvrira : `continuing_investigate_action` et les comportements de continuité d'actions d'un tour au suivant (l'entrée `continuing_claim_action` est déjà documentée dans la section Modes de résolution).
 
-#### Famille `claimMode` — résolution des revendications de zone
+### `claim` — Famille `claimMode` — résolution des revendications de zone
 
 **`claimMode`** — Détermine comment le système résout les revendications de zone à la fin du tour. Valeurs implémentées :
 
@@ -246,25 +355,104 @@ Les moteurs de fin de tour (`claimMechanic`, `attackMechanic`, `investigateMecha
 
 Toute autre valeur (faute de frappe, mode futur non développé) désactive le mécanisme de revendication.
 
-**Clés communes à tous les modes :** `continuing_claimed_action` (= 1, l'action reste active au tour suivant), `txt_ps_claim` et `txt_inf_claim` (textes affichés), et les listes d'actions `passiveInvestigateActions` / `activeAttackActions` / `passiveDefenceActions` qui contiennent toutes la valeur `'claim'`.
+**Clés communes à tous les modes :** `continuing_claim_action` (= 1, l'action reste active au tour suivant), `txt_ps_claim` et `txt_inf_claim` (textes affichés), et les listes d'actions `passiveInvestigateActions` / `activeAttackActions` / `passiveDefenceActions` qui contiennent toutes la valeur `'claim'`.
 
-#### Famille `locationAttackMode` — attaque de lieu (locations)
+### `location_attack` — Famille `locationAttackMode` — attaque de lieu (locations)
 
 **`locationAttackMode`** — Détermine où et quand les attaques de lieu (place forte, etc.) sont résolues. Valeurs implémentées :
 
 - **`immediate`** *(par défaut)* — L'attaque est résolue dès le clic du contrôleur, avant la fin du tour. Comparaison : `attack_val − defence_val ≥ attackLocationDiff` (= 1). `attack_val` et `defence_val` sont les valeurs agrégées du contrôleur attaquant et du lieu, calculées via la famille `baseAttack*` (plancher + pouvoirs + agents) et `baseDefence*` (plancher + pouvoirs + agents + âge du lieu via **`baseDefenceAddTurns`** = 0.5, plafonné à **`maxBonusDefenceTurns`** = 3). Lieu sans contrôleur : bonus défensif **`noControllerDefenceBonus`** (= 3).
 - **`endTurn`** — L'attaque est mise en file d'attente au clic, avec une prédiction d'issue affichée immédiatement (`attack_val_snapshot` et `defence_val_snapshot`). La résolution effective recalcule `attack_val_resolved` et `defence_val_resolved` en fin de tour, après les attaques entre agents. Les attaques sont résolues dans l'ordre chronologique de mise en file (`ORDER BY id ASC`) : la première attaque réussie détruit la cible et les attaques suivantes contre la même cible échouent avec le texte **`textLocationAttackDestroyed`**. Si la cible est déplacée (`moveBase`) entre la mise en file et la résolution, les attaques en cours sont annulées avec **`textLocationAttackMoved`** (visible uniquement par l'attaquant). Une seule entrée par (attaquant, cible, tour) : toute tentative de double mise en file est rejetée avec « Attaque déjà planifiée ce tour ». La prédiction utilise une bande "Faibles chances" de demi-largeur **`attackLocationOutcomeBandwidth`** (= 2) autour de l'égalité ; en-dehors, on affiche "Échec probable" ou "Réussite probable" via les clés `textLocationAttackOutcomeFail/Weak/Probable`.
-- **`worker`** *(v2, non implémenté)* — Mode réservé pour une future itération.
+- **`agent_attack_defence`** *(v2, cf. issue #73)* — Les contrôleurs ne peuvent plus attaquer directement les lieux (les boutons `Attaquer` et le bouton "Mener une équipe d'attaque sur place" côté zone sont cachés). Les agents choisissent `Attaquer le lieu` ou `Défendre le lieu` pour un lieu de leur zone courante ; un déplacement remet l'action à passif et efface la cible. En fin de tour, pour chaque lieu ciblé :
+  - **Initiative.** Attaquants et défenseurs sont triés par `enquete_val` décroissant, avec `worker_id` croissant pour départager les égalités — le même ordre que `attackMechanic` applique déjà à ses propres listes. Les agents les plus perspicaces engagent les premiers.
+  - **Résolution en échelle séquentielle**, et non en produit cartésien : un attaquant enchaîne les défenseurs tant qu'il tue, un défenseur encaisse tant qu'il survit, et un attaquant qui échoue sans mourir est consommé. La séquence s'arrête dès qu'un camp est épuisé. Chaque duel passe par `resolveWorkerCombat` — élimination via `ATTACKDIFF0`, capture via `ATTACKDIFF1`, riposte via `RIPOSTACTIVE` / `RIPOSTDIFF` — donc un défenseur capturé change de camp exactement comme dans un duel d'agents. Un agent tué plus tôt dans le tour par une attaque ordinaire ne rejoint pas l'échelle.
+  - **Allégeance.** Un agent double envoyé contre un lieu que possède son maître secret (son lien `controller_worker` secondaire) n'arrive jamais : il est retiré des attaquants, ne compte dans aucun camp, et reçoit **`textLocationUnreachable`** à son rapport.
+  - **Verdict.** Le lieu tombe quand les attaquants survivants dépassent **strictement** un seuil calculé sur les défenseurs survivants : **`locationOverwhelmMode`** (= `multipliby`) choisit la forme — `multipliby` → `défenseurs × locationOverwhelmValue`, `morethan` → `défenseurs + locationOverwhelmValue` — et **`locationOverwhelmValue`** (= 2) en donne l'opérande. La comparaison stricte règle aussi le cas dégénéré : personne contre personne, le lieu tient. Avec les valeurs par défaut, il faut donc trois attaquants survivants contre un défenseur survivant.
+  - Chaque duel est tracé dans `worker_combat_logs` avec son lieu, consultable et filtrable sur la page d'administration *Agent combat log*.
+
 
 Toute autre valeur désactive le mécanisme d'attaque de lieu.
 
-**Clés communes aux deux modes implémentés :** les familles de formules `baseAttack*`, `baseDefence*`, `baseDiscoveryDiff*` (utilisée aussi pour la découverte de lieux), ainsi que les textes `textLocationDestroyed`, `textLocationPillaged`, `textLocationNotDestroyed`, `textOwnedArtefacts`.
+**Où atterrit le butin — vaut pour les trois modes.** Quand une attaque de lieu réussit, `captureLocationsArtefacts()` (`controllers/functions.php`) déplace les artefacts du lieu pris vers un lieu du vainqueur. La destination n'est **pas** sa base : c'est le premier de ses lieux **destructibles**, trié par `discovery_diff` décroissant puis par `id` croissant — donc le plus difficile à découvrir d'abord.
+
+Deux conséquences à connaître :
+
+- un contrôleur qui ne possède **aucun** lieu destructible ne peut rien emporter. En mode `agent_attack_defence` le lieu reste alors debout et l'attaque est journalisée en échec, même si le combat a été gagné — c'est l'écart entre `falls` et `taken` décrit plus bas.
+- le critère a changé : il était `is_base = TRUE`. Les scénarios où un contrôleur possède plusieurs lieux destructibles voient donc les prisonniers arriver ailleurs que dans sa base, y compris dans les modes `immediate` et `endTurn`.
+
+**Clés communes aux trois modes implémentés :** les familles de formules `baseAttack*`, `baseDefence*`, `baseDiscoveryDiff*` (utilisée aussi pour la découverte de lieux), ainsi que les textes `textLocationDestroyed`, `textLocationPillaged`, `textLocationNotDestroyed`, `textOwnedArtefacts`.
 
 **Spécifique `endTurn` :** textes d'échec d'arrivée `textLocationAttackDestroyed` (cible détruite par une attaque antérieure) et `textLocationAttackMoved` (cible déplacée avant résolution) — visibles uniquement par l'attaquant.
 
+**Spécifique `agent_attack_defence` :** **`locationOverwhelmMode`** (= `multipliby`, valeurs `morethan` | `multipliby` ; toute autre valeur retombe sur `multipliby`) et **`locationOverwhelmValue`** (= 2) pour le verdict de prise, plus **`textLocationUnreachable`** pour l'agent double dont le maître secret possède la cible — liste JSON de formulations, tirée au sort comme les autres pools de texte, avec repli sur une phrase en dur si le JSON est invalide. Les seuils de duel sont ceux du combat entre agents : `ATTACKDIFF0`, `ATTACKDIFF1`, `RIPOSTACTIVE`, `RIPOSTDIFF`.
+
+**Le nom du lieu ciblé est révélé à l'enquêteur — voulu.** Quand un enquêteur repère un agent dont l'action est `attack_location` ou `defend_location`, le rapport nomme le lieu visé (`mechanics/investigateMechanic.php`), **sans vérifier** que le contrôleur de l'enquêteur ait jamais découvert ce lieu. Voir un agent donner l'assaut renseigne sur ce qu'il assaille.
+
+Deux limites qui bornent la fuite :
+
+- le nom seul est divulgué, jamais la description, le secret ni les artefacts ;
+- **aucune entrée n'est écrite dans `controller_known_locations`** : c'est une mention ponctuelle dans un rapport, pas une découverte. Les paliers `LOCATIONNAMEDIFF` / `LOCATIONINFORMATIONDIFF` / `LOCATIONARTEFACTSDIFF` restent entièrement à franchir par l'enquête de lieu.
+
+Le nom passe par `htmlspecialchars` avant affichage.
+
+**Rapports d'attaque de lieu.** Deux familles de pools, distinguées par leur **destinataire** — c'est ce que porte le segment `Owner` / `Agent` de leur nom. Ne pas les confondre avec `textLocationAttackOutcome*`, qui sont les **prédictions** affichées à l'attaquant avant résolution.
+
+- **`textLocationAssaultOwnerSuccess`** / **`textLocationAssaultOwnerFail`** — vus par le **propriétaire** du lieu attaqué. `%1$s` = nom du lieu, `%2$s` = les assaillants, formulés selon `locationAttackCreditMode`. Seedés dans les deux `minimalData.sql`.
+- **`textLocationAssaultAgentSuccess`** / **`textLocationAssaultAgentFail`** et **`textLocationDefenceAgentSuccess`** / **`textLocationDefenceAgentFail`** — vus par les **agents** ayant participé à l'assaut ou à la défense. `%1$s` = nom du lieu, `%2$s` = nom de la zone, `%3$s` = un troisième argument **qui diffère selon la famille** (voir ci-dessous). Seedés uniquement par les fichiers de scénario, pas par `minimalData.sql` : un scénario qui les omet obtient un pool nul, journalisé en `warning`, et le rapport correspondant est vide ou retombe sur un gabarit en dur selon le mode.
+
+**`locationAttackCreditMode`** (= `networks`) — Détermine comment les assaillants sont nommés dans le texte du propriétaire. `networks` : liste les numéros de réseau attaquants. `agents` : nomme chaque agent, en n'attribuant un réseau que pour ceux que le propriétaire a déjà identifiés. Toute autre valeur retombe sur `networks`.
+
+##### Rapports d'agent en mode `agent_attack_defence`
+
+En mode `agent_attack_defence`, l'assaut est mené par des agents et non par un contrôleur : chaque participant reçoit donc son propre compte rendu de l'issue de l'assaut, écrit par `writeLocationAgentReports()` (`mechanics/locationAttackMechanic.php`). Ces lignes sont rangées dans la clé de rapport **`location_attack_report`**, affichée sur la fiche d'agent sous le titre « Attaque de lieu : » — séparément des duels eux-mêmes, qui restent dans `attack_report`. Avant cette séparation, les duels de lieu se mélangeaient aux attaques ordinaires et aucun participant n'apprenait comment l'assaut s'était terminé.
+
+**Qui écrit quoi.** Deux verdicts distincts pilotent le choix du pool, et c'est leur écart qui justifie l'existence des pools `NoHolder` :
+
+- `falls` — le **verdict de l'échelle de duels** : les attaquants survivants dépassent le seuil `locationOverwhelm*`. C'est la victoire au combat.
+- `taken` — l'assaut a **réellement produit son effet** sur la place : `falls` est vrai **et** `rankLocationSpoilsControllers` a trouvé un réseau assaillant capable d'héberger le butin, c'est-à-dire possédant au moins un lieu `can_be_destroyed` où mener les prisonniers. Sans cette destination, le butin ne bouge pas, aucun effet n'est appliqué au lieu, et la place reste debout malgré la défaite de ses défenseurs (une entrée `warning` est journalisée).
+
+À noter : `taken` ne veut pas dire « détruite ». Un lieu indestructible (`can_be_destroyed` à faux, ou `indestructible` dans son `activate_json`) est **pillé** et reste à son propriétaire, mais il compte pour `taken` — ses défenseurs lisent donc bien `textLocationDefenceAgentFail`. Formuler ces pools en termes de défaite et de butin perdu plutôt que de place rasée.
+
+| Situation | Attaquant | Défenseur |
+|---|---|---|
+| Agent mort pendant l'échelle | *aucune ligne* | *aucune ligne* |
+| `falls` sans `taken` (personne où mettre le butin) | `textLocationAssaultAgentNoHolder` | `textLocationDefenceAgentNoHolder` |
+| `taken` — l'assaut aboutit | `textLocationAssaultAgentSuccess` | **`textLocationDefenceAgentFail`** |
+| Ni `falls` ni `taken` — la place tient | `textLocationAssaultAgentFail` | `textLocationDefenceAgentSuccess` |
+| Agent que l'échelle n'a jamais apparié | `textLocationAssaultAgentUnengaged` **en préfixe** | `textLocationDefenceAgentUnengaged` **en préfixe** |
+| Des artefacts ont réellement changé de lieu | `textLocationAgentSpoils*` **en suffixe** | `textLocationAgentSpoils*` **en suffixe** |
+
+**Attention — sens de Success / Fail :** Le succès est celui de *l'assaut*, jamais celui du lecteur. Un assaut qui produit son effet — destruction, échange ou simple pillage — est donc le succès de l'attaquant **et l'échec du défenseur** : c'est bien **`textLocationDefenceAgentFail`** qui part quand l'assaut a réussi, et `textLocationDefenceAgentSuccess` quand il a échoué. La même convention règne déjà sur le chemin contrôleur (`resolveControllerLocationAttackEffects`).
+
+**Ordre de composition.** Le rapport d'un agent est assemblé dans cet ordre, et un agent mort n'en reçoit aucun morceau :
+
+1. la ligne « jamais apparié » (`*Unengaged`), **seulement** si l'échelle ne l'a opposé à personne ;
+2. la ligne d'issue — `*NoHolder` ou l'un des quatre `*Success` / `*Fail` ; ce sont des branches exclusives, jamais deux à la fois ;
+3. la ligne de butin (`textLocationAgentSpoils*`), **seulement** si des artefacts ont réellement été déplacés.
+
+Un agent que personne n'a affronté lit donc deux phrases : d'abord qu'il n'a pas combattu, ensuite comment l'assaut s'est terminé. Aucune écriture n'a lieu si l'ensemble reste vide.
+
+**Placeholders.** Les six nouvelles clés ne reçoivent que les arguments listés ci-dessous — jamais le troisième argument des quatre pools d'issue. Y écrire un `%3$s` (ou un `%2$s` dans un pool `Spoils*`) fait lever `sprintf` en PHP 8 et casse la fin de tour : s'en tenir strictement au contrat de chaque clé.
+
+| Clé | Placeholders |
+|---|---|
+| **`textLocationAssaultAgentNoHolder`** (= `["J'ai participé à la prise de %1$s dans %2$s, mais nous n'avions nulle part où mener les prisonniers : la place nous a filé entre les doigts.<br/>"]`) | `%1$s` = nom du lieu, `%2$s` = nom de la zone |
+| **`textLocationDefenceAgentNoHolder`** (= `["Notre %1$s dans %2$s a été attaqué.e et nous avons cédé, mais les assaillants n'ont rien pu emporter.<br/>"]`) | idem |
+| **`textLocationAssaultAgentUnengaged`** (= `["J'étais du raid sur %1$s dans %2$s, mais tout s'est joué sans moi.<br/>"]`) | idem |
+| **`textLocationDefenceAgentUnengaged`** (= `["Notre %1$s dans %2$s a été attaqué.e ; je tenais mon poste, personne n'est venu jusqu'à moi.<br/>"]`) | idem |
+| **`textLocationAgentSpoilsSelf`** (= `["Les prisonniers sont repartis avec nous.<br/>"]`) | **aucun** — apposé quand le lecteur appartient au réseau vainqueur |
+| **`textLocationAgentSpoilsOther`** (= `["Les prisonniers sont repartis avec le réseau %1$s.<br/>"]`) | `%1$s` = numéro du réseau vainqueur |
+
+**Le troisième argument des quatre pools d'issue.** Les deux familles préexistantes ne reçoivent pas la même chose en `%3$s`, et c'est une source d'erreur classique quand on rédige un scénario :
+
+- **`textLocationAssaultAgent*`** — une **clause déjà rédigée** « ` défendu par le réseau N` », espace initiale comprise, vide quand le lieu n'appartient à personne. À coller directement dans la phrase, sans article ni préposition.
+- **`textLocationDefenceAgent*`** — le ou les **numéros de réseau attaquants**, bruts. En mode `agent_attack_defence` c'est une **liste jointe par des virgules** : un assaut d'agents peut réunir plusieurs réseaux devant la même place, alors que le chemin contrôleur n'en passait jamais qu'un seul. Une formulation du type « du réseau %3$s » doit donc rester lisible au pluriel.
+
+**Valeurs fournies par le scénario uniquement.** Comme les quatre pools d'agent qui les précèdent, ces six clés ne sont **pas** dans `minimalData.sql`. Elles sont seedées par `var/csv/setupTestConfig_config.csv` (anglais), `var/csv/setupJapon1555CSV_config.csv`, `var/mysql/setupJapon1555SQL_textes.sql` et `var/postgres/setupJapon1555SQL_textes.sql` (français). Une clé manquante ou dont le JSON est illisible ne casse rien : `pickLocationAgentText()` journalise un `warning` « missing or unusable text pool » et retourne un gabarit vide, donc la ligne correspondante est simplement absente du rapport — contrairement au chemin contrôleur, qui lui retombe sur une phrase en dur. Le partage de responsabilité entre socle et scénario fait l'objet de la question ouverte **#120** « `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d'appel porter un repli ? » ; si elle se tranche en faveur du socle, ces six clés y descendront.
+
 **Ancienneté du lieu :** le terme `baseDefenceAddTurns` se calcule sur `{prefix}locations.setup_turn`, désormais estampillé à chaque construction, changement d'état et déménagement (voir « Difficulté de découverte des places fortes »). Un lieu neuf ou fraîchement ruiné n'a donc plus le bonus d'ancienneté maximal qu'il recevait quand la colonne restait à `0`.
 
-## 3. Recrutement et progression des Agents (workers)
+### `workers` — Recrutement et progression des agents
 
 *Section à compléter dans un commit suivant.* Couvrira : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_*`, `recrutement_*`, `age_discipline`, `age_transformation`, `owner_knows_own_base_secret`.
 
@@ -343,7 +531,7 @@ La même clé `unlock_turn` peut aussi être utilisée dans les règles `on_age`
 
 Vérifiez simplement qu'il reste toujours au moins un Métier et un Hobby tirables à chaque tour atteignable. Si tous les powers d'un type sont verrouillés, le recrutement ne pourra pas proposer de tirage valide.
 
-## 4. Ressources
+### `resources` — Ressources
 
 Cette section décrit le système économique : coûts d'action, gain forfaitaire de fin de tour, puis gains conditionnels selon l'état du jeu.
 
@@ -467,7 +655,7 @@ Le don passe par `ressources/action.php` qui appelle l'helper `giftRessource()` 
 
 La page admin `ressources/management.php` reçoit en bas une section **Ressource Transactions** qui liste tous les enregistrements de `ressource_gift_logs` triés du plus récent au plus ancien (utile pour suivre ou enquêter sur les échanges).
 
-## 5. Journal des dons d'informations entre factions
+### Dons d’informations entre factions
 
 Le système permet à un contrôleur de transmettre à une autre faction visible la connaissance d'un agent (`giftInformationAgent`) ou d'un lieu (`giftInformationLocation`) découvert. Ces actions écrivent directement dans `controllers_known_enemies` / `controller_known_locations` pour donner au destinataire la même connaissance que le donneur.
 
@@ -494,6 +682,18 @@ Pour permettre le suivi et l'enquête sur ces échanges, chaque don exécuté pa
 
 `controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
 
-## 6. Débogage
+### `debug` — Débogage
 
 *Section à compléter dans un commit suivant.* Couvrira : `DEBUG`, `DEBUG_REPORT`, `DEBUG_ATTACK`, `DEBUG_TRANSFORM`, `ACTIVATE_TESTS`.
+
+## Notes pour mainteneurs
+
+Cette annexe regroupe les détails d’implémentation utiles au code, pas à la rédaction d’un scénario.
+
+- **Import CSV** : `BDD/db_connector.php` charge `setup{config_name}_{table}.csv` avec upsert pour `config` et `power_types`.
+- **Carte documentaire** : `docs/config_section_map.json` (pas importée).
+- **Panneau admin** : `base/admin_csv.php` — download + check d’en-tête / `section_key`.
+- **Guide rendu HTML** : `base/docConfig.php` (Parsedown sur ce fichier).
+- **Logs / fail-open** : règles `zone_rules` invalides, pools texte illisibles, `gain_rules` mal formées → log + valeur de base intacte ou phrase vide selon le site d’appel.
+- **Question ouverte #120** : `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d’appel porter un repli ?
+- Les noms internes de fichiers / fonctions (`calculateVals`, `resolveWorkerCombat`, `writeLocationAgentReports`, etc.) sont cités dans la référence détaillée quand ils aident à tracer un bug ; un auteur de CSV peut les ignorer.
