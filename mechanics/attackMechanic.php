@@ -458,8 +458,8 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
             getConfig($pdo, 'timeValue'),
             $mechanics['turncounter']
         );
-        // Appends to the escape line the else branch always wrote, instead of erasing it.
-        $defenderReport[$defenderReportKey] .= sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller ?? ''));
+        // Replaces the escape line the else branch wrote : one cannot both flee and riposte.
+        $defenderReport[$defenderReportKey] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller ?? ''));
     }
     updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport);
     updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status, $defenderReport, $defender_json);
