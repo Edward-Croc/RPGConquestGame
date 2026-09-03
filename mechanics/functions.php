@@ -363,7 +363,6 @@ function calculateVals(PDO $pdo, array $mechanics): bool
             game_error_log(__FUNCTION__, 'UPDATE worker_actions val failed', ['error' => $e->getMessage(), 'config' => $sql['config']]);
             return false;
         }
-        game_error_log(__FUNCTION__, 'DONE SQL', ['sql' => $sql['sql']], 'debug');
     }
 
     echo '</div>';
