@@ -493,11 +493,13 @@ La défaite des Takeda n’a pas réduit leurs intentions belliqueuses envers le
     }}'
 );
 
-INSERT INTO {prefix}locations (name, description, discovery_diff, can_be_destroyed, can_be_repaired, is_updated_location, zone_id, controller_id, activate_json) VALUES
+INSERT INTO {prefix}locations (name, description, hidden_description, discovery_diff, can_be_destroyed, can_be_repaired, is_updated_location, zone_id, controller_id, activate_json) VALUES
     ('Ruines du Daihō-ji (大宝寺)',
-        'Le Daihō-ji (大宝寺), 44ème temple du pèlerinage de Shikoku, n’a que quelques piliers carbonisés qui subsistent, noirs et fissurés par les flammes. Ici, les pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent gravée d’inscriptions latines.
+        'Le Daihō-ji (大宝寺), 44ème temple du pèlerinage de Shikoku, n’a que quelques piliers carbonisés qui subsistent, noirs et fissurés par les flammes.
 Les paysans parlent d’un prêtre chrétien et de l’Inquisition jésuite elle-même. Mais les recherches menées par les Yamabushi locaux (milices et petits samouraïs vassaux) n’ont rien révélé de probant. (Peut-être pouvons-nous restaurer ce lieu ?)',
-         5, 0, 1, True, (SELECT ID FROM {prefix}zones WHERE name = 'Montagnes d’Iyo'), NULL,
+        ' Ici, les pèlerins affirment avoir vu un artefact étrange caché sous l’autel — une croix d’argent gravée d’inscriptions latines.',
+         4, 0, 1, True, (SELECT ID FROM {prefix}zones WHERE name = 'Montagnes d’Iyo'),
+         (SELECT ID FROM {prefix}controllers WHERE lastname = 'Tendai (天台宗)'),
         '{"update_location": {
                 "name": "Temple Daihō-ji (大宝寺)", "discovery_diff": 6,
                 "can_be_destroyed": 1, "can_be_repaired": 0,
