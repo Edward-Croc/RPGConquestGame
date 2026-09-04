@@ -1094,21 +1094,26 @@ function gameReady(): PDO|null
                     }
                 }
 
-                // Post-load CKL seed for owned bases (createBase covers runtime).
+                // Post-load CKL seed for owned locations (createBase covers runtime).
                 try {
                     $prefix = $_SESSION['GAME_PREFIX'];
                     $synthMechanics = getMechanics($pdo);
                     $synthTurn = isset($synthMechanics['turncounter']) ? (int)$synthMechanics['turncounter'] : 0;
-                    $synthOwnerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
+                    $synthOwnerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE') ? 1 : 0;
                     $synthSQL = "
                         INSERT INTO {$prefix}controller_known_locations (
                             controller_id, location_id, found_secret,
                             first_discovery_turn, last_discovery_turn
                         )
-                        SELECT l.controller_id, l.id, :found_secret, :turn1, :turn2
+                        SELECT
+                            l.controller_id,
+                            l.id,
+                            CASE WHEN l.is_base = True AND :owner_knows_base_secret = 1
+                                THEN True ELSE False END,
+                            :turn1,
+                            :turn2
                         FROM {$prefix}locations l
-                        WHERE l.is_base = True
-                          AND l.controller_id IS NOT NULL
+                        WHERE l.controller_id IS NOT NULL
                           AND NOT EXISTS (
                             SELECT 1 FROM {$prefix}controller_known_locations ckl
                             WHERE ckl.controller_id = l.controller_id
@@ -1116,12 +1121,12 @@ function gameReady(): PDO|null
                           )
                     ";
                     $synthStmt = $pdo->prepare($synthSQL);
-                    $synthStmt->bindParam(':found_secret', $synthOwnerKnowsSecret, PDO::PARAM_BOOL);
+                    $synthStmt->bindParam(':owner_knows_base_secret', $synthOwnerKnowsSecret, PDO::PARAM_INT);
                     $synthStmt->bindParam(':turn1', $synthTurn, PDO::PARAM_INT);
                     $synthStmt->bindParam(':turn2', $synthTurn, PDO::PARAM_INT);
                     $synthStmt->execute();
                     echo sprintf(
-                        "Post-load CKL synthesis: %d owned-base row(s) seeded.<br />",
+                        "Post-load CKL synthesis: %d owned-location row(s) seeded.<br />",
                         $synthStmt->rowCount()
                     );
                 } catch (PDOException $e) {

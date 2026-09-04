@@ -235,6 +235,21 @@ La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalcu
 
 Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, `Defence` et `DiscoveryDiff`. Un changement d'état remet donc l'ancienneté à zéro **sur les deux axes** — un lieu fraîchement construit, ruiné ou déplacé est à la fois plus fragile et plus facile à découvrir, jusqu'à ce qu'il ait de nouveau vieilli.
 
+### Connaissance de ses propres lieux (seed CKL au chargement)
+
+À la fin de chaque chargement de scénario, `gameReady` (`BDD/db_connector.php`) complète `{prefix}controller_known_locations` pour **tout lieu portant un `controller_id`**, base ou non. Un propriétaire connaît donc la description de l'intégralité de ce qu'il possède, et ses ruines possédées apparaissent dans la liste déroulante « Réparer un lieu » — alimentée par `listControllerKnownLocations`, donc par les lieux *connus*.
+
+Le `found_secret` inséré est **conditionnel** :
+
+| Lieu possédé | `found_secret` |
+|---|---|
+| `is_base = 1` | selon **`owner_knows_own_base_secret`** |
+| `is_base = 0` | `false`, toujours |
+
+La clé garde ainsi exactement la portée que son nom annonce : elle ne parle que des bases. Le secret (`hidden_description`) d'un lieu possédé non-base reste à découvrir par l'enquête, comme pour n'importe quel autre lieu.
+
+Le seed est idempotent (`NOT EXISTS`) : il n'écrase jamais une ligne existante, et ne rétrograde donc pas un `found_secret` déjà acquis. En cours de partie, `createBase` et `moveBase` couvrent la création et le déménagement via `addLocationToCKL`.
+
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
 **`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **formes** de règles cohabitent :
