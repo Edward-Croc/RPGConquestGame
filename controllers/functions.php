@@ -1186,7 +1186,10 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
 
     $zones = getZonesArray($pdo);
 
-    $zoneSearchElement = '<input type="hidden" name="controller_id" value="'.$controller_id.'">';
+    // Both gift forms are method="GET" : controller_id only reaches action.php as a form field.
+    $controllerIdInput = sprintf('<input type="hidden" name="controller_id" value="%s">', $controller_id);
+
+    $zoneSearchElement = '';
     if ($origin == 'admin') {
         $zoneSearchElement = showZoneSelect($pdo, $zones, null, false, false, true);
     }
@@ -1233,7 +1236,7 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
         '
         <form action="/%s/%s" method="GET">
         <h4 class="title is-5 mt-5">Sur les agents connus:</h4>
-            %s
+            %s%s
             <div class="field">
                 Sélectionner une faction à informer : %s
             </div>
@@ -1249,6 +1252,7 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
         </form>',
         $_SESSION['FOLDER'],
         $returnLink,
+        $controllerIdInput,
         $zoneSearchElement,
         showControllerSelect($controllers, $controller_id, 'target_controller_id'),
         $enemyWorkersSelect
@@ -1296,6 +1300,7 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
         '
         <form action="/%s/%s" method="GET" >
         <h4 class="title is-5 mt-5">Sur les lieux connus:</h4>
+            %s
             <div class="field">
                 Sélectionner une faction à informer : %s
             </div>
@@ -1311,6 +1316,7 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
         </form>',
         $_SESSION['FOLDER'],
         $returnLink,
+        $controllerIdInput,
         showControllerSelect($controllers, $controller_id, 'target_controller_id'),
         $knownLocationsSelect
     );
