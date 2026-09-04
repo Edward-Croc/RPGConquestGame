@@ -491,14 +491,16 @@ if (isset($_SESSION['controller'])) {
                 $turn
             );
             $items = '';
+            $giftTpl = (string) getConfig($gameReady, 'textInformationGiftReceived');
             foreach ($turnGifts as $gift) {
                 $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
-                $items .= sprintf(
-                    '<li>%s vous a transmis %s <strong>%s</strong></li>',
+                $items .= '<li>' . sprintf(
+                    $giftTpl,
                     htmlspecialchars($gift['giver']),
                     $label,
-                    htmlspecialchars($gift['target_label'])
-                );
+                    htmlspecialchars($gift['target_label']),
+                    htmlspecialchars($gift['zone_name'] ?? '') ?: '—'
+                ) . '</li>';
             }
             $panels .= sprintf(
                 '<div class="tab-content"%s data-tab-group="info-gifts" data-tab-index="%d"><ul>%s</ul></div>',

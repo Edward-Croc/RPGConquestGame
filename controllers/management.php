@@ -219,6 +219,7 @@ $infoTxs = $gameReady->query(
         l.turn,
         l.target_type,
         l.target_id,
+        l.zone_name,
         l.created_at,
         CONCAT(g.firstname, ' ', g.lastname) AS giver_name,
         gf.name AS giver_faction,
@@ -259,6 +260,7 @@ unset($tx);
             <th>Recipient</th>
             <th>Type</th>
             <th>Target</th>
+            <th>Zone</th>
         </tr>
 <?php foreach ($infoTxs as $tx): ?>
         <tr>
@@ -268,6 +270,7 @@ unset($tx);
             <td><?= htmlspecialchars($tx['recipient_name'].' ('.($tx['recipient_faction'] ?? '—').')') ?></td>
             <td><?= htmlspecialchars($tx['target_type']) ?></td>
             <td><?= htmlspecialchars($tx['target_label']) ?></td>
+            <td><?= htmlspecialchars($tx['zone_name'] ?? '') ?: '—' ?></td>
         </tr>
 <?php endforeach; ?>
     </table>
