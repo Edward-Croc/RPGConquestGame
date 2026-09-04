@@ -130,6 +130,7 @@ VALUES
     ('textesAgentUpgradeInfo', '["Nous avons obtenu de nouvelles informations concernant %1$s :"]', 'Templates (JSON array) for the "new info on agent" report variant. %1$s = agent name.'),
     ('textesAgentReminderLabel', 'Rappel des informations connues', 'Label inside <details><summary> for folded previously-known agent info.'),
     ('textesLocationStillHere', '["Le lieu %1$s est toujours là."]', 'Templates (JSON array) for the "location still here" report variant. %1$s = location name.'),
+    ('textInformationGiftReceived', '%1$s vous a informé sur %2$s <strong>%3$s</strong> à <strong>%4$s</strong>.', 'Received-information line on a controller page. %1$s = giver name, %2$s = « l''agent » or « le lieu », %3$s = target name, %4$s = zone recorded when the gift was made.'),
     -- Action End turn effects
     ('continuing_investigate_action', '1', 'Does the investigate action stay active'),
     ('continuing_claim_action', '1', 'Does the claim action stay active'),

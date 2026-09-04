@@ -672,15 +672,17 @@ Pour permettre le suivi et l'enquête sur ces échanges, chaque don exécuté pa
 
 ### Panneau « Informations reçues » sur Ma Faction
 
-`controllers/view.php` rend un panneau qui liste les dons reçus par le contrôleur actif via `getInformationGiftsReceived()`. Le helper résout `target_label` via un JOIN sur `workers` (`firstname + lastname`) ou `locations` (`name`). Format affiché :
+`controllers/view.php` rend un panneau qui liste les dons reçus par le contrôleur actif via `getInformationGiftsReceived()`. Le helper résout `target_label` via un JOIN sur `workers` (`firstname + lastname`) ou `locations` (`name`), et rapporte la colonne `zone_name` du journal.
 
-> <timeValue> <turn> — <giver_name> (<faction>) vous a transmis l'agent / le lieu <target_label>
+**`textInformationGiftReceived`** (= `%1$s vous a informé sur %2$s <strong>%3$s</strong> à <strong>%4$s</strong>.`) — la ligne affichée pour un don reçu. `%1$s` = nom du donateur, `%2$s` = « l'agent » ou « le lieu », `%3$s` = nom de la cible, `%4$s` = zone. Une zone absente s'affiche « — ».
 
-(le préfixe est la valeur configurée par `timeValue`, par exemple « Tour 12 » ou « Trimestre 12 »)
+Le préfixe de l'onglet est la valeur configurée par `timeValue`, par exemple « Tour 12 » ou « Trimestre 12 ».
+
+**`{prefix}information_gift_logs.zone_name`** porte la zone **telle qu'elle était au moment du don**, dénormalisée comme `worker_combat_logs.zone_name`. Pour un agent elle vient de la ligne `controllers_known_enemies` du donateur, donc de la zone qu'il connaissait ; pour un lieu, de la zone où il se trouvait alors. Un agent ou un lieu qui bouge ensuite ne réécrit pas le journal — c'est un registre historique, pas un état courant.
 
 ### Section admin « Information Transactions »
 
-`controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
+`controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target, zone) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
 
 ### `debug` — Débogage
 

@@ -214,23 +214,32 @@ foreach ($controllers as $controller) {
     <?php echo buildGiveKnowledgeHTML($gameReady, 'admin'); ?>
 </div>
 <?php
-$infoTxs = $gameReady->query(
-    "SELECT
-        l.turn,
-        l.target_type,
-        l.target_id,
-        l.created_at,
-        CONCAT(g.firstname, ' ', g.lastname) AS giver_name,
-        gf.name AS giver_faction,
-        CONCAT(r.firstname, ' ', r.lastname) AS recipient_name,
-        rf.name AS recipient_faction
-     FROM {$prefix}information_gift_logs l
-     JOIN {$prefix}controllers g ON l.giver_controller_id = g.id
-     LEFT JOIN {$prefix}factions gf ON g.faction_id = gf.ID
-     JOIN {$prefix}controllers r ON l.recipient_controller_id = r.id
-     LEFT JOIN {$prefix}factions rf ON r.faction_id = rf.ID
-     ORDER BY l.turn DESC, l.created_at DESC"
-)->fetchAll(PDO::FETCH_ASSOC);
+$infoTxs = [];
+$infoTxsFailed = false;
+try {
+    $infoTxs = $gameReady->query(
+        "SELECT
+            l.turn,
+            l.target_type,
+            l.target_id,
+            l.zone_name,
+            l.created_at,
+            CONCAT(g.firstname, ' ', g.lastname) AS giver_name,
+            gf.name AS giver_faction,
+            CONCAT(r.firstname, ' ', r.lastname) AS recipient_name,
+            rf.name AS recipient_faction
+         FROM {$prefix}information_gift_logs l
+         JOIN {$prefix}controllers g ON l.giver_controller_id = g.id
+         LEFT JOIN {$prefix}factions gf ON g.faction_id = gf.ID
+         JOIN {$prefix}controllers r ON l.recipient_controller_id = r.id
+         LEFT JOIN {$prefix}factions rf ON r.faction_id = rf.ID
+         ORDER BY l.turn DESC, l.created_at DESC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // The section degrades rather than replacing the whole admin page with a trace.
+    $infoTxsFailed = true;
+    game_error_log('controllers_management_page', 'SELECT information_gift_logs failed : ' . $e->getMessage(), [], 'error');
+}
 foreach ($infoTxs as &$tx) {
     if ($tx['target_type'] === 'agent') {
         $s = $gameReady->prepare("SELECT CONCAT(firstname, ' ', lastname) AS lbl FROM {$prefix}workers WHERE id = :id");
@@ -248,7 +257,9 @@ unset($tx);
 ?>
 <div class='management'>
     <h1>Information Transactions</h1>
-<?php if (empty($infoTxs)): ?>
+<?php if ($infoTxsFailed): ?>
+    <p>Section indisponible : la lecture du journal a échoué, voir le journal d'erreurs.</p>
+<?php elseif (empty($infoTxs)): ?>
     <p>Aucune transaction enregistrée.</p>
 <?php else: ?>
     <table border="1" cellpadding="5">
@@ -259,6 +270,7 @@ unset($tx);
             <th>Recipient</th>
             <th>Type</th>
             <th>Target</th>
+            <th>Zone</th>
         </tr>
 <?php foreach ($infoTxs as $tx): ?>
         <tr>
@@ -268,6 +280,7 @@ unset($tx);
             <td><?= htmlspecialchars($tx['recipient_name'].' ('.($tx['recipient_faction'] ?? '—').')') ?></td>
             <td><?= htmlspecialchars($tx['target_type']) ?></td>
             <td><?= htmlspecialchars($tx['target_label']) ?></td>
+            <td><?= ($tx['zone_name'] ?? '') === '' ? '—' : htmlspecialchars($tx['zone_name']) ?></td>
         </tr>
 <?php endforeach; ?>
     </table>

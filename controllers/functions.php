@@ -1339,9 +1339,10 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
  * @param string $target_type : 'agent' | 'location'
  * @param int $target_id : worker_id or location_id
  * @param int $turn : current turn number
+ * @param string|null $zone_name : zone recorded at gift time, frozen against later moves
  * @return void
  */
-function logInformationGift(PDO $pdo, int $giver_id, int $recipient_id, string $target_type, int $target_id, int $turn): void
+function logInformationGift(PDO $pdo, int $giver_id, int $recipient_id, string $target_type, int $target_id, int $turn, string|null $zone_name = null): void
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with giver_id : ' . $giver_id, ['recipient_id' => $recipient_id, 'target_type' => $target_type, 'target_id' => $target_id, 'turn' => $turn], 'debug');
@@ -1349,13 +1350,14 @@ function logInformationGift(PDO $pdo, int $giver_id, int $recipient_id, string $
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         $stmt = $pdo->prepare("INSERT INTO {$prefix}information_gift_logs
-            (giver_controller_id, recipient_controller_id, target_type, target_id, turn)
-            VALUES (:giver, :recipient, :type, :tid, :turn)");
+            (giver_controller_id, recipient_controller_id, target_type, target_id, zone_name, turn)
+            VALUES (:giver, :recipient, :type, :tid, :zone_name, :turn)");
         $stmt->execute([
             ':giver'     => (int)$giver_id,
             ':recipient' => (int)$recipient_id,
             ':type'      => $target_type,
             ':tid'       => (int)$target_id,
+            ':zone_name' => $zone_name,
             ':turn'      => (int)$turn,
         ]);
     } catch (PDOException $e) {
@@ -1371,7 +1373,7 @@ function logInformationGift(PDO $pdo, int $giver_id, int $recipient_id, string $
  *
  * @param PDO $pdo : database connection
  * @param int $controller_id : recipient controller id
- * @return array : rows ['turn', 'giver', 'target_type', 'target_id', 'target_label']
+ * @return array : rows ['turn', 'giver', 'target_type', 'target_id', 'zone_name', 'target_label']
  */
 function getInformationGiftsReceived(PDO $pdo, int $controller_id): array
 {
@@ -1384,6 +1386,7 @@ function getInformationGiftsReceived(PDO $pdo, int $controller_id): array
             l.turn,
             l.target_type,
             l.target_id,
+            l.zone_name,
             CONCAT(c.firstname, ' ', c.lastname) AS giver
         FROM {$prefix}information_gift_logs l
         JOIN {$prefix}controllers c ON l.giver_controller_id = c.id

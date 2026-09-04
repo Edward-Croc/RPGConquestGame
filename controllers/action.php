@@ -164,13 +164,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             game_error_log('controllers_action_page', 'giftInformationAgent aborted : self-gift attempt', ['controller_id' => $controller_id, 'target_controller_id' => $target_controller_id, 'enemy_worker_id' => $enemy_worker_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
-            $sql = "SELECT zone_id FROM {$prefix}controllers_known_enemies WHERE controller_id = ? AND discovered_worker_id = ?";
+            $sql = "SELECT cke.zone_id, z.name AS zone_name
+                FROM {$prefix}controllers_known_enemies cke
+                LEFT JOIN {$prefix}zones z ON z.id = cke.zone_id
+                WHERE cke.controller_id = ? AND cke.discovered_worker_id = ?";
             $stmt = $gameReady->prepare($sql);
             $stmt->execute([$controller_id, $enemy_worker_id]);
-            $zone_id = $stmt->fetch(PDO::FETCH_ASSOC)['zone_id'];
+            $known = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $zone_id = $known['zone_id'] ?? null;
 
             addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
-            logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter']);
+            logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter'], $known['zone_name'] ?? null);
         }
     }
 
@@ -187,8 +191,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             game_error_log('controllers_action_page', 'giftInformationLocation aborted : self-gift attempt', ['giver_id' => $giver_id, 'target_controller_id' => $target_controller_id, 'location_id' => $location_id], 'warning');
             echo '<div class="notification is-warning">Faction cible invalide : on ne peut pas se donner d\'information à soi-même.</div>';
         } else {
+            $zoneStmt = $gameReady->prepare("SELECT z.name AS zone_name
+                FROM {$prefix}locations l
+                LEFT JOIN {$prefix}zones z ON z.id = l.zone_id
+                WHERE l.id = ?");
+            $zoneStmt->execute([$location_id]);
+            $location_zone_name = $zoneStmt->fetchColumn() ?: null;
+
             addLocationToCKL($gameReady, $target_controller_id, $location_id, $mechanics['turncounter'], false);
-            logInformationGift($gameReady, $giver_id, $target_controller_id, 'location', $location_id, $mechanics['turncounter']);
+            logInformationGift($gameReady, $giver_id, $target_controller_id, 'location', $location_id, $mechanics['turncounter'], $location_zone_name);
         }
     }
 }
