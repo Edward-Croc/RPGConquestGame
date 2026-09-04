@@ -633,6 +633,7 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
+- `{type: "owns_location_type", location_type: "temple", can_be_destroyed: 1}` → l'usage de Japon1555 pour `Koku`, sur `temple` comme sur `fortress`.
 
 **Filtres whitelistés pour `owns_location_type`** (tous optionnels, AND-combinés) :
 
@@ -656,7 +657,7 @@ Colonne JSON dans `{prefix}locations` contenant un tableau de tags textuels :
 
 Ces tags sont exploités par `owns_location_type` via le filtre `location_type`. Un même lieu peut cumuler plusieurs tags (ex. monastère fortifié = `["temple", "fortress"]`).
 
-**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. Les bases historiques sans tag doivent être complétées dans le CSV du scénario.
+**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. **Tout autre lieu possédé doit être taggé à la main dans le CSV du scénario** — bases comprises quand elles sont seedées et non bâties en jeu. Un lieu possédé sans tag, ou portant un tag hors vocabulaire, est silencieusement ignoré par `owns_location_type` : rien ne valide le vocabulaire, ni à l'import CSV ni à la saisie admin.
 
 ### Séquence de fin de tour
 
