@@ -70,6 +70,22 @@ def _repair_option_labels(page, controller_lastname):
     ]
 
 
+def _own_pages_html(page, controller_lastname):
+    """Return (zones page, controller page) HTML as that controller reads them.
+
+    zones/action.php carries the per-zone « Vos lieux secrets » block
+    (showcontrollerKnownSecrets), controllers/action.php the owner's own base
+    preview. Both are where a secret becomes readable, so both are captured."""
+    ensure_gm_login(page, PHP_BASE_URL)
+    as_controller(page, controller_lastname, base_url=PHP_BASE_URL)
+    safe_goto(page, f"{PHP_BASE_URL}/zones/action.php")
+    page.wait_for_load_state("load")
+    zones_html = page.content()
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    return zones_html, page.content()
+
+
 def _toggle_update_location_admin(page, location_name):
     """POST the management-page toggle_destruction form for a location.
 
@@ -133,6 +149,10 @@ class TestOwnerKnowsOwnLocations:
         ensure_gm_login(page, PHP_BASE_URL)
         golf_known_after = ui_known_locations_for_controller(page, "Golf")
 
+        # What each owner actually READS, as opposed to what CKL stores.
+        golf_zones_html, golf_ctrl_html = _own_pages_html(page, "Golf")
+        echo_zones_html, echo_ctrl_html = _own_pages_html(page, "Echo")
+
         assert_no_collected_php_errors(page)
         context.close()
 
@@ -146,6 +166,10 @@ class TestOwnerKnowsOwnLocations:
         cls._golf_repair_after = golf_repair_after
         cls._golf_known_after = golf_known_after
         cls._shrine_id = shrine_id
+        cls._golf_zones_html = golf_zones_html
+        cls._golf_ctrl_html = golf_ctrl_html
+        cls._echo_zones_html = echo_zones_html
+        cls._echo_ctrl_html = echo_ctrl_html
         yield
 
     # --- Rule 1: the owner knows, and can repair, its own non-base location ---
@@ -248,6 +272,54 @@ class TestOwnerKnowsOwnLocations:
             f"Echo-Base is is_base=1 and owner_knows_own_base_secret is TRUE, "
             f"so its secret must be seeded to Echo (issue #128 rule 2 "
             f"positive); secret-known: {sorted(self._echo_secret)}"
+        )
+
+    # --- Rule 2, render side: what the owner actually READS ---
+
+    _CHAPEL_SECRET = "Hidden crypt beneath the Golf chapel"
+    _SHRINE_SECRET = "Hidden reliquary beneath the Golf shrine"
+    _BASE_SECRET = "Hidden tactical details only owner sees"
+
+    def test_rule2_owner_cannot_read_its_non_base_secrets(self):
+        """The seed storing found_secret=false is only half the rule; the
+        owner-facing renders must honour it.
+
+        listControllerLinkedLocations gates hidden_description in SQL, and
+        showcontrollerKnownSecrets delegates to it, so neither Golf secret can
+        reach Golf's own pages. The name assertions are the paired positives:
+        without them these negatives would pass on an empty page."""
+        for html, label in ((self._golf_zones_html, "zones"),
+                            (self._golf_ctrl_html, "controllers")):
+            assert "Golf-Chapel" in html, (
+                f"Golf must see its own Golf-Chapel on its {label} page, "
+                f"otherwise the secret assertions below prove nothing"
+            )
+            assert self._CHAPEL_SECRET not in html, (
+                f"Golf-Chapel is is_base=0 : its secret must not be readable "
+                f"by its owner on the {label} page (issue #128 rule 2)"
+            )
+            assert self._SHRINE_SECRET not in html, (
+                f"Golf-Shrine is is_base=0 : its secret must not be readable "
+                f"by its owner on the {label} page (issue #128 rule 2)"
+            )
+
+    def test_rule2_owner_reads_its_base_secret(self):
+        """Positive counterpart on the render side, and the witness that the
+        negatives above come from is_base and not from a blanket hide.
+
+        Echo-Base is is_base=1 with owner_knows_own_base_secret TRUE, so its
+        secret is readable — through listControllerLinkedLocations on the zones
+        page and through the base preview on the controllers page."""
+        assert "Echo-Base" in self._echo_zones_html, (
+            "Echo must see its own base on its zones page"
+        )
+        assert self._BASE_SECRET in self._echo_zones_html, (
+            "a base secret must stay readable by its owner when "
+            "owner_knows_own_base_secret is TRUE (issue #128 rule 2 positive)"
+        )
+        assert self._BASE_SECRET in self._echo_ctrl_html, (
+            "the base preview on controllers/action.php must carry the secret "
+            "when owner_knows_own_base_secret is TRUE"
         )
 
     # --- Rule 3: a swap into a ruin keeps the owner's knowledge ---
