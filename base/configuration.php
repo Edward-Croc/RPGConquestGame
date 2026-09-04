@@ -3,6 +3,12 @@ $pageName = 'Configuration';
 
 require_once '../base/basePHP.php';
 
+// Admin-only page: require privileged session
+if (empty($_SESSION['is_privileged'])) {
+    header('Location: /' . $_SESSION['FOLDER'] . '/connection/loginForm.php');
+    exit();
+}
+
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'configuration_page';  // uncomment to log DEBUG events from this page
 
 $prefix = $_SESSION['GAME_PREFIX'];

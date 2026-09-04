@@ -112,6 +112,7 @@ Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autre
 <h3>1. Configuration dynamique</h3>
 <p> Presque tous les paramètres du système sont <strong>configurables dynamiquement</strong> dans la base de données (<code>config</code>) : valeurs de bonus, textes, modes de calcul, seuils de découverte, résultats des attaques etc.
   Deux soirées enquêtes complètes sont prévues pour être publiées en utilisant ce système, il vous sera possible de vous baser sur leur paramétrage.</p>
+<p> Le détail de chaque clé, son rôle et sa valeur par défaut sont décrits dans le <a href="/<?= htmlspecialchars($folder) ?>/base/docConfig.php"><strong>guide de configuration</strong></a>.</p>
 <h3>2. Debug et suivi</h3>
 <p>Un mode <code>DEBUG_REPORT</code> permet d’afficher l’intégralité des calculs et des comparaisons réalisés à chaque tour pour le suivi du développement ou le test des équilibrages.</p>
 <h3>3. Contact</h3>
