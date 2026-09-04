@@ -329,7 +329,7 @@ class TestInformationGiftLocationLogged:
     def test_recipient_sees_target_location_name(self):
         assert "Echo-Base" in self._beta_content
 
-    def test_recipient_sees_transmis_phrasing(self):
+    def test_recipient_sees_informed_phrasing(self):
         assert "vous a informé sur" in self._beta_content
 
     def test_recipient_sees_the_zone_recorded_at_gift_time(self):

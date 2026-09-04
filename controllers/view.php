@@ -481,6 +481,7 @@ if (isset($_SESSION['controller'])) {
         $panels = '';
         $first = true;
         $idx = 0;
+        $giftTpl = (string) getConfig($gameReady, 'textInformationGiftReceived');
         foreach ($giftsByTurn as $turn => $turnGifts) {
             $tabs .= sprintf(
                 '<li%s data-tab-group="info-gifts" data-tab-index="%d"><a onclick="selectTab(\'info-gifts\', %d)">%s %d</a></li>',
@@ -491,7 +492,6 @@ if (isset($_SESSION['controller'])) {
                 $turn
             );
             $items = '';
-            $giftTpl = (string) getConfig($gameReady, 'textInformationGiftReceived');
             foreach ($turnGifts as $gift) {
                 $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
                 $items .= '<li>' . sprintf(
@@ -499,7 +499,7 @@ if (isset($_SESSION['controller'])) {
                     htmlspecialchars($gift['giver']),
                     $label,
                     htmlspecialchars($gift['target_label']),
-                    htmlspecialchars($gift['zone_name'] ?? '') ?: '—'
+                    ($gift['zone_name'] ?? '') === '' ? '—' : htmlspecialchars($gift['zone_name'])
                 ) . '</li>';
             }
             $panels .= sprintf(
