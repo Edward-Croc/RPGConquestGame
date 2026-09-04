@@ -162,6 +162,8 @@ if (isset($_SESSION['controller'])) {
         }
 
         $htmlBase .= '<p>';
+        // A base's secret is previewed to its owner only when the config allows it.
+        $ownerKnowsBaseSecret = (strtoupper((string) getConfig($gameReady, 'owner_knows_own_base_secret')) === 'TRUE');
         foreach ($bases as $base) {
             $htmlBase .= sprintf(
                 '
@@ -183,7 +185,7 @@ if (isset($_SESSION['controller'])) {
                 $base['name'],
                 $base['zone_name'],
                 $base['discovery_diff'],
-                nl2br($base['description'].$base['hidden_description']),
+                nl2br($base['description'] . ($ownerKnowsBaseSecret ? $base['hidden_description'] : '')),
                 moveBaseCostHTML($gameReady, $controllers['id'])
             );
         }

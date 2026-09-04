@@ -250,6 +250,27 @@ La clé garde ainsi exactement la portée que son nom annonce : elle ne parle qu
 
 Le seed est idempotent (`NOT EXISTS`) : il n'écrase jamais une ligne existante, et ne rétrograde donc pas un `found_secret` déjà acquis. En cours de partie, `createBase` et `moveBase` couvrent la création et le déménagement via `addLocationToCKL`.
 
+#### Quand le secret d'un lieu est-il montré ?
+
+Le `found_secret` ci-dessus décide ce que la base **stocke** ; six chemins décident ce qu'un joueur **lit**. Tous appliquent désormais la même règle : un secret ne se montre que si le lecteur l'a acquis.
+
+| Chemin | Condition | Où |
+|---|---|---|
+| Ses propres lieux, groupés par zone | `is_base` **et** `owner_knows_own_base_secret`, **ou** `found_secret` en CKL | `listControllerLinkedLocations` (`zones/functions.php`) |
+| « Vos lieux secrets » d'une zone | délègue au précédent | `showcontrollerKnownSecrets` |
+| Aperçu de sa propre base | `owner_knows_own_base_secret` | `controllers/view.php` |
+| Lieux connus non possédés | `found_secret` en CKL | `listControllerKnownLocations` |
+| Bases ennemies connues d'une zone | `found_secret` en CKL | `showcontrollerKnownSecrets` |
+| Rapport d'enquête | palier artefacts (`LOCATIONARTEFACTSDIFF`) | `locationSearchMechanic` |
+
+Deux conséquences valent d'être connues.
+
+**Posséder un lieu ne révèle pas son secret.** Seule une base le fait, et seulement si `owner_knows_own_base_secret` est à `TRUE`. Pour tout autre lieu possédé, le propriétaire doit le découvrir par l'enquête comme n'importe qui — c'est ce que `found_secret = false` du seed exprime.
+
+**Le filtrage se fait en SQL là où c'est possible.** `listControllerLinkedLocations` renvoie une chaîne vide plutôt que le secret, qui ne quitte donc pas la base quand il n'est pas autorisé. Les autres chemins filtrent en PHP après lecture.
+
+La page d'administration `zones/management_locations.php` affiche tous les secrets sans condition : elle est réservée aux sessions `is_privileged` (voir #121).
+
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
 **`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **formes** de règles cohabitent :
