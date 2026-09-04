@@ -786,42 +786,23 @@ function showcontrollerKnownSecrets(PDO $pdo, int $controller_id, int $zone_id):
 
     $returnText = '';
     $prefix = $_SESSION['GAME_PREFIX'];
-    // Bases owned by this controller in the zone
-    $sql = "
-        SELECT l.id, l.name, l.can_be_destroyed, l.description, l.hidden_description
-        FROM {$prefix}locations l
-        WHERE l.controller_id = :controller_id
-        AND l.zone_id = :zone_id
-    ";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        ':controller_id' => $controller_id,
-        ':zone_id' => $zone_id
-    ]);
-    $owned_bases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Locations owned by this controller in the zone. The helper gates the secret
+    // and resolves the artefacts, so both stay defined in one place.
+    $ownedGrouped = listControllerLinkedLocations($pdo, $controller_id, $zone_id);
+    $owned_bases = $ownedGrouped[$zone_id]['locations'] ?? [];
 
     if (!empty($owned_bases)) {
         $returnText .= "<p><strong>Vos lieux secrets:</strong></p><ul>";
         foreach ($owned_bases as $base) {
             $returnText .= sprintf(
-                "<li><b>%s</b> <em>%s%s</em>",
+                "<li><b>%s</b> <em>%s</em>",
                 $base['name'],
-                $base['description'],
-                $base['hidden_description']
+                $base['description']
             );
 
-            // Fetch artefacts for this location
-            $stmtArt = $pdo->prepare("
-            SELECT name, description, full_description
-            FROM {$prefix}artefacts
-            WHERE location_id = :location_id
-            ");
-            $stmtArt->execute([':location_id' => $base['id']]);
-            $artefacts = $stmtArt->fetchAll(PDO::FETCH_ASSOC);
-
-            if (!empty($artefacts)) {
+            if (!empty($base['artefacts'])) {
                 $returnText .= "<ul>";
-                foreach ($artefacts as $art) {
+                foreach ($base['artefacts'] as $art) {
                     $returnText .= sprintf(
                         "<li><strong>%s</strong>: %s %s</li>",
                         $art['name'],
@@ -985,14 +966,18 @@ function listControllerKnownLocations(PDO $gameReady, int $controllerId, bool $l
  *
  * @param PDO $gameReady
  * @param int $controllerId
+ * @param int|null $zoneId : restrict to one zone, so a per-zone caller does not fetch every zone
  * @return array|null array of controllers know locations
  */
-function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array|null
+function listControllerLinkedLocations(PDO $gameReady, int $controllerId, int|null $zoneId = null): array|null
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controllerId : ' . $controllerId, [], 'debug');
 
     $prefix = $_SESSION['GAME_PREFIX'];
+    $ownerKnowsBaseSecret = (strtoupper((string) getConfig($gameReady, 'owner_knows_own_base_secret')) === 'TRUE') ? 1 : 0;
+    $zoneFilter = $zoneId === null ? '' : ' AND l.zone_id = :zone_id';
+    // Owning a place does not reveal its secret : a base does when configured to, anything else needs a CKL find.
     $sql = "
         SELECT
             z.id AS zone_id,
@@ -1001,15 +986,27 @@ function listControllerLinkedLocations(PDO $gameReady, int $controllerId): array
             l.id AS location_id,
             l.name AS location_name,
             l.description AS location_description,
-            l.hidden_description AS location_hidden_description,
+            CASE
+                WHEN (l.is_base = True AND :owner_knows_base_secret = 1) OR ckl.found_secret = True
+                    THEN l.hidden_description
+                ELSE ''
+            END AS location_hidden_description,
             l.can_be_destroyed AS location_can_be_destroyed
         FROM {$prefix}locations l
         JOIN {$prefix}zones z ON l.zone_id = z.id
-        WHERE l.controller_id = :controller_id
+        LEFT JOIN {$prefix}controller_known_locations ckl
+               ON ckl.location_id = l.id AND ckl.controller_id = :ckl_controller_id
+        WHERE l.controller_id = :controller_id{$zoneFilter}
         ORDER BY z.id, l.id;
     ";
     $stmt = $gameReady->prepare($sql);
-    $stmt->execute(['controller_id' => $controllerId]);
+    $stmt->bindValue(':owner_knows_base_secret', $ownerKnowsBaseSecret, PDO::PARAM_INT);
+    $stmt->bindValue(':ckl_controller_id', $controllerId, PDO::PARAM_INT);
+    $stmt->bindValue(':controller_id', $controllerId, PDO::PARAM_INT);
+    if ($zoneId !== null) {
+        $stmt->bindValue(':zone_id', $zoneId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (!$rows) {
