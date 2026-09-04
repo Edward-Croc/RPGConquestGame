@@ -330,7 +330,14 @@ class TestInformationGiftLocationLogged:
         assert "Echo-Base" in self._beta_content
 
     def test_recipient_sees_transmis_phrasing(self):
-        assert "vous a transmis" in self._beta_content
+        assert "vous a informé sur" in self._beta_content
+
+    def test_recipient_sees_the_zone_recorded_at_gift_time(self):
+        # information_gift_logs.zone_name is written when the gift is made, so the
+        # line names Echo-Base's zone even if the place moves afterwards.
+        assert "à <strong>Theta-Artefacts</strong>" in self._beta_content, (
+            "the received-information line must name the zone recorded with the gift"
+        )
 
 
 class TestInformationAdminTransactionsTable:
@@ -443,5 +450,8 @@ class TestPlayerGiftLocationNonPrivileged:
             f"Charlie's faction page must mention the gifted location "
             f"{self._location_name!r} after the player-path gift"
         )
-        assert "vous a transmis" in self._charlie_content
+        assert "vous a informé sur" in self._charlie_content
+        assert "à <strong>Theta-Artefacts</strong>" in self._charlie_content, (
+            f"the line must name {self._location_name!r}'s zone, recorded with the gift"
+        )
         assert "Alpha" in self._charlie_content
