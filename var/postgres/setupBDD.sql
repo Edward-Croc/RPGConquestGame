@@ -182,6 +182,7 @@ CREATE TABLE {prefix}information_gift_logs (
     recipient_controller_id INT NOT NULL REFERENCES {prefix}controllers (id),
     target_type VARCHAR(16) NOT NULL,
     target_id INT NOT NULL,
+    zone_name TEXT, -- Zone as known when the gift was made, frozen : the target may move after
     turn INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
