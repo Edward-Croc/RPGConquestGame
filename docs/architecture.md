@@ -126,6 +126,41 @@ updateRessources → calculateValsReport → attackMechanic
 Le compteur de tour n'est incrémenté qu'**à la toute fin**. Une exception au
 milieu laisse donc la partie à moitié résolue, au tour précédent.
 
+### Ce que l'incrément tardif implique pour les dates
+
+Toute mécanique écrit ses dates avec le compteur **d'avant** l'incrément. Une
+découverte faite pendant la fin du tour N porte donc `last_discovery_turn = N`,
+et personne ne la lit avant le tour N+1 : **le timbre le plus frais qu'un joueur
+puisse voir vaut toujours `tour − 1`**, jamais le tour courant.
+
+C'est ce qui rend correcte la règle de fenêtre de `buildEnemyWorkerListing`
+(`workers/functions.php:1645` et `:1653`) :
+
+```php
+$bucket = $w['last_discovery_turn'] >= ($turn_number - $window) ? 'recent' : 'older';
+```
+
+Avec `attackTimeWindow = 1`, une entrée estampillée N est `recent` au tour N+1
+et `older` au tour N+2 — **exactement un tour de visibilité**. Le `>=` n'est pas
+un off-by-one ; ne pas le « corriger » en `>`.
+
+**Corollaire pour toute action de joueur qui date une ligne en milieu de tour.**
+Elle est en avance d'un cran sur les données de fin de tour et doit être reculée
+de la fenêtre pour rester comparable. C'est ce que fait le don d'agent, dans
+`controllers/action.php` et `controllers/management.php` :
+
+```php
+$giftDiscoveryTurn = max(0, (int)$mechanics['turncounter'] - (int)$attackTimeWindow);
+```
+
+Normalisation, pas malus : sans elle un don vaudrait deux tours de visibilité,
+soit plus qu'une découverte de première main n'en accorde jamais. Le plancher
+`max(0, …)` neutralise le recul au tour 0, où il n'aurait aucun sens.
+
+`addWorkerToCKE` complète par un `GREATEST(last_discovery_turn, :turn_number)`,
+si bien qu'une source périmée ne peut jamais vieillir un acquis plus frais,
+tandis que l'enquête, qui passe le tour courant, continue de rafraîchir.
+
 ### Le modèle de reprise — un choix, pas un accident
 
 Chaque étape réussie écrit son nom dans `mechanics.end_step`, et le moteur saute
