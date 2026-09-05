@@ -235,6 +235,42 @@ La `discovery_diff` finale d'un lieu est recalculée à chaque tour par `recalcu
 
 Conséquence d'équilibrage : le terme d'ancienneté alimente **deux** calculs, `Defence` et `DiscoveryDiff`. Un changement d'état remet donc l'ancienneté à zéro **sur les deux axes** — un lieu fraîchement construit, ruiné ou déplacé est à la fois plus fragile et plus facile à découvrir, jusqu'à ce qu'il ait de nouveau vieilli.
 
+### Connaissance de ses propres lieux (seed CKL au chargement)
+
+À la fin de chaque chargement de scénario, `gameReady` (`BDD/db_connector.php`) complète `{prefix}controller_known_locations` pour **tout lieu portant un `controller_id`**, base ou non. Un propriétaire connaît donc la description de l'intégralité de ce qu'il possède, et ses ruines possédées apparaissent dans la liste déroulante « Réparer un lieu » — alimentée par `listControllerKnownLocations`, donc par les lieux *connus*.
+
+Le `found_secret` inséré est **conditionnel** :
+
+| Lieu possédé | `found_secret` |
+|---|---|
+| `is_base = 1` | selon **`owner_knows_own_base_secret`** |
+| `is_base = 0` | `false`, toujours |
+
+La clé garde ainsi exactement la portée que son nom annonce : elle ne parle que des bases. Le secret (`hidden_description`) d'un lieu possédé non-base reste à découvrir par l'enquête, comme pour n'importe quel autre lieu.
+
+Le seed est idempotent (`NOT EXISTS`) : il n'écrase jamais une ligne existante, et ne rétrograde donc pas un `found_secret` déjà acquis. En cours de partie, `createBase` et `moveBase` couvrent la création et le déménagement via `addLocationToCKL`.
+
+#### Quand le secret d'un lieu est-il montré ?
+
+Le `found_secret` ci-dessus décide ce que la base **stocke** ; six chemins décident ce qu'un joueur **lit**. Tous appliquent désormais la même règle : un secret ne se montre que si le lecteur l'a acquis.
+
+| Chemin | Condition | Où |
+|---|---|---|
+| Ses propres lieux, groupés par zone | `is_base` **et** `owner_knows_own_base_secret`, **ou** `found_secret` en CKL | `listControllerLinkedLocations` (`zones/functions.php`) |
+| « Vos lieux secrets » d'une zone | délègue au précédent | `showcontrollerKnownSecrets` |
+| Aperçu de sa propre base | `owner_knows_own_base_secret` | `controllers/view.php` |
+| Lieux connus non possédés | `found_secret` en CKL | `listControllerKnownLocations` |
+| Bases ennemies connues d'une zone | `found_secret` en CKL | `showcontrollerKnownSecrets` |
+| Rapport d'enquête | palier artefacts (`LOCATIONARTEFACTSDIFF`) | `locationSearchMechanic` |
+
+Deux conséquences valent d'être connues.
+
+**Posséder un lieu ne révèle pas son secret.** Seule une base le fait, et seulement si `owner_knows_own_base_secret` est à `TRUE`. Pour tout autre lieu possédé, le propriétaire doit le découvrir par l'enquête comme n'importe qui — c'est ce que `found_secret = false` du seed exprime.
+
+**Le filtrage se fait en SQL là où c'est possible.** `listControllerLinkedLocations` renvoie une chaîne vide plutôt que le secret, qui ne quitte donc pas la base quand il n'est pas autorisé. Les autres chemins filtrent en PHP après lecture.
+
+La page d'administration `zones/management_locations.php` affiche tous les secrets sans condition : elle est réservée aux sessions `is_privileged` (voir #121).
+
 ### Règles de modification contextuelles (`zones.zone_rules`)
 
 **`zones.zone_rules`** — colonne JSON nullable de la table `{prefix}zones` portant des règles qui ajustent les valeurs de calcul d'un contrôleur sur cette zone. Deux **formes** de règles cohabitent :
@@ -597,6 +633,7 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
+- `{type: "owns_location_type", location_type: "temple", can_be_destroyed: 1}` → l'usage de Japon1555 pour `Koku`, sur `temple` comme sur `fortress`.
 
 **Filtres whitelistés pour `owns_location_type`** (tous optionnels, AND-combinés) :
 
@@ -620,7 +657,7 @@ Colonne JSON dans `{prefix}locations` contenant un tableau de tags textuels :
 
 Ces tags sont exploités par `owns_location_type` via le filtre `location_type`. Un même lieu peut cumuler plusieurs tags (ex. monastère fortifié = `["temple", "fortress"]`).
 
-**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. Les bases historiques sans tag doivent être complétées dans le CSV du scénario.
+**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. **Tout autre lieu possédé doit être taggé à la main dans le CSV du scénario** — bases comprises quand elles sont seedées et non bâties en jeu. Un lieu possédé sans tag, ou portant un tag hors vocabulaire, est silencieusement ignoré par `owns_location_type` : rien ne valide le vocabulaire, ni à l'import CSV ni à la saisie admin.
 
 ### Séquence de fin de tour
 

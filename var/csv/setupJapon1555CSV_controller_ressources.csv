@@ -1,5 +1,5 @@
 controllers__lastname->controller_id,ressources_config__ressource_name->ressource_id,amount,amount_stored,end_turn_gain
-Chōsokabe (長宗我部),Koku,1000,0,400
+Chōsokabe (長宗我部),Koku,1000,0,300
 Hosokawa (細川),Koku,1000,0,400
 Miyoshi (三好),Koku,1000,0,400
 Jōdo-shinshū (浄土真宗),Koku,1000,0,400
