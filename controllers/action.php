@@ -173,7 +173,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $known = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $zone_id = $known['zone_id'] ?? null;
 
-            addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+            // Discoveries are stamped at end of turn : back-date this mid-turn write to match.
+            $attackTimeWindow = getConfig($gameReady, 'attackTimeWindow');
+            $giftDiscoveryTurn = max(0, (int)$mechanics['turncounter'] - (int)$attackTimeWindow);
+            addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $giftDiscoveryTurn, $zone_id);
             logInformationGift($gameReady, $controller_id, $target_controller_id, 'agent', $enemy_worker_id, $mechanics['turncounter'], $known['zone_name'] ?? null);
         }
     }

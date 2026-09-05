@@ -86,7 +86,10 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $target_controller_id = $_GET['target_controller_id'];
         $enemy_worker_id = $_GET['enemy_worker_id'];
 
-        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $mechanics['turncounter'], $zone_id);
+        // Discoveries are stamped at end of turn : back-date this mid-turn write to match.
+        $attackTimeWindow = getConfig($gameReady, 'attackTimeWindow');
+        $giftDiscoveryTurn = max(0, (int)$mechanics['turncounter'] - (int)$attackTimeWindow);
+        addWorkerToCKE($gameReady, $target_controller_id, $enemy_worker_id, $giftDiscoveryTurn, $zone_id);
     }
     if (isset($_GET['giftInformationLocation'])) {
         //  Get Turn Number
