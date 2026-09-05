@@ -1197,12 +1197,19 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
     $enemyWorkerOptions = '';
     // For each zone
     if ($origin != 'admin') {
+        // Read once : buildEnemyWorkerListing would re-read both per zone.
+        $mechanics = getMechanics($pdo);
+        $giftTurnNumber = $mechanics['turncounter'];
+        $giftWindow = getConfig($pdo, 'attackTimeWindow');
+
         foreach ($zones as $zone) {
-            $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
-            foreach ($zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
-                $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'], $enemyWorker['name'], $zone['name']);
+            $listing = buildEnemyWorkerListing($pdo, $zone['id'], $controller_id, $giftTurnNumber, $giftWindow);
+            // Only 'recent' : an agent leaves the gift list when it leaves the attack list.
+            $recentWorkers = $listing['recent']['unaffiliated'];
+            foreach ($listing['recent']['networks'] as $network) {
+                $recentWorkers = array_merge($recentWorkers, $network['workers']);
             }
-            foreach ($zoneEnemyWorkers['workers_with_controller'] as $enemyWorker) {
+            foreach ($recentWorkers as $enemyWorker) {
                 $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'], $enemyWorker['name'], $zone['name']);
             }
         }
