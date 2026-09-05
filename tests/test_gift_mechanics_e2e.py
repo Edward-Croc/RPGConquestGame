@@ -13,8 +13,9 @@ import pytest
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as,
+    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, login_as,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
+    ui_worker_id, ui_zone_id,
 )
 
 
@@ -113,6 +114,32 @@ def _hidden_controller_id_values(page, form_selector):
         f"{form_selector} input[type='hidden'][name='controller_id']"
     ).all()
     return [i.get_attribute("value") for i in inputs]
+
+
+def _seed_cke_admin(page, recipient_id, worker_id, zone_id):
+    """Admin path writes a CKE row stamped with the current turn — the
+    agent-side twin of _seed_ckl_admin."""
+    safe_goto(
+        page,
+        f"{PHP_BASE_URL}/controllers/management.php"
+        f"?giftInformationAgent=1&target_controller_id={recipient_id}"
+        f"&enemy_worker_id={worker_id}&zone_id={zone_id}"
+    )
+    page.wait_for_load_state("load")
+
+
+def _gift_agent_options(page, controller_id):
+    """Option labels of the agent-gift dropdown as one controller sees it."""
+    safe_goto(
+        page, f"{PHP_BASE_URL}/controllers/action.php?controller_id={controller_id}"
+    )
+    page.wait_for_load_state("load")
+    _open_gift_details(page)
+    options = page.locator(
+        "form:has(input[name='giftInformationAgent']) "
+        "select[name='enemy_worker_id'] option"
+    ).all()
+    return [o.inner_text().strip() for o in options]
 
 
 # ---------------------------------------------------------------------------
@@ -455,3 +482,77 @@ class TestPlayerGiftLocationNonPrivileged:
             f"the line must name {self._location_name!r}'s zone, recorded with the gift"
         )
         assert "Alpha" in self._charlie_content
+
+
+# ---------------------------------------------------------------------------
+# The agent-gift dropdown honours attackTimeWindow (Issue #125)
+# ---------------------------------------------------------------------------
+
+
+class TestAgentGiftHonoursAttackTimeWindow:
+    """buildGiveKnowledgeHTML used to call getEnemyWorkers directly, so the
+    agent-gift dropdown offered every agent ever discovered — dead ones and
+    long-stale entries included — while the attack list dropped them.
+
+    Theta-Artefacts holds no Alpha agent, so no end-of-turn investigation of
+    Alpha's can refresh a discovery there and un-age the stale entry."""
+
+    _zone_name = "Theta-Artefacts"
+    _aged_worker = "Artefact_Worker_Foxtrot"
+    _fresh_worker = "Artefact_Searcher_Echo"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def window_state(self, browser):
+        admin_ctx = browser.new_context()
+        admin = admin_ctx.new_page()
+        register_php_error_listener(admin)
+        ensure_gm_login(admin, PHP_BASE_URL)
+
+        # The gift block only renders in the owning player's session.
+        player_ctx = browser.new_context()
+        player = player_ctx.new_page()
+        register_php_error_listener(player)
+        login_as(player, PHP_BASE_URL, "single_player", "test")
+        try:
+            alpha_id = _resolve_controller_id_via_ui(admin, "Alpha")
+            zone_id = ui_zone_id(admin, self._zone_name, base_url=PHP_BASE_URL)
+            aged_id = ui_worker_id(admin, self._aged_worker, base_url=PHP_BASE_URL)
+            fresh_id = ui_worker_id(admin, self._fresh_worker, base_url=PHP_BASE_URL)
+
+            # Discovered now, then aged past attackTimeWindow (= 1) by two turns.
+            _seed_cke_admin(admin, alpha_id, aged_id, zone_id)
+            seeded = _gift_agent_options(player, alpha_id)
+            for _ in range(2):
+                end_turn(admin, base_url=PHP_BASE_URL)
+            # Discovered after the turns, so still inside the window.
+            _seed_cke_admin(admin, alpha_id, fresh_id, zone_id)
+
+            after = _gift_agent_options(player, alpha_id)
+            assert_no_collected_php_errors(admin)
+            assert_no_collected_php_errors(player)
+
+            type(self)._seeded = seeded
+            type(self)._after = after
+            yield
+        finally:
+            player_ctx.close()
+            admin_ctx.close()
+            load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+
+    def test_seeded_agent_is_offered_on_its_discovery_turn(self):
+        assert any(self._aged_worker in o for o in self._seeded), (
+            f"{self._aged_worker!r} must be offered the turn it is discovered; "
+            f"got {self._seeded!r}"
+        )
+
+    def test_recent_agent_stays_offered(self):
+        assert any(self._fresh_worker in o for o in self._after), (
+            f"{self._fresh_worker!r} was discovered this turn and must still be "
+            f"offered; got {self._after!r}"
+        )
+
+    def test_aged_agent_drops_out_of_the_gift_list(self):
+        assert not any(self._aged_worker in o for o in self._after), (
+            f"{self._aged_worker!r} fell outside attackTimeWindow and must no "
+            f"longer be giftable; got {self._after!r}"
+        )
