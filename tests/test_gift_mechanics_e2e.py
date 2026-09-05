@@ -15,7 +15,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, login_as,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    ui_worker_id, ui_zone_id,
+    ui_detected_enemies_of, ui_worker_id, ui_zone_id,
 )
 
 
@@ -555,4 +555,76 @@ class TestAgentGiftHonoursAttackTimeWindow:
         assert not any(self._aged_worker in o for o in self._after), (
             f"{self._aged_worker!r} fell outside attackTimeWindow and must no "
             f"longer be giftable; got {self._after!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# A gifted agent lands on the end-of-turn timeline, not on the current turn
+# ---------------------------------------------------------------------------
+
+
+class TestGiftedAgentIsDatedOnTheEndOfTurnTimeline:
+    """Investigations stamp last_discovery_turn during end-of-turn processing,
+    before turncounter advances, so the freshest stamp a player ever reads is
+    turn-1. A gift is written mid-turn instead, one step ahead of that clock,
+    and is back-dated by attackTimeWindow to sit on the same timeline. Without
+    it a gift would stay attackable a turn longer than any real discovery.
+
+    Foxtrot's two agents in Theta-Artefacts detect nobody, so the gift stays
+    the only source of intel on Echo's searcher and its expiry is observable.
+    Beta-Combat cannot serve here : every controller re-detects everyone there
+    each turn, which refreshes the entry through GREATEST."""
+
+    _zone_name = "Theta-Artefacts"
+    _target = "Artefact_Searcher_Echo"
+    _observer = "Artefact_Worker_Foxtrot"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def gift_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        try:
+            foxtrot_id = _resolve_controller_id_via_ui(page, "Foxtrot")
+            zone_id = ui_zone_id(page, self._zone_name, base_url=PHP_BASE_URL)
+            target_id = ui_worker_id(page, self._target, base_url=PHP_BASE_URL)
+
+            # Past turn 0, where the max(0, …) floor would hide the back-dating.
+            end_turn(page, base_url=PHP_BASE_URL)
+
+            before = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
+            ensure_gm_login(page, PHP_BASE_URL)
+            _seed_cke_admin(page, foxtrot_id, target_id, zone_id)
+            on_arrival = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
+
+            ensure_gm_login(page, PHP_BASE_URL)
+            end_turn(page, base_url=PHP_BASE_URL)
+            next_turn = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
+            assert_no_collected_php_errors(page)
+
+            type(self)._before = before
+            type(self)._on_arrival = on_arrival
+            type(self)._next_turn = next_turn
+            yield
+        finally:
+            ctx.close()
+            load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+
+    def test_target_unknown_before_the_gift(self):
+        assert self._target not in self._before, (
+            f"{self._target!r} must not be attackable before the gift; "
+            f"got {sorted(self._before)}"
+        )
+
+    def test_gift_is_actionable_on_its_arrival_turn(self):
+        assert self._target in self._on_arrival, (
+            f"{self._target!r} must be attackable on the turn the gift arrives; "
+            f"got {sorted(self._on_arrival)}"
+        )
+
+    def test_gift_expires_on_the_next_turn(self):
+        assert self._target not in self._next_turn, (
+            f"{self._target!r} was back-dated onto the end-of-turn timeline and "
+            f"must expire after one turn; got {sorted(self._next_turn)}"
         )
