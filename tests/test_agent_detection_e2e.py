@@ -35,7 +35,7 @@ from helpers import (
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    end_turn, ui_move, ui_teach_discipline_click,
+    end_turn, ui_move, ui_seed_cke_via_admin, ui_teach_discipline_click,
 )
 
 
@@ -886,13 +886,9 @@ class TestMonotonicCKEPreservation:
         alpha_id = _cached_cid(page, "Alpha")
         bystander_id = _cached_wid(page, "Bystander_1")
         theta_zone_id = ui_zone_id(page, "Theta-Artefacts", base_url=PHP_BASE_URL)
-        safe_goto(
-            page,
-            f"{PHP_BASE_URL}/controllers/management.php"
-            f"?giftInformationAgent=1&target_controller_id={alpha_id}"
-            f"&enemy_worker_id={bystander_id}&zone_id={theta_zone_id}",
+        ui_seed_cke_via_admin(
+            page, alpha_id, bystander_id, theta_zone_id, base_url=PHP_BASE_URL
         )
-        page.wait_for_load_state("load")
         assert_no_collected_php_errors(page)
         context.close()
         yield

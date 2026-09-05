@@ -15,7 +15,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, login_as,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    ui_detected_enemies_of, ui_worker_id, ui_zone_id,
+    ui_detected_enemies_of, ui_seed_cke_via_admin, ui_worker_id, ui_zone_id,
 )
 
 
@@ -114,18 +114,6 @@ def _hidden_controller_id_values(page, form_selector):
         f"{form_selector} input[type='hidden'][name='controller_id']"
     ).all()
     return [i.get_attribute("value") for i in inputs]
-
-
-def _seed_cke_admin(page, recipient_id, worker_id, zone_id):
-    """Admin path writes a CKE row stamped with the current turn — the
-    agent-side twin of _seed_ckl_admin."""
-    safe_goto(
-        page,
-        f"{PHP_BASE_URL}/controllers/management.php"
-        f"?giftInformationAgent=1&target_controller_id={recipient_id}"
-        f"&enemy_worker_id={worker_id}&zone_id={zone_id}"
-    )
-    page.wait_for_load_state("load")
 
 
 def _gift_agent_options(page, controller_id):
@@ -520,12 +508,12 @@ class TestAgentGiftHonoursAttackTimeWindow:
             fresh_id = ui_worker_id(admin, self._fresh_worker, base_url=PHP_BASE_URL)
 
             # Discovered now, then aged past attackTimeWindow (= 1) by two turns.
-            _seed_cke_admin(admin, alpha_id, aged_id, zone_id)
+            ui_seed_cke_via_admin(admin, alpha_id, aged_id, zone_id, base_url=PHP_BASE_URL)
             seeded = _gift_agent_options(player, alpha_id)
             for _ in range(2):
                 end_turn(admin, base_url=PHP_BASE_URL)
             # Discovered after the turns, so still inside the window.
-            _seed_cke_admin(admin, alpha_id, fresh_id, zone_id)
+            ui_seed_cke_via_admin(admin, alpha_id, fresh_id, zone_id, base_url=PHP_BASE_URL)
 
             after = _gift_agent_options(player, alpha_id)
             assert_no_collected_php_errors(admin)
@@ -595,7 +583,7 @@ class TestGiftedAgentIsDatedOnTheEndOfTurnTimeline:
 
             before = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
             ensure_gm_login(page, PHP_BASE_URL)
-            _seed_cke_admin(page, foxtrot_id, target_id, zone_id)
+            ui_seed_cke_via_admin(page, foxtrot_id, target_id, zone_id, base_url=PHP_BASE_URL)
             on_arrival = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
 
             ensure_gm_login(page, PHP_BASE_URL)

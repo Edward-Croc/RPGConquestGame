@@ -515,6 +515,22 @@ def ui_zone_id(page: Page, zone_name: str, base_url: str = None):
     )
 
 
+def ui_seed_cke_via_admin(page: Page, recipient_id, worker_id, zone_id,
+                          base_url: str = None):
+    """Make `recipient_id` know `worker_id` in `zone_id` via the admin
+    agent-gift path, which calls addWorkerToCKE stamped with the current turn.
+
+    Page must be logged in as a privileged user."""
+    url = base_url or PHP_BASE_URL
+    safe_goto(
+        page,
+        f"{url}/controllers/management.php"
+        f"?giftInformationAgent=1&target_controller_id={recipient_id}"
+        f"&enemy_worker_id={worker_id}&zone_id={zone_id}"
+    )
+    page.wait_for_load_state("load")
+
+
 def _scrape_location_discovery_flags(page: Page, base_url: str = None):
     """Scrape /zones/management_locations.php into a nested dict:
       {location_name: {controller_lastname: {known: bool, secret: bool}}}
