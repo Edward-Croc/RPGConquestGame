@@ -20,6 +20,7 @@ puis rend son HTML via `base/baseHTML.php`.
 | Dossier | Rôle |
 |---|---|
 | `base/` | amorçage, session, page d'accueil, administration, configuration |
+| `connection/` | connexion et déconnexion — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
 | `BDD/` | `db_connector.php` : connexion, création du schéma, importeur de scénario |
 | `mechanics/` | le moteur de fin de tour et ses mécaniques |
 | `workers/`, `controllers/`, `zones/`, `ressources/`, `powers/`, `artefacts/` | domaines métier : pages, vues, fonctions |
@@ -44,8 +45,10 @@ puis rend son HTML via `base/baseHTML.php`.
    l'action demandée.
 5. **`base/baseHTML.php`** rend l'en-tête et la barre latérale. Il refuse d'être
    appelé directement (comparaison `realpath`) et redirige vers la connexion si la
-   session n'est pas authentifiée, sauf si `$noConnection` est posé — le drapeau
-   des pages de login et de logout.
+   session n'est pas authentifiée, sauf si `$noConnection` est posé. Un seul
+   fichier le pose : `base/systemPresentation.php:2`, la page de présentation
+   publique. Les pages de connexion, elles, n'ont pas besoin du drapeau puisque
+   **elles n'utilisent pas `baseHTML.php`**.
 6. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
    si la page se termine tôt.
 
@@ -85,6 +88,8 @@ croit à un bug de code.
 > **et** à la liste de `destroyAllTables`. Diagnostic : compter les lignes
 > « dropped successfully » de la réponse du reset contre la longueur de la liste.
 
+La carte des tables, table par table, est en **§9**.
+
 ### Où vivent les données
 
 | Fichier | Contenu |
@@ -93,18 +98,27 @@ croit à un bug de code.
 | `var/csv/setup{Scenario}_*.csv` | scénarios modernes, importés par en-tête de colonne |
 | `var/{dialecte}/setup{Scenario}SQL_*.sql` | anciens scénarios, SQL écrit à la main |
 
-`minimalData.sql` **n'est pas exhaustif** : environ 39 clés lues par le code n'y
-figurent pas et viennent des scénarios. Cette répartition n'est pas une règle
-écrite — voir l'issue #120.
+`minimalData.sql` **n'est pas exhaustif**. Il sème 166 clés ; le code en lit 119
+sous forme littérale, dont **39 n'y figurent pas** et viennent des scénarios.
+Cette répartition n'est pas une règle écrite — voir l'issue #120.
+
+Deux de ces clés ne sont semées par **aucun** scénario non plus, dans aucun
+dialecte : `DEBUG_IA` et `generation_order`. Elles sont lues et jamais définies,
+donc `getConfig` renvoie `null` — ce qui est silencieux, un `(int)null` valant
+zéro. Le décompte ignore par ailleurs les clés construites par concaténation de
+préfixe (`txt_ps_`, `txt_inf_`), qu'aucune recherche littérale ne peut retrouver.
 
 Deux contraintes qui font échouer un chargement entier :
 
-- `config.name` est `VARCHAR(255) UNIQUE NOT NULL`. Une clé seedée deux fois
-  interrompt tout le scénario. Quand un scénario doit surcharger une clé du
-  socle, il faut la clause d'upsert maison (`ON DUPLICATE KEY UPDATE` /
-  `ON CONFLICT (name) DO UPDATE`).
-- L'importeur CSV fait `array_combine($header, $row)` avec un contrôle strict du
-  nombre de champs. Une seule ligne trop courte avorte le chargement.
+- `config.name` est `UNIQUE NOT NULL` — `VARCHAR(255)` côté MySQL, `text` côté
+  PostgreSQL. Une clé seedée deux fois interrompt tout le scénario. Quand un
+  scénario doit surcharger une clé du socle, il faut la clause d'upsert maison
+  (`ON DUPLICATE KEY UPDATE` / `ON CONFLICT (name) DO UPDATE`).
+- L'importeur CSV compare le nombre de champs à celui de l'en-tête avant
+  `array_combine`. Une ligne au mauvais compte **n'avorte pas** le chargement :
+  elle est **sautée** (`BDD/db_connector.php:553-556`), avec un avertissement
+  affiché à l'écran mais **non journalisé**. C'est plus sournois qu'un arrêt net
+  — le scénario se charge, incomplet, et rien n'en garde trace.
 
 Certains fichiers de scénario SQL sont en **CRLF**. Les éditer avec un outil qui
 normalise les fins de ligne produit un diff fantôme de plusieurs centaines de
@@ -116,15 +130,29 @@ lignes.
 
 `mechanics/endTurn.php` exécute une suite d'étapes, dans cet ordre :
 
-```
-updateRessources → calculateValsReport → attackMechanic
-→ recalculateBaseZoneDefence → locationAttackMechanic → claimMechanic
-→ ressourceGainAfterClaim → investigateMechanic → locationSearchMechanic
-→ createNewTurnLines → restartTurnRecrutementCount
-```
+| État écrit dans `end_step` | Ce que l'étape exécute réellement |
+|---|---|
+| `updateRessources` | `updateRessources` (`:44`) **puis** `ressourceGainMechanic('before_claim')` (`:49`) |
+| `calculateValsReport` | `calculateVals` (`:61`) puis la rédaction des rapports de valeurs |
+| `attackMechanic` | `attackMechanic` (`:147`) |
+| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:158`) **puis** `recalculateZoneDefence` (`:164`) |
+| `locationAttackMechanic` | `locationAttackMechanic` (`:175`) |
+| `claimMechanic` | `claimMechanic` (`:186`) |
+| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:197`) |
+| puis | `investigateMechanic`, `locationSearchMechanic`, `createNewTurnLines`, `restartTurnRecrutementCount` |
 
-Le compteur de tour n'est incrémenté qu'**à la toute fin**. Une exception au
-milieu laisse donc la partie à moitié résolue, au tour précédent.
+**La granularité de reprise est l'état, pas la fonction.** Deux étapes portent
+deux appels sous un seul nom : le gain de ressources `before_claim` partage l'état
+de `updateRessources`, et les deux recalculs de défense partagent
+`recalculateBaseZoneDefence`. Une panne entre les deux appels d'un même état fait
+donc **rejouer les deux** à la reprise.
+
+`aiMechanic` figure dans le fichier mais **en commentaire** (`:143`) : le moteur
+d'IA n'est pas branché sur la fin de tour.
+
+Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:230`, écrit en
+`:256`). Une exception au milieu laisse donc la partie à moitié résolue, au tour
+précédent.
 
 ### Ce que l'incrément tardif implique pour les dates
 
@@ -157,7 +185,8 @@ Normalisation, pas malus : sans elle un don vaudrait deux tours de visibilité,
 soit plus qu'une découverte de première main n'en accorde jamais. Le plancher
 `max(0, …)` neutralise le recul au tour 0, où il n'aurait aucun sens.
 
-`addWorkerToCKE` complète par un `GREATEST(last_discovery_turn, :turn_number)`,
+`addWorkerToCKE` (`controllers/functions.php:914`) complète par un
+`GREATEST(last_discovery_turn, :turn_number)` (`:975`),
 si bien qu'une source périmée ne peut jamais vieillir un acquis plus frais,
 tandis que l'enquête, qui passe le tour courant, continue de rafraîchir.
 
@@ -191,6 +220,26 @@ Autrement dit, une reprise duplique des lignes de journal, pas des morts.
 
 ## 4. Valeurs, combat, rapports
 
+### Actions actives et inactives
+
+Deux constantes, en tête de `workers/functions.php` (`:3` et `:4`), décident de
+tout ce qui suit :
+
+```php
+ACTIVE_ACTIONS   = ['passive','investigate','attack','claim','hide','attack_location','defend_location']
+INACTIVE_ACTIONS = ['dead','captured','trace']
+```
+
+Une mécanique de fin de tour ne ramasse que des agents dont l'`action_choice`
+est active, et c'est **par cette liste** qu'un mort sort du jeu : `dead`,
+`captured` et `trace` ne sont pas des drapeaux séparés mais des valeurs
+d'`action_choice`. Ajouter une action au jeu suppose donc de l'ajouter à
+`ACTIVE_ACTIONS`, sans quoi elle est posée en base et ignorée partout.
+
+Le statut affiché s'en déduit, croisé avec `is_primary_controller`
+(`workers/functions.php:320-341`) : actif et à nous vaut `alive`, actif et pas à
+nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à part.
+
 ### Les valeurs
 
 `calculateVals` écrit `attack_val`, `defence_val` et `enquete_val` dans
@@ -216,8 +265,18 @@ resolveWorkerCombat($pdo, $defender, $mechanics,
 ```
 
 Les défauts reproduisent le combat entre agents. L'attaque de lieu passe
-`'location_attack_report'` des deux côtés, pour que ses duels soient classés
-dans leur propre section.
+`'location_attack_report'` des deux côtés (`mechanics/locationAttackMechanic.php:437`),
+pour que ses duels soient classés dans leur propre section.
+
+Deux précisions que la signature ne dit pas :
+
+- **La riposte peut tuer l'attaquant.** Si le défenseur survit et que
+  `riposte_difference` atteint `RIPOSTDIFF`, l'attaquant meurt et le duel
+  retourne `riposte_kill` (`mechanics/attackMechanic.php:447-449`). Attaquer
+  n'est donc jamais sans risque, et `RIPOSTACTIVE = 0` désactive le mécanisme
+  entièrement. On ne peut ni fuir ni riposter dans le même duel (`:461`).
+- **Les agents leurres ne naissent que d'une capture**, pas d'une simple mort
+  (`:371` pour un agent double, `:387` sinon).
 
 ### Les rapports
 
@@ -251,6 +310,21 @@ cible sont écartés avant le combat. Puis attaquants et défenseurs sont appari
 séquentiellement : une mort fait avancer le défenseur, tout le reste dépense
 l'attaquant. La boucle s'arrête quand un camp est épuisé, donc au plus
 `|A| + |D| - 1` duels.
+
+Les deux camps sont triés par `enquete_val` **décroissant**. Le sens du tri est
+la convention du moteur, pas une règle propre à cette mécanique :
+`attackMechanic.php:48` trie déjà les attaquants et `:175` les défenseurs par
+`enquete_val DESC`. Le départage des égalités par `worker_id` croissant, lui, est
+**propre à l'attaque de lieu** (`locationAttackMechanic.php:179`) ; le combat
+entre agents ne le porte pas.
+
+L'énoncé de l'issue #73 annonçait l'ordre inverse — c'est lui qui divergeait du
+code, et le code qui a été suivi.
+
+Aucun code de vivacité n'est nécessaire dans l'échelle : le filtre sur
+`action_choice` exclut déjà les morts à l'entrée, puisque `resolveWorkerCombat`
+remplace l'`action_choice` par `dead` ou `captured`, et pendant l'échelle la
+valeur de retour du duel fait autorité.
 
 ### Gagner n'est pas prendre
 
@@ -310,11 +384,16 @@ jour déclenche l'erreur MySQL 1093 et demande une table dérivée.
 `is_primary_controller`, `is_privileged`, `is_rollable`, `is_stored`,
 `is_updated_location`, `secret_controller`, `success`.
 
+Seize **noms** pour dix-sept occurrences : `success` existe sur deux tables
+(`controller_location_attacks` et `location_attack_logs`).
+
 Le fichier mysql les déclare tantôt `TINYINT(1)`, tantôt `BOOLEAN` — c'est le
-même type de son point de vue, mais chercher `TINYINT(1)` seul en manque trois.
+même type de son point de vue, mais chercher `TINYINT(1)` seul en manque trois
+(`is_rollable`, `is_stored`, `hide_when_zero`).
 
 En SQL brut, `= True` fonctionne partout ; un littéral `0` ou `1` dans un
-`SELECT` sur une colonne `BOOLEAN` échoue sur PostgreSQL. Côté PHP, lier un
+`SELECT` sur une colonne `BOOLEAN` échoue sur PostgreSQL. Le dépôt en porte
+encore un cas non branché par dialecte : `artefacts/management.php:59`. Côté PHP, lier un
 booléen autrement qu'en `PDO::PARAM_BOOL` le transmet en chaîne, et PostgreSQL
 refuse `''`.
 
@@ -332,6 +411,45 @@ est calculé.
 **Commentaires.** Ils décrivent le **comportement**, en une ligne. Le pourquoi
 d'une décision va dans le message de commit ou dans un document, pas dans le
 code.
+
+### Pièges récurrents
+
+1. **La mise à jour de `addWorkerToCKE` est monotone** — la clause `UPDATE` ne touche
+   `discovered_controller_id`, `discovered_controller_name` et `discovered_powers` que si
+   la valeur passée est non nulle (`controllers/functions.php:967-993`, `SET` conditionnel
+   construit par `sprintf`). Un appel à 5 arguments (valeurs par défaut `false`/`null`),
+   comme le font `attackMechanic` ou `claimMechanic`, ne rétrograde donc jamais un drapeau
+   posé par une investigation antérieure. Toute nouvelle colonne CKE doit reprendre ce même
+   motif de `SET` conditionnel, sous peine de régression silencieuse.
+
+2. **Lire l'entrée CKE/CKL avant d'appeler l'upsert, jamais après** — `addWorkerToCKE`
+   (`controllers/functions.php:914`) et `addLocationToCKL`
+   (`controllers/functions.php:1065`) écrasent `zone_id` (ou l'état courant) à chaque
+   appel. Détecter un déplacement suppose donc de lire la ligne existante via
+   `getCKEEntry` (`controllers/functions.php:875`) ou `getCKLEntry`
+   (`controllers/functions.php:1032`) avant l'upsert — inverser l'ordre efface
+   silencieusement l'information « précédemment ici ».
+
+3. **`ORDER BY` ne peut pas être bindé par PDO** — la direction doit être interpolée
+   littéralement dans le SQL. Le seul point d'entrée sûr est un getter à whitelist stricte,
+   comme `getInvestigateOrder` (`mechanics/functions.php:199`, restreint à
+   `'asc'|'desc'`) ou `validateActionChoiceListForSql`
+   (`mechanics/functions.php:130`, restreint à une liste d'actions autorisées). Accepter
+   une valeur de config brute à cet endroit ouvre une injection SQL.
+
+4. **`toggleDescription()` peut fermer une boîte déjà ouverte** — l'ouverture forcée
+   depuis JS doit positionner `style.display = 'block'` directement plutôt que d'appeler
+   `toggleDescription(id)`, qui bascule l'état et peut donc refermer un panneau déjà
+   visible (`base/baseScript.php:8`).
+
+5. **Le seed CKL d'une base n'est centralisé nulle part** — `createBase()`
+   (`controllers/functions.php:359`, appel à `addLocationToCKL`) et la resynthèse
+   post-chargement de `gameReady()` (`BDD/db_connector.php:~1100-1133`, `INSERT ... SELECT`
+   direct sur `controller_known_locations`) portent chacun leur propre logique pour
+   garantir qu'un propriétaire connaît sa propre base, toutes deux conditionnées par
+   `owner_knows_own_base_secret`. Un nouveau chemin de création de base (import, éditeur
+   admin, etc.) qui n'appelle ni l'un ni l'autre laisse la base invisible pour son
+   propriétaire dans tous les panneaux filtrés par CKL.
 
 ---
 
@@ -355,31 +473,580 @@ Trois habitudes qui évitent des tests trompeurs :
 - **Une seule suite à la fois.** Le bootstrap MySQL est partagé ; deux exécutions
   concurrentes se corrompent.
 
+### Attendre une page
+
+`wait_for_load_state("networkidle")` est **proscrit** : il attend 500 ms de
+silence réseau, état qu'une page chargée n'atteint pas toujours dans le délai par
+défaut, et son coût croît avec la charge de la machine. Un fichier de test en
+comptait trente-trois ; leur suppression a fait passer la suite complète de
+40 min 47 s à 26 min 28 s et le premier shard de CI de 14 min 47 s à 8 min 23 s.
+
+Trois formes correctes, par ordre de préférence : `safe_goto`, qui attend déjà
+`load` ; `_wait_loaded(page, sélecteur)`, qui attend l'élément dont le test a
+réellement besoin ; ou une attente explicite sur ce même élément.
+
+Le rechargement de scénario ne se mesure pas au chronomètre. `gameReady` émet
+`END <br />` en fin de chargement (`BDD/db_connector.php:853` et `:1136`), et ce
+marqueur est absent d'une page ordinaire : c'est lui qu'il faut attendre. Un
+reset réel prend une douzaine de secondes côté serveur, en une seule réponse
+synchrone, et le clic de confirmation attend déjà cette navigation.
+
+### Le garde-fou d'erreurs
+
+`conftest.py` compte les lignes `[ERROR]` de `base/admin_logs.php` avant et après
+chaque test et fait échouer celui qui en ajoute. Deux propriétés à préserver :
+le verdict d'indisponibilité **ne doit jamais être mémorisé** pour la session —
+un hoquet au démarrage désactiverait la détection pour tous les tests suivants —
+et son indisponibilité doit **se signaler** en fin de session, sans quoi la suite
+verdit sans plus rien surveiller.
+
+Un test qui provoque volontairement une erreur porte
+`@pytest.mark.expects_errors`.
+
+### Le découpage CI
+
 La CI découpe la suite en deux shards par `pytest-split`. Sans fichier de durées,
 la répartition se fait par comptage, donc **ajouter un test déplace la frontière**
 et change ce qui s'exécute avec quoi.
 
+Le dépôt ne versionne **volontairement pas** `.test_durations`. Deux raisons :
+`--store-durations` **fusionne** avec le fichier existant au lieu de le
+remplacer, si bien qu'il conserve indéfiniment les entrées de fichiers supprimés
+— une régénération honnête exige de le supprimer d'abord ; et le déséquilibre
+qu'il devait corriger était lui-même un effet de `networkidle`. Une fois celui-ci
+éliminé, les deux shards sont tombés à sept secondes d'écart sans aucun fichier
+de durées.
+
 ---
 
-## 9. Ce que ce document ne couvre pas
+## 9. Carte du schéma
 
-Écrit à partir du moteur de fin de tour et du sous-système d'attaque de lieu, les
-parties vérifiées ligne à ligne. Restent à documenter par qui les explorera : le
-moteur d'IA (`mechanics/ia/`), les pouvoirs et disciplines, la revendication de
-zone, l'économie de ressources, le système de dons, et une carte complète du
-schéma table par table.
+`var/mysql/setupBDD.sql` compte **29** `CREATE TABLE`. `var/postgres/setupBDD.sql`
+en compte également 29, avec les mêmes 29 noms de table — aucun des deux
+dialectes n'a de table que l'autre ignore. Les cinq groupes ci-dessous totalisent
+4 + 5 + 7 + 8 + 5 = **29** : chaque table du schéma y apparaît une fois et une
+seule.
 
-### Sur `tests/CODE_KNOWLEDGE.md`
+### Identité
 
-Ce document reprend une partie de `tests/CODE_KNOWLEDGE.md`, une note de travail
-non suivie par git. Ce qui en a été repris a été **revérifié dans le code**, et
-deux écarts ont été corrigés au passage : `workers/action.php` traite quatorze
-actions et non douze — `attackLocation` et `defendLocation` sont arrivées avec
-l'issue #73 — et les mentions de la branche `88-zone-rules`, fusionnée depuis,
-ont été retirées.
+| Table | Contenu | FK clés |
+|---|---|---|
+| `players` | Comptes de connexion (username, passwd, is_privileged) | — |
+| `factions` | Factions, y compris les fausses factions d'apparence | — |
+| `controllers` | Meneurs de faction (firstname/lastname, story, ia_type, origin_zone_id) | `faction_id` → factions, `fake_faction_id` → factions |
+| `player_controller` | Table de liaison joueurs ↔ meneurs (M:N) | `controller_id` → controllers, `player_id` → players |
 
-Sa liste d'issues n'a **délibérément pas** été reprise : elle était datée du
-2026-06-07 et citait comme ouverts des tickets fermés depuis. `gh issue list`
-fait autorité, une liste figée dans un document ne le peut pas.
+`controllers.ia_type` est une colonne texte libre (ex. `passive`, `searching`,
+`aggressive`, `violent`) ; il n'existe **pas** de colonne `is_ia` sur cette
+table — aucun fichier `.sql` ni `.php` du dépôt n'en définit ou n'en lit une.
 
-Mieux vaut étendre ce fichier que le dupliquer ailleurs.
+### Pouvoirs
+
+| Table | Contenu | FK clés |
+|---|---|---|
+| `power_types` | Catégories fixes : `Hobby`, `Metier`, `Discipline`, `Transformation` (seedées par `minimalData.sql`, ids 1-4) | — |
+| `powers` | Pouvoirs individuels (enquete/attack/defence, `other` JSON) | — |
+| `link_power_type` | Jonction pouvoir × catégorie | `power_type_id` → power_types, `power_id` → powers |
+| `faction_powers` | Pouvoirs accessibles à une faction | `faction_id` → factions, `link_power_type_id` → link_power_type |
+| `worker_powers` | Pouvoirs qu'un agent a appris | `worker_id` → workers, `link_power_type_id` → link_power_type |
+
+### Agents
+
+| Table | Contenu | FK clés |
+|---|---|---|
+| `worker_origins` | Types d'origine des agents | — |
+| `worker_names` | Réservoir de prénoms/noms par origine | `origin_id` → worker_origins |
+| `workers` | Identité d'un agent (firstname/lastname, origin, zone) ; **aucune colonne de valeur de jeu** | `origin_id` → worker_origins, `zone_id` → zones |
+| `controller_worker` | Jonction meneur ↔ agent (M:N) | `controller_id` → controllers, `worker_id` → workers |
+| `worker_actions` | État par tour d'un agent (action_choice, action_params, report, enquete_val/attack_val/defence_val) | `worker_id` → workers, `zone_id` → zones, `controller_id` → controllers |
+| `workers_trace_links` | Agent-leurre → agent primaire | `primary_worker_id`, `trace_worker_id` → workers, `controller_id` → controllers |
+| `worker_combat_logs` | Journal d'un duel agent-agent (une ligne par paire attaquant/défenseur) | `attacker_id`, `defender_id` → workers, `attacker_controller_id`, `defender_controller_id` → controllers, `zone_id` → zones |
+
+### Zones / Lieux / Renseignement
+
+| Table | Contenu | FK clés |
+|---|---|---|
+| `zones` | Zones de la carte (claimer/holder, defence_val, adjacent_zones, zone_rules) | `claimer_controller_id`, `holder_controller_id` → controllers |
+| `locations` | Lieux dans une zone (is_base, activate_json, location_types) | `zone_id` → zones, `controller_id` → controllers |
+| `artefacts` | Objets rattachés à un lieu | `location_id` → locations |
+| `controller_known_locations` | Découverte lieu par meneur (found_secret, first/last_discovery_turn) | `controller_id` → controllers, `location_id` → locations |
+| `controllers_known_enemies` | Agents ennemis détectés par zone (connaissance progressive) | `controller_id`, `discovered_controller_id` → controllers, `discovered_worker_id` → workers, `zone_id` → zones |
+| `controller_location_attacks` | File d'attente + résolution des attaques de lieu (mode `endTurn`) | `location_id` → locations, `attacker_controller_id` → controllers |
+| `location_attack_logs` | Journal d'audit des attaques de lieu | `target_controller_id`, `attacker_id` → controllers |
+| `information_gift_logs` | Journal des dons d'information (agent ou lieu) | `giver_controller_id`, `recipient_controller_id` → controllers |
+
+### Runtime / Configuration / Ressources
+
+| Table | Contenu | FK clés |
+|---|---|---|
+| `mechanics` | Ligne singleton : turncounter, gamestate, end_step | — |
+| `config` | Clé/valeur de configuration (`name` UNIQUE) | — |
+| `ressources_config` | Définition des ressources (coûts, gain_rules JSON) | — |
+| `controller_ressources` | Inventaire par meneur | `controller_id` → controllers, `ressource_id` → ressources_config |
+| `ressource_gift_logs` | Journal des dons de ressources | `giver_controller_id`, `recipient_controller_id` → controllers, `ressource_id` → ressources_config |
+
+---
+
+### Tables de jonction : les colonnes réelles
+
+Plusieurs de ces tables ne portent pas les noms de colonne qu'on devine.
+
+| Jonction | Relie | Colonnes réelles |
+|---|---|---|
+| `link_power_type` | powers × power_types | `power_type_id`, `power_id` |
+| `worker_powers` | workers × pouvoirs | `worker_id`, **`link_power_type_id`** — pas `power_id` |
+| `faction_powers` | factions × pouvoirs | `faction_id`, **`link_power_type_id`** — pas `power_id` |
+| `controller_worker` | controllers × workers | `controller_id`, `worker_id`, `is_primary_controller` |
+| `player_controller` | players × controllers | `controller_id`, `player_id`, **clé primaire composite, aucune colonne `id`** |
+| `controller_ressources` | controllers × ressources_config | `controller_id`, `ressource_id` |
+| `workers_trace_links` | agent-leurre → agent primaire | `primary_worker_id`, `trace_worker_id`, `controller_id` |
+
+**`faction_powers` confirmé** : ses colonnes sont bien `faction_id` et
+`link_power_type_id` ; il n'existe pas de colonne `power_id` sur cette table
+(ni sur `worker_powers`, structurée à l'identique). Pour remonter d'une ligne
+`faction_powers` jusqu'à un `powers.id`, il faut passer par
+`link_power_type.power_id` — un `JOIN` de plus qu'une lecture rapide du nom de
+la table ne le suggère.
+
+### Colonnes à sens caché
+
+**`workers` ne porte aucune colonne `*_val`.** Les valeurs de jeu
+(`enquete_val`, `attack_val`, `defence_val`) vivent uniquement sur
+`worker_actions`, une ligne par `(worker_id, turn_number)`, recalculée à chaque
+tour par `calculateVals()` (`mechanics/functions.php`) à partir d'une somme en
+direct sur `worker_powers` → `link_power_type` → `powers`, plus le tirage de dé
+et les bonus de zone/config (détail du calcul en §4 du document principal).
+Chercher une valeur de combat sur `workers` ne renvoie donc rien à corriger :
+la colonne n'y a jamais existé.
+
+`worker_actions.action_choice` est le verbe choisi pour ce tour (`passive`,
+`attack`, `attack_location`, `defend_location`, `claim`, `investigate`, `dead`,
+`captured`…) — une whitelist appliquée côté PHP, pas une contrainte SQL.
+`action_params` (JSON) porte la charge utile propre à ce verbe (ex.
+`claim_controller_id`, `location_id`), relue par les mécaniques de fin de tour
+et par `investigateMechanic` pour formuler ses rapports.
+
+`worker_actions` porte `UNIQUE (worker_id, turn_number)` : une seule ligne par
+agent et par tour. C'est cette contrainte qui permet à `updateWorkerAction()`
+de concaténer sans ambiguïté les rapports du tour courant, et qui impose aux
+mécaniques de fin de tour de filtrer explicitement sur `turn_number`, jamais de
+lire « la dernière ligne » de l'agent.
+
+`locations.setup_turn` est le tour de création **ou du dernier changement
+d'état** du lieu (pas seulement la création) ; `is_updated_location` bascule à
+vrai une fois que le lieu a changé d'état au moins une fois. Le couple sert à
+`locationSearchMechanic` à calculer un âge (`turnDiff`) et à choisir entre un
+texte « jamais changé », « en ruines » ou « restauré ».
+
+`locations.activate_json` (JSON) porte la clé `update_location` consommée par
+`updateLocation()` (`zones/functions.php`) et par `locationAttackMechanic` :
+elle décrit la transition à appliquer quand un lieu « s'active » (destruction,
+réparation), et peut inclure l'ancien contenu du lieu replié dedans pour
+historique.
+
+`zones.adjacent_zones` et `zones.zone_rules` portent deux formats différents
+pour deux notions voisines : `adjacent_zones` est un TEXT en liste d'ids
+séparés par des virgules (topologie de la carte), `zone_rules` est un JSON de
+règles `value_delta` par type, consommé par `applyZoneRules` en fin de
+`calculateControllerValue`. Les deux se ressemblent par le nom mais n'ont ni le
+même type SQL ni le même rôle.
+
+`controllers_known_enemies.last_discovery_turn` est **monotone** :
+`addWorkerToCKE()` ne l'avance que vers l'avant — un appelant qui passerait un
+tour plus ancien que celui déjà stocké laisse la colonne inchangée, si bien
+qu'une source obsolète ne peut pas rajeunir un renseignement déjà connu.
+
+`controller_known_locations.found_secret` conditionne si la description cachée
+d'un lieu (`locations.hidden_description`) est montrée à ce meneur précis ;
+c'est la colonne au cœur de la logique « le propriétaire connaît le secret de
+sa propre base » (session du 2026-09-04/05, PR #129).
+
+`mechanics.turncounter` et `mechanics.end_step` : ligne singleton, déjà
+détaillée au §3 du document principal — `end_step` est le marqueur textuel qui
+permet à `endTurn.php` de reprendre sa machine à états après un rechargement de
+page.
+
+### Le piège booléen inter-dialecte
+
+17 colonnes portent une valeur booléenne dans le schéma. MySQL en déclare 14
+en `TINYINT(1)` et 3 avec le mot-clé littéral `BOOLEAN` (`is_rollable`,
+`is_stored`, `hide_when_zero` — un simple alias de `TINYINT(1)` côté MySQL,
+sans effet sur le stockage) ; PostgreSQL déclare les 17 mêmes colonnes en
+`BOOLEAN`. Les deux fichiers **s'accordent exactement** sur la liste : aucune
+colonne booléenne d'un côté n'est un autre type de l'autre côté.
+
+Colonnes concernées : `players.is_privileged`, `controllers.can_build_base`,
+`controllers.secret_controller`, `zones.hide_turn_zero`, `zones.is_hidden`,
+`locations.is_updated_location`, `locations.can_be_destroyed`,
+`locations.can_be_repaired`, `locations.is_base`,
+`controller_known_locations.found_secret`,
+`controller_location_attacks.success`, `location_attack_logs.success`,
+`controller_worker.is_primary_controller`,
+`controllers_known_enemies.discovered_powers`, `ressources_config.is_rollable`,
+`ressources_config.is_stored`, `ressources_config.hide_when_zero`.
+
+Les règles de liaison PDO (pourquoi lire/écrire ces colonnes demande
+`PDO::PARAM_BOOL` plutôt qu'un littéral `0`/`1`) sont déjà couvertes au §7 du
+document principal ; ce qui précède ne porte que sur le schéma lui-même.
+
+### `destroyAllTables` : la liste MySQL face au schéma réel
+
+Le §2 du document principal décrit le risque : une table absente de la liste
+en dur de `destroyAllTables()` (branche MySQL) interrompt le `DROP` en
+silence. Vérification faite contre l'état actuel du schéma :
+
+- `var/mysql/setupBDD.sql` définit **29** tables.
+- La liste en dur dans `BDD/db_connector.php` (branche `mysql` de
+  `destroyAllTables()`) contient **29** entrées.
+- Comparaison ensembliste des deux listes : **aucune** table du schéma
+  n'est absente de la liste, et **aucune** entrée de la liste ne correspond à
+  une table qui n'existe plus dans le schéma. Concordance exacte, 29/29.
+
+Le risque documenté au §2 reste donc structurel — la liste doit être tenue à
+jour manuellement à chaque table ajoutée ou renommée — mais n'est **pas**
+matérialisé aujourd'hui : les deux fichiers sont synchronisés au moment de la
+rédaction de cette carte.
+
+---
+
+## 10. Les autres mécaniques
+
+### La revendication de zone
+
+`mechanics/claimMechanic.php` lit `claimMode` (`:82`) et ne reconnaît que deux
+valeurs, vérifiées par un `in_array(..., true)` strict : `worker` et
+`worker_leader`. Toute autre valeur — y compris un hypothétique `controller` —
+**n'est pas refusée par erreur mais absente de la liste** : la fonction affiche
+un message et sort sans toucher aux zones (`:83-86`). Il n'existe nulle part
+dans le code un mode « par contrôleur » : si le besoin apparaît un jour, c'est
+une troisième branche à écrire, pas un bug à corriger.
+
+Les deux modes appellent chacun leur propre moteur de résolution, dispatché en
+`:94-96` :
+
+| Mode | Fonction | Granularité |
+|---|---|---|
+| `worker` | `claimByWorkerMath` (`:168`) | une résolution par **agent** ayant choisi `claim` |
+| `worker_leader` | `claimByWorkerLeaderMath` (`:319`) | une résolution par **groupe** (contrôleur × zone), portée par un agent meneur |
+
+**Mode `worker`.** La requête ordonne les revendicateurs par
+`z.id, wa.attack_val DESC` (`:195`) — **sans clé tertiaire** : à `attack_val`
+égal entre deux agents de la même zone, l'ordre de retour dépend du moteur SQL
+et n'est pas garanti stable. Pour chaque zone, le premier de cet ordre dont
+`discrete_claim` (`enquete_val - defence`) ou `violent_claim`
+(`attack_val - defence`) franchit respectivement `DISCRETECLAIMDIFF` ou
+`VIOLENTCLAIMDIFF` gagne la zone ; les revendicateurs suivants sur la même zone
+produisent quand même une résolution (rapport d'échec, fuite CKE) mais avec
+`success = false` (`:229-296`).
+
+Un cas particulier, silencieux : si un agent est **seul** à revendiquer une
+zone encore non tenue ce tour (`isFirstAndOnlyForUnclaimedZone`, `:239-244`) et
+que seul `discrete_claim` franchit son seuil, la réussite est discrète
+(`isViolent = false`) et `fire_observer_reports` passe à `false` : aucun témoin
+actif dans la zone ne reçoit de rapport ni de fuite `addWorkerToCKE`
+(`:101-121`). Toute autre réussite (seuil violent franchi, ou plusieurs
+revendicateurs simultanés même si l'un d'eux passait le seuil discret) est
+bruyante.
+
+**Mode `worker_leader`.** Les agents en `claim` sont groupés par
+`(controller_id, zone_id)` (`:357-382`) ; le meneur du groupe est celui dont le
+vecteur `[attack_val, defence_val, enquete_val, -worker_id]` est le plus grand
+— en cas d'égalité stricte sur les trois stats, c'est le plus petit
+`worker_id` qui l'emporte. Les groupes sont ensuite triés par
+`[attack_val, defence_val, enquete_val, controller_id ASC]` (`:384-395`) : ce
+tri, contrairement à celui du mode `worker`, a une clé terminale déterministe
+(`controller_id`). **Un groupe dont le contrôleur tient déjà la zone est
+purement et simplement ignoré** (`:439-442`) — le commentaire renvoie au terme
+de soutien déjà appliqué par `recalculateZoneDefence` : un tenant ne
+« revendique » pas sa propre zone par ce chemin. Le seuil est
+`calculateControllerValue('Claim', ...) - calculated_defence_val >= claimDiff`
+(`:451-455`) ; le premier groupe de la liste triée à le franchir gagne la zone
+pour ce tour, les groupes suivants qui passeraient aussi le seuil produisent
+quand même leurs rapports d'échec.
+
+**`claimer_controller_id` vs `holder_controller_id`.** Sur un succès, l'écriture
+(`:133-144`) fixe toujours `holder_controller_id` au contrôleur qui a
+effectivement gagné la zone (`$r['cid']`) — c'est la donnée de contrôle réel.
+`claimer_controller_id`, en revanche, est résolu par
+`_claimResolveClaimerControllerIdForWrite` (`:35-44`) : par défaut le même
+contrôleur, mais l'agent meneur peut le déporter via
+`action_params.claim_controller_id` — c'est la donnée d'**affichage**, celle
+que montrent les rapports et les vues « qui tient quoi visiblement ».
+
+Le sentinel `'null'` (chaîne, pas booléen PHP) sur
+`action_params.claim_controller_id` signifie « revendication invisible » :
+`_claimResolveClaimerControllerIdForWrite` écrit alors `NULL` SQL dans
+`claimer_controller_id` (le vrai tenant reste inchangé dans
+`holder_controller_id`), et `_claimResolveOnBehalfName` (`:14-24`) rend ce cas
+sous la forme « Personne (Sans bannière) » partout où `%4$s` apparaît dans les
+gabarits de rapport. Ne rien mettre dans `claim_controller_id` revendique pour
+soi ; y mettre `'null'` revendique sous bannière anonyme ; y mettre un id
+revendique au nom d'un tiers.
+
+**`applyZoneRules`** (`zones/functions.php:1163`) s'exécute sans condition à la
+toute fin de `calculateControllerValue`, pour les cinq types qui existent
+(`Claim`, `ZoneDefence`, `Attack`, `Defence`, `DiscoveryDiff` —
+`zones/functions.php:628`) : ce qui décide si une règle s'applique n'est pas le
+type en lui-même mais la présence d'une clé du même nom dans
+`zones.zone_rules`. Deux formes de règle, mutuellement exclusives
+(`:1207-1216`, une règle qui porte les deux clés ou aucune est journalisée et
+ignorée) :
+
+- **spécifique** (`zone_name` + `condition` + `value_delta`) — regarde le
+  tenant de la zone nommée n'importe où dans la partie, sans exigence
+  d'adjacence (`applyZoneRuleSpecific`, `:1241-1265`) ;
+- **`adjacent_zones: true`** — itère la colonne CSV `adjacent_zones` **de la
+  zone évaluée elle-même** (`applyZoneRuleAdjacent`, `:1280-1314`), pas de la
+  zone référencée : chaque zone listée y est comparée au tenant, et les
+  deltas s'accumulent (plusieurs correspondances peuvent s'ajouter).
+
+**Invariant à un seul saut.** `applyZoneRuleAdjacent` ne lit jamais la colonne
+`adjacent_zones` d'une zone adjacente — il n'y a pas de récursion. « Adjacent »
+signifie donc toujours *une* zone de distance depuis la zone qui déclenche le
+calcul ; il n'existe aucune adjacence transitive (deux sauts) dans ce mécanisme.
+
+---
+
+### L'économie de ressources
+
+Les montants vivent dans `controller_ressources` (`amount`, `amount_stored`,
+`end_turn_gain`, une ligne par `(controller_id, ressource_id)`,
+`var/mysql/setupBDD.sql:373-383`) ; la configuration par ressource — coûts,
+`hide_when_zero`, `gain_rules` — vit dans `ressources_config`
+(`var/mysql/setupBDD.sql:356-371`). `getRessources()` (`ressources/functions.php:65`)
+fait toujours la jointure des deux.
+
+**`updateRessources`** (`:11-55`), appelé à l'étape `before_claim` de la fin de
+tour : pour chaque ressource d'un contrôleur, si `is_stored` elle bascule
+`amount` dans `amount_stored` ; si `is_rollable` est faux, `amount` est remis à
+zéro *avant* d'ajouter `end_turn_gain` ; puis `end_turn_gain` s'ajoute dans
+tous les cas.
+
+**Dépense atomique.** Les trois opérations `spendRessourcesTo{BuildBase,
+MoveBase,RepairLocation}` ne sont que des façades vers
+`spendRessourcesByCostField($pdo, $controller_id, $costField)`
+(`:291-324`) — le nom de colonne de coût est vérifié contre une liste blanche
+figée (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`) ;
+toute autre valeur est refusée. La fonction ne retient que les ressources dont
+ce champ est `> 0`, ouvre **une** transaction, et appelle `consumeRessource`
+(`:489-513`, un `UPDATE ... WHERE amount >= :amt` — garde TOCTOU en une seule
+requête) pour chacune ; le premier échec fait tout annuler
+(`rollBack`) : un contrôleur paie la totalité du coût multi-ressource, ou rien.
+
+**Trap : trois champs de coût morts.** `ressources_config` déclare aussi
+`servant_first_come_cost`, `servant_recruitment_cost` et
+`extra_first_come_cost` — affichés dans `ressources/management.php:88-89` —
+mais **aucun n'apparaît dans la liste blanche de `spendRessourcesByCostField`,
+ni ailleurs dans le code** : ce sont des colonnes de configuration sans chemin
+de dépense. Les renseigner n'a aujourd'hui aucun effet de jeu.
+
+**`hide_when_zero`.** `filterVisibleRessources()` (`:94-106`) est un filtre
+d'affichage pur : il ne masque une ligne que si le flag est posé *et* que
+`amount`, `amount_stored` et `end_turn_gain` sont tous les trois nuls (et,
+quand un `gainEstimate` est fourni, que le gain prévu au tour suivant est aussi
+`<= 0`). Les vérifications internes de coût et de blocage appellent
+`getRessources()` directement, sans ce filtre : une ressource masquée à zéro
+reste pleinement dépensable et gate le jeu normalement.
+
+**`gain_rules`** (JSON par ligne `ressources_config`) est lu par deux
+fonctions séparées : `ressourceGainMechanic($pdo, $timing)`
+(`mechanics/ressourceGainMechanic.php:19`), qui **écrit** — appelée deux fois
+en fin de tour, une fois par `timing` — et
+`ressourceGainEstimateForController()` (`ressources/functions.php:405`), qui
+**ne fait qu'estimer** pour la page Ressources (aperçu du prochain tour), en
+ré-implémentant la même lecture de règles sans jamais écrire. Une règle mal
+formée (montant non numérique, `timing` absent, type de condition hors
+liste) est ignorée silencieusement et journalisée
+(`ressourceGainRuleIsValid`, `:113-137`).
+
+Types de condition acceptés (`RESSOURCE_GAIN_CONDITION_TYPES`, `:6-8`) :
+
+| Type | Résolu contre | Filtres SQL | Filtre post-fetch |
+|---|---|---|---|
+| `holds_zone` | `zones.holder_controller_id` | `zone_id`, `zone_name` | — |
+| `claims_zone` | `zones.claimer_controller_id` | `zone_id`, `zone_name` | — |
+| `owns_location_type` | `locations.controller_id` | `is_base`, `can_be_destroyed`, `zone_id`, `location_id` | `location_type` (comparé en PHP au tableau JSON `locations.location_types`) |
+
+Chaque règle qui matche produit `amount × COUNT(correspondances)` pour le
+contrôleur concerné — pas un montant forfaitaire.
+
+`unlock_turn` : la règle est ignorée tant que `unlock_turn > tour_courant`
+(`:59-61` / `:450`) — **la borne est inclusive** : une règle `unlock_turn = 5`
+produit son premier gain au tour 5, pas au tour 6.
+
+**Montant négatif.** Rien ne distingue un `amount` négatif d'un positif, hormis
+le court-circuit `amount === 0` : le `UPDATE ... SET amount = amount + :gain`
+(`:79-85`) applique un gain négatif tel quel, sans plancher. Or
+`controller_ressources.amount` est un `INT` signé ordinaire, sans contrainte
+`CHECK` (`var/mysql/setupBDD.sql:377`) : une règle négative mal calibrée peut
+faire passer une ressource sous zéro sans qu'aucune couche ne s'y oppose.
+`rowCount() === 0` sur cet `UPDATE` (le contrôleur n'a pas de ligne pour cette
+ressource — scénarios creux type Japon1555) est traité comme normal, journalisé
+en avertissement, et **ne fait pas échouer** la mécanique.
+
+---
+
+### Le système de dons
+
+Quatre canaux de don coexistent, avec des garde-fous et des chemins d'écriture
+différents.
+
+**Ressource** — `ressources/action.php`, POST uniquement, appelle
+`giftRessource($pdo, $giver_id, $_POST)` (`ressources/functions.php:526-610`).
+Garde-fous : montant `> 0`, cible différente du donneur, cible existante et non
+`secret_controller`, ressource existante, stock du donneur suffisant — vérifié
+une première fois en lecture puis une seconde fois dans la clause
+`WHERE amount >= :amt2` du `UPDATE` réel (`:579-586`), donc une course sur le
+stock échoue proprement plutôt que de passer en négatif. Décrément donneur,
+incrément (ou upsert) destinataire et `INSERT ressource_gift_logs` sont dans
+une seule transaction. Le point d'entrée est un *post-redirect-get* strict :
+succès ou échec, il se termine toujours par un `header('Location: ...
+?feedback=...&msg=...')` puis `exit()` (`ressources/action.php:18-27`) — un
+rafraîchissement de page ne peut donc pas rejouer l'envoi.
+
+**Renseignement sur un lieu** — le bloc `giftInformationLocation` de
+`controllers/action.php` (`:185-207`, un bloc GET conditionné sur
+`isset($_GET[...])`, pas une fonction dédiée) appelle
+`addLocationToCKL($pdo, $target, $location_id, $mechanics['turncounter'], false)`
+puis `logInformationGift($pdo, $giver_id, $target, 'location', ...)`. Auto-don
+refusé (`giver_id === target_controller_id`) sans redirection : la page rend
+la vue normalement en dessous du bandeau d'avertissement, dans la même
+réponse.
+
+**Renseignement sur un agent** — même fichier, bloc `giftInformationAgent`
+(`:155-182`), appelle `addWorkerToCKE($pdo, $target, $enemy_worker_id,
+$giftDiscoveryTurn, $zone_id)` puis `logInformationGift(..., 'agent', ...)`.
+Même garde d'auto-don. **Le trap** : `logInformationGift` est appelé
+inconditionnellement juste après `addWorkerToCKE`, y compris quand celui-ci a
+silencieusement refusé d'écrire (cas où la cible contrôle déjà cet agent —
+`addWorkerToCKE` retourne alors `null`, `controllers/functions.php:946-949`) :
+le journal peut donc affirmer qu'un don a eu lieu alors que la ligne CKE n'a
+pas bougé.
+
+Datation : les découvertes sont estampillées avec le compteur de tour
+**d'avant** l'incrément (voir plus haut, « Ce que l'incrément tardif implique
+pour les dates ») ; le don d'agent recule donc son estampille de
+`attackTimeWindow` pour rester comparable
+(`$giftDiscoveryTurn = max(0, $mechanics['turncounter'] - $attackTimeWindow)`,
+`:177-178`). Le don de lieu, lui, écrit le tour courant tel quel, sans ce
+recul. Ce n'est pas une incohérence visible aujourd'hui : rien dans le code ne
+relit `controller_known_locations.last_discovery_turn` à travers une fenêtre
+« récent / ancien » comparable à celle qu'utilise `buildEnemyWorkerListing`
+pour les agents (`workers/functions.php:1642-1653`) — mais si une telle
+fenêtre était un jour ajoutée côté lieux, l'asymétrie deviendrait un bug de
+datation à corriger en miroir de celle déjà appliquée côté agents.
+
+**Version admin.** `controllers/management.php:82-100` reproduit les deux
+blocs `giftInformationAgent` / `giftInformationLocation` sans aucune des trois
+choses que porte la version joueur : pas de garde d'auto-don, pas de garde de
+propriété (accès privilégié), et surtout **pas d'appel à
+`logInformationGift`** — un don du meneur de jeu n'entre jamais dans
+`information_gift_logs` : ce n'est pas un échange entre factions, donc pas un
+événement à journaliser comme tel.
+
+**L'agent lui-même.** Un quatrième canal, distinct des trois précédents,
+transfère l'agent en personne : `workers/action.php`, action `gift`
+(`:234-242`), protégée par la garde de propriété générale de la page (le
+`worker_id` doit appartenir au contrôleur de session, sauf privilège,
+`:39-63`) et par une garde d'auto-don spécifique
+(`(int)$gift_controller_id === (int)$session_controller_id` → 403, `:236`).
+L'effet passe par `activateWorker($pdo, $workerId, 'gift', $extraVal)`
+(`workers/functions.php:1326-1378`) et s'applique **immédiatement**, pas en
+fin de tour comme `attack`/`claim`/`investigate` : le contrôleur primaire de
+`controller_worker` bascule vers le nouveau maître, `worker_actions` du tour
+courant est réécrit à `passive`, un agent-trace est créé pour l'ancien
+contrôleur (`createTraceWorker`) et une éventuelle trace déjà posée sur le
+nouveau contrôleur est détruite (`destroyTraceWorker`). **Ce canal n'écrit
+dans aucune table de journal de don** — ni `ressource_gift_logs`, ni
+`information_gift_logs`, ni équivalent : contrairement aux trois autres, un
+don d'agent ne laisse pas de trace consultable après coup.
+
+---
+
+### Le moteur d'IA
+
+**`mechanics/ia/` n'existe pas sur cette branche.** Le seul fichier existant est
+`mechanics/aiMechanic.php`, 49 lignes, qui est un moteur entièrement inerte :
+
+- la fonction ouvre un bloc HTML de debug, lit le flag `DEBUG_IA` (`:11-13`,
+  une clé qui n'est seedée dans aucun des CSV de config du dépôt —
+  `setupJapon1555CSV_config.csv`, `setupTestConfig_config.csv`,
+  `setupVampire1966CSV_config.csv`), puis termine sans avoir exécuté la
+  moindre requête SQL ni la moindre logique ;
+- tout le comportement voulu — une machine à quatre états `passive` /
+  `searching` / `aggressive` / `violent`, la création d'agents, leur
+  déplacement, leur mise en investigation ou en attaque — n'existe que sous
+  forme de **commentaires `//`** décrivant l'intention (`:15-44`), jamais
+  traduits en code ;
+- **le seul point d'appel du fichier est commenté** :
+  `mechanics/endTurn.php:143` porte `// $IAResult = aiMechanic($gameReady);`
+  — ce que le document note déjà en §3. `aiMechanic()` n'est donc jamais
+  invoquée par la fin de tour, ni gatée par le mécanisme de reprise par état.
+
+Le modèle de données pour *déclarer* un contrôleur IA existe, lui, réellement :
+`controllers.ia_type` (`TEXT`) et `controllers.origin_zone_id` (`INT`, « AI
+anchor zone » selon son commentaire de schéma) sont deux colonnes réelles
+(`var/mysql/setupBDD.sql:57-58`), et `origin_zone_id` est même résolu depuis un
+nom de zone au chargement CSV (`BDD/db_connector.php:861`,
+`'zones__name->origin_zone_id'`). Mais aucune requête, nulle part dans le
+code, ne lit `ia_type` ou `origin_zone_id` pour en tirer un comportement : ce
+sont des colonnes de scénario sans consommateur. De même, ni `is_ia`, ni
+`ai_controller_params`, ni les fonctions `aiCheckStateTransition` /
+`aiPassiveBehaviour` / `aiSearchingBehaviour` / `aiAggressiveBehaviour` /
+`aiViolentBehaviour` / `aiEnsureBase` / `aiRecruitOneInZone` n'existent
+n'importe où dans le dépôt sur `main` — la recherche est exhaustive et vide.
+
+**Ce que cela signifie pour la lecture d'autres documents du dépôt** : la
+branche non fusionnée `feat-dumb-ai-engine` (dernier commit `bb7f5a4`) porte,
+elle, un véritable découpage `mechanics/ia/*.php` en 14 fichiers
+(`aiBudget`, `aiDefence`, `aiIntel`, `aiKnowledge`, `aiMechanic`, `aiParams`,
+`aiPowers`, `aiRecruit`, `aiState`, `aiStrike`, `aiTargets`, `aiTerritory`,
+`aiWorkers`, `aiZones`) — c'est manifestement l'origine des mentions
+`mechanics/ia/` ailleurs dans la documentation et des descriptions détaillées
+de machine à états dans les notes de travail. Cette branche n'a jamais été
+fusionnée dans `main` ; rien de son contenu ne doit être présenté comme
+l'état actuel du dépôt tant qu'elle ne l'a pas été.
+
+**La règle d'équité que le projet vise à respecter** — une IA ne doit
+connaître que ce qu'un joueur humain pourrait savoir au même moment, donc
+**compter les `worker_powers` effectivement révélés plutôt que sommer les
+statistiques réelles des ennemis** — est un principe de conception documenté
+dans les notes du projet, pas une contrainte qu'on puisse aujourd'hui vérifier
+dans `mechanics/aiMechanic.php` : il n'y a ni requête ni calcul à auditer, le
+fichier ne fait rien. Le respecter restera à démontrer le jour où une
+implémentation — sur `main` ou lors d'une fusion depuis la branche citée
+ci-dessus — remplacera ce stub.
+
+---
+
+## 11. Ce que ce document ne couvre pas
+
+Les pouvoirs et disciplines — leur modèle de règles `findMatchingBranch`, les
+transformations, l'enseignement — ne sont décrits qu'en surface, par leurs points
+d'entrée d'action (§6) et leurs colonnes (§9). C'est la dernière zone d'ombre
+notable.
+
+Le reste du document a été **revérifié ligne à ligne dans le code** le
+2026-09-06. Les écarts trouvés à cette occasion, et corrigés :
+
+| Ce que le document disait | Ce que le code fait |
+|---|---|
+| `$noConnection` est le drapeau des pages de login et de logout | Seul `base/systemPresentation.php:2` le pose ; les pages de connexion n'utilisent pas `baseHTML.php` |
+| Une ligne CSV au mauvais compte de champs avorte le chargement | Elle est **sautée** (`BDD/db_connector.php:553-556`), avertissement affiché mais non journalisé : le scénario se charge incomplet |
+| La suite d'étapes de fin de tour | Omettait `ressourceGainMechanic('before_claim')` (`endTurn.php:49`) et présentait `recalculateBaseZoneDefence` comme un appel là où il y en a deux |
+| Le tri de l'échelle de duels reprend `attackMechanic.php` « de la même façon » | Le sens du tri, oui ; le départage par `worker_id` est propre à l'attaque de lieu (`locationAttackMechanic.php:179`) |
+| Seize colonnes booléennes | Seize **noms**, dix-sept occurrences — `success` existe sur deux tables |
+| Le moteur d'IA vit dans `mechanics/ia/` | Ce répertoire n'existe pas sur `main` ; voir §10 |
+
+Le dossier `connection/` manquait au tableau des dossiers, la riposte et la
+règle de création des agents leurres manquaient à la section combat.
+
+Ces corrections viennent de la relecture d'une note de travail non suivie par
+git, `tests/CODE_KNOWLEDGE.md`, désormais supprimée : son contenu utile a été
+revérifié puis intégré ici. Ce qu'elle affirmait de faux n'a **pas** été repris —
+notamment une colonne `controllers.is_ia` qui n'a jamais existé, et un moteur
+d'IA décrit comme « mostly shipped » qui n'est en réalité qu'un stub de
+49 lignes jamais appelé.
+
+Sa liste d'issues n'a délibérément pas été reprise : `gh issue list` fait
+autorité, une liste figée dans un document ne le peut pas.

@@ -856,7 +856,7 @@ class TestReportRedundancyUpgrade:
 
 @pytest.mark.db
 class TestMonotonicCKEPreservation:
-    """addWorkerToCKE UPDATE is monotonic (CODE_KNOWLEDGE §10 #22). A 5-arg
+    """addWorkerToCKE UPDATE is monotonic (docs/architecture.md §3). A 5-arg
     call from a gift / attack / claim path must NOT downgrade the discovered_*
     flags set by a prior investigation. After the V4 upgrade EOT, Alpha's CKE
     row for Bystander_1 has discovered_powers=TRUE. The GM gift handler at
