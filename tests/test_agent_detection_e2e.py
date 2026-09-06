@@ -35,7 +35,7 @@ from helpers import (
     ui_known_secret_locations_for_controller,
     ui_worker_stats, ui_turn_counter, ui_detected_enemies_of,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    end_turn, ui_move, ui_teach_discipline_click,
+    end_turn, ui_move, ui_seed_cke_via_admin, ui_teach_discipline_click,
 )
 
 
@@ -98,7 +98,6 @@ def _worker_report_html(page, worker_lastname, base_url=None):
     ctrl_id = ui_worker_controller_id(page, worker_lastname, base_url=url)
     assert ctrl_id, f"Worker {worker_lastname} has no controller"
     safe_goto(page, f"{url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
     wid = _cached_wid(page, worker_lastname)
     assert wid, f"Worker {worker_lastname} not found"
     safe_goto(page, f"{url}/workers/action.php?worker_id={wid}")
@@ -343,6 +342,7 @@ class TestAgentDetection:
     def test_agent4_report_excludes_agent1(self, page: Page, base_url):
         """Finder_4 vs Finder_1: diff=-2 < REPORTDIFF0. Absent from rendered report section."""
         html = _worker_report_html(page, 'Finder_4', base_url)
+        assert 'Finder_4' in html, "Finder_4 page should render itself"
         # Scope to the report/recherches section so navbar/menu items don't
         # leak — mirrors TestWorkerViewPage split pattern.
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
@@ -388,6 +388,7 @@ class TestLocationDetection:
         """Searcher_1 (diff=-1): rendered worker page's research section has no
         location info (UI-first — assertion via rendered HTML, not DB)."""
         html = _worker_report_html(page, 'Searcher_1', base_url)
+        assert 'Searcher_1' in html, "Searcher_1 page should render itself"
         report_section = html.split("Mes recherches")[1] if "Mes recherches" in html else html
         assert 'Location A' not in report_section
 
@@ -425,9 +426,7 @@ class TestLocationDetection:
         """Golf (name-only) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Golf')}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/zones/action.php")
-        page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
     # --- Level 1: description (Finder_4, enq=5, diff=1) ---
@@ -459,16 +458,13 @@ class TestLocationDetection:
         """Foxtrot should see Location A on zones page."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/zones/action.php")
-        page.wait_for_load_state("networkidle")
         assert "Location A" in page.content()
 
     def test_desc_on_controller_page(self, page: Page, base_url):
         """Foxtrot should see Location A on controller/accueil page."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Foxtrot')}")
-        page.wait_for_load_state("networkidle")
         assert "Location A" in page.inner_text("body") or "Location A" in page.content()
 
     # --- Level 2: secret (Finder_1, enq=7, diff=3) ---
@@ -498,18 +494,14 @@ class TestLocationDetection:
         """Charlie should see Location A on zones page (in hidden description div)."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Charlie')}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/zones/action.php")
-        page.wait_for_load_state("networkidle")
         assert "Location A" in page.content()
 
     def test_undiscovered_not_on_zones_page(self, page: Page, base_url):
         """Alpha (unfound) should NOT see Location A on zones page."""
         ensure_gm_login(page, base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={_cached_cid(page, 'Alpha')}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/zones/action.php")
-        page.wait_for_load_state("networkidle")
         assert "Location A" not in page.content()
 
     # --- Artefact visibility (requires enquete_difference >= LOCATIONARTEFACTSDIFF=2) ---
@@ -565,9 +557,7 @@ class TestWorkerViewPage:
         ctrl_id = _cached_cid(page, controller_lastname)
         worker_id = _cached_wid(page, worker_lastname)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
-        page.wait_for_load_state("networkidle")
 
     def test_agent1_page_has_report(self, page: Page, base_url):
         """Finder_1 page has Rapport section with Tour 0."""
@@ -653,7 +643,6 @@ class TestReportRedundancy:
         ctrl_id = _cached_cid(page, controller_lastname)
         worker_id = _cached_wid(page, worker_lastname)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("load")
 
@@ -757,7 +746,6 @@ class TestReportRedundancyMoved:
         ctrl_id = _cached_cid(page, "Alpha")
         worker_id = _cached_wid(page, "Searcher_1")
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("load")
 
@@ -827,7 +815,6 @@ class TestReportRedundancyUpgrade:
         ctrl_id = _cached_cid(page, "Alpha")
         worker_id = _cached_wid(page, "Searcher_1")
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}")
-        page.wait_for_load_state("networkidle")
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
         page.wait_for_load_state("load")
 
@@ -869,7 +856,7 @@ class TestReportRedundancyUpgrade:
 
 @pytest.mark.db
 class TestMonotonicCKEPreservation:
-    """addWorkerToCKE UPDATE is monotonic (CODE_KNOWLEDGE §10 #22). A 5-arg
+    """addWorkerToCKE UPDATE is monotonic (docs/architecture.md §3). A 5-arg
     call from a gift / attack / claim path must NOT downgrade the discovered_*
     flags set by a prior investigation. After the V4 upgrade EOT, Alpha's CKE
     row for Bystander_1 has discovered_powers=TRUE. The GM gift handler at
@@ -886,13 +873,9 @@ class TestMonotonicCKEPreservation:
         alpha_id = _cached_cid(page, "Alpha")
         bystander_id = _cached_wid(page, "Bystander_1")
         theta_zone_id = ui_zone_id(page, "Theta-Artefacts", base_url=PHP_BASE_URL)
-        safe_goto(
-            page,
-            f"{PHP_BASE_URL}/controllers/management.php"
-            f"?giftInformationAgent=1&target_controller_id={alpha_id}"
-            f"&enemy_worker_id={bystander_id}&zone_id={theta_zone_id}",
+        ui_seed_cke_via_admin(
+            page, alpha_id, bystander_id, theta_zone_id, base_url=PHP_BASE_URL
         )
-        page.wait_for_load_state("load")
         assert_no_collected_php_errors(page)
         context.close()
         yield

@@ -123,13 +123,11 @@ class TestControllerAdmin:
 
     def test_admin_sees_controller_dropdown(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/base/accueil.php")
-        gm_page.wait_for_load_state("networkidle")
         select = gm_page.locator("select#controllerSelect[name='controller_id']")
         expect(select).to_be_visible()
 
     def test_admin_dropdown_lists_both_controllers(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/base/accueil.php")
-        gm_page.wait_for_load_state("networkidle")
         select = gm_page.locator("select#controllerSelect[name='controller_id']")
         options = select.locator("option").all()
         option_texts = [opt.inner_text() for opt in options]
@@ -140,7 +138,6 @@ class TestControllerAdmin:
 
     def test_admin_choose_button_visible(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/base/accueil.php")
-        gm_page.wait_for_load_state("networkidle")
         expect(gm_page.locator("input[value='Choisir']")).to_be_visible()
 
 
@@ -155,14 +152,12 @@ class TestControllerSinglePlayer:
 
     def test_no_controller_chooser(self, single_page: Page, base_url):
         safe_goto(single_page, f"{base_url}/base/accueil.php")
-        single_page.wait_for_load_state("networkidle")
         chooser = single_page.locator("select#controllerSelect[name='controller_id']")
         assert chooser.count() == 0, \
             "Single-controller player should not see controller_id chooser"
 
     def test_sees_faction_directly(self, single_page: Page, base_url):
         safe_goto(single_page, f"{base_url}/base/accueil.php")
-        single_page.wait_for_load_state("networkidle")
         page_text = single_page.inner_text("body")
         assert "Alpha" in page_text, \
             "Single-controller player should see controller Alpha's info"
@@ -179,13 +174,11 @@ class TestControllerMultiPlayer:
 
     def test_sees_controller_dropdown(self, multi_page: Page, base_url):
         safe_goto(multi_page, f"{base_url}/base/accueil.php")
-        multi_page.wait_for_load_state("networkidle")
         select = multi_page.locator("select#controllerSelect[name='controller_id']")
         expect(select).to_be_visible()
 
     def test_sees_only_own_controllers(self, multi_page: Page, base_url):
         safe_goto(multi_page, f"{base_url}/base/accueil.php")
-        multi_page.wait_for_load_state("networkidle")
         select = multi_page.locator("select#controllerSelect[name='controller_id']")
         options = select.locator("option").all()
         option_texts = [opt.inner_text() for opt in options]
@@ -206,14 +199,12 @@ class TestZonesPageStructure:
 
     def test_zones_section_visible(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         zones_section = gm_page.locator("div.section.zones")
         expect(zones_section).to_be_visible()
         expect(zones_section.locator("h2")).to_contain_text("Zones")
 
     def test_all_test_config_zones_listed(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
         for zone_name in [
             "Alpha-Investigation", "Beta-Combat", "Gamma-Claims",
@@ -225,7 +216,6 @@ class TestZonesPageStructure:
 
     def test_zones_have_description_divs(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         description_divs = gm_page.locator("div[id^='description-']")
         count = description_divs.count()
         assert count >= 7, \
@@ -237,14 +227,12 @@ class TestZonesPageControllers:
 
     def test_claimed_zones_show_banner(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         banner_tags = gm_page.locator("span.tag.is-warning")
         assert banner_tags.count() >= 2, \
             f"Expected at least 2 controller banner tags, found {banner_tags.count()}"
 
     def test_banner_shows_controller_name(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         page_text = gm_page.locator("div.section.zones").inner_text()
         assert "Alpha" in page_text, \
             "Controller 'Alpha' banner not found (Gamma-Claims claimer)"
@@ -253,9 +241,7 @@ class TestZonesPageControllers:
 
     def test_own_zone_shows_control_tag(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/base/accueil.php?controller_id=1")
-        gm_page.wait_for_load_state("networkidle")
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        gm_page.wait_for_load_state("networkidle")
         danger_tags = gm_page.locator("span.tag.is-danger")
         assert danger_tags.count() >= 1, \
             "Expected at least 1 'our control' tag for controller Alpha's zone"

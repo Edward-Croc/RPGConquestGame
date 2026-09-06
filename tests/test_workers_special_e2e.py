@@ -30,7 +30,7 @@ from helpers import (
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
-    cached_faction_sections, clear_ui_caches,
+    cached_faction_sections, clear_ui_caches, worker_report_section,
     ui_mass_move_click, ui_all_workers, ui_controller_ids_map,
 )
 
@@ -71,7 +71,6 @@ def gm_page(page: Page, base_url):
 def _select_controller(page, base_url, lastname):
     cid = _controller_ids[lastname]
     safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
 
 
 def _worker_action_html(page, base_url, controller_lastname, worker_lastname):
@@ -176,8 +175,9 @@ class TestGiftWorker:
     def test_life_report_mentions_new_owner(self, gm_page: Page, base_url):
         """The gifted worker's report must contain 'rejoint Echo' (the spec'd life_report line)."""
         html = _worker_action_html(gm_page, base_url, "Echo", "Gift_Source_Foxtrot")
-        assert "rejoint" in html, "Gifted worker report should contain 'rejoint' line"
-        assert "Echo" in html, "Gifted worker report should mention new owner Echo"
+        section = worker_report_section(html, "Changements :")
+        assert "rejoint" in section, "Gifted worker report should contain 'rejoint' line"
+        assert "Echo" in section, "Gifted worker report should mention new owner Echo"
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +264,7 @@ class TestGiftPrisoner:
         gm_page.wait_for_load_state("load")
         # Click the first returnPrisoner submit (release-to-original-owner variant)
         gm_page.locator("input[name='returnPrisoner']").first.click()
-        gm_page.wait_for_load_state("networkidle")
+        gm_page.wait_for_load_state("load")
 
         rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
         live = [r for r in rows if r["action_choice"] != "trace"]
@@ -592,7 +592,6 @@ class TestDoubleAgentCapture:
         # Scrape link_power_type_ids and origin_id from its dropdowns so
         # the recruitment URL is valid even if seed-order changes the ids.
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-        page.wait_for_load_state("networkidle")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -745,7 +744,6 @@ class TestDoubleAgentLifecycle:
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors TestDoubleAgentCapture's pattern).
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-        page.wait_for_load_state("networkidle")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -989,7 +987,6 @@ class TestGoTraitorSelfRecruitCollision:
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors prior classes' pattern).
         safe_goto(page, f"{base_url}/base/admin.php")
-        page.wait_for_load_state("networkidle")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -1094,7 +1091,6 @@ class TestReturnPrisonerReinstatesSecondary:
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors prior classes' pattern).
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-        page.wait_for_load_state("networkidle")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():

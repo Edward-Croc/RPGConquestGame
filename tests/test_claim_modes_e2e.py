@@ -684,7 +684,12 @@ class TestClaimModeHeldZoneSkip:
         """No `claim_report` key written into the worker's `report` JSON —
         the held-zone skip bypasses both the success and failure text paths."""
         import json
-        report_raw = (self._chain_b_action or {}).get('report')
+        # Chain_B queued a claim, so its row must exist — without this the
+        # negative below passes just as readily on a failed row lookup.
+        assert self._chain_b_action is not None, (
+            "no worker_actions row found for Chain_B on the claim turn"
+        )
+        report_raw = self._chain_b_action.get('report')
         report = json.loads(report_raw) if report_raw else {}
         assert not report.get('claim_report'), (
             f"claim_report should be empty for the held-zone claimer; "

@@ -1,5 +1,9 @@
 """Playwright E2E tests for combat resolution mechanics.
 
+Covers three surfaces off one shared scenario build: the rendered agent
+reports (workers/action.php, workers/view.php), the `worker_combat_logs`
+table, and the read-only admin page workers/management_combat.php.
+
 Data: 19 combat agents loaded from setupTestConfig_advanced.csv in Beta-Combat
 zone. All start passive on turn 0. After end-of-turn 0→1, actions are set via
 the workers/action.php UI endpoint. End-of-turn 1→2 resolves all combat.
@@ -39,30 +43,43 @@ Agent stats (power totals → final vals = total + 3):
   Claim_Atk_2 (Charlie): EagleScout+PatrolWarden                       → 6/4/4
   Claim_Def_2 (Delta): BlankSlate+CommonFolk                           → 3/3/3
 
+worker_combat_logs: resolveWorkerCombat() (mechanics/attackMechanic.php)
+opens one row per attacker x defender pair on entry (outcome NULL) and
+closes it with the resolved outcome on exit — see mechanics/logs.php:
+logWorkerCombat / logWorkerCombatUpdate. Of the 19 queued attacker->defender
+pairs above, 3 never reach resolveWorkerCombat() (attacker-guard `continue`
+at mechanics/attackMechanic.php:498 when the attacker itself went inactive
+before its turn: Chain_B captured by Chain_A, Chain_D killed by Chain_C,
+Mover_Test's action was reset to 'passive' by its own move before the EOT
+even queried attacksArray) -- leaving exactly 16 resolved rows, all with
+attempt=1.
+
+management_combat.php: structure, auth guard, ordering, filters (including
+the turn=0 sentinel trap), the agent_attack_defence-only location filter,
+unresolved-row invariants, empty-state rendering, and the base/admin.php
+hub links.
+
 Run:
     python3 -m pytest tests/test_agent_combat_e2e.py -v
 """
-import pymysql
+from itertools import groupby
+
 import pytest
 from playwright.sync_api import Page
 
-from conftest import (
-    GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
-    PHP_BASE_URL, ensure_gm_login,
-)
+from conftest import GAME_PREFIX, PHP_BASE_URL, ensure_gm_login
 
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection as get_db,
-    end_turn, load_minimal_data, load_scenario_via_admin,
+    get_db_connection as get_db,
     ui_all_workers, ui_controller_id, ui_worker_id,
     ui_workers_by_lastname,
-    clear_ui_caches, ui_attack, ui_attack_click,
-    ui_investigate, ui_investigate_click,
-    ui_claim, ui_claim_click,
-    ui_move, ui_move_click,
+    seed_worker_combat_scenario,
     worker_report_html, worker_report_section, cached_faction_sections, ui_worker_action_state,
-    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
+    safe_goto,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
+    ui_combat_logs, ui_combat_unresolved_count,
+    login_as, set_config_via_ui, ui_combat_filter_options,
 )
 
 
@@ -75,11 +92,9 @@ def _ensure_controller_session(page):
     """Ensure the gm is logged in and has a controller selected."""
     ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
     page.locator("select[name='controller_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
-    page.wait_for_load_state("networkidle")
-
+    page.wait_for_load_state("load")
 
 
 
@@ -95,7 +110,8 @@ def combat_scenario(browser):
     Alpha-Investigation, 19 combat passive in Beta-Combat). End-turn processes
     detection mechanics; combat agents are passive so nothing happens to them.
 
-    Between turns: set all combat actions via UI endpoints:
+    Between turns: set all combat actions via UI endpoints (see
+    helpers.seed_worker_combat_scenario for the full 26-action sequence):
       - Chain attacks: A→B, B→C, C→D, D→E, E→F, F→G
       - Base attacks: Even_Atk→Even_Def, Counter_Atk→Counter_Def
       - Blocked investigate: Inv_Atk_1→Inv_Def_1, Inv_Atk_2→Inv_Def_2
@@ -105,100 +121,17 @@ def combat_scenario(browser):
 
     Turn 1 → 2: attack mechanic resolves all combats by enquete_val DESC.
     """
-    if DB_AVAILABLE:
-        load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    ensure_gm_login(page, PHP_BASE_URL)
-    clear_ui_caches()
-
-    # End turn 0 → 1
-    end_turn(page)
-
-    # Set all combat actions via UI for turn 1
-    # Chain: A→B, B→C, C→D, D→E, E→F, F→G
-    # First attack in this file → exercised via the UI 'Attaquer' button
-    # (per once-per-file rule); subsequent attacks reuse the URL-driver.
-    ui_attack_click(page, 'Chain_A', 'Chain_B')
-    ui_attack(page, 'Chain_B', 'Chain_C')
-    ui_attack(page, 'Chain_C', 'Chain_D')
-    ui_attack(page, 'Chain_D', 'Chain_E')
-    ui_attack(page, 'Chain_E', 'Chain_F')
-    ui_attack(page, 'Chain_F', 'Chain_G')
-
-    # Base: equal match + counter
-    ui_attack(page, 'Even_Atk', 'Even_Def')
-    ui_attack(page, 'Counter_Atk', 'Counter_Def')
-
-    # Blocked investigate: attackers attack, defenders investigate
-    ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
-    ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-    # First investigate in this file → exercised via the UI button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_investigate_click(page, 'Inv_Def_1')
-    ui_investigate(page, 'Inv_Def_2')
-
-    # Blocked claim: attackers attack, defenders claim their own controller
-    ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
-    ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-    # First claim in this file → exercised via the UI button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_claim_click(page, 'Claim_Def_1', 'Beta')
-    ui_claim(page, 'Claim_Def_2', 'Delta')
-
-    # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
-    # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
-    # default) the attack-pair SQL has no zone filter. moveWorker()
-    # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
-    # First move in this file → exercised via the UI 'Déménager' button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
-    ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
-
-    # Move-clears-action-params: Mover_Test queues an attack THEN moves.
-    # moveWorker must clobber the action to 'passive' AND reset
-    # action_params to '{}' — no residual attack target data.
-    ui_attack(page, 'Mover_Test', 'Chain_A')
-    ui_move(page, 'Mover_Test', 'Delta-Disputed')
-
-    # Keep-action-params-on-miss: Keep_Def queues claim for Alpha;
-    # Keep_Atk attacks Keep_Def. Equal 3/3/3 stats → attack_difference=0
-    # < ATTACKDIFF0=1 → miss. Both survive. Keep_Def's action_params
-    # (claim target) must survive the defender-branch of attackMechanic
-    # without being wiped to '{}' — regression guard for the
-    # updateWorkerAction gate change (see TestAttackKeepsDefenderParams).
-    ui_claim(page, 'Keep_Def', 'Alpha')
-    ui_attack(page, 'Keep_Atk', 'Keep_Def')
-
-    # Riposte+chain R2: A's failed attack triggers riposte on A;
-    # B then still attacks C in the same turn.
-    #   Riposte_R2_A (atk=3, def=3) → Riposte_R2_B (atk=6, def=5):
-    #     attack_diff = 3-5 = -2 < 1 → fail
-    #     riposte_diff = 6-3 = 3 ≥ 2 → riposte fires, R2_A dies
-    #   Riposte_R2_B → Riposte_R2_C (atk=3, def=3):
-    #     attack_diff = 6-3 = 3 ≥ 3 → captures C
-    ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
-    ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
-
-    # Riposte+chain R3: A's failed attack does NOT riposte;
-    # B then still attacks C in the same turn.
-    #   Riposte_R3_A (atk=4, def=4) → Riposte_R3_B (atk=4, def=4):
-    #     attack_diff = 4-4 = 0 < 1 → fail
-    #     riposte_diff = 4-4 = 0 < 2 → no riposte, R3_A survives
-    #   Riposte_R3_B → Riposte_R3_C (atk=3, def=3):
-    #     attack_diff = 4-3 = 1 → kills C
-    ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
-    ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
-
-    # End turn 1 → 2 (combat resolves)
-    end_turn(page)
-
-    assert_no_collected_php_errors(page)
-    context.close()
-    yield
+    context = None
+    try:
+        context = seed_worker_combat_scenario(browser, base_url=PHP_BASE_URL)
+        yield
+    finally:
+        if context is not None:
+            context.close()
+        # Unconditional : ensure_scenario_loaded() would skip a reload here.
+        if DB_AVAILABLE:
+            load_minimal_data()
+        load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
 
 
 # ---------------------------------------------------------------------------
@@ -397,7 +330,6 @@ class TestAttackFormRender:
         ensure_gm_login(page, base_url)
         cid = ui_controller_id(page, "Alpha", base_url=base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-        page.wait_for_load_state("networkidle")
 
         wid = ui_worker_id(page, "Searcher_1", base_url=base_url)
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
@@ -480,21 +412,6 @@ class TestChainAttack:
             "Chain_F view should show 'A disparu' (dead)"
         assert _ui_worker_is_downed(page, 'Chain_G'), \
             "Chain_G view should show 'A disparu' (dead)"
-
-    def test_chain_reports_in_ui(self, page: Page, base_url):
-        """Spot-check chain attack reports via worker pages.
-
-        Chain_B was queued to attack Chain_C but got captured first by
-        Chain_A. The "didn't-attack" check is DB-only (see
-        test_chain_b_did_not_attack below); this test stays pure-UI."""
-        html_a = worker_report_html(page, 'Chain_A')
-        assert 'Captured' in html_a and 'Chain_B' in html_a
-
-        html_c = worker_report_html(page, 'Chain_C')
-        assert 'succeeded' in html_c and 'Chain_D' in html_c
-
-        html_e = worker_report_html(page, 'Chain_E')
-        assert 'succeeded' in html_e and 'Chain_F' in html_e
 
     def test_chain_b_did_not_attack(self, page: Page, base_url):
         """Chain_B was captured by Chain_A before its attack-phase turn,
@@ -691,7 +608,6 @@ class TestActionBlockedByCombat:
         ensure_gm_login(page, PHP_BASE_URL)
         _ensure_controller_session(page)
         safe_goto(page, f"{PHP_BASE_URL}/zones/management_zones.php")
-        page.wait_for_load_state("networkidle")
         # Beta-Combat row's holder <select>: the currently-selected option
         # must be the empty "-- Aucun --" one (value="").
         holder_select = page.locator(
@@ -909,7 +825,22 @@ class TestAttackKeepsDefenderParams:
 
 class TestRiposteChain:
     """A→B→C chain where A's attack fails; B's downstream attack on C must
-    still resolve regardless of whether B's riposte against A fires."""
+    still resolve regardless of whether B's riposte against A fires.
+
+    R2 — riposte fires:
+      Riposte_R2_A (atk=3, def=3) → Riposte_R2_B (atk=6, def=5):
+        attack_diff = 3-5 = -2 < 1 → fail
+        riposte_diff = 6-3 = 3 ≥ 2 → riposte fires, R2_A dies
+      Riposte_R2_B → Riposte_R2_C (atk=3, def=3):
+        attack_diff = 6-3 = 3 ≥ 3 → captures C
+
+    R3 — riposte does not fire:
+      Riposte_R3_A (atk=4, def=4) → Riposte_R3_B (atk=4, def=4):
+        attack_diff = 4-4 = 0 < 1 → fail
+        riposte_diff = 4-4 = 0 < 2 → no riposte, R3_A survives
+      Riposte_R3_B → Riposte_R3_C (atk=3, def=3):
+        attack_diff = 4-3 = 1 → kills C
+    """
 
     def test_riposte_fires_attacker_dies_chain_continues(self, page: Page, base_url):
         """R2: Riposte_R2_A's attack on Riposte_R2_B fails (atk_diff=-2).
@@ -948,3 +879,362 @@ class TestRiposteChain:
         html_b = worker_report_html(page, 'Riposte_R3_B')
         assert 'succeeded' in html_b and 'Riposte_R3_C' in html_b, \
             f"Riposte_R3_B's attack_report should mention successful attack on R3_C; got: {html_b!r}"
+
+
+# ---------------------------------------------------------------------------
+# Tests: worker_combat_logs table (two-phase log-then-resolve contract)
+# ---------------------------------------------------------------------------
+
+class TestWorkerCombatLogsStructure:
+    """The three highest-value structural assertions on the two-phase
+    log-then-resolve contract."""
+
+    def test_no_unresolved_rows_after_clean_eot(self, page: Page):
+        """Every row opened by logWorkerCombat() must have been closed by
+        logWorkerCombatUpdate() before the EOT response completes — proves
+        the two-phase loop closes."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        count = ui_combat_unresolved_count(page, base_url=PHP_BASE_URL)
+        assert count == 0, (
+            f"expected 0 unresolved worker_combat_logs rows after a clean "
+            f"EOT, got {count}"
+        )
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        unresolved_rows = [r for r in logs if not r['resolved']]
+        assert unresolved_rows == [], (
+            f"banner reports 0 unresolved but found unresolved rows: {unresolved_rows}"
+        )
+
+    def test_all_rows_have_attempt_one(self, page: Page):
+        """attempt=1 on every row -- catches a duplicate-INSERT regression
+        (logWorkerCombat reuses/bumps an existing unresolved row for the
+        same (turn, attacker, defender) instead of inserting a fresh one)."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert len(logs) == 16, (
+            f"expected exactly 16 worker_combat_logs rows for this "
+            f"scenario (19 queued pairs - 3 attacker-guard skips), got {len(logs)}"
+        )
+        bad = [r for r in logs if r['attempt'] != 1]
+        assert bad == [], f"every row should have attempt=1; offenders: {bad}"
+
+    def test_no_row_for_chain_b_attacking_chain_c(self, page: Page):
+        """Chain_B is captured by Chain_A (enquete 8 > 7) before its own
+        attack-phase turn, so mechanics/attackMechanic.php:498's attacker
+        guard `continue`s the outer loop and resolveWorkerCombat is never
+        entered for this pair. Zero rows proves the INSERT lives inside
+        the function, not at the callsite.
+        test_agent_combat_e2e.py:475-495 (test_chain_b_did_not_attack)
+        already establishes the capture fact via management_workers row
+        counts."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        chain_b_id = ui_worker_id(page, 'Chain_B', base_url=PHP_BASE_URL)
+        chain_c_id = ui_worker_id(page, 'Chain_C', base_url=PHP_BASE_URL)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL, worker_id=chain_b_id)
+        pair = [
+            r for r in logs
+            if r['attacker_worker_id'] == chain_b_id and r['defender_worker_id'] == chain_c_id
+        ]
+        assert pair == [], (
+            f"Chain_B->Chain_C should never appear in worker_combat_logs; found {pair}"
+        )
+
+
+class TestWorkerCombatLogsOutcomes:
+    """Per-pair outcome assertions, cross-checked against
+    test_agent_combat_e2e.py's documented combat math."""
+
+    @pytest.mark.parametrize("attacker,defender,outcome", [
+        ("Chain_A", "Chain_B", "capture"),
+        ("Chain_C", "Chain_D", "kill"),
+        ("Chain_F", "Chain_G", "kill"),
+        ("Chain_E", "Chain_F", "kill"),
+        ("Even_Atk", "Even_Def", "miss"),
+        ("Counter_Atk", "Counter_Def", "riposte_kill"),
+        ("Inv_Atk_1", "Inv_Def_1", "capture"),
+        ("Inv_Atk_2", "Inv_Def_2", "kill"),
+        ("Riposte_R2_A", "Riposte_R2_B", "riposte_kill"),
+        ("Riposte_R3_A", "Riposte_R3_B", "miss"),
+    ])
+    def test_pair_outcome(self, page: Page, attacker, defender, outcome):
+        ensure_gm_login(page, PHP_BASE_URL)
+        atk_id = ui_worker_id(page, attacker, base_url=PHP_BASE_URL)
+        def_id = ui_worker_id(page, defender, base_url=PHP_BASE_URL)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL, worker_id=atk_id)
+        pair = [
+            r for r in logs
+            if r['attacker_worker_id'] == atk_id and r['defender_worker_id'] == def_id
+        ]
+        assert len(pair) == 1, (
+            f"expected exactly one worker_combat_logs row for "
+            f"{attacker}->{defender}; got {pair}"
+        )
+        assert pair[0]['outcome'] == outcome, (
+            f"{attacker}->{defender} expected outcome={outcome!r}, "
+            f"got {pair[0]['outcome']!r}"
+        )
+
+    def test_all_four_reachable_outcomes_present(self, page: Page):
+        """miss | kill | capture | riposte_kill are all reachable in the
+        current engine (mutual_kill deliberately is not -- see
+        mechanics/logs.php:resolveWorkerCombatOutcome). At least one row
+        of each must appear across the scenario."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        outcomes = {r['outcome'] for r in logs}
+        for expected in ('miss', 'kill', 'capture', 'riposte_kill'):
+            assert expected in outcomes, (
+                f"expected outcome {expected!r} to appear at least once "
+                f"across the scenario; got {outcomes}"
+            )
+        assert 'mutual_kill' not in outcomes, (
+            "mutual_kill is deliberately unreachable in the current engine"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Tests: workers/management_combat.php admin page
+# ---------------------------------------------------------------------------
+
+class TestAdminCombatLogRenders:
+    """Basic render smoke -- gm session, marker present, correct wrapper."""
+
+    def test_page_renders_for_gm(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        safe_goto(page, f"{PHP_BASE_URL}/workers/management_combat.php")
+        assert page.locator("div.management[data-combat-log='1']").count() == 1, (
+            "expected the root <div class='management' data-combat-log=\"1\"> wrapper"
+        )
+
+
+class TestAdminGuard:
+    """gm-only page: anonymous and non-privileged sessions must be
+    redirected to the login form, never see the log."""
+
+    def test_anonymous_redirects_to_login(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        page.goto(f"{PHP_BASE_URL}/workers/management_combat.php")
+        assert "loginForm.php" in page.url, (
+            f"anonymous GET on management_combat.php must redirect to the "
+            f"login form; landed on {page.url}"
+        )
+        context.close()
+
+    def test_non_privileged_login_redirects(self, browser):
+        """single_player/test (TestConfig, non-gm) is not is_privileged.
+
+        management_combat.php redirects to connection/loginForm.php, but
+        loginForm.php itself immediately bounces an already-authenticated
+        session on to base/accueil.php -- so the final landing page for a
+        logged-in-but-non-privileged user is accueil.php, not
+        loginForm.php. Either way the guard must keep them off the page."""
+        context = browser.new_context()
+        page = context.new_page()
+        login_as(page, PHP_BASE_URL, "single_player", "test")
+        page.goto(f"{PHP_BASE_URL}/workers/management_combat.php")
+        assert "management_combat.php" not in page.url, (
+            f"non-privileged session must not reach management_combat.php; "
+            f"landed on {page.url}"
+        )
+        assert page.url.endswith("accueil.php") or "loginForm.php" in page.url, (
+            f"expected the guard to bounce to accueil.php (via the "
+            f"already-logged-in redirect in loginForm.php) or land on "
+            f"loginForm.php directly; landed on {page.url}"
+        )
+        context.close()
+
+
+class TestAdminCombatLogOrdering:
+    """Default order: turn DESC, id DESC tie-break (management_combat.php
+    calls getWorkerCombatLogs(..., 'turn', 'desc'))."""
+
+    def test_default_order_turn_desc_id_desc_tiebreak(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert len(logs) > 0, "expected at least one combat log row"
+
+        turns = [r['turn'] for r in logs]
+        assert turns == sorted(turns, reverse=True), (
+            f"data-turn should be non-increasing top-to-bottom; got {turns}"
+        )
+
+        for turn_value, group in groupby(logs, key=lambda r: r['turn']):
+            ids = [r['id'] for r in group]
+            assert ids == sorted(ids, reverse=True) and len(set(ids)) == len(ids), (
+                f"within turn={turn_value}, data-combat-log-id should be "
+                f"strictly decreasing (the id tie-break created_at "
+                f"granularity exists for); got {ids}"
+            )
+
+
+class TestAdminCombatLogFilters:
+    def test_worker_filter_matches_attacker_or_defender(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert unfiltered, "need at least one row to test the worker filter"
+        target_id = unfiltered[0]['defender_worker_id']
+        filtered = ui_combat_logs(page, base_url=PHP_BASE_URL, worker_id=target_id)
+        assert filtered, f"expected at least one row for worker_id={target_id}"
+        assert len(filtered) <= len(unfiltered)
+        for row in filtered:
+            assert target_id in (row['attacker_worker_id'], row['defender_worker_id']), (
+                f"row {row} does not carry worker_id={target_id} on "
+                f"either the attacker or defender side"
+            )
+
+    def test_turn_filter(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert unfiltered
+        turn_value = unfiltered[0]['turn']
+        filtered = ui_combat_logs(page, base_url=PHP_BASE_URL, turn=turn_value)
+        assert filtered
+        assert all(r['turn'] == turn_value for r in filtered)
+        assert len(filtered) <= len(unfiltered)
+
+    def test_turn_zero_filter_not_equivalent_to_unfiltered(self, page: Page):
+        """Regression guard for the sentinel trap: a plain (int) cast on
+        an empty ?turn= would make 'no filter' and 'turn zero'
+        indistinguishable. This scenario's combat resolves on turn 1, so
+        ?turn=0 must return strictly fewer rows than unfiltered."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        zero_filtered = ui_combat_logs(page, base_url=PHP_BASE_URL, turn=0)
+        assert len(zero_filtered) != len(unfiltered), (
+            f"?turn=0 must be distinguishable from no-filter; got "
+            f"{len(zero_filtered)} rows filtered vs {len(unfiltered)} unfiltered"
+        )
+        assert all(r['turn'] == 0 for r in zero_filtered)
+
+    def test_worker_and_turn_combined_filter_intersection(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert unfiltered
+        row = unfiltered[0]
+        combined = ui_combat_logs(
+            page, base_url=PHP_BASE_URL,
+            worker_id=row['defender_worker_id'], turn=row['turn'],
+        )
+        assert combined, "expected at least one row in the intersection"
+        for r in combined:
+            assert r['turn'] == row['turn']
+            assert row['defender_worker_id'] in (
+                r['attacker_worker_id'], r['defender_worker_id']
+            )
+
+
+class TestAdminCombatLogLocationGating:
+    """select[name='location'] + the Lieu column only render in
+    agent_attack_defence mode; outside it, a bookmarked ?location=N is
+    ignored rather than emptying the table (defence in depth)."""
+
+    @pytest.fixture(autouse=True)
+    def _restore_mode(self, page: Page):
+        try:
+            yield
+        finally:
+            ensure_gm_login(page, PHP_BASE_URL)
+            set_config_via_ui(page, "locationAttackMode", "immediate", base_url=PHP_BASE_URL)
+
+    def test_location_filter_absent_in_immediate_mode(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        set_config_via_ui(page, "locationAttackMode", "immediate", base_url=PHP_BASE_URL)
+        options = ui_combat_filter_options(page, base_url=PHP_BASE_URL)
+        assert options['has_location_filter'] is False
+        assert options['locations'] == []
+        safe_goto(page, f"{PHP_BASE_URL}/workers/management_combat.php")
+        assert page.locator("th:text-is('Lieu')").count() == 0, (
+            "Lieu header should be absent outside agent_attack_defence mode"
+        )
+
+    def test_location_filter_present_in_agent_attack_defence_mode(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        set_config_via_ui(page, "locationAttackMode", "agent_attack_defence", base_url=PHP_BASE_URL)
+        options = ui_combat_filter_options(page, base_url=PHP_BASE_URL)
+        assert options['has_location_filter'] is True
+        safe_goto(page, f"{PHP_BASE_URL}/workers/management_combat.php")
+        assert page.locator("th:text-is('Lieu')").count() == 1, (
+            "Lieu header should be present in agent_attack_defence mode"
+        )
+
+    def test_location_param_ignored_outside_agent_attack_defence_mode(self, page: Page):
+        """A bookmarked ?location=N in immediate mode must not empty the
+        table -- it is ignored entirely, not merely hidden."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        set_config_via_ui(page, "locationAttackMode", "immediate", base_url=PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        filtered = ui_combat_logs(page, base_url=PHP_BASE_URL, location_id=999999)
+        assert len(filtered) == len(unfiltered), (
+            f"?location= must be ignored (not emptying the table) outside "
+            f"agent_attack_defence mode; unfiltered={len(unfiltered)} "
+            f"filtered={len(filtered)}"
+        )
+
+
+class TestAdminCombatLogUnresolvedInvariants:
+    """Banner/table agreement + per-row invariants for unresolved combats."""
+
+    def test_unresolved_banner_matches_table(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        count = ui_combat_unresolved_count(page, base_url=PHP_BASE_URL)
+        assert isinstance(count, int)
+        logs = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        unresolved_rows = [r for r in logs if not r['resolved']]
+        for r in unresolved_rows:
+            assert r['outcome'] is None, (
+                f"unresolved row must have empty data-outcome; got {r}"
+            )
+            assert 'combat-unresolved' in r['class_attr'], (
+                f"unresolved row must carry class combat-unresolved; got {r}"
+            )
+        assert count == len(unresolved_rows), (
+            f"[data-unresolved-count]={count} must equal the number of "
+            f"data-resolved=\"0\" rows ({len(unresolved_rows)})"
+        )
+        if count == 0:
+            # Unresolved rows need attackMechanic aborted mid-loop, unreachable from the UI.
+            assert unresolved_rows == []
+
+
+class TestAdminCombatLogEmptyState:
+    def test_worker_and_turn_zero_combo_yields_empty_state(self, page: Page):
+        """Single filters can't be empty by design (dropdowns are built
+        from DISTINCT values already present in the log), so the
+        guaranteed-empty case is a combination: any real worker id
+        intersected with turn=0 (no combat happened on turn 0 in this
+        scenario)."""
+        ensure_gm_login(page, PHP_BASE_URL)
+        unfiltered = ui_combat_logs(page, base_url=PHP_BASE_URL)
+        assert unfiltered
+        worker_id = unfiltered[0]['attacker_worker_id']
+        empty_logs = ui_combat_logs(
+            page, base_url=PHP_BASE_URL, worker_id=worker_id, turn=0
+        )
+        assert empty_logs == []
+        assert page.locator("tr.combat-row").count() == 0
+        assert page.locator('[data-combat-empty="filtered"]').count() == 1
+
+
+class TestAdminCombatLogHubLinks:
+    def test_hub_links_and_navigation(self, page: Page):
+        ensure_gm_login(page, PHP_BASE_URL)
+        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        html = page.content()
+        assert "Attack on location log" in html, (
+            "hub should carry the renamed 'Attack on location log' link"
+        )
+        assert "Attack on player base list" not in html, (
+            "the old 'Attack on player base list' label must be gone"
+        )
+        link = page.locator("a[href$='workers/management_combat.php']")
+        assert link.count() == 1, (
+            "expected exactly one link ending in workers/management_combat.php"
+        )
+        assert link.first.inner_text().strip() == "Agent combat log"
+
+        link.first.click()
+        page.wait_for_load_state("load")
+        assert page.locator("[data-combat-log]").count() == 1, (
+            "clicking the hub link should land on management_combat.php"
+        )

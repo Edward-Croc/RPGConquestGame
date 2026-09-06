@@ -17,8 +17,8 @@ Lock surface (see tests/AUDIT_issue_86.md for the full lock list):
 Test driver: render `/workers/new.php?recrutement=true&controller_id=<alpha>` N
 times and scrape the resulting proposal HTML for the test power name. Each
 page renders `recrutement_nb_choices` proposals (=3 in minimalData) → 3 rolls
-per page for each of hobby + metier. With N_VISITS=50 page-visits this gives
-~150 rolls per power type.
+per page for each of hobby + metier. With N_VISITS=35 page-visits this gives
+~105 rolls per power type.
 
 Alpha is used (start_workers=1, can_build_base=1). A base is created in the
 module fixture so canStartRecrutement passes at turn 0.
@@ -45,7 +45,10 @@ from helpers import (
 )
 
 
-N_VISITS = 50  # × nb_choices proposals/visit = sample size per power type
+# Pool is 14 hobbys / 14 jobs, 3 drawn per visit, so a given power is absent
+# from one visit with p = C(13,3)/C(14,3) = 0.786. At 35 visits a "must appear"
+# assertion false-negatives at p^35 = 2e-4; at 20 it would be 8e-3, flaky.
+N_VISITS = 35  # × nb_choices proposals/visit = sample size per power type
 
 
 @pytest.fixture(scope="session")
@@ -125,7 +128,6 @@ def _count_rolls_containing(browser, needle, visits=N_VISITS):
     register_php_error_listener(page)
     ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
     hits = 0
     for _ in range(visits):
         _reset_recruit_counter(cid)
@@ -275,7 +277,6 @@ class Test05AdminPerfectFormStillSees:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-        page.wait_for_load_state("networkidle")
         labels = [
             (opt.inner_text() or "").strip()
             for opt in page.locator("select#power_hobby_id option").all()

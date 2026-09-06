@@ -53,7 +53,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, get_db_connection as get_db, end_turn, load_minimal_data,
     load_scenario_via_admin,
-    ui_controller_id, ui_zone_id, ui_controller_counters,
+    ui_controller_id, ui_location_id, ui_zone_id, ui_controller_counters,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -102,7 +102,6 @@ def _switch_controller(page, controller_lastname):
     safe_goto(page,
         f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir"
     )
-    page.wait_for_load_state("networkidle")
 
 
 def _workers_page_html(page, controller_lastname):
@@ -168,29 +167,6 @@ def _create_base_click(page, controller_lastname, zone_name):
     page.wait_for_load_state("load")
 
 
-def _location_id_via_management(page, location_name):
-    """Look up a location's id by scraping zones/management_locations.php.
-    The page renders one block per location with `<h3>NAME (discovery N)</h3>`
-    followed by a `toggle_destruction` form whose hidden input carries the id.
-    Returns int id, raises if not found."""
-    import re
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    html = page.content()
-    m = re.search(
-        rf'<h3>{re.escape(location_name)}\s+\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        html,
-        re.DOTALL
-    )
-    if not m:
-        raise AssertionError(
-            f"toggle_destruction form for '{location_name}' not found on "
-            f"management_locations.php"
-        )
-    return int(m.group(1))
-
-
 def _toggle_destruction_admin(page, location_name):
     """POST the management-page toggle_destruction form for the named
     location. Toggles the location between repaired/destroyed states by
@@ -202,7 +178,7 @@ def _toggle_destruction_admin(page, location_name):
     even `click(force=True)` fails ("Element is not visible" → scroll-
     into-view aborts). Instead, submit the form directly via JS — the
     page navigation that follows is observed identically to a real click."""
-    location_id = _location_id_via_management(page, location_name)
+    location_id = ui_location_id(page, location_name, base_url=PHP_BASE_URL)
     # Already on management_locations.php from the lookup above.
     # form.submit() navigates asynchronously, so wait_for_load_state alone returns
     # on the page still displayed. expect_navigation waits for the POST to land.
@@ -224,7 +200,7 @@ def _repair_location_click(page, controller_lastname, target_location_name):
     controller (lookup helpers navigate to admin pages — interleaving
     would clobber the controller's view.php form state, Slice 15 pattern)."""
     ensure_gm_login(page, PHP_BASE_URL)
-    location_id = _location_id_via_management(page, target_location_name)
+    location_id = ui_location_id(page, target_location_name, base_url=PHP_BASE_URL)
     _switch_controller(page, controller_lastname)
     safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
     page.wait_for_load_state("load")

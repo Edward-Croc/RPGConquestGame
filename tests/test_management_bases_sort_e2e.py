@@ -26,7 +26,6 @@ test_attack_location_baseline_e2e.py, so the suite runs under UI_ONLY=1.
 Run:
     python3 -m pytest tests/test_management_bases_sort_e2e.py -v
 """
-import re
 import urllib.parse
 
 import pytest
@@ -36,7 +35,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    set_config_via_ui, ui_controller_id,
+    set_config_via_ui, ui_controller_id, ui_location_id,
 )
 
 
@@ -51,22 +50,9 @@ def _row_locator_by_name(page, base_name):
     return page.locator(f"tr:has(td:text-is('{base_name}'))")
 
 
-def _location_id_via_management(page, location_name):
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        page.content(), re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for '{location_name}' not found")
-    return int(m.group(1))
-
-
 def _seed_ckl_admin(page, controller_lastname, location_name):
     cid = ui_controller_id(page, controller_lastname, PHP_BASE_URL)
-    location_id = _location_id_via_management(page, location_name)
+    location_id = ui_location_id(page, location_name, base_url=PHP_BASE_URL)
     safe_goto(
         page,
         f"{PHP_BASE_URL}/controllers/management.php"

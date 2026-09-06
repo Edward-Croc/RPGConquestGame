@@ -15,7 +15,8 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, login_as,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    ui_detected_enemies_of, ui_worker_id, ui_zone_id,
+    ui_detected_enemies_of, ui_location_id, ui_seed_cke_via_admin, ui_worker_id,
+    ui_zone_id,
 )
 
 
@@ -51,20 +52,6 @@ def _set_active_via_ui(page, lastname):
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={value}")
     page.wait_for_load_state("load")
     return value
-
-
-def _resolve_location_id_via_ui(page, location_name):
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    html = page.content()
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        html, re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for {location_name!r} not found")
-    return m.group(1)
 
 
 def _ressources_view(page):
@@ -114,18 +101,6 @@ def _hidden_controller_id_values(page, form_selector):
         f"{form_selector} input[type='hidden'][name='controller_id']"
     ).all()
     return [i.get_attribute("value") for i in inputs]
-
-
-def _seed_cke_admin(page, recipient_id, worker_id, zone_id):
-    """Admin path writes a CKE row stamped with the current turn — the
-    agent-side twin of _seed_ckl_admin."""
-    safe_goto(
-        page,
-        f"{PHP_BASE_URL}/controllers/management.php"
-        f"?giftInformationAgent=1&target_controller_id={recipient_id}"
-        f"&enemy_worker_id={worker_id}&zone_id={zone_id}"
-    )
-    page.wait_for_load_state("load")
 
 
 def _gift_agent_options(page, controller_id):
@@ -330,7 +305,7 @@ class TestInformationGiftLocationLogged:
 
         alpha_id = _resolve_controller_id_via_ui(page, "Alpha")
         beta_id = _resolve_controller_id_via_ui(page, "Beta")
-        echo_base_id = _resolve_location_id_via_ui(page, "Echo-Base")
+        echo_base_id = ui_location_id(page, "Echo-Base", base_url=PHP_BASE_URL)
 
         _seed_ckl_admin(page, alpha_id, echo_base_id)
 
@@ -407,7 +382,7 @@ class TestPlayerGiftLocationNonPrivileged:
         ensure_gm_login(admin, PHP_BASE_URL)
         alpha_id = _resolve_controller_id_via_ui(admin, "Alpha")
         charlie_id = _resolve_controller_id_via_ui(admin, "Charlie")
-        location_id = _resolve_location_id_via_ui(admin, self._location_name)
+        location_id = ui_location_id(admin, self._location_name, base_url=PHP_BASE_URL)
         # Alpha owns no location, so seed its CKL to populate the gift dropdown.
         _seed_ckl_admin(admin, alpha_id, location_id)
         assert_no_collected_php_errors(admin)
@@ -428,7 +403,7 @@ class TestPlayerGiftLocationNonPrivileged:
         ).select_option(value=charlie_id)
         player.locator(
             f"{self._location_form} select[name='location_id']"
-        ).select_option(value=location_id)
+        ).select_option(value=str(location_id))
         with player.expect_response(
             lambda response: "giftInformationLocation" in response.url
         ) as response_info:
@@ -520,12 +495,12 @@ class TestAgentGiftHonoursAttackTimeWindow:
             fresh_id = ui_worker_id(admin, self._fresh_worker, base_url=PHP_BASE_URL)
 
             # Discovered now, then aged past attackTimeWindow (= 1) by two turns.
-            _seed_cke_admin(admin, alpha_id, aged_id, zone_id)
+            ui_seed_cke_via_admin(admin, alpha_id, aged_id, zone_id, base_url=PHP_BASE_URL)
             seeded = _gift_agent_options(player, alpha_id)
             for _ in range(2):
                 end_turn(admin, base_url=PHP_BASE_URL)
             # Discovered after the turns, so still inside the window.
-            _seed_cke_admin(admin, alpha_id, fresh_id, zone_id)
+            ui_seed_cke_via_admin(admin, alpha_id, fresh_id, zone_id, base_url=PHP_BASE_URL)
 
             after = _gift_agent_options(player, alpha_id)
             assert_no_collected_php_errors(admin)
@@ -595,7 +570,7 @@ class TestGiftedAgentIsDatedOnTheEndOfTurnTimeline:
 
             before = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
             ensure_gm_login(page, PHP_BASE_URL)
-            _seed_cke_admin(page, foxtrot_id, target_id, zone_id)
+            ui_seed_cke_via_admin(page, foxtrot_id, target_id, zone_id, base_url=PHP_BASE_URL)
             on_arrival = ui_detected_enemies_of(page, self._observer, base_url=PHP_BASE_URL)
 
             ensure_gm_login(page, PHP_BASE_URL)

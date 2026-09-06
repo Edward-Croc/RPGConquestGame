@@ -4,3 +4,11 @@ Silver,Silver resource for cross-resource test,,0,0,0,0,0,,0
 Bronze,Bronze resource for hide_when_zero test (visible row),,0,0,0,0,0,,0
 Platinum,Platinum hidden resource for hide_when_zero test,,0,0,0,0,0,,1
 Diamond,Diamond hidden ressource surfaced by positive rules estimate,,0,0,0,0,0,"[{""amount"":1,""timing"":""before_claim"",""condition"":{""type"":""holds_zone"",""zone_name"":""Gamma-Claims""}}]",1
+GainTest_SpecificZone,GainTest_SpecificZone resource for the gain-rule specific-zone test,,0,0,0,0,0,,0
+GainTest_CountStyle,GainTest_CountStyle resource for the gain-rule count-style test,,0,0,0,0,0,,0
+GainTest_BeforeClaimTiming,GainTest_BeforeClaimTiming resource for the gain-rule before_claim timing test,,0,0,0,0,0,,0
+GainTest_NegativeAmount,GainTest_NegativeAmount resource for the gain-rule negative-amount penalty test,,0,0,0,0,0,,0
+GainTest_UnlockSkip,GainTest_UnlockSkip resource for the gain-rule unlock_turn-skip test,,0,0,0,0,0,,0
+GainTest_UnlockFires,GainTest_UnlockFires resource for the gain-rule unlock_turn-fires test,,0,0,0,0,0,,0
+GainTest_LocationTypeTag,GainTest_LocationTypeTag resource for the gain-rule location-type-tag test,,0,0,0,0,0,,0
+GainTest_LocationById,GainTest_LocationById resource for the gain-rule location_id filter test,,0,0,0,0,0,,0

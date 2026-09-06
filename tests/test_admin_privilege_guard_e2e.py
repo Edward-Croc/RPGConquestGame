@@ -31,7 +31,7 @@ import pytest
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, assert_no_collected_php_errors, load_minimal_data,
-    load_scenario_via_admin, register_php_error_listener, safe_goto,
+    ensure_scenario_loaded, register_php_error_listener, safe_goto,
 )
 
 # (path, a string present in the page body and nowhere on the login form)
@@ -48,10 +48,13 @@ NON_PRIVILEGED_LOGIN = ("single_player", "test")  # TestConfig account, not gm
 
 @pytest.fixture(scope="module", autouse=True)
 def admin_guard_scenario(browser):
-    """TestConfig, for its gm + non-privileged accounts."""
+    """TestConfig, for its gm + non-privileged accounts.
+
+    Conditional: these tests only need the two accounts to exist, never a
+    pristine game state, so an already-loaded TestConfig is good enough."""
     if DB_AVAILABLE:
         load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+    ensure_scenario_loaded(browser, PHP_BASE_URL, "TestConfig")
 
 
 @pytest.fixture(scope="session")
