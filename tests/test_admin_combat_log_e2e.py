@@ -7,12 +7,11 @@ invariants, empty-state rendering, and the base/admin.php hub links. All
 assertions are UI-only (data-* attributes, no pymysql / direct SQL) so the
 suite runs under UI_ONLY=1 against a remote deployment.
 
-Data: reproduces the same TestConfig combat scenario as
-test_worker_combat_logs_e2e.py (duplicated, not imported -- see that
-file's module docstring for why) so this file's ordering/filter tests
-have real, deterministic worker_combat_logs rows to work against
-(16 rows, single turn, single created_at second -- which is exactly the
-condition the id-DESC tie-break exists to cover).
+Data: built by helpers.seed_worker_combat_scenario(), the same shared
+builder test_worker_combat_logs_e2e.py uses, so this file's
+ordering/filter tests have real, deterministic worker_combat_logs rows
+to work against (16 rows, single turn, single created_at second --
+which is exactly the condition the id-DESC tie-break exists to cover).
 
 Run:
     python3 -m pytest tests/test_admin_combat_log_e2e.py -v
@@ -24,14 +23,9 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
-    login_as, register_php_error_listener, safe_goto,
-    assert_no_collected_php_errors, set_config_via_ui,
+    login_as, safe_goto, set_config_via_ui,
     ui_combat_logs, ui_combat_unresolved_count, ui_combat_filter_options,
-    clear_ui_caches, ui_attack, ui_attack_click,
-    ui_investigate, ui_investigate_click,
-    ui_claim, ui_claim_click,
-    ui_move, ui_move_click,
+    seed_worker_combat_scenario,
 )
 
 
@@ -40,59 +34,13 @@ def admin_combat_scenario(browser):
     """Load TestConfig and produce the same 16-row combat dataset as
     test_worker_combat_logs_e2e.py (see that file for the full pair
     breakdown and per-pair outcomes)."""
-    if DB_AVAILABLE:
-        load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
+    context = None
     try:
-        ensure_gm_login(page, PHP_BASE_URL)
-        clear_ui_caches()
-
-        end_turn(page)
-
-        ui_attack_click(page, 'Chain_A', 'Chain_B')
-        ui_attack(page, 'Chain_B', 'Chain_C')
-        ui_attack(page, 'Chain_C', 'Chain_D')
-        ui_attack(page, 'Chain_D', 'Chain_E')
-        ui_attack(page, 'Chain_E', 'Chain_F')
-        ui_attack(page, 'Chain_F', 'Chain_G')
-
-        ui_attack(page, 'Even_Atk', 'Even_Def')
-        ui_attack(page, 'Counter_Atk', 'Counter_Def')
-
-        ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
-        ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-        ui_investigate_click(page, 'Inv_Def_1')
-        ui_investigate(page, 'Inv_Def_2')
-
-        ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
-        ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-        ui_claim_click(page, 'Claim_Def_1', 'Beta')
-        ui_claim(page, 'Claim_Def_2', 'Delta')
-
-        ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
-        ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
-
-        ui_attack(page, 'Mover_Test', 'Chain_A')
-        ui_move(page, 'Mover_Test', 'Delta-Disputed')
-
-        ui_claim(page, 'Keep_Def', 'Alpha')
-        ui_attack(page, 'Keep_Atk', 'Keep_Def')
-
-        ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
-        ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
-        ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
-        ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
-
-        end_turn(page)
-
-        assert_no_collected_php_errors(page)
+        context = seed_worker_combat_scenario(browser, base_url=PHP_BASE_URL)
         yield
     finally:
-        context.close()
+        if context is not None:
+            context.close()
 
 
 class TestAdminCombatLogRenders:

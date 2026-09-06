@@ -103,7 +103,6 @@ class TestLoginFlow:
         assert "accueil.php" in logged_in_page.url, \
             f"Expected redirect to accueil.php, got: {logged_in_page.url}"
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
 
@@ -113,13 +112,11 @@ class TestAdminPanel:
     def test_admin_page_loads(self, logged_in_page: Page, base_url):
         """Admin page should be accessible after login."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
     def test_config_options_available(self, logged_in_page: Page, base_url):
         """Config dropdown should have the expected scenarios."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
         select = logged_in_page.locator("select[name='config_name']")
         options = select.locator("option").all()
         option_values = [opt.get_attribute("value") for opt in options]
@@ -146,14 +143,15 @@ class TestCSVLoadViaAdmin:
     def test_full_reset_test_config(self, logged_in_page: Page, base_url):
         """Trigger a full reset with TestConfig and verify DB is populated."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("TestConfig")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
             logged_in_page.locator("#confirmModalYes").click(timeout=120000)
-        logged_in_page.wait_for_load_state("networkidle")
-        logged_in_page.wait_for_timeout(2000)
+        # Deterministic end-of-load marker (db_connector.php echoes 'END') instead of a guessed sleep
+        logged_in_page.wait_for_function(
+            "document.body.innerText.includes('END')", timeout=90000
+        )
 
         page_html = logged_in_page.content()
 
@@ -188,7 +186,6 @@ class TestCSVLoadViaAdmin:
 
         # Verify page title and header reflect the loaded scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
-        logged_in_page.wait_for_load_state("networkidle")
         header_text = logged_in_page.locator("div.header").inner_text()
         assert "Tour" in header_text, \
             f"Header should show turn info after reset, got: {header_text}"
@@ -196,14 +193,15 @@ class TestCSVLoadViaAdmin:
     def test_full_reset_japon1555_sql(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555SQL and verify larger dataset."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
             logged_in_page.locator("#confirmModalYes").click(timeout=120000)
-        logged_in_page.wait_for_load_state("networkidle")
-        logged_in_page.wait_for_timeout(3000)
+        # Deterministic end-of-load marker (db_connector.php echoes 'END') instead of a guessed sleep
+        logged_in_page.wait_for_function(
+            "document.body.innerText.includes('END')", timeout=90000
+        )
 
         page_html = logged_in_page.content()
 
@@ -231,7 +229,6 @@ class TestCSVLoadViaAdmin:
 
         # Verify page title and header reflect Japon1555 scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
-        logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
             "PHP warnings on accueil after Japon1555SQL reset"
@@ -242,14 +239,15 @@ class TestCSVLoadViaAdmin:
     def test_full_reset_japon1555_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555CSV and verify CSV-loaded dataset."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
             logged_in_page.locator("#confirmModalYes").click(timeout=120000)
-        logged_in_page.wait_for_load_state("networkidle")
-        logged_in_page.wait_for_timeout(5000)
+        # Deterministic end-of-load marker (db_connector.php echoes 'END') instead of a guessed sleep
+        logged_in_page.wait_for_function(
+            "document.body.innerText.includes('END')", timeout=90000
+        )
 
         page_html = logged_in_page.content()
 
@@ -308,9 +306,7 @@ class TestCSVLoadViaAdmin:
         # life_report under "Changements". Avoid worker_report_html helper
         # because ui_all_workers can't parse CJK-in-parens firstnames.
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php?controller_id=1&chosir=Choisir")
-        logged_in_page.wait_for_load_state("networkidle")
         safe_goto(logged_in_page, f"{base_url}/workers/action.php?worker_id=1")
-        logged_in_page.wait_for_load_state("networkidle")
         iwao_html = logged_in_page.content()
         assert "岩男" in iwao_html and "homme-rocher" in iwao_html, (
             "Issue #106 regression : Iwao's seeded life_report should render "
@@ -326,7 +322,6 @@ class TestCSVLoadViaAdmin:
 
         # Verify page header reflects Japon1555 scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
-        logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
             "PHP warnings on accueil after Japon1555CSV reset"
@@ -337,14 +332,15 @@ class TestCSVLoadViaAdmin:
     def test_full_reset_vampire1966_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Vampire1966CSV and verify CSV-loaded dataset."""
         safe_goto(logged_in_page, f"{base_url}/base/admin.php")
-        logged_in_page.wait_for_load_state("networkidle")
 
         logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
         if logged_in_page.locator("#confirmModalYes").is_visible():
             logged_in_page.locator("#confirmModalYes").click(timeout=120000)
-        logged_in_page.wait_for_load_state("networkidle")
-        logged_in_page.wait_for_timeout(5000)
+        # Deterministic end-of-load marker (db_connector.php echoes 'END') instead of a guessed sleep
+        logged_in_page.wait_for_function(
+            "document.body.innerText.includes('END')", timeout=90000
+        )
 
         page_html = logged_in_page.content()
 
@@ -401,7 +397,6 @@ class TestCSVLoadViaAdmin:
 
         # Verify page header reflects Vampire1966 scenario
         safe_goto(logged_in_page, f"{base_url}/base/accueil.php")
-        logged_in_page.wait_for_load_state("networkidle")
         page_html = logged_in_page.content()
         assert "<b>Warning</b>" not in page_html, \
             "PHP warnings on accueil after Vampire1966CSV reset"

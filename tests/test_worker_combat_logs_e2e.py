@@ -7,12 +7,11 @@ logWorkerCombatUpdate. These tests verify that two-phase contract purely
 through the read-only admin page (workers/management_combat.php) : no
 pymysql, no direct SQL.
 
-Data: duplicates test_agent_combat_e2e.py's `combat_scenario` module
-fixture verbatim (same TestConfig scenario, same UI action queuing) so the
+Data: built by helpers.seed_worker_combat_scenario(), the same shared
+builder test_agent_combat_e2e.py's `combat_scenario` fixture uses, so the
 same 16 attacker-defender pairs enter resolveWorkerCombat() and this file's
 expected row count / per-pair outcomes stay in lockstep with that file's
-documented combat math. Duplicated rather than imported so a change to the
-other file's fixture shape can't silently drift this file's dataset.
+documented combat math.
 
 Of the 19 queued attacker->defender pairs, 3 never reach
 resolveWorkerCombat() (attacker-guard `continue` at
@@ -30,13 +29,10 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
-    register_php_error_listener, safe_goto, assert_no_collected_php_errors,
+    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
+    safe_goto,
     ui_worker_id, ui_combat_logs, ui_combat_unresolved_count,
-    clear_ui_caches, ui_attack, ui_attack_click,
-    ui_investigate, ui_investigate_click,
-    ui_claim, ui_claim_click,
-    ui_move, ui_move_click,
+    seed_worker_combat_scenario,
 )
 
 
@@ -45,69 +41,13 @@ def combat_logs_scenario(browser):
     """Reproduce test_agent_combat_e2e.py's `combat_scenario` turn-1 setup
     so the same 16 attacker-defender pairs enter resolveWorkerCombat() and
     populate worker_combat_logs identically."""
-    if DB_AVAILABLE:
-        load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
+    context = None
     try:
-        ensure_gm_login(page, PHP_BASE_URL)
-        clear_ui_caches()
-
-        # End turn 0 -> 1
-        end_turn(page)
-
-        # Chain: A->B, B->C, C->D, D->E, E->F, F->G
-        ui_attack_click(page, 'Chain_A', 'Chain_B')
-        ui_attack(page, 'Chain_B', 'Chain_C')
-        ui_attack(page, 'Chain_C', 'Chain_D')
-        ui_attack(page, 'Chain_D', 'Chain_E')
-        ui_attack(page, 'Chain_E', 'Chain_F')
-        ui_attack(page, 'Chain_F', 'Chain_G')
-
-        # Base: equal match + counter
-        ui_attack(page, 'Even_Atk', 'Even_Def')
-        ui_attack(page, 'Counter_Atk', 'Counter_Def')
-
-        # Blocked investigate
-        ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
-        ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-        ui_investigate_click(page, 'Inv_Def_1')
-        ui_investigate(page, 'Inv_Def_2')
-
-        # Blocked claim
-        ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
-        ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-        ui_claim_click(page, 'Claim_Def_1', 'Beta')
-        ui_claim(page, 'Claim_Def_2', 'Delta')
-
-        # Cross-zone attack
-        ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
-        ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
-
-        # Move-clears-action-params: no pair reaches resolveWorkerCombat
-        ui_attack(page, 'Mover_Test', 'Chain_A')
-        ui_move(page, 'Mover_Test', 'Delta-Disputed')
-
-        # Keep-action-params-on-miss
-        ui_claim(page, 'Keep_Def', 'Alpha')
-        ui_attack(page, 'Keep_Atk', 'Keep_Def')
-
-        # Riposte+chain R2 and R3
-        ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
-        ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
-        ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
-        ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
-
-        # End turn 1 -> 2 (combat resolves)
-        end_turn(page)
-
-        assert_no_collected_php_errors(page)
+        context = seed_worker_combat_scenario(browser, base_url=PHP_BASE_URL)
         yield
     finally:
-        context.close()
+        if context is not None:
+            context.close()
         # Unconditional : ensure_scenario_loaded() would skip a reload here.
         if DB_AVAILABLE:
             load_minimal_data()

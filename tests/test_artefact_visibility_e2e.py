@@ -72,18 +72,15 @@ def gm_page(page: Page, base_url):
 def _select_controller(page, base_url, lastname):
     cid = _controller_ids[lastname]
     safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-    page.wait_for_load_state("networkidle")
 
 
 def _zones_page_text(page, base_url):
     safe_goto(page, f"{base_url}/zones/action.php")
-    page.wait_for_load_state("networkidle")
     return page.content()
 
 
 def _controllers_page_text(page, base_url):
     safe_goto(page, f"{base_url}/controllers/action.php")
-    page.wait_for_load_state("networkidle")
     return page.content()
 
 
@@ -206,7 +203,6 @@ class TestArtefactCreateViaAdmin:
 
     def test_admin_create_citadelle_appears_for_echo(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/artefacts/management.php")
-        gm_page.wait_for_load_state("networkidle")
         # The 'Add New Artefact' form is the form that contains artefact_name
         add_form = gm_page.locator("form:has(input[name='artefact_name'])")
         add_form.locator("input[name='artefact_name']").fill("Citadelle Crown of Echo")
@@ -214,7 +210,7 @@ class TestArtefactCreateViaAdmin:
         add_form.locator("input[name='artefact_full_description']").fill("Forged in Echo's old stronghold; details lost to history")
         add_form.locator("select[name='location_id']").select_option(label="Echo - Echo-Base")
         add_form.locator("button[name='add_artefact']").click()
-        gm_page.wait_for_load_state("networkidle")
+        gm_page.wait_for_load_state("load")
 
         # Verify it now appears on Echo's zones page
         _select_controller(gm_page, base_url, "Echo")
@@ -242,7 +238,6 @@ class TestArtefactManagementDropdown:
 
     def _add_form_option_labels(self, page, base_url):
         safe_goto(page, f"{base_url}/artefacts/management.php")
-        page.wait_for_load_state("networkidle")
         add_form = page.locator("form:has(input[name='artefact_name'])")
         return [
             (opt.inner_text() or "").strip()
@@ -293,14 +288,13 @@ class TestArtefactMoveViaAdmin:
 
         # Drive the per-row 'Change Location' form for 'Echo-Base Relic' (UI-located)
         safe_goto(gm_page, f"{base_url}/artefacts/management.php")
-        gm_page.wait_for_load_state("networkidle")
         # Each artefact row has the artefact name in a <td> and a Change Location form
         # in the same row. Locate the row by name, then the form within.
         relic_row = gm_page.locator("tr").filter(has_text="Echo-Base Relic").first
         change_form = relic_row.locator("form:has(select[name='new_location_id'])")
         change_form.locator("select[name='new_location_id']").select_option(label="Foxtrot - Foxtrot-Outpost")
         change_form.locator("button[name='update_location']").click()
-        gm_page.wait_for_load_state("networkidle")
+        gm_page.wait_for_load_state("load")
 
         # Post-condition: ownership view has flipped
         _select_controller(gm_page, base_url, "Echo")

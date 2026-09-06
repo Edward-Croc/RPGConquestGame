@@ -23,8 +23,6 @@ Rules under test (issue #128):
      (the location id is unchanged), so the owner still finds it.
 """
 
-import re
-
 import pytest
 from playwright.sync_api import Page
 
@@ -39,6 +37,7 @@ from helpers import (
     safe_goto,
     ui_known_locations_for_controller,
     ui_known_secret_locations_for_controller,
+    ui_location_id,
 )
 
 
@@ -93,19 +92,7 @@ def _toggle_update_location_admin(page, location_name):
     swap path a lost location attack takes. The button sits inside a
     `display:none` span, so it is submitted via JS rather than clicked."""
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        page.content(), re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(
-            f"toggle_destruction form for '{location_name}' not found on "
-            f"management_locations.php"
-        )
-    location_id = int(m.group(1))
+    location_id = ui_location_id(page, location_name, base_url=PHP_BASE_URL)
     with page.expect_navigation(wait_until="load"):
         page.evaluate(
             f"""

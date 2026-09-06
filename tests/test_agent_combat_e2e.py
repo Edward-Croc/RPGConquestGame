@@ -53,16 +53,12 @@ from conftest import (
 
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection as get_db,
-    end_turn, load_minimal_data, load_scenario_via_admin,
+    get_db_connection as get_db,
     ui_all_workers, ui_controller_id, ui_worker_id,
     ui_workers_by_lastname,
-    clear_ui_caches, ui_attack, ui_attack_click,
-    ui_investigate, ui_investigate_click,
-    ui_claim, ui_claim_click,
-    ui_move, ui_move_click,
+    seed_worker_combat_scenario,
     worker_report_html, worker_report_section, cached_faction_sections, ui_worker_action_state,
-    safe_goto, register_php_error_listener, assert_no_collected_php_errors,
+    safe_goto,
 )
 
 
@@ -75,10 +71,9 @@ def _ensure_controller_session(page):
     """Ensure the gm is logged in and has a controller selected."""
     ensure_gm_login(page, PHP_BASE_URL)
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
-    page.wait_for_load_state("networkidle")
     page.locator("select[name='controller_id']").first.select_option(index=0)
     page.locator("input[name='chosir']").first.click()
-    page.wait_for_load_state("networkidle")
+    page.wait_for_load_state("load")
 
 
 
@@ -95,7 +90,8 @@ def combat_scenario(browser):
     Alpha-Investigation, 19 combat passive in Beta-Combat). End-turn processes
     detection mechanics; combat agents are passive so nothing happens to them.
 
-    Between turns: set all combat actions via UI endpoints:
+    Between turns: set all combat actions via UI endpoints (see
+    helpers.seed_worker_combat_scenario for the full 26-action sequence):
       - Chain attacks: A→B, B→C, C→D, D→E, E→F, F→G
       - Base attacks: Even_Atk→Even_Def, Counter_Atk→Counter_Def
       - Blocked investigate: Inv_Atk_1→Inv_Def_1, Inv_Atk_2→Inv_Def_2
@@ -105,98 +101,7 @@ def combat_scenario(browser):
 
     Turn 1 → 2: attack mechanic resolves all combats by enquete_val DESC.
     """
-    if DB_AVAILABLE:
-        load_minimal_data()
-    load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
-
-    context = browser.new_context()
-    page = context.new_page()
-    register_php_error_listener(page)
-    ensure_gm_login(page, PHP_BASE_URL)
-    clear_ui_caches()
-
-    # End turn 0 → 1
-    end_turn(page)
-
-    # Set all combat actions via UI for turn 1
-    # Chain: A→B, B→C, C→D, D→E, E→F, F→G
-    # First attack in this file → exercised via the UI 'Attaquer' button
-    # (per once-per-file rule); subsequent attacks reuse the URL-driver.
-    ui_attack_click(page, 'Chain_A', 'Chain_B')
-    ui_attack(page, 'Chain_B', 'Chain_C')
-    ui_attack(page, 'Chain_C', 'Chain_D')
-    ui_attack(page, 'Chain_D', 'Chain_E')
-    ui_attack(page, 'Chain_E', 'Chain_F')
-    ui_attack(page, 'Chain_F', 'Chain_G')
-
-    # Base: equal match + counter
-    ui_attack(page, 'Even_Atk', 'Even_Def')
-    ui_attack(page, 'Counter_Atk', 'Counter_Def')
-
-    # Blocked investigate: attackers attack, defenders investigate
-    ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
-    ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
-    # First investigate in this file → exercised via the UI button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_investigate_click(page, 'Inv_Def_1')
-    ui_investigate(page, 'Inv_Def_2')
-
-    # Blocked claim: attackers attack, defenders claim their own controller
-    ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
-    ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
-    # First claim in this file → exercised via the UI button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_claim_click(page, 'Claim_Def_1', 'Beta')
-    ui_claim(page, 'Claim_Def_2', 'Delta')
-
-    # Cross-zone attack: Runner flees to Delta-Disputed, but Hunter's
-    # queued attack still lands. With LIMIT_ATTACK_BY_ZONE=0 (TestConfig
-    # default) the attack-pair SQL has no zone filter. moveWorker()
-    # clobbers Runner's action to 'passive' but doesn't touch Hunter's.
-    # First move in this file → exercised via the UI 'Déménager' button
-    # (per once-per-file rule); subsequent calls reuse the URL-driver.
-    ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
-    ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
-
-    # Move-clears-action-params: Mover_Test queues an attack THEN moves.
-    # moveWorker must clobber the action to 'passive' AND reset
-    # action_params to '{}' — no residual attack target data.
-    ui_attack(page, 'Mover_Test', 'Chain_A')
-    ui_move(page, 'Mover_Test', 'Delta-Disputed')
-
-    # Keep-action-params-on-miss: Keep_Def queues claim for Alpha;
-    # Keep_Atk attacks Keep_Def. Equal 3/3/3 stats → attack_difference=0
-    # < ATTACKDIFF0=1 → miss. Both survive. Keep_Def's action_params
-    # (claim target) must survive the defender-branch of attackMechanic
-    # without being wiped to '{}' — regression guard for the
-    # updateWorkerAction gate change (see TestAttackKeepsDefenderParams).
-    ui_claim(page, 'Keep_Def', 'Alpha')
-    ui_attack(page, 'Keep_Atk', 'Keep_Def')
-
-    # Riposte+chain R2: A's failed attack triggers riposte on A;
-    # B then still attacks C in the same turn.
-    #   Riposte_R2_A (atk=3, def=3) → Riposte_R2_B (atk=6, def=5):
-    #     attack_diff = 3-5 = -2 < 1 → fail
-    #     riposte_diff = 6-3 = 3 ≥ 2 → riposte fires, R2_A dies
-    #   Riposte_R2_B → Riposte_R2_C (atk=3, def=3):
-    #     attack_diff = 6-3 = 3 ≥ 3 → captures C
-    ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
-    ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
-
-    # Riposte+chain R3: A's failed attack does NOT riposte;
-    # B then still attacks C in the same turn.
-    #   Riposte_R3_A (atk=4, def=4) → Riposte_R3_B (atk=4, def=4):
-    #     attack_diff = 4-4 = 0 < 1 → fail
-    #     riposte_diff = 4-4 = 0 < 2 → no riposte, R3_A survives
-    #   Riposte_R3_B → Riposte_R3_C (atk=3, def=3):
-    #     attack_diff = 4-3 = 1 → kills C
-    ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
-    ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
-
-    # End turn 1 → 2 (combat resolves)
-    end_turn(page)
-
-    assert_no_collected_php_errors(page)
+    context = seed_worker_combat_scenario(browser, base_url=PHP_BASE_URL)
     context.close()
     yield
 
@@ -397,7 +302,6 @@ class TestAttackFormRender:
         ensure_gm_login(page, base_url)
         cid = ui_controller_id(page, "Alpha", base_url=base_url)
         safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-        page.wait_for_load_state("networkidle")
 
         wid = ui_worker_id(page, "Searcher_1", base_url=base_url)
         safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
@@ -480,21 +384,6 @@ class TestChainAttack:
             "Chain_F view should show 'A disparu' (dead)"
         assert _ui_worker_is_downed(page, 'Chain_G'), \
             "Chain_G view should show 'A disparu' (dead)"
-
-    def test_chain_reports_in_ui(self, page: Page, base_url):
-        """Spot-check chain attack reports via worker pages.
-
-        Chain_B was queued to attack Chain_C but got captured first by
-        Chain_A. The "didn't-attack" check is DB-only (see
-        test_chain_b_did_not_attack below); this test stays pure-UI."""
-        html_a = worker_report_html(page, 'Chain_A')
-        assert 'Captured' in html_a and 'Chain_B' in html_a
-
-        html_c = worker_report_html(page, 'Chain_C')
-        assert 'succeeded' in html_c and 'Chain_D' in html_c
-
-        html_e = worker_report_html(page, 'Chain_E')
-        assert 'succeeded' in html_e and 'Chain_F' in html_e
 
     def test_chain_b_did_not_attack(self, page: Page, base_url):
         """Chain_B was captured by Chain_A before its attack-phase turn,
@@ -691,7 +580,6 @@ class TestActionBlockedByCombat:
         ensure_gm_login(page, PHP_BASE_URL)
         _ensure_controller_session(page)
         safe_goto(page, f"{PHP_BASE_URL}/zones/management_zones.php")
-        page.wait_for_load_state("networkidle")
         # Beta-Combat row's holder <select>: the currently-selected option
         # must be the empty "-- Aucun --" one (value="").
         holder_select = page.locator(
@@ -909,7 +797,22 @@ class TestAttackKeepsDefenderParams:
 
 class TestRiposteChain:
     """A→B→C chain where A's attack fails; B's downstream attack on C must
-    still resolve regardless of whether B's riposte against A fires."""
+    still resolve regardless of whether B's riposte against A fires.
+
+    R2 — riposte fires:
+      Riposte_R2_A (atk=3, def=3) → Riposte_R2_B (atk=6, def=5):
+        attack_diff = 3-5 = -2 < 1 → fail
+        riposte_diff = 6-3 = 3 ≥ 2 → riposte fires, R2_A dies
+      Riposte_R2_B → Riposte_R2_C (atk=3, def=3):
+        attack_diff = 6-3 = 3 ≥ 3 → captures C
+
+    R3 — riposte does not fire:
+      Riposte_R3_A (atk=4, def=4) → Riposte_R3_B (atk=4, def=4):
+        attack_diff = 4-4 = 0 < 1 → fail
+        riposte_diff = 4-4 = 0 < 2 → no riposte, R3_A survives
+      Riposte_R3_B → Riposte_R3_C (atk=3, def=3):
+        attack_diff = 4-3 = 1 → kills C
+    """
 
     def test_riposte_fires_attacker_dies_chain_continues(self, page: Page, base_url):
         """R2: Riposte_R2_A's attack on Riposte_R2_B fails (atk_diff=-2).

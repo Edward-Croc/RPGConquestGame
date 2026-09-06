@@ -31,7 +31,7 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
     register_php_error_listener, safe_goto, set_config_via_ui, ui_controller_id,
-    ui_workers_by_lastname, worker_report_html,
+    ui_location_id, ui_workers_by_lastname, worker_report_html,
 )
 
 
@@ -74,23 +74,9 @@ def _set_config_via_ui(page, name, value):
     set_config_via_ui(page, name, value, base_url=PHP_BASE_URL)
 
 
-def _location_id_via_management(page, location_name):
-    import re
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(location_name)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        page.content(), re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(f"location_id for '{location_name}' not found")
-    return int(m.group(1))
-
-
 def _seed_ckl_admin(page, controller_lastname, location_name):
     cid = ui_controller_id(page, controller_lastname, PHP_BASE_URL)
-    location_id = _location_id_via_management(page, location_name)
+    location_id = ui_location_id(page, location_name, base_url=PHP_BASE_URL)
     safe_goto(
         page,
         f"{PHP_BASE_URL}/controllers/management.php"
@@ -141,7 +127,7 @@ def phrase_snapshot(browser):
 
         # 2. Seed CKL for Foxtrot → Echo-Base (so attack_location URL is accepted)
         echo_base_id = _seed_ckl_admin(page, "Foxtrot", "Echo-Base")
-        foxtrot_outpost_id = _location_id_via_management(page, "Foxtrot-Outpost")
+        foxtrot_outpost_id = ui_location_id(page, "Foxtrot-Outpost", base_url=PHP_BASE_URL)
 
         # 3. Fabricate banner cases via admin UI (no worker moves needed)
         #    - Alpha-Investigation claimed by Alpha → Searcher_1 (Alpha's) sees « notre bannière »

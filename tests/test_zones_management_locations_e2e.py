@@ -43,7 +43,7 @@ from playwright.sync_api import Page
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
-    register_php_error_listener, assert_no_collected_php_errors,
+    register_php_error_listener, assert_no_collected_php_errors, ui_location_id,
 )
 
 
@@ -91,21 +91,7 @@ def _toggle_destruction_first_match(page, name_substring):
     `name_substring` and submit its toggle_destruction form via
     JS (the button sits inside `display:none;`, so click(force=True)
     fails — page.evaluate triggers the form submission directly)."""
-    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
-    page.wait_for_load_state("load")
-    html = page.content()
-    m = re.search(
-        rf'<h3>[^<]*{re.escape(name_substring)}[^<]*\(discovery[^<]+</h3>'
-        rf'.*?name="toggle_destruction"\s+value="(\d+)"',
-        html,
-        re.DOTALL,
-    )
-    if not m:
-        raise AssertionError(
-            f"toggle_destruction form for a location matching "
-            f"'{name_substring}' not found on management_locations.php"
-        )
-    location_id = int(m.group(1))
+    location_id = ui_location_id(page, name_substring, base_url=PHP_BASE_URL)
     # form.submit() navigates asynchronously, so wait_for_load_state alone returns
     # on the page still displayed. expect_navigation waits for the POST to land.
     with page.expect_navigation(wait_until="load"):

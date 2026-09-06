@@ -528,7 +528,6 @@ class TestBucketColourPerController:
         self._controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
 
         safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
-        page.wait_for_load_state("networkidle")
 
         def _scrape(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -572,7 +571,6 @@ class TestBucketColourPerController:
         login_as(page, PHP_BASE_URL, "gm", "orga")
         cid = self._controller_ids[controller_lastname]
         safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
-        page.wait_for_load_state("networkidle")
         wid = ui_worker_id(page, self._worker_lastname, base_url=PHP_BASE_URL)
         safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
         page.wait_for_load_state("load")
