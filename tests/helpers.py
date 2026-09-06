@@ -59,11 +59,15 @@ except Exception:
 # ---------------------------------------------------------------------------
 
 def get_db_connection():
-    """Open a new pymysql connection with DictCursor + utf8mb4."""
+    """Open a new pymysql connection with DictCursor + utf8mb4.
+
+    connect_timeout keeps a busy or restarting MySQL from parking the caller
+    on the OS-level TCP timeout instead of failing with a usable error."""
     return pymysql.connect(
         host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
         password=MYSQL_PASSWORD, database=MYSQL_DB,
         charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
+        connect_timeout=10,
     )
 
 
@@ -86,7 +90,7 @@ def load_minimal_data(prefix=None):
         conn = pymysql.connect(
             host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
             password=MYSQL_PASSWORD, database=MYSQL_DB,
-            charset="utf8mb4", autocommit=True,
+            charset="utf8mb4", autocommit=True, connect_timeout=10,
         )
         cursor = conn.cursor()
         for stmt in sql.split(";"):
@@ -95,7 +99,10 @@ def load_minimal_data(prefix=None):
                 cursor.execute(stmt)
         conn.close()
         return True
-    except pymysql.err.OperationalError:
+    # Catches IntegrityError/ProgrammingError too: a table left behind by
+    # another branch makes a statement fail, and that must read as "minimal
+    # data unavailable" rather than crash the calling fixture.
+    except pymysql.err.MySQLError:
         return False
 
 
@@ -197,8 +204,14 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
         # destroyAllTables + gameReady + CSV load can take 30-60s on slower
         # boxes (Playwright's default click timeout is 30s — too tight).
         page.locator("#confirmModalYes").click(timeout=120000)
-    page.wait_for_timeout(5000)
-    page.wait_for_load_state("load", timeout=120000)
+    page.wait_for_load_state("load", timeout=180000)
+    # gameReady echoes 'END <br />' once the schema and CSV load have run
+    # (BDD/db_connector.php:853 and :1136) — the only completion marker the
+    # loader emits, and absent from an ordinary page render.
+    page.wait_for_function(
+        "() => document.body && document.body.innerHTML.includes('END <br')",
+        timeout=180000,
+    )
     assert_no_collected_php_errors(page)
     context.close()
     _current_scenario = scenario_name
@@ -979,7 +992,7 @@ def ui_recruit_perfect_worker(page: Page, controller_id: int, zone_name: str,
     never trigger them."""
     url = base_url or PHP_BASE_URL
     safe_goto(page, f"{url}/base/admin.php")
-    page.wait_for_load_state("networkidle")
+    _wait_loaded(page, "select#power_hobby_id")
     hobby_id = ui_select_option_id(page, "select#power_hobby_id", hobby_label)
     metier_id = ui_select_option_id(page, "select#power_metier_id", metier_label)
     origin_id = ui_select_option_id(page, "select#origin_id", origin_label)
@@ -1379,6 +1392,79 @@ def ui_move_click(page: Page, lastname: str, zone_name: str,
     page.locator("select[name='zone_id']").first.select_option(value=str(zid))
     page.locator("input[name='move']").click()
     page.wait_for_load_state("load")
+
+
+def seed_worker_combat_scenario(browser, base_url: str = None):
+    """Load TestConfig and queue the 19 attacker->defender combat pairs
+    (26 UI actions total), then run the two end_turn() passes shared by
+    test_agent_combat_e2e.py / test_worker_combat_logs_e2e.py /
+    test_admin_combat_log_e2e.py's module fixtures. Returns the new
+    browser context so the caller can close it (and re-seed if needed)."""
+    url = base_url or PHP_BASE_URL
+    if DB_AVAILABLE:
+        load_minimal_data()
+    load_scenario_via_admin(browser, url, "TestConfig")
+
+    context = browser.new_context()
+    page = context.new_page()
+    register_php_error_listener(page)
+    ensure_gm_login(page, url)
+    clear_ui_caches()
+
+    # End turn 0 -> 1
+    end_turn(page)
+
+    # Chain: A->B, B->C, C->D, D->E, E->F, F->G
+    # First attack -> exercised via the UI button; rest use the URL-driver
+    ui_attack_click(page, 'Chain_A', 'Chain_B')
+    ui_attack(page, 'Chain_B', 'Chain_C')
+    ui_attack(page, 'Chain_C', 'Chain_D')
+    ui_attack(page, 'Chain_D', 'Chain_E')
+    ui_attack(page, 'Chain_E', 'Chain_F')
+    ui_attack(page, 'Chain_F', 'Chain_G')
+
+    # Base: equal match + counter
+    ui_attack(page, 'Even_Atk', 'Even_Def')
+    ui_attack(page, 'Counter_Atk', 'Counter_Def')
+
+    # Blocked investigate: attackers attack, defenders investigate
+    ui_attack(page, 'Inv_Atk_1', 'Inv_Def_1')
+    ui_attack(page, 'Inv_Atk_2', 'Inv_Def_2')
+    # First investigate -> exercised via the UI button; rest use the URL-driver
+    ui_investigate_click(page, 'Inv_Def_1')
+    ui_investigate(page, 'Inv_Def_2')
+
+    # Blocked claim: attackers attack, defenders claim their own controller
+    ui_attack(page, 'Claim_Atk_1', 'Claim_Def_1')
+    ui_attack(page, 'Claim_Atk_2', 'Claim_Def_2')
+    # First claim -> exercised via the UI button; rest use the URL-driver
+    ui_claim_click(page, 'Claim_Def_1', 'Beta')
+    ui_claim(page, 'Claim_Def_2', 'Delta')
+
+    # Cross-zone: Runner flees but Hunter's queued attack still lands
+    # First move -> exercised via the UI button; rest use the URL-driver
+    ui_move_click(page, 'Runner_Cross', 'Delta-Disputed')
+    ui_attack(page, 'Hunter_Cross', 'Runner_Cross')
+
+    # Move-clears-action-params: Mover_Test queues an attack THEN moves
+    ui_attack(page, 'Mover_Test', 'Chain_A')
+    ui_move(page, 'Mover_Test', 'Delta-Disputed')
+
+    # Keep-action-params-on-miss: Keep_Def claims, Keep_Atk attacks (miss)
+    ui_claim(page, 'Keep_Def', 'Alpha')
+    ui_attack(page, 'Keep_Atk', 'Keep_Def')
+
+    # Riposte+chain R2 and R3
+    ui_attack(page, 'Riposte_R2_A', 'Riposte_R2_B')
+    ui_attack(page, 'Riposte_R2_B', 'Riposte_R2_C')
+    ui_attack(page, 'Riposte_R3_A', 'Riposte_R3_B')
+    ui_attack(page, 'Riposte_R3_B', 'Riposte_R3_C')
+
+    # End turn 1 -> 2 (combat resolves)
+    end_turn(page)
+
+    assert_no_collected_php_errors(page)
+    return context
 
 
 def worker_report_section(html: str, heading: str) -> str:

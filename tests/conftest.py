@@ -1,5 +1,6 @@
 """Shared fixtures for RPGConquestGame tests."""
 import os
+import time
 import pymysql
 import pytest
 import requests
@@ -46,15 +47,33 @@ def pytest_configure(config):
 # UI-only per feedback_demo_ui_only: no direct filesystem access.
 _admin_logs_session = None
 _admin_logs_available = False
+_admin_logs_last_probe = 0.0
+_admin_logs_failed_probes = 0
+
+# An unavailable verdict is retried rather than cached: PHP and MySQL are often
+# still warming up when pytest_sessionstart fires, and latching that first
+# failure would disable the ERROR guard below for every later test.
+_ADMIN_LOGS_REPROBE_SECONDS = 30
 
 
 def _ensure_admin_logs_session():
-    """Login as gm once (session-scoped) and return the shared requests.Session.
-    Returns None if login or endpoint is unreachable (fixture will silently skip)."""
+    """Login as gm and return the shared requests.Session for admin_logs.php.
+
+    Returns None while the endpoint is unreachable, re-probing at most every
+    _ADMIN_LOGS_REPROBE_SECONDS so a transient failure recovers on its own.
+    """
     global _admin_logs_session, _admin_logs_available
-    if _admin_logs_session is not None:
-        return _admin_logs_session if _admin_logs_available else None
-    session = requests.Session()
+    global _admin_logs_last_probe, _admin_logs_failed_probes
+    if _admin_logs_available:
+        return _admin_logs_session
+    now = time.monotonic()
+    if (_admin_logs_session is not None
+            and now - _admin_logs_last_probe < _ADMIN_LOGS_REPROBE_SECONDS):
+        return None
+    _admin_logs_last_probe = now
+    if _admin_logs_session is None:
+        _admin_logs_session = requests.Session()
+    session = _admin_logs_session
     try:
         session.post(
             f"{PHP_BASE_URL}/connection/loginForm.php",
@@ -70,8 +89,15 @@ def _ensure_admin_logs_session():
         _admin_logs_available = (probe.status_code == 200)
     except Exception:
         _admin_logs_available = False
-    _admin_logs_session = session
+    if not _admin_logs_available:
+        _admin_logs_failed_probes += 1
     return session if _admin_logs_available else None
+
+
+def _invalidate_admin_logs_session():
+    """Force the next _ensure_admin_logs_session call to re-probe."""
+    global _admin_logs_available
+    _admin_logs_available = False
 
 
 def _count_admin_logs_errors():
@@ -87,10 +113,12 @@ def _count_admin_logs_errors():
             timeout=10,
         )
         if response.status_code != 200:
+            _invalidate_admin_logs_session()
             return None
         # Each rendered ERROR line is wrapped in <span style="color:#c0392b;">…</span>.
         return response.text.count('style="color:#c0392b')
     except Exception:
+        _invalidate_admin_logs_session()
         return None
 
 
@@ -105,9 +133,11 @@ def _count_admin_logs_warnings():
             timeout=10,
         )
         if response.status_code != 200:
+            _invalidate_admin_logs_session()
             return None
         return response.text.count('style="color:#e67e22')
     except Exception:
+        _invalidate_admin_logs_session()
         return None
 
 
@@ -123,6 +153,15 @@ def pytest_sessionstart(session):
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     """Non-blocking WARNING report at session end via admin_logs.php UI."""
+    if _admin_logs_failed_probes:
+        terminalreporter.write_sep(
+            "=",
+            f"game_error_log guard degraded ({_admin_logs_failed_probes} failed probes)"
+        )
+        terminalreporter.write_line(
+            "  [ERROR] regression detection was inactive for part of this session — "
+            f"check that {PHP_BASE_URL}/base/admin_logs.php answers as gm."
+        )
     if _session_warning_count_start is None:
         return
     end_count = _count_admin_logs_warnings()
@@ -145,12 +184,12 @@ def ensure_gm_login(page, base_url=None):
     """Login as gm if not already logged in. Skip login if session is active."""
     from helpers import safe_goto
     url = base_url or PHP_BASE_URL
-    safe_goto(page, f"{url}/base/accueil.php", wait_state="networkidle")
+    safe_goto(page, f"{url}/base/accueil.php")
     if "loginForm.php" in page.url:
         page.locator("input[name='username']").fill("gm")
         page.locator("input[name='passwd']").fill("orga")
         page.locator("input[type='submit']").first.click()
-        page.wait_for_load_state("networkidle")
+        page.locator("a.logout-btn").first.wait_for(state="visible", timeout=30000)
 
 
 @pytest.fixture(autouse=True)
@@ -218,11 +257,11 @@ def ensure_db_usable_after_tests(browser):
     page = context.new_page()
     try:
         page.goto(f"{PHP_BASE_URL}/connection/loginForm.php")
-        page.wait_for_load_state("networkidle")
+        page.locator("input[name='username']").wait_for(state="visible", timeout=30000)
         page.locator("input[name='username']").fill("gm")
         page.locator("input[name='passwd']").fill("orga")
         page.locator("input[type='submit']").first.click()
-        page.wait_for_load_state("networkidle")
+        page.locator("a.logout-btn").first.wait_for(state="visible", timeout=30000)
         assert "accueil.php" in page.url, (
             f"Post-suite gm login failed: expected redirect to accueil.php, got {page.url}"
         )
