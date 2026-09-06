@@ -11,3 +11,11 @@ Alpha,Platinum,0,0,0
 Beta,Platinum,5,0,0
 Alpha,Diamond,0,0,0
 Beta,Diamond,0,0,0
+Alpha,GainTest_SpecificZone,0,0,0
+Alpha,GainTest_CountStyle,0,0,0
+Alpha,GainTest_BeforeClaimTiming,0,0,0
+Alpha,GainTest_NegativeAmount,0,0,0
+Alpha,GainTest_UnlockSkip,0,0,0
+Alpha,GainTest_UnlockFires,0,0,0
+Alpha,GainTest_LocationTypeTag,0,0,0
+Alpha,GainTest_LocationById,0,0,0
