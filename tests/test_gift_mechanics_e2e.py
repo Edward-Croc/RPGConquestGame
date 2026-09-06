@@ -403,7 +403,7 @@ class TestPlayerGiftLocationNonPrivileged:
         ).select_option(value=charlie_id)
         player.locator(
             f"{self._location_form} select[name='location_id']"
-        ).select_option(value=location_id)
+        ).select_option(value=str(location_id))
         with player.expect_response(
             lambda response: "giftInformationLocation" in response.url
         ) as response_info:
