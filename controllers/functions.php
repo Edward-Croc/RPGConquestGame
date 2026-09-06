@@ -898,6 +898,9 @@ function getCKEEntry(PDO $pdo, int $controller_id, int $worker_id): array|null
 /**
  * Upsert a CKE row for (searcher, worker). Only fills discovered_* columns when the caller passes them truthy.
  *
+ * last_discovery_turn only ever moves forward : a caller passing an older turn than the
+ * one already stored leaves it untouched, so a stale source cannot age known intel.
+ *
  * @param PDO $pdo : database connection
  * @param int $searcher_controller_id : observing controller id
  * @param int $found_worker_id : discovered worker id
@@ -968,7 +971,8 @@ function addWorkerToCKE(
             // Update if record exists
             $sql = sprintf(
                 "UPDATE {$prefix}controllers_known_enemies
-                SET last_discovery_turn = :turn_number, zone_id = :zone_id
+                SET zone_id = :zone_id,
+                    last_discovery_turn = GREATEST(last_discovery_turn, :turn_number)
                 %s %s %s
                 WHERE id = :id",
                 $discovered_controller_id ? ", discovered_controller_id = :discovered_controller_id" : "",
@@ -977,8 +981,8 @@ function addWorkerToCKE(
             );
             game_error_log(__FUNCTION__, 'UPDATE existingRecord', ['existingRecord' => $existingRecord, 'sql' => $sql], 'debug');
             $stmt = $pdo->prepare($sql);
-            $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+            $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
             $stmt->bindParam(':id', $existingRecord['id'], PDO::PARAM_INT);
             if ($discovered_controller_id) {
                 $stmt->bindParam(':discovered_controller_id', $discovered_controller_id, PDO::PARAM_INT);
@@ -1197,12 +1201,19 @@ function buildGiveKnowledgeHTML(PDO $pdo, string $origin = 'controller', int|nul
     $enemyWorkerOptions = '';
     // For each zone
     if ($origin != 'admin') {
+        // Read once : buildEnemyWorkerListing would re-read both per zone.
+        $mechanics = getMechanics($pdo);
+        $giftTurnNumber = $mechanics['turncounter'];
+        $giftWindow = getConfig($pdo, 'attackTimeWindow');
+
         foreach ($zones as $zone) {
-            $zoneEnemyWorkers = getEnemyWorkers($pdo, $zone['id'], $controller_id);
-            foreach ($zoneEnemyWorkers['workers_without_controller'] as $enemyWorker) {
-                $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'], $enemyWorker['name'], $zone['name']);
+            $listing = buildEnemyWorkerListing($pdo, $zone['id'], $controller_id, $giftTurnNumber, $giftWindow);
+            // Only 'recent' : an agent leaves the gift list when it leaves the attack list.
+            $recentWorkers = $listing['recent']['unaffiliated'];
+            foreach ($listing['recent']['networks'] as $network) {
+                $recentWorkers = array_merge($recentWorkers, $network['workers']);
             }
-            foreach ($zoneEnemyWorkers['workers_with_controller'] as $enemyWorker) {
+            foreach ($recentWorkers as $enemyWorker) {
                 $enemyWorkerOptions .= sprintf('<option value="%1$s"> %2$s (%3$s)</option>', $enemyWorker['discovered_worker_id'], $enemyWorker['name'], $zone['name']);
             }
         }
