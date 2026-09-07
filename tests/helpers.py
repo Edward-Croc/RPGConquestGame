@@ -1193,16 +1193,21 @@ def ui_teach_discipline_options(page: Page, lastname: str, base_url: str = None)
             if (o.get_attribute("value") or "")]
 
 
-def ui_transform_options(page: Page, lastname: str, base_url: str = None) -> list:
+def ui_transform_options(page: Page, lastname: str, base_url: str = None,
+                          raw: bool = False) -> list:
     """Return the transformation names (suffix stripped) from the
     rendered transformation select on workers/view.php. Empty list when
-    the select is absent (transform UI not rendered)."""
+    the select is absent (transform UI not rendered).
+
+    raw=True keeps the whole label, including the stat suffix and the
+    ressource cost, for tests asserting on what the option actually says."""
     _open_worker_action_page(page, lastname, base_url)
     if page.locator("select#transformationSelect").count() == 0:
         return []
     options = page.locator("select#transformationSelect option").all()
-    return [_power_name_from_option_text(o.inner_text()) for o in options
-            if (o.get_attribute("value") or "")]
+    labels = [(o.inner_text() or "").strip() for o in options
+              if (o.get_attribute("value") or "")]
+    return labels if raw else [_power_name_from_option_text(t) for t in labels]
 
 
 def ui_teach_discipline_click(page: Page, lastname: str, discipline_name: str,

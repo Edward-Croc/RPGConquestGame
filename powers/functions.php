@@ -311,7 +311,19 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
         if (!$match['keep']) {
             game_error_log(__FUNCTION__, 'kill power(' . $key . ')', [], 'debug');
             unset($powerArray[$key]);
+            continue;
         }
+
+        // Same resolver the commit path uses, so a displayed cost is by
+        // construction the one that will be charged.
+        $powerArray[$key]['rule_cost'] = getRuleCostForPower(
+            $pdo,
+            $power,
+            $controller_id,
+            $worker_id,
+            $turn_number,
+            $state_text
+        );
     }
 
     return empty($powerArray) ? null : $powerArray ;
@@ -702,7 +714,20 @@ function showTransformationSelect(PDO $pdo, array $powerTransformationArray, boo
 
     $transformationsOptions = '';
     foreach ($powerTransformationArray as $powerTransformation) {
-        $transformationsOptions .= "<option value='" . $powerTransformation['link_power_type_id'] . "'>" . $powerTransformation['power_text'] . "</option>";
+        $optionText = $powerTransformation['power_text'];
+        $cost = $powerTransformation['rule_cost'] ?? null;
+        $costComment = '';
+        if (
+            isset($cost['ressource_name'])
+            && $cost['ressource_name'] !== ''
+            && !str_contains($powerTransformation['power_text'], $cost['ressource_name'])
+        ) {
+            $costComment = $cost['ressource_name'];
+        }
+        if (!empty($cost)) {
+            $optionText .= rtrim(sprintf(' — Coût: %d %s', $cost['amount'], $costComment));
+        }
+        $transformationsOptions .= "<option value='" . htmlspecialchars($powerTransformation['link_power_type_id']) . "'>" . htmlspecialchars($optionText) . "</option>";
     }
 
     $label = $showText ? getPowerTypesDescription($pdo, 'Transformation').' :' : '';

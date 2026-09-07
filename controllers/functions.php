@@ -279,6 +279,25 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         }
     }
 
+    // Refuse a second base for this controller, in any zone, before spending
+    try {
+        $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE controller_id = :controller_id AND is_base = True";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->execute([
+            ':controller_id' => $controller_id
+        ]);
+
+        if ($checkStmt->fetchColumn() > 0) {
+            game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
+            echo "Une base existe déjà pour cette faction.<br />";
+            return false;
+        }
+    } catch (PDOException $e) {
+        // Permissive on purpose : a transient SELECT failure must not block a
+        // legitimate build, so the absence of a duplicate is assumed.
+        game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'warning');
+    }
+
     if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
         echo "Stock insuffisant ou modifié.<br />";
         return false;
@@ -312,23 +331,6 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
             $controllers[0]['fake_faction_name'],
             $controllers[0]['faction_name']
         );
-    }
-
-    try {
-        // Check if base already exists for this controller in the zone
-        $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE zone_id = :zone_id AND controller_id = :controller_id AND is_base = True";
-        $checkStmt = $pdo->prepare($checkSql);
-        $checkStmt->execute([
-            ':zone_id' => $zone_id,
-            ':controller_id' => $controller_id
-        ]);
-
-        if ($checkStmt->fetchColumn() > 0) {
-            game_error_log(__FUNCTION__, 'Base already exists for this controller in this zone', ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'debug');
-            return false;
-        }
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'warning');
     }
 
     $mechanics = getMechanics($pdo);

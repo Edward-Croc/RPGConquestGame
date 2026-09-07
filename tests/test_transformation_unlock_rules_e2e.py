@@ -702,3 +702,62 @@ class TestGmAsFactionEntersNormalPath:
             "gm-as-faction crafted teach_discipline GET must NOT insert "
             "worker_powers when re-validation fails (issue #94)"
         )
+
+
+# ---------------------------------------------------------------------------
+# cost shown in the dropdown
+# ---------------------------------------------------------------------------
+
+@pytest.mark.db
+class TestRessourceCostShownInDropdown:
+    """The transformation dropdown must state what a transformation will cost,
+    stay silent when the rule deducts nothing (`consume: false`), and drop the
+    ressource name when the power is already named after it — Japon1555 names
+    each transformation after the ressource it consumes, so repeating it read
+    as "Cheval de Takamatsu — Coût: 1 Cheval de Takamatsu".
+
+    The label is fed by the same resolver the commit path uses, so a shown
+    cost is by construction the one that will be charged."""
+
+    def _labels(self, browser, base_url, power_name):
+        alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
+        _set_amount(alpha, gold, 100)
+        _remove_worker_power("Transform_Subject", power_name)
+
+        ctx = browser.new_context(); page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+        labels = ui_transform_options(page, "Transform_Subject",
+                                      base_url=base_url, raw=True)
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        matching = [l for l in labels if l.startswith(power_name)]
+        assert matching, f"{power_name!r} must be offered at Gold=100. Got: {labels}"
+        return matching[0]
+
+    def test_deducting_rule_states_amount_and_ressource(self, browser, base_url):
+        """`Test Direct And OR` costs 3 Gold and is not named after Gold, so
+        the ressource name must appear."""
+        label = self._labels(browser, base_url, "Test Direct And OR")
+        assert "Coût: 3 Gold" in label, (
+            f"a deducting rule must state amount and ressource; got {label!r}"
+        )
+
+    def test_ressource_name_dropped_when_already_in_the_power_name(self, browser, base_url):
+        """`Test Gold Cost Explicit` carries 'Gold' in its own name, so the
+        cost must read `Coût: 3` without repeating it."""
+        label = self._labels(browser, base_url, "Test Gold Cost Explicit")
+        assert "Coût: 3" in label, f"the amount must still show; got {label!r}"
+        assert "Coût: 3 Gold" not in label, (
+            f"the ressource name must not be repeated when the power name "
+            f"already contains it; got {label!r}"
+        )
+
+    def test_non_deducting_rule_shows_no_cost(self, browser, base_url):
+        """`consume: false` deducts nothing, so no cost may be shown."""
+        label = self._labels(browser, base_url, "Test Gold Gate Optout")
+        assert "Coût" not in label, (
+            f"consume=false deducts nothing, so no cost must be shown; "
+            f"got {label!r}"
+        )

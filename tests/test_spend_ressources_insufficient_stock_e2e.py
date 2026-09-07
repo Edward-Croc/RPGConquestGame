@@ -241,6 +241,70 @@ class TestBuildBaseInsufficientStock:
         )
 
 
+@pytest.mark.db
+class TestBuildBaseDuplicateGuard:
+    """Issue #118 — createBase used to spend the build cost BEFORE checking
+    that a base already existed, then `return false` without refunding and
+    without any echo. A double click, a browser back, or a reload therefore
+    debited the cost silently.
+
+    The check now runs before the spend and renders a message like the two
+    other failure paths do. It is scoped to the controller, not to the zone:
+    a controller owning a base anywhere cannot build a second one."""
+
+    def test_second_build_anywhere_is_refused_without_spending(self, browser):
+        # Beta owns no seeded base and can_build_base=1, so it starts clean
+        # whatever the sibling classes did to Alpha.
+        ids = _controller_ids(browser)
+        beta_id = ids["Beta"]
+        _set_gold(beta_id, 50)  # base_building_cost=10
+
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        first_zone_id = ui_zone_id(page, "Zeta-Unclaimed", base_url=PHP_BASE_URL)
+        second_zone_id = ui_zone_id(page, "Epsilon-Controlled", base_url=PHP_BASE_URL)
+
+        def _build(zone_id):
+            safe_goto(
+                page,
+                f"{PHP_BASE_URL}/controllers/action.php"
+                f"?controller_id={beta_id}&zone_id={zone_id}&createBase=1",
+            )
+            page.wait_for_load_state("load")
+            return page.content()
+
+        # First build must succeed and cost exactly the configured amount.
+        _build(first_zone_id)
+        bases_after_first = _count_bases_for(beta_id)
+        gold_after_first = _read_gold(beta_id)
+        assert bases_after_first == 1, (
+            f"the first build must INSERT Beta's base; got {bases_after_first}"
+        )
+        assert gold_after_first == 40, (
+            f"the first build must deduct base_building_cost=10; got Gold={gold_after_first}"
+        )
+
+        # Second build in a DIFFERENT zone : the guard is per controller, not
+        # per zone, so it must fire here too — and before the spend.
+        html = _build(second_zone_id)
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        assert "Une base existe déjà" in html, (
+            "the refused build must render a notification, like the "
+            "insufficient-stock and unreachable-zone paths do"
+        )
+        assert _read_gold(beta_id) == gold_after_first, (
+            f"the refused build must NOT spend anything; expected Gold="
+            f"{gold_after_first} unchanged, got {_read_gold(beta_id)}"
+        )
+        assert _count_bases_for(beta_id) == bases_after_first, (
+            "the refused build must NOT INSERT a second base"
+        )
+
+
 # ---------------------------------------------------------------------------
 # moveBase
 # ---------------------------------------------------------------------------

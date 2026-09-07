@@ -1016,9 +1016,13 @@ class TestClaimModeWorkerLeaderReportPlaceholders:
 
     def test_co_claimer_names_substituted(self):
         """%3$s rendered Even_Atk's full name (the co-claimer; Chain_A
-        is the leader and is excluded)."""
-        assert f'co={self._even_atk_full_name}' in self._claim_report(), (
-            f"Expected `co={self._even_atk_full_name}`; got "
+        is the leader and is excluded).
+
+        The parameter carries its own preposition — "de X", mirroring the
+        "d'autres agents" of the empty case — because the scenario templates
+        read "en compagnie %3$s" (claimMechanic.php:485)."""
+        assert f'co=de {self._even_atk_full_name}' in self._claim_report(), (
+            f"Expected `co=de {self._even_atk_full_name}`; got "
             f"{self._claim_report()!r}"
         )
 
