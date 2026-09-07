@@ -482,7 +482,7 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
         if (empty($coClaimerIds)) {
             $coClaimerNames = "d'autres agents";
         } else {
-            $coClaimerNames = implode(', ', array_map(
+            $coClaimerNames = "de " . implode(', ', array_map(
                 fn ($wid) => (string)($nameByWorkerId[$wid] ?? "?"),
                 $coClaimerIds
             ));

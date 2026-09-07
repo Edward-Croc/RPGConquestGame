@@ -25,7 +25,7 @@
 "textRecrutementJobHobby","Est un.e %5$s avec un.e %4$s.","string to present hobby %4$s and job %5$s on recrutement"
 "textViewWorkerJobHobby","c’est un.e %2$s avec un.e %3$s.","string to present hobby %2$s and job %3$s view of worker"
 "textViewWorkerDisciplines","Ses disciplines développées sont : %s. <br />","Texts for worker view page disciplines"
-"textViewWorkerTransformations","Iel a été équipé de : %s. <br />","Texts for worker view page transformations"
+"textViewWorkerTransformations","Iel a été équipé.e de : %s. <br />","Texts for worker view page transformations"
 "texteNameBase","Forteresse des %s","Text for Name of base %1$s Fake Faction name "
 "texteDescriptionBase","Nous avons trouvé la forteresse %4$s <strong>%1$s</strong> des <strong>%2$s</strong>. Les serviteurs de confiance leur manquent encore pour avoir des défenses solides.
     En attaquant ce lieu nous pourrions lui porter un coup fatal.
@@ -107,16 +107,16 @@
     ""Iel est clairement atypique, iel possède un.e %s. ""
 ]","Texts for transformation level 2"
 "textesClaimFailViewArray","[
-    ""J’ai vu <strong>%1$s</strong> tenter de prendre le contrôle du territoire <strong>%2$s</strong> en compagnie de %3$s et au nom de <strong>%4$s</strong>, mais la défense l’a repoussé.e brutalement."",
+    ""J’ai vu <strong>%1$s</strong> tenter de prendre le contrôle du territoire <strong>%2$s</strong> en compagnie %3$s et au nom de <strong>%4$s</strong>, mais la défense l’a repoussé.e brutalement."",
     ""L’assaut de <strong>%1$s</strong>, soutenu.e par %3$s et mené au nom de <strong>%4$s</strong>, sur le territoire <strong>%2$s</strong> a échoué ; c’était un vrai carnage."",
     ""<strong>%1$s</strong>, accompagné.e de %3$s, a voulu s’imposer au <strong>%2$s</strong> au nom de <strong>%4$s</strong>, sans succès. Iel a été forcé.e de battre en retraite."",
     ""Je pense que <strong>%1$s</strong>, avec %3$s, pensait avoir une chance au <strong>%2$s</strong> au nom de <strong>%4$s</strong>. C’était mal calculé, iel a échoué.""
 ]","Texts the workers observing the failed violent claiming of a zone"
 "textesClaimSuccessViewArray","[
-    ""J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>, en compagnie de %3$s. La zone a changé de mains.<br/>"",
+    ""J’ai vu <strong>%1$s</strong> renverser l’autorité sur <strong>%2$s</strong>, en compagnie %3$s. La zone a changé de mains.<br/>"",
     ""<strong>%2$s</strong> appartient désormais au maitre de <strong>%1$s</strong>. Iel et %3$s ont balayé toute résistance.<br/>"",
     ""L’opération de <strong>%1$s</strong>, appuyé.e par %3$s, sur <strong>%2$s</strong> a été une réussite totale, malgré les dégats.<br/>"",
-    ""<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force, en compagnie de %3$s. Iels n’ont laissé aucune chance aux défenseurs.<br/>""
+    ""<strong>%1$s</strong> a pris <strong>%2$s</strong> par la force, en compagnie %3$s. Iels n’ont laissé aucune chance aux défenseurs.<br/>""
 ]","Texts the workers observing the successful violent claiming of a zone"
 "textesClaimFailArray","[
     ""Notre tentative de prise de contrôle de <strong>%2$s</strong> a échoué. La défense était trop solide.<br/>"",
@@ -125,7 +125,7 @@
     ""La mission de domination de <strong>%2$s</strong> n’a pas abouti. Trop de résistance à notre autorité sur place.<br/>""
 ]","Texts for the fail report of the claiming worker"
 "textesClaimSuccessArray","[
-    ""Nous avons pris le contrôle du territoire <strong>%2$s</strong> avec succès. Félicitations vous en êtes désormais le maitre.<br/>"",
+    ""Nous avons pris le contrôle du territoire <strong>%2$s</strong> avec succès. Félicitations, vous en êtes désormais le maitre.<br/>"",
     ""Notre offensive sur la zone <strong>%2$s</strong> a porté ses fruits. Elle est maintenant à vous.<br/>"",
     ""Nous avons su imposer votre autorité sur <strong>%2$s</strong>. La région vous obéit désormais.<br/>"",
     ""<strong>%2$s</strong> est tombé.e sous votre coupe.<br/>""
@@ -144,7 +144,7 @@
 ]","Templates used for worker disappearance text with a week number placeholder"
 "workerCapturedTexts","[
     ""<p>J’ai été capturé.e et interrogé.e par le réseau <strong>%1$s</strong>. %2$s</p>"",
-    ""<p>Je suis tombé.e entre les mains du réseau <strong>%1$s</strong> et il m’ont forcé.e à révéler mes informations. %2$s</p>"",
+    ""<p>Je suis tombé.e entre les mains du réseau <strong>%1$s</strong> et ils m’ont forcé.e à révéler mes informations. %2$s</p>"",
     ""<p>Ma capture par le réseau <strong>%1$s</strong> m’a forcé.e à révéler mes informations. %2$s</p>""
 ]
 ","Templates used for worker captured text"
@@ -152,7 +152,7 @@
     ""<p>J’ai pu mener à bien ma mission sur <strong>%1$s</strong>, son silence est assuré.</p>"",
     ""<p>J’ai accompli l’attaque sur <strong>%1$s</strong>, iel a trouvé son repos final.</p>"",
     ""<p>Notre cible <strong>%1$s</strong> a été accompagnée chez le médecin dans un état critique, nous n’avons plus rien à craindre.</p>"",
-    ""<p>Un.e suicidé.e sera retrouvé.e dans la mer demain, <strong>%1$s</strong> n’est plus des nôtres.</p>"",
+    ""<p>Un.e suicidé.e sera retrouvé.e dans la mer demain, <strong>%1$s</strong> n’est plus de ce monde.</p>"",
     ""<p>Je confirme que <strong>%1$s</strong> ne posera plus jamais problème, iel a rejoint le silence éternel.</p>"",
     ""<p>L’histoire de <strong>%1$s</strong> est officiellement terminée. Son existence appartient désormais au passé.</p>"",
     ""<p>Mission accomplie : <strong>%1$s</strong> est désormais une simple note dans les rouleaux de l’histoire.</p>""
@@ -236,12 +236,12 @@
     ""Les données concordent : un.e <strong>%s</strong> est bien associé.e à cet endroit. %s""
 ]","Phrases pour décrire une localisation après enquête"
 "textLocationDiscoveredDestroyable","[
-    "" Nous pouvons retourner cette information contre son maître et nous y attaquer au lieu pour le détruire."",
+    "" Nous pouvons retourner cette information contre son maître et nous attaquer à ce lieu pour le détruire."",
     "" Il est possible d’organiser une mission pour détruire ce lieu.""
 ]","Phrases pour signaler qu’une localisation peut être détruite"
 "locationAttackCreditMode","agents","agents = name each agent, attributing a network only for those the owner has already identified"
 "textLocationAssaultOwnerSuccess","[
-    ""Notre %1$s a été attaqué.e, par %2$s. Ils ont malheureusement franchi les portes."",
+    ""Notre %1$s a été attaqué.e, par %2$s. Ils ont malheureusement franchi les portes et saccagé l'endroit."",
     ""Les bannières des assaillants flottent désormais sur %1$s. Nos défenseur·euse·s ont été submergé·e·s par %2$s.""
 ]","Phrases pour signaler au defenseur qu’une localisation as été attaquer avec succée"
 "textLocationAssaultOwnerFail","[
@@ -265,18 +265,18 @@
 "textLocationDefenceAgentSuccess","[
     ""J’ai participé à la défense de %1$s dans %2$s contre les agents du réseau %3$s, la défense a été un succès.<br/>"",
     ""Nous avons réussi à défendre %1$s dans la région %2$s contre les assaillants du réseau %3$s.<br/>"",
-    ""J’étais là à %2$s lorsque nous avons dû défendre %1$s qui était attaqué par le réseau %3$s, nous les avons repoussés.<br/>"",
+    ""J’étais là à %2$s lorsque nous avons dû défendre %1$s qui était attaqué.e par le réseau %3$s, nous les avons repoussés.<br/>"",
     ""J’étais à %2$s lorsque nous avons défendu %1$s contre les attaquants du réseau %3$s et ce fut un succès.<br/>"",
     ""Je peux témoigner que nous avons réussi à nous défendre contre les agents du réseau %3$s sur %1$s dans la région %2$s.<br/>"",
-    ""%1$s a été attaqué par des hommes de %3$s, heureusement j’étais dans la région %2$s et nous les avons repoussés.<br/>""
+    ""%1$s a été attaqué.e par des hommes de %3$s, heureusement j’étais dans la région %2$s et nous les avons repoussés.<br/>""
 ]","Phrases pour ajout au rapport des agents participant à la défense en cas de succès de la défense"
 "textLocationDefenceAgentFail","[
     ""J’ai participé à la défense de %1$s dans %2$s contre les agents du réseau %3$s, nous avons échoué.<br/>"",
     ""Nous avons échoué à défendre %1$s dans la région %2$s contre les assaillants du réseau %3$s.<br/>"",
-    ""J’étais à %2$s lorsque nous avons dû défendre %1$s qui était attaqué par le réseau %3$s, nous avons été battus.<br/>"",
+    ""J’étais à %2$s lorsque nous avons dû défendre %1$s qui était attaqué.e par le réseau %3$s, nous avons été battus.<br/>"",
     ""J’étais à %2$s lorsque nous avons défendu %1$s contre les attaquants du réseau %3$s et ce fut un échec.<br/>"",
     ""Je peux témoigner que nous avons échoué à défendre %1$s contre les agents du réseau %3$s dans la région %2$s.<br/>"",
-    ""%1$s a été attaqué par des hommes de %3$s, malgré ma présence dans la région %2$s nous n’avons pas pu repousser cette attaque.<br/>""
+    ""%1$s a été attaqué.e par des hommes de %3$s, malgré ma présence dans la région %2$s nous n’avons pas pu repousser cette attaque.<br/>""
 ]","Phrases pour ajout au rapport des agents participant à la défense en cas d’échec de la défense"
 "textLocationAssaultAgentNoHolder","[""J’ai participé à la prise de %1$s dans %2$s, mais nous n’avions nulle part où mener les prisonniers : la place nous a filé entre les doigts.<br/>""]","Phrases pour le rapport des agents attaquants quand le combat est gagné mais qu’aucun réseau assaillant ne peut abriter le butin. %1$s = lieu, %2$s = zone."
 "textLocationDefenceAgentNoHolder","[""Notre %1$s dans %2$s a été attaqué.e et nous avons cédé, mais les assaillants n’ont rien pu emporter.<br/>""]","Idem côté défense : la place est perdue au combat mais reste debout faute de destination pour le butin. %1$s = lieu, %2$s = zone."
