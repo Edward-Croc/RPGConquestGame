@@ -372,6 +372,61 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
  * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
  * @return bool : true on success, false on cost/update failure
  */
+/**
+ * Free every agent whose queued location action targeted a base that just moved.
+ *
+ * The place left their zone, so the action can no longer resolve where the agent
+ * stands. Both sides are released : moveBase already cancels controller-mode
+ * attacks on the base, and an agent-mode attack left pointing at it would be the
+ * same defect mirrored. Delegates to resetWorkersTargetingLocation, which skips
+ * agents already dead or captured.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $base_id : id of the base that moved
+ * @param int $turn_number : current turn number
+ *
+ * @return int : how many agents were freed
+ */
+function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_number): int
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with base_id : ' . $base_id, ['turn_number' => $turn_number], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+
+    try {
+        $stmt = $pdo->prepare("SELECT worker_id, action_params
+            FROM {$prefix}worker_actions
+            WHERE turn_number = :turn_number
+              AND action_choice IN ('attack_location', 'defend_location')");
+        $stmt->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT location actions failed : ' . $e->getMessage(), ['base_id' => $base_id, 'turn_number' => $turn_number], 'warning');
+        return 0;
+    }
+
+    // location_id lives in a JSON column : decoded in PHP, as
+    // getAgentLocationActionGroups does, so the query stays dialect-agnostic.
+    $targeting = array();
+    foreach ($rows as $row) {
+        $params = json_decode((string) $row['action_params'], true);
+        if (json_last_error() !== JSON_ERROR_NONE || empty($params['location_id'])) {
+            continue;
+        }
+        if ((int) $params['location_id'] === $base_id) {
+            $targeting[] = ['worker_id' => (int) $row['worker_id']];
+        }
+    }
+
+    $freed = resetWorkersTargetingLocation($pdo, $targeting, $turn_number);
+
+    game_error_log(__FUNCTION__, 'DONE', ['base_id' => $base_id, 'freed' => $freed], 'debug');
+
+    return $freed;
+}
+
 function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
@@ -432,6 +487,10 @@ function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $cont
         game_error_log(__FUNCTION__, 'UPDATE locations SET zone_id failed : ' . $e->getMessage(), ['base_id' => $base_id, 'zone_id' => $zone_id], 'error');
         return false;
     }
+
+    // Released only once the move is committed, so a failed UPDATE leaves the
+    // queued actions intact.
+    releaseAgentsTargetingMovedBase($pdo, (int)$base_id, $turn_number);
 
     // Re-seed the owner's CKL row at the new location.
     $mechanics = getMechanics($pdo);
