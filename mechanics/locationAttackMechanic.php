@@ -154,7 +154,21 @@ function locationAttackMechanic(PDO $pdo, int $turn_number): bool
  *
  * @return array|null : [location_id => ['attackers' => [...], 'defenders' => [...]]], NULL on DB failure
  */
-function getAgentLocationActionGroups(PDO $pdo, int $turn_number): array|null
+/**
+ * This turn's location actions, indexed by the location they target.
+ *
+ * Shared by the end-of-turn grouping and by moveBase's release path, so the
+ * SELECT and the JSON decoding live in one place. location_id is decoded in
+ * PHP rather than extracted in SQL, which keeps the query identical on MySQL
+ * and PostgreSQL. Rows keep the enquete_val DESC, worker_id ASC order the
+ * duel ladder depends on.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $turn_number : current turn number
+ *
+ * @return array|null : [location_id => [worker_actions rows]], null on SQL failure
+ */
+function getLocationActionsByLocation(PDO $pdo, int $turn_number): array|null
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
@@ -185,19 +199,46 @@ function getAgentLocationActionGroups(PDO $pdo, int $turn_number): array|null
         return null;
     }
 
-    $groups = [];
+    $byLocation = [];
     foreach ($rows as $row) {
         $params = json_decode((string) $row['action_params'], true);
         if (json_last_error() !== JSON_ERROR_NONE || empty($params['location_id'])) {
             game_error_log(__FUNCTION__, 'skipped a location action without a usable location_id', ['worker_id' => $row['worker_id'], 'action_params' => $row['action_params']], 'warning');
             continue;
         }
-        $locationId = (int) $params['location_id'];
-        if (!isset($groups[$locationId])) {
-            $groups[$locationId] = ['attackers' => [], 'defenders' => []];
+        $byLocation[(int) $params['location_id']][] = $row;
+    }
+
+    game_error_log(__FUNCTION__, 'DONE with turn_number : ' . $turn_number, ['location_count' => count($byLocation)], 'debug');
+
+    return $byLocation;
+}
+
+/**
+ * Split this turn's location actions into attackers and defenders, per location.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $turn_number : current turn number
+ *
+ * @return array|null : [location_id => ['attackers' => [], 'defenders' => []]]
+ */
+function getAgentLocationActionGroups(PDO $pdo, int $turn_number): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
+
+    $byLocation = getLocationActionsByLocation($pdo, $turn_number);
+    if ($byLocation === null) {
+        return null;
+    }
+
+    $groups = [];
+    foreach ($byLocation as $locationId => $rows) {
+        $groups[$locationId] = ['attackers' => [], 'defenders' => []];
+        foreach ($rows as $row) {
+            $side = $row['action_choice'] === 'attack_location' ? 'attackers' : 'defenders';
+            $groups[$locationId][$side][] = $row;
         }
-        $side = $row['action_choice'] === 'attack_location' ? 'attackers' : 'defenders';
-        $groups[$locationId][$side][] = $row;
     }
 
     game_error_log(__FUNCTION__, 'DONE with turn_number : ' . $turn_number, ['location_count' => count($groups)], 'debug');
