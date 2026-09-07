@@ -279,7 +279,7 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         }
     }
 
-    // Check if base already exists for this controller in the zone
+    // Refuse a second base for this controller, in any zone, before spending
     try {
         $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE controller_id = :controller_id AND is_base = True";
         $checkStmt = $pdo->prepare($checkSql);
@@ -289,7 +289,7 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
 
         if ($checkStmt->fetchColumn() > 0) {
             game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
-            echo "Une base existe déjà dans cette zone.<br />";
+            echo "Une base existe déjà pour cette faction.<br />";
             return false;
         }
     } catch (PDOException $e) {
