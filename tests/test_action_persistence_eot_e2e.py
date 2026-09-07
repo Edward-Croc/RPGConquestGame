@@ -208,7 +208,6 @@ class TestActionResetWhenConfigZero:
 # a reset action must not keep its parameters
 # ---------------------------------------------------------------------------
 
-@pytest.mark.db
 class TestResetAlsoClearsActionParams:
     """createNewTurnLines reset action_choice to 'passive' in raw SQL, without
     touching action_params, so a cancelled action kept its target into the new

@@ -364,15 +364,6 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
 }
 
 /**
- * Move the controller base to the new zone.
- *
- * @param PDO $pdo : database connection
- * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
- * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
- * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
- * @return bool : true on success, false on cost/update failure
- */
-/**
  * Free every agent whose queued location action targeted a base that just moved.
  *
  * The place left their zone, so the action can no longer resolve where the agent
@@ -404,6 +395,15 @@ function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_numbe
     return $freed;
 }
 
+/**
+ * Move the controller base to the new zone.
+ *
+ * @param PDO $pdo : database connection
+ * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
+ * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
+ * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
+ * @return bool : true on success, false on cost/update failure
+ */
 function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function

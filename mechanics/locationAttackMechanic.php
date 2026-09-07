@@ -142,19 +142,6 @@ function locationAttackMechanic(PDO $pdo, int $turn_number): bool
 }
 
 /**
- * Return the current-turn location actions grouped by targeted location.
- *
- * Rows are ordered enquete_val DESC then worker_id ASC, the same initiative order
- * attackMechanic uses, so each group's lists come out already sorted. Workers killed
- * earlier in the turn are absent by construction: their action_choice no longer
- * matches the filter.
- *
- * @param PDO $pdo : database connection
- * @param int $turn_number : current turn number
- *
- * @return array|null : [location_id => ['attackers' => [...], 'defenders' => [...]]], NULL on DB failure
- */
-/**
  * This turn's location actions, indexed by the location they target.
  *
  * Shared by the end-of-turn grouping and by moveBase's release path, so the
