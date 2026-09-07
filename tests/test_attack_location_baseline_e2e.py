@@ -53,7 +53,8 @@ import json
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors, set_config_via_ui,
-    ui_controller_id, ui_location_id, ui_worker_action_state, ui_workers_by_lastname,
+    ui_controller_id, ui_defend_location, ui_location_id, ui_worker_action_state,
+    ui_workers_by_lastname,
 )
 
 
@@ -1648,4 +1649,119 @@ class TestDuplicateQueueAttemptRejected:
         assert len(self._queue_rows) == 1, (
             f"Expected exactly one queue row after duplicate URL hit; "
             f"got {len(self._queue_rows)}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# moveBase frees the agents that were aiming at the base
+# ---------------------------------------------------------------------------
+
+# Still @pytest.mark.db — see TestEndTurnCascadeDestroyed comment.
+@pytest.mark.db
+class TestMoveBaseReleasesLocationDefenders:
+    """Issue #123 — an agent queued on defend_location kept defending a base
+    after moveBase carried it to another zone : it defended at a distance,
+    from the zone it never left. moveBase never touched worker_actions, and
+    locationAttackMechanic's zone-coherence check only logs a warning
+    (`combatant is not in the location zone`) without excluding anyone.
+
+    moveBase now frees every agent whose action targeted the base, attackers
+    included — it already cancelled controller-mode attacks on the same base.
+    No player-facing report is written : the mechanical fix only, by design.
+
+    Uses a synthetic base so no other class's state can interfere.
+    """
+
+    _defender = "Artefact_Searcher_Echo"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def release_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            # ui_defend_location needs the agent mode; action.php 403s otherwise.
+            _set_config_via_ui(page, "locationAttackMode", "agent_attack_defence")
+            echo_id = _controller_id_via_management(page, "Echo")
+
+            conn = _db_conn()
+            cur = conn.cursor()
+            cur.execute(f"SELECT id FROM `{GAME_PREFIX}zones` LIMIT 2")
+            zones = cur.fetchall()
+            zone_origin, zone_target = zones[0]['id'], zones[1]['id']
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}locations` "
+                f"(name, description, zone_id, controller_id, can_be_destroyed, is_base) "
+                f"VALUES ('SyntheticDefendedBase', 'temp', %s, %s, 1, 1)",
+                (zone_origin, echo_id),
+            )
+            synthetic_id = cur.lastrowid
+            # base_moving_cost=5 and TestConfig seeds Echo with Gold=2, so the
+            # move would abort before reaching the release logic.
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}controller_ressources` SET amount = 50 "
+                f"WHERE controller_id = %s AND ressource_id = "
+                f"(SELECT id FROM `{GAME_PREFIX}ressources_config` WHERE ressource_name = 'Gold')",
+                (echo_id,),
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            ui_defend_location(page, self._defender, synthetic_id, base_url=PHP_BASE_URL)
+            type(self)._before = ui_worker_action_state(
+                page, self._defender, base_url=PHP_BASE_URL)
+
+            ensure_gm_login(page, PHP_BASE_URL)
+            safe_goto(
+                page,
+                f"{PHP_BASE_URL}/controllers/action.php"
+                f"?moveBase=1&base_id={synthetic_id}&zone_id={zone_target}"
+                f"&controller_id={echo_id}",
+            )
+            page.wait_for_load_state("load")
+
+            type(self)._after = ui_worker_action_state(
+                page, self._defender, base_url=PHP_BASE_URL)
+            type(self)._synthetic_id = synthetic_id
+
+            assert_no_collected_php_errors(page)
+            yield
+        finally:
+            try:
+                ensure_gm_login(page, PHP_BASE_URL)
+                _set_config_via_ui(page, "locationAttackMode", "immediate")
+                conn = _db_conn()
+                cur = conn.cursor()
+                cur.execute(
+                    f"DELETE FROM `{GAME_PREFIX}locations` WHERE name = 'SyntheticDefendedBase'")
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception:
+                pass
+            context.close()
+
+    def test_the_defence_was_queued_before_the_move(self):
+        """Positive anchor : without it, the negative below would pass on a
+        dead agent or a rejected queue attempt."""
+        assert self._before['action_choice'] == 'defend_location', (
+            f"the defence must be queued before moving; got {self._before!r}"
+        )
+        assert str(self._synthetic_id) in self._before['action_params'], (
+            f"action_params must carry the synthetic base id "
+            f"{self._synthetic_id}; got {self._before['action_params']!r}"
+        )
+
+    def test_the_defender_is_freed_by_the_move(self):
+        assert self._after['action_choice'] == 'passive', (
+            f"moveBase must free the defender; got "
+            f"{self._after['action_choice']!r}"
+        )
+
+    def test_no_stale_location_id_survives(self):
+        """A leftover location_id would resolve again next turn."""
+        assert str(self._synthetic_id) not in self._after['action_params'], (
+            f"action_params must be emptied; got {self._after['action_params']!r}"
         )
