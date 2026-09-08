@@ -31,8 +31,8 @@ from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    ui_investigate, ui_hide_click, end_turn,
-    ui_workers_by_lastname, login_as, logout,
+    ui_investigate, ui_hide_click, ui_claim, end_turn,
+    ui_workers_by_lastname, ui_worker_action_state, login_as, logout,
 )
 
 
@@ -202,3 +202,73 @@ class TestActionResetWhenConfigZero:
             f"got '{non_trace[0]['action_choice']}'"
         )
 
+
+
+# ---------------------------------------------------------------------------
+# a reset action must not keep its parameters
+# ---------------------------------------------------------------------------
+
+class TestResetAlsoClearsActionParams:
+    """createNewTurnLines reset action_choice to 'passive' in raw SQL, without
+    touching action_params, so a cancelled action kept its target into the new
+    turn. resetWorkersTargetingLocation does clear them — its own docstring
+    says "so no stale location_id survives into the next turn" — so the two
+    paths disagreed.
+
+    `claim` is used because it is the cheapest action carrying a parameter
+    (claim_controller_id), and because the reset loop had no coverage for it
+    at all.
+    """
+
+    _subject = "Bystander_1"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def params_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            _set_config_via_ui(page, "continuing_claim_action", "0")
+
+            ui_claim(page, self._subject, "Beta")
+            type(self)._before = ui_worker_action_state(
+                page, self._subject, base_url=PHP_BASE_URL)
+
+            end_turn(page)
+
+            type(self)._after = ui_worker_action_state(
+                page, self._subject, base_url=PHP_BASE_URL)
+
+            assert_no_collected_php_errors(page)
+            yield
+        finally:
+            try:
+                ensure_gm_login(page, PHP_BASE_URL)
+                _set_config_via_ui(page, "continuing_claim_action", "1")
+            except Exception:
+                pass
+            context.close()
+
+    def test_the_claim_carried_a_parameter_before_the_turn(self):
+        """Positive anchor : without it, both negatives below would pass on an
+        action that was never queued."""
+        assert self._before['action_choice'] == 'claim', (
+            f"the claim must be queued before the turn; got {self._before!r}"
+        )
+        assert 'claim_controller_id' in self._before['action_params'], (
+            f"action_params must carry the claim target; "
+            f"got {self._before['action_params']!r}"
+        )
+
+    def test_the_action_is_reset(self):
+        assert self._after['action_choice'] == 'passive', (
+            f"continuing_claim_action=0 must reset claim to passive; "
+            f"got {self._after['action_choice']!r}"
+        )
+
+    def test_the_parameters_are_cleared(self):
+        assert 'claim_controller_id' not in self._after['action_params'], (
+            f"a reset action must not keep its target; "
+            f"got {self._after['action_params']!r}"
+        )
