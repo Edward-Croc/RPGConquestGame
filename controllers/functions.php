@@ -1449,9 +1449,7 @@ function getInformationGiftsReceived(PDO $pdo, int $controller_id): array
             $w->execute([':id' => (int)$row['target_id']]);
             $row['target_label'] = $w->fetchColumn() ?: '#'.(int)$row['target_id'];
         } elseif ($row['target_type'] === 'location') {
-            $l = $pdo->prepare("SELECT name AS label FROM {$prefix}locations WHERE id = :id");
-            $l->execute([':id' => (int)$row['target_id']]);
-            $row['target_label'] = $l->fetchColumn() ?: '#'.(int)$row['target_id'];
+            $row['target_label'] = getLocationName($pdo, (int)$row['target_id']) ?? '#'.(int)$row['target_id'];
         } else {
             $row['target_label'] = '#'.(int)$row['target_id'];
         }

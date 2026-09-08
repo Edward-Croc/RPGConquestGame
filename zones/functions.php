@@ -28,6 +28,33 @@ function getZoneName(PDO $pdo, int $zone_id): string|null
 }
 
 /**
+ * Return a location's display name, or null when there is none to show.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $location_id : location id
+ * @return string|null : the name, or null when absent, empty or on DB failure
+ */
+function getLocationName(PDO $pdo, int $location_id): string|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with location_id : ' . $location_id, [], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT name FROM {$prefix}locations WHERE id = :id LIMIT 1");
+        $stmt->bindParam(':id', $location_id, PDO::PARAM_INT);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT location name failed : ' . $e->getMessage(), ['location_id' => $location_id], 'warning');
+        return null;
+    }
+
+    // Empty counts as absent, so callers' ?? fallback matches the ?: they had.
+    $name = $stmt->fetchColumn();
+    return empty($name) ? null : (string) $name;
+}
+
+/**
  * Function to get ZONEs and return as an array
  *
  * @param PDO $pdo : database connection

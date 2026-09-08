@@ -249,9 +249,7 @@ foreach ($infoTxs as &$tx) {
         $s->execute([':id' => (int)$tx['target_id']]);
         $tx['target_label'] = $s->fetchColumn() ?: '#'.(int)$tx['target_id'];
     } elseif ($tx['target_type'] === 'location') {
-        $s = $gameReady->prepare("SELECT name AS lbl FROM {$prefix}locations WHERE id = :id");
-        $s->execute([':id' => (int)$tx['target_id']]);
-        $tx['target_label'] = $s->fetchColumn() ?: '#'.(int)$tx['target_id'];
+        $tx['target_label'] = getLocationName($gameReady, (int)$tx['target_id']) ?? '#'.(int)$tx['target_id'];
     } else {
         $tx['target_label'] = '#'.(int)$tx['target_id'];
     }
