@@ -412,9 +412,6 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
         return false;
     }
 
-    // Reset non-continuing actions to 'passive' on new turn creation, and clear
-    // their action_params : a cancelled action's target must not survive into
-    // the new turn. '{}' is what updateWorkerAction writes for an empty set.
     // Map : action_choice -> config key that controls whether it persists.
     $continuingActions = [
         'investigate' => 'continuing_investigate_action',
@@ -424,6 +421,7 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
         'attack_location' => 'continuing_attack_location_action',
         'defend_location' => 'continuing_defend_location_action',
     ];
+    // Reset non-continuing actions to 'passive' on new turn creation, and clear their action_params
     foreach ($continuingActions as $action => $configKey) {
         if (getConfig($pdo, $configKey)) {
             continue;

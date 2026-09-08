@@ -366,12 +366,6 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
 /**
  * Free every agent whose queued location action targeted a base that just moved.
  *
- * The place left their zone, so the action can no longer resolve where the agent
- * stands. Both sides are released : moveBase already cancels controller-mode
- * attacks on the base, and an agent-mode attack left pointing at it would be the
- * same defect mirrored. Delegates to resetWorkersTargetingLocation, which skips
- * agents already dead or captured.
- *
  * @param PDO $pdo : database connection
  * @param int $base_id : id of the base that moved
  * @param int $turn_number : current turn number
@@ -387,7 +381,7 @@ function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_numbe
     if ($byLocation === null) {
         return 0;
     }
-
+    // Delegate to resetWorkersTargetingLocation, which skips agents already dead or captured.
     $freed = resetWorkersTargetingLocation($pdo, $byLocation[$base_id] ?? array(), $turn_number);
 
     game_error_log(__FUNCTION__, 'DONE', ['base_id' => $base_id, 'freed' => $freed], 'debug');
