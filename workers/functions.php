@@ -422,13 +422,9 @@ function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionPa
         }
 
         // attack_location / defend_location => target location name
-        // TODO #110 : replace inline SELECT by shared getLocationName helper
     } elseif ($actionChoice === 'attack_location' || $actionChoice === 'defend_location') {
         if (!empty($params['location_id'])) {
-            $prefix = $_SESSION['GAME_PREFIX'];
-            $stmt = $pdo->prepare("SELECT name FROM {$prefix}locations WHERE id = :lid LIMIT 1");
-            $stmt->execute([':lid' => (int) $params['location_id']]);
-            $locName = $stmt->fetchColumn();
+            $locName = getLocationName($pdo, (int) $params['location_id']);
             if (!empty($locName)) {
                 $info .= ' <strong>' . htmlspecialchars($locName) . '</strong>';
             }
