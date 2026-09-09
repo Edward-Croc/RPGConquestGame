@@ -30,7 +30,7 @@ from helpers import (
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
-    cached_faction_sections, clear_ui_caches, worker_report_section,
+    cached_faction_sections, ui_faction_sections, clear_ui_caches, worker_report_section,
     ui_mass_move_click, ui_all_workers, ui_controller_ids_map,
 )
 
@@ -178,6 +178,34 @@ class TestGiftWorker:
         section = worker_report_section(html, "Changements :")
         assert "rejoint" in section, "Gifted worker report should contain 'rejoint' line"
         assert "Echo" in section, "Gifted worker report should mention new owner Echo"
+
+    def test_replaying_the_gift_url_keeps_a_primary_owner(self, gm_page: Page, base_url):
+        """Issue #74 — the DELETE that clears a stale secondary link was not
+        filtered on is_primary_controller. On the replay the giver read from
+        worker_actions is already the receiver, so it deleted the primary row
+        it had just written and the UPDATE behind it matched nothing, leaving
+        the worker with no owner at all.
+
+        Rides on the gift the earlier tests of this class already performed.
+        The assertion goes through the faction sections rather than the admin
+        list: only the sections distinguish a primary row from a secondary
+        one, which is exactly the column the fix is about."""
+        wid = ui_worker_id(gm_page, "Gift_Source_Foxtrot", base_url=base_url)
+        safe_goto(
+            gm_page,
+            f"{base_url}/workers/action.php"
+            f"?worker_id={wid}&gift=1&gift_controller_id={_controller_ids['Echo']}",
+        )
+        gm_page.wait_for_load_state("load")
+
+        sections = ui_faction_sections(gm_page, "Echo", base_url=base_url)
+        assert "Gift_Source_Foxtrot" in sections["live"], (
+            "after the replay the worker must still be a primary agent of Echo; "
+            f"sections={sections}"
+        )
+        assert "Gift_Source_Foxtrot" not in sections["doubles"], (
+            "the replay must not demote the worker to a secondary link"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1264,76 +1292,4 @@ class TestMassMoveBetaCombatWorkers:
         assert self._post["Keep_Def"] == _MASS_MOVE_TARGET_ZONE, (
             f"Keep_Def should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
             f"got {self._post['Keep_Def']}"
-        )
-
-
-# ---------------------------------------------------------------------------
-# replaying the gift URL must not orphan the worker
-# ---------------------------------------------------------------------------
-
-class TestGiftReplayKeepsAnOwner:
-    """Issue #74 — refreshing the gift URL used to leave the worker with NO
-    controller_worker row at all. The DELETE that clears a stale secondary link
-    was not filtered on is_primary_controller, so on the second call — where
-    the giver read from worker_actions is already the receiver — it removed the
-    primary row it had just written, and the UPDATE behind it matched nothing.
-
-    Finder_1 is untouched by the other classes of this file, so this class does
-    not depend on their order.
-    """
-
-    _subject = "Finder_1"
-
-    @pytest.fixture(scope="class", autouse=True)
-    def replay_state(self, browser):
-        context = browser.new_context()
-        page = context.new_page()
-        register_php_error_listener(page)
-        try:
-            ensure_gm_login(page, PHP_BASE_URL)
-            target_cid = _controller_ids["Delta"]
-            wid = ui_worker_id(page, self._subject, base_url=PHP_BASE_URL)
-            gift_url = (
-                f"{PHP_BASE_URL}/workers/action.php"
-                f"?worker_id={wid}&gift=1&gift_controller_id={target_cid}"
-            )
-
-            safe_goto(page, gift_url)
-            page.wait_for_load_state("load")
-            type(self)._after_first = ui_workers_by_lastname(
-                page, self._subject, base_url=PHP_BASE_URL)
-
-            # The refresh : same URL, exactly what F5 sends.
-            safe_goto(page, gift_url)
-            page.wait_for_load_state("load")
-            type(self)._after_replay = ui_workers_by_lastname(
-                page, self._subject, base_url=PHP_BASE_URL)
-            type(self)._target_cid = target_cid
-
-            assert_no_collected_php_errors(page)
-            yield
-        finally:
-            context.close()
-
-    def test_the_gift_landed_before_the_replay(self):
-        """Positive anchor : without it, the replay assertions would pass on a
-        gift that never happened."""
-        live = [r for r in self._after_first if r["action_choice"] != "trace"]
-        assert len(live) == 1, f"expected one live row after the gift; got {self._after_first}"
-        assert live[0]["controller_id"] == self._target_cid, (
-            f"the gift must move the worker to Delta ({self._target_cid}); got {live[0]}"
-        )
-
-    def test_the_worker_still_has_an_owner_after_the_replay(self):
-        live = [r for r in self._after_replay if r["action_choice"] != "trace"]
-        assert len(live) == 1, (
-            f"the replay must not strip the worker of its controller_worker row; "
-            f"got {self._after_replay}"
-        )
-
-    def test_the_owner_is_unchanged_by_the_replay(self):
-        live = [r for r in self._after_replay if r["action_choice"] != "trace"]
-        assert live and live[0]["controller_id"] == self._target_cid, (
-            f"the replay must leave the worker with Delta ({self._target_cid}); "
-            f"got {self._after_replay}"
         )
