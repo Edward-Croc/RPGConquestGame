@@ -799,6 +799,95 @@ class TestMoveBase:
         )
 
 
+def _controller_gold_via_ui(page, controller_lastname):
+    """Read the controller's usable Gold amount via ressources/view.php."""
+    _switch_controller(page, controller_lastname)
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
+    page.wait_for_load_state("load")
+    html = page.content()
+    import re
+    m = re.search(r"<td>Gold</td>\s*<td[^>]*>\s*(\d+)\s*</td>", html)
+    return int(m.group(1)) if m else None
+
+
+# ---------------------------------------------------------------------------
+# TestMoveBaseReplay — issue #74: replaying the moveBase URL (F5 / back-
+# resubmit) must not spend the move cost a second time once the base is
+# already in the requested zone.
+#
+# Subject: Beta, whose base was created by the module fixture's Phase 5 in
+# Zeta-Unclaimed and is never touched by any other class in this file (only
+# Alpha's and Echo's/Foxtrot's bases are moved/repaired elsewhere) — so this
+# class can neither be disturbed by, nor disturb, the rest of the suite.
+# ---------------------------------------------------------------------------
+
+class TestMoveBaseReplay:
+    """First move succeeds and costs once; replaying it is a harmless no-op."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def move_base_replay_state(self, browser):
+        """Move Beta's base once (positive anchor), then replay the exact
+        same move and capture zone + Gold before/after each step."""
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        pre_zone = _controller_base_zone_via_ui(page, 'Beta')
+        pre_gold = _controller_gold_via_ui(page, 'Beta')
+
+        _move_base_click(page, 'Beta', 'Beta-Combat')
+        post_move_zone = _controller_base_zone_via_ui(page, 'Beta')
+        post_move_gold = _controller_gold_via_ui(page, 'Beta')
+
+        # Replay: same base, same (already-current) target zone.
+        _move_base_click(page, 'Beta', 'Beta-Combat')
+        post_replay_zone = _controller_base_zone_via_ui(page, 'Beta')
+        post_replay_gold = _controller_gold_via_ui(page, 'Beta')
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._pre_zone = pre_zone
+        type(self)._pre_gold = pre_gold
+        type(self)._post_move_zone = post_move_zone
+        type(self)._post_move_gold = post_move_gold
+        type(self)._post_replay_zone = post_replay_zone
+        type(self)._post_replay_gold = post_replay_gold
+        yield
+
+    def test_first_move_changes_zone_and_spends_once(self):
+        """Positive anchor: the first move succeeds and Gold drops by
+        exactly base_moving_cost (5)."""
+        assert self._pre_zone == "Zeta-Unclaimed", (
+            f"Beta's base should start in Zeta-Unclaimed (module fixture "
+            f"Phase 5); got {self._pre_zone!r}"
+        )
+        assert self._post_move_zone == "Beta-Combat", (
+            f"Beta's base should be in Beta-Combat after the first move; "
+            f"got {self._post_move_zone!r}"
+        )
+        assert self._post_move_gold == self._pre_gold - 5, (
+            f"First move should spend exactly base_moving_cost (5); "
+            f"pre={self._pre_gold}, post={self._post_move_gold}"
+        )
+
+    def test_replay_spends_nothing_more(self):
+        """Replaying the move (same base, same current zone) must not
+        deduct Gold a second time."""
+        assert self._post_replay_gold == self._post_move_gold, (
+            f"Replay must not spend the move cost again; "
+            f"before replay={self._post_move_gold}, after replay="
+            f"{self._post_replay_gold}"
+        )
+
+    def test_replay_leaves_base_in_same_zone(self):
+        """Replaying the move must not change the base's zone."""
+        assert self._post_replay_zone == "Beta-Combat", (
+            f"Replay should leave Beta's base in Beta-Combat; got "
+            f"{self._post_replay_zone!r}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # TestRepairLocation — controllers/view.php Repair Location +
 # controllers/action.php repairLocation handler.
