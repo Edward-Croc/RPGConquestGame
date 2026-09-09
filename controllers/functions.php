@@ -279,23 +279,26 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         }
     }
 
-    // Refuse a second base for this controller, in any zone, before spending
+    // Refused before spending, so a replay costs nothing.
+    $baseAlreadyExists = null;
     try {
         $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE controller_id = :controller_id AND is_base = True";
         $checkStmt = $pdo->prepare($checkSql);
-        $checkStmt->execute([
-            ':controller_id' => $controller_id
-        ]);
-
-        if ($checkStmt->fetchColumn() > 0) {
-            game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
-            echo "Une base existe déjà pour cette faction.<br />";
-            return false;
-        }
+        $checkStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $baseAlreadyExists = $checkStmt->fetchColumn() > 0;
     } catch (PDOException $e) {
-        // Permissive on purpose : a transient SELECT failure must not block a
-        // legitimate build, so the absence of a duplicate is assumed.
         game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'warning');
+    }
+    // Closed on failure : an unverifiable state must never authorise a spend.
+    if ($baseAlreadyExists === null) {
+        echo "Vérification impossible, réessayez.<br />";
+        return false;
+    }
+    if ($baseAlreadyExists) {
+        game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
+        echo "Une base existe déjà pour cette faction.<br />";
+        return false;
     }
 
     if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
@@ -396,7 +399,7 @@ function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_numbe
  * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
  * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
  * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
- * @return bool : true on success, false on cost/update failure
+ * @return bool : true on success, false when the base is already there or on cost/update failure
  */
 function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool
 {
@@ -405,32 +408,34 @@ function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $cont
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    // Refuse a same-zone replay (F5 / back-resubmit), in any case, before spending
+    // Refused before spending, so a replay costs nothing.
+    $baseAlreadyThere = null;
     try {
         $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE id = :base_id AND zone_id = :zone_id";
         $checkStmt = $pdo->prepare($checkSql);
-        $checkStmt->execute([
-            ':base_id' => $base_id,
-            ':zone_id' => $zone_id
-        ]);
-
-        if ($checkStmt->fetchColumn() > 0) {
-            game_error_log(__FUNCTION__, 'Base already in requested zone', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
-            echo "La base est déjà dans cette zone.<br />";
-            return false;
-        }
+        $checkStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $checkStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $baseAlreadyThere = $checkStmt->fetchColumn() > 0;
     } catch (PDOException $e) {
-        // Permissive on purpose : a transient SELECT failure must not block a
-        // legitimate move, so the absence of a same-zone match is assumed.
         game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['base_id' => $base_id, 'zone_id' => $zone_id], 'warning');
     }
-
-    if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
-        game_error_log(__FUNCTION__, 'SELECT locations aborted : spendRessourcesToMoveBase returned false', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
-        echo "Stock insuffisant ou modifié.<br />";
+    // Closed on failure : an unverifiable state must never authorise a spend.
+    if ($baseAlreadyThere === null) {
+        echo "Vérification impossible, réessayez.<br />";
+        return false;
+    }
+    if ($baseAlreadyThere) {
+        game_error_log(__FUNCTION__, 'Base already in requested zone', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
+        echo "La base est déjà dans cette zone.<br />";
         return false;
     }
 
+    if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
+        game_error_log(__FUNCTION__, 'moveBase aborted : spendRessourcesToMoveBase returned false', ['base_id' => $base_id, 'zone_id' => $zone_id], 'warning');
+        echo "Stock insuffisant ou modifié.<br />";
+        return false;
+    }
 
     // update locations set zone_id where base_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
