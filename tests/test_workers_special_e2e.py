@@ -1265,3 +1265,75 @@ class TestMassMoveBetaCombatWorkers:
             f"Keep_Def should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
             f"got {self._post['Keep_Def']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# replaying the gift URL must not orphan the worker
+# ---------------------------------------------------------------------------
+
+class TestGiftReplayKeepsAnOwner:
+    """Issue #74 — refreshing the gift URL used to leave the worker with NO
+    controller_worker row at all. The DELETE that clears a stale secondary link
+    was not filtered on is_primary_controller, so on the second call — where
+    the giver read from worker_actions is already the receiver — it removed the
+    primary row it had just written, and the UPDATE behind it matched nothing.
+
+    Finder_1 is untouched by the other classes of this file, so this class does
+    not depend on their order.
+    """
+
+    _subject = "Finder_1"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def replay_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            target_cid = _controller_ids["Delta"]
+            wid = ui_worker_id(page, self._subject, base_url=PHP_BASE_URL)
+            gift_url = (
+                f"{PHP_BASE_URL}/workers/action.php"
+                f"?worker_id={wid}&gift=1&gift_controller_id={target_cid}"
+            )
+
+            safe_goto(page, gift_url)
+            page.wait_for_load_state("load")
+            type(self)._after_first = ui_workers_by_lastname(
+                page, self._subject, base_url=PHP_BASE_URL)
+
+            # The refresh : same URL, exactly what F5 sends.
+            safe_goto(page, gift_url)
+            page.wait_for_load_state("load")
+            type(self)._after_replay = ui_workers_by_lastname(
+                page, self._subject, base_url=PHP_BASE_URL)
+            type(self)._target_cid = target_cid
+
+            assert_no_collected_php_errors(page)
+            yield
+        finally:
+            context.close()
+
+    def test_the_gift_landed_before_the_replay(self):
+        """Positive anchor : without it, the replay assertions would pass on a
+        gift that never happened."""
+        live = [r for r in self._after_first if r["action_choice"] != "trace"]
+        assert len(live) == 1, f"expected one live row after the gift; got {self._after_first}"
+        assert live[0]["controller_id"] == self._target_cid, (
+            f"the gift must move the worker to Delta ({self._target_cid}); got {live[0]}"
+        )
+
+    def test_the_worker_still_has_an_owner_after_the_replay(self):
+        live = [r for r in self._after_replay if r["action_choice"] != "trace"]
+        assert len(live) == 1, (
+            f"the replay must not strip the worker of its controller_worker row; "
+            f"got {self._after_replay}"
+        )
+
+    def test_the_owner_is_unchanged_by_the_replay(self):
+        live = [r for r in self._after_replay if r["action_choice"] != "trace"]
+        assert live and live[0]["controller_id"] == self._target_cid, (
+            f"the replay must leave the worker with Delta ({self._target_cid}); "
+            f"got {self._after_replay}"
+        )
