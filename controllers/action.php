@@ -134,14 +134,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($debug) {
             echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         }
-        if (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
-            game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
-            echo "Stock insuffisant ou modifié.<br />";
-        } else {
+        // Idempotence guard : replaying this URL must not re-spend nor flip an already-repaired location back to ruins.
+        $location = null;
+        $activate_json = null;
+        try {
             $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
             $stmt->execute([$target_location_id]);
             $location = $stmt->fetch(PDO::FETCH_ASSOC);
-            $activate_json = json_decode($location['activate_json'], true);
+            $activate_json = $location ? json_decode($location['activate_json'], true) : null;
+        } catch (PDOException $e) {
+            game_error_log('controllers_action_page', 'SELECT locations failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id], 'warning');
+        }
+        // Without the row there is nothing to apply : refuse rather than spend.
+        $locationRepairable = !empty($location) && !empty($location['can_be_repaired']) && !empty($activate_json['update_location']);
+
+        if (!$locationRepairable) {
+            game_error_log('controllers_action_page', 'repairLocation aborted : location not repairable', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
+            echo "Ce lieu n'est pas réparable.<br />";
+        } elseif (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
+            game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
+            echo "Stock insuffisant ou modifié.<br />";
+        } else {
             updateLocation($gameReady, $location, $activate_json);
         }
         if ($debug) {
