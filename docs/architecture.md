@@ -944,6 +944,22 @@ propriété (accès privilégié), et surtout **pas d'appel à
 `information_gift_logs` : ce n'est pas un échange entre factions, donc pas un
 événement à journaliser comme tel.
 
+> **Cette duplication est délibérée, et il ne faut pas la « corriger ».**
+> Arbitrage EPR du 2026-09-09, après que l'audit de l'issue #74 l'eut signalée
+> comme un doublon à factoriser.
+>
+> L'orga agit en étant connecté sur une faction. Journaliser son don le ferait
+> apparaître dans les transactions comme un échange **de cette faction vers une
+> autre** — un geste d'arbitrage deviendrait une manœuvre attribuée à un joueur,
+> visible de tous dans la table des transactions. L'absence de journal n'est
+> donc pas un oubli : c'est ce qui garde le geste du meneur de jeu invisible,
+> comme il doit l'être.
+>
+> Mutualiser les deux blocs supposerait un drapeau « ne pas journaliser »
+> traversant le chemin commun, pour un gain de quelques lignes et un risque
+> réel de brancher un jour le journal du mauvais côté. Le doublon est le moindre
+> mal, tant que ce paragraphe explique pourquoi.
+
 **L'agent lui-même.** Un quatrième canal, distinct des trois précédents,
 transfère l'agent en personne : `workers/action.php`, action `gift`
 (`:234-242`), protégée par la garde de propriété générale de la page (le
