@@ -1338,9 +1338,12 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
                 game_error_log(__FUNCTION__, 'Failed to destroy trace worker', ['workerId' => $workerId, 'extraVal' => $extraVal], 'warning');
             }
 
-            // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table and delete it if it is
+            // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table (ex-double agent) and delete it, if it is
             try {
-                $sqlcontrollerWorker = "DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal";
+                $sqlcontrollerWorker = sprintf(
+                    "DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",
+                    $_SESSION['DBTYPE'] == 'postgres' ? 'false' : '0'
+                );
                 $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
                 $stmtcontrollerWorker->execute([
                     ':extraVal' => $extraVal,
