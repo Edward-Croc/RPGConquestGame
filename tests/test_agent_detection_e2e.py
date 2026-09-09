@@ -171,8 +171,7 @@ def load_and_end_turn(browser):
     page = context.new_page()
     register_php_error_listener(page)
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=90000)
+    end_turn(page, PHP_BASE_URL)
     assert_no_collected_php_errors(page)
     context.close()
     yield

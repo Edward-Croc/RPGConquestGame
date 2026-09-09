@@ -72,8 +72,23 @@ if (!$isLoggedIn && !empty($noConnection)) {
 
     // Privileged user section
     if ($isPrivileged) {
-        $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
-        echo "<a href='/$folder/mechanics/endTurn.php' id='endTurnBtn' class='sidebar-btn'>$btnText</a>";
+        // The end-of-turn page carries no trigger of its own, so an F5 there
+        // has nothing to replay.
+        if ($pageName !== 'End Turn') {
+            if (!empty($mechanics['end_step'])) {
+                $btnText = 'Reprendre la fin de tour';
+            } else {
+                $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
+            }
+            // One token per session, minted here and burned by endTurn.php.
+            if (empty($_SESSION['end_turn_token'])) {
+                $_SESSION['end_turn_token'] = bin2hex(random_bytes(16));
+            }
+            echo "<form id='endTurnForm' class='sidebar-form' method='post' action='/$folder/mechanics/endTurn.php'>";
+            echo "<input type='hidden' name='end_turn_token' value='" . htmlspecialchars($_SESSION['end_turn_token'], ENT_QUOTES) . "'>";
+            echo "<button type='submit' id='endTurnBtn' class='sidebar-btn'>$btnText</button>";
+            echo '</form>';
+        }
 
         $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
         echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
@@ -152,7 +167,7 @@ register_shutdown_function(function () {
             document.getElementById('endTurnModalBody').innerHTML =
                 '<progress class="progress is-small is-primary" max="100"></progress>'
                 + '<p>Résolution du tour en cours, merci de patienter…</p>';
-            window.location.href = document.getElementById('endTurnBtn').href;
+            document.getElementById('endTurnForm').submit();
         }
 
         function initEndTurnConfirmation() {

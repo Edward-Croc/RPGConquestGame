@@ -17,7 +17,32 @@ if (empty($_SESSION['is_privileged'])) {
     exit();
 }
 
+// A turn is a one-shot mutation. It must arrive as a POST carrying the token
+// minted beside the sidebar button, and that token is burned on use, so an F5
+// replays the POST with a dead token and is refused.
+$submittedEndTurnToken = is_string($_POST['end_turn_token'] ?? null) ? $_POST['end_turn_token'] : '';
+$expectedEndTurnToken = $_SESSION['end_turn_token'] ?? '';
+$endTurnAllowed = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+    && $submittedEndTurnToken !== ''
+    && $expectedEndTurnToken !== ''
+    && hash_equals($expectedEndTurnToken, $submittedEndTurnToken);
+if ($endTurnAllowed) {
+    unset($_SESSION['end_turn_token']);
+}
+
 require_once '../base/baseHTML.php';
+
+if (!$endTurnAllowed) {
+    game_error_log(
+        'endTurn_page',
+        'End of turn refused, missing or stale one-shot token',
+        ['method' => $_SERVER['REQUEST_METHOD'] ?? ''],
+        'warning'
+    );
+    echo '<h2>Fin de tour non déclenchée</h2>';
+    echo '<p>Cette page ne déclenche jamais de fin de tour. Utilisez le bouton de la barre latérale depuis une autre page.</p>';
+    exit();
+}
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 

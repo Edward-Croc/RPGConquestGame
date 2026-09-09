@@ -28,7 +28,7 @@ from playwright.sync_api import Page
 
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
-    DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
+    DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_controller_ids_map,
 )
@@ -54,8 +54,7 @@ def load_artefact_scenario(browser):
     page = context.new_page()
     register_php_error_listener(page)
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=90000)
+    end_turn(page, PHP_BASE_URL)
     _controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
     assert_no_collected_php_errors(page)
     context.close()

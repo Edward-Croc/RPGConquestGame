@@ -132,13 +132,13 @@ lignes.
 
 | État écrit dans `end_step` | Ce que l'étape exécute réellement |
 |---|---|
-| `updateRessources` | `updateRessources` (`:44`) **puis** `ressourceGainMechanic('before_claim')` (`:49`) |
-| `calculateValsReport` | `calculateVals` (`:61`) puis la rédaction des rapports de valeurs |
-| `attackMechanic` | `attackMechanic` (`:147`) |
-| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:158`) **puis** `recalculateZoneDefence` (`:164`) |
-| `locationAttackMechanic` | `locationAttackMechanic` (`:175`) |
-| `claimMechanic` | `claimMechanic` (`:186`) |
-| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:197`) |
+| `updateRessources` | `updateRessources` (`:69`) **puis** `ressourceGainMechanic('before_claim')` (`:74`) |
+| `calculateValsReport` | `calculateVals` (`:86`) puis la rédaction des rapports de valeurs |
+| `attackMechanic` | `attackMechanic` (`:172`) |
+| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:183`) **puis** `recalculateZoneDefence` (`:189`) |
+| `locationAttackMechanic` | `locationAttackMechanic` (`:200`) |
+| `claimMechanic` | `claimMechanic` (`:211`) |
+| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:222`) |
 | puis | `investigateMechanic`, `locationSearchMechanic`, `createNewTurnLines`, `restartTurnRecrutementCount` |
 
 **La granularité de reprise est l'état, pas la fonction.** Deux étapes portent
@@ -147,7 +147,34 @@ de `updateRessources`, et les deux recalculs de défense partagent
 `recalculateBaseZoneDefence`. Une panne entre les deux appels d'un même état fait
 donc **rejouer les deux** à la reprise.
 
-`aiMechanic` figure dans le fichier mais **en commentaire** (`:143`) : le moteur
+### La fin de tour ne se déclenche pas depuis la page de fin de tour
+
+`endTurn.php` mutait sur un simple GET, sans paramètre : un F5 sur la page de
+résultat rejouait toute la résolution et avançait le compteur une seconde fois.
+La garde `toggleMechanicsGamestate` ne pouvait pas s'y opposer — quand
+`gamestate` vaut déjà 1 elle laisse son `UPDATE` vide et renvoie `true` quand
+même.
+
+Trois pièces ferment le rejeu :
+
+1. Le bouton de la barre latérale (`base/baseHTML.php`) est un formulaire
+   `POST` portant `end_turn_token`, frappé dans `$_SESSION` au moment du rendu
+   du bouton et seulement s'il n'en existe pas déjà — toutes les pages ouvertes
+   portent donc le même jeton.
+2. `endTurn.php` exige un POST dont le jeton passe `hash_equals`, puis le
+   **brûle**. Il n'est brûlé qu'en cas de succès : un GET parasite ne doit pas
+   invalider le bouton légitime. Un rejeu arrive avec un jeton mort et reçoit
+   « Fin de tour non déclenchée ».
+3. La page de fin de tour ne rend **aucun** déclencheur (`$pageName === 'End
+   Turn'`), donc n'y frappe aucun jeton. Le meneur de jeu repasse par une page
+   de jeu, où le bouton annonce « Reprendre la fin de tour » tant que
+   `end_step` est non vide.
+
+Conséquence pour les tests : `helpers.end_turn` ne peut plus naviguer
+directement vers `endTurn.php`. Il rejoint une page portant la barre latérale,
+puis soumet le formulaire.
+
+`aiMechanic` figure dans le fichier mais **en commentaire** (`:168`) : le moteur
 d'IA n'est pas branché sur la fin de tour.
 
 Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:230`, écrit en
@@ -663,8 +690,9 @@ sa propre base » (session du 2026-09-04/05, PR #129).
 
 `mechanics.turncounter` et `mechanics.end_step` : ligne singleton, déjà
 détaillée au §3 du document principal — `end_step` est le marqueur textuel qui
-permet à `endTurn.php` de reprendre sa machine à états après un rechargement de
-page.
+permet à `endTurn.php` de reprendre sa machine à états après une panne en cours
+de résolution. Ce n'est **pas** un rechargement de page : celui-ci est désormais
+refusé, voir §3.
 
 ### Le piège booléen inter-dialecte
 
@@ -995,7 +1023,7 @@ don d'agent ne laisse pas de trace consultable après coup.
   forme de **commentaires `//`** décrivant l'intention (`:15-44`), jamais
   traduits en code ;
 - **le seul point d'appel du fichier est commenté** :
-  `mechanics/endTurn.php:143` porte `// $IAResult = aiMechanic($gameReady);`
+  `mechanics/endTurn.php:168` porte `// $IAResult = aiMechanic($gameReady);`
   — ce que le document note déjà en §3. `aiMechanic()` n'est donc jamais
   invoquée par la fin de tour, ni gatée par le mécanisme de reprise par état.
 
