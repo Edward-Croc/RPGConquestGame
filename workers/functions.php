@@ -1338,7 +1338,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
                 game_error_log(__FUNCTION__, 'Failed to destroy trace worker', ['workerId' => $workerId, 'extraVal' => $extraVal], 'warning');
             }
 
-            // Check that the entry controller_id:extraVal and worker_id:workerId is not already in the controller_worker table (ex-double agent) and delete it, if it is
+            // Drop a stale secondary link the receiver may hold, never the primary row.
             try {
                 $sqlcontrollerWorker = sprintf(
                     "DELETE FROM {$prefix}controller_worker WHERE worker_id = :worker_id AND controller_id = :extraVal AND is_primary_controller = %s",

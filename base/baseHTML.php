@@ -72,8 +72,7 @@ if (!$isLoggedIn && !empty($noConnection)) {
 
     // Privileged user section
     if ($isPrivileged) {
-        // The end-of-turn page carries no trigger of its own, so an F5 there
-        // has nothing to replay.
+        // The end-of-turn page carries no trigger of its own.
         if ($pageName !== 'End Turn') {
             if (!empty($mechanics['end_step'])) {
                 $btnText = 'Reprendre la fin de tour';

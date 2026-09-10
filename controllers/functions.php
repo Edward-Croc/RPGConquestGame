@@ -460,8 +460,7 @@ function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $cont
     $mechanics = getMechanics($pdo);
     $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
 
-    // Released only once the move is committed, so a failed UPDATE leaves the
-    // queued actions intact.
+    // Released only once the move is committed, so the queue survives a failed UPDATE.
     releaseAgentsTargetingMovedBase($pdo, (int)$base_id, $turn_number);
 
     // Cancel any in-flight end-turn attacks targeting this base.

@@ -17,9 +17,7 @@ if (empty($_SESSION['is_privileged'])) {
     exit();
 }
 
-// A turn is a one-shot mutation. It must arrive as a POST carrying the token
-// minted beside the sidebar button, and that token is burned on use, so an F5
-// replays the POST with a dead token and is refused.
+// EndTurn is a one shot mutation and must have a token, we burn the token on use.
 $submittedEndTurnToken = is_string($_POST['end_turn_token'] ?? null) ? $_POST['end_turn_token'] : '';
 $expectedEndTurnToken = $_SESSION['end_turn_token'] ?? '';
 $endTurnAllowed = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'

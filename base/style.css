@@ -125,6 +125,11 @@ body {
 .sidebar-form {
     margin: 0;
 }
+.sidebar-form .sidebar-btn {
+    box-sizing: border-box;
+    width: 100%;
+    line-height: inherit;
+}
 .sidebar-btn {
     background-color: #4936f4;
     color: white;
