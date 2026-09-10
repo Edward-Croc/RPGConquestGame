@@ -75,7 +75,7 @@ if (!$isLoggedIn && !empty($noConnection)) {
         // The end-of-turn page carries no trigger of its own.
         if ($pageName !== 'End Turn') {
             if (!empty($mechanics['end_step'])) {
-                $btnText = 'Reprendre la fin de tour';
+                $btnText = 'Resume End Turn';
             } else {
                 $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
             }
@@ -171,7 +171,7 @@ register_shutdown_function(function () {
 
         function initEndTurnConfirmation() {
             const endTurnBtn = document.getElementById('endTurnBtn');
-            if (!endTurnBtn) return; // Not rendered for non-privileged users
+            if (!endTurnBtn) return; // Absent for non-privileged users and on the end-of-turn page
 
             endTurnBtn.addEventListener('click', openEndTurnModal);
             document.getElementById('endTurnModalNo').addEventListener('click', closeEndTurnModal);
