@@ -147,32 +147,33 @@ de `updateRessources`, et les deux recalculs de défense partagent
 `recalculateBaseZoneDefence`. Une panne entre les deux appels d'un même état fait
 donc **rejouer les deux** à la reprise.
 
-### La fin de tour ne se déclenche pas depuis la page de fin de tour
+### Comment une fin de tour se déclenche
 
-`endTurn.php` mutait sur un simple GET, sans paramètre : un F5 sur la page de
-résultat rejouait toute la résolution et avançait le compteur une seconde fois.
-La garde `toggleMechanicsGamestate` ne pouvait pas s'y opposer — quand
-`gamestate` vaut déjà 1 elle laisse son `UPDATE` vide et renvoie `true` quand
-même.
+**Une fin de tour ne se déclenche jamais depuis la page de fin de tour.**
 
-Trois pièces ferment le rejeu :
+`endTurn.php` n'accepte qu'une requête `POST` portant `end_turn_token`, un jeton
+à usage unique comparé par `hash_equals`. Tout le reste — un GET, un POST sans
+jeton, un jeton mort ou forgé — reçoit « Fin de tour non déclenchée » et ne mute
+rien.
 
-1. Le bouton de la barre latérale (`base/baseHTML.php`) est un formulaire
-   `POST` portant `end_turn_token`, frappé dans `$_SESSION` au moment du rendu
-   du bouton et seulement s'il n'en existe pas déjà — toutes les pages ouvertes
-   portent donc le même jeton.
-2. `endTurn.php` exige un POST dont le jeton passe `hash_equals`, puis le
-   **brûle**. Il n'est brûlé qu'en cas de succès : un GET parasite ne doit pas
-   invalider le bouton légitime. Un rejeu arrive avec un jeton mort et reçoit
-   « Fin de tour non déclenchée ».
-3. La page de fin de tour ne rend **aucun** déclencheur (`$pageName === 'End
-   Turn'`), donc n'y frappe aucun jeton. Le meneur de jeu repasse par une page
-   de jeu, où le bouton annonce « Reprendre la fin de tour » tant que
-   `end_step` est non vide.
+Le jeton est frappé dans `$_SESSION` par `base/baseHTML.php`, au moment où il
+rend le bouton de la barre latérale, et seulement s'il n'en existe pas déjà :
+toutes les pages ouvertes portent donc le même. `endTurn.php` le brûle, mais
+uniquement quand il l'accepte — un GET parasite n'invalide pas le bouton
+légitime.
 
-Conséquence pour les tests : `helpers.end_turn` ne peut plus naviguer
-directement vers `endTurn.php`. Il rejoint une page portant la barre latérale,
-puis soumet le formulaire.
+La page de fin de tour ne rend aucun déclencheur : `$pageName === 'End Turn'`
+supprime le bloc, qui ne frappe donc aucun jeton. Le meneur de jeu repasse par
+une page de jeu pour en obtenir un neuf. Le bouton y annonce « Reprendre la fin
+de tour » tant que `end_step` est non vide.
+
+`toggleMechanicsGamestate` n'est pas une garde et ne peut pas en tenir lieu :
+quand `gamestate` vaut déjà 1 elle laisse son `UPDATE` vide et renvoie `true`
+quand même.
+
+Côté tests, `helpers.end_turn` rejoint une page portant la barre latérale puis
+soumet le formulaire ; une navigation directe vers `endTurn.php` est refusée
+comme n'importe quel autre GET.
 
 `aiMechanic` figure dans le fichier mais **en commentaire** (`:168`) : le moteur
 d'IA n'est pas branché sur la fin de tour.
@@ -345,8 +346,8 @@ la convention du moteur, pas une règle propre à cette mécanique :
 **propre à l'attaque de lieu** (`locationAttackMechanic.php:179`) ; le combat
 entre agents ne le porte pas.
 
-L'énoncé de l'issue #73 annonçait l'ordre inverse — c'est lui qui divergeait du
-code, et le code qui a été suivi.
+L'énoncé de l'issue #73 annonce l'ordre inverse : c'est lui qui diverge du
+code, et le code qui fait foi.
 
 Aucun code de vivacité n'est nécessaire dans l'échelle : le filtre sur
 `action_choice` exclut déjà les morts à l'entrée, puisque `resolveWorkerCombat`
@@ -686,13 +687,13 @@ qu'une source obsolète ne peut pas rajeunir un renseignement déjà connu.
 `controller_known_locations.found_secret` conditionne si la description cachée
 d'un lieu (`locations.hidden_description`) est montrée à ce meneur précis ;
 c'est la colonne au cœur de la logique « le propriétaire connaît le secret de
-sa propre base » (session du 2026-09-04/05, PR #129).
+sa propre base », que la clé `owner_knows_own_base_secret` gouverne.
 
 `mechanics.turncounter` et `mechanics.end_step` : ligne singleton, déjà
 détaillée au §3 du document principal — `end_step` est le marqueur textuel qui
 permet à `endTurn.php` de reprendre sa machine à états après une panne en cours
-de résolution. Ce n'est **pas** un rechargement de page : celui-ci est désormais
-refusé, voir §3.
+de résolution. Ce n'est **pas** un rechargement de page : celui-ci est refusé,
+voir §3.
 
 ### Le piège booléen inter-dialecte
 
@@ -973,15 +974,12 @@ propriété (accès privilégié), et surtout **pas d'appel à
 événement à journaliser comme tel.
 
 > **Cette duplication est délibérée, et il ne faut pas la « corriger ».**
-> Arbitrage EPR du 2026-09-09, après que l'audit de l'issue #74 l'eut signalée
-> comme un doublon à factoriser.
 >
 > L'orga agit en étant connecté sur une faction. Journaliser son don le ferait
 > apparaître dans les transactions comme un échange **de cette faction vers une
 > autre** — un geste d'arbitrage deviendrait une manœuvre attribuée à un joueur,
-> visible de tous dans la table des transactions. L'absence de journal n'est
-> donc pas un oubli : c'est ce qui garde le geste du meneur de jeu invisible,
-> comme il doit l'être.
+> visible de tous. L'absence de journal n'est donc pas un oubli : c'est ce qui
+> garde le geste du meneur de jeu invisible, comme il doit l'être.
 >
 > Mutualiser les deux blocs supposerait un drapeau « ne pas journaliser »
 > traversant le chemin commun, pour un gain de quelques lignes et un risque
@@ -1070,27 +1068,5 @@ transformations, l'enseignement — ne sont décrits qu'en surface, par leurs po
 d'entrée d'action (§6) et leurs colonnes (§9). C'est la dernière zone d'ombre
 notable.
 
-Le reste du document a été **revérifié ligne à ligne dans le code** le
-2026-09-06. Les écarts trouvés à cette occasion, et corrigés :
-
-| Ce que le document disait | Ce que le code fait |
-|---|---|
-| `$noConnection` est le drapeau des pages de login et de logout | Seul `base/systemPresentation.php:2` le pose ; les pages de connexion n'utilisent pas `baseHTML.php` |
-| Une ligne CSV au mauvais compte de champs avorte le chargement | Elle est **sautée** (`BDD/db_connector.php:553-556`), avertissement affiché mais non journalisé : le scénario se charge incomplet |
-| La suite d'étapes de fin de tour | Omettait `ressourceGainMechanic('before_claim')` (`endTurn.php:49`) et présentait `recalculateBaseZoneDefence` comme un appel là où il y en a deux |
-| Le tri de l'échelle de duels reprend `attackMechanic.php` « de la même façon » | Le sens du tri, oui ; le départage par `worker_id` est propre à l'attaque de lieu (`locationAttackMechanic.php:179`) |
-| Seize colonnes booléennes | Seize **noms**, dix-sept occurrences — `success` existe sur deux tables |
-| Le moteur d'IA vit dans `mechanics/ia/` | Ce répertoire n'existe pas sur `main` ; voir §10 |
-
-Le dossier `connection/` manquait au tableau des dossiers, la riposte et la
-règle de création des agents leurres manquaient à la section combat.
-
-Ces corrections viennent de la relecture d'une note de travail non suivie par
-git, `tests/CODE_KNOWLEDGE.md`, désormais supprimée : son contenu utile a été
-revérifié puis intégré ici. Ce qu'elle affirmait de faux n'a **pas** été repris —
-notamment une colonne `controllers.is_ia` qui n'a jamais existé, et un moteur
-d'IA décrit comme « mostly shipped » qui n'est en réalité qu'un stub de
-49 lignes jamais appelé.
-
-Sa liste d'issues n'a délibérément pas été reprise : `gh issue list` fait
+La liste des sujets ouverts n'est pas reprise ici : `gh issue list` fait
 autorité, une liste figée dans un document ne le peut pas.

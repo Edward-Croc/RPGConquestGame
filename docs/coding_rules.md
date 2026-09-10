@@ -43,7 +43,35 @@ n'est renommée : une clé est une donnée de scénario.
 
 ---
 
-## 3. Commentaires
+## 3. La documentation dit ce qui **est**
+
+`architecture.md` et `configuration.md` décrivent l'état du code, pas son
+histoire. Un lecteur y cherche comment le jeu fonctionne aujourd'hui, et chaque
+phrase au passé le force à deviner ce qui est encore vrai.
+
+Ne s'écrivent donc pas dans ces documents : « X mutait sur un GET », « désormais
+refusé », « corrigé en PR #139 », « arbitrage du 2026-09-09 », un tableau des
+écarts trouvés lors d'une relecture, un horodatage de session. Le récit d'un
+changement vit dans le message de commit et le corps de la PR, que `git log` et
+GitHub conservent bien mieux qu'un paragraphe qui pourrit.
+
+```markdown
+Mal : `endTurn.php` mutait sur un simple GET ; trois pièces ferment désormais
+      le rejeu.
+Bien : `endTurn.php` n'accepte qu'un POST portant un jeton à usage unique.
+```
+
+Une **raison** se documente, elle, au présent : « cette duplication est
+délibérée, parce que… » explique une contrainte qui tient encore. Ce qui est
+proscrit, c'est la date, le numéro de PR et le verbe au passé qui la
+transforment en anecdote.
+
+Une exception assumée : un renvoi vers une question **ouverte** (`voir l'issue
+#120`) décrit bien l'état présent — celui d'un point non tranché.
+
+---
+
+## 4. Commentaires
 
 **Un commentaire dit ce que le code *fait* ou pourquoi il le fait ainsi — jamais
 comment on en est arrivé là.** Pas de numéro d'issue, pas de « suite à l'audit
@@ -51,15 +79,33 @@ X », pas de récit de décision. Ces éléments appartiennent au message de com
 et à la description de PR, qui sont consultables par `git log` et ne pourrissent
 pas dans la source.
 
-**Une ligne courte suffit, y compris dans un PHPDoc.** La règle vaut pour la
-description d'un bloc de documentation autant que pour un commentaire en ligne.
-Si tu as besoin d'un paragraphe de justification, il va dans le message de
-commit.
+**Un commentaire de code tient sur une ligne, et une seule.** Pas deux, pas
+trois. Si une ligne ne suffit pas, c'est que tu écris une justification : elle
+va dans le message de commit. Et une ligne veut dire une ligne *courte*, pas
+une phrase de 160 caractères qu'on a refusé de couper.
+
+```php
+// Mal : trois lignes, dont deux de raisonnement.
+// A turn is a one-shot mutation. It must arrive as a POST carrying the token
+// minted beside the sidebar button, and that token is burned on use, so an F5
+// replays the POST with a dead token and is refused.
+
+// Bien : ce que le code fait, en une ligne.
+// EndTurn is a one shot mutation and must have a token, we burn the token on use.
+```
+
+**Un bloc de documentation — PHPDoc, docstring — peut être plus long**, puisque
+c'est son rôle de décrire une signature et un contrat. Il doit rester au sujet :
+ce que la fonction fait, ce qu'elle attend, ce qu'elle rend. Pas d'historique,
+pas de justification de conception.
+
+**Les fichiers de test `.py` sont exemptés** de la limite d'une ligne. Un test
+qui explique ce qu'il verrouille et pourquoi il rougirait vaut mieux qu'un test
+muet.
 
 ```php
 // Bien : dit ce que la garde protège.
-// Released only once the move is committed, so a failed UPDATE leaves the
-// queued actions intact.
+// Released only once the move is committed, so the queue survives a failed UPDATE.
 
 // Mal : raconte l'historique.
 // Suite au point 3 de l'audit #74, on a décidé après discussion que...
@@ -70,7 +116,7 @@ subsiste au-dessus d'une fonction déplacée.
 
 ---
 
-## 4. Prélude des fonctions PHP
+## 5. Prélude des fonctions PHP
 
 Forme canonique, dans cet ordre :
 
@@ -102,7 +148,7 @@ Niveaux : `debug` pour la trace, `warning` pour un refus attendu et récupérabl
 
 ---
 
-## 5. Base de données
+## 6. Base de données
 
 **Toujours lier les paramètres.** Jamais d'interpolation d'une valeur dans le
 SQL. Rester cohérent à l'intérieur d'une même fonction : `bindParam` partout, ou
@@ -122,7 +168,7 @@ faux. Une valeur de configuration se compare donc explicitement :
 
 ---
 
-## 6. Gardes et actions rejouables
+## 7. Gardes et actions rejouables
 
 Une action déclenchée par une URL peut être rejouée : F5, retour arrière,
 double-clic, ou URL forgée à la main. Deux conséquences :
@@ -144,7 +190,7 @@ redirection est impossible, il faut un jeton à usage unique : voir
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 La suite est Playwright pilotée par pytest, dans `tests/`.
 
@@ -175,7 +221,7 @@ l'amorçage MySQL.
 
 ---
 
-## 8. Branches, commits et revue
+## 9. Branches, commits et revue
 
 **Jamais de commit direct sur `main`.** Une branche par issue, fusionnée par
 pull request. La CI (`.github/workflows/test.yml`) ne se déclenche que sur les PR
@@ -208,7 +254,7 @@ mention d'aide automatisée.
 
 ---
 
-## 9. Ce qui ne se versionne pas
+## 10. Ce qui ne se versionne pas
 
 - `CLAUDE.md` — instructions personnelles, propres à chaque contributeur ;
 - `tests/AUDIT_*.md` — documents de travail temporaires ;
@@ -217,7 +263,7 @@ mention d'aide automatisée.
 
 ---
 
-## 10. Éviter le code inutile
+## 11. Éviter le code inutile
 
 Une nouvelle colonne, une nouvelle clé de configuration ou une nouvelle fonction
 d'aide se justifie par un comportement **visible par un joueur ou par le meneur
