@@ -224,8 +224,9 @@ l'amorçage MySQL.
 ## 9. Branches, commits et revue
 
 **Jamais de commit direct sur `main`.** Une branche par issue, fusionnée par
-pull request. La CI (`.github/workflows/test.yml`) ne se déclenche que sur les PR
-visant `main`.
+pull request. La CI (`.github/workflows/test.yml`) se déclenche sur les PR
+visant `main` et sur les push vers `main` — donc jamais sur une branche de
+travail tant qu'aucune PR ne la vise.
 
 **Jamais de commit non demandé.** L'auteur du dépôt décide quand on commite.
 

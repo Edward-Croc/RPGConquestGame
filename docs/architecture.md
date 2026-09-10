@@ -1,5 +1,8 @@
 # Architecture — note de reprise pour développeur
 
+Les conventions de code, de test, de branche et de commit vivent dans
+[`coding_rules.md`](coding_rules.md).
+
 Ce document s'adresse à **quelqu'un qui reprend le code**. Il décrit comment le
 système est agencé et pourquoi, avec les pièges qui coûtent une demi-journée
 quand on les découvre en production.
@@ -132,13 +135,13 @@ lignes.
 
 | État écrit dans `end_step` | Ce que l'étape exécute réellement |
 |---|---|
-| `updateRessources` | `updateRessources` (`:69`) **puis** `ressourceGainMechanic('before_claim')` (`:74`) |
-| `calculateValsReport` | `calculateVals` (`:86`) puis la rédaction des rapports de valeurs |
-| `attackMechanic` | `attackMechanic` (`:172`) |
-| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:183`) **puis** `recalculateZoneDefence` (`:189`) |
-| `locationAttackMechanic` | `locationAttackMechanic` (`:200`) |
-| `claimMechanic` | `claimMechanic` (`:211`) |
-| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:222`) |
+| `updateRessources` | `updateRessources` (`:67`) **puis** `ressourceGainMechanic('before_claim')` (`:72`) |
+| `calculateValsReport` | `calculateVals` (`:84`) puis la rédaction des rapports de valeurs |
+| `attackMechanic` | `attackMechanic` (`:170`) |
+| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:181`) **puis** `recalculateZoneDefence` (`:187`) |
+| `locationAttackMechanic` | `locationAttackMechanic` (`:198`) |
+| `claimMechanic` | `claimMechanic` (`:209`) |
+| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:220`) |
 | puis | `investigateMechanic`, `locationSearchMechanic`, `createNewTurnLines`, `restartTurnRecrutementCount` |
 
 **La granularité de reprise est l'état, pas la fonction.** Deux étapes portent
@@ -175,11 +178,11 @@ Côté tests, `helpers.end_turn` rejoint une page portant la barre latérale pui
 soumet le formulaire ; une navigation directe vers `endTurn.php` est refusée
 comme n'importe quel autre GET.
 
-`aiMechanic` figure dans le fichier mais **en commentaire** (`:168`) : le moteur
+`aiMechanic` figure dans le fichier mais **en commentaire** (`:166`) : le moteur
 d'IA n'est pas branché sur la fin de tour.
 
-Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:230`, écrit en
-`:256`). Une exception au milieu laisse donc la partie à moitié résolue, au tour
+Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:253`, écrit en
+`:279`). Une exception au milieu laisse donc la partie à moitié résolue, au tour
 précédent.
 
 ### Ce que l'incrément tardif implique pour les dates
@@ -1021,7 +1024,7 @@ don d'agent ne laisse pas de trace consultable après coup.
   forme de **commentaires `//`** décrivant l'intention (`:15-44`), jamais
   traduits en code ;
 - **le seul point d'appel du fichier est commenté** :
-  `mechanics/endTurn.php:168` porte `// $IAResult = aiMechanic($gameReady);`
+  `mechanics/endTurn.php:166` porte `// $IAResult = aiMechanic($gameReady);`
   — ce que le document note déjà en §3. `aiMechanic()` n'est donc jamais
   invoquée par la fin de tour, ni gatée par le mécanisme de reprise par état.
 
