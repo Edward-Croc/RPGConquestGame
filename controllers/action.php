@@ -92,11 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Actions
+    // A forged URL can omit any id : refuse here, the callees require them.
     if (isset($_GET['createBase'])) {
-        createBase($gameReady, $controller_id, $zone_id);
+        if ($controller_id === null || $zone_id === null) {
+            game_error_log('controllers_action_page', 'createBase refused : missing id', ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'warning');
+            echo "Construction impossible : faction ou zone manquante.<br />";
+        } else {
+            createBase($gameReady, $controller_id, $zone_id);
+        }
     }
     if (isset($_GET['moveBase'])) {
-        moveBase($gameReady, $base_id, $zone_id, $controller_id);
+        if ($base_id === null || $zone_id === null || $controller_id === null) {
+            game_error_log('controllers_action_page', 'moveBase refused : missing id', ['base_id' => $base_id, 'zone_id' => $zone_id, 'controller_id' => $controller_id], 'warning');
+            echo "Déménagement impossible : lieu, zone ou faction manquant.<br />";
+        } else {
+            moveBase($gameReady, $base_id, $zone_id, $controller_id);
+        }
     }
     if (isset($_GET['attackLocation'])) {
         $locationAttackMode = getConfig($gameReady, 'locationAttackMode');

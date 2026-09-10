@@ -254,11 +254,11 @@ function hasBase(PDO $pdo, int $controller_id): array|null
  * Create the base for the controller in zone and return true on success.
  *
  * @param PDO $pdo : database connection
- * @param int|null $controller_id : controller id (NULL when the caller received no _GET param)
- * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
+ * @param int $controller_id : controller id
+ * @param int $zone_id : target zone id
  * @return bool : true on success, false on any guard/insert failure
  */
-function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
+function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
 {
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
@@ -396,12 +396,12 @@ function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_numbe
  * Move the controller base to the new zone.
  *
  * @param PDO $pdo : database connection
- * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
- * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
- * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
+ * @param int $base_id : base (location) id
+ * @param int $zone_id : target zone id
+ * @param int $controller_id : owning controller id
  * @return bool : true on success, false when the base is already there or on cost/update failure
  */
-function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool
+function moveBase(PDO $pdo, int $base_id, int $zone_id, int $controller_id): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with base_id : ' . $base_id, ['zone_id' => $zone_id, 'controller_id' => $controller_id], 'debug');
