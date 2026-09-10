@@ -25,6 +25,20 @@ if ($_SESSION['DEBUG'] == true) {
 }
 // it can be determined by worker creation
 if (isset($_GET['creation'])) {
+    // Checked before the INSERT : the guard below needs a worker that exists.
+    if (
+        empty($_SESSION['is_privileged'])
+        && (int) ($_GET['controller_id'] ?? 0) !== (int) ($_SESSION['controller']['id'] ?? -1)
+    ) {
+        game_error_log(
+            'workers_action_page',
+            'Recruitment refused for another controller',
+            ['controller_id' => $_GET['controller_id'] ?? null, 'session_controller_id' => $_SESSION['controller']['id'] ?? null],
+            'warning'
+        );
+        http_response_code(403);
+        exit();
+    }
     $worker_id = createWorker($gameReady, $_GET);
     if ($_SESSION['DEBUG'] == true) {
         echo 'createWorker : DONE <br />';
