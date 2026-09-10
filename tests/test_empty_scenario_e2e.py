@@ -17,8 +17,8 @@ from conftest import (
 )
 
 from helpers import (
-    DB_AVAILABLE, get_db_connection, load_minimal_data, load_scenario_via_admin,
-    safe_goto, ui_turn_counter,
+    DB_AVAILABLE, end_turn, get_db_connection, load_minimal_data, load_scenario_via_admin,
+    ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -78,8 +78,7 @@ def load_empty_scenario(browser):
     page = context.new_page()
     register_php_error_listener(page)
     ensure_gm_login(page, PHP_BASE_URL)
-    safe_goto(page, f"{PHP_BASE_URL}/mechanics/endTurn.php")
-    page.wait_for_load_state("load", timeout=90000)
+    end_turn(page, PHP_BASE_URL)
     assert_no_collected_php_errors(page)
     context.close()
     yield

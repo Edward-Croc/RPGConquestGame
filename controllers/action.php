@@ -92,11 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // Actions
+    // A forged URL can omit any id : refuse here, the callees require them.
     if (isset($_GET['createBase'])) {
-        createBase($gameReady, $controller_id, $zone_id);
+        if ($controller_id === null || $zone_id === null) {
+            game_error_log('controllers_action_page', 'createBase refused : missing id', ['controller_id' => $controller_id, 'zone_id' => $zone_id], 'warning');
+            echo "Construction impossible : faction ou zone manquante.<br />";
+        } else {
+            createBase($gameReady, $controller_id, $zone_id);
+        }
     }
     if (isset($_GET['moveBase'])) {
-        moveBase($gameReady, $base_id, $zone_id, $controller_id);
+        if ($base_id === null || $zone_id === null || $controller_id === null) {
+            game_error_log('controllers_action_page', 'moveBase refused : missing id', ['base_id' => $base_id, 'zone_id' => $zone_id, 'controller_id' => $controller_id], 'warning');
+            echo "Déménagement impossible : lieu, zone ou faction manquant.<br />";
+        } else {
+            moveBase($gameReady, $base_id, $zone_id, $controller_id);
+        }
     }
     if (isset($_GET['attackLocation'])) {
         $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
@@ -134,14 +145,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($debug) {
             echo sprintf('start <br> controller_id: %s, <br />target_location_id: %s<br /><br />', var_export($controller_id, true), var_export($target_location_id, true));
         }
-        if (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
-            game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
-            echo "Stock insuffisant ou modifié.<br />";
-        } else {
+        // Refused before spending, so a replay costs nothing.
+        $location = null;
+        $activate_json = null;
+        $lookupFailed = false;
+        try {
             $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
             $stmt->execute([$target_location_id]);
             $location = $stmt->fetch(PDO::FETCH_ASSOC);
-            $activate_json = json_decode($location['activate_json'], true);
+            $activate_json = $location ? json_decode($location['activate_json'], true) : null;
+        } catch (PDOException $e) {
+            $lookupFailed = true;
+            game_error_log('controllers_action_page', 'SELECT locations failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id], 'warning');
+        }
+        $locationRepairable = !empty($location) && !empty($location['can_be_repaired']) && !empty($activate_json['update_location']);
+
+        // Closed on failure : an unverifiable state must never authorise a spend.
+        if ($lookupFailed) {
+            echo "Vérification impossible, réessayez.<br />";
+        } elseif (!$locationRepairable) {
+            game_error_log('controllers_action_page', 'repairLocation aborted : location not repairable', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
+            echo "Ce lieu n'est pas réparable.<br />";
+        } elseif (!spendRessourcesToRepairLocation($gameReady, $controller_id)) {
+            game_error_log('controllers_action_page', 'repairLocation aborted : spendRessourcesToRepairLocation returned false', ['controller_id' => $controller_id, 'target_location_id' => $target_location_id], 'warning');
+            echo "Stock insuffisant ou modifié.<br />";
+        } else {
             updateLocation($gameReady, $location, $activate_json);
         }
         if ($debug) {

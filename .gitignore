@@ -12,3 +12,9 @@ var/backups/
 # (some user-global excludesfile entries ignore `lib`).
 !lib/
 docker-compose.override.yml
+
+# Personal Claude Code instructions. The shared rules live in
+# docs/coding_rules.md, which IS tracked.
+CLAUDE.md
+.test_durations
+tests/AUDIT_*.md

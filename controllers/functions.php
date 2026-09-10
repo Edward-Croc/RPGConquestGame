@@ -254,11 +254,11 @@ function hasBase(PDO $pdo, int $controller_id): array|null
  * Create the base for the controller in zone and return true on success.
  *
  * @param PDO $pdo : database connection
- * @param int|null $controller_id : controller id (NULL when the caller received no _GET param)
- * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
+ * @param int $controller_id : controller id
+ * @param int $zone_id : target zone id
  * @return bool : true on success, false on any guard/insert failure
  */
-function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
+function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
 {
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
@@ -279,23 +279,26 @@ function createBase(PDO $pdo, int|null $controller_id, int|null $zone_id): bool
         }
     }
 
-    // Refuse a second base for this controller, in any zone, before spending
+    // Refused before spending, so a replay costs nothing.
+    $baseAlreadyExists = null;
     try {
         $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE controller_id = :controller_id AND is_base = True";
         $checkStmt = $pdo->prepare($checkSql);
-        $checkStmt->execute([
-            ':controller_id' => $controller_id
-        ]);
-
-        if ($checkStmt->fetchColumn() > 0) {
-            game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
-            echo "Une base existe déjà pour cette faction.<br />";
-            return false;
-        }
+        $checkStmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $baseAlreadyExists = $checkStmt->fetchColumn() > 0;
     } catch (PDOException $e) {
-        // Permissive on purpose : a transient SELECT failure must not block a
-        // legitimate build, so the absence of a duplicate is assumed.
         game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'warning');
+    }
+    // Closed on failure : an unverifiable state must never authorise a spend.
+    if ($baseAlreadyExists === null) {
+        echo "Vérification impossible, réessayez.<br />";
+        return false;
+    }
+    if ($baseAlreadyExists) {
+        game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
+        echo "Une base existe déjà pour cette faction.<br />";
+        return false;
     }
 
     if (!spendRessourcesToBuildBase($pdo, $controller_id)) {
@@ -393,53 +396,48 @@ function releaseAgentsTargetingMovedBase(PDO $pdo, int $base_id, int $turn_numbe
  * Move the controller base to the new zone.
  *
  * @param PDO $pdo : database connection
- * @param int|null $base_id : base (location) id (NULL when the caller received no _GET param)
- * @param int|null $zone_id : target zone id (NULL when the caller received no _GET param)
- * @param int|null $controller_id : owning controller id (NULL when the caller received no _GET param)
- * @return bool : true on success, false on cost/update failure
+ * @param int $base_id : base (location) id
+ * @param int $zone_id : target zone id
+ * @param int $controller_id : owning controller id
+ * @return bool : true on success, false when the base is already there or on cost/update failure
  */
-function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $controller_id): bool
+function moveBase(PDO $pdo, int $base_id, int $zone_id, int $controller_id): bool
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with base_id : ' . $base_id, ['zone_id' => $zone_id, 'controller_id' => $controller_id], 'debug');
 
+    $prefix = $_SESSION['GAME_PREFIX'];
+
+    // Refused before spending, so a replay costs nothing.
+    $baseAlreadyThere = null;
+    try {
+        $checkSql = "SELECT COUNT(*) FROM {$prefix}locations WHERE id = :base_id AND zone_id = :zone_id";
+        $checkStmt = $pdo->prepare($checkSql);
+        $checkStmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $checkStmt->bindParam(':zone_id', $zone_id, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $baseAlreadyThere = $checkStmt->fetchColumn() > 0;
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT locations failed : ' . $e->getMessage(), ['base_id' => $base_id, 'zone_id' => $zone_id], 'warning');
+    }
+    // Closed on failure : an unverifiable state must never authorise a spend.
+    if ($baseAlreadyThere === null) {
+        echo "Vérification impossible, réessayez.<br />";
+        return false;
+    }
+    if ($baseAlreadyThere) {
+        game_error_log(__FUNCTION__, 'Base already in requested zone', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
+        echo "La base est déjà dans cette zone.<br />";
+        return false;
+    }
+
     if (!spendRessourcesToMoveBase($pdo, $controller_id)) {
+        game_error_log(__FUNCTION__, 'moveBase aborted : spendRessourcesToMoveBase returned false', ['base_id' => $base_id, 'zone_id' => $zone_id], 'warning');
         echo "Stock insuffisant ou modifié.<br />";
         return false;
     }
 
-    $prefix = $_SESSION['GAME_PREFIX'];
-
-    // Cancel any in-flight end-turn attacks targeting this base.
-    $mechanics = getMechanics($pdo);
-    $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
-    try {
-        $sel = $pdo->prepare("SELECT id, location_id, location_name, attacker_controller_id
-            FROM {$prefix}controller_location_attacks
-            WHERE location_id = :base_id AND queued_turn = :turn AND success IS NULL");
-        $sel->bindParam(':base_id', $base_id, PDO::PARAM_INT);
-        $sel->bindParam(':turn', $turn_number, PDO::PARAM_INT);
-        $sel->execute();
-        $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'SELECT in-flight attacks failed : ' . $e->getMessage(), ['base_id' => $base_id, 'turn_number' => $turn_number], 'warning');
-        $inFlight = [];
-    }
-    foreach ($inFlight as $row) {
-        failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
-    }
-
-    // Defensive: ensure any pre-existing base lacking the fortress tag gets it.
-    try {
-        $stmt = $pdo->prepare("UPDATE {$prefix}locations SET location_types = '[\"fortress\"]'
-            WHERE id = :base_id AND location_types IS NULL");
-        $stmt->bindParam(':base_id', $base_id, PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'UPDATE location_types failed : ' . $e->getMessage(), ['base_id' => $base_id], 'warning');
-    }
-
-    // update locations set zone_id where controller_id = "%s";
+    // update locations set zone_id where base_id = "%s";
     $sql = "UPDATE {$prefix}locations SET zone_id = :zone_id, setup_turn = (SELECT turncounter FROM {$prefix}mechanics LIMIT 1) WHERE id = :base_id";
     try {
         // Update config value in the database
@@ -459,13 +457,30 @@ function moveBase(PDO $pdo, int|null $base_id, int|null $zone_id, int|null $cont
         return false;
     }
 
-    // Released only once the move is committed, so a failed UPDATE leaves the
-    // queued actions intact.
-    releaseAgentsTargetingMovedBase($pdo, (int)$base_id, $turn_number);
-
-    // Re-seed the owner's CKL row at the new location.
     $mechanics = getMechanics($pdo);
     $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+
+    // Released only once the move is committed, so the queue survives a failed UPDATE.
+    releaseAgentsTargetingMovedBase($pdo, (int)$base_id, $turn_number);
+
+    // Cancel any in-flight end-turn attacks targeting this base.
+    try {
+        $sel = $pdo->prepare("SELECT id, location_id, location_name, attacker_controller_id
+            FROM {$prefix}controller_location_attacks
+            WHERE location_id = :base_id AND queued_turn = :turn AND success IS NULL");
+        $sel->bindParam(':base_id', $base_id, PDO::PARAM_INT);
+        $sel->bindParam(':turn', $turn_number, PDO::PARAM_INT);
+        $sel->execute();
+        $inFlight = $sel->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT in-flight attacks failed : ' . $e->getMessage(), ['base_id' => $base_id, 'turn_number' => $turn_number], 'warning');
+        $inFlight = [];
+    }
+    foreach ($inFlight as $row) {
+        failQueuedLocationAttack($pdo, $row, $turn_number, 'moved');
+    }
+
+    // Re-seed the owner's CKL row at the new location.
     $ownerKnowsSecret = (strtoupper((string)getConfig($pdo, 'owner_knows_own_base_secret')) === 'TRUE');
     addLocationToCKL($pdo, $controller_id, $base_id, $turn_number, $ownerKnowsSecret);
 

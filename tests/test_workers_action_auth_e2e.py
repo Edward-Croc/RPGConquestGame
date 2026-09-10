@@ -31,7 +31,7 @@ from playwright.sync_api import Page
 from conftest import PHP_BASE_URL, ensure_gm_login
 from helpers import (
     DB_AVAILABLE, load_minimal_data, ensure_scenario_loaded, login_as, safe_goto,
-    ui_worker_id, ui_workers_by_lastname,
+    ui_worker_id, ui_workers_by_lastname, ui_controller_ids_map, ui_zone_id,
     ui_attack, end_turn,
 )
 
@@ -115,6 +115,51 @@ def test_owner_acts_on_own_worker(browser, base_url):
     assert response.status == 200, \
         f"Owner action on own worker must succeed; got {response.status}"
     ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# 3 bis. Recruitment for a foreign controller — refused BEFORE the INSERT
+# ---------------------------------------------------------------------------
+
+def test_recruitment_for_a_foreign_controller_creates_nothing(browser, base_url):
+    """createWorker used to run before the ownership guard, so the 403 landed
+    after the row was already inserted: any logged-in player could recruit onto
+    someone else's faction. The guard now compares the requested controller_id
+    with the session's own before anything is written.
+
+    single_player auto-selects Alpha on login; the target here is Beta.
+    """
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    ids = ui_controller_ids_map(page, base_url)
+    zone_id = ui_zone_id(page, "Alpha-Investigation", base_url=base_url)
+    ctx.close()
+
+    lastname = "Intrus_Recrute"
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    login_as(page, base_url, "single_player", "test")
+    response = page.goto(
+        f"{base_url}/workers/action.php"
+        f"?creation=1&controller_id={ids['Beta']}&lastname={lastname}"
+        f"&firstname=Intrus&origin_id=1&zone_id={zone_id}"
+    )
+    assert response is not None
+    assert response.status == 403, (
+        f"Recruiting onto another controller must 403; got {response.status}"
+    )
+    ctx.close()
+
+    # UI-only proof that nothing was written despite the refusal.
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    rows = ui_workers_by_lastname(page, lastname, base_url=base_url)
+    ctx.close()
+    assert rows == [], (
+        f"The refused recruitment must leave no worker behind; got {rows}"
+    )
 
 
 # ---------------------------------------------------------------------------

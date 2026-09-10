@@ -133,12 +133,20 @@ def _base_id_of(controller_id: int) -> int:
 
 def _set_location_repairable(location_name: str):
     """Force a location into the post-attack 'repairable' state (can_be_repaired=1,
-    can_be_destroyed=0) so the repairLocation handler accepts it."""
+    can_be_destroyed=0).
+
+    activate_json carries the restore shape a real destruction leaves behind,
+    so repairing genuinely clears can_be_repaired. Setting the columns alone
+    would fabricate a state the game cannot reach: update_location would still
+    describe the ruin, and applying it would be a no-op on both flags."""
     conn = _db(); cur = conn.cursor()
     cur.execute(
-        f"UPDATE `{GAME_PREFIX}locations` SET can_be_repaired = 1, can_be_destroyed = 0 "
-        f"WHERE name = %s",
-        (location_name,),
+        f"UPDATE `{GAME_PREFIX}locations` SET can_be_repaired = 1, can_be_destroyed = 0, "
+        f"activate_json = %s WHERE name = %s",
+        (
+            '{"update_location":{"can_be_destroyed":1,"can_be_repaired":0,"save_to_json":"TRUE"}}',
+            location_name,
+        ),
     )
     conn.commit()
     cur.close(); conn.close()
@@ -386,6 +394,43 @@ class TestMoveBaseInsufficientStock:
             f"expected Gold=45, got {_read_gold(echo_id)}"
         )
 
+    def test_move_base_replay_is_refused_without_spending(self, browser):
+        """Issue #74 — the same URL replayed (F5, or Back-then-resubmit) used
+        to spend base_moving_cost again. Rides on the move the previous test
+        left in place, so it costs no extra scenario setup."""
+        ids = _controller_ids(browser)
+        echo_id = ids["Echo"]
+        echo_base_id = _base_id_of(echo_id)
+        zone_before = _zone_of_base(echo_base_id)
+        gold_before = _read_gold(echo_id)
+
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?controller_id={echo_id}&base_id={echo_base_id}"
+            f"&zone_id={zone_before}&moveBase=1",
+        )
+        page.wait_for_load_state("load")
+        html = page.content()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        assert "La base est déjà dans cette zone." in html, (
+            "The replay must be turned away by the same-zone guard itself; "
+            "without this, an unrelated failure would satisfy the Gold assertion too"
+        )
+        assert _read_gold(echo_id) == gold_before, (
+            f"Replaying the move must not spend again; "
+            f"expected Gold={gold_before}, got {_read_gold(echo_id)}"
+        )
+        assert _zone_of_base(echo_base_id) == zone_before, (
+            "Replaying the move must leave the base where it is"
+        )
+
 
 # ---------------------------------------------------------------------------
 # repairLocation
@@ -439,7 +484,7 @@ class TestRepairLocationInsufficientStock:
             f"expected Gold=1 unchanged, got {_read_gold(echo_id)}"
         )
 
-    def test_repair_location_decrements_when_stock_sufficient(self, browser):
+    def test_repair_location_spends_once_and_refuses_a_replay(self, browser):
         ids = _controller_ids(browser)
         echo_id = ids["Echo"]
         _set_location_repairable("Echo-Base")
@@ -463,7 +508,6 @@ class TestRepairLocationInsufficientStock:
         )
         page.wait_for_load_state("load")
         html = page.content()
-        ctx.close()
 
         assert "Stock insuffisant" not in html, (
             "Sufficient stock must NOT trigger the insufficient notification"
@@ -471,4 +515,34 @@ class TestRepairLocationInsufficientStock:
         assert _read_gold(echo_id) == 47, (
             f"repairLocation must deduct location_repaire_cost=3; "
             f"expected Gold=47, got {_read_gold(echo_id)}"
+        )
+        state_after = _location_repaired_state("Echo-Base")
+        assert state_after == {'can_be_repaired': 0, 'can_be_destroyed': 1}, (
+            "a completed repair must leave the location restored; "
+            f"got {state_after}"
+        )
+
+        # Issue #74 : the same URL replayed (F5, or Back-then-resubmit) used to
+        # spend again AND flip the restored location back to ruins, because
+        # updateLocation is a toggle rather than an idempotent write.
+        safe_goto(
+            page,
+            f"{PHP_BASE_URL}/controllers/action.php"
+            f"?controller_id={echo_id}&target_location_id={loc_id}&repairLocation=1",
+        )
+        page.wait_for_load_state("load")
+        html_replay = page.content()
+        assert_no_collected_php_errors(page)
+        ctx.close()
+
+        assert "Ce lieu n'est pas réparable" in html_replay, (
+            "the replay must be turned away by the guard itself; without this, "
+            "an unrelated failure would satisfy the Gold assertion too"
+        )
+        assert _read_gold(echo_id) == 47, (
+            f"the replay must not spend again; expected Gold=47 unchanged, "
+            f"got {_read_gold(echo_id)}"
+        )
+        assert _location_repaired_state("Echo-Base") == state_after, (
+            "the replay must not flip the location back to ruins"
         )

@@ -85,7 +85,7 @@ body {
     transition: 0.4s;
     padding-top: 60px;
 }
-.sidebar a, .sidebar div {
+.sidebar a, .sidebar div, .sidebar button {
     padding: 10px 20px;
     text-decoration: none;
     font-size: 18px;
@@ -122,10 +122,19 @@ body {
     width: 250px;
 }
 
+.sidebar-form {
+    margin: 0;
+}
+.sidebar-form .sidebar-btn {
+    box-sizing: border-box;
+    width: 100%;
+    line-height: inherit;
+}
 .sidebar-btn {
     background-color: #4936f4;
     color: white;
     border: none;
+    font-family: inherit;
     padding: 10px 20px;
     text-align: center;
     text-decoration: none;

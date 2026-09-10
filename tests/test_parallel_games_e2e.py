@@ -10,7 +10,7 @@ prefixes, so their state is fully isolated.
 Fixture flow:
   1. Load TestConfig into the primary game via /RPGConquestGameTest/base/admin.php
   2. Load Japon1555SQL into the secondary game via /RPGConquestGameTest2/base/admin.php
-  3. End-turn in the secondary game only (via /RPGConquestGameTest2/mechanics/endTurn.php)
+  3. End-turn in the secondary game only (via helpers.end_turn on that folder)
 
 Tests verify:
   - Each game has its own prefixed tables populated with scenario data
@@ -329,7 +329,7 @@ class TestEndTurnIsolation:
     """End-turn in one game must not change the other game's state."""
 
     def test_secondary_turn_advanced(self):
-        """After /RPGConquestGameTest2/mechanics/endTurn.php, secondary turncounter == 1."""
+        """After an end of turn on the secondary game, its turncounter == 1."""
         before = _snapshot['secondary_turn_before_endturn']
         after = _snapshot['secondary_turn_after']
         assert before == 0, f"Secondary pre-endturn should be 0, got {before}"

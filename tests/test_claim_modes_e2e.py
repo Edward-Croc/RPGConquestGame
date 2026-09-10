@@ -508,8 +508,7 @@ class TestClaimModeDisabled:
         ).status
 
         ensure_gm_login(page, PHP_BASE_URL)
-        page.goto(f"{PHP_BASE_URL}/mechanics/endTurn.php")
-        page.wait_for_load_state("load", timeout=120000)
+        end_turn(page, PHP_BASE_URL)
         eot_html = page.content()
 
         cur.execute(

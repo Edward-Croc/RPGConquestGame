@@ -155,7 +155,7 @@ def as_controller(page: Page, lastname: str, base_url: str = None):
 
 
 def end_turn(page: Page, base_url: str = None):
-    """Trigger end-of-turn. Page must already be logged in.
+    """Trigger end-of-turn through the sidebar form. Page must be logged in.
 
     Waits for the FINAL `<h2> <timeValue>: <new_turn> </h2>` header that
     endTurn.php emits after all end_step processing — `load` alone fires
@@ -167,13 +167,24 @@ def end_turn(page: Page, base_url: str = None):
     PHP notice in the rendered response.
     """
     url = base_url or PHP_BASE_URL
-    safe_goto(page, f"{url}/mechanics/endTurn.php")
+    # endTurn.php answers only a POST carrying the one-shot token the sidebar
+    # button mints, so the trigger has to come from a page that renders it.
+    # A bare prefix test would accept RPGConquestGameTest2 for RPGConquestGameTest.
+    if not page.url.startswith(f"{url}/") or page.locator("#endTurnForm").count() == 0:
+        safe_goto(page, f"{url}/base/accueil.php")
+    # Deferred so the navigation cannot destroy the execution context mid-call.
+    page.evaluate("setTimeout(() => document.getElementById('endTurnForm').submit(), 0)")
+    page.wait_for_url(f"{url}/mechanics/endTurn.php", timeout=180000)
     page.wait_for_function(
         "() => Array.from(document.querySelectorAll('h2'))"
-        ".some(h => /\\w+\\s*:\\s*\\d+/.test(h.textContent))",
+        ".some(h => /\\w+\\s*:\\s*\\d+/.test(h.textContent)"
+        " || h.textContent.includes('Fin de tour non déclenchée'))",
         timeout=180000,
     )
     html = page.content()
+    assert "Fin de tour non déclenchée" not in html, (
+        "End of turn refused: the submitted form carried no valid one-shot token"
+    )
     assert "<b>Warning</b>" not in html, "PHP warning during end turn"
     assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
     assert "<b>Notice</b>" not in html, "PHP notice during end turn"

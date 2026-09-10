@@ -1,5 +1,8 @@
 # Architecture — note de reprise pour développeur
 
+Les conventions de code, de test, de branche et de commit vivent dans
+[`coding_rules.md`](coding_rules.md).
+
 Ce document s'adresse à **quelqu'un qui reprend le code**. Il décrit comment le
 système est agencé et pourquoi, avec les pièges qui coûtent une demi-journée
 quand on les découvre en production.
@@ -132,13 +135,13 @@ lignes.
 
 | État écrit dans `end_step` | Ce que l'étape exécute réellement |
 |---|---|
-| `updateRessources` | `updateRessources` (`:44`) **puis** `ressourceGainMechanic('before_claim')` (`:49`) |
-| `calculateValsReport` | `calculateVals` (`:61`) puis la rédaction des rapports de valeurs |
-| `attackMechanic` | `attackMechanic` (`:147`) |
-| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:158`) **puis** `recalculateZoneDefence` (`:164`) |
-| `locationAttackMechanic` | `locationAttackMechanic` (`:175`) |
-| `claimMechanic` | `claimMechanic` (`:186`) |
-| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:197`) |
+| `updateRessources` | `updateRessources` (`:67`) **puis** `ressourceGainMechanic('before_claim')` (`:72`) |
+| `calculateValsReport` | `calculateVals` (`:84`) puis la rédaction des rapports de valeurs |
+| `attackMechanic` | `attackMechanic` (`:170`) |
+| `recalculateBaseZoneDefence` | `recalculateBaseDefence` (`:181`) **puis** `recalculateZoneDefence` (`:187`) |
+| `locationAttackMechanic` | `locationAttackMechanic` (`:198`) |
+| `claimMechanic` | `claimMechanic` (`:209`) |
+| `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` (`:220`) |
 | puis | `investigateMechanic`, `locationSearchMechanic`, `createNewTurnLines`, `restartTurnRecrutementCount` |
 
 **La granularité de reprise est l'état, pas la fonction.** Deux étapes portent
@@ -147,11 +150,39 @@ de `updateRessources`, et les deux recalculs de défense partagent
 `recalculateBaseZoneDefence`. Une panne entre les deux appels d'un même état fait
 donc **rejouer les deux** à la reprise.
 
-`aiMechanic` figure dans le fichier mais **en commentaire** (`:143`) : le moteur
+### Comment une fin de tour se déclenche
+
+**Une fin de tour ne se déclenche jamais depuis la page de fin de tour.**
+
+`endTurn.php` n'accepte qu'une requête `POST` portant `end_turn_token`, un jeton
+à usage unique comparé par `hash_equals`. Tout le reste — un GET, un POST sans
+jeton, un jeton mort ou forgé — reçoit « Fin de tour non déclenchée » et ne mute
+rien.
+
+Le jeton est frappé dans `$_SESSION` par `base/baseHTML.php`, au moment où il
+rend le bouton de la barre latérale, et seulement s'il n'en existe pas déjà :
+toutes les pages ouvertes portent donc le même. `endTurn.php` le brûle, mais
+uniquement quand il l'accepte — un GET parasite n'invalide pas le bouton
+légitime.
+
+La page de fin de tour ne rend aucun déclencheur : `$pageName === 'End Turn'`
+supprime le bloc, qui ne frappe donc aucun jeton. Le meneur de jeu repasse par
+une page de jeu pour en obtenir un neuf. Le bouton y annonce « Reprendre la fin
+de tour » tant que `end_step` est non vide.
+
+`toggleMechanicsGamestate` n'est pas une garde et ne peut pas en tenir lieu :
+quand `gamestate` vaut déjà 1 elle laisse son `UPDATE` vide et renvoie `true`
+quand même.
+
+Côté tests, `helpers.end_turn` rejoint une page portant la barre latérale puis
+soumet le formulaire ; une navigation directe vers `endTurn.php` est refusée
+comme n'importe quel autre GET.
+
+`aiMechanic` figure dans le fichier mais **en commentaire** (`:166`) : le moteur
 d'IA n'est pas branché sur la fin de tour.
 
-Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:230`, écrit en
-`:256`). Une exception au milieu laisse donc la partie à moitié résolue, au tour
+Le compteur de tour n'est incrémenté qu'**à la toute fin** (`:253`, écrit en
+`:279`). Une exception au milieu laisse donc la partie à moitié résolue, au tour
 précédent.
 
 ### Ce que l'incrément tardif implique pour les dates
@@ -318,8 +349,8 @@ la convention du moteur, pas une règle propre à cette mécanique :
 **propre à l'attaque de lieu** (`locationAttackMechanic.php:179`) ; le combat
 entre agents ne le porte pas.
 
-L'énoncé de l'issue #73 annonçait l'ordre inverse — c'est lui qui divergeait du
-code, et le code qui a été suivi.
+L'énoncé de l'issue #73 annonce l'ordre inverse : c'est lui qui diverge du
+code, et le code qui fait foi.
 
 Aucun code de vivacité n'est nécessaire dans l'échelle : le filtre sur
 `action_choice` exclut déjà les morts à l'entrée, puisque `resolveWorkerCombat`
@@ -659,12 +690,13 @@ qu'une source obsolète ne peut pas rajeunir un renseignement déjà connu.
 `controller_known_locations.found_secret` conditionne si la description cachée
 d'un lieu (`locations.hidden_description`) est montrée à ce meneur précis ;
 c'est la colonne au cœur de la logique « le propriétaire connaît le secret de
-sa propre base » (session du 2026-09-04/05, PR #129).
+sa propre base », que la clé `owner_knows_own_base_secret` gouverne.
 
 `mechanics.turncounter` et `mechanics.end_step` : ligne singleton, déjà
 détaillée au §3 du document principal — `end_step` est le marqueur textuel qui
-permet à `endTurn.php` de reprendre sa machine à états après un rechargement de
-page.
+permet à `endTurn.php` de reprendre sa machine à états après une panne en cours
+de résolution. Ce n'est **pas** un rechargement de page : celui-ci est refusé,
+voir §3.
 
 ### Le piège booléen inter-dialecte
 
@@ -944,6 +976,19 @@ propriété (accès privilégié), et surtout **pas d'appel à
 `information_gift_logs` : ce n'est pas un échange entre factions, donc pas un
 événement à journaliser comme tel.
 
+> **Cette duplication est délibérée, et il ne faut pas la « corriger ».**
+>
+> L'orga agit en étant connecté sur une faction. Journaliser son don le ferait
+> apparaître dans les transactions comme un échange **de cette faction vers une
+> autre** — un geste d'arbitrage deviendrait une manœuvre attribuée à un joueur,
+> visible de tous. L'absence de journal n'est donc pas un oubli : c'est ce qui
+> garde le geste du meneur de jeu invisible, comme il doit l'être.
+>
+> Mutualiser les deux blocs supposerait un drapeau « ne pas journaliser »
+> traversant le chemin commun, pour un gain de quelques lignes et un risque
+> réel de brancher un jour le journal du mauvais côté. Le doublon est le moindre
+> mal, tant que ce paragraphe explique pourquoi.
+
 **L'agent lui-même.** Un quatrième canal, distinct des trois précédents,
 transfère l'agent en personne : `workers/action.php`, action `gift`
 (`:234-242`), protégée par la garde de propriété générale de la page (le
@@ -979,7 +1024,7 @@ don d'agent ne laisse pas de trace consultable après coup.
   forme de **commentaires `//`** décrivant l'intention (`:15-44`), jamais
   traduits en code ;
 - **le seul point d'appel du fichier est commenté** :
-  `mechanics/endTurn.php:143` porte `// $IAResult = aiMechanic($gameReady);`
+  `mechanics/endTurn.php:166` porte `// $IAResult = aiMechanic($gameReady);`
   — ce que le document note déjà en §3. `aiMechanic()` n'est donc jamais
   invoquée par la fin de tour, ni gatée par le mécanisme de reprise par état.
 
@@ -1026,27 +1071,5 @@ transformations, l'enseignement — ne sont décrits qu'en surface, par leurs po
 d'entrée d'action (§6) et leurs colonnes (§9). C'est la dernière zone d'ombre
 notable.
 
-Le reste du document a été **revérifié ligne à ligne dans le code** le
-2026-09-06. Les écarts trouvés à cette occasion, et corrigés :
-
-| Ce que le document disait | Ce que le code fait |
-|---|---|
-| `$noConnection` est le drapeau des pages de login et de logout | Seul `base/systemPresentation.php:2` le pose ; les pages de connexion n'utilisent pas `baseHTML.php` |
-| Une ligne CSV au mauvais compte de champs avorte le chargement | Elle est **sautée** (`BDD/db_connector.php:553-556`), avertissement affiché mais non journalisé : le scénario se charge incomplet |
-| La suite d'étapes de fin de tour | Omettait `ressourceGainMechanic('before_claim')` (`endTurn.php:49`) et présentait `recalculateBaseZoneDefence` comme un appel là où il y en a deux |
-| Le tri de l'échelle de duels reprend `attackMechanic.php` « de la même façon » | Le sens du tri, oui ; le départage par `worker_id` est propre à l'attaque de lieu (`locationAttackMechanic.php:179`) |
-| Seize colonnes booléennes | Seize **noms**, dix-sept occurrences — `success` existe sur deux tables |
-| Le moteur d'IA vit dans `mechanics/ia/` | Ce répertoire n'existe pas sur `main` ; voir §10 |
-
-Le dossier `connection/` manquait au tableau des dossiers, la riposte et la
-règle de création des agents leurres manquaient à la section combat.
-
-Ces corrections viennent de la relecture d'une note de travail non suivie par
-git, `tests/CODE_KNOWLEDGE.md`, désormais supprimée : son contenu utile a été
-revérifié puis intégré ici. Ce qu'elle affirmait de faux n'a **pas** été repris —
-notamment une colonne `controllers.is_ia` qui n'a jamais existé, et un moteur
-d'IA décrit comme « mostly shipped » qui n'est en réalité qu'un stub de
-49 lignes jamais appelé.
-
-Sa liste d'issues n'a délibérément pas été reprise : `gh issue list` fait
+La liste des sujets ouverts n'est pas reprise ici : `gh issue list` fait
 autorité, une liste figée dans un document ne le peut pas.
