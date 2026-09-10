@@ -18,7 +18,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, end_turn, get_db_connection, load_minimal_data, load_scenario_via_admin,
-    safe_goto, ui_turn_counter,
+    ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 

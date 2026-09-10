@@ -416,6 +416,7 @@ class TestMoveBaseInsufficientStock:
         )
         page.wait_for_load_state("load")
         html = page.content()
+        assert_no_collected_php_errors(page)
         ctx.close()
 
         assert "La base est déjà dans cette zone." in html, (
@@ -531,6 +532,7 @@ class TestRepairLocationInsufficientStock:
         )
         page.wait_for_load_state("load")
         html_replay = page.content()
+        assert_no_collected_php_errors(page)
         ctx.close()
 
         assert "Ce lieu n'est pas réparable" in html_replay, (
