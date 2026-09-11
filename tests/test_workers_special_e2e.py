@@ -281,6 +281,201 @@ class TestGiftPrisoner:
         assert any("Beta" in v for v in values), \
             f"returnPrisoner button value should mention original owner Beta; got {values}"
 
+    def test_release_only_reaches_a_faction_recorded_at_capture(self, gm_page: Page, browser, base_url):
+        """Issue #95 — returnPrisoner accepted any return_controller_id, so a
+        jailer could name itself and walk away with the prisoner as a free
+        agent. The destination must now be one the capture recorded, i.e.
+        original_controller_id or double_agent_controller_id.
+
+        Claim_Def_1 was captured from Beta and has no double-agent link, so
+        Beta is the only legal destination and Delta must be refused.
+        echo_player is Echo's non-privileged account.
+        """
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        echo_id = _controller_ids["Echo"]
+
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "echo_player", "test")
+        response = page.goto(
+            f"{base_url}/workers/action.php"
+            f"?worker_id={wid}&returnPrisoner=1"
+            f"&recall_controller_id={echo_id}&return_controller_id={_controller_ids['Delta']}"
+        )
+        assert response is not None
+        assert response.status == 403, (
+            f"a destination the capture never recorded must 403; got {response.status}"
+        )
+        ctx.close()
+
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["action_choice"] == "captured", (
+            f"the refused release must leave the prisoner captured; got {live}"
+        )
+        assert live[0]["controller_id"] == echo_id, (
+            "the refused release must leave the prisoner with its captor"
+        )
+
+    def test_the_transfer_form_only_shows_in_the_jailer_own_view(self, gm_page: Page, base_url):
+        """The guard requires the session to act for the jailer, so a view
+        opened as another controller must not render a button that would 403.
+        workers/action.php lets ?controller_id= pick whose view is rendered,
+        which is exactly how the two sides can diverge.
+        """
+        _select_controller(gm_page, base_url, "Echo")
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        safe_goto(gm_page, f"{base_url}/workers/action.php?worker_id={wid}")
+        gm_page.wait_for_load_state("load")
+        assert gm_page.locator("input[name='transferPrisoner']").count() >= 1, (
+            "the jailer own view must offer the transfer form"
+        )
+
+        _select_controller(gm_page, base_url, "Foxtrot")
+        safe_goto(
+            gm_page,
+            f"{base_url}/workers/action.php?worker_id={wid}"
+            f"&controller_id={_controller_ids['Echo']}",
+        )
+        gm_page.wait_for_load_state("load")
+        assert gm_page.locator("input[name='transferPrisoner']").count() == 0, (
+            "a foreign view must not offer a transfer the guard would refuse"
+        )
+
+    def test_a_live_agent_cannot_be_transferred(self, gm_page: Page, base_url):
+        """transferPrisoner forces action_choice to 'captured'. Without the
+        prisoner check it is a general-purpose agent-stealing endpoint: any live
+        worker the caller has any controller_worker link to — a secret master's
+        double agent, for one — could be handed to a third faction.
+        """
+        _select_controller(gm_page, base_url, "Alpha")
+        wid = ui_worker_id(gm_page, "Searcher_1", base_url=base_url)
+        response = gm_page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
+            f"&recall_controller_id={_controller_ids['Alpha']}"
+            f"&transfer_controller_id={_controller_ids['Delta']}"
+        )
+        assert response is not None and response.status == 403, (
+            f"a live agent must not be transferable; got "
+            f"{response.status if response else None}"
+        )
+        rows = ui_workers_by_lastname(gm_page, "Searcher_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["controller_id"] == _controller_ids["Alpha"], (
+            f"the refused transfer must leave the agent with Alpha; got {live}"
+        )
+        assert live[0]["action_choice"] != "captured", (
+            "the refused transfer must not have turned a live agent into a prisoner"
+        )
+
+    def test_only_the_holding_faction_can_transfer(self, gm_page: Page, base_url):
+        """recall_controller_id must name the worker real primary controller,
+        so a third party cannot pass someone else prisoner around."""
+        _select_controller(gm_page, base_url, "Foxtrot")
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        response = gm_page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
+            f"&recall_controller_id={_controller_ids['Foxtrot']}"
+            f"&transfer_controller_id={_controller_ids['Delta']}"
+        )
+        assert response is not None and response.status == 403, (
+            f"only the jailer may transfer; got {response.status if response else None}"
+        )
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["controller_id"] == _controller_ids["Echo"], (
+            f"the refused transfer must leave the prisoner with Echo; got {live}"
+        )
+
+    def test_transfer_hands_custody_over_without_freeing(self, gm_page: Page, base_url):
+        """Issue #95 — the third gesture : the prisoner changes jailer and stays
+        a prisoner. Transfers Echo -> Delta, checks everything, then transfers
+        back so the release test below still finds Echo holding them.
+
+        The round trip also proves the reverse direction, and restores the
+        state this class shares.
+        """
+        _select_controller(gm_page, base_url, "Echo")
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        echo_id = _controller_ids["Echo"]
+        delta_id = _controller_ids["Delta"]
+
+        safe_goto(
+            gm_page,
+            f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
+            f"&recall_controller_id={echo_id}&transfer_controller_id={delta_id}",
+        )
+        gm_page.wait_for_load_state("load")
+
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1, f"expected one live row after the transfer; got {rows}"
+        assert live[0]["controller_id"] == delta_id, (
+            f"custody must pass to Delta; got controller_id={live[0]['controller_id']}"
+        )
+        assert live[0]["action_choice"] == "captured", (
+            f"a transfer is not a release : the agent must stay captured; got {live[0]}"
+        )
+
+        # original_controller_id survived, so the new jailer can still release
+        # to the origin — observable as Beta being offered in Delta's view.
+        _select_controller(gm_page, base_url, "Delta")
+        safe_goto(gm_page, f"{base_url}/workers/action.php?worker_id={wid}")
+        gm_page.wait_for_load_state("load")
+        section = worker_report_section(gm_page.content(), "Changements :")
+        assert "transféré" in section, (
+            f"the prisoner own report must carry textPrisonerTransferReceived; got {section!r}"
+        )
+        assert "envoyé" not in section, (
+            "the outgoing line belongs to the trace kept by the jailer, not to the prisoner"
+        )
+        values = [
+            (b.get_attribute("value") or "")
+            for b in gm_page.locator("input[name='returnPrisoner']").all()
+        ]
+        assert any("Beta" in v for v in values), (
+            f"the capture origin must survive the transfer; buttons were {values}"
+        )
+
+        # Hand them back so the release test below keeps its premise.
+        _select_controller(gm_page, base_url, "Delta")
+        safe_goto(
+            gm_page,
+            f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
+            f"&recall_controller_id={delta_id}&transfer_controller_id={echo_id}",
+        )
+        gm_page.wait_for_load_state("load")
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["controller_id"] == echo_id, (
+            f"the round trip must return the prisoner to Echo; got {live}"
+        )
+        assert live[0]["action_choice"] == "captured", (
+            "the agent must still be captured after the round trip"
+        )
+
+    def test_transfer_refuses_the_origin_and_the_jailer(self, gm_page: Page, base_url):
+        """Origin and double-agent factions are release destinations, never
+        transfer ones; the jailer is never a destination at all."""
+        _select_controller(gm_page, base_url, "Echo")
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        echo_id = _controller_ids["Echo"]
+        for label, target in (("origine", _controller_ids["Beta"]), ("geôlier", echo_id)):
+            response = gm_page.goto(
+                f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
+                f"&recall_controller_id={echo_id}&transfer_controller_id={target}"
+            )
+            assert response is not None and response.status == 403, (
+                f"transfer to the {label} must 403; got "
+                f"{response.status if response else None}"
+            )
+
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["controller_id"] == echo_id, (
+            f"the refused transfers must leave the prisoner with Echo; got {live}"
+        )
+
     def test_return_releases_prisoner_to_original_owner(self, gm_page: Page, base_url):
         """Click 'Relâcher le prisonnier vers Beta !' → Claim_Def_1's live row
         belongs to Beta again. Note: returnPrisoner also creates a trace at
