@@ -112,7 +112,9 @@
         "textesClaimFailArray",
         "textesClaimFailViewArray",
         "textesClaimSuccessArray",
-        "textesClaimSuccessViewArray"
+        "textesClaimSuccessViewArray",
+        "textPrisonerTransferSent",
+        "textPrisonerTransferReceived"
       ]
     },
     "engine": {

@@ -271,6 +271,52 @@ Le statut affiché s'en déduit, croisé avec `is_primary_controller`
 (`workers/functions.php:320-341`) : actif et à nous vaut `alive`, actif et pas à
 nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à part.
 
+### Ce qu'un geôlier peut faire d'un prisonnier
+
+Un prisonnier est un agent dont l'`action_choice` vaut `captured` et dont
+l'unique ligne `controller_worker` — primaire — appartient à son geôlier. La
+capture enregistre la faction qu'il servait dans
+`worker_actions.action_params.original_controller_id`, et le lien d'agent double
+éventuel dans `double_agent_controller_id`. Ce JSON survit à la bascule de tour :
+la remise à zéro de `createNewTurnLines` ne frappe que les six actions
+continuables, dont `captured` ne fait pas partie.
+
+Trois gestes, dont deux libèrent et un seul ne libère pas :
+
+| Geste | Destination | Résultat |
+|---|---|---|
+| `returnPrisoner` vers l'origine | `original_controller_id` | libéré, `passive` |
+| `returnPrisoner` vers le maître double | `double_agent_controller_id` | libéré, `passive` |
+| `transferPrisoner` | toute autre faction | **reste `captured`** chez son nouveau geôlier |
+
+Le transfert n'est pas une variante de `returnPrisoner` : celui-ci se termine
+sur `$new_action = 'passive'`, donc il affranchit. `transferPrisoner` conserve
+`captured` et **recopie** `original_controller_id`, de sorte que le nouveau
+geôlier puisse à son tour relâcher vers l'origine. C'est nécessaire parce
+qu'`activateWorker` réécrit `action_params` après le `switch` : un `case` qui ne
+renseigne pas `$jsonOutput` efface l'origine de la capture.
+
+Les deux gestes se répartissent les destinations par des règles inverses, l'une
+et l'autre gardées en 403 au point d'entrée.
+
+**Une libération ne va que vers une faction que la capture a enregistrée** :
+`original_controller_id` ou `double_agent_controller_id`, et rien d'autre. La
+liste blanche vaut même quand cette faction est le geôlier du moment — une
+faction qui reprend son propre agent le libère légitimement. Le paramètre
+`double_controller_id` est vérifié contre celui de la capture, faute de quoi un
+geôlier s'installerait maître secret de l'agent qu'il relâche.
+
+**Un transfert ne va que vers une faction que la capture n'a pas enregistrée** :
+l'origine et le maître double appellent une libération. Il exige en outre que
+l'agent soit réellement `captured`, que `recall_controller_id` soit son
+contrôleur primaire réel, et que la session agisse pour ce contrôleur. Ses
+destinations sortent de `getControllers`, la liste que rend déjà le menu : une
+faction secrète ou inexistante n'y figure pas.
+
+Quand l'`UPDATE` de garde ne touche aucune ligne — un rejeu, le geôlier ne les
+détenant plus — ni trace ni texte ne sont écrits : c'est ce qui rend le geste
+rejouable sans laisser d'agent-leurre en trop.
+
 ### Les valeurs
 
 `calculateVals` écrit `attack_val`, `defence_val` et `enquete_val` dans
@@ -381,7 +427,7 @@ propriétaire.
 | Fichier | Forme | Actions |
 |---|---|---|
 | `controllers/action.php` | GET | `createBase`, `moveBase`, `attackLocation`, `cancelLocationAttack`, `repairLocation`, `giftInformationAgent`, `giftInformationLocation` |
-| `workers/action.php` | GET | `creation`, `move`, `attack`, `attackLocation`, `defendLocation`, `hide`, `passive`, `investigate`, `claim`, `gift`, `recallDoubleAgent`, `returnPrisoner`, `teach_discipline`, `transform` |
+| `workers/action.php` | GET | `creation`, `move`, `attack`, `attackLocation`, `defendLocation`, `hide`, `passive`, `investigate`, `claim`, `gift`, `recallDoubleAgent`, `returnPrisoner`, `transferPrisoner`, `teach_discipline`, `transform` |
 | `workers/massAction.php` | GET | `mass_move`, `mass_investigate`, `mass_passive`, `mass_hide` |
 | `ressources/action.php` | POST | don de ressource, en *post-redirect-get* pour qu'un rafraîchissement ne rejoue pas l'envoi |
 | `zones/action.php` | — | ne fait qu'inclure la vue |
