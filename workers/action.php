@@ -50,6 +50,8 @@ if (empty($worker_id)) {
     exit();
 }
 
+$session_controller_id = $_SESSION['controller']['id'] ?? null;
+
 // If the user is not privileged and not the owner of the worker, he should not have access
 if (empty($_SESSION['is_privileged'])) {
     $session_controller_id = $_SESSION['controller']['id'] ?? null;
@@ -78,7 +80,7 @@ if (empty($_SESSION['is_privileged'])) {
 
 // Blocking trace and dead workers from changing action illogicaly
 $MUTATING_ACTIONS = ['move', 'attack', 'hide', 'passive', 'investigate',
-    'claim', 'gift', 'recallDoubleAgent', 'returnPrisoner',
+    'claim', 'gift', 'recallDoubleAgent', 'returnPrisoner', 'transferPrisoner',
     'teach_discipline', 'transform',
     'attackLocation', 'defendLocation'
 ];
@@ -173,6 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo "return_controller_id: ".var_export($return_controller_id, true)."<br /><br />";
     }
 
+    $transfer_controller_id = null;
+    if (!empty($_GET['transfer_controller_id'])) {
+        $transfer_controller_id = $_GET['transfer_controller_id'];
+    }
+
     $double_controller_id = null;
     if (!empty($_GET['double_controller_id'])) {
         $double_controller_id = $_GET['double_controller_id'];
@@ -265,6 +272,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             array('recall_controller_id' => $recall_controller_id, 'return_controller_id' => $return_controller_id, 'double_controller_id' => $double_controller_id)
         );
         header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER'], $worker_id));
+    }
+
+    if (isset($_GET['transferPrisoner'])) {
+        $workerActions = getWorkerActions($gameReady, $worker_id);
+        $currentAction = $workerActions[0] ?? array();
+        $params = array();
+        if (!empty($currentAction['action_params'])) {
+            $params = json_decode($currentAction['action_params'], true) ?: array();
+        }
+        // Only a prisoner may be transferred, and only by the faction actually holding them.
+        $isPrisoner = ($currentAction['action_choice'] ?? '') === 'captured';
+        $primaryControllerId = getPrimaryControllerId($gameReady, (int) $worker_id);
+        $isJailer = $recall_controller_id !== null
+            && $primaryControllerId !== null
+            && (int) $recall_controller_id === $primaryControllerId;
+        $actsAsJailer = (int) $recall_controller_id === (int) $session_controller_id;
+        // Same list the dropdown renders : existing, non-secret, jailer excluded.
+        $allowedDestinations = array_map(
+            'intval',
+            array_column(getControllers($gameReady, null, null, true, $recall_controller_id) ?? array(), 'id')
+        );
+        // Origin and double-agent factions get a release, never a transfer.
+        $forbidden = array_map('intval', array_filter([
+            $params['original_controller_id'] ?? null,
+            $params['double_agent_controller_id'] ?? null,
+        ]));
+        if (
+            !$isPrisoner
+            || !$isJailer
+            || !$actsAsJailer
+            || $transfer_controller_id === null
+            || !in_array((int) $transfer_controller_id, $allowedDestinations, true)
+            || in_array((int) $transfer_controller_id, $forbidden, true)
+        ) {
+            game_error_log('workers_action_page', 'transferPrisoner refused', ['worker_id' => $worker_id, 'transfer_controller_id' => $transfer_controller_id, 'isPrisoner' => $isPrisoner, 'isJailer' => $isJailer, 'actsAsJailer' => $actsAsJailer], 'warning');
+            http_response_code(403);
+            exit();
+        }
+        activateWorker(
+            $gameReady,
+            $worker_id,
+            'transferPrisoner',
+            array('from_controller_id' => $recall_controller_id, 'to_controller_id' => $transfer_controller_id)
+        );
+        header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
 
     if (isset($_GET['teach_discipline'])) {

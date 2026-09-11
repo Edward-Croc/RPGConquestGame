@@ -305,6 +305,37 @@ function setWorkerCurrentAction(array $workerActions, int $turncounter): array
 }
 
 /**
+ * Return the controller who primarily owns the worker.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $workerId : worker to look up
+ *
+ * @return int|null : controller id, NULL when the worker has no primary row
+ */
+function getPrimaryControllerId(PDO $pdo, int $workerId): int|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, [], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $sql = sprintf(
+            "SELECT controller_id FROM {$prefix}controller_worker
+                WHERE worker_id = :worker_id AND is_primary_controller = %s LIMIT 1",
+            ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
+        );
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':worker_id' => $workerId]);
+        $controllerId = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId], 'warning');
+        return null;
+    }
+
+    return ($controllerId === false || $controllerId === null) ? null : (int) $controllerId;
+}
+
+/**
  * Get Worker status
  *
  * @param array $worker : must contain keys ['actions'][turncounter]['action_choice'] and 'is_primary_controller'
@@ -489,20 +520,9 @@ function buildWorkerZoneActionPhrase(
 
     // Build text for double_agent
     if ($workerStatus === 'double_agent') {
-        $prefix = $_SESSION['GAME_PREFIX'];
-        $sql = "SELECT cw.controller_id
-                FROM {$prefix}controller_worker AS cw
-                WHERE cw.worker_id = :worker_id
-                AND cw.is_primary_controller = :is_primary_controller
-                LIMIT 1";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':worker_id' => $workerId,
-            ':is_primary_controller' => 1,
-        ]);
         // Append the infiltrated Controller name to the action
-        $infiltrated = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        if (!empty($infiltrated[0])) {
+        $infiltratedId = getPrimaryControllerId($pdo, $workerId);
+        if (!empty($infiltratedId)) {
             $doubleAgentTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_double_agent' : 'txt_ps_double_agent'));
             if ($doubleAgentTpl === '' && $firstPerson) {
                 $doubleAgentTpl = (string) getConfig($pdo, 'txt_ps_double_agent');
@@ -510,7 +530,7 @@ function buildWorkerZoneActionPhrase(
             $verb .= sprintf(
                 ' et ' . $doubleAgentTpl,
                 getConfig($pdo, 'controllerNameDenominatorOf'),
-                getControllerName($pdo, $infiltrated[0])
+                getControllerName($pdo, $infiltratedId)
             );
         }
 
@@ -1252,7 +1272,7 @@ function getWorkerActions(PDO $pdo, int $workerId, int|null $turn_number = null)
  *
  * @param PDO $pdo : database connection
  * @param int $workerId : id of the worker being activated
- * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / hide / passive / investigate)
+ * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / transferPrisoner / hide / passive / investigate)
  * @param int|array|null $extraVal : per-action payload (worker id list, controller id, or associative array)
  *
  * @return int : $workerId (returned even on soft-failure paths)
@@ -1487,6 +1507,82 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
             }
 
             $new_action = 'passive';
+            break;
+
+        case 'transferPrisoner':
+            game_error_log(__FUNCTION__, 'transferPrisoner', ['extraVal' => $extraVal], 'debug');
+            $fromControllerId = (int) $extraVal['from_controller_id'];
+            $toControllerId = (int) $extraVal['to_controller_id'];
+
+            // Custody changes hands, captivity does not : the capture params must survive.
+            $currentParams = array();
+            if (!empty($currentAction['action_params'])) {
+                $currentParams = json_decode($currentAction['action_params'], true) ?: array();
+            }
+            $preservedParams = array();
+            foreach (array('original_controller_id', 'double_agent_controller_id') as $paramKey) {
+                if (!empty($currentParams[$paramKey])) {
+                    $preservedParams[$paramKey] = (int) $currentParams[$paramKey];
+                }
+            }
+            $jsonOutput = json_encode($preservedParams);
+
+            $transferred = false;
+            try {
+                $sqlcontrollerWorker = sprintf(
+                    "UPDATE {$prefix}controller_worker SET controller_id = :to_controller_id
+                        WHERE worker_id = :worker_id AND controller_id = :from_controller_id AND is_primary_controller = %s",
+                    ($_SESSION['DBTYPE'] == 'postgres') ? 'true' : '1'
+                );
+                $stmtcontrollerWorker = $pdo->prepare($sqlcontrollerWorker);
+                $stmtcontrollerWorker->execute([
+                    ':to_controller_id' => $toControllerId,
+                    ':from_controller_id' => $fromControllerId,
+                    ':worker_id' => $workerId
+                ]);
+                // Zero rows means the jailer no longer holds them : a replay, so no trace and no text.
+                $transferred = $stmtcontrollerWorker->rowCount() > 0;
+            } catch (PDOException $e) {
+                game_error_log(__FUNCTION__, 'transferPrisoner UPDATE controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'error');
+            }
+
+            if ($transferred) {
+                // Snapshot taken while the action row still names the jailer, as every other trace site does.
+                $traceWorkerId = createTraceWorker($pdo, $workerId, $fromControllerId);
+                if ($traceWorkerId === false) {
+                    game_error_log(__FUNCTION__, 'Failed to create trace worker', ['workerId' => $workerId, 'from_controller_id' => $fromControllerId], 'warning');
+                } else {
+                    updateWorkerAction($pdo, (int) $traceWorkerId, $turn_number, null, array('life_report' => sprintf(
+                        (string) getConfig($pdo, 'textPrisonerTransferSent'),
+                        getConfig($pdo, 'controllerNameDenominatorThe'),
+                        getControllerName($pdo, $toControllerId)
+                    )));
+                }
+                try {
+                    $sqlWorkerActions = "UPDATE {$prefix}worker_actions SET controller_id = :to_controller_id
+                        WHERE worker_id = :worker_id AND turn_number = :turn_number";
+                    $stmtWorkerActions = $pdo->prepare($sqlWorkerActions);
+                    $stmtWorkerActions->execute([
+                        ':to_controller_id' => $toControllerId,
+                        ':worker_id' => $workerId,
+                        ':turn_number' => $turn_number
+                    ]);
+                } catch (PDOException $e) {
+                    game_error_log(__FUNCTION__, 'transferPrisoner UPDATE worker_actions failed : ' . $e->getMessage(), ['workerId' => $workerId], 'error');
+                }
+
+                if (empty($currentReport['life_report'])) {
+                    $currentReport['life_report'] = '';
+                }
+                $currentReport['life_report'] .= sprintf(
+                    (string) getConfig($pdo, 'textPrisonerTransferReceived'),
+                    getConfig($pdo, 'controllerNameDenominatorThe'),
+                    getControllerName($pdo, $toControllerId)
+                );
+            }
+
+            // The prisoner stays a prisoner : only the jailer changed.
+            $new_action = 'captured';
             break;
     }
 
