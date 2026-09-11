@@ -54,7 +54,6 @@ $session_controller_id = $_SESSION['controller']['id'] ?? null;
 
 // If the user is not privileged and not the owner of the worker, he should not have access
 if (empty($_SESSION['is_privileged'])) {
-    $session_controller_id = $_SESSION['controller']['id'] ?? null;
     if (empty($session_controller_id)) {
         http_response_code(403);
         exit();
@@ -253,8 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])) {
-        $session_controller_id = $_SESSION['controller']['id'] ?? null;
-        if (empty($_SESSION['is_privileged']) && $session_controller_id !== null && (int)$gift_controller_id === (int)$session_controller_id) {
+        if ((int)$gift_controller_id === (int)$session_controller_id) {
             http_response_code(403);
             exit();
         }
@@ -265,6 +263,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
     }
     if (isset($_GET['returnPrisoner'])) {
+        $prisonerActions = getWorkerActions($gameReady, $worker_id);
+        $prisonerParams = array();
+        if (!empty($prisonerActions[0]['action_params'])) {
+            $prisonerParams = json_decode($prisonerActions[0]['action_params'], true) ?: array();
+        }
+        // A release only ever goes back to a faction the capture recorded, even when that is the jailer.
+        $releaseTargets = array_map('intval', array_filter([
+            $prisonerParams['original_controller_id'] ?? null,
+            $prisonerParams['double_agent_controller_id'] ?? null,
+        ]));
+        if ($return_controller_id === null || !in_array((int) $return_controller_id, $releaseTargets, true)) {
+            game_error_log('workers_action_page', 'returnPrisoner refused : destination not recorded at capture', ['worker_id' => $worker_id, 'return_controller_id' => $return_controller_id, 'releaseTargets' => $releaseTargets], 'warning');
+            http_response_code(403);
+            exit();
+        }
+        // The double-agent link is the prisoner own, never one the jailer may grant itself.
+        if (
+            $double_controller_id !== null
+            && (int) $double_controller_id !== (int) ($prisonerParams['double_agent_controller_id'] ?? 0)
+        ) {
+            game_error_log('workers_action_page', 'returnPrisoner refused : forged double_controller_id', ['worker_id' => $worker_id, 'double_controller_id' => $double_controller_id], 'warning');
+            http_response_code(403);
+            exit();
+        }
         activateWorker(
             $gameReady,
             $worker_id,
