@@ -163,6 +163,66 @@ def test_recruitment_for_a_foreign_controller_creates_nothing(browser, base_url)
 
 
 # ---------------------------------------------------------------------------
+# 3 ter. base/accueil.php — a player may only act as a controller they own
+# ---------------------------------------------------------------------------
+
+def test_controller_switch_to_a_foreign_faction_is_refused(browser, base_url):
+    """base/accueil.php wrote $_SESSION['controller'] from ?controller_id=
+    without checking the player was linked to it, and $_SESSION['controller']
+    is the sole subject of every ownership guard in the game — so one GET was
+    a complete impersonation.
+
+    single_player is linked to Alpha only; Beta is another player's faction.
+    """
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    ids = ui_controller_ids_map(page, base_url)
+    ctx.close()
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    login_as(page, base_url, "single_player", "test")
+    response = page.goto(
+        f"{base_url}/base/accueil.php?controller_id={ids['Beta']}&chosir=Choisir"
+    )
+    assert response is not None and response.status == 403, (
+        f"switching to a foreign faction must 403; got "
+        f"{response.status if response else None}"
+    )
+
+    # Positive anchor : the session must still be usable for its own faction,
+    # otherwise a guard that refuses everything would satisfy the assertion above.
+    own = page.goto(
+        f"{base_url}/base/accueil.php?controller_id={ids['Alpha']}&chosir=Choisir"
+    )
+    assert own is not None and own.status == 200, (
+        f"a player must still reach their own faction; got "
+        f"{own.status if own else None}"
+    )
+    ctx.close()
+
+
+def test_anonymous_controller_switch_is_refused(browser, base_url):
+    """The session write preceded the login check, so an unauthenticated
+    request reached it."""
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    beta_id = ui_controller_ids_map(page, base_url)["Beta"]
+    ctx.close()
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    response = page.goto(f"{base_url}/base/accueil.php?controller_id={beta_id}")
+    assert response is not None and response.status == 403, (
+        f"an anonymous controller switch must 403; got "
+        f"{response.status if response else None}"
+    )
+    ctx.close()
+
+
+# ---------------------------------------------------------------------------
 # 4. Privileged gm — bypasses ownership
 # ---------------------------------------------------------------------------
 

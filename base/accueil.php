@@ -11,9 +11,16 @@ if (
     if ($debug) {
         echo "_GET['controller_id']:". var_export($_GET['controller_id'], true).'<br/><br/>';
     }
-    $controllers = getControllers($gameReady, null, $_GET['controller_id']);
+    // A player only acts as a controller they are linked to ; the game master is exempt.
+    $playerFilter = empty($_SESSION['is_privileged']) ? (int) ($_SESSION['user_id'] ?? 0) : null;
+    $controllers = getControllers($gameReady, $playerFilter, $_GET['controller_id']);
     if ($debug) {
         echo "controllers:". var_export($controllers, true).'<br/><br/>';
+    }
+    if (empty($controllers)) {
+        game_error_log('accueil_page', 'Controller switch refused', ['controller_id' => $_GET['controller_id'], 'user_id' => $_SESSION['user_id'] ?? null], 'warning');
+        http_response_code(403);
+        exit();
     }
     $_SESSION['controller'] =  $controllers[0];
     $controller_id = $controllers[0]['id'];
