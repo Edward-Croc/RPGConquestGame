@@ -1,10 +1,10 @@
 FROM php:8.0-apache
 
 # Install PHP extensions and mysql client (needed for BDD export/import tests)
-# Two mirrors are listed because each 404s on pool files the other serves; apt falls back.
-# Check-Valid-Until=false : bullseye-security republishes weekly and serves an expired Release until it does.
-RUN printf 'deb http://ftp.fr.debian.org/debian bullseye main\ndeb http://ftp.fr.debian.org/debian bullseye-updates main\ndeb http://ftp.fr.debian.org/debian-security bullseye-security main\n' >> /etc/apt/sources.list \
-    && apt-get -o Acquire::Retries=3 -o Acquire::Check-Valid-Until=false update \
+# bullseye-security is frozen since Debian 11 went end of life : its index is expired and
+# advertises package versions whose pool files are gone, so apt must not read it at all.
+RUN sed -i '/bullseye-security/d' /etc/apt/sources.list \
+    && apt-get -o Acquire::Retries=3 update \
     && apt-get install -y --no-install-recommends default-mysql-client \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install pdo pdo_mysql mysqli
