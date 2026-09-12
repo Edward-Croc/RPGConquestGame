@@ -21,6 +21,7 @@ from conftest import (
 
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
+    ui_turn_counter,
     register_php_error_listener, assert_no_collected_php_errors,
 )
 
@@ -352,6 +353,127 @@ class TestBDDImport:
         safe_goto(page, f"{base_url}/base/admin.php")
         hidden = page.locator("input[type='hidden'][name='importBDD']")
         assert hidden.count() >= 1, "importBDD hidden input should exist"
+
+
+# ---------------------------------------------------------------------------
+# Tests: turn report archive at end-turn + admin_turn_reports.php page
+# ---------------------------------------------------------------------------
+
+class TestTurnReportArchive:
+    """The end-of-turn page is the only place the engine narrates a turn, and
+    that narrative used to vanish with the page. endTurn.php now archives the
+    rendered page under var/turn_reports, and the admin page lists, views and
+    deletes those archives.
+
+    One class-scoped end-turn feeds every test below."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def _fresh_report_state(self, browser, base_url):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        purge_form = page.locator("form:has(input[name='purge_all'])")
+        if purge_form.count() >= 1:
+            page.on("dialog", lambda d: d.accept())
+            purge_form.locator("button[type='submit']").click()
+            page.wait_for_load_state("load")
+
+        type(self)._turn_before = ui_turn_counter(page, base_url)
+        end_turn(page, base_url)
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+    def test_report_is_archived_after_end_turn(self, page: Page, base_url):
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        rows = page.locator("tbody tr:has(td:has-text('.html'))")
+        assert rows.count() >= 1, (
+            "After one end-turn, at least one turn report should be listed "
+            "on admin_turn_reports.php ; got 0 rows"
+        )
+        # The archive is stamped with the counter BEFORE the increment, so the
+        # narrative of turn N is filed under N. Capturing it after the increment
+        # would shift every archive by one and leave every other assertion green.
+        turn_cell = rows.first.locator("td").first.inner_text().strip()
+        assert turn_cell == str(self._turn_before), (
+            f"the archive must be filed under the turn it narrates "
+            f"({self._turn_before}); got {turn_cell!r}"
+        )
+
+    def test_the_archive_holds_the_narrative_not_an_empty_page(self, page: Page, base_url):
+        """Without this, an archive of the sidebar alone would satisfy the
+        row-count assertion above."""
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        view_link = page.locator("tbody tr:has(td:has-text('.html'))").first.locator("a")
+        safe_goto(page, view_link.get_attribute("href"))
+        page.wait_for_load_state("load")
+        html = page.content()
+        assert "Starting END of Turn" in html, (
+            "the archive must contain the opening marker of the resolution"
+        )
+        assert "attackMechanic" in html, (
+            "the archive must contain the step-by-step narrative, not just the shell"
+        )
+
+    def test_delete_button_removes_the_archive(self, page: Page, base_url):
+        ensure_gm_login(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        before = page.locator("tbody tr:has(td:has-text('.html'))").count()
+        assert before >= 1, "Pre-condition failed: no archive to delete"
+
+        page.on("dialog", lambda d: d.accept())
+        page.locator("tbody tr:has(td:has-text('.html'))").first.locator(
+            "form button.is-danger"
+        ).click()
+        page.wait_for_load_state("load")
+
+        after = page.locator("tbody tr:has(td:has-text('.html'))").count()
+        assert after == before - 1, (
+            f"Delete must remove exactly 1 row ; before={before}, after={after}"
+        )
+
+    def test_reloading_a_scenario_purges_the_archives(self, browser, base_url):
+        """The archives describe a game that the reset wipes, so they go with
+        it — which also keeps them from piling up across a test campaign.
+
+        Runs last in the class: it destroys the state the tests above read.
+        """
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, base_url)
+
+        # The delete test above consumed the fixture's archive, so make one.
+        end_turn(page, base_url)
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        before = page.locator("tbody tr:has(td:has-text('.html'))").count()
+        assert before >= 1, "Pre-condition failed: no archive to purge"
+
+        load_scenario_via_admin(browser, base_url, "TestConfig")
+
+        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        page.wait_for_load_state("load")
+        after = page.locator("tbody tr:has(td:has-text('.html'))").count()
+        html_after = page.content()
+        assert_no_collected_php_errors(page)
+        context.close()
+        assert after == 0, (
+            f"reloading a scenario must purge the turn archives; {after} left"
+        )
+        # Without this, a renamed page or a regressed guard would also count 0.
+        assert "No turn report found." in html_after, (
+            "the listing must still render after the purge, not redirect or 500"
+        )
 
 
 # ---------------------------------------------------------------------------
