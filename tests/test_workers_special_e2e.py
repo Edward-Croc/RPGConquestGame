@@ -317,6 +317,39 @@ class TestGiftPrisoner:
             "the refused release must leave the prisoner with its captor"
         )
 
+    def test_release_refuses_a_forged_holding_faction(self, gm_page: Page, base_url):
+        """returnPrisoner passed recall_controller_id straight through. Naming a
+        faction that does not hold the prisoner made the custody UPDATE match
+        nothing while the action still ended on 'passive' — so the jailer kept
+        the prisoner as a free active agent, the origin faction got nothing
+        back, and createTraceWorker minted a full clone of the worker at the
+        forged faction, secret ones included.
+        """
+        _select_controller(gm_page, base_url, "Echo")
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        response = gm_page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}&returnPrisoner=1"
+            f"&recall_controller_id={_controller_ids['Delta']}"
+            f"&return_controller_id={_controller_ids['Beta']}"
+        )
+        assert response is not None and response.status == 403, (
+            f"a forged holding faction must 403; got "
+            f"{response.status if response else None}"
+        )
+
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["action_choice"] == "captured", (
+            f"the refused release must leave the prisoner captured, not freed; got {live}"
+        )
+        assert live[0]["controller_id"] == _controller_ids["Echo"], (
+            "the refused release must leave the prisoner with its real holder"
+        )
+        traces = [r for r in rows if r["action_choice"] == "trace"]
+        assert all(r["controller_id"] != _controller_ids["Delta"] for r in traces), (
+            f"the refused release must not mint a dossier at the forged faction; got {traces}"
+        )
+
     def test_the_transfer_form_only_shows_in_the_jailer_own_view(self, gm_page: Page, base_url):
         """The guard requires the session to act for the jailer, so a view
         opened as another controller must not render a button that would 403.

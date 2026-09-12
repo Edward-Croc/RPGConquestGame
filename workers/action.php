@@ -263,6 +263,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
     }
     if (isset($_GET['returnPrisoner'])) {
+        // Only the faction actually holding the prisoner may release them, and only as itself.
+        $prisonerHolderId = getPrimaryControllerId($gameReady, (int) $worker_id);
+        if (
+            $recall_controller_id === null
+            || $prisonerHolderId === null
+            || (int) $recall_controller_id !== $prisonerHolderId
+            || (int) $recall_controller_id !== (int) $session_controller_id
+        ) {
+            game_error_log('workers_action_page', 'returnPrisoner refused : not the holding faction', ['worker_id' => $worker_id, 'recall_controller_id' => $recall_controller_id, 'prisonerHolderId' => $prisonerHolderId], 'warning');
+            http_response_code(403);
+            exit();
+        }
         $prisonerActions = getWorkerActions($gameReady, $worker_id);
         $prisonerParams = array();
         if (!empty($prisonerActions[0]['action_params'])) {

@@ -317,8 +317,10 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 );
             }
 
+            // Every prisoner gesture requires the session to act for the jailer, so a foreign view offers none.
+            $viewedAsJailer = (int) $controller_id === (int) ($_SESSION['controller']['id'] ?? 0);
             // on $workerStatus = 'prisoner' show return to owner button
-            if (!empty($workerStatus) && $workerStatus == 'prisoner') {
+            if (!empty($workerStatus) && $workerStatus == 'prisoner' && $viewedAsJailer) {
 
                 $params = json_decode($worker['actions'][$mechanics['turncounter']]['action_params'], true);
                 if (json_last_error() !== JSON_ERROR_NONE) {

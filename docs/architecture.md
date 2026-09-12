@@ -306,6 +306,13 @@ faction qui reprend son propre agent le libère légitimement. Le paramètre
 `double_controller_id` est vérifié contre celui de la capture, faute de quoi un
 geôlier s'installerait maître secret de l'agent qu'il relâche.
 
+La faction qui libère est contrôlée elle aussi : `recall_controller_id` doit être
+le contrôleur primaire réel de l'agent, et la session doit agir pour lui. Sans
+cela, en nommer une autre laissait l'`UPDATE` de garde sans effet pendant que
+l'action se terminait quand même sur `passive` — le geôlier gardait le prisonnier
+en agent **actif**, l'origine ne récupérait rien, et `createTraceWorker` déposait
+un dossier complet de l'agent chez la faction nommée dans l'URL.
+
 **Un transfert ne va que vers une faction que la capture n'a pas enregistrée** :
 l'origine et le maître double appellent une libération. Il exige en outre que
 l'agent soit réellement `captured`, que `recall_controller_id` soit son
@@ -313,9 +320,12 @@ contrôleur primaire réel, et que la session agisse pour ce contrôleur. Ses
 destinations sortent de `getControllers`, la liste que rend déjà le menu : une
 faction secrète ou inexistante n'y figure pas.
 
-Quand l'`UPDATE` de garde ne touche aucune ligne — un rejeu, le geôlier ne les
-détenant plus — ni trace ni texte ne sont écrits : c'est ce qui rend le geste
-rejouable sans laisser d'agent-leurre en trop.
+Un rejeu est refusé en amont par la garde, le geôlier n'étant plus le contrôleur
+primaire. En seconde barrière, quand l'`UPDATE` de garde ne touche aucune ligne,
+ni trace ni texte ne sont écrits : rien ne peut laisser un agent-leurre en trop.
+
+Les trois gestes exigent que la session agisse pour le geôlier, donc le panneau
+d'actions d'un prisonnier ne s'affiche pas dans la vue d'une autre faction.
 
 ### Les valeurs
 
