@@ -18,6 +18,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (is_writable($GLOBALS['LOG_PATH'])) {
             @file_put_contents($GLOBALS['LOG_PATH'], '');
         }
+        // The archived turn narratives describe the game being wiped, so they go with it.
+        foreach (glob($GLOBALS['TURN_REPORT_DIR'] . '/*.html') ?: array() as $turnReport) {
+            @unlink($turnReport);
+        }
         destroyAllTables($gameReady);
         $gameReady = gameReady();
     }
@@ -77,6 +81,7 @@ $adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
                 </ul>
             <?php endif; ?>
             <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_logs.php">&rarr; Game errors log</a></p>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_turn_reports.php">&rarr; Turn reports</a></p>
         </div>
         <div class="config">
                 <h1>BDD management : </h1>
