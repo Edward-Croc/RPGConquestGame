@@ -10,6 +10,18 @@ if (isset($_SESSION['controller'])) {
 if (isset($_GET['controller_id'])) {
     $controller_id = $_GET['controller_id'];
 }
+
+// Checked before the counter is incremented : a stranger could otherwise burn a rival allowance.
+if (empty($_SESSION['logged_in']) || empty($controller_id)) {
+    header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
+    exit();
+}
+if (empty($_SESSION['is_privileged']) && (int) $controller_id !== (int) ($_SESSION['controller']['id'] ?? 0)) {
+    game_error_log('workers_new_page', 'Recruitment page refused for another controller', ['controller_id' => $controller_id], 'warning');
+    http_response_code(403);
+    exit();
+}
+
 $controllerValues = getControllers($gameReady, null, $controller_id);
 $recrutment_allowed = true;
 
