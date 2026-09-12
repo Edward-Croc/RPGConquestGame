@@ -470,6 +470,28 @@ class TestGiftPrisoner:
             f"the capture origin must survive the transfer; buttons were {values}"
         )
 
+        # The outgoing line lives on the trace Echo keeps, not on the prisoner.
+        # Asserting it only by its absence above would leave the whole
+        # jailer-side half of the feature able to vanish with the suite green.
+        _select_controller(gm_page, base_url, "Echo")
+        traces = [
+            r for r in ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+            if r["action_choice"] == "trace" and r["controller_id"] == echo_id
+        ]
+        assert traces, "the transfer must leave a trace at the jailer"
+        safe_goto(
+            gm_page,
+            f"{base_url}/workers/action.php?worker_id={traces[-1]['id']}",
+        )
+        gm_page.wait_for_load_state("load")
+        trace_section = worker_report_section(gm_page.content(), "Changements :")
+        assert "envoyé" in trace_section, (
+            f"the jailer trace must carry textPrisonerTransferSent; got {trace_section!r}"
+        )
+        assert "transféré" not in trace_section, (
+            "the incoming line belongs to the prisoner own report, not to the trace"
+        )
+
         # Hand them back so the release test below keeps its premise.
         _select_controller(gm_page, base_url, "Delta")
         safe_goto(
