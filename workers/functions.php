@@ -147,7 +147,8 @@ function getWorkers(PDO $pdo, array|null $workerIds): array|null
     if (empty($workerIds)) {
         return null;
     }
-    $worker_id_str = implode(',', $workerIds);
+    // Cast each element : the array type does not constrain what it holds, and this goes into IN() unbound.
+    $worker_id_str = implode(',', array_map('intval', $workerIds));
 
     $sql = "SELECT
             w.*,

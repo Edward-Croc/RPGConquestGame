@@ -33,6 +33,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, ensure_scenario_loaded, login_as, safe_goto,
     ui_worker_id, ui_workers_by_lastname, ui_controller_ids_map, ui_zone_id,
     ui_attack, end_turn,
+    register_php_error_listener, assert_no_collected_php_errors,
 )
 
 
@@ -219,6 +220,50 @@ def test_anonymous_controller_switch_is_refused(browser, base_url):
         f"an anonymous controller switch must 403; got "
         f"{response.status if response else None}"
     )
+    ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# 3 quinquies. getWorkers — the id list goes into IN() unbound
+# ---------------------------------------------------------------------------
+
+def test_forged_worker_id_cannot_widen_the_query(browser, base_url):
+    """getWorkers built its IN(...) with implode() and no cast, and the
+    statement is executed with zero bound parameters, so a payload in
+    ?worker_id= landed whole in the query.
+
+    `1) OR (1=1` is valid SQL — it raises no error, it simply widens the IN()
+    to every row. The page then renders the whole roster instead of one agent.
+    Asserting the absence of a database error would therefore prove nothing;
+    what must be observed is that a worker nobody asked for stays out.
+
+    Searcher_1 belongs to Alpha and is not worker 1, so it may only appear if
+    the query was widened.
+    """
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    register_php_error_listener(page)
+    ensure_gm_login(page, base_url)
+    alpha_id = ui_controller_ids_map(page, base_url)["Alpha"]
+    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={alpha_id}&chosir=Choisir")
+
+    page.goto(f"{base_url}/workers/action.php?worker_id=1) OR (1=1")
+    forged = page.content()
+    assert "Searcher_1" not in forged, (
+        "the forged id widened the query : an agent that was not requested is rendered"
+    )
+    assert "<b>Warning</b>" not in forged and "<b>Fatal error</b>" not in forged, (
+        "the forged id must not surface a PHP error"
+    )
+
+    # Positive anchor : a legitimate id must still render its agent.
+    wid = ui_worker_id(page, "Searcher_1", base_url=base_url)
+    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={alpha_id}&chosir=Choisir")
+    safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
+    assert "Searcher_1" in page.content(), (
+        "a legitimate worker id must still render its agent"
+    )
+    assert_no_collected_php_errors(page)
     ctx.close()
 
 
