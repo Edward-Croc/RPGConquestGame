@@ -252,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         activateWorker($gameReady, $worker_id, 'claim', $claim_controller_id);
     }
     if (isset($_GET['gift'])) {
-        if ((int)$gift_controller_id === (int)$session_controller_id) {
+        if ($session_controller_id !== null && (int)$gift_controller_id === (int)$session_controller_id) {
             http_response_code(403);
             exit();
         }
@@ -260,6 +260,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
     if (isset($_GET['recallDoubleAgent'])) {
+        if ($session_controller_id !== null && (int)$recall_controller_id === (int)$session_controller_id) {
+            http_response_code(403);
+            exit();
+        }
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
     }
     if (isset($_GET['returnPrisoner'])) {
