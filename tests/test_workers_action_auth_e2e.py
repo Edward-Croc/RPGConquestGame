@@ -223,6 +223,76 @@ def test_anonymous_controller_switch_is_refused(browser, base_url):
 
 
 # ---------------------------------------------------------------------------
+# 3 quater. workers/new.php — the recruitment allowance is not a stranger's to burn
+# ---------------------------------------------------------------------------
+
+def test_recruitment_page_refuses_a_foreign_controller(browser, base_url):
+    """workers/new.php carried no guard at all : $controller_id came from the
+    query string and the UPDATE that spends the recruitment allowance ran
+    before baseHTML's login check. Anyone, logged in or not, could exhaust a
+    rival faction's allowance every turn without creating a single agent.
+    """
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    ids = ui_controller_ids_map(page, base_url)
+    ctx.close()
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    login_as(page, base_url, "single_player", "test")
+    response = page.goto(f"{base_url}/workers/new.php?controller_id={ids['Beta']}")
+    assert response is not None and response.status == 403, (
+        f"the recruitment page must refuse a foreign controller; got "
+        f"{response.status if response else None}"
+    )
+
+    # Positive anchor : the owner must still reach their own page.
+    own = page.goto(f"{base_url}/workers/new.php?controller_id={ids['Alpha']}")
+    assert own is not None and own.status == 200, (
+        f"a player must still reach their own recruitment page; got "
+        f"{own.status if own else None}"
+    )
+    ctx.close()
+
+
+def test_anonymous_visit_does_not_burn_the_allowance(browser, base_url):
+    """The counter UPDATE ran at line 57 while baseHTML's login check only
+    arrived at line 90, so an anonymous request was redirected *after* having
+    spent the allowance. Asserting the redirect proves nothing — it happens
+    either way. What must be observed is that the allowance survives.
+
+    turn_firstcome_workers is 1, so a single anonymous hit used to be enough
+    to lock a faction out of recruitment for the turn.
+
+    Golf is used : merely rendering the page spends the allowance, so the
+    subject must be a faction no other test in this file has visited, and the
+    verification visit must come after the anonymous one.
+    """
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    golf_id = ui_controller_ids_map(page, base_url)["Golf"]
+    ctx.close()
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    page.goto(f"{base_url}/workers/new.php?controller_id={golf_id}")
+    ctx.close()
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/workers/new.php?controller_id={golf_id}")
+    page.wait_for_load_state("load")
+    html = page.content()
+    ctx.close()
+    assert "Le recrutement n'est pas permis" not in html, (
+        "an anonymous visit must not spend the owner's recruitment allowance"
+    )
+
+
+# ---------------------------------------------------------------------------
 # 4. Privileged gm — bypasses ownership
 # ---------------------------------------------------------------------------
 
