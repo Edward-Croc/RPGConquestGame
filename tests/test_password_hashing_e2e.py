@@ -1,9 +1,9 @@
 """Playwright end-to-end tests for password hashing and password changes.
 
-players.passwd used to hold the password in clear and the login compared
-it in SQL. It now holds a hash, the comparison happens through
-password_verify, and the CSV importer hashes on the way in so a scenario
-reload never reintroduces clear text.
+players.passwd holds a hash, the login compares it through
+password_verify, and every seeding path -- the CSV importer, minimalData
+and the SQL scenario files -- stores a hash, so no reload reintroduces
+clear text. The player-facing page is connection/account.php.
 
 Run:
     python3 -m pytest tests/test_password_hashing_e2e.py -v
@@ -12,6 +12,10 @@ import pytest
 from playwright.sync_api import Page
 
 from conftest import GAME_PREFIX, PHP_BASE_URL, ensure_gm_login
+
+import csv
+import re
+from pathlib import Path
 
 from helpers import (
     DB_AVAILABLE, get_db_connection, load_scenario_via_admin, login_as, safe_goto,
@@ -99,7 +103,7 @@ def test_the_password_case_is_preserved(browser, base_url):
     register_php_error_listener(page)
     login_as(page, base_url, "single_player", "test")
 
-    safe_goto(page, f"{base_url}/connection/changePassword.php")
+    safe_goto(page, f"{base_url}/connection/account.php")
     page.fill("input[name='current_password']", "test")
     page.fill("input[name='new_password']", "MiXeD")
     page.fill("input[name='confirm_password']", "MiXeD")
@@ -149,7 +153,7 @@ def test_a_wrong_current_password_is_refused(browser, base_url):
     ctx = browser.new_context()
     page = ctx.new_page()
     login_as(page, base_url, "gm", "orga")
-    safe_goto(page, f"{base_url}/connection/changePassword.php")
+    safe_goto(page, f"{base_url}/connection/account.php")
     page.fill("input[name='current_password']", "wrong")
     page.fill("input[name='new_password']", "abcd")
     page.fill("input[name='confirm_password']", "abcd")
@@ -167,7 +171,7 @@ def test_a_wrong_current_password_is_refused(browser, base_url):
 def test_the_page_is_closed_to_anonymous_visitors(browser, base_url):
     ctx = browser.new_context()
     page = ctx.new_page()
-    safe_goto(page, f"{base_url}/connection/changePassword.php")
+    safe_goto(page, f"{base_url}/connection/account.php")
     url = page.url
     ctx.close()
     assert "loginForm" in url, f"an anonymous visitor must land on the login form; got {url}"
@@ -196,3 +200,83 @@ def test_the_admin_can_reset_a_player_password(browser, base_url):
     logged = page.locator("a.logout-btn").count()
     ctx.close()
     assert logged >= 1, "the player must be able to log in with the reset password"
+
+
+def test_the_account_page_lists_the_factions_of_the_player(browser, base_url):
+    """The account page is not only a password form : a player must see which
+    factions are theirs. multi_player holds Alpha and Beta, so a page that
+    listed every controller, or only the session one, would fail here."""
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    register_php_error_listener(page)
+    login_as(page, base_url, "multi_player", "test")
+    safe_goto(page, f"{base_url}/connection/account.php")
+    listed = page.locator("#playerFactions li").all_inner_texts()
+    assert_no_collected_php_errors(page)
+    ctx.close()
+
+    joined = " ".join(listed)
+    assert "Alpha" in joined and "Beta" in joined, (
+        f"the player's two factions must be listed; got {listed}"
+    )
+    assert "Charlie" not in joined, (
+        f"a faction the player does not hold must not be listed; got {listed}"
+    )
+
+
+@pytest.mark.db
+def test_the_admin_can_restore_the_scenario_password(browser, base_url):
+    """A player who lost their password gets the scenario default back. The
+    previous test left delta_player on 'ResetMe', so this one proves the
+    restore by logging in with the CSV value again."""
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/controllers/management.php")
+    page.select_option("select[name='scenario_player_id']", label="delta_player")
+    page.select_option("select[name='scenario_name']", "TestConfig")
+    page.click("button[name='reset_scenario_password']")
+    page.wait_for_load_state("load")
+    assert "Mot de passe remis à la valeur du scénario" in page.content()
+    ctx.close()
+
+    stored = _stored_password("delta_player")
+    assert stored.startswith("$2y$"), "the restore must store a hash"
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    login_as(page, base_url, "delta_player", "test")
+    logged = page.locator("a.logout-btn").count()
+    ctx.close()
+    assert logged >= 1, "the scenario password must open the session again"
+
+
+def test_no_seed_file_carries_a_clear_password():
+    """The CSV path hashes on import, but the SQL scenario files are piped to
+    the database as they stand : a clear value there is stored as-is and locks
+    every seeded account out. This reads the files, so it needs no database."""
+    repo = Path(__file__).resolve().parent.parent
+    offenders = []
+    for sql_file in sorted(repo.glob("var/*/*.sql")):
+        text = sql_file.read_text(encoding="utf-8", errors="replace")
+        for block in re.findall(
+            r"INSERT INTO \{prefix\}players[^;]+;", text, re.S
+        ):
+            for username, passwd in re.findall(r"\('([^']+)',\s*'([^']*)'", block):
+                if not passwd.startswith("$2y$") and not passwd.startswith("$argon2"):
+                    offenders.append(f"{sql_file.name}:{username}")
+    assert offenders == [], f"these seeds hold a clear password : {offenders}"
+
+
+def test_every_scenario_csv_seeds_a_password():
+    """The restore-to-scenario button reads these files : a scenario whose CSV
+    has no passwd column would silently offer a restore that does nothing."""
+    repo = Path(__file__).resolve().parent.parent
+    csv_files = sorted(repo.glob("var/csv/setup*_players.csv"))
+    assert csv_files, "no scenario players CSV found"
+    for csv_file in csv_files:
+        with csv_file.open(encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        assert rows, f"{csv_file.name} seeds no player"
+        missing = [r["username"] for r in rows if not (r.get("passwd") or "").strip()]
+        assert missing == [], f"{csv_file.name} seeds no password for {missing}"
