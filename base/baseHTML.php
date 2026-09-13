@@ -49,8 +49,8 @@ $isLoggedIn = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
 $isPrivileged = $_SESSION['is_privileged'] ?? false;
 
 if (!$isLoggedIn && !empty($noConnection)) {
-    $sysClass = ($pageName === 'systemPresentation') ? ' class="select"' : '';
-    echo "<a href='/$folder/base/systemPresentation.php'$sysClass>Le Système</a>";
+    $sysClass = ($pageName === 'systemPresentation') ? 'sidebar-btn select' : 'sidebar-btn';
+    echo "<a href='/$folder/base/systemPresentation.php' class='$sysClass'>Le Système</a>";
     echo "<a href='/$folder/connection/loginForm.php' class='sidebar-btn'>Login</a>";
 } else {
     // Define main links
@@ -63,11 +63,12 @@ if (!$isLoggedIn && !empty($noConnection)) {
         $links['ressources_view'] = ['label' => 'Ressources', 'path' => 'ressources/view.php'];
     }
     $links['zones_action'] = ['label' => 'Les Zones', 'path' => 'zones/action.php'];
-    $links['systemPresentation'] = ['label' => 'Le Système', 'path' => 'base/systemPresentation.php'];
+    $links['systemPresentation'] = ['label' => 'Le Système', 'path' => 'base/systemPresentation.php', 'class' => 'sidebar-btn'];
 
     foreach ($links as $key => $info) {
-        $selectedClass = ($pageName === $key) ? ' class="select"' : '';
-        echo "<a href='/$folder/{$info['path']}'$selectedClass>{$info['label']}</a>";
+        $linkClass = trim(($info['class'] ?? '') . ($pageName === $key ? ' select' : ''));
+        $classAttr = $linkClass === '' ? '' : " class='$linkClass'";
+        echo "<a href='/$folder/{$info['path']}'$classAttr>{$info['label']}</a>";
     }
 
     // Privileged user section
@@ -93,8 +94,9 @@ if (!$isLoggedIn && !empty($noConnection)) {
         echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
     }
 
-    // Logout button
-    echo "<a href='/$folder/connection/changePassword.php'>Mon mot de passe</a>";
+    // Account and logout buttons
+    $accountClass = ($pageName === 'account') ? 'sidebar-btn select' : 'sidebar-btn';
+    echo "<a href='/$folder/connection/account.php' class='$accountClass'>Mon compte</a>";
     echo "<a href='/$folder/connection/logout.php' class='logout-btn'>Logout</a>";
 }
 ?>
