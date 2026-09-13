@@ -44,6 +44,12 @@ if (!$endTurnAllowed) {
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
+// Registered after baseHTML so it runs after the footer : the archive holds the page as sent.
+$archivedTurnNumber = (int) $mechanics['turncounter'];
+register_shutdown_function(function () use ($archivedTurnNumber) {
+    saveTurnReport((string) ob_get_contents(), $archivedTurnNumber);
+});
+
 $backupDir = __DIR__ . '/../var/backups';
 if (is_dir($backupDir) && is_writable($backupDir)) {
     exportBDD(true);

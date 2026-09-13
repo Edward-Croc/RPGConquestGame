@@ -26,6 +26,12 @@ mkdir -p "$BACKUP_DIR"
 chown -R www-data:www-data "$BACKUP_DIR" 2>/dev/null || chmod 777 "$BACKUP_DIR"
 echo "Backup directory ready at $BACKUP_DIR."
 
+# Same treatment for the turn report archive, for the same bind-mount reason.
+TURN_REPORT_DIR="/var/www/html/RPGConquestGameTest/var/turn_reports"
+mkdir -p "$TURN_REPORT_DIR"
+chown -R www-data:www-data "$TURN_REPORT_DIR" 2>/dev/null || chmod 777 "$TURN_REPORT_DIR"
+echo "Turn report directory ready at $TURN_REPORT_DIR."
+
 # Initialize the database schema if requested
 if [ "${INIT_DB:-false}" = "true" ]; then
     SQL_FILE="/var/www/html/RPGConquestGameTest/var/mysql/setupBDD.sql"

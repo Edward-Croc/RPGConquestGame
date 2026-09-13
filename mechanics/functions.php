@@ -54,6 +54,43 @@ function toggleMechanicsGamestate(PDO $pdo, array $mechanics, bool $start = true
 }
 
 /**
+ * Archive the rendered end-of-turn narrative as an HTML file.
+ *
+ * @param string $html : the page as rendered, taken from the output buffer
+ * @param int $turn_number : turn the narrative belongs to
+ *
+ * @return string|null : the file name written, NULL when nothing was archived
+ */
+function saveTurnReport(string $html, int $turn_number): string|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, [], 'debug');
+
+    if ($html === '') {
+        return null;
+    }
+    $dir = $GLOBALS['TURN_REPORT_DIR'] ?? null;
+    if ($dir !== null && !is_dir($dir)) {
+        // Created on first use so a fresh deployment needs no manual step.
+        @mkdir($dir, 0755, true);
+    }
+    if ($dir === null || !is_dir($dir) || !is_writable($dir)) {
+        game_error_log(__FUNCTION__, 'Turn report directory missing or read-only', ['dir' => $dir], 'warning');
+        return null;
+    }
+
+    $prefix = preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($_SESSION['GAME_PREFIX'] ?? 'game'));
+    $name = sprintf('%sturn_%04d_%s.html', $prefix, $turn_number, date('Ymd-His'));
+    if (@file_put_contents($dir . '/' . $name, $html) === false) {
+        game_error_log(__FUNCTION__, 'Failed to write the turn report', ['name' => $name], 'warning');
+        return null;
+    }
+
+    game_error_log(__FUNCTION__, 'DONE', ['name' => $name], 'debug');
+    return $name;
+}
+
+/**
  * Change the end turn state
  *
  * @param PDO $pdo : database connection
