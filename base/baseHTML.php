@@ -94,6 +94,7 @@ if (!$isLoggedIn && !empty($noConnection)) {
     }
 
     // Logout button
+    echo "<a href='/$folder/connection/changePassword.php'>Mon mot de passe</a>";
     echo "<a href='/$folder/connection/logout.php' class='logout-btn'>Logout</a>";
 }
 ?>

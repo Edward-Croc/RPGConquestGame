@@ -100,6 +100,23 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     }
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset_password'])) {
+    $reset_player_id = intval($_POST['reset_player_id'] ?? 0);
+    $new_password = (string) ($_POST['new_password'] ?? '');
+    if ($reset_player_id <= 0 || strlen($new_password) < 4) {
+        $message = "Remise à zéro impossible : joueur ou mot de passe manquant (4 caractères minimum).";
+    } else {
+        try {
+            $stmt = $gameReady->prepare("UPDATE {$prefix}players SET passwd = :passwd WHERE id = :id");
+            $stmt->execute([':passwd' => hashPlayerPassword($new_password), ':id' => $reset_player_id]);
+            $message = "Mot de passe réinitialisé.";
+        } catch (PDOException $e) {
+            game_error_log('controller_management_page', 'UPDATE players passwd failed : ' . $e->getMessage(), ['player_id' => $reset_player_id], 'error');
+            $message = "Remise à zéro impossible : erreur en base.";
+        }
+    }
+}
+
 // Fetch all players and controllers
 $players = $gameReady->query("SELECT id, username FROM {$prefix}players ORDER BY username")->fetchAll(PDO::FETCH_ASSOC);
 $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
@@ -127,6 +144,20 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
         </select>
         <button type="submit" name="add">Add Player to Controller</button>
         <button type="submit" name="remove">Remove Player from Controller</button>
+    </form>
+
+    <h2>Réinitialiser un mot de passe</h2>
+    <form method="post">
+        <label for="reset_player_id">Joueur :</label>
+        <select name="reset_player_id" id="reset_player_id" required>
+            <option value="">-- Choisir un joueur --</option>
+            <?php foreach ($players as $player): ?>
+                <option value="<?php echo (int) $player['id']; ?>"><?php echo htmlspecialchars($player['username']); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label for="new_password">Nouveau mot de passe :</label>
+        <input type="text" name="new_password" id="new_password" required minlength="4" />
+        <button type="submit" name="reset_password">Réinitialiser</button>
     </form>
     <hr>
     <h2>Controller Details</h2>
