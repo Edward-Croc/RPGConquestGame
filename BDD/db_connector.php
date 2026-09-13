@@ -1220,7 +1220,7 @@ function exportBDD(bool $silent = false): string|null
     // export BDD to file via command line
     if ($config['db_type'] == 'mysql') {
         $command = sprintf(
-            'mysqldump -h %s -u %s -p%s %s > %s',
+            'mysqldump --skip-ssl -h %s -u %s -p%s %s > %s',
             escapeshellarg($config['host']),
             escapeshellarg($config['username']),
             escapeshellarg($config['password']),
@@ -1290,7 +1290,7 @@ function importBDD(PDO $pdo, array $file): bool
             // import BDD from file via command line
             if ($config['db_type'] == 'mysql') {
                 $command = sprintf(
-                    'mysql -h %s -u %s -p%s %s < %s',
+                    'mysql --skip-ssl -h %s -u %s -p%s %s < %s',
                     escapeshellarg($config['host']),
                     escapeshellarg($config['username']),
                     escapeshellarg($config['password']),

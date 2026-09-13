@@ -42,7 +42,7 @@ if [ "${INIT_DB:-false}" = "true" ]; then
     if [ -f "$SQL_FILE" ]; then
         echo "Initializing database schema..."
         PREFIX="${GAME_PREFIX:-}"
-        sed "s/{prefix}/$PREFIX/g" "$SQL_FILE" | mysql -h "${DB_HOST:-mysql}" -u "${DB_USER:-rpg_user}" -p"${DB_PASS:-rpg_pass}" "${DB_NAME:-rpgconquestgame}" 2>/dev/null || echo "DB init skipped (may already exist or MySQL not ready yet)."
+        sed "s/{prefix}/$PREFIX/g" "$SQL_FILE" | mysql --skip-ssl -h "${DB_HOST:-mysql}" -u "${DB_USER:-rpg_user}" -p"${DB_PASS:-rpg_pass}" "${DB_NAME:-rpgconquestgame}" 2>/dev/null || echo "DB init skipped (may already exist or MySQL not ready yet)."
     fi
 fi
 
