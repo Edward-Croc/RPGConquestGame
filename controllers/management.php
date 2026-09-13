@@ -145,8 +145,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset_scenario_passwor
 }
 
 // Fetch all players and controllers
-$players = $gameReady->query("SELECT id, username FROM {$prefix}players ORDER BY username")->fetchAll(PDO::FETCH_ASSOC);
-$controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
+$players = $gameReady->query("SELECT id, username FROM {$prefix}players ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+$controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <div class="content">
