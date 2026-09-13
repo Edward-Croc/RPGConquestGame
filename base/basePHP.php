@@ -12,7 +12,7 @@ if ($_SESSION['DEBUG'] == true) {
 
 // Set BEFORE errorLog.php require so its ini_set('error_log', ...) picks it up.
 $GLOBALS['LOG_PATH'] = __DIR__ . '/../var/logs/game_errors.log';
-// Where endTurn.php archives each turn narrative, listed by base/admin_turn_reports.php.
+// Where endTurn.php archives each turn narrative, listed by admin/admin_turn_reports.php.
 $GLOBALS['TURN_REPORT_DIR'] = __DIR__ . '/../var/turn_reports';
 
 require_once '../base/version.php';

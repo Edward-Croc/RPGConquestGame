@@ -80,15 +80,15 @@ $adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
-            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_logs.php">&rarr; Game errors log</a></p>
-            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_turn_reports.php">&rarr; Turn reports</a></p>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_logs.php">&rarr; Game errors log</a></p>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_turn_reports.php">&rarr; Turn reports</a></p>
         </div>
         <div class="config">
                 <h1>BDD management : </h1>
                 <?php
                     // Add button to extract BDD to file.sql or .sql
                     echo sprintf(
-                        '<p> <form action="/%s/base/admin.php" method="post">
+                        '<p> <form action="/%s/admin/admin.php" method="post">
                             <input type="hidden" name="exportBDD" />
                             <input type="submit" name="submitButton" value="Export BDD to file.sql" />
                         </form> </p>',
@@ -96,7 +96,7 @@ $adminBorderColor = empty($adminRecentErrors) ? '#27ae60' : '#c0392b';
                     );
 // Import BDD from file.sql
 echo sprintf(
-    '<p> <form action="/%s/base/admin.php" method="post" enctype="multipart/form-data">
+    '<p> <form action="/%s/admin/admin.php" method="post" enctype="multipart/form-data">
                             <input type="hidden" name="importBDD" />
                             <input type="file" name="bddFile" id="bddFile" />
                             <input type="submit" name="submitButton" value="Import BDD from file.sql" />
@@ -104,7 +104,7 @@ echo sprintf(
     $_SESSION['FOLDER']
 );
 ?>
-            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php">&rarr; DB backups</a></p>
+            <p style="margin-top: 0.5em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_backups.php">&rarr; DB backups</a></p>
         </div>
     </div>
     <!-- Ligne 2 : Config Management | Management | List (avec Worker list) -->
@@ -115,10 +115,10 @@ echo sprintf(
     echo sprintf(
         '<p> <a href="/%1$s/base/configuration.php">Configuration</a> </p>
                 <p> <a href="/%1$s/base/docConfig.php">Guide de configuration</a> </p>
-                <p> <a href="/%1$s/base/admin_csv.php">CSV scénarios (download / check)</a> </p>',
+                <p> <a href="/%1$s/admin/admin_csv.php">CSV scénarios (download / check)</a> </p>',
         $_SESSION['FOLDER']
     );
-echo sprintf('<form id="resetForm" action="/%s/base/admin.php" method="post">', $_SESSION['FOLDER']);
+echo sprintf('<form id="resetForm" action="/%s/admin/admin.php" method="post">', $_SESSION['FOLDER']);
 ?>
                 <h2> FULL Reset : <br />
                     <select id="configSelect" name="config_name">

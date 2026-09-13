@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "purpose": "Documentation-only grouping of {prefix}config keys. Not imported by the CSV loader. Used by docs/configuration.md and base/admin_csv.php.",
+    "purpose": "Documentation-only grouping of {prefix}config keys. Not imported by the CSV loader. Used by docs/configuration.md and admin/admin_csv.php.",
     "config_csv_header": ["name", "value", "description"],
     "scenarios": {
       "TestConfig": {

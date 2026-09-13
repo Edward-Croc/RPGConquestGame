@@ -91,7 +91,7 @@ if (!$isLoggedIn && !empty($noConnection)) {
         }
 
         $adminClass = ($pageName === 'admin') ? 'sidebar-btn select' : 'sidebar-btn';
-        echo "<a href='/$folder/base/admin.php' class='$adminClass'>Configuration</a>";
+        echo "<a href='/$folder/admin/admin.php' class='$adminClass'>Configuration</a>";
     }
 
     // Account and logout buttons

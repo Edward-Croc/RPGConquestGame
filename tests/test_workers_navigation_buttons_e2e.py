@@ -527,7 +527,7 @@ class TestBucketColourPerController:
         login_as(page, PHP_BASE_URL, "gm", "orga")
         self._controller_ids.update(ui_controller_ids_map(page, PHP_BASE_URL))
 
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
 
         def _scrape(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():

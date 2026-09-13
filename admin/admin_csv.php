@@ -314,7 +314,7 @@ require_once '../base/baseHTML.php';
     </p>
     <?= $action_msg ?>
 
-    <form method="get" action="/<?= htmlspecialchars($folder) ?>/base/admin_csv.php" class="box" style="margin-bottom: 1.5em;">
+    <form method="get" action="/<?= htmlspecialchars($folder) ?>/admin/admin_csv.php" class="box" style="margin-bottom: 1.5em;">
         <h2 class="title is-5">Vérifier un CSV config par section_key</h2>
         <div class="field is-grouped is-grouped-multiline">
             <div class="control">
@@ -364,7 +364,7 @@ require_once '../base/baseHTML.php';
                 — table <code><?= htmlspecialchars($checkResult['table']) ?></code>
                 — <?= number_format($checkResult['size'] / 1024, 1) ?> KB
                 —
-                <a class="button is-small" href="/<?= htmlspecialchars($folder) ?>/base/admin_csv.php?download=<?= urlencode($checkResult['file']) ?>">Download</a>
+                <a class="button is-small" href="/<?= htmlspecialchars($folder) ?>/admin/admin_csv.php?download=<?= urlencode($checkResult['file']) ?>">Download</a>
             </p>
             <?php if ($checkResult['header_error']): ?>
                 <p style="color: red;"><?= htmlspecialchars($checkResult['header_error']) ?></p>
@@ -445,9 +445,9 @@ require_once '../base/baseHTML.php';
                                 <td><?= number_format($f['size'] / 1024, 1) ?> KB</td>
                                 <td><?= date('Y-m-d H:i', $f['mtime']) ?></td>
                                 <td>
-                                    <a class="button is-small" href="/<?= htmlspecialchars($folder) ?>/base/admin_csv.php?download=<?= urlencode($f['name']) ?>">Download</a>
+                                    <a class="button is-small" href="/<?= htmlspecialchars($folder) ?>/admin/admin_csv.php?download=<?= urlencode($f['name']) ?>">Download</a>
                                     <?php if ($f['table'] === 'config'): ?>
-                                        <a class="button is-small is-info is-light" href="/<?= htmlspecialchars($folder) ?>/base/admin_csv.php?check=<?= urlencode($f['name']) ?>">Check</a>
+                                        <a class="button is-small is-info is-light" href="/<?= htmlspecialchars($folder) ?>/admin/admin_csv.php?check=<?= urlencode($f['name']) ?>">Check</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -459,7 +459,7 @@ require_once '../base/baseHTML.php';
     <?php endif; ?>
 
     <p style="margin-top: 1em;">
-        <a href="/<?= htmlspecialchars($folder) ?>/base/admin.php">&larr; Back to admin</a>
+        <a href="/<?= htmlspecialchars($folder) ?>/admin/admin.php">&larr; Back to admin</a>
         —
         <a href="/<?= htmlspecialchars($folder) ?>/base/configuration.php">Configuration live</a>
     </p>

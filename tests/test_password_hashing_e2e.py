@@ -280,3 +280,18 @@ def test_every_scenario_csv_seeds_a_password():
         assert rows, f"{csv_file.name} seeds no player"
         missing = [r["username"] for r in rows if not (r.get("passwd") or "").strip()]
         assert missing == [], f"{csv_file.name} seeds no password for {missing}"
+
+
+def test_the_restore_form_preselects_the_loaded_scenario(browser, base_url):
+    """mechanics.scenario_name is written by the loader and read here, so the
+    orga does not have to remember which scenario is running. A column that
+    was never stamped would leave the select on its empty first option."""
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/controllers/management.php")
+    selected = page.locator("select[name='scenario_name']").input_value()
+    ctx.close()
+    assert selected == "TestConfig", (
+        f"the loaded scenario must be preselected; got {selected!r}"
+    )

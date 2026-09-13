@@ -104,7 +104,7 @@ require_once '../base/baseHTML.php';
     <?php if (empty($reports)): ?>
         <p><em>No turn report found.</em></p>
     <?php else: ?>
-        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_turn_reports.php" method="post" style="margin-bottom: 1em;">
+        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_turn_reports.php" method="post" style="margin-bottom: 1em;">
             <input type="hidden" name="purge_all" value="1" />
             <button type="submit" class="button is-danger" onclick="return confirm('Purge ALL <?= count($reports) ?> turn reports ? This cannot be undone.');">Purge all reports</button>
         </form>
@@ -127,8 +127,8 @@ require_once '../base/baseHTML.php';
                         <td><?= number_format($r['size'] / 1024, 1) ?> KB</td>
                         <td><?= date('Y-m-d H:i:s', $r['mtime']) ?></td>
                         <td>
-                            <a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_turn_reports.php?view=<?= urlencode($r['name']) ?>" class="button is-small" target="_blank">View</a>
-                            <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_turn_reports.php" method="post" style="display:inline;">
+                            <a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_turn_reports.php?view=<?= urlencode($r['name']) ?>" class="button is-small" target="_blank">View</a>
+                            <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_turn_reports.php" method="post" style="display:inline;">
                                 <input type="hidden" name="delete_report" value="<?= htmlspecialchars($r['name']) ?>" />
                                 <button type="submit" class="button is-small is-danger" onclick="return confirm('Delete <?= htmlspecialchars(addslashes($r['name'])) ?> ?');">Delete</button>
                             </form>
@@ -139,7 +139,7 @@ require_once '../base/baseHTML.php';
         </table>
     <?php endif; ?>
 
-    <p style="margin-top: 1em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin.php">&larr; Back to admin</a></p>
+    <p style="margin-top: 1em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin.php">&larr; Back to admin</a></p>
 </div>
 </body>
 </html>

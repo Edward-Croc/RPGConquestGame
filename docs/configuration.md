@@ -40,6 +40,30 @@ name,value,description
 
 **Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
 
+## Le scénario chargé
+
+La réinitialisation complète (`admin/admin.php`) inscrit le nom du scénario
+choisi dans **`{prefix}mechanics.scenario_name`**, la seule trace qui en
+subsiste : rien d'autre ne le mémorise. Le tableau *Mechanics* de la page
+d'administration l'affiche, et la remise d'un mot de passe à sa valeur de
+scénario s'en sert pour présélectionner le bon fichier.
+
+La colonne est vide sur une base antérieure à son ajout, ou après un
+chargement fait hors de l'interface : les pages qui la lisent retombent alors
+sur un choix manuel.
+
+**Le scénario `Base`** est un socle nu : le schéma et `minimalData.sql`, sans
+aucun fichier de scénario. Aucun `var/csv/setupBase_*.csv` n'existe, et c'est
+volontaire — chaque chargeur teste la présence de son fichier et passe son
+tour. On obtient une partie vide, avec le seul compte `gm`, à peupler depuis
+l'administration. Le chargement affiche donc une vingtaine de lignes
+« Neither CSV nor SQL file found » : elles décrivent exactement ce qui se
+passe.
+
+Comme `Base` ne sème aucun joueur, il n'apparaît pas dans la liste de remise
+des mots de passe, qui est construite à partir des fichiers
+`var/csv/setup*_players.csv` présents.
+
 ## Les comptes de connexion
 
 `players.passwd` ne contient **jamais** le mot de passe en clair : la colonne
@@ -96,7 +120,7 @@ tous les autres comptes — et réattribuer les mots de passe depuis
 
 ## Exemples CSV à télécharger / comparer
 
-Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`base/admin_csv.php`, compte privilégié).
+Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`admin/admin_csv.php`, compte privilégié).
 
 | Scénario | Fichier config | Ressources | Autres tables utiles |
 |---|---|---|---|
@@ -110,7 +134,7 @@ Les valeurs absentes d’un CSV scénario restent celles de `var/{mysql|postgres
 
 ### Comment vérifier une section
 
-1. Ouvrir **Admin → CSV scénarios (download / check)** (`base/admin_csv.php`).
+1. Ouvrir **Admin → CSV scénarios (download / check)** (`admin/admin_csv.php`).
 2. Choisir un fichier `*_config.csv` et un `section_key` (ex. `location_attack`).
 3. Lire les clés **trouvées** vs **absentes** (souvent OK si le défaut `minimalData` suffit).
 4. Télécharger le CSV pour le comparer à votre brouillon local.
@@ -792,7 +816,7 @@ Cette annexe regroupe les détails d’implémentation utiles au code, pas à la
 
 - **Import CSV** : `BDD/db_connector.php` charge `setup{config_name}_{table}.csv` avec upsert pour `config` et `power_types`.
 - **Carte documentaire** : `docs/config_section_map.json` (pas importée).
-- **Panneau admin** : `base/admin_csv.php` — download + check d’en-tête / `section_key`.
+- **Panneau admin** : `admin/admin_csv.php` — download + check d’en-tête / `section_key`.
 - **Guide rendu HTML** : `base/docConfig.php` (Parsedown sur ce fichier).
 - **Logs / fail-open** : règles `zone_rules` invalides, pools texte illisibles, `gain_rules` mal formées → log + valeur de base intacte ou phrase vide selon le site d’appel.
 - **Question ouverte #120** : `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d’appel porter un repli ?

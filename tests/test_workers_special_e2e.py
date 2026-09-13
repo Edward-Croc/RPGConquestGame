@@ -866,10 +866,10 @@ class TestDoubleAgentCapture:
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
 
-        # The perfect-worker admin form is included by /base/admin.php.
+        # The perfect-worker admin form is included by /admin/admin.php.
         # Scrape link_power_type_ids and origin_id from its dropdowns so
         # the recruitment URL is valid even if seed-order changes the ids.
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -1021,7 +1021,7 @@ class TestDoubleAgentLifecycle:
 
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors TestDoubleAgentCapture's pattern).
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -1264,7 +1264,7 @@ class TestGoTraitorSelfRecruitCollision:
 
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors prior classes' pattern).
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
@@ -1368,7 +1368,7 @@ class TestReturnPrisonerReinstatesSecondary:
 
         # Scrape link_power_type_ids and origin_id from the perfect-worker
         # form (mirrors prior classes' pattern).
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
 
         def _scrape_option_value(select_selector, text_match):
             for opt in page.locator(f"{select_selector} option").all():
