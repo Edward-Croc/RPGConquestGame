@@ -194,6 +194,7 @@ def end_turn(page: Page, base_url: str = None):
     assert "<b>Warning</b>" not in html, "PHP warning during end turn"
     assert "<b>Fatal error</b>" not in html, "PHP fatal error during end turn"
     assert "<b>Notice</b>" not in html, "PHP notice during end turn"
+    assert "<b>Deprecated</b>" not in html, "PHP deprecation during end turn"
     assert "Failed:" not in html, "Caught-PDO error during end turn (look for 'Failed:' echo)"
     assert "Stack trace" not in html, "Uncaught exception trace during end turn"
 
@@ -1627,12 +1628,12 @@ def ui_worker_action_state(page: Page, lastname: str, base_url: str = None):
 # PHP error guard — belt-and-buckle: explicit safe_goto + response listener
 # ---------------------------------------------------------------------------
 
-PHP_ERROR_MARKERS = ('<b>Warning</b>', '<b>Fatal error</b>', '<b>Parse error</b>')
+PHP_ERROR_MARKERS = ('<b>Warning</b>', '<b>Fatal error</b>', '<b>Parse error</b>', '<b>Deprecated</b>')
 
 
 def assert_no_php_errors(page, context=None):
     """Assert that page.content() contains no PHP error markers
-    (Warning / Fatal error / Parse error, as PHP renders them with
+    (Warning / Fatal error / Parse error / Deprecated, as PHP renders them with
     default html_errors=On)."""
     html = page.content()
     found = [m for m in PHP_ERROR_MARKERS if m in html]
