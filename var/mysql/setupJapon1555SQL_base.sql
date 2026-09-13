@@ -24,30 +24,31 @@ UPDATE {prefix}config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
 UPDATE {prefix}config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts';
 
+-- passwd holds a hash : the login compares it with password_verify, so a clear value locks the account out.
 INSERT INTO {prefix}players (username, passwd, is_privileged, url) VALUES
-    ('player0', 'yokai', 0, ''),
-    ('shingen', 'takeda', 0, ''),
-    ('yoshiteru', 'ashizero', 0, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
-    ('yoshiaki', 'ashizero', 0, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
-    ('yoshihide', 'ashizero', 0, 'https://docs.google.com/document/d/1FcjTlNsO31TBnwXBQcF2BbuTKzH_gmMc-TGl6g-tW5Y'),
-    ('motochika', 'chosone', 0, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
-    ('kanetsugu', 'chosone', 0, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
-    ('shoho', 'chosone', 0, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
-    ('nagayoshi', 'miytwo', 0, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
-    ('fudzisan', 'miytwo', 0, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
-    ('sogo', 'miytwo', 0, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
-    ('rennyo', 'renthree', 0, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
-    ('ren-jo', 'renthree', 0, 'https://docs.google.com/document/d/1WC11-CiBHk1pkfxub39VdR7iS29n_tl7Krca9w4khxI'),
-    ('ennyo', 'renthree', 0, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
-    ('tadaoki', 'hosfour', 0, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
-    ('tama', 'hosfour', 0, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
-    ('joha', 'hosfour', 0, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
-    ('murai', 'wakfive', 0, 'https://docs.google.com/document/d/1phCVmNoAXUGi5ukGLwIQihu76DOMjLwaPdC_q5xBsV4'),
-    ('tsuruhime', 'wakfive', 0, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
-    ('wang', 'wakfive', 0, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
-    ('kukai', 'kobsix', 0, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
-    ('satomura', 'kobsix', 0, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
-    ('yubien', 'kobsix', 0, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
+    ('player0', '$2y$10$0xDFkGQZMhz8yoaPOZDslu3bNusGHWQCAsuHK6vtFh1ExKkN3PPd6', 0, ''),
+    ('shingen', '$2y$10$O6TpcXGdvhSFqeBJidCigOYXKHq0wW9IrTKCAXp9XaQQfBV5YYt9.', 0, ''),
+    ('yoshiteru', '$2y$10$/EUTmaDZnC7HBQ1NvCXTUehtWtf0CgYSaZbwbLr0828s1hu/ihnxG', 0, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
+    ('yoshiaki', '$2y$10$0YO.1CMmKG0oneOFNSGE8uhawtyNuQ7kGm2jzek7DtChVNAEUPHhG', 0, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
+    ('yoshihide', '$2y$10$bgNblGGaTHHlAVuTFjw2tezXRErYLXgmUqIkw2SGqWWuQNAsnHrKC', 0, 'https://docs.google.com/document/d/1FcjTlNsO31TBnwXBQcF2BbuTKzH_gmMc-TGl6g-tW5Y'),
+    ('motochika', '$2y$10$7rFalzrqQ3OGOpTda6SW2el0ahjSwDR4m7F/mxZUFTFLQwHsxUbVG', 0, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
+    ('kanetsugu', '$2y$10$IbY6qjLCBeIx8kTyZsm7fu0Ek9vyCsEAO7oI3wKAiO0VuDT3hBT56', 0, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
+    ('shoho', '$2y$10$3f24huOGlgbiH6OLMUGHOemielP4/xX.TazJixjRN5V7VHGK.h6a6', 0, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
+    ('nagayoshi', '$2y$10$ArXhL5.MpqQYxy4mhZiNtuGBaF1f4EWNqAqvyJKOc.YBUMJ39kSqG', 0, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
+    ('fudzisan', '$2y$10$i548vgiBji6NT8E2R6.w8.08cnbBk0gcCpYDnXJ2IdUigjhSUwaHy', 0, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
+    ('sogo', '$2y$10$5w/572Y6dJl4kU.IZ.8cB.kpUfAzmeae1CLaBkxZwpT1/fgrvQ/Qe', 0, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
+    ('rennyo', '$2y$10$3LAlIwnQAzXGuaTVjvOX9e7XaFO1AXJFMrMfVVzihbZqD4ey4hpLu', 0, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
+    ('ren-jo', '$2y$10$vqqpKnnjdh8.o2chqZnzA.gDRXQArwEku1Dc.NyLw60bTXXMaPX9q', 0, 'https://docs.google.com/document/d/1WC11-CiBHk1pkfxub39VdR7iS29n_tl7Krca9w4khxI'),
+    ('ennyo', '$2y$10$LrEACEU2uwKrPKp4kWy5NOMOCB9AReylcMpRn70XRrrQgLb8c.WXW', 0, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
+    ('tadaoki', '$2y$10$GHkVK5eMg8Q/7qbtWKNwDOybqt6kQgLB9NCiiaFkaRh1Pu/LDj1/S', 0, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
+    ('tama', '$2y$10$sjHhmQoRA99HsVBqvZcL0u9XiXtvp1eVCP8VWlWLBaLIQX4tET63m', 0, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
+    ('joha', '$2y$10$JGYS1l6v7LsAfHHgNwlk1e/DjArGdlhRY83T8bOq1/Gk4jMj0diQq', 0, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
+    ('murai', '$2y$10$wwXbwiZVP5AjRnrfShEDoOvUniJZ8cjnd9pECuJxdWgt/16OMsGAG', 0, 'https://docs.google.com/document/d/1phCVmNoAXUGi5ukGLwIQihu76DOMjLwaPdC_q5xBsV4'),
+    ('tsuruhime', '$2y$10$1Fv4VuXD1cOwtj8oSq2h4uW2cCmA32h6iQLOKwXx2BN1qPKZ07OES', 0, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
+    ('wang', '$2y$10$0V4Sc.cDY8HUs7skZsQmbOjvyeGNoBci9E6JLYaStLePzup2B3HfG', 0, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
+    ('kukai', '$2y$10$ma2F2vtQU2HnxgqC1GaJxuSDEGtuyF6XAWZF3.KtqfiJugaLdMPrO', 0, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
+    ('satomura', '$2y$10$s50LQnZVvf/qy.1pRG7V..iqewXxzaXvY4TOq0ixCdK6pwS1881Ue', 0, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
+    ('yubien', '$2y$10$g4XJ7TRRav8mFEtrtiaVUuRfmN3n57IY4jVA5H.tXTCZtvfCNI4c.', 0, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
 ;
 
 INSERT INTO {prefix}factions (name) VALUES

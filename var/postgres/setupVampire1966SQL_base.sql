@@ -18,20 +18,21 @@ UPDATE {prefix}config SET value =  'FALSE' WHERE name = 'ressource_management';
 UPDATE {prefix}config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
+-- passwd holds a hash : the login compares it with password_verify, so a clear value locks the account out.
 INSERT INTO {prefix}players (username, passwd, is_privileged) VALUES
-    ('player1', 'one', False),
-    ('player2', 'two', False),
-    ('player3', 'three', False),
-    ('player4', 'four', False),
-    ('player5', 'five', False),
-    ('player6', 'six', False),
-    ('player7', 'seven', False),
-    ('player8', 'eight', False),
-    ('player9', 'nine', False),
-    ('player10', 'ten', False),
-    ('player11', 'eleven', False),
-    ('player12', 'twelve', False),
-    ('player13', '13', False)
+    ('player1', '$2y$10$072yuLRIbeoplMCZ99SobOux.5Er0bP6c0LQYIC.BlXsDkza30ihO', False),
+    ('player2', '$2y$10$My6B4Ws4OkpYyji9DNlBVOk.gKh6oyOr7m9eOO4d4iJCmCBuoaOK6', False),
+    ('player3', '$2y$10$WqezxSoJUGPw/vHSgApZpObRmnsoiNKJzgEp/DxPjQ4bZV49/IUdi', False),
+    ('player4', '$2y$10$SOe/WSn28WfovwUrIxVMF.Qu3UAwbK0ABn0cjOU2F6bf7d1VxuaWe', False),
+    ('player5', '$2y$10$FikQVMPI2tGc33CBkPkvZ.PuWmkiVqEPTi1g.xUivf.Sk5IJA7Gta', False),
+    ('player6', '$2y$10$TTfevbthV7j34mKC8v84yuk4C1JkEUwxup3gp.NuUqoxVXXFUzlgi', False),
+    ('player7', '$2y$10$jh4J3UWnMhqOgvEQZq6Ftu2XFzgUSVvj5gIbsKPdq22naEqi.4BcW', False),
+    ('player8', '$2y$10$rSfp/s1EY9Iu.6zSwzLgousEQV8DuqUjg6I9spe6EzD/ir0IkiIQu', False),
+    ('player9', '$2y$10$/UNTyOn3eWlh.4pR4mMsaekpBl6BFAUSwa.cPqyTFkqZYE2xh3Vce', False),
+    ('player10', '$2y$10$jDRkfIunLwSnWrP5HDYAtOYYMdsTWNJfO/ZZBUT1/3TNWgniuMnnC', False),
+    ('player11', '$2y$10$9WiVkLekmpWm0EUP2h61ze2BwkCHenkDA.366kA9FUSJluf3z05vO', False),
+    ('player12', '$2y$10$p16N6uyIwT/DMjNzc3VVAuipJI5GqWr3uVo6RT/3ITCBjMkXJEyzG', False),
+    ('player13', '$2y$10$iV5fyLIjUx5WuOv5G5KWZe7KwugyYUsobClgZegoMaWxklWnD8d5a', False)
 ;
 
 INSERT INTO {prefix}factions (name) VALUES

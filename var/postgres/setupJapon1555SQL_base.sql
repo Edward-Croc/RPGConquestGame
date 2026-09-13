@@ -24,30 +24,31 @@ UPDATE {prefix}config SET value =  'du' WHERE name = 'timeDenominatorOf';
 
 UPDATE {prefix}config SET value =  'Vos protégé.es :' WHERE name = 'textOwnedArtefacts';
 
+-- passwd holds a hash : the login compares it with password_verify, so a clear value locks the account out.
 INSERT INTO {prefix}players (username, passwd, is_privileged, url) VALUES
-    ('player0', 'yokai', False, ''),
-    ('shingen', 'takeda', False, ''),
-    ('yoshiteru', 'ashikaga', False, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
-    ('yoshiaki', 'ashikaga', False, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
-    ('yoshihide', 'ashikaga', False, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
-    ('motochika', 'chosone', False, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
-    ('kanetsugu', 'chosone', False, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
-    ('shoho', 'chosone', False, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
-    ('nagayoshi', 'miytwo', False, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
-    ('fudzisan', 'miytwo', False, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
-    ('sogo', 'miytwo', False, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
-    ('rennyo', 'renthree', False, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
-    ('ren-jo', 'renthree', False, 'https://docs.google.com/document/d/1WC11-CiBHk1pkfxub39VdR7iS29n_tl7Krca9w4khxI'),
-    ('renko', 'renthree', False, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
-    ('tadaoki', 'hosfour', False, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
-    ('tama', 'hosfour', False, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
-    ('joha', 'hosfour', False, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
-    ('murai', 'wakfive', False, 'https://docs.google.com/document/d/1phCVmNoAXUGi5ukGLwIQihu76DOMjLwaPdC_q5xBsV4'),
-    ('tsuruhime', 'wakfive', False, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
-    ('wang', 'wakfive', False, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
-    ('kukai', 'kobsix', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
-    ('satomura', 'kobsix', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
-    ('yubien', 'kobsix', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
+    ('player0', '$2y$10$4zV/2USutptz2s9Q4FxS0usE22JECy.tFxBeb1/6yRWpj9Nxcg7ma', False, ''),
+    ('shingen', '$2y$10$tKN73lxutKIE09eQeHRYtucKH27EQbmnO31OxA9qgFb9HnE6gpwly', False, ''),
+    ('yoshiteru', '$2y$10$KsN27RwbH5DDfQRGe0INguacv6D/rXrIPQ5v4ntm5oySorzEh.BQW', False, 'https://docs.google.com/document/d/1XWEAm-2-gFsGRPqPElp4qtxWfCXLaGOQaZgJbnuGTJ8'),
+    ('yoshiaki', '$2y$10$VS18F4EmlVttDHfk2jqcyeOHQz0A8lI05Grj0uNNvxTaQpIue6hqS', False, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
+    ('yoshihide', '$2y$10$rZpDwiRDiFYTBFvkbGK4lue6ksFTIuuYVLEONBp3JOCyJBcqUe1jK', False, 'https://docs.google.com/document/d/1Qryg_9w8oGfKZ87wqtGlAVzwoMAh26dm92cwuOYSfmg'),
+    ('motochika', '$2y$10$HgrYq0.NCJK4ZMyv3bXtb.1ZAtVX7TfmTU9dN/Yu7ruz5SYRR1MVq', False, 'https://docs.google.com/document/d/1HZRuA8IYp4taWFqqZcK7fY5PhyKIBT9DZuzgYYBnWfA'),
+    ('kanetsugu', '$2y$10$zq.yrE3RfblyD1eDecwHUelBtsH6GRW6YusIOu8rZw9GMZgMWP0YW', False, 'https://docs.google.com/document/d/1YdDNPTEudj0YvysCxoiU6UdZPsHrFdHK5goCg88pjeQ'),
+    ('shoho', '$2y$10$S..l3BF1e0lwUL9OhzJIAeOQC4i01SyPOhKvhzzngFxUZacWPn3Dy', False, 'https://docs.google.com/document/d/1NU7d51p--9oeaaN6nlCBr1a8990JJw4OMDBA77wbyVE'),
+    ('nagayoshi', '$2y$10$O4DSVBPR4Kypz.76n45/ae13LErF9fqAhK.w1DsN3ZbaSds8vk4na', False, 'https://docs.google.com/document/d/1W95lJ9bq0-KWRTCijgQ0Ua4koFsjTdLp3nvPTrnvCOc'),
+    ('fudzisan', '$2y$10$b7O/xyLN0cpdAQhSQB6F/.PcJ54HHTNorYgMMmxN360vdh/tJ8.9m', False, 'https://docs.google.com/document/d/1s_i_H1q2s3lPN26UQTQODfED81XXgWWy0qkUvGvm8L8'),
+    ('sogo', '$2y$10$q64jLpmm86VaFrP.Aq0WgOI5BHqz/4tISQkGBX/Qr2xb6GV5JjoQW', False, 'https://docs.google.com/document/d/1qIumW_aa9LJAv7u2ie1MyEV4dblRuiTPKhcmuVmq2dY'),
+    ('rennyo', '$2y$10$1mwrDmk5GvNQZJwjcC/sgOEon5h88UlWAbgtuNjmWp6FVyA3jJLM6', False, 'https://docs.google.com/document/d/1eynG0_wLeCS_8Z6991qX2dGwxFbH7e0Ln-Zcpb6XKEA'),
+    ('ren-jo', '$2y$10$38.ps.CXAuK3t8kOgjdiue7RrKKwgkOd8WqVEiqxucuX4.ZudF9gC', False, 'https://docs.google.com/document/d/1WC11-CiBHk1pkfxub39VdR7iS29n_tl7Krca9w4khxI'),
+    ('renko', '$2y$10$T/KiuhTJnQl.P297d4c73eVHzsowUcMlQlfchQh/abtiBcmS9b3ee', False, 'https://docs.google.com/document/d/1yI4IPxk5rHHWrtap5NBEAFRIX3SIF8TJkOrjzwcH0Hw'),
+    ('tadaoki', '$2y$10$hG/Mgx5mkQ4ZUNQHfUzXzepTgM2OFAFeGi8KGKK0cuQynzGh3RBE2', False, 'https://docs.google.com/document/d/1b-Vk3Pc7zhCORjOuNG968TNq-1YMcGxx8bmJE_chIzo'),
+    ('tama', '$2y$10$9Irm8E4NShELRJd1Wx2g.OcBfKZH2WIhlVuj7oE1S3f1D9oXZpPxW', False, 'https://docs.google.com/document/d/1O9_iUsfAbT_1AfUVaQxe9Ogrjont__mqWVdIROGUcAg'),
+    ('joha', '$2y$10$YwkB7ipBDUqwcSqoT1v8M.5GlP98JSthFkrdBOtkf4PKqKxKJq9my', False, 'https://docs.google.com/document/d/14dIXHkiLZ9LFnRPbr3WHfxuBhkQupkASIGoqLx6i3Ug'),
+    ('murai', '$2y$10$zy2P8p.Mk3xkNv4vCrebG.04RrFHY0PmQnG.tbK102hjikcNNdLL2', False, 'https://docs.google.com/document/d/1phCVmNoAXUGi5ukGLwIQihu76DOMjLwaPdC_q5xBsV4'),
+    ('tsuruhime', '$2y$10$0HNWCG.UazUsCFQUIfRxIe.fkGsXJ.vPJcMHQjk0MSVU70NGsUBKy', False, 'https://docs.google.com/document/d/1eAjNsf8kSXhPeeymYpZgpBFvkkb-08SJtdhdWjB4CJI'),
+    ('wang', '$2y$10$SBRs/863DPcy/ZOTPd9OweQCxRpEz6.Rl81mg4dAf2vdxQ48JIEyi', False, 'https://docs.google.com/document/d/1TWo7xseEmTo-S8x8qSfXCV1mtP42omzMR_FuMHOf9RI'),
+    ('kukai', '$2y$10$PUzz8SxGmsYSkdgIt/uNbuFaLYUnl/ovKEHKU2nncX8WPGnvBTqJC', False, 'https://docs.google.com/document/d/18n06xOJueWRKJ9lq2GbVgk3C7vC031YOxeIWB4lwlvc'),
+    ('satomura', '$2y$10$N4P6R9PC.DlpiTX3XUs0JeRu23q32ZM/AT0I2Dc.gG3MnsCQv.SjO', False, 'https://docs.google.com/document/d/1YVUapPuI1lmko_BUjhlHnbU-ZvaZHgWNbdOtoSSXKtU'),
+    ('yubien', '$2y$10$OKZMVRJSTDklDWI8kR9OxOfSzVkjhDbWCTyRBcfS1n4vs81T4VtDu', False, 'https://docs.google.com/document/d/1nORj-ibMjS0-vqIFV7cnmfW9-vur44TLEOwpZuPvHb0')
 ;
 
 INSERT INTO {prefix}factions (name) VALUES
