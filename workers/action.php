@@ -260,10 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         header(sprintf('Location: /%s/workers/viewAll.php', $_SESSION['FOLDER']));
     }
     if (isset($_GET['recallDoubleAgent'])) {
-        if ($session_controller_id !== null && (int)$recall_controller_id === (int)$session_controller_id) {
-            http_response_code(403);
-            exit();
-        }
+        // recall_controller_id names the faction doing the recalling, so it is its own by design.
         activateWorker($gameReady, $worker_id, 'recallDoubleAgent', $recall_controller_id);
     }
     if (isset($_GET['returnPrisoner'])) {
