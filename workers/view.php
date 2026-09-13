@@ -329,7 +329,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
             // on $workerStatus = 'prisoner' show return to owner button
             if (!empty($workerStatus) && $workerStatus == 'prisoner' && $viewedAsJailer) {
 
-                $params = json_decode($worker['actions'][$mechanics['turncounter']]['action_params'], true);
+                $params = decodeJson($worker['actions'][$mechanics['turncounter']]['action_params']);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     echo "JSON decoding error: " . json_last_error_msg() . "<br />";
                 }
@@ -554,7 +554,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 }
                 if ($action['report'] != '{}') {
                     // Decode the existing JSON into an associative array
-                    $currentReport = json_decode($action['report'], true);
+                    $currentReport = decodeJson($action['report']);
                     if (!empty($currentReport['life_report'])) {
                         echo '<p><h4 class="subtitle is-6"> Changements : </h4> '.$currentReport['life_report'].'</p>';
                     }

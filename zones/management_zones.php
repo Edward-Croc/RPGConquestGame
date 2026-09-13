@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['zone_id'])) {
     $zoneRulesToStore = null;
     $jsonError = false;
     if (trim($zoneRulesRaw) !== '') {
-        $decoded = json_decode($zoneRulesRaw, true);
+        $decoded = decodeJson($zoneRulesRaw);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
             $jsonError = true;
         } else {

@@ -2,6 +2,8 @@
 
 // Needed by loadCSVFile : seeded passwords are hashed on the way in.
 require_once __DIR__ . '/../connection/functions.php';
+// Every entry point reaches this file, so decodeJson is available everywhere.
+require_once __DIR__ . '/../base/jsonHelpers.php';
 
 /**
  * Resolves the directory containing a given config filename.

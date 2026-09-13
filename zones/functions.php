@@ -1265,7 +1265,7 @@ function applyZoneRules(PDO $pdo, string $type, int $zone_id, int|null $controll
         return $value;
     }
 
-    $rules = json_decode($row['zone_rules'], true);
+    $rules = decodeJson($row['zone_rules']);
     if (!is_array($rules)) {
         game_error_log(__FUNCTION__, 'invalid JSON in zone_rules', ['zone_id' => $zone_id]);
         return $value;

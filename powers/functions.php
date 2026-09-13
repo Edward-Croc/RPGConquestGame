@@ -299,7 +299,7 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
             continue;
         }
 
-        $powerConditions = json_decode($power['other'] ?? '', true);
+        $powerConditions = decodeJson($power['other'] ?? '');
         if (!is_array($powerConditions)) {
             continue;
         }
@@ -436,7 +436,7 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
     if (empty($power['other'])) {
         return null;
     }
-    $powerConditions = json_decode($power['other'], true);
+    $powerConditions = decodeJson($power['other']);
     if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) {
         return null;
     }

@@ -45,7 +45,7 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool
         $ressourceId = (int)$row['ressource_id'];
 
         // Extract the gain rules
-        $rules = json_decode($row['gain_rules'], true);
+        $rules = decodeJson($row['gain_rules']);
         if (!is_array($rules)) {
             game_error_log(__FUNCTION__, 'Invalid gain_rules JSON for ressource_id=' . $ressourceId . ', skipping', ['ressourceId' => $ressourceId, 'gain_rules' => $row['gain_rules']], 'error');
             continue;
@@ -218,7 +218,7 @@ function ressourceGainEvaluateCondition(PDO $pdo, array $condition): array
         $counts = [];
         foreach ($rows as $row) {
             if ($requiredTag !== null) {
-                $tags = json_decode($row['location_types'] ?? '[]', true);
+                $tags = decodeJson($row['location_types'] ?? '[]');
                 if (!is_array($tags) || !in_array($requiredTag, $tags, true)) {
                     continue;
                 }
