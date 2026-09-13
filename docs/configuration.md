@@ -40,6 +40,38 @@ name,value,description
 
 **Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
 
+## Les comptes de connexion
+
+`players.passwd` ne contient **jamais** le mot de passe en clair : la colonne
+porte une empreinte, et l'authentification passe par `password_verify`.
+
+Les CSV de scénario, eux, portent bien la valeur en clair — c'est leur rôle, ce
+sont des données de mise en place. L'importeur la hache au chargement, donc un
+rechargement de scénario ne réintroduit pas de clair.
+
+L'identifiant est normalisé en minuscules, **pas le mot de passe** : `Secret` et
+`secret` sont deux mots de passe différents.
+
+Le compte `gm` semé par `minimalData.sql` a pour mot de passe `orga`.
+
+### Déployer le hachage sur une partie existante
+
+Une base antérieure au hachage contient des mots de passe en clair, et
+`password_verify` les refuse tous — **personne ne peut plus se connecter**, pas
+même le meneur de jeu. Or recharger un scénario exige d'être connecté : l'accès
+ne peut pas se rétablir par l'interface.
+
+La remise en route se fait donc en base, une fois, avant tout le reste :
+
+```sql
+UPDATE {prefix}players SET passwd = '<empreinte>' WHERE username = 'gm';
+```
+
+où `<empreinte>` s'obtient par `php -r 'echo password_hash("orga", PASSWORD_DEFAULT);'`.
+Le meneur de jeu peut alors se connecter, recharger le scénario — ce qui hache
+tous les autres comptes — et réattribuer les mots de passe depuis
+`controllers/management.php`.
+
 ## Exemples CSV à télécharger / comparer
 
 Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`base/admin_csv.php`, compte privilégié).
