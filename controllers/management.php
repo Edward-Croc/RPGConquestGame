@@ -117,6 +117,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset_password'])) {
     }
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset_scenario_password'])) {
+    $scenario_player_id = intval($_POST['scenario_player_id'] ?? 0);
+    $scenario_name = (string) ($_POST['scenario_name'] ?? '');
+    try {
+        $stmt = $gameReady->prepare("SELECT username FROM {$prefix}players WHERE id = :id");
+        $stmt->execute([':id' => $scenario_player_id]);
+        $scenario_player = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        game_error_log('controller_management_page', 'SELECT players failed : ' . $e->getMessage(), ['player_id' => $scenario_player_id], 'error');
+        $scenario_player = false;
+    }
+
+    $seededPassword = $scenario_player ? scenarioSeededPassword($scenario_name, $scenario_player['username']) : null;
+    if ($seededPassword === null) {
+        $message = "Remise à zéro impossible : ce scénario ne sème pas de mot de passe pour ce joueur.";
+    } else {
+        try {
+            $stmt = $gameReady->prepare("UPDATE {$prefix}players SET passwd = :passwd WHERE id = :id");
+            $stmt->execute([':passwd' => hashPlayerPassword($seededPassword), ':id' => $scenario_player_id]);
+            $message = "Mot de passe remis à la valeur du scénario.";
+        } catch (PDOException $e) {
+            game_error_log('controller_management_page', 'UPDATE players passwd failed : ' . $e->getMessage(), ['player_id' => $scenario_player_id], 'error');
+            $message = "Remise à zéro impossible : erreur en base.";
+        }
+    }
+}
+
 // Fetch all players and controllers
 $players = $gameReady->query("SELECT id, username FROM {$prefix}players ORDER BY username")->fetchAll(PDO::FETCH_ASSOC);
 $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers ORDER BY lastname")->fetchAll(PDO::FETCH_ASSOC);
@@ -158,6 +185,25 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
         <label for="new_password">Nouveau mot de passe :</label>
         <input type="text" name="new_password" id="new_password" required minlength="4" />
         <button type="submit" name="reset_password">Réinitialiser</button>
+    </form>
+
+    <h2>Remettre le mot de passe du scénario</h2>
+    <form method="post">
+        <label for="scenario_player_id">Joueur :</label>
+        <select name="scenario_player_id" id="scenario_player_id" required>
+            <option value="">-- Choisir un joueur --</option>
+            <?php foreach ($players as $player): ?>
+                <option value="<?php echo (int) $player['id']; ?>"><?php echo htmlspecialchars($player['username']); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <label for="scenario_name">Scénario :</label>
+        <select name="scenario_name" id="scenario_name" required>
+            <option value="">-- Choisir un scénario --</option>
+            <?php foreach (listScenariosWithPlayers() as $scenario): ?>
+                <option value="<?php echo htmlspecialchars($scenario); ?>"><?php echo htmlspecialchars($scenario); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit" name="reset_scenario_password">Remettre la valeur du scénario</button>
     </form>
     <hr>
     <h2>Controller Details</h2>
