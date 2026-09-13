@@ -28,7 +28,7 @@ CREATE TABLE {prefix}config (
 CREATE TABLE {prefix}players (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    passwd VARCHAR(64) NOT NULL,
+    passwd VARCHAR(255) NOT NULL,
     url text,
     is_privileged BOOLEAN DEFAULT FALSE -- does player have god mode
 );

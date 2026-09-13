@@ -30,7 +30,7 @@ CREATE TABLE {prefix}config (
 CREATE TABLE {prefix}players (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    passwd VARCHAR(64) NOT NULL,
+    passwd VARCHAR(255) NOT NULL,
     url TEXT,
     is_privileged TINYINT(1) DEFAULT 0 -- does player have god mode
 );
