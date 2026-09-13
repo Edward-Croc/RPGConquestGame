@@ -317,8 +317,10 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 );
             }
 
+            // Every prisoner gesture requires the session to act for the jailer, so a foreign view offers none.
+            $viewedAsJailer = (int) $controller_id === (int) ($_SESSION['controller']['id'] ?? 0);
             // on $workerStatus = 'prisoner' show return to owner button
-            if (!empty($workerStatus) && $workerStatus == 'prisoner') {
+            if (!empty($workerStatus) && $workerStatus == 'prisoner' && $viewedAsJailer) {
 
                 $params = json_decode($worker['actions'][$mechanics['turncounter']]['action_params'], true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -362,6 +364,39 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                         $controller_id,
                         $double_agent_controller_id,
                         'Relâcher le prisonnier vers ' . $controllerName . ' !',
+                        $_SESSION['FOLDER']
+                    );
+                }
+                // Transfer keeps the agent captive : origin and double faction are release targets, not transfer ones.
+                $transferControllers = array_values(array_filter(
+                    getControllers($gameReady, null, null, true, $controller_id) ?? array(),
+                    function ($candidate) use ($return_controller_id, $double_agent_controller_id) {
+                        if ((int) $candidate['id'] === (int) $return_controller_id) {
+                            return false;
+                        }
+                        return $double_agent_controller_id === null
+                            || (int) $candidate['id'] !== (int) $double_agent_controller_id;
+                    }
+                ));
+                if (!empty($transferControllers)) {
+                    $actionHTML .= sprintf(
+                        '
+                        <form action="/%4$s/workers/action.php" method="GET">
+                            <input type="hidden" name="worker_id" value="%1$s">
+                            <input type="hidden" name="recall_controller_id" value="%2$s">
+                            <div class="field is-grouped is-grouped-multiline">
+                                <div class="control">
+                                    %3$s
+                                </div>
+                                <div class="control">
+                                    <input type="submit" name="transferPrisoner" value="Transférer le prisonnier !" class="button is-link">
+                                </div>
+                            </div>
+                        </form>
+                    ',
+                        $worker['id'],
+                        $controller_id,
+                        showControllerSelect($transferControllers, null, 'transfer_controller_id'),
                         $_SESSION['FOLDER']
                     );
                 }
