@@ -12,7 +12,8 @@ CREATE TABLE {prefix}mechanics (
     id INT AUTO_INCREMENT PRIMARY KEY,
     turncounter INT DEFAULT 0,
     gamestate INT DEFAULT 0,
-    end_step TEXT
+    end_step TEXT,
+    scenario_name VARCHAR(255) DEFAULT '' -- scenario loaded by the last full reset
 );
 
 -- create configuration table

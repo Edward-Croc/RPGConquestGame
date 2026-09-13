@@ -151,6 +151,7 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
 ?>
 <div class="content">
     <h1>Controller Management</h1>
+    <p>
     <?php if ($message): ?>
         <p style="color:green;"><?php echo $message; ?></p>
     <?php endif; ?>
@@ -172,8 +173,11 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
         <button type="submit" name="add">Add Player to Controller</button>
         <button type="submit" name="remove">Remove Player from Controller</button>
     </form>
-
-    <h2>Réinitialiser un mot de passe</h2>
+    </p>
+    <hr>
+    <h2>Mots de passes</h2>
+    <p>
+    <strong>Réinitialiser un mot de passe</strong>
     <form method="post">
         <label for="reset_player_id">Joueur :</label>
         <select name="reset_player_id" id="reset_player_id" required>
@@ -187,24 +191,24 @@ $controllers = $gameReady->query("SELECT id, lastname FROM {$prefix}controllers 
         <button type="submit" name="reset_password">Réinitialiser</button>
     </form>
 
-    <h2>Remettre le mot de passe du scénario</h2>
-    <form method="post">
-        <label for="scenario_player_id">Joueur :</label>
-        <select name="scenario_player_id" id="scenario_player_id" required>
-            <option value="">-- Choisir un joueur --</option>
-            <?php foreach ($players as $player): ?>
-                <option value="<?php echo (int) $player['id']; ?>"><?php echo htmlspecialchars($player['username']); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <label for="scenario_name">Scénario :</label>
-        <select name="scenario_name" id="scenario_name" required>
-            <option value="">-- Choisir un scénario --</option>
-            <?php foreach (listScenariosWithPlayers() as $scenario): ?>
-                <option value="<?php echo htmlspecialchars($scenario); ?>"><?php echo htmlspecialchars($scenario); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button type="submit" name="reset_scenario_password">Remettre la valeur du scénario</button>
-    </form>
+    <strong>Remettre le mot de passe du scénario</strong>
+    <?php if (!empty($mechanics['scenario_name'])): ?>
+        <p>Scénario chargé : <strong><?php echo htmlspecialchars($mechanics['scenario_name']); ?></strong>.</p>
+        <form method="post">
+            <input type="hidden" name="scenario_name" value="<?php echo htmlspecialchars($mechanics['scenario_name']); ?>" />
+            <label for="scenario_player_id">Joueur :</label>
+            <select name="scenario_player_id" id="scenario_player_id" required>
+                <option value="">-- Choisir un joueur --</option>
+                <?php foreach ($players as $player): ?>
+                    <option value="<?php echo (int) $player['id']; ?>"><?php echo htmlspecialchars($player['username']); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" name="reset_scenario_password">Remettre la valeur du scénario</button>
+        </form>
+    <?php else: ?>
+        <p>Aucun scénario enregistré.</p>
+    <?php endif; ?>
+    </p>
     <hr>
     <h2>Controller Details</h2>
     <table border="1">

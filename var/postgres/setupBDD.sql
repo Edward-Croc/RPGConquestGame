@@ -10,7 +10,8 @@ CREATE TABLE {prefix}mechanics (
     id SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
     gamestate INTEGER DEFAULT 0,
-    end_step TEXT DEFAULT ''
+    end_step TEXT DEFAULT '',
+    scenario_name VARCHAR(255) DEFAULT '' -- scenario loaded by the last full reset
 );
 
 

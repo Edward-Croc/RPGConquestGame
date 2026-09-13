@@ -127,6 +127,9 @@ echo sprintf('<form id="resetForm" action="/%s/admin/admin.php" method="post">',
                             <option  value='Vampire1966CSV'> Firenze Vampire 1966 </option>
                             <option  value='TestConfig'> TestConfig </option>
                         </optgroup>
+                        <optgroup label="Sans scénario">
+                            <option  value='Base'> Base (socle nu) </option>
+                        </optgroup>
                         <optgroup label="Anciennes config SQL">
                             <option  value='Vampire1966SQL'> Firenze Vampire 1966 </option>
                             <option  value='Japon1555SQL'> Shikoku (四国) 1555 </option>
