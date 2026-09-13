@@ -133,11 +133,11 @@ function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|nul
  * Function to get worker and return as an array
  *
  * @param PDO $pdo : database connection
- * @param array|null $workerIds : worker ids to fetch
+ * @param array $workerIds : worker ids to fetch
  *
  * @return array|null : workers with powers + actions attached, or NULL on empty/error
  */
-function getWorkers(PDO $pdo, array|null $workerIds): array|null
+function getWorkers(PDO $pdo, array $workerIds): array|null
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START', ['workerIds' => $workerIds], 'debug');
@@ -147,7 +147,8 @@ function getWorkers(PDO $pdo, array|null $workerIds): array|null
     if (empty($workerIds)) {
         return null;
     }
-    $worker_id_str = implode(',', $workerIds);
+    // Cast each element : the array type does not constrain what it holds, and this goes into IN() unbound.
+    $worker_id_str = implode(',', array_map('intval', $workerIds));
 
     $sql = "SELECT
             w.*,
@@ -264,7 +265,7 @@ function getWorkersByController(PDO $pdo, int $controller_id, int|null $zone_id 
     }
 
     $controller_workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $worker_ids = null;
+    $worker_ids = array();
     foreach ($controller_workers as $controller_worker) {
         $worker_ids[] = $controller_worker['worker_id'];
     }
