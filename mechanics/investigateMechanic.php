@@ -32,7 +32,7 @@ function cleanAndSplitString(string|null $input): array
  */
 function getSearcherComparisons(PDO $pdo, int|null $turn_number = null, int|null $searcher_id = null): array|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . ($turn_number ?? 'NULL'), ['searcher_id' => $searcher_id], 'debug');
@@ -506,7 +506,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
  */
 function investigateMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');

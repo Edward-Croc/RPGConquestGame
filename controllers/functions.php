@@ -269,7 +269,7 @@ function hasBase(PDO $pdo, int $controller_id): array|null
  */
 function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['zone_id' => $zone_id], 'debug');
@@ -603,7 +603,7 @@ function showRepairableControllerKnownLocations(PDO $pdo, int $controller_id): s
  */
 function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_location_id): array|null
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['target_location_id' => $target_location_id], 'debug');
@@ -693,7 +693,7 @@ function attackLocation(PDO $pdo, int|null $controller_id, int|null $target_loca
  */
 function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $controller_id, int $turn_number, int $controllerAttack, int $locationDefence): array|null
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with target_location_id : ' . ($location['id'] ?? ''), ['controller_id' => $controller_id, 'turn_number' => $turn_number, 'controllerAttack' => $controllerAttack, 'locationDefence' => $locationDefence, 'location' => $location], 'debug');
@@ -983,7 +983,7 @@ function addWorkerToCKE(
     string|null $discovered_controller_name = null,
     bool $discovered_powers = false
 ): int|string|null {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with searcher_controller_id : ' . $searcher_controller_id, ['found_worker_id' => $found_worker_id, 'turn_number' => $turn_number, 'zone_id' => $zone_id, 'discovered_controller_id' => $discovered_controller_id, 'discovered_controller_name' => $discovered_controller_name, 'discovered_powers' => $discovered_powers], 'debug');
@@ -1126,7 +1126,7 @@ function getCKLEntry(PDO $pdo, int $controller_id, int $location_id): array|null
  */
 function addLocationToCKL(PDO $pdo, int $controller_id, int $location_id, int $turn_number, bool $found_secret): int|string|null
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['location_id' => $location_id, 'turn_number' => $turn_number, 'found_secret' => $found_secret], 'debug');

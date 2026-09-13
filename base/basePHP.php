@@ -125,19 +125,19 @@ if (!$gameReady) {
 } else {
     // Set the session debug status
     $_SESSION['DEBUG'] = false;
-    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
     $_SESSION['DEBUG_REPORT'] = false;
-    if (strtolower(getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
         $_SESSION['DEBUG_REPORT'] = true;
     }
     $_SESSION['DEBUG_ATTACK'] = false;
-    if (strtolower(getConfig($gameReady, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG_ATTACK')) == 'true') {
         $_SESSION['DEBUG_ATTACK'] = true;
     }
     $_SESSION['DEBUG_TRANSFORM'] = false;
-    if (strtolower(getConfig($gameReady, 'DEBUG_TRANSFORM')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG_TRANSFORM')) == 'true') {
         $_SESSION['DEBUG_TRANSFORM'] = true;
     }
 

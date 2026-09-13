@@ -188,7 +188,7 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
  */
 function locationSearchMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');

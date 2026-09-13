@@ -74,7 +74,7 @@ function _claimResolveClaimerControllerIdForWrite(array $params, int $selfContro
  */
 function claimMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -175,7 +175,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
  */
 function claimByWorkerMath(PDO $pdo, array $mechanics): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -328,7 +328,7 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array
  */
 function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');

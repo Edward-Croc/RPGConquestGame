@@ -35,7 +35,7 @@ if (isset($_SESSION['user_id'])) {
 // Get Controllers information
 $controllers = getControllers($gameReady, $_SESSION['user_id'], null, false);
 $debug = false;
-if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
+if (strtolower((string) getConfig($gameReady, 'DEBUG')) == 'true') {
     $debug = true;
 }
 echo '<div class="section factions">';

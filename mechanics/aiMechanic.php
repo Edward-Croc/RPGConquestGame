@@ -8,7 +8,7 @@ function aiMechanic($pdo, $mechanics)
     echo "turn_number : $turn_number <br>";
 
     $debug = false;
-    if (strtolower(getConfig($pdo, 'DEBUG_IA')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_IA')) == 'true') {
         $debug = true;
     }
 

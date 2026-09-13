@@ -164,7 +164,7 @@ function topUpRecruitCandidates(PDO $pdo, int $controller_id, string $recruit_ty
  */
 function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|null $actionChoice = null, array|null $reportAppendArray = null, array|null $jsonArray = null): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['turnNumber' => $turnNumber, 'actionChoice' => $actionChoice, 'reportAppendArray' => $reportAppendArray, 'jsonArray' => $jsonArray], 'debug');
@@ -1281,7 +1281,7 @@ function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
  */
 function createWorker(PDO $pdo, array $array, bool $reuseNamesake = true): string|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START', ['array' => $array], 'debug');
@@ -1400,7 +1400,7 @@ function createWorker(PDO $pdo, array $array, bool $reuseNamesake = true): strin
  */
 function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $isRecrutment = false): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['link_power_type_id' => $link_power_type_id, 'isRecrutment' => $isRecrutment], 'debug');
@@ -1461,7 +1461,7 @@ function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $i
  */
 function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bool $isRecrutment = false): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['otherJson' => $otherJson, 'isRecrutment' => $isRecrutment], 'debug');
@@ -2223,7 +2223,7 @@ function buildEnemyWorkerListing(PDO $pdo, int $zone_id, int $controller_id, int
  */
 function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|null $turn_number = null): string
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with zone_id : ' . $zone_id, ['controller_id' => $controller_id, 'turn_number' => $turn_number], 'debug');
@@ -2297,7 +2297,7 @@ function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|
  */
 function createTraceWorker(PDO $pdo, int $worker_id, int $controller_id): string|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');
@@ -2394,7 +2394,7 @@ function createTraceWorker(PDO $pdo, int $worker_id, int $controller_id): string
  */
 function destroyTraceWorker(PDO $pdo, int $worker_id, int $controller_id): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');

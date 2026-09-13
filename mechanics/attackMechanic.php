@@ -18,7 +18,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  */
 function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null $attacker_id = null): array|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 
@@ -298,7 +298,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
  */
 function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string $attackerReportKey = 'attack_report', string $defenderReportKey = 'life_report'): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 
@@ -493,7 +493,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
  */
 function attackMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 

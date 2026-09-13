@@ -1093,11 +1093,11 @@ function gameReady(): PDO|null
                     }
 
                     if (
-                        (strtolower(getConfig($pdo, 'DEBUG')) == 'true')
-                        || (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true')
-                        || (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
-                        || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
-                        || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
+                        (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true')
+                        || (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true')
+                        || (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true')
+                        || (strtolower((string) getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
+                        || (strtolower((string) getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
                     ) {
                         $csvFile = sprintf('%s/var/csv/setup%s_advanced_tests.csv', $path, $_POST['config_name']);
                         $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
