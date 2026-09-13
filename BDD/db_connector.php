@@ -1,5 +1,7 @@
 <?php
 
+// Needed by loadCSVFile : seeded passwords are hashed on the way in.
+require_once __DIR__ . '/../connection/functions.php';
 
 /**
  * Resolves the directory containing a given config filename.
@@ -595,6 +597,9 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                         } else {
                             $values[] = null;
                         }
+                    } elseif ($tableName === 'players' && $col === 'passwd') {
+                        // Scenario CSVs carry the password in clear : it is setup data, and it is hashed here.
+                        $values[] = hashPlayerPassword($value);
                     } else {
                         $values[] = $value;
                     }
