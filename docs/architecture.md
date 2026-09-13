@@ -23,7 +23,7 @@ puis rend son HTML via `base/baseHTML.php`.
 | Dossier | Rôle |
 |---|---|
 | `base/` | amorçage, session, page d'accueil, administration, configuration |
-| `connection/` | connexion et déconnexion — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
+| `connection/` | connexion, déconnexion et compte du joueur (`account.php` : factions rattachées, changement de mot de passe) — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
 | `BDD/` | `db_connector.php` : connexion, création du schéma, importeur de scénario |
 | `mechanics/` | le moteur de fin de tour et ses mécaniques |
 | `workers/`, `controllers/`, `zones/`, `ressources/`, `powers/`, `artefacts/` | domaines métier : pages, vues, fonctions |

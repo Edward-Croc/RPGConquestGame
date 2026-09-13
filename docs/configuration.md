@@ -49,10 +49,32 @@ Les CSV de scénario, eux, portent bien la valeur en clair — c'est leur rôle,
 sont des données de mise en place. L'importeur la hache au chargement, donc un
 rechargement de scénario ne réintroduit pas de clair.
 
+Les anciens scénarios SQL (`var/{mysql|postgres}/setup*SQL_base.sql`) sont
+injectés tels quels, sans passer par l'importeur : leurs comptes y portent donc
+déjà une empreinte. Les valeurs en clair correspondantes se lisent dans le CSV
+du même scénario.
+
 L'identifiant est normalisé en minuscules, **pas le mot de passe** : `Secret` et
 `secret` sont deux mots de passe différents.
 
 Le compte `gm` semé par `minimalData.sql` a pour mot de passe `orga`.
+
+### Changer ou réattribuer un mot de passe
+
+Un joueur change le sien depuis **Mon compte** (`connection/account.php`), la
+page qui lui montre aussi les factions rattachées à son compte. Le changement
+exige le mot de passe actuel.
+
+Un joueur qui a perdu le sien ne peut rien faire seul. L'orga le lui réattribue
+depuis **Player-Controllers** (`controllers/management.php`), de deux façons :
+
+- **Réinitialiser** : l'orga saisit la valeur de son choix ;
+- **Remettre la valeur du scénario** : l'orga choisit un scénario, et le compte
+  retrouve le mot de passe que `var/csv/setup<scénario>_players.csv` lui sème.
+
+Le nom du scénario chargé n'est mémorisé nulle part — il n'existe que le temps
+du rechargement — d'où le choix explicite dans le formulaire. La restitution lit
+le CSV, jamais la base.
 
 ### Déployer le hachage sur une partie existante
 
