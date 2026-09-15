@@ -3,7 +3,7 @@ admin pages that used to have none (GitHub issue #121).
 
 `base/baseHTML.php` only ever checked `logged_in`, and only after the
 entry point had already run its POST handlers. So an ordinary logged-in
-player could open `base/admin.php` and `base/configuration.php` in full.
+player could open `admin/admin.php` and `base/configuration.php` in full.
 The guard added right after `basePHP.php` on each page is what these
 tests pin down: a logged-in non-gm session must be bounced, and gm must
 still get through.
@@ -36,7 +36,7 @@ from helpers import (
 
 # (path, a string present in the page body and nowhere on the login form)
 ADMIN_PAGES = (
-    ("base/admin.php", "BDD management"),
+    ("admin/admin.php", "BDD management"),
     ("base/configuration.php", "Add New Config Value"),
 )
 
@@ -99,7 +99,7 @@ def _assert_non_privileged_blocked(browser, base_url, path, body_marker):
 
 
 def test_non_privileged_player_cannot_reach_the_admin_hub(browser, base_url):
-    """An ordinary player must be bounced off /base/admin.php, whose POST
+    """An ordinary player must be bounced off /admin/admin.php, whose POST
     handlers wipe, export and import the database."""
     _assert_non_privileged_blocked(browser, base_url, *ADMIN_PAGES[0])
 
@@ -135,7 +135,7 @@ def test_non_privileged_player_can_read_the_config_guide(browser, base_url):
         assert body_marker in html, (
             f"the guide body must render for a player; {body_marker!r} missing"
         )
-        assert "/base/admin_csv.php" not in html, (
+        assert "/admin/admin_csv.php" not in html, (
             "the admin CSV link must stay hidden from a non-privileged reader"
         )
         assert_no_collected_php_errors(page)

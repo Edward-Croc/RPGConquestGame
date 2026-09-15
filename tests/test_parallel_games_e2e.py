@@ -8,8 +8,8 @@ Both share the same database (`rpgconquestgame`) but use distinct table
 prefixes, so their state is fully isolated.
 
 Fixture flow:
-  1. Load TestConfig into the primary game via /RPGConquestGameTest/base/admin.php
-  2. Load Japon1555SQL into the secondary game via /RPGConquestGameTest2/base/admin.php
+  1. Load TestConfig into the primary game via /RPGConquestGameTest/admin/admin.php
+  2. Load Japon1555SQL into the secondary game via /RPGConquestGameTest2/admin/admin.php
   3. End-turn in the secondary game only (via helpers.end_turn on that folder)
 
 Tests verify:

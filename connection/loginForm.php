@@ -10,6 +10,7 @@ require_once '../base/version.php';
 require_once '../base/errorLog.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
+require_once '../connection/functions.php';
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'login_form_page';  // uncomment to log DEBUG events from this page
 
@@ -80,18 +81,22 @@ if (
     && isset($_POST['passwd'])
 ) {
     $_SESSION['username'] = strtolower(trim($_POST['username']));
-    $passwd = strtolower(trim($_POST['passwd']));
+    // Only the username is normalised : lowercasing a password would make any capital unusable.
+    $passwd = trim($_POST['passwd']);
 
     try {
         // SQL query to select username from the players table
         // Prepare and execute SQL query
         $prefix = $_SESSION['GAME_PREFIX'];
-        $stmt = $gameReady->prepare("SELECT id, is_privileged FROM {$prefix}players WHERE username = :username AND passwd = :passwd");
+        $stmt = $gameReady->prepare("SELECT id, is_privileged, passwd FROM {$prefix}players WHERE username = :username");
         $stmt->bindParam(':username', $_SESSION['username'], PDO::PARAM_STR);
-        $stmt->bindParam(':passwd', $passwd, PDO::PARAM_STR);
         $stmt->execute();
         // Fetch the result
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        // The stored value is a hash, so the comparison cannot happen in SQL.
+        if ($result && !verifyPlayerPassword($passwd, $result['passwd'])) {
+            $result = false;
+        }
 
         // Output the result
         if ($result) {

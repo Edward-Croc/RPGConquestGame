@@ -62,14 +62,14 @@ class TestCreatePerfectAgentForm:
     def test_form_present_on_admin_page(self, page: Page, base_url):
         """The Recruter et Affecter button should be visible on admin page."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         submit_btn = page.locator("input[name='chosir'][value='Recruter et Affecter']")
         expect(submit_btn).to_be_visible()
 
     def test_form_dropdowns_populated(self, page: Page, base_url):
         """All required dropdowns should have options."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
 
         # Use the second controllerSelect (the one inside the worker form)
         # The first one is the controller-switch dropdown at the top.
@@ -88,7 +88,7 @@ class TestCreatePerfectAgentForm:
     def test_origin_dropdown_has_test_data(self, page: Page, base_url):
         """Origin dropdown should contain TestConfig origins."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#origin_id option").all_inner_texts()
         assert any("Accessible" in t for t in options_text), \
@@ -99,7 +99,7 @@ class TestCreatePerfectAgentForm:
     def test_zone_dropdown_has_test_data(self, page: Page, base_url):
         """Zone dropdown should contain TestConfig zones."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#zoneSelect option").all_inner_texts()
         assert any("Alpha-Investigation" in t for t in options_text), f"Should have Alpha-Investigation: {options_text}"
@@ -108,7 +108,7 @@ class TestCreatePerfectAgentForm:
     def test_hobby_dropdown_includes_test_powers(self, page: Page, base_url):
         """Hobby dropdown should have Eagle Scout loaded from TestConfig CSV."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_hobby_id option").all_inner_texts()
         assert any("Eagle Scout" in t for t in options_text), \
@@ -117,7 +117,7 @@ class TestCreatePerfectAgentForm:
     def test_metier_dropdown_includes_test_powers(self, page: Page, base_url):
         """Metier dropdown should have Veteran Tactician from TestConfig CSV."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         options_text = form.locator("select#power_metier_id option").all_inner_texts()
         assert any("Veteran Tactician" in t for t in options_text), \
@@ -139,7 +139,7 @@ class TestCreatePerfectAgentForm:
         target_controller_id = "1"  # Lord Alpha
 
         # --- Fill the worker-creation form on admin.php ---
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         form.locator("select#controllerSelect").select_option(target_controller_id)
         form.locator("select#origin_id").select_option("1")
@@ -180,7 +180,7 @@ class TestCreatePerfectAgentForm:
         target_controller_id = "2"  # Lord Beta
 
         # --- Fill the worker-creation form on admin.php ---
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form[action*='workers/action.php']")
         form.locator("select#controllerSelect").select_option(target_controller_id)
         form.locator("select#origin_id").select_option("1")
@@ -294,14 +294,14 @@ class TestBDDExport:
     def test_export_button_visible(self, page: Page, base_url):
         """Export BDD button should be visible on admin page."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         export_btn = page.locator("input[value='Export BDD to file.sql']")
         expect(export_btn).to_be_visible()
 
     def test_export_triggers_download(self, page: Page, base_url):
         """Clicking export should trigger a file download."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
 
         # Set up download listener
         with page.expect_download(timeout=60000) as download_info:
@@ -331,7 +331,7 @@ class TestBDDImport:
     def test_import_form_visible(self, page: Page, base_url):
         """Import form with file input and submit button should be visible."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         file_input = page.locator("input[type='file'][name='bddFile']")
         expect(file_input).to_be_visible()
         import_btn = page.locator("input[value='Import BDD from file.sql']")
@@ -340,7 +340,7 @@ class TestBDDImport:
     def test_import_form_uses_multipart(self, page: Page, base_url):
         """Import form must be enctype='multipart/form-data' for file upload."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         form = page.locator("form:has(input[name='importBDD'])")
         expect(form).to_be_visible()
         enctype = form.get_attribute("enctype")
@@ -350,7 +350,7 @@ class TestBDDImport:
     def test_import_form_has_importBDD_hidden_field(self, page: Page, base_url):
         """Import form should have the importBDD hidden input."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin.php")
+        safe_goto(page, f"{base_url}/admin/admin.php")
         hidden = page.locator("input[type='hidden'][name='importBDD']")
         assert hidden.count() >= 1, "importBDD hidden input should exist"
 
@@ -374,7 +374,7 @@ class TestTurnReportArchive:
         register_php_error_listener(page)
         ensure_gm_login(page, base_url)
 
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         purge_form = page.locator("form:has(input[name='purge_all'])")
         if purge_form.count() >= 1:
@@ -390,7 +390,7 @@ class TestTurnReportArchive:
 
     def test_report_is_archived_after_end_turn(self, page: Page, base_url):
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         rows = page.locator("tbody tr:has(td:has-text('.html'))")
         assert rows.count() >= 1, (
@@ -410,7 +410,7 @@ class TestTurnReportArchive:
         """Without this, an archive of the sidebar alone would satisfy the
         row-count assertion above."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         view_link = page.locator("tbody tr:has(td:has-text('.html'))").first.locator("a")
         safe_goto(page, view_link.get_attribute("href"))
@@ -425,7 +425,7 @@ class TestTurnReportArchive:
 
     def test_delete_button_removes_the_archive(self, page: Page, base_url):
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         before = page.locator("tbody tr:has(td:has-text('.html'))").count()
         assert before >= 1, "Pre-condition failed: no archive to delete"
@@ -454,14 +454,14 @@ class TestTurnReportArchive:
 
         # The delete test above consumed the fixture's archive, so make one.
         end_turn(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         before = page.locator("tbody tr:has(td:has-text('.html'))").count()
         assert before >= 1, "Pre-condition failed: no archive to purge"
 
         load_scenario_via_admin(browser, base_url, "TestConfig")
 
-        safe_goto(page, f"{base_url}/base/admin_turn_reports.php")
+        safe_goto(page, f"{base_url}/admin/admin_turn_reports.php")
         page.wait_for_load_state("load")
         after = page.locator("tbody tr:has(td:has-text('.html'))").count()
         html_after = page.content()
@@ -495,7 +495,7 @@ class TestBDDBackupAutoOnEndTurn:
         ensure_gm_login(page, base_url)
 
         # Purge all existing backups (Purge-all button click)
-        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        safe_goto(page, f"{base_url}/admin/admin_backups.php")
         page.wait_for_load_state("load")
         purge_form = page.locator("form:has(input[name='purge_all'])")
         if purge_form.count() >= 1:
@@ -514,7 +514,7 @@ class TestBDDBackupAutoOnEndTurn:
         """After the class fixture's purge + end-turn, at least one
         .sql row must appear in the admin backups table."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        safe_goto(page, f"{base_url}/admin/admin_backups.php")
         page.wait_for_load_state("load")
         sql_rows = page.locator("tbody tr:has(td:has-text('.sql'))")
         assert sql_rows.count() >= 1, (
@@ -526,7 +526,7 @@ class TestBDDBackupAutoOnEndTurn:
         """Deleting a backup via the per-row Delete button must remove
         it from the listing on the reloaded page."""
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/base/admin_backups.php")
+        safe_goto(page, f"{base_url}/admin/admin_backups.php")
         page.wait_for_load_state("load")
         sql_rows_before = page.locator(
             "tbody tr:has(td:has-text('.sql'))"

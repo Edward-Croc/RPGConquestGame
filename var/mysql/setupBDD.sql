@@ -12,7 +12,8 @@ CREATE TABLE {prefix}mechanics (
     id INT AUTO_INCREMENT PRIMARY KEY,
     turncounter INT DEFAULT 0,
     gamestate INT DEFAULT 0,
-    end_step TEXT
+    end_step TEXT,
+    scenario_name VARCHAR(255) DEFAULT '' -- scenario loaded by the last full reset
 );
 
 -- create configuration table
@@ -30,7 +31,7 @@ CREATE TABLE {prefix}config (
 CREATE TABLE {prefix}players (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    passwd VARCHAR(64) NOT NULL,
+    passwd VARCHAR(255) NOT NULL,
     url TEXT,
     is_privileged TINYINT(1) DEFAULT 0 -- does player have god mode
 );

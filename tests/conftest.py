@@ -43,7 +43,7 @@ def pytest_configure(config):
     )
 
 
-# Module-level HTTP session for /base/admin_logs.php queries.
+# Module-level HTTP session for /admin/admin_logs.php queries.
 # UI-only per feedback_demo_ui_only: no direct filesystem access.
 _admin_logs_session = None
 _admin_logs_available = False
@@ -82,7 +82,7 @@ def _ensure_admin_logs_session():
             timeout=10,
         )
         probe = session.get(
-            f"{PHP_BASE_URL}/base/admin_logs.php",
+            f"{PHP_BASE_URL}/admin/admin_logs.php",
             timeout=10,
             allow_redirects=False,
         )
@@ -108,7 +108,7 @@ def _count_admin_logs_errors():
         return None
     try:
         response = session.get(
-            f"{PHP_BASE_URL}/base/admin_logs.php",
+            f"{PHP_BASE_URL}/admin/admin_logs.php",
             params={"prefix": GAME_PREFIX, "level": "ERROR"},
             timeout=10,
         )
@@ -128,7 +128,7 @@ def _count_admin_logs_warnings():
         return None
     try:
         response = session.get(
-            f"{PHP_BASE_URL}/base/admin_logs.php",
+            f"{PHP_BASE_URL}/admin/admin_logs.php",
             params={"prefix": GAME_PREFIX, "level": "WARNING"},
             timeout=10,
         )
@@ -160,7 +160,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         )
         terminalreporter.write_line(
             "  [ERROR] regression detection was inactive for part of this session — "
-            f"check that {PHP_BASE_URL}/base/admin_logs.php answers as gm."
+            f"check that {PHP_BASE_URL}/admin/admin_logs.php answers as gm."
         )
     if _session_warning_count_start is None:
         return
@@ -173,7 +173,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         f"WARNING report for '{GAME_PREFIX}' ({delta} new during session)"
     )
     terminalreporter.write_line(
-        f"  See {PHP_BASE_URL}/base/admin_logs.php?prefix={GAME_PREFIX}&level=WARNING"
+        f"  See {PHP_BASE_URL}/admin/admin_logs.php?prefix={GAME_PREFIX}&level=WARNING"
     )
 
 # PHP app URL (Docker)
@@ -210,7 +210,7 @@ def _php_error_guard(request):
 @pytest.fixture(autouse=True)
 def _assert_no_new_game_log_errors(request):
     """Fail the test when the [GAME_PREFIX] [ERROR] count reported by
-    /base/admin_logs.php grows during the test's execution.
+    /admin/admin_logs.php grows during the test's execution.
 
     UI-only (respects feedback_demo_ui_only): reads via the admin viewer
     HTTP endpoint, never touches the filesystem. Silently skips when the
@@ -235,7 +235,7 @@ def _assert_no_new_game_log_errors(request):
     pytest.fail(
         f"New game_error_log [ERROR] entries during '{request.node.name}' "
         f"(prefix '{GAME_PREFIX}'): +{delta}. "
-        f"See {PHP_BASE_URL}/base/admin_logs.php?prefix={GAME_PREFIX}&level=ERROR "
+        f"See {PHP_BASE_URL}/admin/admin_logs.php?prefix={GAME_PREFIX}&level=ERROR "
         f"(or mark @pytest.mark.expects_errors if intentional)."
     )
 

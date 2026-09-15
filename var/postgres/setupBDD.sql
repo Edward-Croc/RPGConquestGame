@@ -10,7 +10,8 @@ CREATE TABLE {prefix}mechanics (
     id SERIAL PRIMARY KEY,
     turncounter INTEGER DEFAULT 0,
     gamestate INTEGER DEFAULT 0,
-    end_step TEXT DEFAULT ''
+    end_step TEXT DEFAULT '',
+    scenario_name VARCHAR(255) DEFAULT '' -- scenario loaded by the last full reset
 );
 
 
@@ -28,7 +29,7 @@ CREATE TABLE {prefix}config (
 CREATE TABLE {prefix}players (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
-    passwd VARCHAR(64) NOT NULL,
+    passwd VARCHAR(255) NOT NULL,
     url text,
     is_privileged BOOLEAN DEFAULT FALSE -- does player have god mode
 );

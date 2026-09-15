@@ -102,7 +102,7 @@ class TestLoginFlow:
             f"Login redirect failed — still on loginForm.php: {logged_in_page.url}"
         assert "accueil.php" in logged_in_page.url, \
             f"Expected redirect to accueil.php, got: {logged_in_page.url}"
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
 
@@ -111,12 +111,12 @@ class TestAdminPanel:
 
     def test_admin_page_loads(self, logged_in_page: Page, base_url):
         """Admin page should be accessible after login."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
         expect(logged_in_page.locator("select[name='config_name']")).to_be_visible()
 
     def test_config_options_available(self, logged_in_page: Page, base_url):
         """Config dropdown should have the expected scenarios."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
         select = logged_in_page.locator("select[name='config_name']")
         options = select.locator("option").all()
         option_values = [opt.get_attribute("value") for opt in options]
@@ -142,7 +142,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_test_config(self, logged_in_page: Page, base_url):
         """Trigger a full reset with TestConfig and verify DB is populated."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
 
         logged_in_page.locator("select[name='config_name']").select_option("TestConfig")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
@@ -192,7 +192,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_japon1555_sql(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555SQL and verify larger dataset."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555SQL")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
@@ -238,7 +238,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_japon1555_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Japon1555CSV and verify CSV-loaded dataset."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
 
         logged_in_page.locator("select[name='config_name']").select_option("Japon1555CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()
@@ -331,7 +331,7 @@ class TestCSVLoadViaAdmin:
 
     def test_full_reset_vampire1966_csv(self, logged_in_page: Page, base_url):
         """Trigger a full reset with Vampire1966CSV and verify CSV-loaded dataset."""
-        safe_goto(logged_in_page, f"{base_url}/base/admin.php")
+        safe_goto(logged_in_page, f"{base_url}/admin/admin.php")
 
         logged_in_page.locator("select[name='config_name']").select_option("Vampire1966CSV")
         logged_in_page.locator("input[type='submit'][value='Submit']").click()

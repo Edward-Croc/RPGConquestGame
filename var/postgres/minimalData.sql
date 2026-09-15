@@ -208,8 +208,9 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- Core user (must exist for login)
+-- passwd is a hash of the default 'orga' : players.passwd never holds clear text.
 INSERT INTO {prefix}players (username, passwd, is_privileged)
-VALUES ('gm', 'orga', 1)
+VALUES ('gm', '$2y$10$dRY7DyoYarkt4eCQBUlBzeLT8X3Lkp4uH.Enp4SbRFiYoppd3ugAW', 1)
 ON CONFLICT (username) DO NOTHING;
 
 -- Fixed power types used by application code (hobbys/jobs linking logic).
