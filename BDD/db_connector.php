@@ -1139,13 +1139,15 @@ function gameReady(): PDO|null
                 }
 
                 // The loaded scenario is kept on the mechanics row : nothing else remembers it.
-                try {
-                    $prefix = $_SESSION['GAME_PREFIX'];
-                    $scenarioStmt = $pdo->prepare("UPDATE {$prefix}mechanics SET scenario_name = :scenario_name");
-                    $scenarioStmt->execute([':scenario_name' => (string) $_POST['config_name']]);
-                    echo sprintf('Scenario recorded : %s.<br />', htmlspecialchars((string) $_POST['config_name']));
-                } catch (PDOException $e) {
-                    game_error_log(__FUNCTION__, 'Recording the scenario name failed : ' . $e->getMessage(), ['config_name' => $_POST['config_name']], 'warning');
+                if (isset($_POST['config_name'])) {
+                    try {
+                        $prefix = $_SESSION['GAME_PREFIX'];
+                        $scenarioStmt = $pdo->prepare("UPDATE {$prefix}mechanics SET scenario_name = :scenario_name");
+                        $scenarioStmt->execute([':scenario_name' => (string) $_POST['config_name']]);
+                        echo sprintf('Scenario recorded : %s.<br />', htmlspecialchars((string) $_POST['config_name']));
+                    } catch (PDOException $e) {
+                        game_error_log(__FUNCTION__, 'Recording the scenario name failed : ' . $e->getMessage(), ['config_name' => $_POST['config_name']], 'warning');
+                    }
                 }
 
                 echo 'END <br />';
