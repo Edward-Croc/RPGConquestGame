@@ -46,11 +46,12 @@ La réinitialisation complète (`admin/admin.php`) inscrit le nom du scénario
 choisi dans **`{prefix}mechanics.scenario_name`**, la seule trace qui en
 subsiste : rien d'autre ne le mémorise. Le tableau *Mechanics* de la page
 d'administration l'affiche, et la remise d'un mot de passe à sa valeur de
-scénario s'en sert pour présélectionner le bon fichier.
+scénario s'en sert pour savoir quel fichier lire.
 
 La colonne est vide sur une base antérieure à son ajout, ou après un
-chargement fait hors de l'interface : les pages qui la lisent retombent alors
-sur un choix manuel.
+chargement fait hors de l'interface. La remise à la valeur du scénario n'est
+alors pas proposée du tout : seule la réinitialisation à une valeur choisie
+reste possible, jusqu'au prochain rechargement complet.
 
 **Le scénario `Base`** est un socle nu : le schéma et `minimalData.sql`, sans
 aucun fichier de scénario. Aucun `var/csv/setupBase_*.csv` n'existe, et c'est
@@ -60,9 +61,11 @@ l'administration. Le chargement affiche donc une vingtaine de lignes
 « Neither CSV nor SQL file found » : elles décrivent exactement ce qui se
 passe.
 
-Comme `Base` ne sème aucun joueur, il n'apparaît pas dans la liste de remise
-des mots de passe, qui est construite à partir des fichiers
-`var/csv/setup*_players.csv` présents.
+Comme `Base` ne sème aucun joueur, la remise à la valeur du scénario n'y
+trouve rien : elle lit `var/csv/setup<scénario>_players.csv`, et ce fichier
+n'existe pas. Il en va de même des scénarios SQL `Japon1555SQL` et
+`Vampire1966SQL`, qui portent leurs comptes dans `var/{mysql|postgres}/` et
+non en CSV.
 
 ## Les comptes de connexion
 
@@ -75,8 +78,10 @@ rechargement de scénario ne réintroduit pas de clair.
 
 Les anciens scénarios SQL (`var/{mysql|postgres}/setup*SQL_base.sql`) sont
 injectés tels quels, sans passer par l'importeur : leurs comptes y portent donc
-déjà une empreinte. Les valeurs en clair correspondantes se lisent dans le CSV
-du même scénario.
+déjà une empreinte, et le mot de passe en clair ne se lit nulle part. Le CSV du
+scénario voisin en donne une idée sans faire foi — `Japon1555SQL` et
+`Japon1555CSV` divergent sur trois comptes, et le SQL postgres nomme `renko`
+là où les deux autres nomment `ennyo`.
 
 L'identifiant est normalisé en minuscules, **pas le mot de passe** : `Secret` et
 `secret` sont deux mots de passe différents.
@@ -93,12 +98,14 @@ Un joueur qui a perdu le sien ne peut rien faire seul. L'orga le lui réattribue
 depuis **Player-Controllers** (`controllers/management.php`), de deux façons :
 
 - **Réinitialiser** : l'orga saisit la valeur de son choix ;
-- **Remettre la valeur du scénario** : l'orga choisit un scénario, et le compte
-  retrouve le mot de passe que `var/csv/setup<scénario>_players.csv` lui sème.
+- **Remettre la valeur du scénario** : le compte retrouve le mot de passe que
+  `var/csv/setup<scénario>_players.csv` lui sème, pour le scénario qu'annonce
+  `{prefix}mechanics.scenario_name`.
 
-Le nom du scénario chargé n'est mémorisé nulle part — il n'existe que le temps
-du rechargement — d'où le choix explicite dans le formulaire. La restitution lit
-le CSV, jamais la base.
+La seconde forme ne demande rien d'autre que le joueur : le scénario est celui
+qui est chargé, posté par un champ caché. Elle lit le CSV, jamais la base, et
+n'apparaît pas tant qu'aucun scénario n'est enregistré — ni pour un scénario
+sans CSV de joueurs.
 
 ### Déployer le hachage sur une partie existante
 
