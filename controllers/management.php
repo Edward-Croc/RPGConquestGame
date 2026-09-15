@@ -102,7 +102,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reset_password'])) {
     $reset_player_id = intval($_POST['reset_player_id'] ?? 0);
-    $new_password = (string) ($_POST['new_password'] ?? '');
+    // loginForm trims what it compares, so what we store is trimmed too.
+    $new_password = trim((string) ($_POST['new_password'] ?? ''));
     if ($reset_player_id <= 0 || strlen($new_password) < 4) {
         $message = "Remise à zéro impossible : joueur ou mot de passe manquant (4 caractères minimum).";
     } else {

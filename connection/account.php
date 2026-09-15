@@ -16,9 +16,10 @@ $message = '';
 $messageColor = 'red';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $current = (string) ($_POST['current_password'] ?? '');
-    $new = (string) ($_POST['new_password'] ?? '');
-    $confirm = (string) ($_POST['confirm_password'] ?? '');
+    // loginForm trims what it compares, so what we store is trimmed too.
+    $current = trim((string) ($_POST['current_password'] ?? ''));
+    $new = trim((string) ($_POST['new_password'] ?? ''));
+    $confirm = trim((string) ($_POST['confirm_password'] ?? ''));
 
     try {
         $stmt = $gameReady->prepare("SELECT passwd FROM {$prefix}players WHERE id = :id");
