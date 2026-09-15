@@ -58,11 +58,15 @@ def test_the_loaded_scenario_is_recorded(browser, base_url):
     register_php_error_listener(page)
     ensure_gm_login(page, base_url)
     safe_goto(page, f"{base_url}/admin/admin.php")
-    html = page.content()
+    # The page also carries a <option value='Base'>, so read the cell itself :
+    # searching the whole HTML for 'Base' would pass with no stamping at all.
+    row = page.locator("div.mechanics tr", has_text="scenario_name")
+    recorded = row.locator("td").nth(1).inner_text().strip()
     assert_no_collected_php_errors(page)
     ctx.close()
-    assert "scenario_name" in html, "the Mechanics table must list the column"
-    assert "Base" in html, f"the loaded scenario must read Base; got {html[:200]}"
+    assert recorded == "Base", (
+        f"the Mechanics row must report the loaded scenario; got {recorded!r}"
+    )
 
 
 def test_the_bare_game_seeds_only_the_game_master(browser, base_url):

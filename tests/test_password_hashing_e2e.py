@@ -234,7 +234,6 @@ def test_the_admin_can_restore_the_scenario_password(browser, base_url):
     ensure_gm_login(page, base_url)
     safe_goto(page, f"{base_url}/controllers/management.php")
     page.select_option("select[name='scenario_player_id']", label="delta_player")
-    page.select_option("select[name='scenario_name']", "TestConfig")
     page.click("button[name='reset_scenario_password']")
     page.wait_for_load_state("load")
     assert "Mot de passe remis à la valeur du scénario" in page.content()
@@ -260,7 +259,7 @@ def test_no_seed_file_carries_a_clear_password():
     for sql_file in sorted(repo.glob("var/*/*.sql")):
         text = sql_file.read_text(encoding="utf-8", errors="replace")
         for block in re.findall(
-            r"INSERT INTO \{prefix\}players[^;]+;", text, re.S
+            r"INSERT (?:IGNORE )?INTO \{prefix\}players[^;]+;", text, re.S
         ):
             for username, passwd in re.findall(r"\('([^']+)',\s*'([^']*)'", block):
                 if not passwd.startswith("$2y$") and not passwd.startswith("$argon2"):
@@ -282,16 +281,20 @@ def test_every_scenario_csv_seeds_a_password():
         assert missing == [], f"{csv_file.name} seeds no password for {missing}"
 
 
-def test_the_restore_form_preselects_the_loaded_scenario(browser, base_url):
-    """mechanics.scenario_name is written by the loader and read here, so the
-    orga does not have to remember which scenario is running. A column that
-    was never stamped would leave the select on its empty first option."""
+def test_the_restore_form_carries_the_loaded_scenario(browser, base_url):
+    """mechanics.scenario_name is written by the loader and posted back by a
+    hidden field, so the orga never picks the scenario. An unstamped column
+    hides the whole form, so an empty value here would be a real regression."""
     ctx = browser.new_context()
     page = ctx.new_page()
     ensure_gm_login(page, base_url)
     safe_goto(page, f"{base_url}/controllers/management.php")
-    selected = page.locator("select[name='scenario_name']").input_value()
+    carried = page.locator("input[name='scenario_name']").get_attribute("value")
+    shown = page.content()
     ctx.close()
-    assert selected == "TestConfig", (
-        f"the loaded scenario must be preselected; got {selected!r}"
+    assert carried == "TestConfig", (
+        f"the form must carry the loaded scenario; got {carried!r}"
+    )
+    assert "Scénario chargé : <strong>TestConfig" in shown, (
+        "the loaded scenario must be named on the page"
     )
