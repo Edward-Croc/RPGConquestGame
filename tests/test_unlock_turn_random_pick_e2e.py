@@ -267,7 +267,7 @@ class Test04EligibleAboveThreshold:
 # ---------------------------------------------------------------------------
 
 class Test05AdminPerfectFormStillSees:
-    """The admin perfect-worker form on base/admin.php sources its dropdowns
+    """The admin perfect-worker form on admin/admin.php sources its dropdowns
     via getSQLPowerText + a direct JOIN, NOT via randomPowersByType. So the
     gated power must still appear in the admin dropdown regardless of turn."""
 
@@ -276,7 +276,7 @@ class Test05AdminPerfectFormStillSees:
         page = ctx.new_page()
         register_php_error_listener(page)
         ensure_gm_login(page, PHP_BASE_URL)
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
         labels = [
             (opt.inner_text() or "").strip()
             for opt in page.locator("select#power_hobby_id option").all()

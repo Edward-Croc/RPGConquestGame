@@ -22,8 +22,9 @@ puis rend son HTML via `base/baseHTML.php`.
 
 | Dossier | Rôle |
 |---|---|
-| `base/` | amorçage, session, page d'accueil, administration, configuration |
-| `connection/` | connexion et déconnexion — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
+| `base/` | amorçage, session, page d'accueil, pages de configuration du scénario |
+| `admin/` | les pages d'administration : tableau de bord, sauvegardes, CSV, journaux, récits de fin de tour |
+| `connection/` | connexion, déconnexion et compte du joueur (`account.php` : factions rattachées, changement de mot de passe) — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
 | `BDD/` | `db_connector.php` : connexion, création du schéma, importeur de scénario |
 | `mechanics/` | le moteur de fin de tour et ses mécaniques |
 | `workers/`, `controllers/`, `zones/`, `ressources/`, `powers/`, `artefacts/` | domaines métier : pages, vues, fonctions |
@@ -32,7 +33,7 @@ puis rend son HTML via `base/baseHTML.php`.
 
 ### Le trajet d'une requête
 
-1. L'URL touche un point d'entrée : `*/action.php`, `*/management_*.php`, `base/admin.php`…
+1. L'URL touche un point d'entrée : `*/action.php`, `*/management_*.php`, `admin/admin.php`…
 2. **`base/basePHP.php`** est requis en premier. Il ouvre un tampon de sortie
    (`ob_start()`, pour que `header()` fonctionne même si un avertissement a déjà
    été émis), démarre la session, charge les neuf bibliothèques de fonctions
@@ -194,7 +195,7 @@ L'écriture passe par `register_shutdown_function`, déclarée après l'inclusio
 page entière. C'est aussi ce qui fait qu'une résolution interrompue en cours de
 route laisse quand même son récit partiel — le cas où il est le plus utile.
 
-`base/admin_turn_reports.php` liste ces archives, les ouvre et les supprime, une
+`admin/admin_turn_reports.php` liste ces archives, les ouvre et les supprime, une
 par une ou toutes. Le répertoire est créé au premier usage, et `var/.htaccess`
 interdit d'y accéder par le web.
 
@@ -603,7 +604,7 @@ synchrone, et le clic de confirmation attend déjà cette navigation.
 
 ### Le garde-fou d'erreurs
 
-`conftest.py` compte les lignes `[ERROR]` de `base/admin_logs.php` avant et après
+`conftest.py` compte les lignes `[ERROR]` de `admin/admin_logs.php` avant et après
 chaque test et fait échouer celui qui en ajoute. Deux propriétés à préserver :
 le verdict d'indisponibilité **ne doit jamais être mémorisé** pour la session —
 un hoquet au démarrage désactiverait la détection pour tous les tests suivants —

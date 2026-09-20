@@ -1,5 +1,7 @@
 <?php
 
+// Needed by loadCSVFile : seeded passwords are hashed on the way in.
+require_once __DIR__ . '/../connection/functions.php';
 
 /**
  * Resolves the directory containing a given config filename.
@@ -595,6 +597,9 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                         } else {
                             $values[] = null;
                         }
+                    } elseif ($tableName === 'players' && $col === 'passwd') {
+                        // Scenario CSVs carry the password in clear : it is setup data, and it is hashed here.
+                        $values[] = hashPlayerPassword($value);
                     } else {
                         $values[] = $value;
                     }
@@ -1131,6 +1136,18 @@ function gameReady(): PDO|null
                     );
                 } catch (PDOException $e) {
                     game_error_log(__FUNCTION__, 'Post-load CKL synthesis failed : ' . $e->getMessage(), ['prefix' => $prefix, 'synthTurn' => $synthTurn ?? null], 'warning');
+                }
+
+                // The loaded scenario is kept on the mechanics row : nothing else remembers it.
+                if (isset($_POST['config_name'])) {
+                    try {
+                        $prefix = $_SESSION['GAME_PREFIX'];
+                        $scenarioStmt = $pdo->prepare("UPDATE {$prefix}mechanics SET scenario_name = :scenario_name");
+                        $scenarioStmt->execute([':scenario_name' => (string) $_POST['config_name']]);
+                        echo sprintf('Scenario recorded : %s.<br />', htmlspecialchars((string) $_POST['config_name']));
+                    } catch (PDOException $e) {
+                        game_error_log(__FUNCTION__, 'Recording the scenario name failed : ' . $e->getMessage(), ['config_name' => $_POST['config_name']], 'warning');
+                    }
                 }
 
                 echo 'END <br />';

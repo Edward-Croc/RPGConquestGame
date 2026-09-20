@@ -40,9 +40,94 @@ name,value,description
 
 **Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
 
+## Le scénario chargé
+
+La réinitialisation complète (`admin/admin.php`) inscrit le nom du scénario
+choisi dans **`{prefix}mechanics.scenario_name`**, la seule trace qui en
+subsiste : rien d'autre ne le mémorise. Le tableau *Mechanics* de la page
+d'administration l'affiche, et la remise d'un mot de passe à sa valeur de
+scénario s'en sert pour savoir quel fichier lire.
+
+La colonne est vide sur une base antérieure à son ajout, ou après un
+chargement fait hors de l'interface. La remise à la valeur du scénario n'est
+alors pas proposée du tout : seule la réinitialisation à une valeur choisie
+reste possible, jusqu'au prochain rechargement complet.
+
+**Le scénario `Base`** est un socle nu : le schéma et `minimalData.sql`, sans
+aucun fichier de scénario. Aucun `var/csv/setupBase_*.csv` n'existe, et c'est
+volontaire — chaque chargeur teste la présence de son fichier et passe son
+tour. On obtient une partie vide, avec le seul compte `gm`, à peupler depuis
+l'administration. Le chargement affiche donc une vingtaine de lignes
+« Neither CSV nor SQL file found » : elles décrivent exactement ce qui se
+passe.
+
+Comme `Base` ne sème aucun joueur, la remise à la valeur du scénario n'y
+trouve rien : elle lit `var/csv/setup<scénario>_players.csv`, et ce fichier
+n'existe pas. Il en va de même des scénarios SQL `Japon1555SQL` et
+`Vampire1966SQL`, qui portent leurs comptes dans `var/{mysql|postgres}/` et
+non en CSV.
+
+## Les comptes de connexion
+
+`players.passwd` ne contient **jamais** le mot de passe en clair : la colonne
+porte une empreinte, et l'authentification passe par `password_verify`.
+
+Les CSV de scénario, eux, portent bien la valeur en clair — c'est leur rôle, ce
+sont des données de mise en place. L'importeur la hache au chargement, donc un
+rechargement de scénario ne réintroduit pas de clair.
+
+Les anciens scénarios SQL (`var/{mysql|postgres}/setup*SQL_base.sql`) sont
+injectés tels quels, sans passer par l'importeur : leurs comptes y portent donc
+déjà une empreinte, et le mot de passe en clair ne se lit nulle part. Le CSV du
+scénario voisin en donne une idée sans faire foi — `Japon1555SQL` et
+`Japon1555CSV` divergent sur trois comptes, et le SQL postgres nomme `renko`
+là où les deux autres nomment `ennyo`.
+
+L'identifiant est normalisé en minuscules, **pas le mot de passe** : `Secret` et
+`secret` sont deux mots de passe différents.
+
+Le compte `gm` semé par `minimalData.sql` a pour mot de passe `orga`.
+
+### Changer ou réattribuer un mot de passe
+
+Un joueur change le sien depuis **Mon compte** (`connection/account.php`), la
+page qui lui montre aussi les factions rattachées à son compte. Le changement
+exige le mot de passe actuel.
+
+Un joueur qui a perdu le sien ne peut rien faire seul. L'orga le lui réattribue
+depuis **Player-Controllers** (`controllers/management.php`), de deux façons :
+
+- **Réinitialiser** : l'orga saisit la valeur de son choix ;
+- **Remettre la valeur du scénario** : le compte retrouve le mot de passe que
+  `var/csv/setup<scénario>_players.csv` lui sème, pour le scénario qu'annonce
+  `{prefix}mechanics.scenario_name`.
+
+La seconde forme ne demande rien d'autre que le joueur : le scénario est celui
+qui est chargé, posté par un champ caché. Elle lit le CSV, jamais la base, et
+n'apparaît pas tant qu'aucun scénario n'est enregistré — ni pour un scénario
+sans CSV de joueurs.
+
+### Déployer le hachage sur une partie existante
+
+Une base antérieure au hachage contient des mots de passe en clair, et
+`password_verify` les refuse tous — **personne ne peut plus se connecter**, pas
+même le meneur de jeu. Or recharger un scénario exige d'être connecté : l'accès
+ne peut pas se rétablir par l'interface.
+
+La remise en route se fait donc en base, une fois, avant tout le reste :
+
+```sql
+UPDATE {prefix}players SET passwd = '<empreinte>' WHERE username = 'gm';
+```
+
+où `<empreinte>` s'obtient par `php -r 'echo password_hash("orga", PASSWORD_DEFAULT);'`.
+Le meneur de jeu peut alors se connecter, recharger le scénario — ce qui hache
+tous les autres comptes — et réattribuer les mots de passe depuis
+`controllers/management.php`.
+
 ## Exemples CSV à télécharger / comparer
 
-Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`base/admin_csv.php`, compte privilégié).
+Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dans l’UI, utilisez uniquement le panneau admin **CSV scénarios** (`admin/admin_csv.php`, compte privilégié).
 
 | Scénario | Fichier config | Ressources | Autres tables utiles |
 |---|---|---|---|
@@ -56,7 +141,7 @@ Les valeurs absentes d’un CSV scénario restent celles de `var/{mysql|postgres
 
 ### Comment vérifier une section
 
-1. Ouvrir **Admin → CSV scénarios (download / check)** (`base/admin_csv.php`).
+1. Ouvrir **Admin → CSV scénarios (download / check)** (`admin/admin_csv.php`).
 2. Choisir un fichier `*_config.csv` et un `section_key` (ex. `location_attack`).
 3. Lire les clés **trouvées** vs **absentes** (souvent OK si le défaut `minimalData` suffit).
 4. Télécharger le CSV pour le comparer à votre brouillon local.
@@ -738,7 +823,7 @@ Cette annexe regroupe les détails d’implémentation utiles au code, pas à la
 
 - **Import CSV** : `BDD/db_connector.php` charge `setup{config_name}_{table}.csv` avec upsert pour `config` et `power_types`.
 - **Carte documentaire** : `docs/config_section_map.json` (pas importée).
-- **Panneau admin** : `base/admin_csv.php` — download + check d’en-tête / `section_key`.
+- **Panneau admin** : `admin/admin_csv.php` — download + check d’en-tête / `section_key`.
 - **Guide rendu HTML** : `base/docConfig.php` (Parsedown sur ce fichier).
 - **Logs / fail-open** : règles `zone_rules` invalides, pools texte illisibles, `gain_rules` mal formées → log + valeur de base intacte ou phrase vide selon le site d’appel.
 - **Question ouverte #120** : `minimalData.sql` doit-il seeder toutes les clés lues, ou chaque site d’appel porter un repli ?

@@ -207,7 +207,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     page = context.new_page()
     register_php_error_listener(page)
     login_as(page, base_url, "gm", "orga")
-    safe_goto(page, f"{base_url}/base/admin.php")
+    safe_goto(page, f"{base_url}/admin/admin.php")
     _wait_loaded(page, "select[name='config_name']")
     page.locator("select[name='config_name']").select_option(scenario_name)
     page.locator("input[type='submit'][value='Submit']").click()
@@ -217,7 +217,7 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
         page.locator("#confirmModalYes").click(timeout=120000)
     page.wait_for_load_state("load", timeout=180000)
     # gameReady echoes 'END <br />' once the schema and CSV load have run
-    # (BDD/db_connector.php:853 and :1136) — the only completion marker the
+    # (BDD/db_connector.php:858 and :1151) — the only completion marker the
     # loader emits, and absent from an ordinary page render.
     page.wait_for_function(
         "() => document.body && document.body.innerHTML.includes('END <br')",
@@ -741,7 +741,7 @@ def ui_power_options_by_type(page: Page, base_url: str = None):
     admin page are the authoritative UI enumeration of all powers
     linked to each type (via the link_power_type junction)."""
     url = base_url or PHP_BASE_URL
-    safe_goto(page, f"{url}/base/admin.php")
+    safe_goto(page, f"{url}/admin/admin.php")
     _wait_loaded(page, "select#power_hobby_id")
     type_map = {
         "Hobby": "select#power_hobby_id",
@@ -1002,7 +1002,7 @@ def ui_recruit_perfect_worker(page: Page, controller_id: int, zone_name: str,
     on_recrutment power effects such as go_traitor fire; CSV-seeded workers
     never trigger them."""
     url = base_url or PHP_BASE_URL
-    safe_goto(page, f"{url}/base/admin.php")
+    safe_goto(page, f"{url}/admin/admin.php")
     _wait_loaded(page, "select#power_hobby_id")
     hobby_id = ui_select_option_id(page, "select#power_hobby_id", hobby_label)
     metier_id = ui_select_option_id(page, "select#power_metier_id", metier_label)

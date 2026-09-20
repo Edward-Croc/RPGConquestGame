@@ -28,7 +28,7 @@ $folder = $_SESSION['FOLDER'] ?? '';
 // The guide is open to every player ; the CSV tooling behind this link is not.
 $adminCsvNote = '';
 if ($folder !== '' && !empty($_SESSION['is_privileged'])) {
-    $adminCsvNote = '<p class="box"><a href="/' . htmlspecialchars($folder) . '/base/admin_csv.php">→ CSV scénarios (download / check par section_key)</a></p>';
+    $adminCsvNote = '<p class="box"><a href="/' . htmlspecialchars($folder) . '/admin/admin_csv.php">→ CSV scénarios (download / check par section_key)</a></p>';
 }
 
 echo $adminCsvNote . '<div class="docConfig section">' . $html . '</div>';

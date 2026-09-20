@@ -310,7 +310,7 @@ class TestZoneBoxAfterFirstEot:
         page = context.new_page()
         register_php_error_listener(page)
         login_as(page, PHP_BASE_URL, "gm", "orga")
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
 
         def _option_value(selector, text_match):
             for opt in page.locator(f"{selector} option").all():

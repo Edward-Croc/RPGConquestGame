@@ -56,7 +56,7 @@ attempt=1.
 
 management_combat.php: structure, auth guard, ordering, filters (including
 the turn=0 sentinel trap), the agent_attack_defence-only location filter,
-unresolved-row invariants, empty-state rendering, and the base/admin.php
+unresolved-row invariants, empty-state rendering, and the admin/admin.php
 hub links.
 
 Run:
@@ -1219,7 +1219,7 @@ class TestAdminCombatLogEmptyState:
 class TestAdminCombatLogHubLinks:
     def test_hub_links_and_navigation(self, page: Page):
         ensure_gm_login(page, PHP_BASE_URL)
-        safe_goto(page, f"{PHP_BASE_URL}/base/admin.php")
+        safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
         html = page.content()
         assert "Attack on location log" in html, (
             "hub should carry the renamed 'Attack on location log' link"

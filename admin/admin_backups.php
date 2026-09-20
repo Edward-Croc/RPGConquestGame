@@ -96,7 +96,7 @@ require_once '../base/baseHTML.php';
     <?php if (empty($backups)): ?>
         <p><em>No backup files found.</em></p>
     <?php else: ?>
-        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php" method="post" style="margin-bottom: 1em;">
+        <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_backups.php" method="post" style="margin-bottom: 1em;">
             <input type="hidden" name="purge_all" value="1" />
             <button type="submit" class="button is-danger" onclick="return confirm('Purge ALL <?= count($backups) ?> backup files ? This cannot be undone.');">Purge all backups</button>
         </form>
@@ -117,8 +117,8 @@ require_once '../base/baseHTML.php';
                         <td><?= number_format($b['size'] / 1024, 1) ?> KB</td>
                         <td><?= date('Y-m-d H:i:s', $b['mtime']) ?></td>
                         <td>
-                            <a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php?download=<?= urlencode($b['name']) ?>" class="button is-small">Download</a>
-                            <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin_backups.php" method="post" style="display:inline;">
+                            <a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_backups.php?download=<?= urlencode($b['name']) ?>" class="button is-small">Download</a>
+                            <form action="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin_backups.php" method="post" style="display:inline;">
                                 <input type="hidden" name="delete_backup" value="<?= htmlspecialchars($b['name']) ?>" />
                                 <button type="submit" class="button is-small is-danger" onclick="return confirm('Delete <?= htmlspecialchars(addslashes($b['name'])) ?> ?');">Delete</button>
                             </form>
@@ -129,7 +129,7 @@ require_once '../base/baseHTML.php';
         </table>
     <?php endif; ?>
 
-    <p style="margin-top: 1em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/base/admin.php">&larr; Back to admin</a></p>
+    <p style="margin-top: 1em;"><a href="/<?= htmlspecialchars($_SESSION['FOLDER']) ?>/admin/admin.php">&larr; Back to admin</a></p>
 </div>
 </body>
 </html>

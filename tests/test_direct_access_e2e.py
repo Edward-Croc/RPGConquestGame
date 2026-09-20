@@ -8,7 +8,7 @@ login form (navigational entry points like logout).
 Files covered here:
   - /connection/logout.php        — entry point, anon → 302 to loginForm
   - /base/baseHTML.php            — include-only partial, direct GET → 403
-  - /base/admin.php               — admin hub, anon → 302 to loginForm
+  - /admin/admin.php               — admin hub, anon → 302 to loginForm
   - /base/configuration.php       — config editor, anon → 302 to loginForm
   - /base/docConfig.php           — config guide, anon → 302 to loginForm
 
@@ -95,7 +95,7 @@ def _assert_guarded(browser, base_url, path, body_marker):
 
 
 def test_anonymous_admin_hub_redirects_to_login(browser, base_url):
-    """No session → /base/admin.php must land on the login form, not on
+    """No session → /admin/admin.php must land on the login form, not on
     the hub that exposes resetBDD / exportBDD / importBDD.
 
     Caught by baseHTML.php's logged_in guard, which predates the is_privileged
@@ -103,7 +103,7 @@ def test_anonymous_admin_hub_redirects_to_login(browser, base_url):
     The discriminating case is a logged-in non-privileged player, covered by
     tests/test_admin_privilege_guard_e2e.py.
     """
-    _assert_guarded(browser, base_url, "base/admin.php", "BDD management")
+    _assert_guarded(browser, base_url, "admin/admin.php", "BDD management")
 
 
 def test_anonymous_configuration_page_redirects_to_login(browser, base_url):
