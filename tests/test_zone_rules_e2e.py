@@ -13,7 +13,6 @@ import json
 import re
 from pathlib import Path
 
-import pymysql
 import pytest
 
 from conftest import (
@@ -22,19 +21,14 @@ from conftest import (
 )
 from helpers import (
     end_turn, load_minimal_data, load_scenario_via_admin,
-    register_php_error_listener, assert_no_collected_php_errors,
-)
+    register_php_error_listener, assert_no_collected_php_errors, get_db_connection,)
 
 
 REPO = Path(__file__).resolve().parent.parent
 
 
 def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 class TestZoneRulesSchemaAndLoader:

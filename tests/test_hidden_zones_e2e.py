@@ -24,7 +24,6 @@ zone_rules/adjacent_zones so no state race.
 Run:
     python3 -m pytest tests/test_hidden_zones_e2e.py -v
 """
-import pymysql
 import pytest
 from playwright.sync_api import Page
 
@@ -34,19 +33,14 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, _wait_loaded, load_minimal_data, load_scenario_via_admin,
-    login_as, safe_goto,
-)
+    login_as, safe_goto, get_db_connection,)
 
 
 _TARGET_ZONE = "Zeta-Unclaimed"
 
 
 def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 def _describe_zones_columns():

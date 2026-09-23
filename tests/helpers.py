@@ -47,6 +47,7 @@ try:
     _probe = pymysql.connect(
         host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
         password=MYSQL_PASSWORD, database=MYSQL_DB, connect_timeout=3,
+        autocommit=True,
     )
     _probe.close()
     DB_AVAILABLE = True
@@ -62,12 +63,17 @@ def get_db_connection():
     """Open a new pymysql connection with DictCursor + utf8mb4.
 
     connect_timeout keeps a busy or restarting MySQL from parking the caller
-    on the OS-level TCP timeout instead of failing with a usable error."""
+    on the OS-level TCP timeout instead of failing with a usable error.
+
+    autocommit matters as much: without it every SELECT opens a transaction
+    that holds metadata locks on the tables it read, and a connection left
+    open by a test then blocks the DROP TABLE of the next scenario load until
+    it is garbage-collected."""
     return pymysql.connect(
         host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
         password=MYSQL_PASSWORD, database=MYSQL_DB,
         charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-        connect_timeout=10,
+        connect_timeout=10, autocommit=True,
     )
 
 
@@ -211,10 +217,15 @@ def load_scenario_via_admin(browser, base_url: str, scenario_name: str):
     _wait_loaded(page, "select[name='config_name']")
     page.locator("select[name='config_name']").select_option(scenario_name)
     page.locator("input[type='submit'][value='Submit']").click()
-    if page.locator("#confirmModalYes").is_visible():
-        # destroyAllTables + gameReady + CSV load can take 30-60s on slower
-        # boxes (Playwright's default click timeout is 30s — too tight).
-        page.locator("#confirmModalYes").click(timeout=120000)
+    # The confirm button starts destroyAllTables + gameReady + the CSV load.
+    # Playwright's own click would then sit in "waiting for scheduled
+    # navigations to finish" for the whole reset and time out on a warm
+    # database; the JS click starts it and returns, and the END marker below
+    # is the completion signal we actually care about.
+    if page.locator("#confirmModalYes").count():
+        page.evaluate(
+            "setTimeout(() => document.getElementById('confirmModalYes').click(), 0)"
+        )
     page.wait_for_load_state("load", timeout=180000)
     # gameReady echoes 'END <br />' once the schema and CSV load have run
     # (BDD/db_connector.php:858 and :1151) — the only completion marker the

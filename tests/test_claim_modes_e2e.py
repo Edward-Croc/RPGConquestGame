@@ -14,7 +14,6 @@ Math calibration (TestConfig defaults + per-test overrides):
   claim_val ≈ 7 vs defence ≈ 3 (noControllerZoneDefenceBonus) → wins.
 """
 import json
-import pymysql
 import pytest
 
 from conftest import (
@@ -23,16 +22,12 @@ from conftest import (
 )
 from helpers import (
     end_turn, load_minimal_data, load_scenario_via_admin, safe_goto, ui_claim, ui_claim_click,
-    register_php_error_listener, assert_no_collected_php_errors,
+    register_php_error_listener, assert_no_collected_php_errors, get_db_connection,
     ui_worker_id, ui_worker_controller_id, ui_worker_action_state,)
 
 
 def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 @pytest.fixture(scope="session")
