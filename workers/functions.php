@@ -1274,11 +1274,11 @@ function getWorkerActions(PDO $pdo, int $workerId, int|null $turn_number = null)
  * @param PDO $pdo : database connection
  * @param int $workerId : id of the worker being activated
  * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / transferPrisoner / hide / passive / investigate)
- * @param int|array|null $extraVal : per-action payload (worker id list, controller id, or associative array)
+ * @param int|array|string|null $extraVal : per-action payload (worker id list, controller id, associative array, or the 'null' no-banner sentinel of a claim)
  *
  * @return int : $workerId (returned even on soft-failure paths)
  */
-function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null $extraVal = null): int
+function activateWorker(PDO $pdo, int $workerId, string $action, int|array|string|null $extraVal = null): int
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['action' => $action, 'extraVal' => $extraVal], 'debug');
@@ -1303,6 +1303,15 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
     $sql_worker_actions = "UPDATE {$prefix}worker_actions SET ";
     game_error_log(__FUNCTION__, 'activate action : ' . $action, [], 'debug');
     $new_action = $action;
+    // A string payload is an id, or the claim no-banner sentinel : nothing else.
+    if (is_string($extraVal) && !($action === 'claim' && $extraVal === 'null')) {
+        if (!is_numeric($extraVal)) {
+            game_error_log(__FUNCTION__, 'Refused a malformed payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
+            return $workerId;
+        }
+        $extraVal = (int) $extraVal;
+    }
+
     $jsonOutput = '{}';
     switch ($action) {
         case 'attack':
@@ -1330,9 +1339,11 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|null 
             break;
         case 'claim':
             game_error_log(__FUNCTION__, 'claim', ['extraVal' => $extraVal], 'debug');
+            // 'null' is the no-banner sentinel the claim mechanics read back.
+            $claimControllerId = is_string($extraVal) ? 'null' : $extraVal;
             // Create JSON table
             $jsonOutput = json_encode([
-                'claim_controller_id' => $extraVal
+                'claim_controller_id' => $claimControllerId
             ]);
             break;
         case 'attack_location':

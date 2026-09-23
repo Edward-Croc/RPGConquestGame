@@ -13,6 +13,7 @@ Math calibration (TestConfig defaults + per-test overrides):
   and ~7 Beta workers in Beta-Combat (all active including passive),
   claim_val ≈ 7 vs defence ≈ 3 (noControllerZoneDefenceBonus) → wins.
 """
+import json
 import pymysql
 import pytest
 
@@ -23,7 +24,7 @@ from conftest import (
 from helpers import (
     end_turn, load_minimal_data, load_scenario_via_admin, safe_goto, ui_claim, ui_claim_click,
     register_php_error_listener, assert_no_collected_php_errors,
-)
+    ui_worker_id, ui_worker_controller_id, ui_worker_action_state,)
 
 
 def _db_conn():
@@ -1034,3 +1035,74 @@ class TestClaimModeWorkerLeaderReportPlaceholders:
             f"{self._claim_report()!r}"
         )
 
+
+
+class TestClaimForNobody:
+    """The controller dropdown carries a « Personne (Sans bannière) » option
+    whose value is the literal string 'null'. Four readers treat that string
+    as a sentinel (claimMechanic ×2, investigateMechanic, workers/functions),
+    so it has to reach action_params intact.
+
+    Selecting it used to be the only untested branch of the claim form, and
+    it crashed in production: 'null' is not numeric, so PHP's coercive typing
+    could not turn it into the int the activateWorker signature declared.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_for_nobody(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker' WHERE name = 'claimMode'"
+        )
+        cur.close()
+        conn.close()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        wid = ui_worker_id(page, "Chain_B", base_url=PHP_BASE_URL)
+        cid = ui_worker_controller_id(page, "Chain_B", base_url=PHP_BASE_URL)
+        safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
+        page.locator("select[name='claim_controller_id']").select_option(value="null")
+        page.locator("input[name='claim']").click()
+        page.wait_for_load_state("load")
+        type(self)._html = page.content()
+        assert_no_collected_php_errors(page)
+
+        # Read back through the UI marker, not the database : this is what a
+        # UI_ONLY run against prod can see.
+        type(self)._state = ui_worker_action_state(page, "Chain_B", base_url=PHP_BASE_URL)
+
+        # Hand Chain_B back passive : the classes of this file share the worker,
+        # and a claim left standing would silently change what a later one sees.
+        safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}&passive=1")
+        context.close()
+        yield
+
+    def test_the_form_does_not_fatal(self):
+        """The production symptom: a TypeError on activateWorker, rendered as
+        an uncaught fatal. Nothing else on the page would show it."""
+        assert "Fatal error" not in self._html, (
+            "claiming for nobody must not raise a TypeError"
+        )
+        assert "TypeError" not in self._html
+
+    def test_the_worker_is_claiming(self):
+        """Positive anchor: the action really was recorded, so the test above
+        cannot pass merely because the page refused to do anything."""
+        assert self._state["action_choice"] == "claim", (
+            f"the claim should have been recorded; got {self._state['action_choice']!r}"
+        )
+
+    def test_the_sentinel_survives_into_the_parameters(self):
+        """The four readers compare against the string 'null'. An id coerced
+        to 0, or a SQL NULL, would silently claim for the worker's own
+        controller instead of removing the banner."""
+        params = json.loads(self._state.get("action_params") or "{}")
+        assert params.get("claim_controller_id") == "null", (
+            f"the no-banner sentinel must reach action_params; got {params!r}"
+        )
