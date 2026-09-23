@@ -344,7 +344,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     $worker['id'],
                     $controller_id, // %2$s
                     $return_controller_id, // %3$s
-                    'Relâcher le prisonnier vers ' . $controllerName . ' !', // %4$s
+                    'Relâcher vers ' . $controllerName . ' !', // %4$s
                     $_SESSION['FOLDER'], // %5$s
                     (!empty($double_agent_controller_id)) ? sprintf('<input type="hidden" name="double_controller_id" value="%s">', $double_agent_controller_id) : '' // %6$s
                 );
@@ -363,7 +363,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                         $worker['id'],
                         $controller_id,
                         $double_agent_controller_id,
-                        'Relâcher le prisonnier vers ' . $controllerName . ' !',
+                        'Relâcher vers ' . $controllerName . ' !',
                         $_SESSION['FOLDER']
                     );
                 }

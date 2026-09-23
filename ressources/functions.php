@@ -632,7 +632,7 @@ function getRessourceGiftsReceived(PDO $pdo, int $controller_id): array
             rc.ressource_name AS ressource
         FROM {$prefix}ressource_gift_logs l
         JOIN {$prefix}controllers c ON l.giver_controller_id = c.id
-        LEFT JOIN {$prefix}factions f ON c.faction_id = f.ID
+        LEFT JOIN {$prefix}factions f ON c.fake_faction_id = f.ID
         JOIN {$prefix}ressources_config rc ON l.ressource_id = rc.id
         WHERE l.recipient_controller_id = :recipient_id
         ORDER BY l.turn DESC, l.created_at DESC";

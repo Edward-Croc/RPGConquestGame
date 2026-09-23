@@ -214,7 +214,7 @@ class TestGiftWorker:
 # Setup uses the existing combat seed: Claim_Def_1 (Beta) is captured by
 # Claim_Atk_1 (Echo) during end-turn combat in Beta-Combat. Post-end-turn,
 # Claim_Def_1 is a prisoner of Echo. Echo can release the prisoner back
-# to Beta via the 'Relâcher le prisonnier vers Beta !' button.
+# to Beta via the 'Relâcher vers Beta !' button.
 #
 # This class runs end-turn in a class-scoped fixture so TestGiftWorker
 # above keeps its turn-0 state. (Class fixtures fire only for their own
@@ -276,8 +276,8 @@ class TestGiftPrisoner:
             (b.get_attribute("value") or "")
             for b in return_buttons.all()
         ]
-        assert any("Relâcher le prisonnier" in v for v in values), \
-            f"returnPrisoner button value should contain 'Relâcher le prisonnier'; got {values}"
+        assert any("Relâcher vers" in v for v in values), \
+            f"returnPrisoner button value should contain 'Relâcher vers'; got {values}"
         assert any("Beta" in v for v in values), \
             f"returnPrisoner button value should mention original owner Beta; got {values}"
 
@@ -532,7 +532,7 @@ class TestGiftPrisoner:
         )
 
     def test_return_releases_prisoner_to_original_owner(self, gm_page: Page, base_url):
-        """Click 'Relâcher le prisonnier vers Beta !' → Claim_Def_1's live row
+        """Click 'Relâcher vers Beta !' → Claim_Def_1's live row
         belongs to Beta again. Note: returnPrisoner also creates a trace at
         the captor (Echo) per workers/functions.php:1122 — same trace pattern
         as the gift flow."""
