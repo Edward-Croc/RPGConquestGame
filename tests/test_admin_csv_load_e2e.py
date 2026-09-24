@@ -266,6 +266,7 @@ class TestCSVLoadViaAdmin:
 
         # Verify CSV load success messages with exact row counts
         zones_n = csv_row_count("setupJapon1555CSV_zones.csv")
+        locations_n = csv_row_count("setupJapon1555CSV_locations.csv")
         assert "setupJapon1555CSV_worker_origins.csv loaded successfully (13 rows)" in page_html, \
             "Expected worker_origins CSV to load 13 rows"
         assert "setupJapon1555CSV_worker_names.csv loaded successfully (122 rows)" in page_html, \
@@ -278,8 +279,8 @@ class TestCSVLoadViaAdmin:
             "Expected jobs CSV to load 47 rows"
         assert "setupJapon1555CSV_factions.csv loaded successfully (11 rows)" in page_html, \
             "Expected factions CSV to load 11 rows"
-        assert "setupJapon1555CSV_locations.csv loaded successfully (48 rows)" in page_html, \
-            "Expected locations CSV to load 48 rows"
+        assert f"setupJapon1555CSV_locations.csv loaded successfully ({locations_n} rows)" in page_html, \
+            f"Expected locations CSV to load {locations_n} rows"
         assert "setupJapon1555CSV_advanced.csv loaded successfully (12 rows)" in page_html, \
             "Expected advanced workers CSV to load 12 rows"
 
@@ -292,8 +293,8 @@ class TestCSVLoadViaAdmin:
             "Japon1555CSV should load exactly 122 worker names"
         assert table_row_count("factions") == 11, \
             "Japon1555CSV should load exactly 11 factions"
-        assert table_row_count("locations") == 48, \
-            "Japon1555CSV should load exactly 48 locations"
+        assert table_row_count("locations") == locations_n, \
+            f"Japon1555CSV should load exactly {locations_n} locations"
         # Workers from advanced.csv (12 rows × 1 worker each — 9 original + 3 Bansō sōhei)
         assert table_row_count("workers") == 12, \
             "Japon1555CSV advanced should create exactly 12 workers"
