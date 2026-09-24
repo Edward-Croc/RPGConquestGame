@@ -22,7 +22,6 @@ Run:
 """
 import json
 
-import pymysql
 import pytest
 
 from conftest import (
@@ -32,16 +31,11 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     ui_turn_counter,
-    register_php_error_listener, assert_no_collected_php_errors,
-)
+    register_php_error_listener, assert_no_collected_php_errors, get_db_connection,)
 
 
 def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 @pytest.fixture(scope="session")

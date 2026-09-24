@@ -40,7 +40,6 @@ Run:
 """
 import re
 
-import pymysql
 import pytest
 from playwright.sync_api import Page
 
@@ -54,16 +53,11 @@ from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors, set_config_via_ui,
     ui_controller_id, ui_defend_location, ui_location_id, ui_worker_action_state,
-    ui_workers_by_lastname,
-)
+    ui_workers_by_lastname, get_db_connection,)
 
 
 def _db_conn():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 @pytest.fixture(scope="session")

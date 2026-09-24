@@ -280,6 +280,7 @@ def db_connection():
         database=MYSQL_DB,
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True,
     )
     yield conn
     conn.close()

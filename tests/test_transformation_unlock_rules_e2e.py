@@ -25,7 +25,6 @@ Run:
     python3 -m pytest tests/test_transformation_unlock_rules_e2e.py -v
 """
 import pytest
-import pymysql
 from playwright.sync_api import Page
 
 from conftest import (
@@ -36,8 +35,7 @@ from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
     login_as, ui_transform_options, ui_transform_click,
-    ui_teach_discipline_options, ui_worker_id,
-)
+    ui_teach_discipline_options, ui_worker_id, get_db_connection,)
 
 
 @pytest.fixture(scope="session")
@@ -54,11 +52,7 @@ def setup_testconfig(browser):
 
 
 def _db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 def _ressource_id(name):

@@ -18,7 +18,6 @@ import html as _html
 import json as _json
 import re
 
-import pymysql
 import pytest
 
 from conftest import (
@@ -27,8 +26,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
-    register_php_error_listener, assert_no_collected_php_errors,
-)
+    register_php_error_listener, assert_no_collected_php_errors, get_db_connection,)
 
 
 @pytest.fixture(scope="session")
@@ -161,11 +159,7 @@ class TestZoneAdjacencyAdminView:
 
 
 def _db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 @pytest.mark.db

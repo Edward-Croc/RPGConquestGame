@@ -31,7 +31,6 @@ Run:
 """
 import pathlib
 
-import pymysql
 import pytest
 
 from conftest import (
@@ -41,8 +40,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
-    end_turn, ui_controller_ids_map, ui_zone_id,
-)
+    end_turn, ui_controller_ids_map, ui_zone_id, get_db_connection,)
 
 
 # Pool is 14 hobbys / 14 jobs, 3 drawn per visit, so a given power is absent
@@ -94,11 +92,7 @@ def _alpha_cid():
 
 
 def _db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 def _reset_recruit_counter(cid):

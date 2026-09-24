@@ -31,7 +31,6 @@ Run:
     python3 -m pytest tests/test_spend_ressources_insufficient_stock_e2e.py -v
 """
 import pytest
-import pymysql
 
 from conftest import (
     GAME_PREFIX, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB,
@@ -40,8 +39,7 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    ui_controller_ids_map, ui_zone_id,
-)
+    ui_controller_ids_map, ui_zone_id, get_db_connection,)
 
 
 @pytest.fixture(scope="session")
@@ -58,11 +56,7 @@ def setup_testconfig(browser):
 
 
 def _db():
-    return pymysql.connect(
-        host=MYSQL_HOST, port=MYSQL_PORT, user=MYSQL_USER,
-        password=MYSQL_PASSWORD, database=MYSQL_DB,
-        charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor,
-    )
+    return get_db_connection()
 
 
 def _gold_id():
