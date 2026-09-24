@@ -371,7 +371,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
                     $traceWrokerID = createTraceWorker($pdo, $defender['defender_id'], $defender_json['double_agent_controller_id']);
                     updateWorkerAction($pdo, $traceWrokerID, $defender['turn_number'], null, ['life_report' => $tmpLifeReport]);
                     //
-                    $tmpDoubleAgentReport = sprintf("<br/> J'était un <strong>agent double %s %s.</strong>", getConfig($pdo, 'controllerNameDenominatorOf'), $doubleAgentControllerResult['double_agent_contoller_name']);
+                    $tmpDoubleAgentReport = sprintf("<br/> J'étais un <strong>agent double %s %s.</strong>", getConfig($pdo, 'controllerNameDenominatorOf'), $doubleAgentControllerResult['double_agent_contoller_name']);
                 }
             } catch (PDOException $e) {
                 game_error_log(__FUNCTION__, 'SELECT double agent controller failed', ['error' => $e->getMessage()]);
