@@ -895,6 +895,30 @@ gabarits de rapport. Ne rien mettre dans `claim_controller_id` revendique pour
 soi ; y mettre `'null'` revendique sous bannière anonyme ; y mettre un id
 revendique au nom d'un tiers.
 
+**L'agent double revendique pour son primaire, mais compte pour les deux.**
+Un agent double porte une ligne `controller_worker` par contrôleur : primaire
+chez sa faction d'origine, secondaire chez celle qui l'a recruté. Deux
+requêtes exploitent cette table différemment, et **l'écart est voulu** :
+
+| Requête | Filtre | Effet |
+|---|---|---|
+| groupement des revendicateurs (`claimMechanic.php:349`) | `is_primary_controller = 1` | la revendication est attribuée au **primaire** |
+| comptage des soutiens (`zones/functions.php:596`) | aucun | l'agent est compté **aussi** chez le recruteur |
+
+Un agent double qui revendique le fait donc pour sa faction d'origine. Chez
+son recruteur il ne crée aucun groupe, mais il grossit le compte des soutiens
+— lequel vaut `max(0, count - 1)`. Le recruteur n'en tire donc rien tant qu'il
+n'a pas **un agent à lui** qui revendique la même zone ; dès lors, l'agent
+double lui apporte un soutien de plus.
+
+Ajouter `is_primary_controller` au comptage des soutiens « par cohérence »
+supprimerait cette règle : ce n'est pas une omission.
+
+Les listes de témoins écartent de leur côté les revendicateurs eux-mêmes
+(`:272-277` et `:484-489`), et le rapport d'observateur n'est écrit qu'une fois
+par agent (`:108-115`) — sans quoi un agent double, présent deux fois dans la
+liste, lirait deux fois la même phrase sur sa fiche unique.
+
 **`applyZoneRules`** (`zones/functions.php:1163`) s'exécute sans condition à la
 toute fin de `calculateControllerValue`, pour les cinq types qui existent
 (`Claim`, `ZoneDefence`, `Attack`, `Defence`, `DiscoveryDiff` —
