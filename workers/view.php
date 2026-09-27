@@ -130,10 +130,8 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     $showListClaimTargetsSelect = showControllerSelect($controllers, $controller_id, 'claim_controller_id', true);
                     $claim_label = ($zoneOwner) ? 'Protéger' : 'Revendiquer';
                     $claimActionHTML = sprintf(
-                        '<div class="field is-grouped is-grouped-multiline">
-                            <div class="control">
-                                %1$s le %2$s au nom de
-                            </div>
+                        '<p class="mb-2">%1$s le %2$s au nom de</p>
+                        <div class="field is-grouped is-grouped-multiline">
                             %3$s
                             <div class="control">
                                 <input type="submit" name="claim" value="%1$s" class="button is-success">

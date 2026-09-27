@@ -32,10 +32,11 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
     echo "<div class='section workers'>";
     $recruitButton = "";
+    $recruitNotice = "";
     if (canStartRecrutement($gameReady, $controller_id, (int)$mechanics['turncounter'])) {
         $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur' class='button is-link'>";
     } elseif (empty(hasBase($gameReady, $controller_id))) {
-        $recruitButton = "<span class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</span>";
+        $recruitNotice = "<p class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</p>";
     }
 
     $firstComeButton = "";
@@ -53,11 +54,13 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     <div class='control'>%s</div>
                     <div class='control'>%s</div>
                 </div>
+                %s
             </form>",
         $_SESSION['FOLDER'],
         $controller_id,
         $firstComeButton,
-        $recruitButton
+        $recruitButton,
+        $recruitNotice
     );
 
     $sortLabels = ['age' => 'Ancienneté', 'zone' => 'Zone', 'investigate' => 'Valeur d\'enquête', 'attack' => 'Valeur d\'attaque'];
