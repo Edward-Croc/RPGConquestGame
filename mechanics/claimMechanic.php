@@ -69,7 +69,7 @@ function _claimResolveClaimerControllerIdForWrite(array $params, int $selfContro
  *     'claimer_worker_ids'    => int[],  // CKE writes (1 in mode A, N in mode B)
  *     'co_claimer_names'      => string, // %3$s
  *     'params'                => array,  // decoded action_params (for %4$s + write override)
- *     'observers'             => array,  // active-non-cid workers in zone (worker_id + controller_id rows)
+ *     'observers'             => array,  // active workers in zone, minus this controller's and minus the claimers themselves
  *   ]
  */
 function claimMechanic(PDO $pdo, array $mechanics): bool
@@ -104,13 +104,15 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
             // (zone) - %2$s
             // (co-claimer names) - %3$s
             // (claim_controller_id target name) - %4$s
-            foreach ($r['observers'] as $observer) {
+
+            // Deduplicated because a double agent stands in the list twice
+            foreach (array_unique(array_map('intval', array_column($r['observers'], 'worker_id'))) as $observerWorkerId) {
                 if (empty($textesView)) {
                     continue;
                 }
                 $tpl = $textesView[array_rand($textesView)];
                 $report = sprintf($tpl, $r['leader_name'], $r['zone_name'], $r['co_claimer_names'], $onBehalfName).'<br/>';
-                updateWorkerAction($pdo, (int)$observer['worker_id'], $turn_number, null, ['claim_report' => $report]);
+                updateWorkerAction($pdo, $observerWorkerId, $turn_number, null, ['claim_report' => $report]);
             }
             $observerControllerIds = array_unique(array_column($r['observers'], 'controller_id'));
             foreach ($observerControllerIds as $observerCid) {
@@ -124,10 +126,14 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
         // (nom) - %1$s
         // (zone) - %2$s
         $textesSelf = json_decode(getConfig($pdo, $r['success'] ? 'textesClaimSuccessArray' : 'textesClaimFailArray'), true) ?: [];
+        // Every agent of the group claimed, so every agent reports it, the leader included.
+        $selfRecipients = array_unique(array_merge([(int)$r['leader_worker_id']], array_map('intval', $r['claimer_worker_ids'])));
         if (!empty($textesSelf)) {
-            $tpl = $textesSelf[array_rand($textesSelf)];
-            $report = sprintf($tpl, $r['leader_name'], $r['zone_name']);
-            updateWorkerAction($pdo, (int)$r['leader_worker_id'], $turn_number, null, ['claim_report' => $report]);
+            foreach ($selfRecipients as $selfWorkerId) {
+                $tpl = $textesSelf[array_rand($textesSelf)];
+                $report = sprintf($tpl, $r['leader_name'], $r['zone_name']);
+                updateWorkerAction($pdo, $selfWorkerId, $turn_number, null, ['claim_report' => $report]);
+            }
         }
 
         if ($r['success']) {
@@ -263,9 +269,11 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array
             $claimerParams = array();
         }
 
+        // A double agent never witnesses his own claim.
         $observers = array_values(array_filter(
             $allActiveByZone[$zone_id] ?? [],
             fn ($w) => (int)$w['controller_id'] !== $claimer_cid
+                && (int)$w['worker_id'] !== (int)$claimer['claimer_id']
         ));
 
         $resolutions[] = [
@@ -463,11 +471,6 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
             $outcome
         ), [], 'debug');
 
-        $observers = array_values(array_filter(
-            $activeByZone[$zone_id] ?? [],
-            fn ($w) => (int)$w['controller_id'] !== $cid
-        ));
-
         $claimerWorkerIds = [];
         foreach ($candidates as $c) {
             if ((int)$c['controller_id'] === $cid && (int)$c['zone_id'] === $zone_id) {
@@ -477,6 +480,13 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
         if (empty($claimerWorkerIds)) {
             $claimerWorkerIds = [$leader_id];
         }
+
+        // A double agent never witnesses his own claim.
+        $observers = array_values(array_filter(
+            $activeByZone[$zone_id] ?? [],
+            fn ($w) => (int)$w['controller_id'] !== $cid
+                && !in_array((int)$w['worker_id'], $claimerWorkerIds, true)
+        ));
 
         $coClaimerIds = array_values(array_diff($claimerWorkerIds, [$leader_id]));
         if (empty($coClaimerIds)) {

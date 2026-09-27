@@ -23,7 +23,8 @@ from conftest import (
 from helpers import (
     end_turn, load_minimal_data, load_scenario_via_admin, safe_goto, ui_claim, ui_claim_click,
     register_php_error_listener, assert_no_collected_php_errors, get_db_connection,
-    ui_worker_id, ui_worker_controller_id, ui_worker_action_state,)
+    ui_worker_id, ui_worker_controller_id, ui_worker_action_state, worker_report_html,
+    worker_report_section, ui_recruit_perfect_worker, ui_controller_id,)
 
 
 def _db_conn():
@@ -1100,4 +1101,295 @@ class TestClaimForNobody:
         params = json.loads(self._state.get("action_params") or "{}")
         assert params.get("claim_controller_id") == "null", (
             f"the no-banner sentinel must reach action_params; got {params!r}"
+        )
+
+
+@pytest.mark.db
+class TestClaimReportReachesEveryCoClaimer:
+    """Issue #151 : in mode B the claim resolves as a group, but the report
+    used to be written to `leader_worker_id` alone — the best-ranked worker
+    of the group. The other agents of the same faction who submitted the
+    same claim saw nothing: they are not observers either, since observers
+    are the workers of OTHER controllers standing in the zone.
+
+    Same setup as TestClaimModeSupportingClaimersBonus: two Beta workers
+    claim Beta-Combat and win. Here both reports are read through the UI.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim','baseClaimAddWorkers',"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '0' WHERE name IN "
+            f"('baseClaim','baseClaimAddWorkers','baseClaimAddOwnedLocations')"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '10' WHERE name = 'baseClaimAddSupporting'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        ui_claim_click(page, 'Chain_B', 'Beta')
+        ui_claim(page, 'Even_Def', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        type(self)._reports = {
+            name: worker_report_html(page, name, base_url=PHP_BASE_URL)
+            for name in ('Chain_B', 'Even_Def')
+        }
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = %s", (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6 WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        yield
+
+    def test_the_leader_reports_the_claim(self):
+        """Positive anchor : the leader always reported, before and after the
+        fix. If this one goes quiet the setup broke, not the fix.
+
+        Asserted on the « Controle: » section, not on the whole page: the
+        zone name appears on any worker page standing in that zone, so a
+        bare `"Beta-Combat" in html` would pass with no report at all."""
+        section = worker_report_section(self._reports['Chain_B'], "Controle:")
+        assert "Beta-Combat" in section, (
+            f"the group leader should file the claim in its report; got {section[:200]!r}"
+        )
+
+    def test_the_other_claimer_reports_it_too(self):
+        """The defect of #151 : this section did not exist for a co-claimer."""
+        section = worker_report_section(self._reports['Even_Def'], "Controle:")
+        assert "Beta-Combat" in section, (
+            "a co-claimer of the same faction must read the claim in their own "
+            f"report, not only the best-ranked worker of the group; got {section[:200]!r}"
+        )
+
+
+@pytest.mark.db
+class TestDoubleAgentIsNotHisOwnWitness:
+    """Issue #151, second report : a double agent holds one controller_worker
+    row per controller — primary with his origin faction, secondary with the
+    faction that recruited him. The observer query joins that table without
+    filtering on is_primary_controller, so a claimer resurfaced in the
+    observer list under his recruiter's id and received BOTH the participation
+    report and the seen-from-outside one, on the same sheet.
+
+    Here a Beta worker is recruited with the go_traitor job, which points his
+    secondary link at Echo, then claims for Beta. TestConfig's templates make
+    the two reports easy to tell apart : the self line reads « We took control
+    of », the observer line « Saw … take control of ».
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim','baseClaimAddWorkers',"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '0' WHERE name IN "
+            f"('baseClaim','baseClaimAddWorkers','baseClaimAddOwnedLocations')"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '10' WHERE name = 'baseClaimAddSupporting'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        # Earlier classes of this file leave claims standing in the same zone :
+        # a competing Alpha claim would win and hide the line under test.
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        current_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = (SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat') "
+            f"  AND wa.action_choice = 'claim'",
+            (current_turn,)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        beta_id = ui_controller_id(page, "Beta", base_url=PHP_BASE_URL)
+        ui_recruit_perfect_worker(
+            page, beta_id, "Beta-Combat", "Claim_Traitor",
+            "Blank Slate", "Test_Job_GoTraitor_Echo", base_url=PHP_BASE_URL,
+        )
+        ui_claim_click(page, 'Claim_Traitor', 'Beta')
+        ui_claim(page, 'Chain_B', 'Beta')
+        end_turn(page, PHP_BASE_URL)
+
+        type(self)._section = worker_report_section(
+            worker_report_html(page, "Claim_Traitor", base_url=PHP_BASE_URL), "Controle:"
+        )
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = %s", (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6 WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        yield
+
+    def test_he_reports_taking_part(self):
+        """Positive anchor : without it, a report emptied of everything would
+        satisfy the assertion below."""
+        assert "We took control of" in self._section, (
+            f"the double agent claimed, so he reports it; got {self._section[:200]!r}"
+        )
+
+    def test_he_does_not_witness_himself(self):
+        """The defect : his secondary link to Echo made him an observer of the
+        very claim he was making."""
+        assert "take control of" not in self._section.replace("We took control of", ""), (
+            "a claimer must not receive the seen-from-outside report of his own "
+            f"claim; got {self._section[:300]!r}"
+        )
+
+
+@pytest.mark.db
+class TestDoubleAgentWitnessesOnlyOnce:
+    """Issue #151, same root cause seen from the other side : a double agent
+    who merely STANDS in the zone is a legitimate witness of someone else's
+    claim — but his two controller_worker rows put him in the observer list
+    twice, so the sentence was appended twice to his single sheet.
+
+    Beta's traitor watches Alpha take Beta-Combat, and must read it once.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def claim_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT name, value FROM `{GAME_PREFIX}config` WHERE name IN ("
+            f"'claimMode','baseClaim','baseClaimAddWorkers',"
+            f"'baseClaimAddOwnedLocations','baseClaimAddSupporting')"
+        )
+        prev_config = {row['name']: row['value'] for row in cur.fetchall()}
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = 'worker_leader' WHERE name = 'claimMode'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '0' WHERE name IN "
+            f"('baseClaim','baseClaimAddWorkers','baseClaimAddOwnedLocations')"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}config` SET value = '10' WHERE name = 'baseClaimAddSupporting'"
+        )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 0, "
+            f"claimer_controller_id = NULL, holder_controller_id = NULL "
+            f"WHERE name = 'Beta-Combat'"
+        )
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        current_turn = cur.fetchone()['turncounter']
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}worker_actions` wa "
+            f"JOIN `{GAME_PREFIX}workers` w ON w.id = wa.worker_id "
+            f"SET wa.action_choice = 'passive', wa.action_params = '{{}}' "
+            f"WHERE wa.turn_number = %s "
+            f"  AND w.zone_id = (SELECT id FROM `{GAME_PREFIX}zones` WHERE name='Beta-Combat') "
+            f"  AND wa.action_choice = 'claim'",
+            (current_turn,)
+        )
+        conn.commit()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        beta_id = ui_controller_id(page, "Beta", base_url=PHP_BASE_URL)
+        # Recruited, then left passive : a witness, not a claimer.
+        ui_recruit_perfect_worker(
+            page, beta_id, "Beta-Combat", "Witness_Traitor",
+            "Blank Slate", "Test_Job_GoTraitor_Echo", base_url=PHP_BASE_URL,
+        )
+        ui_claim_click(page, 'Chain_A', 'Alpha')
+        end_turn(page, PHP_BASE_URL)
+
+        type(self)._section = worker_report_section(
+            worker_report_html(page, "Witness_Traitor", base_url=PHP_BASE_URL), "Controle:"
+        )
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        for name, value in prev_config.items():
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}config` SET value = %s WHERE name = %s", (value, name)
+            )
+        cur.execute(
+            f"UPDATE `{GAME_PREFIX}zones` SET defence_val = 6 WHERE name = 'Beta-Combat'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        yield
+
+    def test_he_witnesses_the_claim(self):
+        """Positive anchor : a double agent standing in the zone still sees
+        what happens there, so the line must be present at all.
+
+        Counted on « Saw », which opens both TestConfig view templates — the
+        success one and the failure one — so the test does not depend on
+        whether the watched claim carried the zone."""
+        assert "Saw " in self._section, (
+            f"the witness should read the claim he saw; got {self._section[:200]!r}"
+        )
+
+    def test_he_reads_it_only_once(self):
+        """The defect : one controller_worker row per controller meant one
+        copy of the sentence per row."""
+        assert self._section.count("Saw ") == 1, (
+            "a double agent holds two controller_worker rows but a single report "
+            f"sheet; got {self._section.count('Saw ')} copies : {self._section[:300]!r}"
         )
