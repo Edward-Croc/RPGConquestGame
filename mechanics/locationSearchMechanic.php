@@ -133,7 +133,10 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
             $descBody .= $txtBag['locationDestroyableText'][array_rand($txtBag['locationDestroyableText'])];
         }
         // State disclosure : gated with the destroyable text, never at the name tier.
-        $descBody .= ' ' . buildLocationAgeSentence($row, $txtBag);
+        $ageSentence = buildLocationAgeSentence($row, $txtBag);
+        if ($ageSentence !== '') {
+            $descBody .= ' ' . $ageSentence;
+        }
     } else {
         $nameTpl = $txtBag['locationNameText'][array_rand($txtBag['locationNameText'])];
         $descBody = sprintf($nameTpl, $foundName);
@@ -295,15 +298,20 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool
  * "always been there" unless the place has actually changed state.
  *
  * @param array $row : location row carrying found_name, found_setup_turn,
- *   found_is_updated_location and found_can_be_repaired
+ *   found_is_updated_location, found_can_be_destroyed and found_can_be_repaired
  * @param array $txtBag : loaded text pools plus timeValue and turn_number
  *
- * @return string : the rendered sentence
+ * @return string : the rendered sentence, empty for a place that was never built
  */
 function buildLocationAgeSentence(array $row, array $txtBag): string
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with found_id : ' . $row['found_id'], ['row' => $row, 'txtBag' => $txtBag], 'debug');
+
+    // A place that can be neither razed nor rebuilt was never built : a cove has no age.
+    if (empty($row['found_can_be_destroyed']) && empty($row['found_can_be_repaired'])) {
+        return '';
+    }
 
     $isUpdated = !empty($row['found_is_updated_location']);
     $setupTurn = (int) ($row['found_setup_turn'] ?? 0);

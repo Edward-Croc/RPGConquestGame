@@ -69,7 +69,7 @@ import re
 import pytest
 from playwright.sync_api import Page
 
-from conftest import PHP_BASE_URL, ensure_gm_login
+from conftest import GAME_PREFIX, PHP_BASE_URL, ensure_gm_login
 
 from helpers import (
     DB_AVAILABLE, clear_ui_caches, end_turn, load_minimal_data,
@@ -79,7 +79,7 @@ from helpers import (
     ui_combat_logs, ui_combat_unresolved_count, ui_config_value,
     ui_controller_id, ui_defend_location, ui_location_id,
     ui_recruit_perfect_worker, ui_worker_id, ui_workers_by_lastname,
-    worker_report_html, worker_report_section,
+    worker_report_html, worker_report_section, safe_goto, get_db_connection,
 )
 
 # Location name -> (attacker lastnames, defender lastnames), in the order queued.
@@ -511,4 +511,88 @@ class TestSaboteurExcluded:
         assert pool, "textLocationUnreachable is not seeded"
         assert any(text in _sabotage["report"] for text in pool), (
             f"expected one of {pool!r} in the saboteur's report"
+        )
+
+
+class TestDefendSelectFollowsAttackability:
+    """Issue #161 : a place is defendable exactly when it is attackable.
+
+    `listControllerLinkedLocations` returns every place a controller owns, so
+    the defend select offered rubble too — visible on Japon1555 where the
+    Daihō-ji is seeded already destroyed. Defending answers an assault, so the
+    gate is `can_be_destroyed`, the same column the attack select uses.
+
+    Gating on « not repairable » instead would read the same on today's data
+    and break the day a place is both attackable and repairable — a fortress
+    that can be razed and rebuilt. The last test below pins that case down.
+
+    Golf owns two places in Theta-Artefacts, neither attackable as seeded, and
+    no agent standing there. Nothing else in this file touches Golf or that
+    zone.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def defend_select(self, browser):
+        conn = get_db_connection()
+        cur = conn.cursor()
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        try:
+            ensure_gm_login(page, PHP_BASE_URL)
+            golf_id = ui_controller_id(page, "Golf", base_url=PHP_BASE_URL)
+            wid = ui_recruit_perfect_worker(
+                page, golf_id, "Theta-Artefacts", "Defender_Golf",
+                "Blank Slate", "Test_Job_GoTraitor_Echo", base_url=PHP_BASE_URL,
+            )
+            safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={golf_id}&chosir=Choisir")
+
+            def options():
+                safe_goto(page, f"{PHP_BASE_URL}/workers/action.php?worker_id={wid}")
+                page.wait_for_load_state("load")
+                return page.locator(
+                    "select[name='defend_target_location_id'] option"
+                ).all_inner_texts()
+
+            type(self)._as_seeded = options()
+
+            # No admin form flips can_be_destroyed, so the future shape is set up
+            # here; the assertions themselves stay UI-only.
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}locations` SET can_be_destroyed = 1 "
+                f"WHERE name = 'Golf-Chapel'"
+            )
+            type(self)._attackable_ruin = options()
+            assert_no_collected_php_errors(page)
+            yield
+        finally:
+            cur.execute(
+                f"UPDATE `{GAME_PREFIX}locations` SET can_be_destroyed = 0 "
+                f"WHERE name = 'Golf-Chapel'"
+            )
+            cur.close()
+            conn.close()
+            context.close()
+
+    def test_a_place_nobody_can_attack_is_not_offered(self):
+        """Golf-Shrine can be neither razed nor repaired : no assault can reach
+        it, so standing guard over it means nothing."""
+        assert not any("Golf-Shrine" in o for o in self._as_seeded), (
+            f"an unattackable place must not be offered for defence; got {self._as_seeded}"
+        )
+
+    def test_a_ruin_that_cannot_be_attacked_is_not_offered(self):
+        """The reported defect : Golf-Chapel is seeded awaiting repair and not
+        attackable, yet it was listed."""
+        assert not any("Golf-Chapel" in o for o in self._as_seeded), (
+            f"rubble no one can attack must not be offered; got {self._as_seeded}"
+        )
+
+    def test_a_place_both_attackable_and_repairable_is_offered(self):
+        """The case a « not repairable » gate would have broken, and the
+        positive anchor of this class : with can_be_destroyed raised, the very
+        same repairable place must come back into the list."""
+        assert any("Golf-Chapel" in o for o in self._attackable_ruin), (
+            "a place that can be attacked must be defendable, repairable or not; "
+            f"got {self._attackable_ruin}"
         )

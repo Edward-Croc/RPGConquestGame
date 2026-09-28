@@ -4,7 +4,8 @@
 maximally old from the first minute. This file covers the fix and what it feeds:
 `createBase` and `updateLocation` now stamp the turn, `updateLocation` also raises
 `is_updated_location`, and `locationSearchMechanic` turns the pair into a sentence
-appended to every discovery report.
+appended to the discovery report of every place that can be razed or rebuilt —
+a cove or a civic site was never built and carries no age (issue #162).
 
 The sentence is built from two pools (`buildLocationAgeSentence`):
   state  — textLocationAgeOriginal / Ruined / Restored, chosen from
@@ -206,8 +207,15 @@ def age_state(browser):
 class TestScenery:
     """setup_turn 0 with no state change reads as immemorial."""
 
-    def test_a_seeded_place_has_always_been_there(self):
-        assert "Ce.tte Location A a été construit.e il y a des années." in _state["t1"]
+    def test_a_place_that_was_never_built_has_no_age(self):
+        """Issue #162 : Location A can be neither razed nor rebuilt, so dating
+        it read as absurd — a cove announced as « construit il y a des années ».
+        Paired with the base assertion below, which proves the sentence still
+        fires for places that ARE built : without it, a mechanic emitting
+        nothing at all would satisfy this test."""
+        assert "Ce.tte Location A a été" not in _state["t1"], (
+            "a place that is neither destructible nor repairable carries no age"
+        )
 
     def test_a_base_built_during_setup_is_scenery_too(self):
         # Built at turn 0, so the sentinel rule applies and it must NOT be dated.
@@ -217,17 +225,20 @@ class TestScenery:
 
 
 class TestTierBoundary:
-    """The sentence discloses state, so it starts at the description tier.
+    """State is disclosed at the description tier, never at the name tier.
 
     Location A has discovery_diff 4 and both probes share its zone, so their
     enquete_val alone decides the tier: Finder_4 has 5 (difference 1, which clears
     LOCATIONINFORMATIONDIFF) and Finder_5 has 4 (difference 0, exactly
     LOCATIONNAMEDIFF). One location, one turn, one threshold between them.
+
+    Since #162 Location A carries no age sentence — it is neither destructible
+    nor repairable — so the tier is read on its description instead.
     """
 
-    def test_the_description_tier_gets_the_sentence(self):
-        assert "Ce.tte Location A a été construit.e il y a des années." in _state["t1_desc_tier"], (
-            "a searcher clearing LOCATIONINFORMATIONDIFF must read the age sentence"
+    def test_the_description_tier_gets_the_description(self):
+        assert "A test location for discovery testing" in _state["t1_desc_tier"], (
+            "a searcher clearing LOCATIONINFORMATIONDIFF must read the description"
         )
 
     def test_the_name_tier_gets_the_name_but_not_the_sentence(self):

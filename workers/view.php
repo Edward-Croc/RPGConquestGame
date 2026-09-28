@@ -206,7 +206,11 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     $ownInZone = [];
                     $ownIdsInZone = [];
                     if (!empty($ownLinked) && isset($ownLinked[$worker['zone_id']])) {
-                        $ownInZone = $ownLinked[$worker['zone_id']]['locations'] ?? [];
+                        // only what can be attacked can be defended.
+                        $ownInZone = array_values(array_filter(
+                            $ownLinked[$worker['zone_id']]['locations'] ?? [],
+                            fn ($ol) => !empty($ol['can_be_destroyed'])
+                        ));
                         foreach ($ownInZone as $ol) {
                             $ownIdsInZone[(int)$ol['id']] = true;
                         }
