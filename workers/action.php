@@ -213,18 +213,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // re-validate against the same helpers as the UI select (single source
         // of truth for zone/ownership/attackability). Privileged bypass.
         if (empty($_SESSION['is_privileged'])) {
+
             $prefix = $_SESSION['GAME_PREFIX'];
+
             $stmtWZ = $gameReady->prepare("SELECT zone_id FROM {$prefix}workers WHERE id = :wid LIMIT 1");
             $stmtWZ->execute([':wid' => $worker_id]);
             $worker_zone_id = (int)$stmtWZ->fetchColumn();
+
             $ctrlId = (int)$_SESSION['controller']['id'];
             $attackableSet = listControllerKnownLocations($gameReady, $ctrlId, true, false, true, false);
             $attackableIds = array_column($attackableSet[$worker_zone_id]['locations'] ?? [], 'id');
+
             if ($agent_action === 'attack_location') {
                 $validIds = $attackableIds;
             } else {
                 $ownSet = listControllerLinkedLocations($gameReady, $ctrlId);
-                $ownIds = array_column($ownSet[$worker_zone_id]['locations'] ?? [], 'id');
+                //  only what can be attacked can be defended.
+                $ownIds = array_column(array_filter(
+                    $ownSet[$worker_zone_id]['locations'] ?? [],
+                    fn ($ol) => !empty($ol['can_be_destroyed'])
+                ), 'id');
                 $validIds = array_unique(array_merge($ownIds, $attackableIds));
             }
             if (!in_array($target_location_id, array_map('intval', $validIds), true)) {
