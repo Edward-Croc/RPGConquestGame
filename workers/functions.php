@@ -902,7 +902,7 @@ function createWorker(PDO $pdo, array $array): string|false
     // Add the basic worker action line
     $newControllerName = getControllerName($pdo, $array['controller_id']);
     $zone_name = getZoneName($pdo, $array['zone_id']);
-    $life_report = sprintf("J'ai été recruté par %s<strong>%s</strong> et envoyé en mission dans le %s <strong>%s</strong>.<br/>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name);
+    $life_report = sprintf("J'ai été recruté.e par %s<strong>%s</strong> et envoyé.e en mission dans le %s <strong>%s</strong>.<br/>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name);
     $reportArray = array('life_report' => $life_report);
     addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id'], $reportArray);
 
