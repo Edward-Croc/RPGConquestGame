@@ -200,6 +200,15 @@ if (isset($_SESSION['controller'])) {
     );
     if (!empty($incomingAttacks)) {
         $timeWord = (string)getConfig($gameReady, 'timeValue');
+
+        $currentTurn = (int) ($mechanics['turncounter'] ?? 0);
+        $hasRecentAttack = false;
+        foreach ($incomingAttacks as $atk) {
+            if ((int) $atk['turn'] >= $currentTurn - 1) {
+                $hasRecentAttack = true;
+                break;
+            }
+        }
         $byTurn = [];
         foreach ($incomingAttacks as $atk) {
             $byTurn[(int)$atk['turn']][] = $atk;
@@ -232,12 +241,18 @@ if (isset($_SESSION['controller'])) {
             $idx++;
         }
         $tabs .= '</ul></div>';
-        $htmlBase .= sprintf(
-            "<div class='notification is-danger'><strong>Alerte !</strong> Votre base a été attaquée ce %s !%s%s</div>",
-            strtolower($timeWord),
-            $tabs,
-            $panels
-        );
+        $htmlBase .= $hasRecentAttack
+            ? sprintf(
+                "<div class='notification is-danger'><strong>Alerte !</strong> Votre base a été attaquée ce %s !%s%s</div>",
+                strtolower($timeWord),
+                $tabs,
+                $panels
+            )
+            : sprintf(
+                "<div class='notification'><strong>Attaques passées sur votre base</strong>%s%s</div>",
+                $tabs,
+                $panels
+            );
     }
     echo $htmlBase;
 
@@ -265,8 +280,6 @@ if (isset($_SESSION['controller'])) {
         } else {
             echo '<span class="has-text-grey">Aucun lieu connu attaquable.</span>';
         }
-    } else {
-        echo '<span class="has-text-grey">Les attaques de lieux sont impossibles sans une base d\'opération.</span>';
     }
 
     $ownedArtefacts = showOwnedArtefacts($gameReady, $controllers['id']);

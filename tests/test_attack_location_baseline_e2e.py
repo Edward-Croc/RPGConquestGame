@@ -1795,3 +1795,101 @@ class TestMoveBaseReleasesLocationDefenders:
             f"the control defender must keep targeting {self._control_id}; "
             f"got {self._control_after['action_params']!r}"
         )
+
+
+class TestAttackAlertOnlyWhenRecent:
+    """Issue #152 : the red « Alerte ! Votre base a été attaquée ce <tour> ! »
+    box appeared as soon as ANY attack log existed, so a faction attacked once
+    on turn 0 was still being warned on turn 4.
+
+    The relevant window is {current turn, current turn - 1} : end-of-turn
+    resolution stamps the OLD turncounter, so the freshest attack a player can
+    read is always turn - 1.
+
+    The history itself stays on the page either way — these logs are shown
+    nowhere else on the player side — so the old case must keep its tabs and
+    lose only the alarm.
+
+    Synthetic logs, like TestAttackLogMultiTurnTabs above : the renderer is
+    what is under test, not the attack maths.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def alert_state(self, browser):
+        conn = _db_conn()
+        cur = conn.cursor()
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Foxtrot' LIMIT 1"
+        )
+        foxtrot_id = cur.fetchone()['id']
+        cur.execute(
+            f"SELECT id FROM `{GAME_PREFIX}controllers` WHERE lastname = 'Echo' LIMIT 1"
+        )
+        echo_id = cur.fetchone()['id']
+
+        def log_attack(at_turn, marker):  # noqa: E306
+            cur.execute(
+                f"INSERT INTO `{GAME_PREFIX}location_attack_logs` "
+                f"(location_name, target_controller_id, attacker_id, attack_val, defence_val, "
+                f"turn, success, target_result_text, attacker_result_text) "
+                f"VALUES ('AlertFakeBase', %s, %s, 5, 1, %s, 1, %s, %s)",
+                (echo_id, foxtrot_id, at_turn, marker, marker),
+            )
+            conn.commit()
+
+        def echo_page():
+            safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+            page.wait_for_load_state("load")
+            return page.content()
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        # TestConfig starts at turn 0, so the clock has to move for an attack to
+        # become old. Moving it by hand raises warnings — the pages expect an
+        # action row for the current turn — so the game really is advanced.
+        end_turn(page, PHP_BASE_URL)
+        end_turn(page, PHP_BASE_URL)
+        cur.execute(f"SELECT turncounter FROM `{GAME_PREFIX}mechanics` LIMIT 1")
+        turn = int(cur.fetchone()['turncounter'])
+        assert turn >= 2, f"the alert window needs a clock past turn 1; got {turn}"
+
+        _switch_controller(page, "Echo")
+        log_attack(0, 'alert-old-text')
+        type(self)._stale_html = echo_page()
+
+        log_attack(turn, 'alert-recent-text')
+        type(self)._recent_html = echo_page()
+
+        assert_no_collected_php_errors(page)
+        context.close()
+
+        cur.execute(
+            f"DELETE FROM `{GAME_PREFIX}location_attack_logs` WHERE location_name = 'AlertFakeBase'"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        yield
+
+    def test_a_recent_attack_raises_the_alert(self):
+        """Positive anchor : without it, a page that stopped rendering the box
+        at all would satisfy the staleness test below."""
+        assert "Alerte !" in self._recent_html, (
+            "an attack on the current turn must still raise the alert"
+        )
+
+    def test_an_old_attack_does_not_raise_the_alert(self):
+        """The defect of #152 : the alert fired on the mere existence of a log."""
+        assert "Alerte !" not in self._stale_html, (
+            "an attack several turns old must not be announced as happening now"
+        )
+
+    def test_the_old_attack_is_still_listed(self):
+        """The history is shown nowhere else on the player side, so dropping
+        the alarm must not drop the report with it."""
+        assert "alert-old-text" in self._stale_html, (
+            "past attack reports must stay readable once the alert is gone"
+        )
