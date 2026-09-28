@@ -600,6 +600,10 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
     $workerStatus = getWorkerStatus($worker, $mechanics);
 
     $textActionUpdated = getConfig($pdo, 'txt_ps_'.$currentAction['action_choice']);
+    // 'trace' has no text of its own : a decoy must read exactly like a death.
+    if ((string) $textActionUpdated === '') {
+        $textActionUpdated = getConfig($pdo, 'txt_ps_'.$workerStatus);
+    }
     // change action text if prisonner or double agent
     if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
 
