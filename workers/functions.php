@@ -1322,7 +1322,9 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
             game_error_log(__FUNCTION__, 'attack', ['extraVal' => $extraVal], 'debug');
             // Build attack JSON
             $chosenAttackOptions = array();
-            foreach ($extraVal as $val) {
+            // A submit with no target selected arrives as null : iterate nothing rather than warn.
+            $selectedTargets = is_array($extraVal) ? $extraVal : array();
+            foreach ($selectedTargets as $val) {
                 $attackScope = '';
                 $attackID = null;
                 // Determine scope and ID
