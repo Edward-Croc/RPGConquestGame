@@ -230,6 +230,12 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
 
     foreach ($attackArray as $compared_attacker_id => $defender_ids) {
+        // An attack action carrying no target at all would build IN (), a syntax error.
+        if (empty($defender_ids)) {
+            game_error_log(__FUNCTION__, 'No target resolved for this attacker, nothing to compare', ['attacker_id' => $compared_attacker_id], 'warning');
+            continue;
+        }
+
         try {
             game_error_log(__FUNCTION__, 'compared_attacker_id : ' . $compared_attacker_id, ['defender_ids' => $defender_ids], 'debug');
 
@@ -238,7 +244,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
                     $sqlValCompare,
                     $active_actions,
                     ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true',
-                    implode(',', $defender_ids)
+                    implode(',', array_map('intval', $defender_ids))
                 )
             );
             $stmtValCompare->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
@@ -246,6 +252,8 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
             $stmtValCompare->execute();
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'SELECT compare attackers to defenders failed', ['error' => $e->getMessage(), 'attacker_id' => $compared_attacker_id]);
+            // Without this the next lines read the statement left by the previous attacker.
+            continue;
         }
         if ($stmtValCompare->rowCount() == 0) {
             continue;
