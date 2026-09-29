@@ -60,6 +60,23 @@ def base_url():
     return PHP_BASE_URL
 
 
+def _count_log_mentions(page, base_url, needle='getAttackerComparisons'):
+    """Count ERROR lines naming `needle` in the admin log viewer.
+
+    The viewer keeps only the last 1000 raw lines BEFORE applying the level
+    filter (admin/admin_logs.php:50), and nothing clears the log between test
+    files. An absolute absence would therefore prove nothing on a verbose run,
+    so the caller brackets the end of turn and compares two readings.
+    """
+    ensure_gm_login(page, base_url)
+    safe_goto(page, f"{base_url}/admin/admin_logs.php?prefix={GAME_PREFIX}&level=ERROR")
+    page.wait_for_load_state("load")
+    content = page.content()
+    # Positive control : an unauthenticated page renders no log at all.
+    assert 'Game Errors Log' in content, "the log viewer did not render as gm"
+    return content.count(needle)
+
+
 def _ui_attack_without_target(page, lastname, base_url):
     """Press « Attaquer » on the agent's own action page, selecting nobody.
 
@@ -107,8 +124,11 @@ def no_target_scenario(browser):
 
         ui_attack(page, CONTROL_ATTACKER, CONTROL_DEFENDER)
 
+        observed['log_before'] = _count_log_mentions(page, PHP_BASE_URL)
+
         # Turn 1 -> 2 : the attack mechanic resolves.
         end_turn(page)
+        observed['log_after'] = _count_log_mentions(page, PHP_BASE_URL)
         assert_no_collected_php_errors(page)
 
         yield observed
@@ -131,23 +151,15 @@ class TestAttackWithoutTarget:
         assert no_target_scenario['queued_choice'] == 'passive'
         assert no_target_scenario['queued_params'] == '{}'
 
-    def test_no_error_logged_for_the_turn(self, page, base_url, no_target_scenario):
-        """admin_logs.php must not carry a getAttackerComparisons ERROR line.
+    def test_no_error_logged_for_the_turn(self, no_target_scenario):
+        """The end of turn must not add a getAttackerComparisons ERROR line.
 
-        Named rather than counted so a regression reads as itself : before the
-        fix this is where `WHERE w.id IN ()` surfaced.
+        A delta across the turn rather than an absolute absence : the viewer
+        only shows the last 1000 raw lines, so "not in the page" would pass on a
+        verbose run whether or not the fix is present. Before the fix this is
+        where `WHERE w.id IN ()` surfaced.
         """
-        ensure_gm_login(page, base_url)
-        safe_goto(
-            page,
-            f"{base_url}/admin/admin_logs.php?prefix={GAME_PREFIX}&level=ERROR",
-        )
-        page.wait_for_load_state("load")
-        content = page.content()
-        # Positive control : an unauthenticated page renders no log at all, and
-        # the absence below would then be worth nothing.
-        assert 'Game Errors Log' in content, "the log viewer did not render as gm"
-        assert 'getAttackerComparisons' not in content
+        assert no_target_scenario['log_after'] == no_target_scenario['log_before']
 
     def test_attacker_is_still_alive(self, page, base_url, no_target_scenario):
         """A refused attack must cost the agent its action, never its life."""

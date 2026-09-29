@@ -16,7 +16,7 @@ The scenario, as reported:
 What happens, and why:
 
 `controllers_known_enemies` is the only source a network-scope attack resolves
-through (`getAttackerTargets`, mechanics/attackMechanic.php). The gift
+through (`getAttackerComparisons`, mechanics/attackMechanic.php). The gift
 (`activateWorker` case 'gift', workers/functions.php) rewrites
 `controller_worker.controller_id` and `worker_actions.controller_id` — and
 nothing else. The whole codebase writes to `controllers_known_enemies` in
@@ -57,6 +57,7 @@ from helpers import (
     load_scenario_via_admin,
     register_php_error_listener,
     safe_goto,
+    ui_controller_id,
     ui_gift_click,
     ui_worker_action_state,
     ui_worker_controller_id,
@@ -126,8 +127,10 @@ def gifted_target_scenario(browser):
         ui_gift_click(page, GIFTED_AGENT, GIFT_RECIPIENT, base_url=PHP_BASE_URL)
         observed['after_gift_cid'] = ui_worker_controller_id(page, GIFTED_AGENT,
                                                              base_url=PHP_BASE_URL)
-        observed['recipient_cid'] = ui_worker_controller_id(page, 'Chain_D',
-                                                            base_url=PHP_BASE_URL)
+        # controllerSelect is gm-only, and ui_gift_click left the session on the giver.
+        ensure_gm_login(page, PHP_BASE_URL)
+        observed['recipient_cid'] = ui_controller_id(page, GIFT_RECIPIENT,
+                                                     base_url=PHP_BASE_URL)
 
         # Turn 1 -> 2 : the attack mechanic resolves.
         end_turn(page)
