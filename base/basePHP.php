@@ -1,8 +1,9 @@
 <?php
 
 ob_start(); // Buffer output so header() redirects work even when warnings are emitted
+require_once __DIR__ . '/session.php';
+startGameSession();
 if (!isset($_SESSION['DEBUG'])) {
-    session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
 }
 

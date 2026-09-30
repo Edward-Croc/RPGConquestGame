@@ -1,7 +1,8 @@
 <?php
 
+require_once __DIR__ . '/base/session.php';
+startGameSession();
 if (!isset($_SESSION['DEBUG'])) {
-    session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
     $_SESSION['DEBUG_REPORT'] = false;
 }
