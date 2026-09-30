@@ -134,6 +134,18 @@ lignes.
 
 `mechanics/endTurn.php` exécute une suite d'étapes, dans cet ordre :
 
+Chaque étape rend un booléen. **Un `false` fait sortir `endTurn` avant
+`changeEndTurnState`**, donc `end_step` reste sur l'étape précédente et la fin de tour
+**reprend à l'endroit du ratage** quand on la relance — le jeton à usage unique est
+régénéré au rendu suivant (`base/baseHTML.php:84-85`). C'est pourquoi une requête qui
+échoue doit faire échouer son étape plutôt que sauter le travail : les étapes suivantes
+lisent le monde que la précédente était censée modifier, et `createNewTurnLines` rend
+l'écart définitif.
+
+La règle qui en découle, dans les mécaniques : une **situation de jeu** (une attaque qui
+ne nomme personne) vaut un `warning` et un `continue` ; une **`PDOException` sur une
+requête entièrement liée** n'est jamais une situation de jeu, et doit remonter.
+
 | État écrit dans `end_step` | Ce que l'étape exécute réellement |
 |---|---|
 | `updateRessources` | `updateRessources` (`:73`) **puis** `ressourceGainMechanic('before_claim')` (`:78`) |
@@ -383,11 +395,11 @@ Deux précisions que la signature ne dit pas :
 
 - **La riposte peut tuer l'attaquant.** Si le défenseur survit et que
   `riposte_difference` atteint `RIPOSTDIFF`, l'attaquant meurt et le duel
-  retourne `riposte_kill` (`mechanics/attackMechanic.php:455-457`). Attaquer
+  retourne `riposte_kill` (`mechanics/attackMechanic.php:457-459`). Attaquer
   n'est donc jamais sans risque, et `RIPOSTACTIVE = 0` désactive le mécanisme
-  entièrement. On ne peut ni fuir ni riposter dans le même duel (`:469`).
+  entièrement. On ne peut ni fuir ni riposter dans le même duel (`:471`).
 - **Les agents leurres ne naissent que d'une capture**, pas d'une simple mort
-  (`:379` pour un agent double, `:395` sinon).
+  (`:381` pour un agent double, `:397` sinon).
 
 ### L'attaque qui n'atteint personne
 
@@ -400,11 +412,11 @@ cibles vide, et la comparaison construisait `WHERE w.id IN ()`, que MySQL refuse
 `workers/action.php:196-205` refuse désormais cette soumission et laisse l'agent en
 `passive`, si bien que l'état incohérent n'est plus écrit.
 `getAttackerComparisons` porte en plus sa propre garde sur la liste vide
-(`mechanics/attackMechanic.php:233`) : la fonction qui construit le `IN (...)` est aussi
+(`mechanics/attackMechanic.php:236`) : la fonction qui construit le `IN (...)` est aussi
 celle qui doit refuser de le construire vide.
 
 **L'attaquant a visé un agent nommé déjà `dead`, `captured` ou réduit à une `trace`.**
-Le bloc `defenders` filtre sur `ACTIVE_ACTIONS` (`:146`, et `:220` sous
+Le bloc `defenders` filtre sur `ACTIVE_ACTIONS` (`:149`, et `:223` sous
 `LIMIT_ATTACK_BY_ZONE`), la paire n'atteint donc jamais la boucle de résolution — et
 **rien n'est écrit dans le rapport de l'attaquant**. La liste des cibles, elle, ne filtre
 pas sur le statut (`getEnemyWorkers`, `workers/functions.php:1640`) : un cadavre, un agent
@@ -412,7 +424,7 @@ capturé ou un **agent leurre** restent proposés à l'attaque.
 
 À ne pas confondre avec la cible qui meurt **pendant** la résolution, tuée par un duel
 antérieur de la même boucle : celle-là vaut à l'attaquant un texte tiré
-d'`unfoundAttackTextes` (`mechanics/attackMechanic.php:529`).
+d'`unfoundAttackTextes` (`mechanics/attackMechanic.php:537`).
 
 **Une attaque de réseau ne voit que les découvertes affiliées.** La requête filtre sur
 `discovered_controller_id`, donc un agent connu comme présent mais **pas encore rattaché
@@ -461,7 +473,7 @@ l'attaquant. La boucle s'arrête quand un camp est épuisé, donc au plus
 
 Les deux camps sont triés par `enquete_val` **décroissant**. Le sens du tri est
 la convention du moteur, pas une règle propre à cette mécanique :
-`attackMechanic.php:48` trie déjà les attaquants et `:175` les défenseurs par
+`attackMechanic.php:53` trie déjà les attaquants et `:178` les défenseurs par
 `enquete_val DESC`. Le départage des égalités par `worker_id` croissant, lui, est
 **propre à l'attaque de lieu** (`locationAttackMechanic.php:179`) ; le combat
 entre agents ne le porte pas.
