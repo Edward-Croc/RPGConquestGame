@@ -28,7 +28,7 @@ require_once '../zones/functions.php';
 
 /**
  * True when this deployment is declared as a test environment.
- * 
+ *
  * @return bool : true when the markup may carry an agent's raw state
  */
 function isTestEnvironment(): bool
