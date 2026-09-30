@@ -302,7 +302,7 @@ function excludeLocationCombatSaboteurs(PDO $pdo, array $attackers, array $locat
  *
  * Carries the ten keys resolveWorkerCombat reads, the five extra ones the logger
  * reads off the same array, plus the location so the combat log can be filtered by
- * place. Difference arithmetic mirrors getAttackerComparisons (attackMechanic.php:169).
+ * place. Difference arithmetic mirrors getAttackerComparisons (attackMechanic.php).
  *
  * @param array $attacker : attacker row from getAgentLocationActionGroups()
  * @param array $defender : defender row from getAgentLocationActionGroups()
