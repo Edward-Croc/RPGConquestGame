@@ -8,20 +8,22 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
 
 /**
  * Start the session, isolated to this installation.
- * Several games served from the same domain, session cookies are bound to the domain, not to the path. 
+ * Several games served from the same domain, session cookies are bound to the domain, not to the path.
  *
  * @return void
  */
 function startGameSession(): void
 {
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        return;
+    $installation = hash('sha256', (string) realpath(__DIR__ . '/..'));
+
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_name('RPGSESSID' . substr($installation, 0, 12));
+        session_start();
     }
 
-    $installation = hash('sha256', (string) realpath(__DIR__ . '/..'));
-    session_name('RPGSESSID' . substr($installation, 0, 12));
-    session_start();
-
+    // Checked on every call, not only when we opened the session ourselves : with
+    // session.auto_start the session exists before any of this code runs, and the
+    // cookie name can no longer be set — this second guard is all that is left.
     if (($_SESSION['INSTALLATION'] ?? '') !== $installation) {
         $_SESSION = array();
         session_regenerate_id(true);

@@ -19,6 +19,14 @@ Why the suite could not see this before: everything ran against a single
 installation. The Docker stack already serves a second one
 (docker-compose.yml:33-35), which is what this file uses.
 
+Measured under `session.auto_start = 1`, where the session exists before any of
+our code runs and the cookie can no longer be renamed: the first test below
+fails, and the second still passes — the binding is all that is left, and it
+holds. The cost is that the two installations then become mutually exclusive,
+each visit emptying the other's session, so the third test fails too. That trade
+is deliberate; auto_start is a misconfiguration, and a breach is worse than a
+logout.
+
 Run:
     python3 -m pytest tests/test_session_isolation_e2e.py -v
 """

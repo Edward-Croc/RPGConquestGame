@@ -75,8 +75,15 @@ session passent tous par lui — `base/basePHP.php`, `index.php`,
 - la session **retient l'installation qui l'a ouverte**, et une session venue d'ailleurs
   est vidée au lieu d'être crue.
 
-La seconde garde tient même si la première est mal déployée. Conséquence pratique :
-**changer ce nom de cookie déconnecte tout le monde**, une fois, au déploiement.
+La seconde garde tient même si la première est mal déployée — **mesuré** sous
+`session.auto_start = 1`, où la session existe avant notre code et le cookie ne peut plus
+être renommé : le passage d'un jeu à l'autre reste refusé. Le prix est qu'alors les deux
+installations deviennent mutuellement exclusives, chaque visite vidant la session de
+l'autre. C'est un arbitrage assumé : `auto_start` est une mauvaise configuration, et une
+brèche est pire qu'une déconnexion.
+
+Conséquence pratique du déploiement : **changer ce nom de cookie déconnecte tout le
+monde**, une fois.
 
 ### Le mode d'environnement
 
