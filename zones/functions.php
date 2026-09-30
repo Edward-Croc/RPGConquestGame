@@ -195,10 +195,22 @@ function showZoneSelect(PDO $pdo, array $zonesArray, int|null $selectedID = null
         if ($hideZones && !canControllerSeeZone($pdo, $zone, $sessionCid, $bypassVisibility)) {
             continue;
         }
+
+        // Build the zone label.
+        $zoneLabel = htmlspecialchars($zone['name']);
+        // If a claimer exists, add the claimer's lastname.
+        if (!empty($zone['controller_id'])) {
+            $zoneLabel .= sprintf(' (%s)', htmlspecialchars($zone['claimer_lastname']));
+        }
+        // If the controller is the holder, add the "contrôlé.e" text.
+        if ($sessionCid !== null && !empty($zone['holder_controller_id'])
+            && (int) $zone['holder_controller_id'] === $sessionCid) {
+            $zoneLabel .= ' — contrôlé.e';
+        }
         $zoneOptions .= sprintf(
-            '<option value="%1$s" %3$s >%2$s (%1$s)</option>',
+            '<option value="%1$s" %3$s >%2$s</option>',
             htmlspecialchars($zone['zone_id']),
-            htmlspecialchars($zone['name']),
+            $zoneLabel,
             ($selectedID !== null && $zone['zone_id'] == $selectedID) ? 'selected' : '',
         );
     }

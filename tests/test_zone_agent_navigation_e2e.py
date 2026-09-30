@@ -12,6 +12,8 @@ Beta-Combat).
 Run:
     python3 -m pytest tests/test_zone_agent_navigation_e2e.py -v
 """
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -20,6 +22,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     as_controller, end_turn, ui_zone_id, ui_controller_id, ui_move_click,
+    ui_all_zones, ensure_gm_login,
 )
 
 
@@ -446,3 +449,96 @@ class TestZoneBoxAfterAgingCke:
                              "Finder_5", "Bystander_1"]
         found = [e for e in plausible_enemies if e in box_text]
         assert found, f"Expected enemy names in Plus anciens; got: {box_text[:300]}"
+
+
+# ---------------------------------------------------------------------------
+# Issue #160 : the move dropdown names the banner, not the technical id
+# ---------------------------------------------------------------------------
+#
+# Ground truth comes from the admin zones table rather than from hardcoded zone
+# names : a scenario resolves claims, so who claims or holds what drifts between
+# runs. Comparing the dropdown against that table is immune to the drift, and it
+# checks every zone instead of a chosen one.
+
+
+def _lastname(controller_name):
+    """The admin table renders "Lord Alpha"; the dropdown carries the lastname only.
+
+    Same convention as ui_detected_enemies_of: take the last whitespace token.
+    """
+    return controller_name.split()[-1] if controller_name else ""
+
+
+def _expected_label(zone, session_controller_lastname):
+    """Label showZoneSelect should build for `zone`, seen by that controller."""
+    label = zone['name']
+    if zone['claimer_name']:
+        label += f" ({_lastname(zone['claimer_name'])})"
+    if zone['holder_name'] and _lastname(zone['holder_name']) == session_controller_lastname:
+        label += " — contrôlé.e"
+    return label
+
+
+def _zone_select_options(page, base_url):
+    safe_goto(page, f"{base_url}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    return [t.strip() for t in
+            page.locator("select#zoneSelect option").all_inner_texts() if t.strip()]
+
+
+class TestZoneSelectShowsTheBanner:
+    """What a player reads in the move dropdown, checked against the admin table."""
+
+    def test_no_option_still_carries_the_technical_id(self, alpha_page, base_url):
+        """The regression this issue is about : options used to end with `(id)`."""
+        options = _zone_select_options(alpha_page, base_url)
+        assert options, "the move dropdown offered no zone at all"
+        numeric = [o for o in options if re.search(r'\(\d+\)$', o)]
+        assert not numeric, f"technical ids are still rendered: {numeric}"
+
+    def test_every_option_matches_the_admin_table(self, alpha_page, base_url):
+        """Banner from the claimer, mark from the holder — for every zone at once.
+
+        Reads the truth as gm first, then comes back as Alpha : the mark depends
+        on who is looking, so it cannot be checked from the admin session.
+        """
+        ensure_gm_login(alpha_page, base_url)
+        zones = {z['name']: z for z in ui_all_zones(alpha_page, base_url=base_url)}
+        assert any(z['claimer_name'] for z in zones.values()), \
+            "no zone carries a claimer; this test would prove nothing"
+
+        as_controller(alpha_page, "Alpha", base_url=base_url)
+        for option in _zone_select_options(alpha_page, base_url):
+            name = option.split(' (')[0].split(' — ')[0]
+            assert name in zones, f"dropdown offers an unknown zone: {option!r}"
+            assert option == _expected_label(zones[name], "Alpha"), (
+                f"option {option!r} disagrees with the admin table for {name!r}: "
+                f"claimer={zones[name]['claimer_name']!r} "
+                f"holder={zones[name]['holder_name']!r}"
+            )
+
+    def test_the_mark_follows_who_is_looking(self, page: Page, base_url):
+        """Paired with the test above : a zone marked for its holder must not be
+        marked for anybody else, or the mark would say nothing."""
+        ensure_gm_login(page, base_url)
+        zones = ui_all_zones(page, base_url=base_url)
+        held = [z for z in zones if z['holder_name']]
+        if not held:
+            pytest.skip("no zone is held by anyone in this scenario")
+        target = held[0]
+
+        as_controller(page, _lastname(target['holder_name']), base_url=base_url)
+        assert any(o.startswith(target['name']) and o.endswith(" — contrôlé.e")
+                   for o in _zone_select_options(page, base_url)), \
+            f"{target['name']} is not marked for its holder {target['holder_name']}"
+
+        other = next((_lastname(z['claimer_name']) for z in zones
+                      if z['claimer_name']
+                      and _lastname(z['claimer_name']) != _lastname(target['holder_name'])),
+                     None)
+        if other is None:
+            pytest.skip("no second controller to compare against")
+        as_controller(page, other, base_url=base_url)
+        assert not any(o.startswith(target['name']) and o.endswith(" — contrôlé.e")
+                       for o in _zone_select_options(page, base_url)), \
+            f"{target['name']} is marked for {other}, who does not hold it"
