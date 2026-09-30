@@ -48,7 +48,7 @@ opens one row per attacker x defender pair on entry (outcome NULL) and
 closes it with the resolved outcome on exit — see mechanics/logs.php:
 logWorkerCombat / logWorkerCombatUpdate. Of the 19 queued attacker->defender
 pairs above, 3 never reach resolveWorkerCombat() (attacker-guard `continue`
-at mechanics/attackMechanic.php:498 when the attacker itself went inactive
+at mechanics/attackMechanic.php:523 when the attacker itself went inactive
 before its turn: Chain_B captured by Chain_A, Chain_D killed by Chain_C,
 Mover_Test's action was reset to 'passive' by its own move before the EOT
 even queried attacksArray) -- leaving exactly 16 resolved rows, all with
@@ -920,7 +920,7 @@ class TestWorkerCombatLogsStructure:
 
     def test_no_row_for_chain_b_attacking_chain_c(self, page: Page):
         """Chain_B is captured by Chain_A (enquete 8 > 7) before its own
-        attack-phase turn, so mechanics/attackMechanic.php:498's attacker
+        attack-phase turn, so mechanics/attackMechanic.php:523's attacker
         guard `continue`s the outer loop and resolveWorkerCombat is never
         entered for this pair. Zero rows proves the INSERT lives inside
         the function, not at the callsite.
