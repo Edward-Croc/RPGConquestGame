@@ -33,7 +33,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, _wait_loaded, load_minimal_data, load_scenario_via_admin,
-    login_as, safe_goto, get_db_connection,)
+    login_as, safe_goto, get_db_connection, zone_name_from_option,)
 
 
 _TARGET_ZONE = "Zeta-Unclaimed"
@@ -245,11 +245,10 @@ def _reset_all_recruitment_counters():
 
 
 def _worker_new_zone_option_names(page):
-    """Return the zone-name text (id suffix stripped) of each <option>
-    in <select name='zone_id'> on workers/new.php. Option label is
-    `Name (id)` per showZoneSelect."""
+    """Return the zone name of each <option> in <select name='zone_id'> on
+    workers/new.php, decoration stripped by zone_name_from_option."""
     raw = page.locator("select[name='zone_id'] option").all_text_contents()
-    return [r.split(" (")[0].strip() for r in raw]
+    return [zone_name_from_option(r) for r in raw]
 
 
 def _zones_view_box_zone_names(page):

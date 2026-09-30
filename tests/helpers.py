@@ -496,6 +496,16 @@ def ui_worker_controller_id(page: Page, lastname: str, base_url: str = None,
     return matches[0]["controller_id"]
 
 
+def zone_name_from_option(option_text):
+    """Zone name out of a showZoneSelect option label.
+
+    The label is `Name`, `Name (Claimer)` or `Name (Claimer) — contrôlé.e`
+    (zones/functions.php). Parsing it in one place keeps the next label change
+    from silently breaking a handful of unrelated assertions.
+    """
+    return (option_text or "").split(" (")[0].split(" — ")[0].strip()
+
+
 def ui_all_zones(page: Page, base_url: str = None):
     """Scrape /zones/management_zones.php and return a list of dicts:
       [{id, name, claimer_name, holder_name}, ...]

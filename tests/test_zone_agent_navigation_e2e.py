@@ -22,7 +22,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin, login_as, logout, safe_goto,
     register_php_error_listener, assert_no_collected_php_errors,
     as_controller, end_turn, ui_zone_id, ui_controller_id, ui_move_click,
-    ui_all_zones, ensure_gm_login,
+    ui_all_zones, ensure_gm_login, zone_name_from_option,
 )
 
 
@@ -509,7 +509,7 @@ class TestZoneSelectShowsTheBanner:
 
         as_controller(alpha_page, "Alpha", base_url=base_url)
         for option in _zone_select_options(alpha_page, base_url):
-            name = option.split(' (')[0].split(' — ')[0]
+            name = zone_name_from_option(option)
             assert name in zones, f"dropdown offers an unknown zone: {option!r}"
             assert option == _expected_label(zones[name], "Alpha"), (
                 f"option {option!r} disagrees with the admin table for {name!r}: "
