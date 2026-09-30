@@ -27,6 +27,16 @@ require_once '../workers/functions.php';
 require_once '../zones/functions.php';
 
 /**
+ * True when this deployment is declared as a test environment.
+ * 
+ * @return bool : true when the markup may carry an agent's raw state
+ */
+function isTestEnvironment(): bool
+{
+    return ($_SESSION['ENV'] ?? 'production') === 'test';
+}
+
+/**
  * Extract configuration value from the database by key.
  *
  * @param PDO $pdo : database connection

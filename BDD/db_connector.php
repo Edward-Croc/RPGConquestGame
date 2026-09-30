@@ -46,7 +46,8 @@ function loadDBConfig(string|null $path, string $configFile): array
         'password' => 'postgres',
         'db_type' => 'postgres',
         'folder' => 'RPGConquestGame',
-        'game_prefix' => ''  // e.g., 'rpg1_' or 'demo_'
+        'game_prefix' => '',  // e.g., 'rpg1_' or 'demo_'
+        'env' => 'production',
     ];
 
     // Check if the file exists
@@ -103,6 +104,7 @@ function getDBConnection(string|null $path, string $configFile): PDO|null
     $_SESSION['DBTYPE'] = $config['db_type'];
     $_SESSION['FOLDER'] = $config['folder'];
     $_SESSION['GAME_PREFIX'] = $config['game_prefix'];
+    $_SESSION['ENV'] = (($config['env'] ?? 'production') === 'test') ? 'test' : 'production';
 
     if ($config['db_type'] == 'mysql') {
         // Attempt to connect to PostgreSQL database

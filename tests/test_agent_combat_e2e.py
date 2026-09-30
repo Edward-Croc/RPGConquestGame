@@ -62,6 +62,7 @@ hub links.
 Run:
     python3 -m pytest tests/test_agent_combat_e2e.py -v
 """
+import re
 from itertools import groupby
 
 import pytest
@@ -80,6 +81,7 @@ from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
     ui_combat_logs, ui_combat_unresolved_count,
     login_as, set_config_via_ui, ui_combat_filter_options,
+    set_env_mode,
 )
 
 
@@ -1237,4 +1239,117 @@ class TestAdminCombatLogHubLinks:
         page.wait_for_load_state("load")
         assert page.locator("[data-combat-log]").count() == 1, (
             "clicking the hub link should land on management_combat.php"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Issue #166 : an agent's raw state must not be readable in the markup
+# ---------------------------------------------------------------------------
+#
+# Chain_B was captured by Chain_A, so Beta keeps a trace of it — a decoy whose
+# very existence has to stay indistinguishable from a death. The visible text
+# already says the same thing in both cases; these tests are about what the
+# markup says. They live here because this file already builds the capture.
+
+# What a page a player can reach may carry in production. data-tab-* drive the
+# tab switching in base/baseScript.php:35-36 and data-max is the player's own
+# stock, printed right beside it; the three state attributes are present but
+# empty. Anything else is new, and whoever adds it has to decide whether it tells
+# a player something the page itself does not — which is exactly how #166 got in.
+PLAYER_VISIBLE_DATA_ATTRIBUTES = {
+    'data-tab-group', 'data-tab-index', 'data-max',
+    'data-worker-id', 'data-worker-lastname',
+    'data-action-choice', 'data-action-params', 'data-worker-status',
+}
+
+PLAYER_VISIBLE_PAGES = (
+    '/base/accueil.php',
+    '/workers/viewAll.php',
+    '/controllers/view.php',
+    '/ressources/view.php',
+)
+
+
+@pytest.fixture
+def production_env():
+    """Run one test with the context ini set to production, then put it back.
+
+    The restore is unconditional : leaving 'production' behind would strip the
+    data-* attributes every later file reads an agent's state from.
+    """
+    previous = set_env_mode('production')
+    try:
+        yield
+    finally:
+        set_env_mode(previous)
+
+
+def _as_beta(page, base_url):
+    """Switch the session to Beta, the faction that owns the Chain_B decoy."""
+    ensure_gm_login(page, base_url)
+    cid = ui_controller_id(page, 'Beta', base_url=base_url)
+    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    page.wait_for_load_state("load")
+
+
+def _beta_decoy_attributes(page, base_url):
+    """State attributes Beta's own agent list carries for the Chain_B decoy."""
+    _as_beta(page, base_url)
+    safe_goto(page, f"{base_url}/workers/viewAll.php")
+    page.wait_for_load_state("load")
+    rows = page.locator('[data-worker-lastname="Chain_B"]')
+    assert rows.count() > 0, "Beta's list carries no Chain_B row at all"
+    row = rows.first
+    return (row.get_attribute('data-action-choice'),
+            row.get_attribute('data-action-params'),
+            row.get_attribute('data-worker-status'))
+
+
+class TestEnvModeHidesTheAgentState:
+    """env = test keeps the raw state readable; env = production says nothing."""
+
+    def test_test_mode_still_reveals_the_decoy(self, page: Page, base_url):
+        """Positive control : without it the production assertion below would
+        pass on any page that simply stopped rendering the row."""
+        action_choice, _, worker_status = _beta_decoy_attributes(page, base_url)
+        assert action_choice == 'trace', (
+            f"the suite relies on the raw state under env = test; got {action_choice!r}"
+        )
+        assert worker_status == 'dead', (
+            f"getWorkerStatus already reports a decoy as dead; got {worker_status!r}"
+        )
+
+    def test_production_says_nothing_about_the_agent(self, page: Page, base_url,
+                                                     production_env):
+        """The leak, closed at the root : rather than deciding which values are
+        safe to show — a rule scenario text could break — the attributes are
+        emptied outright, since nothing in the application reads them."""
+        assert _beta_decoy_attributes(page, base_url) == ('', '', ''), (
+            "the state attributes must say nothing in production"
+        )
+
+
+class TestNoUnexpectedDataAttributes:
+    """A guard for the next contributor, not for this change.
+
+    Applying the rule by hand will not survive; a test will. Any new data-*
+    reaching a player in production fails here and has to be argued for.
+    """
+
+    def test_player_visible_pages_carry_no_unlisted_data_attribute(
+            self, page: Page, base_url, production_env):
+        _as_beta(page, base_url)
+        found = {}
+        for path in PLAYER_VISIBLE_PAGES:
+            safe_goto(page, base_url + path)
+            page.wait_for_load_state("load")
+            for name in re.findall(r'(data-[a-z-]+)=', page.content()):
+                found.setdefault(name, path)
+        assert found, "no data-* attribute found at all; the pages did not render"
+        unexpected = {k: v for k, v in found.items()
+                      if k not in PLAYER_VISIBLE_DATA_ATTRIBUTES}
+        assert not unexpected, (
+            "data-* attributes a player can see that are not on the whitelist: "
+            f"{unexpected}. Decide whether each tells a player something the page "
+            "does not, then empty it in production or add it to the list."
         )

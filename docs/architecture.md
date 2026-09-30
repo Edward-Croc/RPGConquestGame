@@ -22,7 +22,7 @@ puis rend son HTML via `base/baseHTML.php`.
 
 | Dossier | Rôle |
 |---|---|
-| `base/` | amorçage, session, page d'accueil, pages de configuration du scénario |
+| `base/` | amorçage, session (`session.php`), page d'accueil, pages de configuration du scénario |
 | `admin/` | les pages d'administration : tableau de bord, sauvegardes, CSV, journaux, récits de fin de tour |
 | `connection/` | connexion, déconnexion et compte du joueur (`account.php` : factions rattachées, changement de mot de passe) — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
 | `BDD/` | `db_connector.php` : connexion, création du schéma, importeur de scénario |
@@ -36,7 +36,8 @@ puis rend son HTML via `base/baseHTML.php`.
 1. L'URL touche un point d'entrée : `*/action.php`, `*/management_*.php`, `admin/admin.php`…
 2. **`base/basePHP.php`** est requis en premier. Il ouvre un tampon de sortie
    (`ob_start()`, pour que `header()` fonctionne même si un avertissement a déjà
-   été émis), démarre la session, charge les neuf bibliothèques de fonctions
+   été émis), démarre la session par `startGameSession()` (voir plus bas), charge
+   les neuf bibliothèques de fonctions
    (`version`, `errorLog`, `db_connector`, puis `controllers`, `mechanics`,
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
@@ -55,6 +56,56 @@ puis rend son HTML via `base/baseHTML.php`.
    **elles n'utilisent pas `baseHTML.php`**.
 6. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
    si la page se termine tôt.
+
+### La session est cloisonnée par installation
+
+Un cookie de session est lié au **domaine**, pas au chemin. Plusieurs jeux servis sous le
+même domaine partageraient donc leur session sous le nom de cookie par défaut, et
+`logged_in`, `user_id` et `is_privileged` traverseraient d'une installation à l'autre. Le
+point aggravant est que `DBNAME`, `FOLDER` et `GAME_PREFIX` sont **réécrits à chaque
+requête** par `getDBConnection` : le `user_id` survivant serait relu contre une **autre
+base**, donc réécrit en quelqu'un d'autre.
+
+`base/session.php` pose donc deux gardes, et les quatre points d'entrée qui ouvrent une
+session passent tous par lui — `base/basePHP.php`, `index.php`,
+`connection/loginForm.php`, `connection/logout.php` :
+
+- le cookie est **nommé d'après le répertoire de l'installation**, donc deux jeux ne
+  partagent plus d'identifiant ;
+- la session **retient l'installation qui l'a ouverte**, et une session venue d'ailleurs
+  est vidée au lieu d'être crue.
+
+La seconde garde tient même si la première est mal déployée. Conséquence pratique :
+**changer ce nom de cookie déconnecte tout le monde**, une fois, au déploiement.
+
+### Le mode d'environnement
+
+La clé `env` du fichier de contexte vaut `test` ou `production`, et `isTestEnvironment()`
+(`base/basePHP.php`) répond à la question. **Tout ce qui n'est pas littéralement `test`
+vaut production** : un fichier de contexte écrit avant l'existence de cette clé, ou une
+valeur mal orthographiée, doit masquer la donnée plutôt que l'exposer.
+
+Ce que ça change aujourd'hui : `buildWorkerStateAttributes()` (`workers/functions.php`),
+appelée par les deux sites de rendu d'une fiche d'agent, **vide** `data-action-choice`,
+`data-action-params` et `data-worker-status` hors d'une installation de test. Elle ne
+choisit pas quelles valeurs seraient sûres — **rien ne les lit** : le dépôt n'expédie aucun
+code client qui y touche, ils n'existent que pour la suite UI-only, qui observe l'état d'un
+agent à travers eux faute de base de données.
+
+Ce choix est délibérément **indépendant des données de scénario**. Une règle qui déciderait
+du masquage d'après les textes — « une action sans entrée `txt_ps_` est un leurre » —
+tomberait le jour où un auteur remplit, ou oublie, une clé de texte. Vider ne peut pas
+casser ainsi.
+
+`data-worker-id` et `data-worker-lastname` restent tels quels : tous deux répètent ce que
+le lien et la phrase voisins montrent déjà.
+
+**La règle générale** : un attribut `data-*` qui n'existe que pour la suite de tests, sur
+une page qu'un joueur peut voir, ne dit rien en production. Les autres restent — les
+`data-tab-*` pilotent les onglets (`base/baseScript.php:35-36`), et les pages
+d'administration sont hors de portée d'un joueur. `TestNoUnexpectedDataAttributes`
+(`tests/test_agent_combat_e2e.py`) tient la liste blanche et fait rougir la suite dès qu'un
+attribut non prévu atteint une page joueur.
 
 Deux bases sont supportées, **MySQL et PostgreSQL**, choisies par
 `$_SESSION['DBTYPE']`. Tout ce qui touche au SQL doit fonctionner dans les deux.
