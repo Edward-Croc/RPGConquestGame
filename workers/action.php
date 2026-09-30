@@ -194,7 +194,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if (isset($_GET['attack'])) {
-        activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
+        // An unselected multiple select sends no key at all : that is not an attack, and
+        // recording it would store an empty target list the end of turn cannot resolve.
+        if (empty($enemy_worker_id)) {
+            game_error_log('workers_action_page', 'attack submitted with no target selected, left passive', ['worker_id' => $worker_id], 'warning');
+            activateWorker($gameReady, $worker_id, 'passive');
+        } else {
+            activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
+        }
     }
     if (isset($_GET['attackLocation']) || isset($_GET['defendLocation'])) {
         $mode = getConfig($gameReady, 'locationAttackMode');

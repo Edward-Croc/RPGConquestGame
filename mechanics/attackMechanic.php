@@ -13,9 +13,10 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  * @param int|null $turn_number : turn number (falls back to current turn from mechanics when empty)
  * @param int|null $attacker_id : optional attacker id filter
  *
- * @return array : final_attacks_aggregate — map attacker_id => list of defender comparison rows
+ * @return array|false : final_attacks_aggregate — map attacker_id => list of defender comparison rows,
+ *   or false when a query failed. A failed query is never a game situation.
  */
-function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null $attacker_id = null): array
+function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null $attacker_id = null): array|false
 {
     if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
@@ -34,6 +35,8 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
 
     try {
         // Define the SQL query to get all attackers for the turn
+        // The optional filter belongs in the WHERE clause : appended after the ORDER BY it is a syntax error.
+        $attackerFilter = (!empty($attacker_id)) ? ' AND wa.worker_id = :attacker_id' : '';
         $sql = "SELECT
                 wa.worker_id AS attacker_id,
                 wa.action_params AS params,
@@ -45,12 +48,8 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
             WHERE
                 wa.action_choice IN ('attack')
                 AND turn_number = :turn_number
+                {$attackerFilter}
         ORDER BY wa.enquete_val DESC";
-
-        // Add Limit to only 1 caracter
-        if (!empty($attacker_id)) {
-            $sql .= " AND s.attacker_id = :attacker_id";
-        }
 
         // Prepare and execute the statement
         $stmt = $pdo->prepare($sql);
@@ -61,6 +60,8 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
         $stmt->execute();
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT list of attackers failed', ['error' => $e->getMessage()]);
+        // Losing every attack of the turn in silence is worse than stopping : the turn stays replayable.
+        return false;
     }
 
     $attackersActionArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -89,6 +90,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
                         $stmtNetworkSearch->execute();
                     } catch (PDOException $e) {
                         game_error_log(__FUNCTION__, 'SELECT list of attackers for network failed', ['error' => $e->getMessage(), 'network_id' => $param['attackID']]);
+                        return false;
                     }
                     $networkWorkersList = $stmtNetworkSearch->fetchAll(PDO::FETCH_COLUMN);
                     game_error_log(__FUNCTION__, 'networkWorkersList fetched', ['networkWorkersList' => $networkWorkersList], 'debug');
@@ -230,6 +232,12 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
     $active_actions = "'".implode("','", ACTIVE_ACTIONS)."'";
 
     foreach ($attackArray as $compared_attacker_id => $defender_ids) {
+        // An attack action carrying no target at all would build IN (), a syntax error.
+        if (empty($defender_ids)) {
+            game_error_log(__FUNCTION__, 'No target resolved for this attacker, nothing to compare', ['attacker_id' => $compared_attacker_id], 'warning');
+            continue;
+        }
+
         try {
             game_error_log(__FUNCTION__, 'compared_attacker_id : ' . $compared_attacker_id, ['defender_ids' => $defender_ids], 'debug');
 
@@ -238,7 +246,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
                     $sqlValCompare,
                     $active_actions,
                     ($_SESSION['DBTYPE'] == 'mysql') ? 1 : 'true',
-                    implode(',', $defender_ids)
+                    implode(',', array_map('intval', $defender_ids))
                 )
             );
             $stmtValCompare->bindParam(':turn_number', $turn_number, PDO::PARAM_INT);
@@ -246,6 +254,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
             $stmtValCompare->execute();
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'SELECT compare attackers to defenders failed', ['error' => $e->getMessage(), 'attacker_id' => $compared_attacker_id]);
+            return false;
         }
         if ($stmtValCompare->rowCount() == 0) {
             continue;
@@ -491,6 +500,12 @@ function attackMechanic(PDO $pdo, array $mechanics): bool
     $prefix = $_SESSION['GAME_PREFIX'];
 
     $attacksArray = getAttackerComparisons($pdo, $mechanics['turncounter'], null);
+    // Tested before empty() on purpose : empty(false) is true, and the failure would read as 'all is calm'.
+    if ($attacksArray === false) {
+        echo 'Comparison query failed, turn stopped </div>';
+        game_error_log(__FUNCTION__, 'DONE with return : false (comparison query failed)', [], 'debug');
+        return false;
+    }
     game_error_log(__FUNCTION__, 'attacksArray fetched', ['attacksArray' => $attacksArray], 'debug');
     if (empty($attacksArray)) {
         echo 'All is calm </div>';
