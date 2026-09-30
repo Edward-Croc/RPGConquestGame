@@ -14,8 +14,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  * @param int|null $attacker_id : optional attacker id filter
  *
  * @return array|false : final_attacks_aggregate — map attacker_id => list of defender comparison rows,
- *   or false when a query failed. A failed query is never a game situation, and eight end-of-turn steps
- *   run on the world this one is meant to change, so the caller must stop the turn rather than skip it.
+ *   or false when a query failed. A failed query is never a game situation.
  */
 function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null $attacker_id = null): array|false
 {
