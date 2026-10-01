@@ -1272,7 +1272,7 @@ def ui_mass_move_click(page: Page, controller_lastname: str,
     Switches to `controller_lastname`, opens viewAll, checks the
     `worker_ids[]` checkbox for each worker in `worker_lastnames`,
     selects `target_zone_name` in the zone dropdown, then clicks the
-    'Déplacer les agents sélectionnés' submit button. Form posts to
+    'Déplacer les agents' submit button. Form posts to
     /workers/massAction.php (GET) which loops over worker_ids[] and
     calls moveWorker for each."""
     url = base_url or PHP_BASE_URL

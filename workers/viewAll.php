@@ -158,7 +158,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                         %1$s
                         <div class="control">
-                            <input type="submit" name="mass_claim" value="Revendiquer avec les agents sélectionnés" class="button is-link">
+                            <input type="submit" name="mass_claim" value="Revendiquer par les Agents" class="button is-link">
                         </div>
                     </div>',
                     showControllerSelect(
@@ -181,16 +181,21 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
                     %s
                     <div class="control"> 
-                        <input type="submit" name="mass_move" value="Déplacer les agents sélectionnés" class="button is-warning">
+                        <input type="submit" name="mass_move" value="Déplacer les agents" class="button is-warning">
                     </div>
                 </div>
                 <div class="control"><strong>Mettre en place l\'action suivante sur les agents sélectionnés :</strong></div>
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
-                    <div class="control"> 
+                    <div class="control">
                         <input type="submit" name="mass_investigate" value="%3$s" class="button is-info">
+                    </div>
+                    <div class="control">
                         <input type="submit" name="mass_passive" value="%2$s" class="button is-warning">
+                    </div>
+                    <div class="control">
                         <input type="submit" name="mass_hide" value="%4$s" class="button is-danger">
-                </div></div>
+                    </div>
+                </div>
                 %5$s',
                 showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true), // %1$s
                 ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %2$s
