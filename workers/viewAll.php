@@ -150,6 +150,26 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
         if (!empty($liveWorkerArray)) {
             echo "<div class='box mb-4'> <h3 class='title is-5'>Nos Agents :</h3>";
+            // The claim block only exists in the modes workers/action.php accepts.
+            $massClaimHTML = '';
+            if (in_array(getConfig($gameReady, 'claimMode'), ['worker', 'worker_leader'], true)) {
+                $massClaimHTML = sprintf(
+                    '<div class="control"><strong>Bannière (pour revendication uniquement) :</strong></div>
+                    <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">
+                        %1$s
+                        <div class="control">
+                            <input type="submit" name="mass_claim" value="Revendiquer avec les agents sélectionnés" class="button is-link">
+                        </div>
+                    </div>',
+                    showControllerSelect(
+                        getControllers($gameReady),
+                        $_SESSION['controller']['id'] ?? null,
+                        'claim_controller_id',
+                        true
+                    )
+                );
+            }
+
             // Mass worker action form
             echo sprintf("<form action='/%s/workers/massAction.php' method='GET' class='mb-4'>", $_SESSION['FOLDER']);
             foreach ($liveWorkerArray as $worker) {
@@ -170,11 +190,13 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                         <input type="submit" name="mass_investigate" value="%3$s" class="button is-info">
                         <input type="submit" name="mass_passive" value="%2$s" class="button is-warning">
                         <input type="submit" name="mass_hide" value="%4$s" class="button is-danger">
-                </div></div>',
+                </div></div>
+                %5$s',
                 showZoneSelect($gameReady, getZonesArray($gameReady), null, false, false, true), // %1$s
                 ucfirst(getConfig($gameReady, 'txt_inf_passive')), // %2$s
                 ucfirst(getConfig($gameReady, 'txt_inf_investigate')), // %3$s
-                ucfirst(getConfig($gameReady, 'txt_inf_hide')) // %4$s
+                ucfirst(getConfig($gameReady, 'txt_inf_hide')), // %4$s
+                $massClaimHTML // %5$s
             );
             echo "</form></div>";
         }
