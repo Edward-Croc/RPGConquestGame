@@ -324,17 +324,17 @@ class TestForgedAttackPayloads:
         """A scalar passes the empty() guard, is cast to an int, and used to be
         stored as an attack carrying no target at all."""
         status, state = self._state_after(page, base_url, "enemy_worker_id=5")
-        assert status == 200, f"a forged payload must not break the page; got {status}"
+        assert status == 400, f"a forged payload must be answered as such; got {status}"
         assert state['action_choice'] == 'passive', (
             f"the queued action must survive a refused attack; got {state['action_choice']!r}"
         )
 
-    def test_a_malformed_target_does_not_blank_the_page(self, page, base_url,
-                                                        attack_targeting_scenario):
+    def test_a_malformed_target_is_refused_rather_than_thrown(self, page, base_url,
+                                                              attack_targeting_scenario):
         """Paired with the test above : this one used to raise an uncaught
         exception, because activateWorker is called without a try."""
         status, state = self._state_after(page, base_url, "enemy_worker_id[]=x")
-        assert status == 200, f"a malformed target must not end on a 500; got {status}"
+        assert status == 400, f"a malformed target must be refused, not thrown; got {status}"
         assert state['action_choice'] == 'passive', (
             f"the queued action must survive a refused attack; got {state['action_choice']!r}"
         )

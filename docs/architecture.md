@@ -467,11 +467,18 @@ normale**, pas une donnée corrompue. Deux chemins y mènent.
 **L'attaquant a pressé « Attaquer » sans cocher aucune cible.** Un `<select multiple>`
 sans sélection n'envoie aucune clé : l'action était alors enregistrée avec une liste de
 cibles vide, et la comparaison construisait `WHERE w.id IN ()`, que MySQL refuse.
-`workers/action.php:196-205` refuse désormais cette soumission et laisse l'agent en
-`passive`, si bien que l'état incohérent n'est plus écrit.
+`workers/action.php` refuse désormais cette soumission et laisse l'agent en `passive`,
+si bien que l'état incohérent n'est plus écrit.
 `getAttackerComparisons` porte en plus sa propre garde sur la liste vide
 (`mechanics/attackMechanic.php:236`) : la fonction qui construit le `IN (...)` est aussi
 celle qui doit refuser de le construire vide.
+
+Une soumission vide n'est pas une soumission forgée, et les deux ne reçoivent pas la
+même réponse. Le formulaire ne produit qu'un tableau de `worker_N` / `network_N` : un
+scalaire ou un élément qui ne suit pas cette forme ne peut venir que d'une requête
+fabriquée. `activateWorker` les journalise et rend `false` au lieu du numéro d'agent,
+et la branche `attack` de `workers/action.php` répond alors **400**, comme un déplacement
+sans zone. Le refus laisse l'action déjà en file intacte.
 
 **L'attaquant a visé un agent nommé déjà `dead`, `captured` ou réduit à une `trace`.**
 Le bloc `defenders` filtre sur `ACTIVE_ACTIONS` (`:149`, et `:223` sous

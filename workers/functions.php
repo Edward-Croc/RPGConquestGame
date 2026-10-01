@@ -584,8 +584,8 @@ function buildWorkerZoneActionPhrase(
 
 /**
  * What the state attributes of an agent's markup are allowed to show.
- * 
- * We hode the data attributes when not in test environment.
+ *
+ * We hide the data attributes when not in test environment.
  *
  * @param array $currentAction : the worker_actions row of the current turn
  * @param string $workerStatus : getWorkerStatus output, already resolved for the viewer
@@ -1307,9 +1307,9 @@ function getWorkerActions(PDO $pdo, int $workerId, int|null $turn_number = null)
  * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / transferPrisoner / hide / passive / investigate)
  * @param int|array|string|null $extraVal : per-action payload (worker id list, controller id, associative array, or the 'null' no-banner sentinel of a claim)
  *
- * @return int : $workerId (returned even on soft-failure paths)
+ * @return int|false : the worker id, or false when the payload was refused
  */
-function activateWorker(PDO $pdo, int $workerId, string $action, int|array|string|null $extraVal = null): int
+function activateWorker(PDO $pdo, int $workerId, string $action, int|array|string|null $extraVal = null): int|false
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['action' => $action, 'extraVal' => $extraVal], 'debug');
@@ -1338,7 +1338,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
     if (is_string($extraVal) && !($action === 'claim' && $extraVal === 'null')) {
         if (!is_numeric($extraVal)) {
             game_error_log(__FUNCTION__, 'Refused a malformed payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
-            return $workerId;
+            return false;
         }
         $extraVal = (int) $extraVal;
     }
@@ -1350,7 +1350,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
             // Only the multiple select feeds this : anything else is a forged payload.
             if (!is_array($extraVal)) {
                 game_error_log(__FUNCTION__, 'Refused a non-array attack payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
-                return $workerId;
+                return false;
             }
             $chosenAttackOptions = array();
             foreach ($extraVal as $val) {
@@ -1364,7 +1364,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                     // Refused like a malformed string payload, rather than thrown : activateWorker
                     // is called without a try, so an exception here is a blank 500 page.
                     game_error_log(__FUNCTION__, 'Refused a malformed attack target', ['action' => $action, 'worker_id' => $workerId], 'warning');
-                    return $workerId;
+                    return false;
                 }
                 $chosenAttackOptions[] =
                 [
