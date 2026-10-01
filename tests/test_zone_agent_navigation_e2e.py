@@ -499,13 +499,15 @@ class TestZoneSelectShowsTheBanner:
     def test_every_option_matches_the_admin_table(self, alpha_page, base_url):
         """Banner from the claimer, mark from the holder — for every zone at once.
 
-        Reads the truth as gm first, then comes back as Alpha : the mark depends
-        on who is looking, so it cannot be checked from the admin session.
+        The admin table is read first because the mark depends on who is looking,
+        so it cannot be derived from the dropdown alone.
         """
         ensure_gm_login(alpha_page, base_url)
         zones = {z['name']: z for z in ui_all_zones(alpha_page, base_url=base_url)}
         assert any(z['claimer_name'] for z in zones.values()), \
             "no zone carries a claimer; this test would prove nothing"
+        assert any(not z['claimer_name'] for z in zones.values()), \
+            "every zone is claimed; the bare-name branch is never exercised"
 
         as_controller(alpha_page, "Alpha", base_url=base_url)
         for option in _zone_select_options(alpha_page, base_url):
@@ -523,22 +525,25 @@ class TestZoneSelectShowsTheBanner:
         ensure_gm_login(page, base_url)
         zones = ui_all_zones(page, base_url=base_url)
         held = [z for z in zones if z['holder_name']]
-        if not held:
-            pytest.skip("no zone is held by anyone in this scenario")
+        assert held, "no zone is held by anyone; the mark is never exercised"
         target = held[0]
 
         as_controller(page, _lastname(target['holder_name']), base_url=base_url)
-        assert any(o.startswith(target['name']) and o.endswith(" — contrôlé.e")
-                   for o in _zone_select_options(page, base_url)), \
+        options = _zone_select_options(page, base_url)
+        assert any(zone_name_from_option(o) == target['name']
+                   and o.endswith(" — contrôlé.e") for o in options), \
             f"{target['name']} is not marked for its holder {target['holder_name']}"
 
         other = next((_lastname(z['claimer_name']) for z in zones
                       if z['claimer_name']
                       and _lastname(z['claimer_name']) != _lastname(target['holder_name'])),
                      None)
-        if other is None:
-            pytest.skip("no second controller to compare against")
+        assert other is not None, "no second controller to compare the mark against"
         as_controller(page, other, base_url=base_url)
-        assert not any(o.startswith(target['name']) and o.endswith(" — contrôlé.e")
-                       for o in _zone_select_options(page, base_url)), \
+        options = _zone_select_options(page, base_url)
+        # The zone must still be offered, or its missing mark would prove nothing.
+        assert any(zone_name_from_option(o) == target['name'] for o in options), \
+            f"{target['name']} is not offered to {other} at all"
+        assert not any(zone_name_from_option(o) == target['name']
+                       and o.endswith(" — contrôlé.e") for o in options), \
             f"{target['name']} is marked for {other}, who does not hold it"
