@@ -1347,11 +1347,13 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
     switch ($action) {
         case 'attack':
             game_error_log(__FUNCTION__, 'attack', ['extraVal' => $extraVal], 'debug');
-            // Build attack JSON
+            // Only the multiple select feeds this : anything else is a forged payload.
+            if (!is_array($extraVal)) {
+                game_error_log(__FUNCTION__, 'Refused a non-array attack payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
+                return $workerId;
+            }
             $chosenAttackOptions = array();
-            // A submit with no target selected arrives as null : iterate nothing rather than warn.
-            $selectedTargets = is_array($extraVal) ? $extraVal : array();
-            foreach ($selectedTargets as $val) {
+            foreach ($extraVal as $val) {
                 $attackScope = '';
                 $attackID = null;
                 // Determine scope and ID
@@ -1359,7 +1361,10 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                     $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
                     $attackID = intval($matches[2]); // Extract ID as integer
                 } else {
-                    throw new Exception('Invalid extraVal format');
+                    // Refused like a malformed string payload, rather than thrown : activateWorker
+                    // is called without a try, so an exception here is a blank 500 page.
+                    game_error_log(__FUNCTION__, 'Refused a malformed attack target', ['action' => $action, 'worker_id' => $workerId], 'warning');
+                    return $workerId;
                 }
                 $chosenAttackOptions[] =
                 [

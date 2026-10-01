@@ -295,3 +295,46 @@ class TestGiftDoesNotEscapeANetworkAttack:
         html = worker_report_html(page, NETWORK_ATTACKER, base_url=base_url)
         report = worker_report_section(html, "Attaques :")
         assert GIFTED_AGENT in report
+
+
+class TestForgedAttackPayloads:
+    """Issue #173 : a request the form cannot produce must not reach the turn.
+
+    The multiple select always sends enemy_worker_id[] as an array of
+    `worker_N` / `network_N`. Anything else is forged, and used to be stored or
+    to end the request on a blank page.
+    """
+
+    def _state_after(self, page, base_url, query):
+        """Queue a passive action, fire the forged request, return the state."""
+        ensure_gm_login(page, base_url)
+        ctrl_id = ui_worker_controller_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        wid = ui_worker_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}&passive=1")
+        page.wait_for_load_state("load")
+        response = page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}&{query}&attack=Attaquer")
+        status = response.status if response is not None else None
+        return status, ui_worker_action_state(page, NO_TARGET_ATTACKER, base_url=base_url)
+
+    def test_a_scalar_target_is_refused(self, page, base_url,
+                                        attack_targeting_scenario):
+        """A scalar passes the empty() guard, is cast to an int, and used to be
+        stored as an attack carrying no target at all."""
+        status, state = self._state_after(page, base_url, "enemy_worker_id=5")
+        assert status == 200, f"a forged payload must not break the page; got {status}"
+        assert state['action_choice'] == 'passive', (
+            f"the queued action must survive a refused attack; got {state['action_choice']!r}"
+        )
+
+    def test_a_malformed_target_does_not_blank_the_page(self, page, base_url,
+                                                        attack_targeting_scenario):
+        """Paired with the test above : this one used to raise an uncaught
+        exception, because activateWorker is called without a try."""
+        status, state = self._state_after(page, base_url, "enemy_worker_id[]=x")
+        assert status == 200, f"a malformed target must not end on a 500; got {status}"
+        assert state['action_choice'] == 'passive', (
+            f"the queued action must survive a refused attack; got {state['action_choice']!r}"
+        )
