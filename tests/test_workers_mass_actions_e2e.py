@@ -26,6 +26,8 @@ from helpers import (
     register_php_error_listener, assert_no_collected_php_errors,
     ui_worker_id, ui_all_workers,
     ui_mass_hide_click, ui_mass_investigate_click, ui_mass_passive_click,
+    ui_mass_claim_click, ui_worker_action_state, ui_controller_id,
+    set_config_via_ui, ui_config_value,
 )
 
 
@@ -176,7 +178,8 @@ def _resolve_worker_id(browser, base_url, lastname):
     return wid
 
 
-@pytest.mark.parametrize("mass_action", ["mass_investigate", "mass_passive", "mass_hide"])
+@pytest.mark.parametrize("mass_action",
+                         ["mass_investigate", "mass_passive", "mass_hide", "mass_claim"])
 def test_mass_action_non_owner_returns_403(browser, base_url, mass_action):
     """single_player owns Alpha; Bystander_1 belongs to Beta. massAction.php
     must 403 before any activateWorker() call when a non-privileged controller
@@ -197,3 +200,87 @@ def test_mass_action_non_owner_returns_403(browser, base_url, mass_action):
         f"got {response.status}"
     )
     ctx.close()
+
+
+# ---------------------------------------------------------------------------
+# Issue #150 : mass claim, and the guards massAction.php was missing
+# ---------------------------------------------------------------------------
+#
+# A claim is made on behalf of a faction, so unlike the three actions above it
+# carries a parameter. Each selected agent claims the zone it already stands in;
+# agents spread across several zones each claim their own, which is intended.
+
+
+class TestMassClaim:
+    """Mass-claim the 3 Beta combat workers on behalf of Alpha."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def mass_claim_state(self, browser):
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+
+        alpha_id = ui_controller_id(page, "Alpha", base_url=PHP_BASE_URL)
+        ui_mass_claim_click(page, "Beta", _MASS_WORKERS, "Alpha")
+
+        post = _capture_action_choices(page)
+        params = ui_worker_action_state(page, _MASS_WORKERS[0])["action_params"]
+
+        assert_no_collected_php_errors(page)
+        context.close()
+        type(self)._post = post
+        type(self)._params = params
+        type(self)._alpha_id = alpha_id
+        yield
+
+    def test_every_selected_worker_claims(self):
+        for lastname in _MASS_WORKERS:
+            assert self._post[lastname] == "claim", (
+                f"{lastname} action_choice should be 'claim' after mass-claim; "
+                f"got {self._post[lastname]}"
+            )
+
+    def test_the_chosen_banner_is_carried(self):
+        """Without this the claim would resolve for nobody : the banner is the
+        one thing a claim needs that the other mass actions do not."""
+        assert str(self._alpha_id) in self._params, (
+            f"action_params must carry the chosen claim_controller_id "
+            f"{self._alpha_id}; got {self._params!r}"
+        )
+
+
+def test_mass_claim_is_ignored_when_the_mode_forbids_it(browser, base_url):
+    """claimMode is a scenario setting : the button is not rendered under an
+    unsupported mode, and a stale form must be ignored rather than answered
+    with an error page.
+    """
+    context = browser.new_context()
+    page = context.new_page()
+    ensure_gm_login(page, base_url)
+    previous_mode = None
+    try:
+        worker_id = _resolve_worker_id(browser, base_url, _MASS_WORKERS[0])
+        alpha_id = ui_controller_id(page, "Alpha", base_url=base_url)
+        previous_mode = ui_config_value(page, "claimMode", base_url=base_url)
+
+        ui_mass_passive_click(page, "Beta", [_MASS_WORKERS[0]], base_url=base_url)
+        set_config_via_ui(page, "claimMode", "controller", base_url=base_url)
+
+        response = page.request.get(
+            f"{base_url}/workers/massAction.php"
+            f"?worker_ids[]={worker_id}&claim_controller_id={alpha_id}&mass_claim=1"
+        )
+        assert response.status == 200, (
+            f"an unsupported claim mode must be ignored, not refused; "
+            f"got HTTP {response.status}"
+        )
+        state = ui_worker_action_state(page, _MASS_WORKERS[0], base_url=base_url)
+        assert state["action_choice"] == "passive", (
+            f"the action must be untouched under an unsupported claim mode; "
+            f"got {state['action_choice']!r}"
+        )
+    finally:
+        if previous_mode is not None:
+            set_config_via_ui(page, "claimMode", previous_mode, base_url=base_url)
+        context.close()
