@@ -42,11 +42,12 @@ puis rend son HTML via `base/baseHTML.php`.
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
    schéma et recharge un scénario si `$_POST['config_name']` est posté. Il lit enfin
-   les mécaniques et **arrête la page** si le compteur de tour est illisible :
-   `getMechanics()` rattrape sa propre `PDOException` et rend `null`, si bien que
-   sans cette sortie chaque garde construite sur le tour courant s'ouvrirait au lieu
-   de se fermer. Toute page atteinte au-delà de l'amorçage dispose donc d'un
-   `$mechanics` complet, sans avoir à le revérifier.
+   les mécaniques dans `$mechanics`, **sans garantir qu'elles existent** :
+   `getMechanics()` rend `null` aussi bien sur une `PDOException` qu'avant le premier
+   amorçage, la table étant créée vide par `setupBDD.sql` et peuplée par
+   `minimalData.sql`. Une base au seul schéma doit rester navigable, ne serait-ce que
+   pour atteindre la page qui la peuplera — c'est donc à **chaque garde bâtie sur le
+   tour courant** de refuser quand il manque, et non à l'amorçage.
 3. Une page d'administration place sa **garde `is_privileged`** juste après
    `basePHP.php`, avant tout handler : la garde de `baseHTML.php` (étape 5)
    n'exige que `logged_in` et n'est évaluée qu'après l'exécution des POST.
@@ -608,8 +609,9 @@ silence**, puisque le bouton n'est alors pas rendu et qu'un formulaire périmé 
 pas une page d'erreur.
 
 Les deux gardes se replient **fermées** : une panne SQL vaut un 403, car refuser coûte
-moins cher que faire agir un prisonnier. Le compteur de tour, lui, n'est plus leur
-affaire — l'amorçage l'exige avant elles.
+moins cher que faire agir un prisonnier. Celle d'inactivité exige en plus le compteur de
+tour avant d'interroger la base — un tour illisible ne correspondrait à aucune ligne,
+donc le `COUNT(*)` vaudrait zéro et la garde laisserait passer ce qu'elle doit refuser.
 
 Deux actions de masse portent un paramètre : `mass_move` la zone de destination, et
 `mass_claim` la bannière au nom de laquelle on revendique. Chaque agent sélectionné

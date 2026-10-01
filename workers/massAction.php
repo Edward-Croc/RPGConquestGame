@@ -84,6 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         // An inactive worker keeps its action : a captor must not put a prisoner back to work.
         if (empty($_SESSION['is_privileged'])) {
+            // A turn we cannot read matches no row, so the guard would open instead of closing.
+            if (!isset($mechanics['turncounter'])) {
+                game_error_log('workers_mass_action_page', 'unreadable turncounter, mass action refused', ['worker_ids' => $worker_ids], 'error');
+                http_response_code(403);
+                exit();
+            }
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
                 $placeholders = implode(',', array_fill(0, count($worker_ids), '?'));

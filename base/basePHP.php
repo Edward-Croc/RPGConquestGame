@@ -122,13 +122,6 @@ if (!$gameReady) {
 
     // Get mechanics values
     $mechanics = getMechanics($gameReady);
-    // getMechanics returns null on a PDO error
-    if (!isset($mechanics['turncounter'])) {
-        game_error_log('basePHP', 'unreadable turncounter', ['mechanics' => $mechanics], 'error');
-        echo "The game is not ready. Please check DB Configuration and Setup. <br />";
-        http_response_code(503);
-        exit();
-    }
 }
 
 // print debug values
@@ -142,6 +135,14 @@ game_error_log(
     ],
     'debug'
 );
-game_error_log('basePHP', 'Turn : '.$mechanics['turncounter'].'; gamestate : '.$mechanics['gamestate'], ['mechanics' => $mechanics], 'debug');
+game_error_log(
+    'basePHP',
+    'Turn ',
+    [
+        'turncounter' => $mechanics['turncounter'] ?? 'null',
+        'gamestate' => $mechanics['gamestate'] ?? 'null',
+    ],
+    'debug'
+);
 
 game_error_log('basePHP', 'END', [], 'debug');
