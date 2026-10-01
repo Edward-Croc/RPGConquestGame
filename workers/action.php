@@ -188,9 +188,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     if (isset($_GET['move'])) {
-        if (!empty($zone_id)) {
-            moveWorker($gameReady, $worker_id, $zone_id);
+        // The zone select never renders an empty option, so a move without one is forged.
+        if (empty($zone_id)) {
+            game_error_log('workers_action_page', 'move submitted without a zone', ['worker_id' => $worker_id], 'warning');
+            http_response_code(400);
+            exit();
         }
+        moveWorker($gameReady, $worker_id, $zone_id);
     }
 
     if (isset($_GET['attack'])) {

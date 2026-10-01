@@ -338,3 +338,20 @@ class TestForgedAttackPayloads:
         assert state['action_choice'] == 'passive', (
             f"the queued action must survive a refused attack; got {state['action_choice']!r}"
         )
+
+    def test_a_move_without_a_zone_is_refused(self, page, base_url,
+                                              attack_targeting_scenario):
+        """The zone select never renders an empty option, so a move carrying no
+        zone is forged too — and used to be ignored without a word.
+
+        Unlike an attack with nothing selected, which the multiple select does
+        produce and which deliberately falls back to passive.
+        """
+        ensure_gm_login(page, base_url)
+        ctrl_id = ui_worker_controller_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        wid = ui_worker_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        response = page.goto(f"{base_url}/workers/action.php?worker_id={wid}&move=1")
+        status = response.status if response is not None else None
+        assert status == 400, f"a move without a zone must be refused; got {status}"
