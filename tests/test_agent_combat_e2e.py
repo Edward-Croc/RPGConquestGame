@@ -82,7 +82,6 @@ from helpers import (
     ui_combat_logs, ui_combat_unresolved_count,
     login_as, set_config_via_ui, ui_combat_filter_options,
     set_env_mode,
-    ui_workers_by_lastname,
 )
 
 
