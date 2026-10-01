@@ -236,18 +236,18 @@ ne vaut pas pour le suivant.
 **Suite complète avant commit.** Et prévenir bruyamment quand elle tourne : elle
 occupe la même base de données qu'un test manuel.
 
-**Format du message.** Conventional Commits, avec une espace avant les deux
-points (`feat : `, `fix : `, `test : `, `docs : `, `ci : `, `config : `), sujet
-en français, puis trois à cinq lignes qui disent *pourquoi*. C'est là que va la
-justification qu'on a retirée des commentaires.
+**Format du message.** Conventional Commits **sans espace avant les deux points**
+(`feat:`, `fix:`, `test:`, `docs:`, `ci:`, `config:`), sujet **en anglais**, puis
+trois à cinq lignes qui disent *pourquoi*. C'est là que va la justification qu'on
+a retirée des commentaires.
 
 ```
-fix : refuser un rejeu de réparation de lieu
+fix: refuse a replayed location repair
 
-repairLocation dépensait la ressource à chaque rechargement de l'URL,
-puis réappliquait update_location — un lieu déjà relevé repartait en
-ruines. Le SELECT qui alimentait updateLocation sert désormais aussi de
-garde, en amont de la dépense.
+repairLocation spent the resource on every reload of the URL and then
+reapplied update_location, so a place already rebuilt fell back into
+ruins. The SELECT that fed updateLocation now doubles as the guard,
+ahead of the spending.
 ```
 
 **Aucune co-signature d'outil.** Pas de `Co-Authored-By` d'assistant, pas de
