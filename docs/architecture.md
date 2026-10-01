@@ -41,7 +41,12 @@ puis rend son HTML via `base/baseHTML.php`.
    (`version`, `errorLog`, `db_connector`, puis `controllers`, `mechanics`,
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
-   schéma et recharge un scénario si `$_POST['config_name']` est posté.
+   schéma et recharge un scénario si `$_POST['config_name']` est posté. Il lit enfin
+   les mécaniques et **arrête la page** si le compteur de tour est illisible :
+   `getMechanics()` rattrape sa propre `PDOException` et rend `null`, si bien que
+   sans cette sortie chaque garde construite sur le tour courant s'ouvrirait au lieu
+   de se fermer. Toute page atteinte au-delà de l'amorçage dispose donc d'un
+   `$mechanics` complet, sans avoir à le revérifier.
 3. Une page d'administration place sa **garde `is_privileged`** juste après
    `basePHP.php`, avant tout handler : la garde de `baseHTML.php` (étape 5)
    n'exige que `logged_in` et n'est évaluée qu'après l'exécution des POST.
@@ -594,15 +599,22 @@ un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 trace, avec une exception pour `transform` — la résurrection vampire.
 
 Les actions de masse pré-vérifient **chaque** identifiant de la liste contre le
-contrôleur de session avant d'agir sur le premier, et portent les deux mêmes verrous
-que `workers/action.php` : un agent dont l'action est dans `INACTIVE_ACTIONS` ne peut
-pas en changer — un geôlier ne remet pas son prisonnier au travail — et le mode de
-revendication non autorisé est **ignoré en silence**, puisque le bouton n'est alors pas
-rendu et qu'un formulaire périmé ne mérite pas une page d'erreur.
+contrôleur de session avant d'agir sur le premier, et portent un verrou d'inactivité
+**plus strict** que celui de `workers/action.php` : il lit les trois valeurs
+d'`INACTIVE_ACTIONS`, `captured` compris, de sorte qu'un geôlier ne remette pas son
+prisonnier au travail. Elles traitent aussi différemment le mode de revendication non
+autorisé : là où `workers/action.php` répond 403, l'action de masse l'**ignore en
+silence**, puisque le bouton n'est alors pas rendu et qu'un formulaire périmé ne mérite
+pas une page d'erreur.
 
-`mass_claim` est la seule action de masse à porter un paramètre : la bannière au nom de
-laquelle on revendique. Chaque agent sélectionné revendique **la zone où il se trouve**,
-donc une sélection répartie sur plusieurs zones en revendique plusieurs.
+Les deux gardes se replient **fermées** : une panne SQL vaut un 403, car refuser coûte
+moins cher que faire agir un prisonnier. Le compteur de tour, lui, n'est plus leur
+affaire — l'amorçage l'exige avant elles.
+
+Deux actions de masse portent un paramètre : `mass_move` la zone de destination, et
+`mass_claim` la bannière au nom de laquelle on revendique. Chaque agent sélectionné
+revendique **la zone où il se trouve**, donc une sélection répartie sur plusieurs zones
+en revendique plusieurs.
 
 ---
 

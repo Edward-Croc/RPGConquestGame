@@ -17,6 +17,8 @@ UI-only / prod-DEMO-runnable.
 Run:
     python3 -m pytest tests/test_workers_mass_actions_e2e.py -v
 """
+import json
+
 import pytest
 from playwright.sync_api import Page
 
@@ -228,11 +230,14 @@ class TestMassClaim:
         params = ui_worker_action_state(page, _MASS_WORKERS[0])["action_params"]
 
         assert_no_collected_php_errors(page)
-        context.close()
         type(self)._post = post
         type(self)._params = params
         type(self)._alpha_id = alpha_id
         yield
+        # Three agents queued on a claim for a foreign banner would reach the next
+        # module, since ensure_scenario_loaded skips an already-loaded TestConfig.
+        ui_mass_passive_click(page, "Beta", _MASS_WORKERS)
+        context.close()
 
     def test_every_selected_worker_claims(self):
         for lastname in _MASS_WORKERS:
@@ -243,10 +248,18 @@ class TestMassClaim:
 
     def test_the_chosen_banner_is_carried(self):
         """Without this the claim would resolve for nobody : the banner is the
-        one thing a claim needs that the other mass actions do not."""
-        assert str(self._alpha_id) in self._params, (
+        one thing a claim needs that the other mass actions do not.
+
+        Decoded rather than searched : '1' is a substring of '12', so a raw
+        `in` would pass on the wrong faction.
+        """
+        carried = json.loads(self._params or '{}').get('claim_controller_id')
+        assert carried is not None, (
+            f"action_params must carry a claim_controller_id; got {self._params!r}"
+        )
+        assert int(carried) == int(self._alpha_id), (
             f"action_params must carry the chosen claim_controller_id "
-            f"{self._alpha_id}; got {self._params!r}"
+            f"{self._alpha_id}; got {carried!r}"
         )
 
 

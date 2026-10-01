@@ -86,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (empty($_SESSION['is_privileged'])) {
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
-                $mechanics = getMechanics($gameReady);
                 $placeholders = implode(',', array_fill(0, count($worker_ids), '?'));
                 $inactive = implode(',', array_fill(0, count(INACTIVE_ACTIONS), '?'));
                 $stmt = $gameReady->prepare(

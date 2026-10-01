@@ -94,6 +94,7 @@ $gameReady = gameReady();
 // Use the return value
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
+    http_response_code(503);
     exit();
 } else {
     // Set the session debug status
@@ -116,17 +117,31 @@ if (!$gameReady) {
 
     // Set game title
     $gameTitle = getConfig($gameReady, 'TITLE');
-    if ($_SESSION['DEBUG'] == true) {
-        echo "The game is ready.<br />";
-        echo "The gameTitle is : '$gameTitle'.<br />";
-    }
+    game_error_log('basePHP', 'The game is ready.', [], 'debug');
+    game_error_log('basePHP', 'The gameTitle is : '.$gameTitle, [], 'debug');
 
     // Get mechanics values
     $mechanics = getMechanics($gameReady);
+    // getMechanics returns null on a PDO error
+    if (!isset($mechanics['turncounter'])) {
+        game_error_log('basePHP', 'unreadable turncounter', ['mechanics' => $mechanics], 'error');
+        echo "The game is not ready. Please check DB Configuration and Setup. <br />";
+        http_response_code(503);
+        exit();
+    }
 }
 
-if ($_SESSION['DEBUG'] == true) {
-    // print debug values
-    echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
-    echo "Turn : ".$mechanics['turncounter']."; gamestate : '".$mechanics['gamestate']. "' <br />";
-}
+// print debug values
+game_error_log(
+    'basePHP',
+    'Debug ',
+    [
+        'debug' => $_SESSION['DEBUG'],
+        'ID' => $_SESSION['user_id'] ?? 'null',
+        'is_privileged' => $_SESSION['is_privileged'] ?? 'null',
+    ],
+    'debug'
+);
+game_error_log('basePHP', 'Turn : '.$mechanics['turncounter'].'; gamestate : '.$mechanics['gamestate'], ['mechanics' => $mechanics], 'debug');
+
+game_error_log('basePHP', 'END', [], 'debug');
