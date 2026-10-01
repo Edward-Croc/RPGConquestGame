@@ -22,7 +22,7 @@ puis rend son HTML via `base/baseHTML.php`.
 
 | Dossier | Rôle |
 |---|---|
-| `base/` | amorçage, session, page d'accueil, pages de configuration du scénario |
+| `base/` | amorçage, session (`session.php`), page d'accueil, pages de configuration du scénario |
 | `admin/` | les pages d'administration : tableau de bord, sauvegardes, CSV, journaux, récits de fin de tour |
 | `connection/` | connexion, déconnexion et compte du joueur (`account.php` : factions rattachées, changement de mot de passe) — **hors du trajet décrit plus bas** : `loginForm.php` porte son propre amorçage dupliqué, `logout.php` ne rend aucun HTML |
 | `BDD/` | `db_connector.php` : connexion, création du schéma, importeur de scénario |
@@ -36,7 +36,8 @@ puis rend son HTML via `base/baseHTML.php`.
 1. L'URL touche un point d'entrée : `*/action.php`, `*/management_*.php`, `admin/admin.php`…
 2. **`base/basePHP.php`** est requis en premier. Il ouvre un tampon de sortie
    (`ob_start()`, pour que `header()` fonctionne même si un avertissement a déjà
-   été émis), démarre la session, charge les neuf bibliothèques de fonctions
+   été émis), démarre la session par `startGameSession()` (voir plus bas), charge
+   les neuf bibliothèques de fonctions
    (`version`, `errorLog`, `db_connector`, puis `controllers`, `mechanics`,
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
@@ -55,6 +56,63 @@ puis rend son HTML via `base/baseHTML.php`.
    **elles n'utilisent pas `baseHTML.php`**.
 6. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
    si la page se termine tôt.
+
+### La session est cloisonnée par installation
+
+Un cookie de session est lié au **domaine**, pas au chemin. Plusieurs jeux servis sous le
+même domaine partageraient donc leur session sous le nom de cookie par défaut, et
+`logged_in`, `user_id` et `is_privileged` traverseraient d'une installation à l'autre. Le
+point aggravant est que `DBNAME`, `FOLDER` et `GAME_PREFIX` sont **réécrits à chaque
+requête** par `getDBConnection` : le `user_id` survivant serait relu contre une **autre
+base**, donc réécrit en quelqu'un d'autre.
+
+`base/session.php` pose donc deux gardes, et les quatre points d'entrée qui ouvrent une
+session passent tous par lui — `base/basePHP.php`, `index.php`,
+`connection/loginForm.php`, `connection/logout.php` :
+
+- le cookie est **nommé d'après le répertoire de l'installation**, donc deux jeux ne
+  partagent plus d'identifiant ;
+- la session **retient l'installation qui l'a ouverte**, et une session venue d'ailleurs
+  est vidée au lieu d'être crue.
+
+La seconde garde tient même si la première est mal déployée — **mesuré** sous
+`session.auto_start = 1`, où la session existe avant notre code et le cookie ne peut plus
+être renommé : le passage d'un jeu à l'autre reste refusé. Le prix est qu'alors les deux
+installations deviennent mutuellement exclusives, chaque visite vidant la session de
+l'autre. C'est un arbitrage assumé : `auto_start` est une mauvaise configuration, et une
+brèche est pire qu'une déconnexion.
+
+Conséquence pratique du déploiement : **changer ce nom de cookie déconnecte tout le
+monde**, une fois.
+
+### Le mode d'environnement
+
+La clé `env` du fichier de contexte vaut `test` ou `production`, et `isTestEnvironment()`
+(`base/basePHP.php`) répond à la question. **Tout ce qui n'est pas littéralement `test`
+vaut production** : un fichier de contexte écrit avant l'existence de cette clé, ou une
+valeur mal orthographiée, doit masquer la donnée plutôt que l'exposer.
+
+Ce que ça change aujourd'hui : `buildWorkerStateAttributes()` (`workers/functions.php`),
+appelée par les deux sites de rendu d'une fiche d'agent, **vide** `data-action-choice`,
+`data-action-params` et `data-worker-status` hors d'une installation de test. Elle ne
+choisit pas quelles valeurs seraient sûres — **rien ne les lit** : le dépôt n'expédie aucun
+code client qui y touche, ils n'existent que pour la suite UI-only, qui observe l'état d'un
+agent à travers eux faute de base de données.
+
+Ce choix est délibérément **indépendant des données de scénario**. Une règle qui déciderait
+du masquage d'après les textes — « une action sans entrée `txt_ps_` est un leurre » —
+tomberait le jour où un auteur remplit, ou oublie, une clé de texte. Vider ne peut pas
+casser ainsi.
+
+`data-worker-id` et `data-worker-lastname` restent tels quels : tous deux répètent ce que
+le lien et la phrase voisins montrent déjà.
+
+**La règle générale** : un attribut `data-*` qui n'existe que pour la suite de tests, sur
+une page qu'un joueur peut voir, ne dit rien en production. Les autres restent — les
+`data-tab-*` pilotent les onglets (`base/baseScript.php:35-36`), et les pages
+d'administration sont hors de portée d'un joueur. `TestNoUnexpectedDataAttributes`
+(`tests/test_agent_combat_e2e.py`) tient la liste blanche et fait rougir la suite dès qu'un
+attribut non prévu atteint une page joueur.
 
 Deux bases sont supportées, **MySQL et PostgreSQL**, choisies par
 `$_SESSION['DBTYPE']`. Tout ce qui touche au SQL doit fonctionner dans les deux.
@@ -229,7 +287,7 @@ et personne ne la lit avant le tour N+1 : **le timbre le plus frais qu'un joueur
 puisse voir vaut toujours `tour − 1`**, jamais le tour courant.
 
 C'est ce qui rend correcte la règle de fenêtre de `buildEnemyWorkerListing`
-(`workers/functions.php:1645` et `:1653`) :
+(`workers/functions.php:1785` et `:1793`) :
 
 ```php
 $bucket = $w['last_discovery_turn'] >= ($turn_number - $window) ? 'recent' : 'older';
@@ -304,7 +362,7 @@ d'`action_choice`. Ajouter une action au jeu suppose donc de l'ajouter à
 `ACTIVE_ACTIONS`, sans quoi elle est posée en base et ignorée partout.
 
 Le statut affiché s'en déduit, croisé avec `is_primary_controller`
-(`workers/functions.php:320-341`) : actif et à nous vaut `alive`, actif et pas à
+(`getWorkerStatus`, `workers/functions.php:347-379`) : actif et à nous vaut `alive`, actif et pas à
 nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à part.
 
 ### Ce qu'un geôlier peut faire d'un prisonnier
@@ -419,7 +477,7 @@ celle qui doit refuser de le construire vide.
 Le bloc `defenders` filtre sur `ACTIVE_ACTIONS` (`:149`, et `:223` sous
 `LIMIT_ATTACK_BY_ZONE`), la paire n'atteint donc jamais la boucle de résolution — et
 **rien n'est écrit dans le rapport de l'attaquant**. La liste des cibles, elle, ne filtre
-pas sur le statut (`getEnemyWorkers`, `workers/functions.php:1640`) : un cadavre, un agent
+pas sur le statut (`getEnemyWorkers`, `workers/functions.php:1667`) : un cadavre, un agent
 capturé ou un **agent leurre** restent proposés à l'attaque.
 
 À ne pas confondre avec la cible qui meurt **pendant** la résolution, tuée par un duel
@@ -1117,7 +1175,7 @@ pour les dates ») ; le don d'agent recule donc son estampille de
 recul. Ce n'est pas une incohérence visible aujourd'hui : rien dans le code ne
 relit `controller_known_locations.last_discovery_turn` à travers une fenêtre
 « récent / ancien » comparable à celle qu'utilise `buildEnemyWorkerListing`
-pour les agents (`workers/functions.php:1642-1653`) — mais si une telle
+pour les agents (`workers/functions.php:1785-1793`) — mais si une telle
 fenêtre était un jour ajoutée côté lieux, l'asymétrie deviendrait un bug de
 datation à corriger en miroir de celle déjà appliquée côté agents.
 
@@ -1149,7 +1207,7 @@ transfère l'agent en personne : `workers/action.php`, action `gift`
 `:39-63`) et par une garde d'auto-don spécifique
 (`(int)$gift_controller_id === (int)$session_controller_id` → 403, `:236`).
 L'effet passe par `activateWorker($pdo, $workerId, 'gift', $extraVal)`
-(`workers/functions.php:1326-1378`) et s'applique **immédiatement**, pas en
+(`workers/functions.php:1387-1442`) et s'applique **immédiatement**, pas en
 fin de tour comme `attack`/`claim`/`investigate` : le contrôleur primaire de
 `controller_worker` bascule vers le nouveau maître, `worker_actions` du tour
 courant est réécrit à `passive`, un agent-trace est créé pour l'ancien

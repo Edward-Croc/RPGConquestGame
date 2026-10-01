@@ -1,6 +1,7 @@
 <?php
 
-session_start(); // Start the session
+require_once __DIR__ . '/../base/session.php';
+startGameSession();
 
 // Anonymous direct GET: nothing to log out from. loginForm.php sits in
 // the same /connection/ directory so a relative Location header works

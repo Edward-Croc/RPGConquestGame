@@ -1,8 +1,9 @@
 <?php
 
 ob_start(); // Buffer output so header() redirects work even when warnings are emitted
+require_once __DIR__ . '/session.php';
+startGameSession();
 if (!isset($_SESSION['DEBUG'])) {
-    session_start(); // Start the session
     $_SESSION['DEBUG'] = false;
 }
 
@@ -24,6 +25,16 @@ require_once '../powers/functions.php';
 require_once '../ressources/functions.php';
 require_once '../workers/functions.php';
 require_once '../zones/functions.php';
+
+/**
+ * True when this deployment is declared as a test environment.
+ *
+ * @return bool : true when the markup may carry an agent's raw state
+ */
+function isTestEnvironment(): bool
+{
+    return ($_SESSION['ENV'] ?? 'production') === 'test';
+}
 
 /**
  * Extract configuration value from the database by key.

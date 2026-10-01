@@ -94,6 +94,9 @@ Installation (manual):
  - Create a folder called RPGConquestGame and pull the sources to it.
  - Create a config.ini file in the VAR folder and add the parent folder name to it.
  - Setup a database, and add the connection info to the ./var/config.ini file and execute the ./var/setupBDD.sql file.
+ - Add `env = production` to the config file. Any value but the literal `test` is treated
+   as production; `test` is only for a development or Demo install, and it makes an
+   agent's raw state readable in the page markup.
  - Ensure var/logs/ is writable by the PHP process user.
  - The base game is set up with a user: gm; pwd: orga.
 

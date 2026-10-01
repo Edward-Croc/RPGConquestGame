@@ -1644,3 +1644,54 @@ def assert_no_collected_php_errors(page: Page):
             f"on {first_url}"
             + (f" (and {len(errors)-1} other(s))" if len(errors) > 1 else "")
         )
+
+
+# ---------------------------------------------------------------------------
+# Environment mode (issue #166)
+# ---------------------------------------------------------------------------
+
+# BDD/db_connector.php tries local_config.ini FIRST and stops at the first hit,
+# so rewriting config.ini has no effect while local_config.ini exists. The order
+# here mirrors the PHP so the helper stays correct if either file appears or
+# disappears — and config.ini may well point at a different database entirely.
+ENV_CONFIG_CANDIDATES = ("var/local_config.ini", "var/config.ini")
+
+_ENV_LINE_RE = re.compile(r"^[ \t]*env[ \t]*=.*$", re.MULTILINE)
+
+
+def effective_config_ini():
+    """Return the path of the context ini the application actually reads."""
+    root = Path(__file__).resolve().parent.parent
+    for candidate in ENV_CONFIG_CANDIDATES:
+        path = root / candidate
+        if path.exists():
+            return path
+    raise AssertionError(
+        "no context ini found, looked for: " + ", ".join(ENV_CONFIG_CANDIDATES)
+    )
+
+
+def set_env_mode(mode):
+    """Rewrite the `env` key of the context ini and return what was there before.
+
+    Returns '' when the key was absent, and passing '' back removes the line
+    again, so a caller can restore the file byte for byte.
+
+    A test must never leave 'production' behind : every later file would lose the
+    data-* attributes it reads an agent's state from. Always restore in a
+    `finally`, never at the end of the happy path.
+    """
+    path = effective_config_ini()
+    text = path.read_text(encoding="utf-8")
+    found = _ENV_LINE_RE.search(text)
+    previous = found.group(0).split("=", 1)[1].strip().strip("'\"") if found else ""
+
+    if mode == "":
+        new_text = _ENV_LINE_RE.sub("", text) if found else text
+    elif found:
+        new_text = _ENV_LINE_RE.sub("env = " + mode, text, count=1)
+    else:
+        new_text = text.rstrip("\n") + "\nenv = " + mode + "\n"
+
+    path.write_text(new_text, encoding="utf-8")
+    return previous

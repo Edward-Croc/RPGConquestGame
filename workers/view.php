@@ -560,6 +560,8 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 $navNextHTML
             );
 
+            $stateAttributes = buildWorkerStateAttributes($currentAction, $workerStatus);
+
             $viewHTML = sprintf(
                 '<div class="card">
                     <header
@@ -599,9 +601,9 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 $viewHistoryHTML, // %9$s
                 $actionHTML, // %10$s
                 $upgradeHTML, // %11$s
-                htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %12$s
-                htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %13$s
-                htmlspecialchars($workerStatus, ENT_QUOTES), // %14$s
+                htmlspecialchars($stateAttributes['action_choice'], ENT_QUOTES), // %12$s
+                htmlspecialchars($stateAttributes['action_params'], ENT_QUOTES), // %13$s
+                htmlspecialchars($stateAttributes['worker_status'], ENT_QUOTES), // %14$s
                 $navButtonsHTML // %15$s
             );
             echo $viewHTML;

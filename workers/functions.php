@@ -583,6 +583,31 @@ function buildWorkerZoneActionPhrase(
 }
 
 /**
+ * What the state attributes of an agent's markup are allowed to show.
+ * 
+ * We hode the data attributes when not in test environment.
+ *
+ * @param array $currentAction : the worker_actions row of the current turn
+ * @param string $workerStatus : getWorkerStatus output, already resolved for the viewer
+ *
+ * @return array : ['action_choice' => string, 'action_params' => string, 'worker_status' => string]
+ */
+function buildWorkerStateAttributes(array $currentAction, string $workerStatus): array
+{
+    // If not in test environment, return empty array to hide the data attributes.
+    if (!isTestEnvironment()) {
+        return ['action_choice' => '', 'action_params' => '', 'worker_status' => ''];
+    }
+
+    // Return the data attributes.
+    return [
+        'action_choice' => (string) ($currentAction['action_choice'] ?? ''),
+        'action_params' => (string) ($currentAction['action_params'] ?? '{}'),
+        'worker_status' => $workerStatus,
+    ];
+}
+
+/**
  * show Worker view Short version
  *
  * @param PDO $pdo : database connection
@@ -640,6 +665,8 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
         );
     }
 
+    $stateAttributes = buildWorkerStateAttributes($currentAction, $workerStatus);
+
     $return = sprintf(
         '<div class="worker-short" 
             data-worker-id="%1$s"
@@ -668,9 +695,9 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
         ), // %6$s
         $_SESSION['FOLDER'], // %7$s
         ($showCheckBox ? sprintf('<input type="checkbox" name="worker_ids[]" value="%s" class="mr-2">', $worker['id']) : ''), // %8$s
-        htmlspecialchars($currentAction['action_choice'] ?? '', ENT_QUOTES), // %9$s
-        htmlspecialchars($currentAction['action_params'] ?? '{}', ENT_QUOTES), // %10$s
-        htmlspecialchars($workerStatus, ENT_QUOTES) // %11$s
+        htmlspecialchars($stateAttributes['action_choice'], ENT_QUOTES), // %9$s
+        htmlspecialchars($stateAttributes['action_params'], ENT_QUOTES), // %10$s
+        htmlspecialchars($stateAttributes['worker_status'], ENT_QUOTES) // %11$s
     );
 
     return $return;
