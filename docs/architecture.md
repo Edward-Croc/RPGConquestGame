@@ -287,7 +287,7 @@ et personne ne la lit avant le tour N+1 : **le timbre le plus frais qu'un joueur
 puisse voir vaut toujours `tour − 1`**, jamais le tour courant.
 
 C'est ce qui rend correcte la règle de fenêtre de `buildEnemyWorkerListing`
-(`workers/functions.php:1785` et `:1793`) :
+(`workers/functions.php:1789` et `:1797`) :
 
 ```php
 $bucket = $w['last_discovery_turn'] >= ($turn_number - $window) ? 'recent' : 'older';
@@ -467,17 +467,30 @@ normale**, pas une donnée corrompue. Deux chemins y mènent.
 **L'attaquant a pressé « Attaquer » sans cocher aucune cible.** Un `<select multiple>`
 sans sélection n'envoie aucune clé : l'action était alors enregistrée avec une liste de
 cibles vide, et la comparaison construisait `WHERE w.id IN ()`, que MySQL refuse.
-`workers/action.php:196-205` refuse désormais cette soumission et laisse l'agent en
-`passive`, si bien que l'état incohérent n'est plus écrit.
+`workers/action.php` refuse cette soumission et laisse l'agent en `passive`, de sorte
+que l'état incohérent n'est pas écrit.
 `getAttackerComparisons` porte en plus sa propre garde sur la liste vide
 (`mechanics/attackMechanic.php:236`) : la fonction qui construit le `IN (...)` est aussi
 celle qui doit refuser de le construire vide.
+
+Une soumission vide n'est pas une soumission forgée, et les deux ne reçoivent pas la
+même réponse. Le formulaire ne produit qu'un tableau de `worker_N` / `network_N` : un
+scalaire ou un élément qui ne suit pas cette forme ne peut venir que d'une requête
+fabriquée. `activateWorker` les journalise et rend `false` au lieu du numéro d'agent,
+et la branche `attack` de `workers/action.php` répond alors **400**. Le refus laisse
+l'action déjà en file intacte.
+
+Le déplacement se garde de même, et plus strictement : son sélecteur ne soumet qu'un
+entier positif, donc tout le reste est forgé et vaut 400. La vérification porte sur la
+**forme** de la valeur reçue, et non sur un `(int)`, parce qu'un transtypage rend `1`
+sans un mot sur un tableau non vide — `zone_id[]=2` déplacerait l'agent vers la zone 1
+au lieu d'être refusé.
 
 **L'attaquant a visé un agent nommé déjà `dead`, `captured` ou réduit à une `trace`.**
 Le bloc `defenders` filtre sur `ACTIVE_ACTIONS` (`:149`, et `:223` sous
 `LIMIT_ATTACK_BY_ZONE`), la paire n'atteint donc jamais la boucle de résolution — et
 **rien n'est écrit dans le rapport de l'attaquant**. La liste des cibles, elle, ne filtre
-pas sur le statut (`getEnemyWorkers`, `workers/functions.php:1667`) : un cadavre, un agent
+pas sur le statut (`getEnemyWorkers`, `workers/functions.php:1671`) : un cadavre, un agent
 capturé ou un **agent leurre** restent proposés à l'attaque.
 
 À ne pas confondre avec la cible qui meurt **pendant** la résolution, tuée par un duel
@@ -1175,7 +1188,7 @@ pour les dates ») ; le don d'agent recule donc son estampille de
 recul. Ce n'est pas une incohérence visible aujourd'hui : rien dans le code ne
 relit `controller_known_locations.last_discovery_turn` à travers une fenêtre
 « récent / ancien » comparable à celle qu'utilise `buildEnemyWorkerListing`
-pour les agents (`workers/functions.php:1785-1793`) — mais si une telle
+pour les agents (`workers/functions.php:1789-1797`) — mais si une telle
 fenêtre était un jour ajoutée côté lieux, l'asymétrie deviendrait un bug de
 datation à corriger en miroir de celle déjà appliquée côté agents.
 
@@ -1207,7 +1220,7 @@ transfère l'agent en personne : `workers/action.php`, action `gift`
 `:39-63`) et par une garde d'auto-don spécifique
 (`(int)$gift_controller_id === (int)$session_controller_id` → 403, `:236`).
 L'effet passe par `activateWorker($pdo, $workerId, 'gift', $extraVal)`
-(`workers/functions.php:1387-1442`) et s'applique **immédiatement**, pas en
+(`workers/functions.php:1391-1446`) et s'applique **immédiatement**, pas en
 fin de tour comme `attack`/`claim`/`investigate` : le contrôleur primaire de
 `controller_worker` bascule vers le nouveau maître, `worker_actions` du tour
 courant est réécrit à `passive`, un agent-trace est créé pour l'ancien

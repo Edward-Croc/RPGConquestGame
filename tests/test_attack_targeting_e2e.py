@@ -79,6 +79,7 @@ from helpers import (
     load_scenario_via_admin,
     register_php_error_listener,
     safe_goto,
+    ui_all_workers,
     ui_controller_id,
     ui_gift_click,
     ui_worker_action_state,
@@ -295,3 +296,105 @@ class TestGiftDoesNotEscapeANetworkAttack:
         html = worker_report_html(page, NETWORK_ATTACKER, base_url=base_url)
         report = worker_report_section(html, "Attaques :")
         assert GIFTED_AGENT in report
+
+
+def _zone_name_of(page, base_url, lastname):
+    """The agent's zone, read from the management listing — a move is only
+    refused if the agent did not actually travel."""
+    rows = [w for w in ui_all_workers(page, base_url=base_url) if w['lastname'] == lastname]
+    assert rows, f"{lastname} is not in the management listing"
+    return rows[0]['zone_name']
+
+
+class TestForgedAttackPayloads:
+    """Issue #173 : a request the form cannot produce must not reach the turn.
+
+    The multiple select always sends enemy_worker_id[] as an array of
+    `worker_N` / `network_N`. Anything else is forged, and used to be stored or
+    to end the request on a blank page.
+    """
+
+    def _state_after(self, page, base_url, query):
+        """Queue a passive action, fire the forged request, return the state."""
+        ensure_gm_login(page, base_url)
+        ctrl_id = ui_worker_controller_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        wid = ui_worker_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}&passive=1")
+        page.wait_for_load_state("load")
+        response = page.goto(
+            f"{base_url}/workers/action.php?worker_id={wid}&{query}&attack=Attaquer")
+        status = response.status if response is not None else None
+        return status, ui_worker_action_state(page, NO_TARGET_ATTACKER, base_url=base_url)
+
+    def test_a_scalar_target_is_refused(self, page, base_url,
+                                        attack_targeting_scenario):
+        """A scalar passes the empty() guard, is cast to an int, and used to be
+        stored as an attack carrying no target at all."""
+        status, state = self._state_after(page, base_url, "enemy_worker_id=5")
+        assert status == 400, f"a forged payload must be answered as such; got {status}"
+        assert state['action_choice'] == 'passive', (
+            f"the queued action must survive a refused attack; got {state['action_choice']!r}"
+        )
+
+    def test_a_malformed_target_is_refused_rather_than_thrown(self, page, base_url,
+                                                              attack_targeting_scenario):
+        """Paired with the test above : this one used to raise an uncaught
+        exception, because activateWorker is called without a try."""
+        status, state = self._state_after(page, base_url, "enemy_worker_id[]=x")
+        assert status == 400, f"a malformed target must be refused, not thrown; got {status}"
+        assert state['action_choice'] == 'passive', (
+            f"the queued action must survive a refused attack; got {state['action_choice']!r}"
+        )
+
+    def test_a_nested_target_is_refused(self, page, base_url,
+                                        attack_targeting_scenario):
+        """Indexing the field gets an array PAST is_array(), so the element
+        itself reached preg_match, whose $subject is typed string : a TypeError
+        nothing catches, which is the blank page all over again."""
+        status, state = self._state_after(page, base_url, "enemy_worker_id[0][]=worker_1")
+        assert status == 400, f"a nested target must be refused, not thrown; got {status}"
+        assert state['action_choice'] == 'passive', (
+            f"the queued action must survive a refused attack; got {state['action_choice']!r}"
+        )
+
+    def test_a_move_without_a_zone_is_refused(self, page, base_url,
+                                              attack_targeting_scenario):
+        """The zone select never renders an empty option, so a move carrying no
+        zone is forged too — and used to be ignored without a word.
+
+        Unlike an attack with nothing selected, which the multiple select does
+        produce and which deliberately falls back to passive.
+        """
+        ensure_gm_login(page, base_url)
+        ctrl_id = ui_worker_controller_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        wid = ui_worker_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        response = page.goto(f"{base_url}/workers/action.php?worker_id={wid}&move=1")
+        status = response.status if response is not None else None
+        assert status == 400, f"a move without a zone must be refused; got {status}"
+
+    @pytest.mark.parametrize("payload,why", [
+        ("zone_id=abc", "a non-numeric zone reached moveWorker's int parameter"),
+        ("zone_id%5B%5D=2", "an array casts to the int 1, so it MOVED to the wrong zone"),
+    ])
+    def test_a_move_carrying_a_malformed_zone_is_refused(self, page, base_url, payload,
+                                                         why, attack_targeting_scenario):
+        """Emptiness was guarded, shape was not. Both of these used to get past."""
+        ensure_gm_login(page, base_url)
+        ctrl_id = ui_worker_controller_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        wid = ui_worker_id(page, NO_TARGET_ATTACKER, base_url=base_url)
+        before = _zone_name_of(page, base_url, NO_TARGET_ATTACKER)
+
+        response = page.goto(f"{base_url}/workers/action.php?worker_id={wid}&move=1&{payload}")
+        status = response.status if response is not None else None
+        assert status == 400, f"{why}; got {status}"
+
+        after = _zone_name_of(page, base_url, NO_TARGET_ATTACKER)
+        assert after == before, (
+            f"a refused move must leave the agent where it stood; was {before!r}, now {after!r}"
+        )
