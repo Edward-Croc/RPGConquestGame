@@ -82,18 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
 
-        // A trace or dead worker keeps its action here too, as workers/action.php refuses it.
+        // An inactive worker keeps its action : a captor must not put a prisoner back to work.
         if (empty($_SESSION['is_privileged'])) {
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
                 $mechanics = getMechanics($gameReady);
                 $placeholders = implode(',', array_fill(0, count($worker_ids), '?'));
+                $inactive = implode(',', array_fill(0, count(INACTIVE_ACTIONS), '?'));
                 $stmt = $gameReady->prepare(
                     "SELECT COUNT(*) FROM {$prefix}worker_actions
                      WHERE turn_number = ? AND worker_id IN ($placeholders)
-                       AND action_choice IN ('trace', 'dead')"
+                       AND action_choice IN ($inactive)"
                 );
-                $stmt->execute(array_merge([$mechanics['turncounter']], $worker_ids));
+                $stmt->execute(array_merge([$mechanics['turncounter']], $worker_ids, INACTIVE_ACTIONS));
                 if ((int)$stmt->fetchColumn() > 0) {
                     game_error_log('workers_mass_action_page', 'inactive worker in mass action', ['worker_ids' => $worker_ids], 'warning');
                     http_response_code(403);

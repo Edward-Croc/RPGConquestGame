@@ -582,7 +582,7 @@ propriétaire.
 |---|---|---|
 | `controllers/action.php` | GET | `createBase`, `moveBase`, `attackLocation`, `cancelLocationAttack`, `repairLocation`, `giftInformationAgent`, `giftInformationLocation` |
 | `workers/action.php` | GET | `creation`, `move`, `attack`, `attackLocation`, `defendLocation`, `hide`, `passive`, `investigate`, `claim`, `gift`, `recallDoubleAgent`, `returnPrisoner`, `transferPrisoner`, `teach_discipline`, `transform` |
-| `workers/massAction.php` | GET | `mass_move`, `mass_investigate`, `mass_passive`, `mass_hide` |
+| `workers/massAction.php` | GET | `mass_move`, `mass_investigate`, `mass_passive`, `mass_hide`, `mass_claim` |
 | `ressources/action.php` | POST | don de ressource, en *post-redirect-get* pour qu'un rafraîchissement ne rejoue pas l'envoi |
 | `zones/action.php` | — | ne fait qu'inclure la vue |
 
@@ -594,7 +594,15 @@ un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 trace, avec une exception pour `transform` — la résurrection vampire.
 
 Les actions de masse pré-vérifient **chaque** identifiant de la liste contre le
-contrôleur de session avant d'agir sur le premier.
+contrôleur de session avant d'agir sur le premier, et portent les deux mêmes verrous
+que `workers/action.php` : un agent dont l'action est dans `INACTIVE_ACTIONS` ne peut
+pas en changer — un geôlier ne remet pas son prisonnier au travail — et le mode de
+revendication non autorisé est **ignoré en silence**, puisque le bouton n'est alors pas
+rendu et qu'un formulaire périmé ne mérite pas une page d'erreur.
+
+`mass_claim` est la seule action de masse à porter un paramètre : la bannière au nom de
+laquelle on revendique. Chaque agent sélectionné revendique **la zone où il se trouve**,
+donc une sélection répartie sur plusieurs zones en revendique plusieurs.
 
 ---
 
