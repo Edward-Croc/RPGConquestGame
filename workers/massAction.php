@@ -84,24 +84,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         // An inactive worker keeps its action : a captor must not put a prisoner back to work.
         if (empty($_SESSION['is_privileged'])) {
-            // A turn we cannot read matches no row, so the guard would open instead of closing.
-            if (!isset($mechanics['turncounter'])) {
-                game_error_log('workers_mass_action_page', 'unreadable turncounter, mass action refused', ['worker_ids' => $worker_ids], 'error');
-                http_response_code(403);
-                exit();
-            }
             try {
                 $prefix = $_SESSION['GAME_PREFIX'];
                 $placeholders = implode(',', array_fill(0, count($worker_ids), '?'));
                 $inactive = implode(',', array_fill(0, count(INACTIVE_ACTIONS), '?'));
+                // Counting what may act, not what may not : a row we cannot read then refuses.
                 $stmt = $gameReady->prepare(
                     "SELECT COUNT(*) FROM {$prefix}worker_actions
                      WHERE turn_number = ? AND worker_id IN ($placeholders)
-                       AND action_choice IN ($inactive)"
+                       AND action_choice NOT IN ($inactive)"
                 );
                 $stmt->execute(array_merge([$mechanics['turncounter']], $worker_ids, INACTIVE_ACTIONS));
-                if ((int)$stmt->fetchColumn() > 0) {
-                    game_error_log('workers_mass_action_page', 'inactive worker in mass action', ['worker_ids' => $worker_ids], 'warning');
+                if ((int)$stmt->fetchColumn() !== count($worker_ids)) {
+                    game_error_log('workers_mass_action_page', 'inactive or unreadable worker in mass action', ['worker_ids' => $worker_ids], 'warning');
                     http_response_code(403);
                     exit();
                 }

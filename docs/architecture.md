@@ -41,13 +41,19 @@ puis rend son HTML via `base/baseHTML.php`.
    (`version`, `errorLog`, `db_connector`, puis `controllers`, `mechanics`,
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
-   schéma et recharge un scénario si `$_POST['config_name']` est posté. Il lit enfin
-   les mécaniques dans `$mechanics`, **sans garantir qu'elles existent** :
-   `getMechanics()` rend `null` aussi bien sur une `PDOException` qu'avant le premier
-   amorçage, la table étant créée vide par `setupBDD.sql` et peuplée par
-   `minimalData.sql`. Une base au seul schéma doit rester navigable, ne serait-ce que
-   pour atteindre la page qui la peuplera — c'est donc à **chaque garde bâtie sur le
-   tour courant** de refuser quand il manque, et non à l'amorçage.
+   schéma et, sur une base neuve, charge un scénario si `$_POST['config_name']` est
+   posté. Il lit enfin les mécaniques dans `$mechanics`, **sans garantir qu'elles
+   existent** :
+   `getMechanics()` rend `null` aussi bien sur une `PDOException` que sur une table
+   `mechanics` vide, celle-ci étant créée par `setupBDD.sql` et peuplée par
+   `minimalData.sql`. Or `gameReady()` ne joue ces deux fichiers **que si la table
+   `players` est absente** (`BDD/db_connector.php:833`), et le rechargement de
+   scénario est imbriqué dans la même condition (`:862`) : une base dont `players`
+   existe mais dont `mechanics` est vide — réinitialisation de test, destruction à
+   moitié avortée — n'est donc réparée par aucune page. Arrêter l'amorçage la
+   rendrait inatteignable au lieu de la protéger. Les gardes n'ont pourtant pas à le
+   vérifier une à une : il leur suffit d'être écrites de sorte que **l'absence de
+   donnée refuse**, et un tour illisible se ferme alors de lui-même.
 3. Une page d'administration place sa **garde `is_privileged`** juste après
    `basePHP.php`, avant tout handler : la garde de `baseHTML.php` (étape 5)
    n'exige que `logged_in` et n'est évaluée qu'après l'exécution des POST.
@@ -596,22 +602,34 @@ propriétaire.
 n'applique la garde de propriété qu'à celles-ci : une lecture reste possible sur
 un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 
-`workers/action.php` ajoute un verrou d'écriture sur les agents morts ou en
-trace, avec une exception pour `transform` — la résurrection vampire.
+`workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
+est dans `INACTIVE_ACTIONS`, avec une exception pour `transform` sur un mort — la
+résurrection vampire.
+
+Le verrou n'autorise que sur une **lecture positive** : il faut que la ligne du tour
+existe et porte autre chose qu'une action inactive. Écrit à l'envers — refuser sur
+`trace` ou `dead` — il laissait passer dès qu'aucune ligne n'était trouvée, ce que
+produit un tour illisible ; et `activateWorker`, qui relit les mécaniques pour son
+propre compte, aurait alors écrit sur le bon tour. Le `catch` autour de la lecture
+refuse de même, là où une `PDOException` rendait une page blanche.
 
 Les actions de masse pré-vérifient **chaque** identifiant de la liste contre le
-contrôleur de session avant d'agir sur le premier, et portent un verrou d'inactivité
-**plus strict** que celui de `workers/action.php` : il lit les trois valeurs
-d'`INACTIVE_ACTIONS`, `captured` compris, de sorte qu'un geôlier ne remette pas son
-prisonnier au travail. Elles traitent aussi différemment le mode de revendication non
-autorisé : là où `workers/action.php` répond 403, l'action de masse l'**ignore en
-silence**, puisque le bouton n'est alors pas rendu et qu'un formulaire périmé ne mérite
-pas une page d'erreur.
+contrôleur de session avant d'agir sur le premier, et portent le **même** verrou
+d'inactivité que `workers/action.php`, écrit dans la même forme positive : la requête
+compte les agents dont l'action du tour n'est **pas** dans `INACTIVE_ACTIONS`, et il en
+faut autant que d'identifiants soumis. Un prisonnier manque à l'appel, donc le compte
+ne tombe pas juste et un geôlier ne remet pas son prisonnier au travail — tout comme un
+tour illisible, qui ne compte rien. Elles traitent en revanche différemment le mode de
+revendication non autorisé : là où `workers/action.php` répond 403, l'action de masse
+l'**ignore en silence**, puisque le bouton n'est alors pas rendu et qu'un formulaire
+périmé ne mérite pas une page d'erreur.
 
-Les deux gardes se replient **fermées** : une panne SQL vaut un 403, car refuser coûte
-moins cher que faire agir un prisonnier. Celle d'inactivité exige en plus le compteur de
-tour avant d'interroger la base — un tour illisible ne correspondrait à aucune ligne,
-donc le `COUNT(*)` vaudrait zéro et la garde laisserait passer ce qu'elle doit refuser.
+Les gardes se replient **fermées** : une panne SQL vaut un 403, car refuser coûte moins
+cher que faire agir un prisonnier.
+
+Le repli sur tour illisible n'est **pas observable depuis l'interface** : il faudrait
+faire échouer `getMechanics()` sans faire échouer la requête suivante. Aucun test ne le
+couvre, et aucun ne prétend le faire.
 
 Deux actions de masse portent un paramètre : `mass_move` la zone de destination, et
 `mass_claim` la bannière au nom de laquelle on revendique. Chaque agent sélectionné
