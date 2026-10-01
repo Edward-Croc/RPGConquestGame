@@ -1305,8 +1305,13 @@ def _beta_decoy_attributes(page, base_url):
             row.get_attribute('data-worker-status'))
 
 
+@pytest.mark.db
 class TestEnvModeHidesTheAgentState:
-    """env = test keeps the raw state readable; env = production says nothing."""
+    """env = test keeps the raw state readable; env = production says nothing.
+
+    Marked db so UI_ONLY skips it : set_env_mode rewrites the context ini of the
+    LOCAL checkout, which is not the one a remote installation reads.
+    """
 
     def test_test_mode_still_reveals_the_decoy(self, page: Page, base_url):
         """Positive control : without it the production assertion below would
@@ -1329,8 +1334,11 @@ class TestEnvModeHidesTheAgentState:
         )
 
 
+@pytest.mark.db
 class TestNoUnexpectedDataAttributes:
     """A guard for the next contributor, not for this change.
+
+    Marked db for the same reason as the class above : it flips the context ini.
 
     Applying the rule by hand will not survive; a test will. Any new data-*
     reaching a player in production fails here and has to be argued for.
