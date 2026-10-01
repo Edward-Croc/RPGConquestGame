@@ -107,7 +107,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
 
-        if (isset($_GET['mass_move']) && !empty($zone_id)) {
+        if (isset($_GET['mass_move'])) {
+            // The zone select never renders an empty option, so a move without one is forged.
+            if (empty($zone_id)) {
+                game_error_log('workers_mass_action_page', 'mass move submitted without a zone', ['worker_ids' => $worker_ids], 'warning');
+                http_response_code(400);
+                exit();
+            }
             foreach ($worker_ids as $worker_id) {
                 moveWorker($gameReady, $worker_id, $zone_id);
             }

@@ -284,3 +284,22 @@ def test_mass_claim_is_ignored_when_the_mode_forbids_it(browser, base_url):
         if previous_mode is not None:
             set_config_via_ui(page, "claimMode", previous_mode, base_url=base_url)
         context.close()
+
+
+def test_mass_move_without_a_zone_is_refused(browser, base_url):
+    """The zone select never renders an empty option, so a mass move carrying no
+    zone cannot come from the form. It used to be ignored without a word.
+
+    Paired with the claim above, which is ignored in SILENCE on purpose : an
+    unsupported claim mode is a scenario setting, a missing zone is a forged call.
+    """
+    worker_id = _resolve_worker_id(browser, base_url, _MASS_WORKERS[0])
+
+    ctx = browser.new_context()
+    page = ctx.new_page()
+    ensure_gm_login(page, base_url)
+    response = page.goto(
+        f"{base_url}/workers/massAction.php?mass_move=1&worker_ids%5B%5D={worker_id}")
+    status = response.status if response is not None else None
+    ctx.close()
+    assert status == 400, f"a mass move without a zone must be refused; got {status}"
