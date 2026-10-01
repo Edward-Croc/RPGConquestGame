@@ -1357,12 +1357,11 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                 $attackScope = '';
                 $attackID = null;
                 // Determine scope and ID
-                if (preg_match('/^(network|worker)_(\d+)$/', $val, $matches)) {
+                if (is_string($val) && preg_match('/^(network|worker)_(\d+)$/', $val, $matches)) {
                     $attackScope = $matches[1]; // Extract scope (e.g., 'network' or 'worker')
                     $attackID = intval($matches[2]); // Extract ID as integer
                 } else {
-                    // Refused like a malformed string payload, rather than thrown : activateWorker
-                    // is called without a try, so an exception here is a blank 500 page.
+                    // Refused rather than thrown : activateWorker is called without a try.
                     game_error_log(__FUNCTION__, 'Refused a malformed attack target', ['action' => $action, 'worker_id' => $workerId], 'warning');
                     return false;
                 }
