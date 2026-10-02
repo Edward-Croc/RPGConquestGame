@@ -94,7 +94,7 @@ $gameReady = gameReady();
 // Use the return value
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
-    http_response_code(503);
+    http_response_code(500);
     exit();
 } else {
     // Set the session debug status
