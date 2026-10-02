@@ -1668,7 +1668,6 @@ function getEnemyWorkers(PDO $pdo, int $zone_id, int|null $controller_id = null)
     // return table of :
     // A worker discovered_worker_id with no discovered_controller_id
     // B workers discovered_worker_id with identical discovered_controller_id
-    // Optional discovered_controller_name if is associated to a
     try {
         // Query for workers with no discovered_controller_id (A)
         $sqlA = sprintf(
