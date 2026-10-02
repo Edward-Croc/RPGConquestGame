@@ -2195,26 +2195,3 @@ function getPrevNextWorkerIds(PDO $pdo, int $controller_id, int $current_worker_
     }
     return $result;
 }
-
-// TODO : Add Conversion to the captured agent possible actions list,
-// lock behind config JSON for certain factions, conversion probablility values
-// This function should take an worker_id and a controller_id:
-// check the configuration for the JSON
-// decompresse the JSON
-// check if the worker_id is in the list of captured agents for the controller_id
-// roll the random conversion probability :
-
-// agent dies : ?
-// set
-
-// if become double agent :
-// set the worker to active
-// controller_worker to primary controller
-
-// if converted :
-// set original workers table to inactive dead and worker_actions to dead
-// Copies workers and worker_actions tables to the active controller
-// Adds a Tranformation with the info and a négativ effect ?
-// set original workers table to inactive dead and worker_actions to dead
-
-// TODO : Add conversion of the captured agent faction power to the pirates

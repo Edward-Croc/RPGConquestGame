@@ -1273,18 +1273,16 @@ don d'agent ne laisse pas de trace consultable après coup.
 ### Le moteur d'IA
 
 **`mechanics/ia/` n'existe pas sur cette branche.** Le seul fichier existant est
-`mechanics/aiMechanic.php`, 49 lignes, qui est un moteur entièrement inerte :
+`mechanics/aiMechanic.php`, une coquille vide :
 
 - la fonction ouvre un bloc HTML de debug, lit le flag `DEBUG_IA` (`aiMechanic`,
   une clé qui n'est seedée dans aucun des CSV de config du dépôt —
   `setupJapon1555CSV_config.csv`, `setupTestConfig_config.csv`,
   `setupVampire1966CSV_config.csv`), puis termine sans avoir exécuté la
   moindre requête SQL ni la moindre logique ;
-- tout le comportement voulu — une machine à quatre états `passive` /
-  `searching` / `aggressive` / `violent`, la création d'agents, leur
-  déplacement, leur mise en investigation ou en attaque — n'existe que sous
-  forme de **commentaires `//`** décrivant l'intention (`aiMechanic`), jamais
-  traduits en code ;
+- aucun comportement n'y est écrit : ni machine à états, ni création d'agents,
+  ni déplacement. La conception et le moteur déjà écrit sur une autre branche
+  sont décrits dans l'issue #182 ;
 - **rien ne l'appelle** : `mechanics/endTurn.php` ne la nomme pas, ce que le
   document note déjà en §3. `aiMechanic()` n'est donc jamais invoquée par la fin
   de tour, ni gatée par le mécanisme de reprise par état.
