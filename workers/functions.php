@@ -761,8 +761,6 @@ function randomWorkerOrigin(PDO $pdo, array $newWorker, string $buttonClicked): 
     if (!empty($tmpOrigine) && $tmpOrigine != 'rand') {
         $originList = $tmpOrigine;
     }
-    // TODO : Add locking of origins by controller_id
-
     // Locking of origins by config on hobbies
     if (!empty($newWorker['power_1']['other'])) {
         $otherJson = json_decode($newWorker['power_1']['other'], true);
@@ -1093,17 +1091,9 @@ function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bo
                         game_error_log(__FUNCTION__, 'go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'warning');
                     }
                 }
-                if ($element['type'] == 'add_opposition') {
-                    // $element['controller_lastname']
-                    // TODO
-                    // Create worker with hobby and job in a random zone
-                    // Add $workerId to CKE
-                }
             }
         }
     }
-    // TODO : If the effect can be obtained out of recrutment
-
     return true;
 }
 
@@ -1678,7 +1668,6 @@ function getEnemyWorkers(PDO $pdo, int $zone_id, int|null $controller_id = null)
     // return table of :
     // A worker discovered_worker_id with no discovered_controller_id
     // B workers discovered_worker_id with identical discovered_controller_id
-    // Optional discovered_controller_name if is associated to a
     try {
         // Query for workers with no discovered_controller_id (A)
         $sqlA = sprintf(
@@ -2195,26 +2184,3 @@ function getPrevNextWorkerIds(PDO $pdo, int $controller_id, int $current_worker_
     }
     return $result;
 }
-
-// TODO : Add Conversion to the captured agent possible actions list,
-// lock behind config JSON for certain factions, conversion probablility values
-// This function should take an worker_id and a controller_id:
-// check the configuration for the JSON
-// decompresse the JSON
-// check if the worker_id is in the list of captured agents for the controller_id
-// roll the random conversion probability :
-
-// agent dies : ?
-// set
-
-// if become double agent :
-// set the worker to active
-// controller_worker to primary controller
-
-// if converted :
-// set original workers table to inactive dead and worker_actions to dead
-// Copies workers and worker_actions tables to the active controller
-// Adds a Tranformation with the info and a négativ effect ?
-// set original workers table to inactive dead and worker_actions to dead
-
-// TODO : Add conversion of the captured agent faction power to the pirates

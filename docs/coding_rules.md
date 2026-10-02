@@ -69,6 +69,21 @@ transforment en anecdote.
 Une exception assumée : un renvoi vers une question **ouverte** (`voir l'issue
 #120`) décrit bien l'état présent — celui d'un point non tranché.
 
+**On cite le code par son nom, jamais par son numéro de ligne.** Un
+`workers/functions.php:1391` périme dès qu'une ligne s'ajoute au-dessus, sans que
+personne s'en aperçoive avant de suivre le renvoi et de tomber à côté ; le nom
+d'une fonction, d'un `case` ou d'une constante se retrouve par un `grep` et
+survit à toutes les refontes.
+
+```markdown
+Mal : la comparaison se construit en `mechanics/attackMechanic.php:236`.
+Bien : la comparaison se construit dans `getAttackerComparisons`
+       (`mechanics/attackMechanic.php`).
+```
+
+Quand la cible n'a pas de nom — une ligne au milieu d'une fonction — on décrit
+ce qu'elle fait et on nomme la fonction qui la contient.
+
 ---
 
 ## 4. Commentaires
@@ -102,6 +117,16 @@ pas de justification de conception.
 **Les fichiers de test `.py` sont exemptés** de la limite d'une ligne. Un test
 qui explique ce qu'il verrouille et pourquoi il rougirait vaut mieux qu'un test
 muet.
+
+**Les légendes de `sprintf` sont exemptées elles aussi**, en longueur comme en
+nombre de lignes. Une correspondance `%1$s` → nom, `%2$s` → zone n'est ni un
+récit ni une justification : c'est la seule façon de lire un gabarit au moment
+où on le remplit, et la couper la rend inutilisable.
+
+```php
+// Bien : la légende se lit en face des arguments qu'elle décrit.
+// %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue
+```
 
 ```php
 // Bien : dit ce que la garde protège.

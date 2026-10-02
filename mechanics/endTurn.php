@@ -168,9 +168,6 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
     }
 }
 
-// set Controlled by IA actions
-// $IAResult = aiMechanic($gameReady);
-
 if ($mechanics['end_step'] == 'calculateValsReport') {
     // check attacks
     $attackResult = attackMechanic($gameReady, $mechanics);
