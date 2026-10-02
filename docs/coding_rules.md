@@ -118,6 +118,16 @@ pas de justification de conception.
 qui explique ce qu'il verrouille et pourquoi il rougirait vaut mieux qu'un test
 muet.
 
+**Les légendes de `sprintf` sont exemptées elles aussi**, en longueur comme en
+nombre de lignes. Une correspondance `%1$s` → nom, `%2$s` → zone n'est ni un
+récit ni une justification : c'est la seule façon de lire un gabarit au moment
+où on le remplit, et la couper la rend inutilisable.
+
+```php
+// Bien : la légende se lit en face des arguments qu'elle décrit.
+// %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue
+```
+
 ```php
 // Bien : dit ce que la garde protège.
 // Released only once the move is committed, so the queue survives a failed UPDATE.
