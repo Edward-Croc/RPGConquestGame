@@ -1297,9 +1297,9 @@ function getWorkerActions(PDO $pdo, int $workerId, int|null $turn_number = null)
  * @param string $action : action key (attack / claim / gift / recallDoubleAgent / returnPrisoner / transferPrisoner / hide / passive / investigate)
  * @param int|array|string|null $extraVal : per-action payload (worker id list, controller id, associative array, or the 'null' no-banner sentinel of a claim)
  *
- * @return int|false : the worker id, or false when the payload was refused
+ * @return void : the stored state is the only report ; failures are logged, never returned
  */
-function activateWorker(PDO $pdo, int $workerId, string $action, int|array|string|null $extraVal = null): int|false
+function activateWorker(PDO $pdo, int $workerId, string $action, int|array|string|null $extraVal = null): void
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['action' => $action, 'extraVal' => $extraVal], 'debug');
@@ -1328,7 +1328,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
     if (is_string($extraVal) && !($action === 'claim' && $extraVal === 'null')) {
         if (!is_numeric($extraVal)) {
             game_error_log(__FUNCTION__, 'Refused a malformed payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
-            return false;
+            return;
         }
         $extraVal = (int) $extraVal;
     }
@@ -1340,7 +1340,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
             // Only the multiple select feeds this : anything else is a forged payload.
             if (!is_array($extraVal)) {
                 game_error_log(__FUNCTION__, 'Refused a non-array attack payload', ['action' => $action, 'worker_id' => $workerId], 'warning');
-                return false;
+                return;
             }
             $chosenAttackOptions = array();
             foreach ($extraVal as $val) {
@@ -1353,7 +1353,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                 } else {
                     // Refused rather than thrown : activateWorker is called without a try.
                     game_error_log(__FUNCTION__, 'Refused a malformed attack target', ['action' => $action, 'worker_id' => $workerId], 'warning');
-                    return false;
+                    return;
                 }
                 $chosenAttackOptions[] =
                 [
@@ -1432,8 +1432,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
             } catch (PDOException $e) {
                 game_error_log(__FUNCTION__, 'gift UPDATE tables failed : ' . $e->getMessage(), ['workerId' => $workerId, 'extraVal' => $extraVal], 'error');
             }
-            return $workerId;
-            break;
+            return;
         case 'recallDoubleAgent':
             game_error_log(__FUNCTION__, 'recallDoubleAgent', ['extraVal' => $extraVal], 'debug');
 
@@ -1646,7 +1645,6 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'UPDATE worker_actions failed : ' . $e->getMessage(), ['sql_worker_actions' => $sql_worker_actions, 'workerId' => $workerId], 'error');
     }
-    return $workerId;
 }
 
 /**

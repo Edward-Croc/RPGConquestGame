@@ -504,9 +504,11 @@ celle qui doit refuser de le construire vide.
 Une soumission vide n'est pas une soumission forgée, et les deux ne reçoivent pas la
 même réponse. Le formulaire ne produit qu'un tableau de `worker_N` / `network_N` : un
 scalaire ou un élément qui ne suit pas cette forme ne peut venir que d'une requête
-fabriquée. `activateWorker` les journalise et rend `false` au lieu du numéro d'agent,
-et la branche `attack` de `workers/action.php` répond alors **400**. Le refus laisse
-l'action déjà en file intacte.
+fabriquée. **C'est le point d'entrée qui juge la requête** : `workers/action.php` vérifie
+la forme de la charge avant d'appeler quoi que ce soit et répond **400**, laissant
+intacte l'action déjà en file. `activateWorker` garde la même vérification en garde
+défensive — elle journalise et sort sans écrire — mais elle n'arbitre plus : elle rend
+`void`, parce qu'une valeur de retour que personne ne lit finit par mentir.
 
 Le déplacement se garde de même, et plus strictement : son sélecteur ne soumet qu'un
 entier positif, donc tout le reste est forgé et vaut 400. La vérification porte sur la
