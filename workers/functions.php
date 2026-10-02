@@ -1805,7 +1805,7 @@ function buildEnemyWorkerListing(PDO $pdo, int $zone_id, int $controller_id, int
  * @param int $controller_id : viewing controller
  * @param int|null $turn_number : reference turn; defaults to mechanics.turncounter
  *
- * @return string : rendered HTML <select> block, or '' when the listing is empty
+ * @return string : rendered HTML <select> block, or '' when no recent sighting remains
  */
 function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|null $turn_number = null): string
 {
@@ -1825,10 +1825,9 @@ function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|
     game_error_log(__FUNCTION__, 'listing built', ['listing' => $listing], 'debug');
 
     $recent = $listing['recent'];
-    $older  = $listing['older'];
 
-    if (empty($recent['unaffiliated']) && empty($recent['networks'])
-        && empty($older['unaffiliated']) && empty($older['networks'])) {
+    // Only 'recent' is offered : a stale sighting may have moved, died or been traded.
+    if (empty($recent['unaffiliated']) && empty($recent['networks'])) {
         return '';
     }
 

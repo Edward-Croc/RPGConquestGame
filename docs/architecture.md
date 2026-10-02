@@ -309,6 +309,22 @@ Avec `attackTimeWindow = 1`, une entrée estampillée N est `recent` au tour N+1
 et `older` au tour N+2 — **exactement un tour de visibilité**. Le `>=` n'est pas
 un off-by-one ; ne pas le « corriger » en `>`.
 
+**Ce qui est exploitable se limite à `recent`.** Une observation périmée ne prouve
+plus rien : l'agent a pu déménager, mourir ou être échangé depuis, et tout cela se
+résout en fin de tour, hors de la vue du joueur. Les trois consommateurs du listing se
+répartissent donc ainsi :
+
+| Consommateur | Groupes utilisés |
+|---|---|
+| Sélecteur d'attaque (`showEnemyWorkersSelect`) | `recent` seul — et le bloc entier disparaît quand il est vide |
+| Liste de don d'information (`controllers/functions.php`) | `recent` seul, « *an agent leaves the gift list when it leaves the attack list* » |
+| Boîte de zone (`zones/functions.php`) | **les deux**, sous des titres séparés |
+
+La boîte de zone est l'exception assumée : elle **informe** sans rien offrir à faire,
+donc une observation ancienne y garde sa place. Partout où l'on peut **agir**, `older`
+n'apparaît pas — sans quoi l'interface proposerait une action que la règle refuse, ou
+pire, un bouton surmontant une liste vide.
+
 **Corollaire pour toute action de joueur qui date une ligne en milieu de tour.**
 Elle est en avance d'un cran sur les données de fin de tour et doit être reculée
 de la fenêtre pour rester comparable. C'est ce que fait le don d'agent, dans

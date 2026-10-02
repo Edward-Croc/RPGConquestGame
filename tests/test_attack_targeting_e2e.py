@@ -100,6 +100,8 @@ ORDINARY_DEFENDER = 'Inv_Def_1'
 GIFTED_AGENT = 'Even_Def'
 # Receives the gift.
 GIFT_RECIPIENT = 'Delta'
+# Stands where its controller's knowledge will be left to rot (#172).
+SEARCHER = 'Hunter_Cross'
 
 
 @pytest.fixture(scope="session")
@@ -124,12 +126,8 @@ def _count_log_mentions(page, base_url, needle='getAttackerComparisons'):
     return content.count(needle)
 
 
-def _ui_attack_without_target(page, lastname, base_url):
-    """Press « Attaquer » on the agent's own action page, selecting nobody.
-
-    Deliberately a real button click rather than the URL driver : the point is
-    that the plain interface produced the faulty state.
-    """
+def _open_action_page(page, lastname, base_url):
+    """Switch the session to the agent's controller and open its action page."""
     ensure_gm_login(page, base_url)
     ctrl_id = ui_worker_controller_id(page, lastname, base_url=base_url)
     safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
@@ -137,6 +135,16 @@ def _ui_attack_without_target(page, lastname, base_url):
     wid = ui_worker_id(page, lastname, base_url=base_url)
     safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
     page.wait_for_load_state("load")
+    return wid
+
+
+def _ui_attack_without_target(page, lastname, base_url):
+    """Press « Attaquer » on the agent's own action page, selecting nobody.
+
+    Deliberately a real button click rather than the URL driver : the point is
+    that the plain interface produced the faulty state.
+    """
+    _open_action_page(page, lastname, base_url)
     page.locator("input[name='attack']").click()
     page.wait_for_load_state("load")
 
@@ -148,13 +156,7 @@ def _ui_attack_network(page, attacker_lastname, network_cid, base_url):
     that the interface really offers the network — the test would otherwise be
     exercising a state no player can reach.
     """
-    ensure_gm_login(page, base_url)
-    ctrl_id = ui_worker_controller_id(page, attacker_lastname, base_url=base_url)
-    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
-    page.wait_for_load_state("load")
-    wid = ui_worker_id(page, attacker_lastname, base_url=base_url)
-    safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
-    page.wait_for_load_state("load")
+    _open_action_page(page, attacker_lastname, base_url)
     page.locator("select#enemyWorkersSelect").select_option(value=f"network_{network_cid}")
     page.locator("input[name='attack']").click()
     page.wait_for_load_state("load")
@@ -397,4 +399,124 @@ class TestForgedAttackPayloads:
         after = _zone_name_of(page, base_url, NO_TARGET_ATTACKER)
         assert after == before, (
             f"a refused move must leave the agent where it stood; was {before!r}, now {after!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Issue #172 : the attack block must follow the recency window
+# ---------------------------------------------------------------------------
+#
+# A sighting is only exploitable while it is fresh : between two turns the agent
+# may have moved, died or been traded, and all of that resolves out of the
+# player's sight. showEnemyWorkersSelect used to measure emptiness over BOTH
+# recent and older while rendering only recent, so once a zone's sightings had
+# aged out the player got a working « Attaquer » button above an empty list, and
+# clicking it cost the turn.
+#
+# Freezing a controller's knowledge of a zone means hiding EVERY one of its
+# agents standing there, not just the one whose action_choice reads
+# 'investigate' : investigateActionsList defaults to 'passive', 'investigate',
+# 'defend_location', so a passive agent searches too.
+
+
+def _attack_block(page, lastname, base_url):
+    """Return the button count and the option count of the attack block.
+
+    Counted separately on purpose : the defect was a button of 1 above a list
+    of 0, which a single « is the attack offered » boolean cannot express.
+    """
+    _open_action_page(page, lastname, base_url)
+    return {
+        'button': page.locator("input[name='attack']").count(),
+        'options': page.locator("select#enemyWorkersSelect option").count(),
+    }
+
+
+def _hide_every_agent_of_the_zone(page, lastname, base_url):
+    """Hide every agent of the subject's controller standing in its zone.
+
+    Read from the management listing rather than hard-coded : the scenario may
+    gain or lose agents, and a stale list would silently leave one searching.
+    """
+    ensure_gm_login(page, base_url)
+    rows = ui_all_workers(page, base_url=base_url)
+    subject = next(w for w in rows if w['lastname'] == lastname)
+    peers = [w for w in rows
+             if w['controller_id'] == subject['controller_id']
+             and w['zone_name'] == subject['zone_name']]
+    assert peers, f"no agent found beside {lastname} in {subject['zone_name']}"
+    ctrl_id = subject['controller_id']
+    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={ctrl_id}&chosir=Choisir")
+    page.wait_for_load_state("load")
+    for w in peers:
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={w['id']}&hide=1")
+        page.wait_for_load_state("load")
+    return len(peers)
+
+
+@pytest.fixture(scope="module")
+def recency_window_states(browser):
+    """Observe the attack block on both sides of the sighting ageing out.
+
+    Yields the two readings, since the second end of turn destroys the state
+    the first one measured.
+    """
+    context = None
+    observed = {}
+    try:
+        if DB_AVAILABLE:
+            load_minimal_data()
+        load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+
+        context = browser.new_context()
+        page = context.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        clear_ui_caches()
+
+        # Turn 0 -> 1 : the investigation resolves and stamps the sighting with turn 0.
+        end_turn(page)
+        observed['fresh'] = _attack_block(page, SEARCHER, PHP_BASE_URL)
+
+        # Every one of them, not just the investigator : passive searches too.
+        observed['hidden'] = _hide_every_agent_of_the_zone(page, SEARCHER, PHP_BASE_URL)
+
+        # Turn 1 -> 2 : with attackTimeWindow = 1, a turn-0 stamp is now 'older'.
+        end_turn(page)
+        observed['stale'] = _attack_block(page, SEARCHER, PHP_BASE_URL)
+
+        assert_no_collected_php_errors(page)
+        yield observed
+    finally:
+        if context is not None:
+            context.close()
+        # Unconditional : this file burns two turns, ensure_scenario_loaded would skip.
+        if DB_AVAILABLE:
+            load_minimal_data()
+        load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+
+
+class TestAttackBlockFollowsTheRecencyWindow:
+    """The block is offered while the sighting is fresh, and withdrawn after."""
+
+    def test_a_fresh_sighting_offers_targets(self, recency_window_states):
+        """The positive control : without it, a block missing at the end would
+        prove nothing — it could have been missing all along."""
+        fresh = recency_window_states['fresh']
+        assert fresh['button'] == 1, (
+            f"a fresh sighting must offer the attack button; got {fresh['button']}"
+        )
+        assert fresh['options'] > 0, (
+            f"a fresh sighting must list at least one target; got {fresh['options']}"
+        )
+
+    def test_a_stale_sighting_withdraws_the_whole_block(self, recency_window_states):
+        """The defect : the button survived its own list. Both must go together,
+        because a button above an empty list costs the player the turn."""
+        stale = recency_window_states['stale']
+        assert stale['options'] == 0, (
+            f"a stale sighting must list nothing; got {stale['options']}"
+        )
+        assert stale['button'] == 0, (
+            f"a stale sighting must withdraw the attack button too; got {stale['button']}"
         )
