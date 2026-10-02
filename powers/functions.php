@@ -100,9 +100,6 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with type : ' . $type, ['newWorker' => $newWorker], 'debug');
 
-    // TODO : Add a select limit by controller_id like in the getPowersByType function
-    // TODO : Allow locking certain Hobbys/Metiers by origin or controler !
-
     $power_text = getSQLPowerText(false);
     $randCommand = 'RANDOM()';
     $unlockTurnExpr = "p.other->'on_random_pick'->>'unlock_turn'";
@@ -155,7 +152,7 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
  *  - base power from config
  *
  * @param PDO $pdo : database connection
- * @param string $type_list : link_power_type id list  // TODO change from ID of link_power_type to a type name ?
+ * @param string $type_list : link_power_type id list
  * @param int|null $controller_id : controller id, or NULL to skip controller filter
  * @param bool $add_base : whether to add basePowerNames from config
  * @return array|null : $powerArray

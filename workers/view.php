@@ -409,10 +409,6 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
             $upgradeHTML = '';
             // worker must be active to have upgrades available
             if (in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)) {
-                // TODO : UPDATE powers on age code ?
-                /* ('age_hobby', 'false', ''),
-                ('age_metier', 'false', ''), */
-
                 // Allow Discipline teaching via age_discipline param
                 $upgradeDisciplineHTML = "";
                 $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];

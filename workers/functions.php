@@ -761,8 +761,6 @@ function randomWorkerOrigin(PDO $pdo, array $newWorker, string $buttonClicked): 
     if (!empty($tmpOrigine) && $tmpOrigine != 'rand') {
         $originList = $tmpOrigine;
     }
-    // TODO : Add locking of origins by controller_id
-
     // Locking of origins by config on hobbies
     if (!empty($newWorker['power_1']['other'])) {
         $otherJson = json_decode($newWorker['power_1']['other'], true);
@@ -1102,8 +1100,6 @@ function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bo
             }
         }
     }
-    // TODO : If the effect can be obtained out of recrutment
-
     return true;
 }
 

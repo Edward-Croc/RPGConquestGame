@@ -721,11 +721,6 @@ function resolveControllerLocationAttackEffects(PDO $pdo, array $location, int $
                 updateLocation($pdo, $location, $activate_json);
             }
             $return['message'] .= sprintf($textSuccess, $location['name']);
-            // TODO on JSON key:
-            // create_location => Create New location from name, description, discovery_diff, can_be_destroyed, controller_id, save_to_json
-            // show_text => add text to the message
-            // add_worker => add worker to controller
-            // change_ia => change the functionning of an IA character
         } else {
             $return['message'] .= sprintf(
                 getConfig($pdo, 'textLocationDestroyed'),
