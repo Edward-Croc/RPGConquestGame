@@ -391,8 +391,8 @@ function getActiveLocationCombatants(PDO $pdo, array $combatants, int $turn_numb
  * One sequential ladder per location rather than a cartesian product: an attacker
  * keeps going while it kills, a defender holds while it survives, and an attacker
  * that fails without dying is spent. Each pair is settled by resolveWorkerCombat(),
- * whose return value drives the two cursors. Produces the capture verdict; applying
- * it to the location is step 5.D.
+ * whose return value drives the two cursors. Produces the capture verdict without
+ * applying it : writing the location over is the caller's job.
  *
  * @param PDO $pdo : database connection
  * @param int $turn_number : current turn number

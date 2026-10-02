@@ -284,8 +284,8 @@ interdit d'y accéder par le web.
 Un rechargement de configuration les efface, comme il vide déjà le journal
 d'erreurs : elles racontent la partie que la remise à zéro détruit.
 
-`aiMechanic` figure dans le fichier mais **en commentaire** : le moteur
-d'IA n'est pas branché sur la fin de tour.
+`aiMechanic` ne figure pas dans la chaîne : le moteur d'IA n'est pas branché sur
+la fin de tour.
 
 Le compteur de tour n'est incrémenté qu'**à la toute fin**, et écrit en base dans la
 foulée. Une exception au milieu laisse donc la partie à moitié résolue, au tour
@@ -1285,10 +1285,9 @@ don d'agent ne laisse pas de trace consultable après coup.
   déplacement, leur mise en investigation ou en attaque — n'existe que sous
   forme de **commentaires `//`** décrivant l'intention (`aiMechanic`), jamais
   traduits en code ;
-- **le seul point d'appel du fichier est commenté** :
-  `mechanics/endTurn.php` porte `// $IAResult = aiMechanic($gameReady);`
-  — ce que le document note déjà en §3. `aiMechanic()` n'est donc jamais
-  invoquée par la fin de tour, ni gatée par le mécanisme de reprise par état.
+- **rien ne l'appelle** : `mechanics/endTurn.php` ne la nomme pas, ce que le
+  document note déjà en §3. `aiMechanic()` n'est donc jamais invoquée par la fin
+  de tour, ni gatée par le mécanisme de reprise par état.
 
 Le modèle de données pour *déclarer* un contrôleur IA existe, lui, réellement :
 `controllers.ia_type` (`TEXT`) et `controllers.origin_zone_id` (`INT`, « AI

@@ -584,7 +584,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
                             echo "Warning: Lookup value '{$lookupValue}' not found for {$col} in row " . ($rowCount + 1) . ".<br />";
                             echo "from: " . var_export($rowData, true) . "<br />";
                         } elseif ($lookupValue !== '') {
-                            // Known forward-ref : a post-load fixup will resolve this ; keep silent but log for audit.
+                            // Known forward-ref : a post-load fixup resolves it, so log it without warning.
                             game_error_log(__FUNCTION__, 'Forward-ref skipped', ['tableName' => $tableName, 'col' => $col, 'lookupValue' => $lookupValue, 'row' => $rowCount + 1], 'debug');
                         }
                         $values[] = null;
