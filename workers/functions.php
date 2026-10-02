@@ -1091,12 +1091,6 @@ function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bo
                         game_error_log(__FUNCTION__, 'go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'warning');
                     }
                 }
-                if ($element['type'] == 'add_opposition') {
-                    // $element['controller_lastname']
-                    // TODO
-                    // Create worker with hobby and job in a random zone
-                    // Add $workerId to CKE
-                }
             }
         }
     }
