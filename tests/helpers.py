@@ -1272,7 +1272,7 @@ def ui_mass_move_click(page: Page, controller_lastname: str,
     Switches to `controller_lastname`, opens viewAll, checks the
     `worker_ids[]` checkbox for each worker in `worker_lastnames`,
     selects `target_zone_name` in the zone dropdown, then clicks the
-    'Déplacer les agents sélectionnés' submit button. Form posts to
+    'Déplacer les agents' submit button. Form posts to
     /workers/massAction.php (GET) which loops over worker_ids[] and
     calls moveWorker for each."""
     url = base_url or PHP_BASE_URL
@@ -1314,6 +1314,30 @@ def _ui_mass_zoneless_action_click(page: Page, controller_lastname: str,
     for wid in worker_ids:
         page.locator(f"input[name='worker_ids[]'][value='{wid}']").check()
     page.locator(f"input[name='{submit_name}']").click()
+    page.wait_for_load_state("load")
+
+
+def ui_mass_claim_click(page: Page, controller_lastname: str,
+                        worker_lastnames: list, claim_controller_lastname: str,
+                        base_url: str = None):
+    """UI-button-click for the Mass Claim form on workers/viewAll.php.
+
+    Unlike the parameter-free mass actions, a claim is made on behalf of a
+    faction, so the banner select is filled before the submit.
+    """
+    url = base_url or PHP_BASE_URL
+    ensure_gm_login(page, url)
+    cid = ui_controller_id(page, controller_lastname, base_url=url)
+    target_cid = ui_controller_id(page, claim_controller_lastname, base_url=url)
+    worker_ids = [_cached_wid(page, ln, base_url) for ln in worker_lastnames]
+    safe_goto(page, f"{url}/base/accueil.php?controller_id={cid}&chosir=Choisir")
+    _wait_loaded(page, "div.header")
+    safe_goto(page, f"{url}/workers/viewAll.php")
+    _wait_loaded(page, "input[name='mass_claim']")
+    for wid in worker_ids:
+        page.locator(f"input[name='worker_ids[]'][value='{wid}']").check()
+    page.locator("select[name='claim_controller_id']").select_option(value=str(target_cid))
+    page.locator("input[name='mass_claim']").click()
     page.wait_for_load_state("load")
 
 

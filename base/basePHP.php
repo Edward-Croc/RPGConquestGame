@@ -94,6 +94,7 @@ $gameReady = gameReady();
 // Use the return value
 if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
+    http_response_code(500);
     exit();
 } else {
     // Set the session debug status
@@ -116,17 +117,32 @@ if (!$gameReady) {
 
     // Set game title
     $gameTitle = getConfig($gameReady, 'TITLE');
-    if ($_SESSION['DEBUG'] == true) {
-        echo "The game is ready.<br />";
-        echo "The gameTitle is : '$gameTitle'.<br />";
-    }
+    game_error_log('basePHP', 'The game is ready.', [], 'debug');
+    game_error_log('basePHP', 'The gameTitle is : '.$gameTitle, [], 'debug');
 
     // Get mechanics values
     $mechanics = getMechanics($gameReady);
 }
 
-if ($_SESSION['DEBUG'] == true) {
-    // print debug values
-    echo "Debug : ".$_SESSION['DEBUG'].";  ID: " . $_SESSION['user_id']. ", is_privileged: '" . $_SESSION['is_privileged']. "' <br />";
-    echo "Turn : ".$mechanics['turncounter']."; gamestate : '".$mechanics['gamestate']. "' <br />";
-}
+// print debug values
+game_error_log(
+    'basePHP',
+    'Debug ',
+    [
+        'debug' => $_SESSION['DEBUG'],
+        'ID' => $_SESSION['user_id'] ?? 'null',
+        'is_privileged' => $_SESSION['is_privileged'] ?? 'null',
+    ],
+    'debug'
+);
+game_error_log(
+    'basePHP',
+    'Turn ',
+    [
+        'turncounter' => $mechanics['turncounter'] ?? 'null',
+        'gamestate' => $mechanics['gamestate'] ?? 'null',
+    ],
+    'debug'
+);
+
+game_error_log('basePHP', 'END', [], 'debug');

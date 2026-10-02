@@ -1361,3 +1361,107 @@ class TestNoUnexpectedDataAttributes:
             f"{unexpected}. Decide whether each tells a player something the page "
             "does not, then empty it in production or add it to the list."
         )
+
+
+# ---------------------------------------------------------------------------
+# Issue #150 : workers/massAction.php must refuse an inactive agent
+# ---------------------------------------------------------------------------
+#
+# Chain_B was captured, so Beta keeps a decoy whose action_choice is 'trace'
+# and Alpha, the captor, holds the prisoner row whose action is 'captured'.
+# The mass-action form never offers it — workers/viewAll.php only puts a
+# checkbox on workers whose action is in ACTIVE_ACTIONS — so reaching the
+# dispatcher with it means a forged payload. multi_player owns Beta and is not
+# privileged, which is what makes the guard observable at all.
+
+
+class TestMassActionRefusesAnInactiveWorker:
+    """The guard added with the mass-claim button, checked on the real decoy."""
+
+    def _beta_rows(self, page, base_url):
+        ensure_gm_login(page, base_url)
+        return ui_workers_by_lastname(page, 'Chain_B', base_url=base_url)
+
+    def _as_player_of(self, browser, base_url, controller_id):
+        """login_as submits credentials only; a player owning several factions
+        has no session controller until one is chosen, and massAction refuses
+        that outright — which would make any 403 below prove nothing.
+
+        multi_player owns both Alpha and Beta, so the same login serves the
+        captor's side and the victim's.
+        """
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "multi_player", "test")
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={controller_id}&chosir=Choisir")
+        page.wait_for_load_state("load")
+        return ctx, page
+
+    def test_a_forged_payload_naming_the_decoy_is_refused(self, page: Page, base_url,
+                                                          browser):
+        """Paired with the test below : a 403 here would prove nothing if an
+        ordinary agent of the same faction were refused too."""
+        decoys = [w for w in self._beta_rows(page, base_url)
+                  if w['action_choice'] == 'trace']
+        assert decoys, "the scenario left no Chain_B decoy to forge against"
+        beta_cid = ui_controller_id(page, 'Beta', base_url=base_url)
+
+        ctx, forged = self._as_player_of(browser, base_url, beta_cid)
+        response = forged.goto(
+            f"{base_url}/workers/massAction.php"
+            f"?mass_passive=1&worker_ids%5B%5D={decoys[0]['id']}"
+        )
+        status = response.status if response is not None else None
+        ctx.close()
+        assert status == 403, (
+            f"a mass action naming a decoy must be refused; got {status}"
+        )
+
+    def test_a_forged_payload_naming_a_prisoner_is_refused(self, page: Page, base_url,
+                                                           browser):
+        """The captor's own case, and the reason the guard reads the three
+        INACTIVE_ACTIONS : a capture moves the row to the captor, so the prisoner
+        is a worker Alpha legitimately owns. The ownership check passes, and only
+        the inactive-state guard stands between a gaoler and free labour.
+        """
+        prisoners = [w for w in self._beta_rows(page, base_url)
+                     if w['action_choice'] == 'captured']
+        assert prisoners, "the scenario left no captured Chain_B to forge against"
+        alpha_cid = ui_controller_id(page, 'Alpha', base_url=base_url)
+        assert prisoners[0]['controller_id'] == alpha_cid, (
+            f"the prisoner must have moved to the captor, or the ownership check "
+            f"would refuse it first; got controller {prisoners[0]['controller_id']}"
+        )
+
+        ctx, captor = self._as_player_of(browser, base_url, alpha_cid)
+        response = captor.goto(
+            f"{base_url}/workers/massAction.php"
+            f"?mass_passive=1&worker_ids%5B%5D={prisoners[0]['id']}"
+        )
+        status = response.status if response is not None else None
+        ctx.close()
+        assert status == 403, (
+            f"a gaoler must not put a prisoner back to work; got {status}"
+        )
+
+    def test_an_active_worker_of_the_same_faction_is_not_refused(self, page: Page,
+                                                                 base_url, browser):
+        """The positive control : the refusal must come from the agent's state,
+        not from the session, the ownership check or a broken URL."""
+        ensure_gm_login(page, base_url)
+        beta_cid = ui_controller_id(page, 'Beta', base_url=base_url)
+        live = [w for w in ui_all_workers(page, base_url=base_url)
+                if w['controller_id'] == beta_cid
+                and w['action_choice'] not in ('trace', 'dead', 'captured')]
+        assert live, "no active Beta worker left to compare against"
+
+        ctx, allowed = self._as_player_of(browser, base_url, beta_cid)
+        response = allowed.goto(
+            f"{base_url}/workers/massAction.php"
+            f"?mass_passive=1&worker_ids%5B%5D={live[0]['id']}"
+        )
+        status = response.status if response is not None else None
+        ctx.close()
+        assert status != 403, (
+            f"an active worker of an owned faction must not be refused; got {status}"
+        )
