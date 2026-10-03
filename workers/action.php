@@ -210,10 +210,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (empty($enemy_worker_id)) {
             game_error_log('workers_action_page', 'attack submitted with no target selected, left passive', ['worker_id' => $worker_id], 'warning');
             activateWorker($gameReady, $worker_id, 'passive');
-        } elseif (activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id) === false) {
-            // A refused payload is one the form cannot produce : say so, do not render.
-            http_response_code(400);
-            exit();
+        } else {
+            // The select only ever submits worker_N / network_N : anything else is forged.
+            $forged = !is_array($enemy_worker_id);
+            foreach ((array) $enemy_worker_id as $target) {
+                if (!is_string($target) || !preg_match('/^(network|worker)_\d+$/', $target)) {
+                    $forged = true;
+                }
+            }
+            if ($forged) {
+                game_error_log('workers_action_page', 'forged attack payload', ['worker_id' => $worker_id], 'warning');
+                http_response_code(400);
+                exit();
+            }
+            activateWorker($gameReady, $worker_id, 'attack', $enemy_worker_id);
         }
     }
     if (isset($_GET['attackLocation']) || isset($_GET['defendLocation'])) {
