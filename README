@@ -29,7 +29,8 @@ Installation (Docker — recommended):
    (needed once; the container runs PHP as www-data while checked-out
    files are owned by your host user)
  - First start builds the PHP image and initializes the database (may take 1-2 minutes).
- - The application is available at: http://localhost:8080/RPGConquestGame/
+ - The application is available at: http://localhost:8090/RPGConquestGame/
+ - phpMyAdmin is available at: http://localhost:8091/
  - MySQL is accessible at localhost:3307 (user: rpg_user / rpg_pass, database: rpgconquestgame).
  - The base game is set up with a user: gm; pwd: orga.
  - Stop the application:
@@ -61,7 +62,7 @@ Installation (Docker — recommended):
    running on success.
 
 Troubleshooting:
- - Port 8080 already in use: another service is using the port. Either
+ - Port 8090 already in use: another service is using the port. Either
    stop that service or change the host port in docker-compose.yml
    (php > ports: "NEW:80").
  - Port 3307 already in use: change the host port for MySQL in
