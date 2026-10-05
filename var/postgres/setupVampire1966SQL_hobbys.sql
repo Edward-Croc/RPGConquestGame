@@ -75,9 +75,9 @@ INSERT INTO {prefix}powers ( name, enquete, attack, defence) VALUES
 
 
 INSERT INTO {prefix}powers ( name, enquete, attack, defence, other) VALUES
-    -- Voulu, jamais implémenté : {"type":"add_opposition", "controller_lastname": "Lorenzo"} en seconde action.
     ('Chrétien.ne pratiquant.e', 1,1,1,'{"on_recrutment": {
-        "action": {"type": "go_traitor", "controller_lastname": "Lorenzo"}
+        "action": {"type": "add_opposition", "controller_lastname": "Lorenzo", "hobby_name": "Scout", "job_name": "Prêtre",
+            "textOppositionRecrutment": "J''ai rejoint %1$s%2$s car je n''ai pas apprécié ce qui est arrivé à %3$s.<br />"}
         } }'
     )
 ;

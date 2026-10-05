@@ -51,4 +51,4 @@ Anarchiste romantique,,1,1,-1,{},Hobby
 Astronome amateur.rice,,2,0,-1,{},Hobby
 Rôliste,,2,-1,0,{},Hobby
 Oiseau de nuit,,2,-1,0,{},Hobby
-Chrétien.ne pratiquant.e,,1,1,1,"{""on_recrutment"": {""action"": {""type"": ""go_traitor"", ""controller_lastname"": ""Lorenzo""}}}",Hobby
+Chrétien.ne pratiquant.e,,1,1,1,"{""on_recrutment"": {""action"": {""type"": ""add_opposition"", ""controller_lastname"": ""Lorenzo"", ""hobby_name"": ""Scout"", ""job_name"": ""Prêtre"", ""textOppositionRecrutment"": ""J'ai rejoint %1$s%2$s car je n'ai pas apprécié ce qui est arrivé à %3$s.<br />""}}}",Hobby

@@ -639,6 +639,57 @@ L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obt
 
 La validation au commit (re-vérification de la règle + débit ressource) est gardée par `$_SESSION['is_privileged']`. Le compte admin (`gm`) court-circuite tout : il peut accorder n'importe quelle discipline ou transformation à un agent **sans** vérification et **sans** consommer la moindre ressource. C'est une issue de secours volontaire, dans la même lignée que la création directe d'agents ou la modification d'action via la page d'administration.
 
+### Effets de recrutement (`on_recrutment.action`)
+
+`on_recrutment` joue deux rôles. Ses clés de règle, décrites plus haut, décident si le
+pouvoir est **proposé** au recrutement. Sa clé `action`, elle, déclenche un **effet** une
+fois l'agent recruté avec ce pouvoir.
+
+Les effets ne jouent que sur un vrai recrutement, c'est-à-dire quand l'agent naît par
+`createWorker` : le formulaire de recrutement, ou la page admin « Créer agent parfait ».
+**Un agent semé par un CSV de scénario ne les déclenche pas** : le chargeur insère ses
+lignes directement.
+
+`action` accepte **un objet ou une liste d'objets**, ce qui permet à un même pouvoir de
+répondre deux fois au recrutement. Une action sans `type` ou sans `controller_lastname`
+est ignorée.
+
+```json
+{"on_recrutment": {"action": [
+    {"type": "go_traitor",     "controller_lastname": "Lorenzo"},
+    {"type": "add_opposition", "controller_lastname": "Lorenzo", "job_name": "Prêtre"}
+]}}
+```
+
+**`go_traitor`** — le contrôleur nommé devient contrôleur **secondaire** de l'agent
+recruté, qui devient ainsi agent double. Sans effet si ce contrôleur est déjà lié à
+l'agent.
+
+**`add_opposition`** — le contrôleur nommé répond au recrutement en dépêchant un agent
+à lui, qui naît **dans la zone du recruté**.
+
+- **`controller_lastname`** (requis) — le contrôleur qui reçoit l'agent.
+- **`origin_name`** — l'origine de l'agent ; tirée comme au recrutement si absente.
+- **`hobby_name`**, **`job_name`** — son hobby et son métier, par leur nom exact ; tirés
+  comme au recrutement si absents.
+- **`textOppositionRecrutment`** — une phrase **ajoutée** au rapport de vie de l'agent,
+  après celle de son recrutement. C'est une clé de la **charge**, pas de la table de
+  configuration : chaque pouvoir porte son propre texte. Trois arguments, `%1$s` le
+  déterminant `controllerNameDenominatorThe`, `%2$s` le contrôleur, `%3$s` l'agent dont le
+  recrutement a déclenché l'effet. Facultative ; un gabarit mal formé est journalisé et
+  la phrase est omise, sans empêcher l'agent de naître.
+
+Le nom de l'agent est toujours tiré au hasard dans son origine. Le contrôleur cible
+**apprend l'existence du recruté** — c'est ce qui motive l'envoi — tandis que le
+contrôleur du recruté n'apprend rien de l'agent qui vient de naître : il devra le
+découvrir.
+
+**Un contrôleur, une origine ou un pouvoir nommés qui n'existent pas annulent l'effet**,
+avec un avertissement au journal : rien n'est créé à moitié. Et **un seul niveau** : l'agent
+né d'un `add_opposition` déclenche normalement ses propres effets de recrutement — un
+`go_traitor` par exemple — mais un `add_opposition` qu'il porterait à son tour est ignoré,
+sans quoi un pouvoir mal choisi ferait naître des agents indéfiniment.
+
 ### Verrou de tour sur les pouvoirs aléatoires (`on_random_pick.unlock_turn`)
 
 Pour empêcher un Métier ou un Hobby d'apparaître trop tôt dans le tirage aléatoire à la création d'un agent, ajoutez `on_random_pick.unlock_turn` dans le JSON du power :
