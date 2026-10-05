@@ -68,7 +68,7 @@ INSERT INTO {prefix}powers (name, description, enquete, attack, defence) VALUES
 
 INSERT INTO {prefix}powers ( name, description, enquete, attack, defence, other) VALUES
     ('Prêtre chrétien(司祭)', 'missionnaire et guide spirituel', 1,1,1,
-        '{"on_recrutment": {"origin_list": "12", "action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
+        '{"on_recrutment": {"origin_list": "12", "action": {"type":"go_traitor", "controller_lastname": "Sogō (十河)"} } }'),
     ('Marin européen (南蛮水夫)', 'employé sur les vaisseaux noirs portugais ou français', 1,1,1,
         '{"on_recrutment": {"origin_list": "12, 13", "action": {"type":"go_traitor", "controller_lastname": "Miyoshi (三好)"} } }'),
     ('Reishi (霊師) – Médium ou exorciste', ', intervenant lors de troubles spirituels', 1, 0, 1,
