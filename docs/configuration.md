@@ -672,7 +672,7 @@ l'agent.
 - **`origin_name`** — l'origine de l'agent ; tirée comme au recrutement si absente.
 - **`hobby_name`**, **`job_name`** — son hobby et son métier, par leur nom exact ; tirés
   comme au recrutement si absents.
-- **`textOppositionRecrutment`** — une phrase **ajoutée** au rapport de vie de l'agent,
+- **`text_opposition_recrutment`** — une phrase **ajoutée** au rapport de vie de l'agent,
   après celle de son recrutement. C'est une clé de la **charge**, pas de la table de
   configuration : chaque pouvoir porte son propre texte. Trois arguments, `%1$s` le
   déterminant `controllerNameDenominatorThe`, `%2$s` le contrôleur, `%3$s` l'agent dont le
@@ -685,7 +685,14 @@ contrôleur du recruté n'apprend rien de l'agent qui vient de naître : il devr
 découvrir.
 
 **Un contrôleur, une origine ou un pouvoir nommés qui n'existent pas annulent l'effet**,
-avec un avertissement au journal : rien n'est créé à moitié. Et **un seul niveau** : l'agent
+avec un avertissement au journal : rien n'est créé à moitié. **L'effet ne joue pas non plus
+quand le contrôleur nommé tient déjà le recruté** — comme `go_traitor`, qui saute dans le
+même cas : un contrôleur qui recrute lui-même un tel agent ne s'offre pas un renfort.
+
+Si le nom tiré porte déjà un agent de même origine chez le contrôleur cible, `createWorker`
+rend cet agent au lieu d'en créer un : aucun agent ne naît, et la phrase de motif
+s'ajoute au rapport de l'agent existant. Le risque dépend de la taille du réservoir de
+noms de l'origine. Et **un seul niveau** : l'agent
 né d'un `add_opposition` déclenche normalement ses propres effets de recrutement — un
 `go_traitor` par exemple — mais un `add_opposition` qu'il porterait à son tour est ignoré,
 sans quoi un pouvoir mal choisi ferait naître des agents indéfiniment.

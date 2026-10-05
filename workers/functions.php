@@ -857,13 +857,13 @@ function randomWorkerName(PDO $pdo, array $newWorker): array|null
 /**
  * Create the opposition agent an add_opposition recruitment effect calls for.
  *
- * The named controller learns of the recruit that triggered it, which is what
- * motivates the dispatch ; the recruit's own controller learns nothing. One level
- * only : an agent born this way cannot raise an opposition of its own.
+ * The named controller learns of the recruit that triggered it ; the recruit's own
+ * controller learns nothing. Skipped when the target already holds the recruit, and
+ * one level only : an agent born this way cannot raise an opposition of its own.
  *
  * @param PDO $pdo : database connection
  * @param int $workerId : the recruit whose power carried the effect
- * @param array $action : payload, requires controller_lastname, accepts origin_name / hobby_name / job_name / textOppositionRecrutment
+ * @param array $action : payload, requires controller_lastname, accepts origin_name / hobby_name / job_name / text_opposition_recrutment
  *
  * @return void : every failure is a game situation, logged and stepped over
  */
@@ -895,6 +895,13 @@ function createOppositionWorker(PDO $pdo, int $workerId, array $action): void
             $stmt->execute([':name' => $action['origin_name']]);
             $origin_id = $stmt->fetchColumn();
         }
+
+        $already_linked = false;
+        if ($target_controller_id !== false) {
+            $stmt = $pdo->prepare("SELECT 1 FROM {$prefix}controller_worker WHERE controller_id = :controller_id AND worker_id = :worker_id LIMIT 1");
+            $stmt->execute([':controller_id' => (int) $target_controller_id, ':worker_id' => $workerId]);
+            $already_linked = $stmt->fetchColumn() !== false;
+        }
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT target, zone or origin failed : ' . $e->getMessage(), ['workerId' => $workerId], 'warning');
         return;
@@ -902,6 +909,11 @@ function createOppositionWorker(PDO $pdo, int $workerId, array $action): void
     // Absence is not permission : the target, the zone and any named origin must all exist.
     if ($target_controller_id === false || $zone_id === false || (!empty($action['origin_name']) && $origin_id === false)) {
         game_error_log(__FUNCTION__, 'add_opposition skipped — unknown controller, origin, or recruit without a zone', ['workerId' => $workerId, 'action' => $action], 'warning');
+        return;
+    }
+    // Like go_traitor : a controller does not raise an opposition against an agent it already holds.
+    if ($already_linked) {
+        game_error_log(__FUNCTION__, 'add_opposition skipped — target controller already holds the recruit', ['workerId' => $workerId, 'controller_lastname' => $action['controller_lastname']], 'debug');
         return;
     }
 
@@ -920,17 +932,17 @@ function createOppositionWorker(PDO $pdo, int $workerId, array $action): void
 
     // Built before the agent exists : a faulty template then costs a sentence, not half an agent.
     $motive = '';
-    if (!empty($action['textOppositionRecrutment']) && is_string($action['textOppositionRecrutment'])) {
+    if (!empty($action['text_opposition_recrutment']) && is_string($action['text_opposition_recrutment'])) {
         $trigger = getWorkers($pdo, [$workerId])[0] ?? null;
         try {
             $motive = sprintf(
-                $action['textOppositionRecrutment'],
+                $action['text_opposition_recrutment'],
                 getConfig($pdo, 'controllerNameDenominatorThe'),
                 getControllerName($pdo, (int) $target_controller_id),
                 trim(($trigger['firstname'] ?? '') . ' ' . ($trigger['lastname'] ?? ''))
             );
         } catch (\Throwable $e) {
-            game_error_log(__FUNCTION__, 'textOppositionRecrutment is not a valid template : ' . $e->getMessage(), ['template' => $action['textOppositionRecrutment']], 'warning');
+            game_error_log(__FUNCTION__, 'text_opposition_recrutment is not a valid template : ' . $e->getMessage(), ['template' => $action['text_opposition_recrutment']], 'warning');
         }
     }
 

@@ -32,6 +32,7 @@ from helpers import (
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, ui_faction_sections, clear_ui_caches, worker_report_section,
     ui_mass_move_click, ui_all_workers, ui_controller_ids_map, ui_recruit_perfect_worker,
+    worker_report_html,
 )
 
 
@@ -1566,27 +1567,13 @@ def _delta_ids(page, base_url):
             if w['controller_id'] == delta}
 
 
-def _recruit_and_diff(page, base_url, lastname, metier_label):
-    """Recruit an Alpha worker with this job and return the ids Delta gained."""
+def _recruit_and_diff(page, base_url, recruiter, lastname, metier_label):
+    """Recruit a worker for `recruiter` with this job and return the ids Delta gained."""
     before = _delta_ids(page, base_url)
     ensure_gm_login(page, base_url)
-    ui_recruit_perfect_worker(page, _controller_ids['Alpha'], _EFFECT_ZONE, lastname,
+    ui_recruit_perfect_worker(page, _controller_ids[recruiter], _EFFECT_ZONE, lastname,
                               'Blank Slate', metier_label, base_url=base_url)
     return _delta_ids(page, base_url) - before
-
-
-def _open_worker_as(page, base_url, controller_id, worker_id):
-    """Open a worker's action page under the given controller's session."""
-    ensure_gm_login(page, base_url)
-    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={controller_id}&chosir=Choisir")
-    page.wait_for_load_state("load")
-    safe_goto(page, f"{base_url}/workers/action.php?worker_id={worker_id}")
-    page.wait_for_load_state("load")
-
-
-def _target_options(page):
-    """The labels of the attack select, i.e. what the controller knows in this zone."""
-    return [o.inner_text() for o in page.locator("select#enemyWorkersSelect option").all()]
 
 
 class TestRecrutmentEffects:
@@ -1609,29 +1596,34 @@ class TestRecrutmentEffects:
 
             # One add_opposition : Delta must answer with exactly one agent.
             observed['single_new'] = _recruit_and_diff(
-                page, PHP_BASE_URL, 'Effect_Single', 'Test_Job_AddOpposition_Delta')
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Single', 'Test_Job_AddOpposition_Delta')
             if len(observed['single_new']) == 1:
                 wid = next(iter(observed['single_new']))
                 rows = [w for w in ui_all_workers(page, base_url=PHP_BASE_URL) if w['id'] == wid]
                 observed['opposition'] = rows[0] if rows else None
-                _open_worker_as(page, PHP_BASE_URL, _controller_ids['Delta'], wid)
-                observed['opposition_changes'] = worker_report_section(page.content(), "Changements :")
-                observed['opposition_targets'] = _target_options(page)
+            agent = observed.get('opposition')
+            if agent is not None:
+                html = worker_report_html(page, agent['lastname'], base_url=PHP_BASE_URL)
+                observed['opposition_changes'] = worker_report_section(html, "Changements :")
+                observed['opposition_knows'] = ui_detected_enemies_of(page, agent['lastname'], base_url=PHP_BASE_URL)
                 # The recruit's own controller, for the deliberate absence.
-                recruit_id = ui_worker_id(page, 'Effect_Single', base_url=PHP_BASE_URL)
-                _open_worker_as(page, PHP_BASE_URL, _controller_ids['Alpha'], recruit_id)
-                observed['recruit_targets'] = _target_options(page)
+                observed['recruit_knows'] = ui_detected_enemies_of(page, 'Effect_Single', base_url=PHP_BASE_URL)
+
+            # The target recruiting for itself : no opposition against its own agent.
+            observed['self_new'] = _recruit_and_diff(
+                page, PHP_BASE_URL, 'Delta', 'Effect_Self', 'Test_Job_AddOpposition_Delta')
+            observed['self_id'] = ui_worker_id(page, 'Effect_Self', base_url=PHP_BASE_URL)
 
             # A list : go_traitor towards Echo AND add_opposition towards Delta.
             observed['both_new'] = _recruit_and_diff(
-                page, PHP_BASE_URL, 'Effect_Both', 'Test_Job_BothActions_Echo')
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Both', 'Test_Job_BothActions_Echo')
             observed['both_controllers'] = {
                 w['controller_id'] for w in ui_all_workers(page, base_url=PHP_BASE_URL)
                 if w['lastname'] == 'Effect_Both'}
 
             # A job whose add_opposition names itself : the guard must stop at one.
             observed['loop_new'] = _recruit_and_diff(
-                page, PHP_BASE_URL, 'Effect_Loop', 'Test_Job_SelfOpposition_Delta')
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Loop', 'Test_Job_SelfOpposition_Delta')
 
             assert_no_collected_php_errors(page)
             yield observed
@@ -1661,20 +1653,27 @@ class TestRecrutmentEffects:
         assert 'Effect_Single' in changes, f"the motive must name the recruit: {changes!r}"
 
     def test_the_target_learns_of_the_recruit(self, recruitment_effects):
-        """The opposition agent stands in the recruit's zone, so its attack select
-        lists exactly what Delta knows there."""
-        targets = recruitment_effects.get('opposition_targets', [])
-        assert any('Effect_Single' in t for t in targets), (
-            f"Delta must know the recruit that provoked it; select lists {targets}")
+        """The opposition agent stands in the recruit's zone, so what it detects
+        there is exactly what Delta knows."""
+        known = recruitment_effects.get('opposition_knows', set())
+        assert 'Effect_Single' in known, (
+            f"Delta must know the recruit that provoked it; knows {known}")
 
     def test_the_recruiter_learns_nothing_of_the_opposition(self, recruitment_effects):
         """Paired with the test above : knowledge flows one way only, so the
         recruiter has to find the opposition by investigating."""
         agent = recruitment_effects.get('opposition')
         assert agent is not None, "the opposition agent is missing from the listing"
-        targets = recruitment_effects.get('recruit_targets', [])
-        assert not any(agent['lastname'] in t for t in targets), (
-            f"Alpha must not know {agent['lastname']} yet; select lists {targets}")
+        known = recruitment_effects.get('recruit_knows', set())
+        assert agent['lastname'] not in known, (
+            f"Alpha must not know {agent['lastname']} yet; knows {known}")
+
+    def test_no_opposition_against_an_agent_the_target_holds(self, recruitment_effects):
+        """Delta recruiting with a power that answers for Delta : the recruit is
+        the only agent it gains, so a controller cannot buy itself a free agent."""
+        gained = recruitment_effects['self_new']
+        assert gained == {recruitment_effects['self_id']}, (
+            f"Delta should gain only its own recruit {recruitment_effects['self_id']}; gained {gained}")
 
     def test_a_list_fires_both_actions(self, recruitment_effects):
         assert len(recruitment_effects['both_new']) == 1, (
