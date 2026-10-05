@@ -296,7 +296,7 @@ SELECT
 FROM (
     SELECT 'Mendes Pinto' AS lastname, 'defend_location' AS action_choice,
         JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Sanctuaire clandestin du Port de Tokushima')) AS action_params,
-        '{"life_report":"Je suis Fernão (フェルナン) Mendes Pinto (メンデス・ピント), marin portugais venu sur les vaisseaux noirs. On dit que j''ai apporté l''arquebuse à Tanegashima. Je veille sur le sanctuaire du père Fróis (フロイス), l''arquebuse à la main."}' AS report
+        '{"life_report":"Je suis Fernão (フェルナン) Mendes Pinto (メンデス・ピント), marin portugais venu sur les vaisseaux noirs. On dit que j’ai apporté l’arquebuse à Tanegashima. Je veille sur le sanctuaire du père Fróis (フロイス), l’arquebuse à la main."}' AS report
 ) AS entry
 JOIN {prefix}workers w ON w.lastname = entry.lastname
 JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;

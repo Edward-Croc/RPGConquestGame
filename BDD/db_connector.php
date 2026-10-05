@@ -650,7 +650,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
  *   worker_origins__name->origin_id,
  *   zones__name->zone_id,
  *   controllers__lastname->controller_id,
- *   action_choice, action_params,
+ *   action_choice, action_params (a {"location_name": …} target becomes its location_id),
  *   report (optional JSON — seeds worker_actions.report at turn 0, e.g. life_report lore),
  *   powers (pipe-separated list of power names)
  *

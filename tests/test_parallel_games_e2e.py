@@ -150,7 +150,7 @@ def parallel_games_scenario(browser):
     for prefix in (SECONDARY_PREFIX, PRIMARY_PREFIX):
         load_minimal_data(prefix)
 
-    # Load Japon1555SQL into secondary (larger scenario — Shodoshima, 9 workers)
+    # Load Japon1555SQL into secondary (larger scenario — Shodoshima, 10 workers)
     load_scenario_via_admin(browser, PHP_BASE_URL_SECONDARY, 'Japon1555SQL')
 
     # Load TestConfig into primary (baseline test scenario — 26 workers)
