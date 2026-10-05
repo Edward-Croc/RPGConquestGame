@@ -40,6 +40,8 @@ Run:
     python3 -m pytest tests/test_controller_recruitment_e2e.py -v
     KEEP_DB=1 python3 -m pytest tests/test_controller_recruitment_e2e.py -v
 """
+import re
+
 import pymysql
 import pytest
 from playwright.sync_api import Page
@@ -384,10 +386,28 @@ def recruitment_scenario(browser):
     page.wait_for_load_state("load")
     _snapshot['alpha_recruit_form_html'] = page.content()
 
-    # Now submit the form
-    page.locator("select[name='zone_id']").first.select_option(index=0)
-    page.locator("input[name='chosir']").first.click()
+    # Submit the first proposal not named like an Alpha agent : createWorker
+    # would hand back that agent, whose powers are not the ones offered.
+    forms = page.locator("div.workers form")
+    form = forms.first
+    for index in range(forms.count()):
+        candidate = forms.nth(index)
+        name = " ".join(
+            candidate.locator(f"input[name='{field}']").get_attribute("value")
+            for field in ("firstname", "lastname")
+        )
+        if name not in _snapshot['alpha_t0_after_base_html']:
+            form = candidate
+            break
+    _snapshot['alpha_recruit_offered_powers'] = {
+        field: re.search(r"<strong>(.+?) \(", form.locator(f"input[name='{field}']").get_attribute("value")).group(1)
+        for field in ("power_hobby", "power_metier")
+    }
+    form.locator("select[name='zone_id']").select_option(index=0)
+    form.locator("input[name='chosir']").click()
     page.wait_for_load_state("load")
+    # workers/action.php renders the recruited agent's page.
+    _snapshot['alpha_recruited_worker_html'] = page.content()
     _snapshot['alpha_t0_after_recruit_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t0_after_recruit_html'] = _workers_page_html(page, 'Alpha')
     _snapshot['alpha_t0_after_recruit_workers_ui'] = _count_worker_cards_in_html(
@@ -616,6 +636,18 @@ class TestRegularRecruitment:
         assert after_recruit_ui >= after_first_come_ui, \
             f"UI worker-card count should not decrease after recruit: " \
             f"{after_first_come_ui} -> {after_recruit_ui}"
+
+    def test_recruit_carries_the_offered_powers(self):
+        """The recruited agent holds the hobby and job its proposal displayed.
+
+        setupTestConfig_jobs.csv opens on a power with no type, so every job's
+        powers.id sits one above its link_power_type.id : a form sending the
+        powers.id hands the agent the next job in the list.
+        """
+        html = _snapshot['alpha_recruited_worker_html']
+        for field, power_name in _snapshot['alpha_recruit_offered_powers'].items():
+            assert power_name in html, \
+                f"Recruited agent should hold the offered {field} '{power_name}'"
 
     def test_recruit_locked_on_same_turn(self):
         """After using start_workers slot, recruit button should disappear on turn 0.
