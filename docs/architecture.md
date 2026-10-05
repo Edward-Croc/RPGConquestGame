@@ -610,6 +610,26 @@ emporter, et le lieu reste alors debout **malgré un combat gagné**.
 Un lieu pillé garde son propriétaire : `taken` n'est donc pas un changement de
 propriétaire.
 
+### Un défenseur posé dès la mise en place
+
+Un agent ne défend un lieu que si son action du tour porte
+`action_choice = defend_location` et `action_params = {"location_id": N}`. Or
+l'identifiant d'un lieu n'existe qu'une fois les lieux chargés. Une graine
+d'agents nomme donc sa cible :
+
+- **CSV** (`setup*_advanced.csv`) — `action_params` porte
+  `{"location_name": "…"}`, que `loadWorkersCSV` remplace par le `location_id`
+  du lieu de ce nom. Un nom inconnu laisse l'agent en `passive`, avec un
+  avertissement à l'écran et au journal d'erreurs.
+- **SQL** (`setup*_advanced.sql`) — la requête lit l'identifiant par une
+  sous-requête sur le nom du lieu.
+
+Le Japon1555 poste ainsi chaque agent de départ sur un lieu destructible que
+son contrôleur tient dans sa zone : les temples Shikoku, les temples Tendai, la
+forteresse et les geôles Ashikaga, le sanctuaire Sogō de Tokushima. Un agent
+sans tel lieu reste en `passive`. Un défenseur continue d'enquêter, et
+`continuing_defend_location_action` garde l'ordre d'un tour à l'autre.
+
 ---
 
 ## 6. Points d'entrée d'action
