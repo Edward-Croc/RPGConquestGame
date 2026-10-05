@@ -180,14 +180,14 @@ class TestBothGamesLoaded:
     """Each game's prefix has its own tables populated."""
 
     def test_secondary_has_workers(self, page: Page, base_url):
-        """Japon1555SQL in secondary loaded 9 workers (Shikoku advanced scenario).
+        """Japon1555SQL in secondary loaded 10 workers (setupJapon1555SQL_advanced.sql).
 
         Counts rows on /workers/management_workers.php served by the
         secondary URL — UI-runnable, no direct DB access required.
         """
         login_as(page, PHP_BASE_URL_SECONDARY, "gm", "orga")
         count = ui_worker_count(page, base_url=PHP_BASE_URL_SECONDARY)
-        assert count == 9, f"Expected 9 Shikoku workers, got {count}"
+        assert count == 10, f"Expected 10 Japon1555SQL workers, got {count}"
 
     def test_primary_has_workers(self, page: Page, base_url):
         """TestConfig in primary loaded the workers from setupTestConfig_advanced.csv.
