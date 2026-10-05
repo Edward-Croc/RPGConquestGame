@@ -57,7 +57,8 @@ First build takes 1–2 minutes (downloading PHP + MySQL images, installing
 
 Once running:
 
-- **App:** http://localhost:8080/RPGConquestGame/ (open in your Windows browser)
+- **App:** http://localhost:8090/RPGConquestGame/ (open in your Windows browser)
+- **phpMyAdmin:** http://localhost:8091/
 - **Login:** `gm` / `orga`
 - **MySQL:** `localhost:3307` (user `rpg_user`, pass `rpg_pass`, db `rpgconquestgame`)
 
@@ -98,7 +99,7 @@ Chromium caching).
 KEEP_DB=1 python3 -m pytest tests/test_agent_combat_e2e.py -v
 ```
 
-Then browse http://localhost:8080/RPGConquestGame/ (login gm / orga,
+Then browse http://localhost:8090/RPGConquestGame/ (login gm / orga,
 pick a controller, browse workers) to see the post-combat state.
 
 ## 6. Common Windows pitfalls
@@ -107,7 +108,7 @@ pick a controller, browse workers) to see the post-combat state.
 |---------|-------|-----|
 | `bash: bad interpreter: \r\n` | CRLF line endings on `*.sh` | `git config --global core.autocrlf false` then re-clone |
 | Slow `docker compose up` | Repo on `/mnt/c/...` | Move repo to `~/` inside WSL |
-| Port 8080 in use | Another service (IIS, Jenkins, etc.) | Change `"8080:80"` to `"9080:80"` in `docker-compose.yml` |
+| Port 8090 in use | Another service (IIS, Jenkins, etc.) | Change `"8090:80"` to `"9090:80"` in `docker-compose.yml` and set `PHP_BASE_URL=http://localhost:9090/RPGConquestGameTest` when running pytest |
 | Port 3307 in use | Local MySQL installed | Change `"3307:3306"` to `"3308:3306"` and set `MYSQL_PORT=3308` when running pytest |
 | Docker Desktop not running | Windows service stopped | Start "Docker Desktop" from Start Menu |
 | Tests fail with permission errors | Repo cloned as Administrator | Re-clone as normal user inside WSL |

@@ -1,8 +1,8 @@
 """E2E tests for two games running in parallel in the same MySQL database.
 
 The Docker stack mounts the project source at two paths:
-  - http://localhost:8080/RPGConquestGameTest  → prefix `game_test_`  (primary / default)
-  - http://localhost:8080/RPGConquestGameTest2 → prefix `game_test2_` (secondary / overlay config)
+  - http://localhost:8090/RPGConquestGameTest  → prefix `game_test_`  (primary / default)
+  - http://localhost:8090/RPGConquestGameTest2 → prefix `game_test2_` (secondary / overlay config)
 
 Both share the same database (`rpgconquestgame`) but use distinct table
 prefixes, so their state is fully isolated.
