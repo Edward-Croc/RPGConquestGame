@@ -26,7 +26,7 @@ services:
     build: .
     container_name: rpg_php
     ports:
-      - "8080:80"
+      - "8090:80"
     volumes:
       # Primary test game — URL: /RPGConquestGameTest, prefix: game_test_
       - .:/var/www/html/RPGConquestGameTest
@@ -49,7 +49,7 @@ services:
     image: phpmyadmin:latest
     container_name: rpg_pma
     ports:
-      - "8081:80"
+      - "8091:80"
     environment:
       PMA_HOST: mysql
       PMA_USER: root

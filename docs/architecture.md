@@ -338,6 +338,12 @@ Normalisation, pas malus : sans elle un don vaudrait deux tours de visibilité,
 soit plus qu'une découverte de première main n'en accorde jamais. Le plancher
 `max(0, …)` neutralise le recul au tour 0, où il n'aurait aucun sens.
 
+L'effet de recrutement `add_opposition` suit la même règle, dans
+`createOppositionWorker` (`workers/functions.php`) : le contrôleur qui dépêche un
+agent apprend l'existence du recruté, et le recrutement est lui aussi une action de
+milieu de tour. Toute nouvelle écriture dans `controllers_known_enemies` hors de la fin
+de tour doit reculer de la même fenêtre.
+
 `addWorkerToCKE` (`controllers/functions.php`) complète par un
 `GREATEST(last_discovery_turn, :turn_number)`,
 si bien qu'une source périmée ne peut jamais vieillir un acquis plus frais,

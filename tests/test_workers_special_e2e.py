@@ -31,7 +31,8 @@ from helpers import (
     ui_worker_id, ui_workers_by_lastname, ui_detected_enemies_of,
     ui_attack, ui_attack_click, ui_claim, ui_gift_click, ui_zone_id, end_turn,
     cached_faction_sections, ui_faction_sections, clear_ui_caches, worker_report_section,
-    ui_mass_move_click, ui_all_workers, ui_controller_ids_map,
+    ui_mass_move_click, ui_all_workers, ui_controller_ids_map, ui_recruit_perfect_worker,
+    worker_report_html,
 )
 
 
@@ -1543,3 +1544,146 @@ class TestMassMoveBetaCombatWorkers:
             f"Keep_Def should be in {_MASS_MOVE_TARGET_ZONE} after mass-move; "
             f"got {self._post['Keep_Def']}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Recruitment effects : go_traitor, add_opposition, and a list of both
+# ---------------------------------------------------------------------------
+#
+# Effects only fire on a real recruitment (createWorker), never on a CSV-seeded
+# worker, so every subject here goes through the perfect-worker form. The three
+# test jobs are locked out of random draws (on_random_pick.unlock_turn 999), so
+# no other test's random recruitment can spawn a Delta agent behind its back.
+# The opposition agent's name is drawn at random : it is found by diffing
+# Delta's roster around each recruitment, never by name.
+
+_EFFECT_ZONE = 'Zeta-Unclaimed'
+
+
+def _delta_ids(page, base_url):
+    """Ids of every worker Delta controls, read from the management listing."""
+    delta = _controller_ids['Delta']
+    return {w['id'] for w in ui_all_workers(page, base_url=base_url)
+            if w['controller_id'] == delta}
+
+
+def _recruit_and_diff(page, base_url, recruiter, lastname, metier_label):
+    """Recruit a worker for `recruiter` with this job and return the ids Delta gained."""
+    before = _delta_ids(page, base_url)
+    ensure_gm_login(page, base_url)
+    ui_recruit_perfect_worker(page, _controller_ids[recruiter], _EFFECT_ZONE, lastname,
+                              'Blank Slate', metier_label, base_url=base_url)
+    return _delta_ids(page, base_url) - before
+
+
+class TestRecrutmentEffects:
+    """go_traitor and add_opposition, alone and as a list, on a real recruitment."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def recruitment_effects(self, browser):
+        """Run the three recruitments and capture what each one left behind.
+
+        Reloads TestConfig afterwards, unconditionally : the agents these
+        recruitments create would otherwise reach every later class and file.
+        """
+        context = None
+        observed = {}
+        try:
+            context = browser.new_context()
+            page = context.new_page()
+            register_php_error_listener(page)
+            ensure_gm_login(page, PHP_BASE_URL)
+
+            # One add_opposition : Delta must answer with exactly one agent.
+            observed['single_new'] = _recruit_and_diff(
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Single', 'Test_Job_AddOpposition_Delta')
+            if len(observed['single_new']) == 1:
+                wid = next(iter(observed['single_new']))
+                rows = [w for w in ui_all_workers(page, base_url=PHP_BASE_URL) if w['id'] == wid]
+                observed['opposition'] = rows[0] if rows else None
+            agent = observed.get('opposition')
+            if agent is not None:
+                html = worker_report_html(page, agent['lastname'], base_url=PHP_BASE_URL)
+                observed['opposition_changes'] = worker_report_section(html, "Changements :")
+                observed['opposition_knows'] = ui_detected_enemies_of(page, agent['lastname'], base_url=PHP_BASE_URL)
+                # The recruit's own controller, for the deliberate absence.
+                observed['recruit_knows'] = ui_detected_enemies_of(page, 'Effect_Single', base_url=PHP_BASE_URL)
+
+            # The target recruiting for itself : no opposition against its own agent.
+            observed['self_new'] = _recruit_and_diff(
+                page, PHP_BASE_URL, 'Delta', 'Effect_Self', 'Test_Job_AddOpposition_Delta')
+            observed['self_id'] = ui_worker_id(page, 'Effect_Self', base_url=PHP_BASE_URL)
+
+            # A list : go_traitor towards Echo AND add_opposition towards Delta.
+            observed['both_new'] = _recruit_and_diff(
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Both', 'Test_Job_BothActions_Echo')
+            observed['both_controllers'] = {
+                w['controller_id'] for w in ui_all_workers(page, base_url=PHP_BASE_URL)
+                if w['lastname'] == 'Effect_Both'}
+
+            # A job whose add_opposition names itself : the guard must stop at one.
+            observed['loop_new'] = _recruit_and_diff(
+                page, PHP_BASE_URL, 'Alpha', 'Effect_Loop', 'Test_Job_SelfOpposition_Delta')
+
+            assert_no_collected_php_errors(page)
+            yield observed
+        finally:
+            if context is not None:
+                context.close()
+            if DB_AVAILABLE:
+                load_minimal_data()
+            load_scenario_via_admin(browser, PHP_BASE_URL, "TestConfig")
+            clear_ui_caches()
+
+    def test_add_opposition_gives_the_target_exactly_one_agent(self, recruitment_effects):
+        new = recruitment_effects['single_new']
+        assert len(new) == 1, f"Delta should gain exactly one agent; gained {len(new)}"
+
+    def test_the_opposition_agent_is_born_in_the_recruit_zone(self, recruitment_effects):
+        agent = recruitment_effects.get('opposition')
+        assert agent is not None, "the opposition agent is missing from the listing"
+        assert agent['zone_name'] == _EFFECT_ZONE, (
+            f"it must be born where the recruit stands, {_EFFECT_ZONE}; got {agent['zone_name']}")
+
+    def test_the_opposition_agent_reports_its_motive(self, recruitment_effects):
+        """Read from the life report alone : the recruit's name also sits in the
+        attack select, which would satisfy a page-wide search for wrong reasons."""
+        changes = recruitment_effects.get('opposition_changes', '')
+        assert 'OPPOSITION-MOTIVE' in changes, f"motive missing from the life report: {changes!r}"
+        assert 'Effect_Single' in changes, f"the motive must name the recruit: {changes!r}"
+
+    def test_the_target_learns_of_the_recruit(self, recruitment_effects):
+        """The opposition agent stands in the recruit's zone, so what it detects
+        there is exactly what Delta knows."""
+        known = recruitment_effects.get('opposition_knows', set())
+        assert 'Effect_Single' in known, (
+            f"Delta must know the recruit that provoked it; knows {known}")
+
+    def test_the_recruiter_learns_nothing_of_the_opposition(self, recruitment_effects):
+        """Paired with the test above : knowledge flows one way only, so the
+        recruiter has to find the opposition by investigating."""
+        agent = recruitment_effects.get('opposition')
+        assert agent is not None, "the opposition agent is missing from the listing"
+        known = recruitment_effects.get('recruit_knows', set())
+        assert agent['lastname'] not in known, (
+            f"Alpha must not know {agent['lastname']} yet; knows {known}")
+
+    def test_no_opposition_against_an_agent_the_target_holds(self, recruitment_effects):
+        """Delta recruiting with a power that answers for Delta : the recruit is
+        the only agent it gains, so a controller cannot buy itself a free agent."""
+        gained = recruitment_effects['self_new']
+        assert gained == {recruitment_effects['self_id']}, (
+            f"Delta should gain only its own recruit {recruitment_effects['self_id']}; gained {gained}")
+
+    def test_a_list_fires_both_actions(self, recruitment_effects):
+        assert len(recruitment_effects['both_new']) == 1, (
+            f"the add_opposition half must fire; Delta gained {len(recruitment_effects['both_new'])}")
+        controllers = recruitment_effects['both_controllers']
+        assert {_controller_ids['Alpha'], _controller_ids['Echo']} <= controllers, (
+            f"the go_traitor half must make Echo a second controller; got {controllers}")
+
+    def test_an_opposition_agent_cannot_raise_one(self, recruitment_effects):
+        """The new agent inherits a job whose own add_opposition would fire again
+        inside createWorker : without the guard, agents would keep being born."""
+        new = recruitment_effects['loop_new']
+        assert len(new) == 1, f"one level only: Delta should gain one agent, gained {len(new)}"

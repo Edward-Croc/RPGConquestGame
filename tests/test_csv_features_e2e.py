@@ -127,7 +127,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 14, 'Metier': 14, 'Discipline': 4, 'Transformation': 11}
+        expected = {'Hobby': 14, 'Metier': 17, 'Discipline': 4, 'Transformation': 11}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 

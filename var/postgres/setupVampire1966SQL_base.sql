@@ -14,7 +14,7 @@ UPDATE {prefix}config SET value =  'de la' WHERE name = 'timeDenominatorOf';
 
 UPDATE {prefix}config SET value =  'FALSE' WHERE name = 'ressource_management';
 
---- Base Power Names
+-- Base Power Names
 UPDATE {prefix}config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
@@ -67,7 +67,7 @@ INSERT INTO {prefix}controllers (
         (SELECT ID FROM {prefix}factions WHERE name = 'Malkavien' )
     ),
     (
-        --'Sir Angelo', 'Ricciotti',
+        -- 'Sir Angelo', 'Ricciotti',
         'Sir Antonio', 'Mazzino',
         'https://docs.google.com/document/d/12uoZS1sgh239qgQJbXJC6U10X6dLyacn1SmaAC3CZbg/edit?usp=drive_link',
         1,1,1,

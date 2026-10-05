@@ -855,6 +855,167 @@ function randomWorkerName(PDO $pdo, array $newWorker): array|null
 }
 
 /**
+ * Create the opposition agent an add_opposition recruitment effect calls for.
+ *
+ * The named controller learns of the recruit that triggered it ; the recruit's own
+ * controller learns nothing. Skipped when the target already holds the recruit, and
+ * one level only : an agent born this way cannot raise an opposition of its own.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $workerId : the recruit whose power carried the effect
+ * @param array $action : payload, requires controller_lastname, accepts origin_name / hobby_name / job_name / text_opposition_recrutment
+ *
+ * @return void : every failure is a game situation, logged and stepped over
+ */
+function createOppositionWorker(PDO $pdo, int $workerId, array $action): void
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['action' => $action], 'debug');
+
+    // createWorker re-applies the new agent's recruitment effects, so a nested call would loop.
+    static $creating = false;
+    if ($creating) {
+        game_error_log(__FUNCTION__, 'add_opposition skipped — an opposition agent cannot raise one', ['workerId' => $workerId], 'warning');
+        return;
+    }
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $origin_id = false;
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM {$prefix}controllers WHERE lastname = :lastname LIMIT 1");
+        $stmt->execute([':lastname' => $action['controller_lastname']]);
+        $target_controller_id = $stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("SELECT zone_id FROM {$prefix}workers WHERE id = :worker_id LIMIT 1");
+        $stmt->execute([':worker_id' => $workerId]);
+        $zone_id = $stmt->fetchColumn();
+
+        if (!empty($action['origin_name'])) {
+            $stmt = $pdo->prepare("SELECT id FROM {$prefix}worker_origins WHERE name = :name LIMIT 1");
+            $stmt->execute([':name' => $action['origin_name']]);
+            $origin_id = $stmt->fetchColumn();
+        }
+
+        $already_linked = false;
+        if ($target_controller_id !== false) {
+            $stmt = $pdo->prepare("SELECT 1 FROM {$prefix}controller_worker WHERE controller_id = :controller_id AND worker_id = :worker_id LIMIT 1");
+            $stmt->execute([':controller_id' => (int) $target_controller_id, ':worker_id' => $workerId]);
+            $already_linked = $stmt->fetchColumn() !== false;
+        }
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT target, zone or origin failed : ' . $e->getMessage(), ['workerId' => $workerId], 'warning');
+        return;
+    }
+    // Absence is not permission : the target, the zone and any named origin must all exist.
+    if ($target_controller_id === false || $zone_id === false || (!empty($action['origin_name']) && $origin_id === false)) {
+        game_error_log(__FUNCTION__, 'add_opposition skipped — unknown controller, origin, or recruit without a zone', ['workerId' => $workerId, 'action' => $action], 'warning');
+        return;
+    }
+    // Like go_traitor : a controller does not raise an opposition against an agent it already holds.
+    if ($already_linked) {
+        game_error_log(__FUNCTION__, 'add_opposition skipped — target controller already holds the recruit', ['workerId' => $workerId, 'controller_lastname' => $action['controller_lastname']], 'debug');
+        return;
+    }
+
+    $newWorker = ['controller_id' => (int) $target_controller_id, 'zone_id' => (int) $zone_id];
+    $newWorker = ($origin_id !== false)
+        ? $newWorker + ['origin_id' => (int) $origin_id]
+        : randomWorkerOrigin($pdo, $newWorker, 'recrutement');
+    $newWorker = ($newWorker === null) ? null : randomWorkerName($pdo, $newWorker);
+    $newWorker = ($newWorker === null) ? null : _oppositionPickPower($pdo, $newWorker, $action, 'hobby_name', 'hobby', '1');
+    $newWorker = ($newWorker === null) ? null : _oppositionPickPower($pdo, $newWorker, $action, 'job_name', 'metier', '2');
+    // An empty name pool yields an empty lastname, which createWorker would refuse by echoing to the player.
+    if ($newWorker === null || empty($newWorker['lastname'])) {
+        game_error_log(__FUNCTION__, 'add_opposition skipped — no origin, no name, or an unknown named power', ['workerId' => $workerId, 'action' => $action], 'warning');
+        return;
+    }
+
+    // Built before the agent exists : a faulty template then costs a sentence, not half an agent.
+    $motive = '';
+    if (!empty($action['text_opposition_recrutment']) && is_string($action['text_opposition_recrutment'])) {
+        $trigger = getWorkers($pdo, [$workerId])[0] ?? null;
+        try {
+            $motive = sprintf(
+                $action['text_opposition_recrutment'],
+                getConfig($pdo, 'controllerNameDenominatorThe'),
+                getControllerName($pdo, (int) $target_controller_id),
+                trim(($trigger['firstname'] ?? '') . ' ' . ($trigger['lastname'] ?? ''))
+            );
+        } catch (\Throwable $e) {
+            game_error_log(__FUNCTION__, 'text_opposition_recrutment is not a valid template : ' . $e->getMessage(), ['template' => $action['text_opposition_recrutment']], 'warning');
+        }
+    }
+
+    $creating = true;
+    try {
+        $new_worker_id = createWorker($pdo, $newWorker);
+    } finally {
+        $creating = false;
+    }
+    if ($new_worker_id === false) {
+        game_error_log(__FUNCTION__, 'add_opposition could not create the agent', ['newWorker' => $newWorker], 'warning');
+        return;
+    }
+
+    $mechanics = getMechanics($pdo);
+    $turn_number = (int) ($mechanics['turncounter'] ?? 0);
+    // The motive is appended, not substituted : the recruitment line carries the mission zone.
+    if ($motive !== '') {
+        updateWorkerAction($pdo, (int) $new_worker_id, $turn_number, null, ['life_report' => $motive]);
+    }
+    // Mid-turn player action : recoil the stamp so it is worth one turn of sight, not two.
+    $discoveryTurn = max(0, $turn_number - (int) getConfig($pdo, 'attackTimeWindow'));
+    addWorkerToCKE($pdo, (int) $target_controller_id, $workerId, $discoveryTurn, (int) $zone_id);
+
+    game_error_log(__FUNCTION__, 'DONE', ['new_worker_id' => $new_worker_id, 'target_controller_id' => $target_controller_id], 'debug');
+}
+
+/**
+ * Resolve the hobby or job an add_opposition payload names, or draw one as recruitment does.
+ *
+ * @param PDO $pdo : database connection
+ * @param array $newWorker : worker draft
+ * @param array $action : add_opposition payload
+ * @param string $payloadKey : key naming the power in the payload, 'hobby_name' or 'job_name'
+ * @param string $draftKey : key createWorker reads, 'hobby' or 'metier'
+ * @param string $type : power_types id, '1' for hobby and '2' for metier
+ *
+ * @return array|null : draft carrying power_<draftKey>_id, or NULL when a named power is unknown
+ */
+function _oppositionPickPower(PDO $pdo, array $newWorker, array $action, string $payloadKey, string $draftKey, string $type): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with payloadKey : ' . $payloadKey, ['action' => $action], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $powerName = $action[$payloadKey] ?? null;
+    if (empty($powerName)) {
+        $drawn = randomPowersByType($pdo, $type, $newWorker);
+        $powerName = $drawn['power_' . $type]['name'] ?? null;
+        if (empty($powerName)) {
+            return $newWorker;
+        }
+    }
+    try {
+        // createWorker hands this id to upgradeWorker, which wants a link_power_type id.
+        $stmt = $pdo->prepare("SELECT lpt.id FROM {$prefix}link_power_type lpt
+            JOIN {$prefix}powers p ON p.id = lpt.power_id
+            WHERE p.name = :name AND lpt.power_type_id = :type LIMIT 1");
+        $stmt->execute([':name' => $powerName, ':type' => (int) $type]);
+        $link_power_type_id = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT link_power_type failed : ' . $e->getMessage(), ['name' => $powerName], 'warning');
+        return null;
+    }
+    if ($link_power_type_id === false) {
+        game_error_log(__FUNCTION__, 'add_opposition — no power of that name and type', ['payloadKey' => $payloadKey, 'name' => $powerName], 'warning');
+        return null;
+    }
+    $newWorker['power_' . $draftKey . '_id'] = (int) $link_power_type_id;
+    return $newWorker;
+}
+
+/**
  * Function to create worker and assign the controller
  *
  * @param PDO $pdo : database connection
@@ -1056,40 +1217,44 @@ function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bo
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['otherJson' => $otherJson, 'isRecrutment' => $isRecrutment], 'debug');
 
-    $prefix = $_SESSION['GAME_PREFIX'];
-
     // If it is a recrutment effect
     if ($isRecrutment && !empty($otherJson['on_recrutment']) && is_array($otherJson['on_recrutment'])) {
+        $prefix = $_SESSION['GAME_PREFIX'];
         foreach ($otherJson['on_recrutment'] as $key => $element) {
             game_error_log(__FUNCTION__, 'on_recrutment iteration', ['key' => $key, 'element' => $element], 'debug');
-            // If it is an action and we have a type
-            if (
-                $key == 'action'
-                && !empty($element)
-                && !empty($element['type'])
-            ) {
+            if ($key != 'action' || empty($element) || !is_array($element)) {
+                continue;
+            }
+            // One action, or a list of them : a power may answer a recruitment more than once.
+            $actions = isset($element['type']) ? [$element] : $element;
+            foreach ($actions as $action) {
+                if (!is_array($action) || empty($action['type']) || empty($action['controller_lastname'])) {
+                    continue;
+                }
                 // go_traitor add the listed controler as a non primary controler
-                if ($element['type'] == 'go_traitor' && !empty($element['controller_lastname'])) {
+                if ($action['type'] == 'go_traitor') {
                     try {
                         // Skip when the go_traitor target is already a controller for this worker
                         $sqlExists = "SELECT 1 FROM {$prefix}controller_worker cw
                             JOIN {$prefix}controllers c ON c.id = cw.controller_id
                             WHERE c.lastname = :lastname AND cw.worker_id = :worker_id LIMIT 1";
                         $stmtExists = $pdo->prepare($sqlExists);
-                        $stmtExists->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                        $stmtExists->execute([':lastname' => $action['controller_lastname'], ':worker_id' => $workerId]);
                         if ($stmtExists->fetchColumn() !== false) {
-                            game_error_log(__FUNCTION__, 'go_traitor skipped — target controller already linked to worker', ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'debug');
+                            game_error_log(__FUNCTION__, 'go_traitor skipped — target controller already linked to worker', ['workerId' => $workerId, 'controller_lastname' => $action['controller_lastname']], 'debug');
                         } else {
                             // Add non primary controller for the worker
                             $sql = "INSERT INTO {$prefix}controller_worker (controller_id, worker_id, is_primary_controller)
                                     VALUES ( (SELECT id FROM {$prefix}controllers WHERE lastname = :lastname), :worker_id, False)";
                             game_error_log(__FUNCTION__, 'go_traitor INSERT prepared', ['sql' => $sql], 'debug');
                             $stmt = $pdo->prepare($sql);
-                            $stmt->execute([':lastname' => $element['controller_lastname'], ':worker_id' => $workerId]);
+                            $stmt->execute([':lastname' => $action['controller_lastname'], ':worker_id' => $workerId]);
                         }
                     } catch (PDOException $e) {
-                        game_error_log(__FUNCTION__, 'go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_lastname' => $element['controller_lastname']], 'warning');
+                        game_error_log(__FUNCTION__, 'go_traitor INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_lastname' => $action['controller_lastname']], 'warning');
                     }
+                } elseif ($action['type'] == 'add_opposition') {
+                    createOppositionWorker($pdo, $workerId, $action);
                 }
             }
         }

@@ -25,7 +25,7 @@ echo "-> Waiting for PHP + DB readiness (login form must render without DB error
 ATTEMPTS=0
 # curl -sf only checks HTTP status; a 200 page can still contain a DB error.
 # Wait until the response body actually contains the login form username input.
-until curl -s http://localhost:8080/RPGConquestGameTest/connection/loginForm.php 2>/dev/null | grep -q 'name="username"'; do
+until curl -s http://localhost:8090/RPGConquestGameTest/connection/loginForm.php 2>/dev/null | grep -q 'name="username"'; do
     ATTEMPTS=$((ATTEMPTS + 1))
     if [ "$ATTEMPTS" -gt 60 ]; then
         echo "FAIL: login form did not render within 3 minutes (PHP or DB not ready)"
@@ -56,5 +56,5 @@ echo "   ${TABLE_COUNT} tables created."
 
 echo ""
 echo "=== PASS: Docker setup is healthy ==="
-echo "You can now browse: http://localhost:8080/RPGConquestGameTest/"
+echo "You can now browse: http://localhost:8090/RPGConquestGameTest/"
 echo "Login: gm / orga"

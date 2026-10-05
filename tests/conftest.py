@@ -177,7 +177,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
     )
 
 # PHP app URL (Docker)
-PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8080/RPGConquestGameTest")
+PHP_BASE_URL = os.environ.get("PHP_BASE_URL", "http://localhost:8090/RPGConquestGameTest")
 
 
 def ensure_gm_login(page, base_url=None):
