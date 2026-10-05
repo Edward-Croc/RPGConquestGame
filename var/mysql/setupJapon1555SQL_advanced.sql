@@ -55,13 +55,13 @@ SELECT
     entry.action_params,
     entry.report
 FROM (
-    SELECT 'Kotatsu' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
+    SELECT 'Kotatsu' AS lastname, 'defend_location' AS action_choice, JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Vieux temple du vallon de Tengu-Iwa')) AS action_params, 
         '{"life_report":"Depuis des siècles moi Kazusa (風佐 — « celui qui suit le vent ») des Yōkai (妖怪) hante les vallons de Shōdoshima."}' AS report
-    UNION ALL SELECT 'Jizane', 'passive', '{}',
+    UNION ALL SELECT 'Jizane', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Vieux temple du Mont Ishizuchi')),
         '{"life_report":"Depuis des siecles moi Iwao (岩男 — « homme-rocher ») des Yōkai (妖怪) arpente les flancs des montagnes d’Iyo."}'
-    UNION ALL SELECT  'Noayame', 'passive', '{}',
+    UNION ALL SELECT  'Noayame', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Vieux temple de la falaise d’Esaki')),
         '{"life_report":"Depuis des siecles moi Kosagi (小鷺 — « petite héronne ») des Yōkai (妖怪) hante les falaises d’Awaji."}'
-    UNION ALL SELECT  'Kagaribi', 'passive', '{}',
+    UNION ALL SELECT  'Kagaribi', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Vieux temple des collines de Kubokawa')),
         '{"life_report":"Depuis des siecles moi Hiuchi (火打 — « pierre à feu ») des Yōkai (妖怪) je terrorise le cap sud de Tosa."}'
 ) AS entry
 JOIN {prefix}workers w ON w.lastname = entry.lastname
@@ -214,13 +214,13 @@ SELECT
     entry.action_params,
     entry.report
 FROM (
-    SELECT 'Mitsunao-dono(光直-殿)' AS lastname, 'passive' AS action_choice, '{}' AS action_params, 
+    SELECT 'Mitsunao-dono(光直-殿)' AS lastname, 'defend_location' AS action_choice, JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Forteresse des Samouraïs Ashikaga')) AS action_params, 
         '{"life_report":"Je Mitsunao-dono(光直-殿) du clan Asakura(朝倉), conseiller personnel du Shogun au palais impérial de Kyoto."}' AS report
-    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'passive', '{}',
+    UNION ALL SELECT 'Ibara-dono(茨の紅-殿)', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Geôles impériales')),
         '{"life_report":"Je suis Ibara-dono(茨の紅-殿), la première courtisane de Kyoto, mon nom est connu du Shogun lui-même."}' AS report
-    UNION ALL SELECT  'Renryū-dono(蓮竜-殿)', 'passive', '{}',
+    UNION ALL SELECT  'Renryū-dono(蓮竜-殿)', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Forteresse des Samouraïs Ashikaga')),
         '{"life_report":"Je suis Renryū-dono(蓮竜-殿), un cousin du clan Takeda (武田), révolté contre les actions de Takeda Shingen (信玄), je suis venu de l’est pour protéger le Shogun."}' AS report
-    UNION ALL SELECT  'Sōen-dono(僧円-殿)', 'passive', '{}',
+    UNION ALL SELECT  'Sōen-dono(僧円-殿)', 'defend_location', JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Geôles impériales')),
         '{"life_report":"Je suis Sōen-dono(僧円-殿), maitre moine Tendai au service du Shogun au palais impérial de Kyoto."}' AS report
 ) AS entry
 JOIN {prefix}workers w ON w.lastname = entry.lastname
@@ -258,6 +258,58 @@ JOIN (
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Bugaku (舞楽) – Danse de cour'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Shodō (書道) – Calligraphie'
     UNION ALL SELECT 'Mitsunao-dono(光直-殿)', 'Armure en fer de Tosa'
+) AS wp ON wp.lastname = w.lastname
+JOIN {prefix}powers p ON p.name = wp.power_name
+JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;
+
+-- Create the sanctuary's defender for Sogō (十河)
+INSERT INTO {prefix}workers (firstname, lastname, origin_id, zone_id)
+SELECT
+    nd.firstname,
+    nd.lastname,
+    wo.id AS origin_id,
+    z.id AS zone_id
+FROM (
+    SELECT 'Fernão' AS firstname, 'Mendes Pinto' AS lastname, 'Portugal' AS origin_name, 'Côte Est d’Awa' AS zone_name
+) AS nd
+JOIN {prefix}worker_origins wo ON wo.name = nd.origin_name
+JOIN {prefix}zones z ON z.name = nd.zone_name;
+
+INSERT INTO {prefix}controller_worker (controller_id, worker_id)
+SELECT c.id AS controller_id, w.id AS worker_id
+FROM {prefix}controllers c, {prefix}workers w
+WHERE c.lastname = 'Sogō (十河)'
+AND w.lastname IN ('Mendes Pinto');
+
+-- He starts on the sanctuary : its id only exists once the locations are loaded.
+INSERT INTO {prefix}worker_actions (
+    worker_id, controller_id, turn_number, zone_id, action_choice, action_params, report
+)
+SELECT
+    w.id,
+    cw.controller_id,
+    0,
+    w.zone_id,
+    entry.action_choice,
+    entry.action_params,
+    entry.report
+FROM (
+    SELECT 'Mendes Pinto' AS lastname, 'defend_location' AS action_choice,
+        JSON_OBJECT('location_id', (SELECT id FROM {prefix}locations WHERE name = 'Sanctuaire clandestin du Port de Tokushima')) AS action_params,
+        '{"life_report":"Je suis Fernão (フェルナン) Mendes Pinto (メンデス・ピント), marin portugais venu sur les vaisseaux noirs. On dit que j’ai apporté l’arquebuse à Tanegashima. Je veille sur le sanctuaire du père Fróis (フロイス), l’arquebuse à la main."}' AS report
+) AS entry
+JOIN {prefix}workers w ON w.lastname = entry.lastname
+JOIN {prefix}controller_worker cw ON cw.worker_id = w.id;
+
+INSERT INTO {prefix}worker_powers (worker_id, link_power_type_id)
+SELECT
+    w.id AS worker_id,
+    lpt.id AS link_power_type_id
+FROM {prefix}workers w
+JOIN (
+    SELECT 'Mendes Pinto' AS lastname, 'Marin européen (南蛮水夫)' AS power_name
+    UNION ALL SELECT 'Mendes Pinto', 'Tetsubō (鉄棒) — Masse de guerre en fer'
+    UNION ALL SELECT 'Mendes Pinto', 'Hōjutsu (砲術) – Art des armes à feu (teppō)'
 ) AS wp ON wp.lastname = w.lastname
 JOIN {prefix}powers p ON p.name = wp.power_name
 JOIN {prefix}link_power_type lpt ON lpt.power_id = p.id;

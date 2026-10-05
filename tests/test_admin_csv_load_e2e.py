@@ -9,6 +9,8 @@ Run against production (browser-only tests, skips DB checks):
 Run only DB-dependent tests:
     python3 -m pytest tests/test_admin_csv_load_e2e.py -v -m db
 """
+import csv
+import json
 import os
 import re
 
@@ -21,7 +23,10 @@ from conftest import (
     PHP_BASE_URL,
 )
 
-from helpers import DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, csv_row_count, worker_report_html
+from helpers import (
+    CSV_DIR, DB_AVAILABLE, get_db_connection, load_minimal_data, safe_goto, csv_row_count, worker_report_html,
+    ui_controller_id, ui_location_id,
+)
 
 
 def table_row_count(table_name):
@@ -32,6 +37,28 @@ def table_row_count(table_name):
     count = cursor.fetchone()["c"]
     conn.close()
     return count
+
+
+def ui_seeded_defenders(page, base_url):
+    """Lastname -> (controller id, action_params) of every agent on
+    defend_location, read off the worker-short markers of each controller's
+    workers/viewAll.php."""
+    safe_goto(page, f"{base_url}/base/accueil.php")
+    controller_ids = [
+        int(value) for value in (
+            option.get_attribute("value")
+            for option in page.locator("select#controllerSelect option").all()
+        ) if value
+    ]
+    defenders = {}
+    for controller_id in controller_ids:
+        safe_goto(page, f"{base_url}/base/accueil.php?controller_id={controller_id}&chosir=Choisir")
+        safe_goto(page, f"{base_url}/workers/viewAll.php")
+        for card in page.locator("div.worker-short[data-action-choice='defend_location']").all():
+            defenders[card.get_attribute("data-worker-lastname")] = (
+                controller_id, json.loads(card.get_attribute("data-action-params"))
+            )
+    return defenders
 
 
 def null_column_count(table_name: str, column: str) -> int:
@@ -218,6 +245,23 @@ class TestCSVLoadViaAdmin:
             "Expected hobbys SQL to execute successfully"
         assert "setupJapon1555SQL_jobs.sql executed successfully" in page_html, \
             "Expected jobs SQL to execute successfully"
+        assert "setupJapon1555SQL_advanced.sql executed successfully" in page_html, \
+            "Expected advanced SQL to execute successfully"
+
+        # The SQL seed reads each defended location's id by name.
+        defenders = ui_seeded_defenders(logged_in_page, base_url)
+        assert len(defenders) == 9, (
+            f"Japon1555SQL seeds 9 defenders; got {sorted(defenders)!r}"
+        )
+        safe_goto(logged_in_page, f"{base_url}/zones/management_locations.php")
+        location_ids = {
+            int(location_id)
+            for location_id in re.findall(r'name="delete_id"\s+value="(\d+)"', logged_in_page.content())
+        }
+        for lastname, (_, params) in defenders.items():
+            assert set(params) == {"location_id"} and params["location_id"] in location_ids, (
+                f"{lastname} must defend an existing location by its id; got {params!r}"
+            )
 
         # Verify DB row counts
         assert table_row_count("worker_origins") >= 10, \
@@ -267,6 +311,7 @@ class TestCSVLoadViaAdmin:
         # Verify CSV load success messages with exact row counts
         zones_n = csv_row_count("setupJapon1555CSV_zones.csv")
         locations_n = csv_row_count("setupJapon1555CSV_locations.csv")
+        advanced_n = csv_row_count("setupJapon1555CSV_advanced.csv")
         assert "setupJapon1555CSV_worker_origins.csv loaded successfully (13 rows)" in page_html, \
             "Expected worker_origins CSV to load 13 rows"
         assert "setupJapon1555CSV_worker_names.csv loaded successfully (122 rows)" in page_html, \
@@ -281,8 +326,8 @@ class TestCSVLoadViaAdmin:
             "Expected factions CSV to load 11 rows"
         assert f"setupJapon1555CSV_locations.csv loaded successfully ({locations_n} rows)" in page_html, \
             f"Expected locations CSV to load {locations_n} rows"
-        assert "setupJapon1555CSV_advanced.csv loaded successfully (12 rows)" in page_html, \
-            "Expected advanced workers CSV to load 12 rows"
+        assert f"setupJapon1555CSV_advanced.csv loaded successfully ({advanced_n} rows)" in page_html, \
+            f"Expected advanced workers CSV to load {advanced_n} rows"
 
         # Verify DB row counts
         assert table_row_count("worker_origins") == 13, \
@@ -295,12 +340,46 @@ class TestCSVLoadViaAdmin:
             "Japon1555CSV should load exactly 11 factions"
         assert table_row_count("locations") == locations_n, \
             f"Japon1555CSV should load exactly {locations_n} locations"
-        # Workers from advanced.csv (12 rows × 1 worker each — 9 original + 3 Bansō sōhei)
-        assert table_row_count("workers") == 12, \
-            "Japon1555CSV advanced should create exactly 12 workers"
+        # Workers from advanced.csv, one worker per row.
+        assert table_row_count("workers") == advanced_n, \
+            f"Japon1555CSV advanced should create exactly {advanced_n} workers"
+
+        # A seeded location action names its target : the loader must turn the
+        # name into the id, which only exists once locations are loaded. Each
+        # defender guards a location its own controller holds.
+        with open(CSV_DIR / "setupJapon1555CSV_advanced.csv", encoding="utf-8") as f:
+            seeded = {
+                row["lastname"]: (
+                    row["controllers__lastname->controller_id"],
+                    json.loads(row["action_params"])["location_name"],
+                )
+                for row in csv.DictReader(f) if row["action_choice"] == "defend_location"
+            }
+        with open(CSV_DIR / "setupJapon1555CSV_locations.csv", encoding="utf-8") as f:
+            owners = {row["name"]: row["controllers__lastname->controller_id"] for row in csv.DictReader(f)}
+        assert "Mendes Pinto" in seeded, "the Tokushima sanctuary should have its seeded defender"
+        defenders = ui_seeded_defenders(logged_in_page, base_url)
+        assert set(defenders) == set(seeded), (
+            f"every seeded defender must start on defend_location; got {sorted(defenders)!r}"
+        )
+        controller_ids = {
+            controller: ui_controller_id(logged_in_page, controller, base_url=base_url)
+            for controller, _ in seeded.values()
+        }
+        location_ids = {
+            location: ui_location_id(logged_in_page, location, base_url=base_url)
+            for _, location in seeded.values()
+        }
+        for lastname, (controller, location) in seeded.items():
+            assert owners[location] == controller, (
+                f"{lastname} must defend a location its own controller holds ({location})"
+            )
+            assert defenders[lastname] == (controller_ids[controller], {"location_id": location_ids[location]}), (
+                f"{lastname} : location_name must be resolved to the id of {location}; got {defenders[lastname]!r}"
+            )
 
         # Issue #106 : advanced.csv now seeds worker_actions.report at turn 0
-        # for the 12 NPC workers (life_report lore texts previously lost in
+        # for the NPC workers (life_report lore texts previously lost in
         # SQL→CSV migration). Verify via UI on Iwao (worker_id=1 as first row
         # of advanced.csv on fresh AUTO_INCREMENT; controller_id=1 as first row
         # of controllers.csv = Shikoku). workers/action.php:591-592 renders

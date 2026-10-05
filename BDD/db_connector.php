@@ -650,7 +650,7 @@ function loadCSVFile(PDO $pdo, string $csvFile, string $tableName, array $column
  *   worker_origins__name->origin_id,
  *   zones__name->zone_id,
  *   controllers__lastname->controller_id,
- *   action_choice, action_params,
+ *   action_choice, action_params (a {"location_name": …} target becomes its location_id),
  *   report (optional JSON — seeds worker_actions.report at turn 0, e.g. life_report lore),
  *   powers (pipe-separated list of power names)
  *
@@ -696,6 +696,11 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool
         $stmt = $pdo->query("SELECT id, lastname FROM {$prefix}controllers");
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $controllerCache[$r['lastname']] = $r['id'];
+        }
+        $locationCache = [];
+        $stmt = $pdo->query("SELECT id, name FROM {$prefix}locations");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $locationCache[$r['name']] = (int) $r['id'];
         }
         // Compound lookup: power name -> link_power_type.id
         $linkPowerCache = [];
@@ -751,10 +756,26 @@ function loadWorkersCSV(PDO $pdo, string $csvFile): bool
             $insertCW->execute([$controllerId, $workerId]);
 
             // 3. Insert worker_actions for turn 0
+            $actionChoice = $data['action_choice'] ?? 'passive';
+            $actionParams = $data['action_params'] ?? '{}';
+            // A location id only exists once loaded, so a seeded location action names its target.
+            $params = json_decode($actionParams, true);
+            if (is_array($params) && isset($params['location_name'])) {
+                $locationId = $locationCache[$params['location_name']] ?? null;
+                if ($locationId === null) {
+                    echo "Warning: Row " . ($rowCount + 1) . " names an unknown location ({$params['location_name']}), worker left passive.<br />";
+                    game_error_log(__FUNCTION__, 'seeded location action names an unknown location', ['location_name' => $params['location_name'], 'lastname' => $data['lastname']], 'warning');
+                    $actionChoice = 'passive';
+                    $actionParams = '{}';
+                } else {
+                    unset($params['location_name']);
+                    $actionParams = json_encode($params + ['location_id' => $locationId]);
+                }
+            }
             $insertAction->execute([
                 $workerId, $controllerId, $zoneId,
-                $data['action_choice'] ?? 'passive',
-                $data['action_params'] ?? '{}',
+                $actionChoice,
+                $actionParams,
                 $data['report'] ?? '{}',
             ]);
 
