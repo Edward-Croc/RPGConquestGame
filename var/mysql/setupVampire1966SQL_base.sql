@@ -14,7 +14,7 @@ UPDATE {prefix}config SET value =  'de la' WHERE name = 'timeDenominatorOf';
 
 UPDATE {prefix}config SET value =  'FALSE' WHERE name = 'ressource_management';
 
---- Base Power Names
+-- Base Power Names
 UPDATE {prefix}config SET value = '''Célérité'', ''Endurance'', ''Puissance'''
 WHERE name = 'basePowerNames';
 
@@ -67,7 +67,7 @@ INSERT INTO {prefix}controllers (
         (SELECT ID FROM {prefix}factions WHERE name = 'Malkavien' )
     ),
     (
-        --'Sir Angelo', 'Ricciotti',
+        -- 'Sir Angelo', 'Ricciotti',
         'Sir Antonio', 'Mazzino',
         'https://docs.google.com/document/d/12uoZS1sgh239qgQJbXJC6U10X6dLyacn1SmaAC3CZbg/edit?usp=drive_link',
         1,1,1,
@@ -269,7 +269,7 @@ INSERT INTO {prefix}power_types (id, name, description) VALUES
     (2, 'Metier', 'Metier'),
     (3, 'Discipline', 'Discipline'),
     (4, 'Transformation', 'Transformation')
-ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.description;
+ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation

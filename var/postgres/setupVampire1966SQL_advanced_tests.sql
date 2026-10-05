@@ -298,35 +298,35 @@ SELECT
 FROM {prefix}workers w
 JOIN (
     -- Agent 1 and 2 should have a investigation lvl of 4 and a combat lvl of 4/4
-    SELECT '1' AS lastname, 'Vampire nouveau né' AS power_name --1,1,2
+    SELECT '1' AS lastname, 'Vampire nouveau né' AS power_name -- 1,1,2
     UNION ALL SELECT '1', 'Punk à chien' -- 1,1,-1
-    UNION ALL SELECT '1', 'Domination' --1,1,1
+    UNION ALL SELECT '1', 'Domination' -- 1,1,1
     UNION ALL SELECT '1', 'Célérité' -- 1,1,1
     UNION ALL SELECT '1', 'Goule' -- 0,0,1
-    UNION ALL SELECT '2', 'Vampire nouveau né' --1,1,2
+    UNION ALL SELECT '2', 'Vampire nouveau né' -- 1,1,2
     UNION ALL SELECT '2', 'Punk à chien' -- 1,1,-1
-    UNION ALL SELECT '2', 'Domination' --1,1,1
+    UNION ALL SELECT '2', 'Domination' -- 1,1,1
     UNION ALL SELECT '2', 'Célérité' -- 1,1,1
     UNION ALL SELECT '2', 'Goule' -- 0,0,1
 
 -- Agent 3 shoudl have a investigation level of 3 and a atk/defense LVL of 2/2
-    UNION ALL SELECT '3', 'Vampire nouveau né' --1,1,2
+    UNION ALL SELECT '3', 'Vampire nouveau né' -- 1,1,2
     UNION ALL SELECT '3', 'Punk à chien' -- 1,1,-1
-    UNION ALL SELECT '3', 'Radio-amateur.rice' --1,0,0
-    UNION ALL SELECT '3', 'Goule' --0,0,1
+    UNION ALL SELECT '3', 'Radio-amateur.rice' -- 1,0,0
+    UNION ALL SELECT '3', 'Goule' -- 0,0,1
     
 -- Agent 4 should have a investigation level of 2 and a atk/defense lvl of 0/0
-    UNION ALL SELECT '4', 'Animalisme' --2,0,0
+    UNION ALL SELECT '4', 'Animalisme' -- 2,0,0
     
 -- Agent 5 should have a investigation level of 1 and a atk/defense lvl of 5/3
-    UNION ALL SELECT '5', 'Agent.e de sécurité' --0,1,1
+    UNION ALL SELECT '5', 'Agent.e de sécurité' -- 0,1,1
     UNION ALL SELECT '5', 'Collectionneur.se de couteaux' -- 0,1,1
     UNION ALL SELECT '5', 'Endurance' -- 0,0,2
     UNION ALL SELECT '5', 'Puissance' -- 0,2,0
     UNION ALL SELECT '5', 'Célérité' -- 1,1,1
 
 -- Agent 6 should have a investigation level of 0 and be on investigate to check the random function
-    UNION ALL SELECT '6', 'Agent.e de sécurité' --0,1,1
+    UNION ALL SELECT '6', 'Agent.e de sécurité' -- 0,1,1
     UNION ALL SELECT '6', 'Collectionneur.se de couteaux' -- 0,1,1
 ) AS wp ON wp.lastname = w.lastname
 JOIN {prefix}powers p ON p.name = wp.power_name
