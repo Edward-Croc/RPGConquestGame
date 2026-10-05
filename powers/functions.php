@@ -91,9 +91,9 @@ function getPowersByWorkers(PDO $pdo, int|string $worker_id_str): array
  *  get a number of random elements from the type of power given
  *
  * @param PDO $pdo : database connection
- * @param string $type : link_power_type id
+ * @param string $type : power_types id
  * @param array $newWorker : worker being built
- * @return array|null : $newWorker with power_<type> filled, or NULL on SQL error
+ * @return array|null : $newWorker with power_<type> filled, link_power_type_id included, or NULL on SQL error
  */
 function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|null
 {
@@ -123,7 +123,7 @@ function randomPowersByType(PDO $pdo, string $type, array $newWorker): array|nul
     try {
         // Get x random values from powers for a power_type
         $sql = sprintf(
-            "SELECT p.*, %s FROM {$prefix}powers AS p
+            "SELECT p.*, %s, lpt.id AS link_power_type_id FROM {$prefix}powers AS p
             INNER JOIN {$prefix}link_power_type lpt ON lpt.power_id = p.id
             WHERE lpt.power_type_id = %s %s ORDER BY %s LIMIT 1",
             $power_text,

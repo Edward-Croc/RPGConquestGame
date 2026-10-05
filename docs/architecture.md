@@ -901,6 +901,13 @@ Plusieurs de ces tables ne portent pas les noms de colonne qu'on devine.
 `link_power_type.power_id` — un `JOIN` de plus qu'une lecture rapide du nom de
 la table ne le suggère.
 
+**`powers.id` et `link_power_type.id` ne sont jamais interchangeables.** Ils
+coïncident souvent, quand chaque pouvoir reçoit un seul lien inséré juste après
+lui, ce qui masque l'erreur. Une requête qui alimente un formulaire d'agent
+expose donc l'identifiant du lien sous l'alias `link_power_type_id`, comme
+`getPowersByType` et `randomPowersByType`. Le scénario de test les décale exprès :
+`setupTestConfig_jobs.csv` ouvre sur un pouvoir sans type.
+
 ### Colonnes à sens caché
 
 **`workers` ne porte aucune colonne `*_val`.** Les valeurs de jeu

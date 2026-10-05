@@ -1,4 +1,5 @@
 name,description,enquete,attack,defence,other,linkTable_power_types__name->link_power_type__power_type_id
+"Test_Power_Untyped"," power with no type (test data only, shifts powers.id away from link_power_type.id)",0,0,0,,
 "Field Analyst"," investigative profession",1,0,0,,Metier
 "Data Miner"," information specialist",1,0,0,,Metier
 "Code Breaker"," master analyst, fragile",2,0,-1,,Metier

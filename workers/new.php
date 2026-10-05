@@ -136,8 +136,8 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         $newWorker['power_1']['power_text'],
         $newWorker['power_2']['power_text'],
         $newWorker['origin_id'],
-        $newWorker['power_1']['id'],
-        $newWorker['power_2']['id'],
+        $newWorker['power_1']['link_power_type_id'],
+        $newWorker['power_2']['link_power_type_id'],
         $controller_id,
         $_SESSION['FOLDER']
     );
