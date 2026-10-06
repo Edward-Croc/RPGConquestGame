@@ -213,6 +213,12 @@ parce qu'elle diffuse le récit du tour au fil de la résolution. Là où la
 redirection est impossible, il faut un jeton à usage unique : voir
 [`architecture.md`](architecture.md) §3.
 
+**Un texte de configuration ne passe jamais par `sprintf`.** Un orga l'édite, et
+PHP 8 lève sur un gabarit mal formé. Il passe par
+`formatConfigText($cle, $gabarit, ...$valeurs)`, qui rend le gabarit et ses valeurs
+au lieu de lever. Un tel texte inséré dans un format plus large se formate à part,
+puis entre comme simple valeur.
+
 ---
 
 ## 8. Tests

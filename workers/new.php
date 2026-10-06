@@ -111,13 +111,27 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     if ($_SESSION['DEBUG'] == true) {
         echo "newWorker: ".var_export($newWorker, true)."<br /><br />";
     }
-    echo sprintf(
+    $proposalValues = [
+        $newWorker['firstname'],
+        $newWorker['lastname'],
+        $newWorker['origin'],
+        $newWorker['power_1']['power_text'],
+        $newWorker['power_2']['power_text'],
+        $newWorker['origin_id'],
+        $newWorker['power_1']['link_power_type_id'],
+        $newWorker['power_2']['link_power_type_id'],
+        $controller_id,
+        $_SESSION['FOLDER'],
+    ];
+    // The job and hobby sentence numbers its values like the form around it.
+    $jobHobbyText = formatConfigText('textRecrutementJobHobby', getConfig($gameReady, 'textRecrutementJobHobby'), ...$proposalValues);
+    echo vsprintf(
         '
     <div class="workers">
     <form action="/%10$s/workers/action.php" method="GET">
         <p>
         <strong>%1$s %2$s</strong> de %3$s <br />
-        '.getConfig($gameReady, 'textRecrutementJobHobby').' <br />
+        %11$s <br />
         <!-- Hidden inputs -->
         <input type="hidden" name="creation" value="true">
         <input type="hidden" name="firstname" value="%1$s">
@@ -130,16 +144,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         <input type="hidden" name="power_metier_id" value="%8$s">
         <input type="hidden" name="controller_id" value="%9$s">
     ',
-        $newWorker['firstname'],
-        $newWorker['lastname'],
-        $newWorker['origin'],
-        $newWorker['power_1']['power_text'],
-        $newWorker['power_2']['power_text'],
-        $newWorker['origin_id'],
-        $newWorker['power_1']['link_power_type_id'],
-        $newWorker['power_2']['link_power_type_id'],
-        $controller_id,
-        $_SESSION['FOLDER']
+        [...$proposalValues, $jobHobbyText]
     );
 
     // Check Transformation Conditions

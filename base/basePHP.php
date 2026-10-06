@@ -65,6 +65,31 @@ function getConfig(PDO $pdo, string $configName): string|null
 }
 
 /**
+ * Format a text template read from the configuration, as sprintf does.
+ *
+ * A malformed template does not throw : the reader gets the template as typed,
+ * followed by its values in brackets, and a warning names the configuration key.
+ *
+ * @param string $configName : configuration key the template comes from, named in the warning
+ * @param string|null $template : the template
+ * @param mixed ...$values : the values sprintf would receive
+ *
+ * @return string : the formatted text, or the template followed by its values
+ */
+function formatConfigText(string $configName, string|null $template, mixed ...$values): string
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with configName : ' . $configName, [], 'debug');
+
+    try {
+        return vsprintf((string) $template, $values);
+    } catch (ValueError | ArgumentCountError $e) {
+        game_error_log(__FUNCTION__, 'malformed template : ' . $e->getMessage(), ['configName' => $configName, 'template' => $template], 'warning');
+        return sprintf('%s [%s]', $template, implode(', ', array_map(fn ($value) => (string) $value, $values)));
+    }
+}
+
+/**
  * Extract elements of mechanics from database.
  *
  * @param PDO $pdo : database connection

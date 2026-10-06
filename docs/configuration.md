@@ -199,6 +199,15 @@ Les sections suivantes détaillent le comportement. Chaque bloc porte un `sectio
 
 ### `texts` — Textes affichés
 
+**Un gabarit mal formé ne bloque rien.** Un placeholder de trop (`%3$s` là où la clé
+n'en reçoit que deux), un `%` en fin de texte ou un spécificateur inconnu font lever
+`sprintf` en PHP 8. Les textes de la configuration passent donc par
+`formatConfigText` : le joueur lit le gabarit tel que saisi, suivi de ses valeurs
+entre crochets, et le journal d'erreurs nomme la clé en `warning`. La fin de tour
+va à son terme. Un `%` isolé suivi d'un caractère ne lève pas toujours : il peut
+consommer une valeur et corrompre la phrase en silence. Écrire `%%` pour un
+pourcent.
+
 *Section à compléter dans un commit suivant.* Couvrira : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, les familles `txt_ps_*` et `txt_inf_*`, les dénominateurs (`controllerNameDenominator*`, `timeDenominator*`), `textForZoneType`, `timeValue`, `map_file`, `map_alt`.
 
 **`textPrisonerTransferSent`** et **`textPrisonerTransferReceived`** — les deux
@@ -560,7 +569,7 @@ En mode `agent_attack_defence`, l'assaut est mené par des agents et non par un 
 
 Un agent que personne n'a affronté lit donc deux phrases : d'abord qu'il n'a pas combattu, ensuite comment l'assaut s'est terminé. Aucune écriture n'a lieu si l'ensemble reste vide.
 
-**Placeholders.** Les six nouvelles clés ne reçoivent que les arguments listés ci-dessous — jamais le troisième argument des quatre pools d'issue. Y écrire un `%3$s` (ou un `%2$s` dans un pool `Spoils*`) fait lever `sprintf` en PHP 8 et casse la fin de tour : s'en tenir strictement au contrat de chaque clé.
+**Placeholders.** Les six nouvelles clés ne reçoivent que les arguments listés ci-dessous — jamais le troisième argument des quatre pools d'issue. Y écrire un `%3$s` (ou un `%2$s` dans un pool `Spoils*`) ne casse pas la fin de tour, mais le rapport montre alors le gabarit tel que saisi suivi de ses valeurs : s'en tenir strictement au contrat de chaque clé.
 
 | Clé | Placeholders |
 |---|---|

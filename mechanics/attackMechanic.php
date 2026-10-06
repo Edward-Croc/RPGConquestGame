@@ -340,9 +340,10 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
         $kill = true;
         $defender_status = 'dead';
 
-        $attackerReport[$attackerReportKey] = sprintf($attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
+        $attackerReport[$attackerReportKey] = formatConfigText('attackSuccessTexts', $attackSuccessTexts[array_rand($attackSuccessTexts)], $defender['defender_name']);
         // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
-        $defenderReport[$defenderReportKey] = sprintf(
+        $defenderReport[$defenderReportKey] = formatConfigText(
+            'workerDisappearanceTexts',
             $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
             getConfig($pdo, 'timeDenominatorThe'),
             getConfig($pdo, 'timeDenominatorOf'),
@@ -353,7 +354,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
             echo $defender['defender_name']. ' Was Captured ! <br />';
             $capture = true;
             $defender_status = 'captured';
-            $attackerReport[$attackerReportKey] = sprintf($captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
+            $attackerReport[$attackerReportKey] = formatConfigText('captureSuccessTexts', $captureSuccessTexts[array_rand($captureSuccessTexts)], $defender['defender_name']);
             $defender_json = array('original_controller_id' => $defender['defender_controller_id']);
 
             $tmpLifeReport = $defenderReport[$defenderReportKey];
@@ -386,7 +387,8 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
                 game_error_log(__FUNCTION__, 'SELECT double agent controller failed', ['error' => $e->getMessage()]);
             }
 
-            $defenderReport[$defenderReportKey] = sprintf(
+            $defenderReport[$defenderReportKey] = formatConfigText(
+                'workerCapturedTexts',
                 $workerCapturedTexts[array_rand($workerCapturedTexts)],
                 $defender['attacker_controller_id'],
                 $tmpDoubleAgentReport
@@ -420,7 +422,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
         }
     } else {
         echo $defender['defender_name']. ' Escaped !<br />';
-        $attackerReport[$attackerReportKey] = sprintf($failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
+        $attackerReport[$attackerReportKey] = formatConfigText('failedAttackTextes', $failedAttackTextes[array_rand($failedAttackTextes)], $defender['defender_name']);
         // Check if attaker is in know ennemies
         $knownEnemycontroller = '';
         try {
@@ -450,17 +452,18 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
         } catch (PDOException $e) {
             game_error_log(__FUNCTION__, 'SELECT/INSERT controllers_known_enemies failed', ['error' => $e->getMessage()]);
         }
-        $defenderReport[$defenderReportKey] = sprintf($escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
+        $defenderReport[$defenderReportKey] = formatConfigText('escapeTextes', $escapeTextes[array_rand($escapeTextes)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller));
     }
     game_error_log(__FUNCTION__, 'survived : ' . ($survived ? 'true' : 'false'), [], 'debug');
     if ($RIPOSTACTIVE != '0' && $survived  && $defender['riposte_difference'] >= (int)$RIPOSTDIFF) {
         $attacker_status = 'dead';
         $riposte_kill = true;
         echo $defender['defender_name']. ' RIPOSTE ! <br />';
-        $attackerReport[$attackerReportKey] = sprintf($textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
+        $attackerReport[$attackerReportKey] = formatConfigText('textesAttackFailedAndCountered', $textesAttackFailedAndCountered[array_rand($textesAttackFailedAndCountered)], $defender['defender_name']);
         // The agent that vanishes is the attacker, so its own controller reads the loss.
         // %1$s - timeDenominatorThe lowercase, %2$s - timeDenominatorOf lowercase %3$s - timeValue %4$s - week number
-        $attackerReport['life_report'] = sprintf(
+        $attackerReport['life_report'] = formatConfigText(
+            'workerDisappearanceTexts',
             $workerDisappearanceTexts[array_rand($workerDisappearanceTexts)],
             getConfig($pdo, 'timeDenominatorThe'),
             getConfig($pdo, 'timeDenominatorOf'),
@@ -468,7 +471,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
             $mechanics['turncounter']
         );
         // Replaces the escape line the else branch wrote : one cannot both flee and riposte.
-        $defenderReport[$defenderReportKey] = sprintf($counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller ?? ''));
+        $defenderReport[$defenderReportKey] = formatConfigText('counterAttackTexts', $counterAttackTexts[array_rand($counterAttackTexts)], sprintf("%s(%s)%s", $defender['attacker_name'], $defender['attacker_id'], $knownEnemycontroller ?? ''));
     }
     updateWorkerAction($pdo, $defender['attacker_id'], $defender['turn_number'], $attacker_status, $attackerReport);
     updateWorkerAction($pdo, $defender['defender_id'], $defender['turn_number'], $defender_status, $defenderReport, $defender_json);
@@ -535,7 +538,7 @@ function attackMechanic(PDO $pdo, array $mechanics): bool
             $defenderArray = getWorkers($pdo, [$defender['defender_id']]);
             // if defender already is dead or prisoner, skip attack and add to report
             if (in_array($defenderArray[0]['actions'][$mechanics['turncounter']]['action_choice'], INACTIVE_ACTIONS)) {
-                $attackerReport = ['attack_report' => sprintf($unfoundAttackTextes[array_rand($unfoundAttackTextes)], $defender['defender_name'])];
+                $attackerReport = ['attack_report' => formatConfigText('unfoundAttackTextes', $unfoundAttackTextes[array_rand($unfoundAttackTextes)], $defender['defender_name'])];
                 updateWorkerAction($pdo, $defender['attacker_id'], $mechanics['turncounter'], null, $attackerReport);
             } else {
                 resolveWorkerCombat($pdo, $defender, $mechanics);

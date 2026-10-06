@@ -99,7 +99,8 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
         $onBehalfName = _claimResolveOnBehalfName($pdo, $r['params'], (int)$r['self_controller_id']);
 
         if ($r['fire_observer_reports']) {
-            $textesView = json_decode(getConfig($pdo, $r['success'] ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray'), true) ?: [];
+            $textesViewKey = $r['success'] ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray';
+            $textesView = json_decode(getConfig($pdo, $textesViewKey), true) ?: [];
             // (nom) - %1$s
             // (zone) - %2$s
             // (co-claimer names) - %3$s
@@ -111,7 +112,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
                     continue;
                 }
                 $tpl = $textesView[array_rand($textesView)];
-                $report = sprintf($tpl, $r['leader_name'], $r['zone_name'], $r['co_claimer_names'], $onBehalfName).'<br/>';
+                $report = formatConfigText($textesViewKey, $tpl, $r['leader_name'], $r['zone_name'], $r['co_claimer_names'], $onBehalfName).'<br/>';
                 updateWorkerAction($pdo, $observerWorkerId, $turn_number, null, ['claim_report' => $report]);
             }
             $observerControllerIds = array_unique(array_column($r['observers'], 'controller_id'));
@@ -125,13 +126,14 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
         // Self-report (always, 2 args)
         // (nom) - %1$s
         // (zone) - %2$s
-        $textesSelf = json_decode(getConfig($pdo, $r['success'] ? 'textesClaimSuccessArray' : 'textesClaimFailArray'), true) ?: [];
+        $textesSelfKey = $r['success'] ? 'textesClaimSuccessArray' : 'textesClaimFailArray';
+        $textesSelf = json_decode(getConfig($pdo, $textesSelfKey), true) ?: [];
         // Every agent of the group claimed, so every agent reports it, the leader included.
         $selfRecipients = array_unique(array_merge([(int)$r['leader_worker_id']], array_map('intval', $r['claimer_worker_ids'])));
         if (!empty($textesSelf)) {
             foreach ($selfRecipients as $selfWorkerId) {
                 $tpl = $textesSelf[array_rand($textesSelf)];
-                $report = sprintf($tpl, $r['leader_name'], $r['zone_name']);
+                $report = formatConfigText($textesSelfKey, $tpl, $r['leader_name'], $r['zone_name']);
                 updateWorkerAction($pdo, $selfWorkerId, $turn_number, null, ['claim_report' => $report]);
             }
         }
