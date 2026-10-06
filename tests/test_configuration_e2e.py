@@ -15,7 +15,10 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import PHP_BASE_URL
-from helpers import DB_AVAILABLE, load_minimal_data, login_as, safe_goto
+from helpers import (
+    DB_AVAILABLE, clear_ui_caches, end_turn, load_minimal_data, load_scenario_via_admin, login_as, safe_goto,
+    set_config_via_ui, ui_turn_counter, worker_report_html,
+)
 
 
 @pytest.fixture(scope="session")
@@ -86,3 +89,29 @@ class TestConfigurationCRUD:
         expect(
             gm_session.locator(f"td:has-text('{config_name}')")
         ).to_have_count(0)
+
+
+class TestMalformedTemplate:
+    """A template edited with one placeholder too many no longer stops the end
+    of turn : the report shows the template as typed, followed by its values."""
+
+    def test_end_of_turn_survives_a_malformed_template(self, browser, base_url):
+        load_scenario_via_admin(browser, base_url, "TestConfig")
+        clear_ui_caches()
+        context = browser.new_context()
+        page = context.new_page()
+        try:
+            login_as(page, base_url, "gm", "orga")
+            turn_before = ui_turn_counter(page, base_url=base_url)
+            # textesStartInvestigate receives the zone name only : %2$s has no value.
+            set_config_via_ui(page, "textesStartInvestigate", "MALFORMED %1$s %2$s", base_url=base_url)
+            end_turn(page, base_url=base_url)
+            assert ui_turn_counter(page, base_url=base_url) == turn_before + 1, \
+                "the end of turn must complete despite the malformed template"
+            report_html = worker_report_html(page, "Searcher_1", base_url=base_url)
+            assert "MALFORMED %1$s %2$s [" in report_html, \
+                "the investigator's report should show the template as typed, followed by its values"
+        finally:
+            context.close()
+            load_scenario_via_admin(browser, base_url, "TestConfig")
+            clear_ui_caches()

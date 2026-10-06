@@ -18,7 +18,7 @@ function failQueuedLocationAttack(PDO $pdo, array $queue_row, int $turn_number, 
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $textKey = $reason === 'moved' ? 'textLocationAttackMoved' : 'textLocationAttackDestroyed';
-    $attackerText = sprintf((string)getConfig($pdo, $textKey), $queue_row['location_name']);
+    $attackerText = formatConfigText($textKey, (string)getConfig($pdo, $textKey), $queue_row['location_name']);
 
     try {
         $u = $pdo->prepare("UPDATE {$prefix}controller_location_attacks
@@ -781,20 +781,20 @@ function writeLocationAgentReports(PDO $pdo, array $location, array $attackers, 
             }
             $report = '';
             if (empty($engaged[$workerId])) {
-                $report .= sprintf(
-                    pickLocationAgentText($pdo, $side === 'attack'
-                        ? 'textLocationAssaultAgentUnengaged'
-                        : 'textLocationDefenceAgentUnengaged'),
+                $unengagedKey = $side === 'attack' ? 'textLocationAssaultAgentUnengaged' : 'textLocationDefenceAgentUnengaged';
+                $report .= formatConfigText(
+                    $unengagedKey,
+                    pickLocationAgentText($pdo, $unengagedKey),
                     $locationName,
                     $zoneName
                 );
             }
             if ($falls && !$taken) {
                 // Won the fight, nowhere to put the spoils : its own outcome.
-                $report .= sprintf(
-                    pickLocationAgentText($pdo, $side === 'attack'
-                        ? 'textLocationAssaultAgentNoHolder'
-                        : 'textLocationDefenceAgentNoHolder'),
+                $noHolderKey = $side === 'attack' ? 'textLocationAssaultAgentNoHolder' : 'textLocationDefenceAgentNoHolder';
+                $report .= formatConfigText(
+                    $noHolderKey,
+                    pickLocationAgentText($pdo, $noHolderKey),
                     $locationName,
                     $zoneName
                 );
@@ -803,7 +803,8 @@ function writeLocationAgentReports(PDO $pdo, array $location, array $attackers, 
                 $key = $side === 'attack'
                     ? ($taken ? 'textLocationAssaultAgentSuccess' : 'textLocationAssaultAgentFail')
                     : ($taken ? 'textLocationDefenceAgentFail' : 'textLocationDefenceAgentSuccess');
-                $report .= sprintf(
+                $report .= formatConfigText(
+                    $key,
                     pickLocationAgentText($pdo, $key),
                     $locationName,
                     $zoneName,
@@ -814,7 +815,7 @@ function writeLocationAgentReports(PDO $pdo, array $location, array $attackers, 
             if ($artefactCount > 0 && $winnerId !== null) {
                 $report .= ((int) $row['controller_id'] === $winnerId)
                     ? pickLocationAgentText($pdo, 'textLocationAgentSpoilsSelf')
-                    : sprintf(pickLocationAgentText($pdo, 'textLocationAgentSpoilsOther'), $winnerId);
+                    : formatConfigText('textLocationAgentSpoilsOther', pickLocationAgentText($pdo, 'textLocationAgentSpoilsOther'), $winnerId);
             }
             if ($report !== '') {
                 updateWorkerAction($pdo, $workerId, $turn_number, null, ['location_attack_report' => $report]);
@@ -897,8 +898,8 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $attackers
             false,
             null,
             $targetControllerId,
-            sprintf((string) getConfig($pdo, 'textLocationNotDestroyed'), $locationName),
-            sprintf(locationAttackText($pdo, false), $locationName, $attackerClause),
+            formatConfigText('textLocationNotDestroyed', (string) getConfig($pdo, 'textLocationNotDestroyed'), $locationName),
+            formatConfigText('textLocationAssaultOwnerFail', locationAttackText($pdo, false), $locationName, $attackerClause),
             $aliveCount,
             count($aliveDefenders)
         );
@@ -914,8 +915,9 @@ function resolveAgentLocationOutcome(PDO $pdo, array $location, array $attackers
         || (!empty($activateJson['indestructible']) && $activateJson['indestructible'] == 'TRUE');
     $swapped = !$pillaged && !empty($activateJson['update_location']);
 
-    $targetText = sprintf(locationAttackText($pdo, true), $locationName, $attackerClause);
-    $attackerText = sprintf((string) getConfig($pdo, $pillaged ? 'textLocationPillaged' : 'textLocationDestroyed'), $locationName);
+    $targetText = formatConfigText('textLocationAssaultOwnerSuccess', locationAttackText($pdo, true), $locationName, $attackerClause);
+    $attackerTextKey = $pillaged ? 'textLocationPillaged' : 'textLocationDestroyed';
+    $attackerText = formatConfigText($attackerTextKey, getConfig($pdo, $attackerTextKey), $locationName);
 
     if ($swapped) {
         updateLocation($pdo, $location, $activateJson);

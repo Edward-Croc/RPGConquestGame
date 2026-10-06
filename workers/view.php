@@ -74,21 +74,26 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
             }
 
             // build view history HTML
-            $viewHistoryHTML = sprintf(
-                '<div class="box history">
-                    <h3 class="title is-5">Historique :</h3>
-                    <p>
-                        Originaire de <strong>%1$s</strong>, '.getConfig($gameReady, 'textViewWorkerJobHobby').' <br />
-                        %4$s %5$s
-                    </p>
-                </div>',
+            $historyValues = [
                 $worker['origin_name'],
                 empty($worker['powers']['Metier']['texte']) ? '' : $worker['powers']['Metier']['texte'],
                 empty($worker['powers']['Hobby']['texte']) ? '' : $worker['powers']['Hobby']['texte'],
                 empty($worker['powers']['Discipline']['texte']) ? '' :
-                    sprintf(getConfig($gameReady, 'textViewWorkerDisciplines'), $worker['powers']['Discipline']['texte']),
+                    formatConfigText('textViewWorkerDisciplines', getConfig($gameReady, 'textViewWorkerDisciplines'), $worker['powers']['Discipline']['texte']),
                 empty($worker['powers']['Transformation']['texte']) ? '' :
-                    sprintf(getConfig($gameReady, 'textViewWorkerTransformations'), $worker['powers']['Transformation']['texte']),
+                    formatConfigText('textViewWorkerTransformations', getConfig($gameReady, 'textViewWorkerTransformations'), $worker['powers']['Transformation']['texte']),
+            ];
+            // The job and hobby sentence numbers its values like the history block around it.
+            $jobHobbyText = formatConfigText('textViewWorkerJobHobby', getConfig($gameReady, 'textViewWorkerJobHobby'), ...$historyValues);
+            $viewHistoryHTML = vsprintf(
+                '<div class="box history">
+                    <h3 class="title is-5">Historique :</h3>
+                    <p>
+                        Originaire de <strong>%1$s</strong>, %6$s <br />
+                        %4$s %5$s
+                    </p>
+                </div>',
+                [...$historyValues, $jobHobbyText]
             );
 
             // build view actions HTML

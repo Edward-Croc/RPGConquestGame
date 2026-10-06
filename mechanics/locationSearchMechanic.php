@@ -125,7 +125,7 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
 
     if ($currentLevel >= 1) {
         $descTpl = $txtBag['locationDescText'][array_rand($txtBag['locationDescText'])];
-        $descBody = sprintf($descTpl, $foundName, $row['found_description']);
+        $descBody = formatConfigText('textLocationDiscoveredDescription', $descTpl, $foundName, $row['found_description']);
         if ($foundSecretFlag) {
             $descBody .= "<br />" . $row['found_hidden_description'];
         }
@@ -139,7 +139,7 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
         }
     } else {
         $nameTpl = $txtBag['locationNameText'][array_rand($txtBag['locationNameText'])];
-        $descBody = sprintf($nameTpl, $foundName);
+        $descBody = formatConfigText('textLocationDiscoveredName', $nameTpl, $foundName);
     }
 
     $artefactsHtml = '';
@@ -169,7 +169,7 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
             $coreElement = "<p>" . $descBody . "</p>";
         } else {
             $stillTpl = $txtBag['textesLocationStillHere'][array_rand($txtBag['textesLocationStillHere'])];
-            $summary = sprintf($stillTpl, $foundName);
+            $summary = formatConfigText('textesLocationStillHere', $stillTpl, $foundName);
             $coreElement = '<details><summary>' . $summary . '</summary><p>' . $descBody . '</p></details>';
         }
     }
@@ -330,12 +330,12 @@ function buildLocationAgeSentence(array $row, array $txtBag): string
     if ($setupTurn === 0 && !$isUpdated) {
         $ageClause = pickLocationAgeText($txtBag, 'textLocationAgeLongAgo');
     } elseif ($turnNumber <= $setupTurn) {
-        $ageClause = sprintf(pickLocationAgeText($txtBag, 'textLocationAgeThisTurn'), $timeValue);
+        $ageClause = formatConfigText('textLocationAgeThisTurn', pickLocationAgeText($txtBag, 'textLocationAgeThisTurn'), $timeValue);
     } else {
-        $ageClause = sprintf(pickLocationAgeText($txtBag, 'textLocationAgeTurnsAgo'), $turnNumber - $setupTurn, $timeValue);
+        $ageClause = formatConfigText('textLocationAgeTurnsAgo', pickLocationAgeText($txtBag, 'textLocationAgeTurnsAgo'), $turnNumber - $setupTurn, $timeValue);
     }
 
-    return sprintf(pickLocationAgeText($txtBag, $stateKey), $row['found_name'], $ageClause);
+    return formatConfigText($stateKey, pickLocationAgeText($txtBag, $stateKey), $row['found_name'], $ageClause);
 }
 
 /**

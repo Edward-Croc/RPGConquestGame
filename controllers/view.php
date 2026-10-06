@@ -98,9 +98,9 @@ if (isset($_SESSION['controller'])) {
             $htmlRessources = '<div class="box mb-5"><h3 class="title is-5 mt-4">Vos Ressources :</h3>';
             foreach ($ressources as $ressource) {
                 $htmlRessources .= '<p>';
-                $htmlRessources .= sprintf($ressource['presentation'], $ressource['amount'], $ressource['ressource_name'], $ressource['end_turn_gain']);
+                $htmlRessources .= formatConfigText('ressources_config.presentation', $ressource['presentation'], $ressource['amount'], $ressource['ressource_name'], $ressource['end_turn_gain']);
                 if ($ressource['amount_stored'] > 0) {
-                    $htmlRessources .= "</br>".sprintf($ressource['stored_text'], $ressource['amount_stored'], $ressource['ressource_name']);
+                    $htmlRessources .= "</br>".formatConfigText('ressources_config.stored_text', $ressource['stored_text'], $ressource['amount_stored'], $ressource['ressource_name']);
                 }
                 $htmlRessources .= '</p>';
             }
@@ -333,7 +333,7 @@ if (isset($_SESSION['controller'])) {
             );
         }
         $byTurn[(int)$q['queued_turn']][] =
-            '<em>'.sprintf($queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
+            '<em>'.formatConfigText('textLocationAttackQueued', $queuedTpl, $q['location_name'], $liveAttack, getConfig($gameReady, $bandKey)).'</em>'
             . $cancelLink;
     }
 
@@ -509,7 +509,8 @@ if (isset($_SESSION['controller'])) {
             $items = '';
             foreach ($turnGifts as $gift) {
                 $label = $gift['target_type'] === 'agent' ? "l'agent" : 'le lieu';
-                $items .= '<li>' . sprintf(
+                $items .= '<li>' . formatConfigText(
+                    'textInformationGiftReceived',
                     $giftTpl,
                     htmlspecialchars($gift['giver']),
                     $label,

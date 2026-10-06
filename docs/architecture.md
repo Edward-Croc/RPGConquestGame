@@ -714,9 +714,14 @@ refuse `''`.
 
 **Textes.** Les pools sont des listes JSON tirées au sort, éditables par un orga.
 En PHP 8, `sprintf` **lève** sur un gabarit mal formé et `array_rand` **lève** sur
-un tableau vide — dans la fin de tour, cela coupe la résolution. Voir l'issue
-#117 ; `pickLocationAgeText()` et `pickLocationAgentText()` sont les deux
-prototypes de garde.
+un tableau vide — dans la fin de tour, cela couperait la résolution.
+- Un gabarit venu de la configuration passe par `formatConfigText`
+  (`base/basePHP.php`), jamais par `sprintf` : mal formé, il rend le gabarit tel
+  que saisi suivi de ses valeurs entre crochets, et un `warning` nomme la clé.
+  Quand le texte d'une clé s'insère dans un format plus large, il est formaté à
+  part puis passé comme simple valeur.
+- Un pool vide se garde au tirage : `pickLocationAgeText()` et
+  `pickLocationAgentText()` en sont les deux prototypes.
 
 **Types PHP.** Unions écrites `int|null`, jamais `?int`.
 
