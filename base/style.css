@@ -165,6 +165,11 @@ body {
 .sidebar-btn:hover {
     background-color: var(--color-sidebar-btn-hover);
 }
+.toggle-link {
+    cursor: pointer;
+    color: var(--color-sidebar-btn);
+    text-decoration: underline;
+}
 .logout-btn {
     background-color: var(--color-logout);
     color: var(--color-chrome-text);
