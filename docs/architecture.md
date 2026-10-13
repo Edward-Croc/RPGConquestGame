@@ -37,8 +37,8 @@ puis rend son HTML via `base/baseHTML.php`.
 2. **`base/basePHP.php`** est requis en premier. Il ouvre un tampon de sortie
    (`ob_start()`, pour que `header()` fonctionne même si un avertissement a déjà
    été émis), démarre la session par `startGameSession()` (voir plus bas), charge
-   les neuf bibliothèques de fonctions
-   (`version`, `errorLog`, `db_connector`, puis `controllers`, `mechanics`,
+   les dix bibliothèques de fonctions
+   (`version`, `errorLog`, `theme`, `db_connector`, puis `controllers`, `mechanics`,
    `powers`, `ressources`, `workers`, `zones`), définit `getConfig()` et
    `getMechanics()`, puis appelle `gameReady()` — qui établit le PDO, garantit le
    schéma et, sur une base neuve, charge un scénario si `$_POST['config_name']` est
@@ -60,7 +60,8 @@ puis rend son HTML via `base/baseHTML.php`.
 4. Le point d'entrée lit ses paramètres, applique sa **garde de propriété** — un
    non-privilégié ne peut pas agir pour un autre contrôleur — puis aiguille sur
    l'action demandée.
-5. **`base/baseHTML.php`** rend l'en-tête et la barre latérale. Il refuse d'être
+5. **`base/baseHTML.php`** rend l'en-tête et la barre latérale, avec les styles de
+   la page (voir « L'habillage d'un scénario »). Il refuse d'être
    appelé directement (comparaison `realpath`) et redirige vers la connexion si la
    session n'est pas authentifiée, sauf si `$noConnection` est posé. Un seul
    fichier le pose : `base/systemPresentation.php`, la page de présentation
@@ -68,6 +69,20 @@ puis rend son HTML via `base/baseHTML.php`.
    **elles n'utilisent pas `baseHTML.php`**.
 6. Un `register_shutdown_function` émet le pied de page, ce qui ferme le HTML même
    si la page se termine tôt.
+
+### L'habillage d'un scénario
+
+Les couleurs du jeu sont des variables CSS déclarées dans le `:root` de
+`base/style.css` (`--color-chrome`, `--color-workers`, `--color-zones`…), que la
+feuille utilise partout au lieu de valeurs en dur. `style.css` est inclus en ligne
+dans un `<style>`, puis Bulma est chargé depuis son CDN, puis vient le thème du
+scénario : un fichier de `base/themes/`, nommé par la clé `uiTheme`, que
+`themeStyleSheet()` (`base/theme.php`) inclut en ligne **après Bulma** pour pouvoir
+en surcharger les classes. Le nom n'est jamais assemblé en chemin : il est comparé
+aux fichiers présents, et un nom inconnu ne charge rien et journalise un
+avertissement. `loginForm.php`, qui n'utilise pas `baseHTML.php`, charge le thème
+lui-même après `style.css`. Les pages d'administration gardent leurs couleurs en
+ligne.
 
 ### La session est cloisonnée par installation
 

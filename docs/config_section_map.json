@@ -28,6 +28,7 @@
         "basePowerNames",
         "map_file",
         "map_alt",
+        "uiTheme",
         "textForZoneType",
         "timeValue",
         "timeDenominatorThis",
