@@ -62,7 +62,7 @@ foreach ($zones as $zone) {
         ? showZoneAgents($gameReady, $_SESSION['controller']['id'], $zone['zone_id'], $mechanics, $controllerWorkers)
         : '';
     $ourControl = (!empty($_SESSION['controller']['id']) && $zone['holder_controller_id'] == $_SESSION['controller']['id'])
-        ? '<span class="tag is-danger ml-2">Sous notre contrôle</span><br>'
+        ? '<span class="tag is-success ml-2">Sous notre contrôle</span><br>'
         : '';
 
     echo sprintf(
