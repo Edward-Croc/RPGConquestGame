@@ -15,7 +15,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import PHP_BASE_URL
-from helpers import DB_AVAILABLE, load_minimal_data, login_as, safe_goto
+from helpers import DB_AVAILABLE, load_minimal_data, login_as, safe_goto, set_config_via_ui
 
 
 @pytest.fixture(scope="session")
@@ -86,3 +86,23 @@ class TestConfigurationCRUD:
         expect(
             gm_session.locator(f"td:has-text('{config_name}')")
         ).to_have_count(0)
+
+
+class TestUiTheme:
+    """uiTheme names a file of base/themes/ : the pages load it after Bulma,
+    and a name matching no file loads nothing."""
+
+    def test_theme_follows_the_configuration_key(self, gm_session: Page, base_url):
+        sepia_marker = "--color-chrome: #3b2a1e"
+        try:
+            set_config_via_ui(gm_session, "uiTheme", "sepia", base_url=base_url)
+            safe_goto(gm_session, f"{base_url}/base/accueil.php")
+            assert sepia_marker in gm_session.content(), "uiTheme=sepia should load base/themes/sepia.css"
+
+            set_config_via_ui(gm_session, "uiTheme", "../style", base_url=base_url)
+            safe_goto(gm_session, f"{base_url}/base/accueil.php")
+            html = gm_session.content()
+            assert sepia_marker not in html, "a name matching no theme file must load no theme"
+            assert "<b>Warning</b>" not in html, "an unknown theme name must not raise a PHP warning"
+        finally:
+            set_config_via_ui(gm_session, "uiTheme", "", base_url=base_url)

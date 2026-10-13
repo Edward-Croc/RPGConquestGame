@@ -18,6 +18,7 @@ $GLOBALS['TURN_REPORT_DIR'] = __DIR__ . '/../var/turn_reports';
 
 require_once '../base/version.php';
 require_once '../base/errorLog.php';
+require_once '../base/theme.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 require_once '../mechanics/functions.php';
