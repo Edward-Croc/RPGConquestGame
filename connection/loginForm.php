@@ -140,7 +140,7 @@ if (
     <title>RPGConquestGame</title>
     <style>
         <?php include_once  '../base/style.css'; ?>
-        <?php echo themeStyleSheet($gameReady ? getConfig($gameReady, 'uiTheme') : null); ?>
+        <?php echo themeStyleSheet(getConfig($gameReady, 'uiTheme')); ?>
     </style>
 </head>
 <body>
