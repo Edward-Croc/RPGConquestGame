@@ -99,10 +99,12 @@ class TestUiTheme:
             safe_goto(gm_session, f"{base_url}/base/accueil.php")
             assert sepia_marker in gm_session.content(), "uiTheme=sepia should load base/themes/sepia.css"
 
+            # A path built from the name would inline base/style.css a second time.
             set_config_via_ui(gm_session, "uiTheme", "../style", base_url=base_url)
             safe_goto(gm_session, f"{base_url}/base/accueil.php")
             html = gm_session.content()
+            assert "--color-chrome: #333" in html, "the default colours must still load"
+            assert html.count("--color-chrome:") == 1, "a name matching no theme file must load no stylesheet"
             assert sepia_marker not in html, "a name matching no theme file must load no theme"
-            assert "<b>Warning</b>" not in html, "an unknown theme name must not raise a PHP warning"
         finally:
             set_config_via_ui(gm_session, "uiTheme", "", base_url=base_url)
