@@ -33,12 +33,12 @@ a:hover {
 }
 
 /* Bulma colour classes used by the game pages. */
-.button.is-primary, .button.is-primary:hover, .button.is-primary:focus { background-color: #6b4f2f; border-color: transparent; color: #f8f0dc; }
-.button.is-link, .button.is-link:hover, .button.is-link:focus { background-color: #7a4a24; border-color: transparent; color: #f8f0dc; }
-.button.is-info, .button.is-info:hover, .button.is-info:focus { background-color: #5d6b4f; border-color: transparent; color: #f8f0dc; }
-.button.is-success, .button.is-success:hover, .button.is-success:focus { background-color: #4f6b3a; border-color: transparent; color: #f8f0dc; }
-.button.is-warning, .button.is-warning:hover, .button.is-warning:focus { background-color: #c99a3c; border-color: transparent; color: #2e2015; }
-.button.is-danger, .button.is-danger:hover, .button.is-danger:focus { background-color: #8e2b1f; border-color: transparent; color: #f8f0dc; }
+.button.is-primary, .button.is-primary:hover, .button.is-primary:focus, .button.is-primary:active { background-color: #6b4f2f; border-color: transparent; color: #f8f0dc; }
+.button.is-link, .button.is-link:hover, .button.is-link:focus, .button.is-link:active { background-color: #7a4a24; border-color: transparent; color: #f8f0dc; }
+.button.is-info, .button.is-info:hover, .button.is-info:focus, .button.is-info:active { background-color: #5d6b4f; border-color: transparent; color: #f8f0dc; }
+.button.is-success, .button.is-success:hover, .button.is-success:focus, .button.is-success:active { background-color: #4f6b3a; border-color: transparent; color: #f8f0dc; }
+.button.is-warning, .button.is-warning:hover, .button.is-warning:focus, .button.is-warning:active { background-color: #c99a3c; border-color: transparent; color: #2e2015; }
+.button.is-danger, .button.is-danger:hover, .button.is-danger:focus, .button.is-danger:active { background-color: #8e2b1f; border-color: transparent; color: #f8f0dc; }
 .button.is-primary:hover, .button.is-link:hover, .button.is-info:hover,
 .button.is-success:hover, .button.is-warning:hover, .button.is-danger:hover { filter: brightness(1.12); }
 
