@@ -3,3 +3,4 @@ pytest-split
 pymysql
 pytest-playwright
 playwright
+requests
