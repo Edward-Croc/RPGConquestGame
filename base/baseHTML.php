@@ -27,6 +27,9 @@ if (
         <?php include_once '../base/style.css'; ?>
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+        <?php echo themeStyleSheet(getConfig($gameReady, 'uiTheme')); ?>
+    </style>
 </head>
 <body class='content'>
     <div class="header"><?php

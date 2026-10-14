@@ -9,6 +9,7 @@ if (!isset($_SESSION['DEBUG'])) {
 
 require_once '../base/version.php';
 require_once '../base/errorLog.php';
+require_once '../base/theme.php';
 require_once '../BDD/db_connector.php';
 require_once '../controllers/functions.php';
 require_once '../connection/functions.php';
@@ -139,6 +140,7 @@ if (
     <title>RPGConquestGame</title>
     <style>
         <?php include_once  '../base/style.css'; ?>
+        <?php echo themeStyleSheet(getConfig($gameReady, 'uiTheme')); ?>
     </style>
 </head>
 <body>

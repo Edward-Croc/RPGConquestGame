@@ -42,7 +42,7 @@ require_once '../base/baseHTML.php';
                 <td>%3$s</td>
                 <td>%12$s</td>
                 <td>
-                    <span style="cursor: pointer; color: #4936f4; text-decoration: underline;" onclick="toggleDisciplines(%1$s)">Disciplines</span>
+                    <span class="toggle-link" onclick="toggleDisciplines(%1$s)">Disciplines</span>
                     <div id="disciplines-%1$s" style="display: none; margin-top: 10px;">
                         %5$s <br />
                         %6$s <br />
@@ -50,7 +50,7 @@ require_once '../base/baseHTML.php';
                     </div>
                 </td>
                 <td>
-                    <span style="cursor: pointer; color: #4936f4; text-decoration: underline;" onclick="toggleActions(%1$s)">Actions</span>
+                    <span class="toggle-link" onclick="toggleActions(%1$s)">Actions</span>
                     <div id="actions-%1$s" style="display: none; margin-top: 10px;">
                         <form action="/%10$s/workers/action.php" method="GET">
                             <input type="hidden" name="worker_id" value="%1$s">

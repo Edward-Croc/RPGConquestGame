@@ -242,8 +242,8 @@ class TestZonesPageControllers:
     def test_own_zone_shows_control_tag(self, gm_page: Page, base_url):
         safe_goto(gm_page, f"{base_url}/base/accueil.php?controller_id=1")
         safe_goto(gm_page, f"{base_url}/zones/action.php")
-        danger_tags = gm_page.locator("span.tag.is-danger")
-        assert danger_tags.count() >= 1, \
+        control_tags = gm_page.locator("span.tag.is-success")
+        assert control_tags.count() >= 1, \
             "Expected at least 1 'our control' tag for controller Alpha's zone"
 
 

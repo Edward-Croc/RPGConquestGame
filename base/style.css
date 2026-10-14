@@ -1,3 +1,20 @@
+/* Colours a scenario theme (base/themes/<name>.css) may redefine. */
+:root {
+    --color-chrome: #333;
+    --color-chrome-text: white;
+    --color-chrome-hover: #575757;
+    --color-workers: #c3e5f8;
+    --color-zones: #f8c3c3;
+    --color-factions: #f8c3c3;
+    --color-sidebar-btn: #4936f4;
+    --color-sidebar-btn-hover: #4936f4e0;
+    --color-logout: #f44336;
+    --color-logout-hover: #d32f2f;
+    --color-bucket-double-agent: #d8c6e5;
+    --color-bucket-prisoner: #c3d0d8;
+    --color-bucket-dead: #cccccc;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -9,8 +26,8 @@ body {
 
 .header {
     text-align: center;
-    background-color: #333;
-    color: white;
+    background-color: var(--color-chrome);
+    color: var(--color-chrome-text);
     padding: 12px 20px;
 }
 .content {
@@ -35,8 +52,8 @@ body {
 
 .app-footer {
     margin-top: auto;
-    background-color: #333;
-    color: white;
+    background-color: var(--color-chrome);
+    color: var(--color-chrome-text);
     text-align: center;
     padding: 8px 12px;
     font-size: 0.85em;
@@ -49,8 +66,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #333;
-    color: white;
+    background-color: var(--color-chrome);
+    color: var(--color-chrome-text);
     padding: 10px 20px;
 }
 
@@ -61,10 +78,13 @@ body {
     padding: 20px;
 }
 .workers {
-    background-color: #c3e5f8;
+    background-color: var(--color-workers);
 }
-.zones, .factions {
-    background-color: #f8c3c3;
+.zones {
+    background-color: var(--color-zones);
+}
+.factions {
+    background-color: var(--color-factions);
 }
 
 .config, .mechanics {
@@ -80,7 +100,7 @@ body {
     z-index: 10;
     top: 0;
     left: 0;
-    background-color: #333;
+    background-color: var(--color-chrome);
     overflow-x: hidden;
     transition: 0.4s;
     padding-top: 60px;
@@ -89,16 +109,16 @@ body {
     padding: 10px 20px;
     text-decoration: none;
     font-size: 18px;
-    color: white;
+    color: var(--color-chrome-text);
     display: block;
     transition: 0.2s;
 }
 .sidebar a:hover {
-    background-color: #575757;
+    background-color: var(--color-chrome-hover);
 }
 .sidebar .select {
-    background-color: white;
-    color: #333;
+    background-color: var(--color-chrome-text);
+    color: var(--color-chrome);
 }
 .sidebar .closebtn {
     position: absolute;
@@ -109,8 +129,8 @@ body {
 .openbtn {
     font-size: 20px;
     cursor: pointer;
-    background-color: #333;
-    color: white;
+    background-color: var(--color-chrome);
+    color: var(--color-chrome-text);
     padding: 5px 10px;
     border: none;
     position: fixed;
@@ -131,8 +151,8 @@ body {
     line-height: inherit;
 }
 .sidebar-btn {
-    background-color: #4936f4;
-    color: white;
+    background-color: var(--color-sidebar-btn);
+    color: var(--color-chrome-text);
     border: none;
     font-family: inherit;
     padding: 10px 20px;
@@ -143,11 +163,16 @@ body {
     cursor: pointer;
 }
 .sidebar-btn:hover {
-    background-color: #4936f4e0;
+    background-color: var(--color-sidebar-btn-hover);
+}
+.toggle-link {
+    cursor: pointer;
+    color: var(--color-sidebar-btn);
+    text-decoration: underline;
 }
 .logout-btn {
-    background-color: #f44336;
-    color: white;
+    background-color: var(--color-logout);
+    color: var(--color-chrome-text);
     border: none;
     padding: 10px 20px;
     text-align: center;
@@ -157,7 +182,7 @@ body {
     cursor: pointer;
 }
 .logout-btn:hover {
-    background-color: #d32f2f;
+    background-color: var(--color-logout-hover);
 }
 
 /* Phone setup */
@@ -195,17 +220,17 @@ body {
 }
 
 /* Bucket-tinted background on the .workers section wrapper.
-   alive = existing .workers blue (#c3e5f8). Other 3 are soft variants
+   alive = the .workers colour. Other 3 are soft variants
    at the same lightness so body text stays readable without white-on-X. */
 .workers.is-bucket-alive {
-    background-color: #c3e5f8;
+    background-color: var(--color-workers);
 }
 .workers.is-bucket-double-agent {
-    background-color: #d8c6e5;
+    background-color: var(--color-bucket-double-agent);
 }
 .workers.is-bucket-prisoner {
-    background-color: #c3d0d8;
+    background-color: var(--color-bucket-prisoner);
 }
 .workers.is-bucket-dead {
-    background-color: #cccccc;
+    background-color: var(--color-bucket-dead);
 }

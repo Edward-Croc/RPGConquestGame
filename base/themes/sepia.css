@@ -1,0 +1,62 @@
+/* Sepia theme : lacquered wood, parchment and ink, for Japon1555. Loaded after Bulma. */
+:root {
+    --color-chrome: #3b2a1e;
+    --color-chrome-text: #f3e6c8;
+    --color-chrome-hover: #5a4130;
+    --color-workers: #e8d9b5;
+    --color-zones: #e6cdb0;
+    --color-factions: #e6cdb0;
+    --color-sidebar-btn: #8b5a2b;
+    --color-sidebar-btn-hover: #a0693a;
+    --color-logout: #8e2b1f;
+    --color-logout-hover: #6f1f16;
+    --color-bucket-double-agent: #ddcbb8;
+    --color-bucket-prisoner: #d3c7ab;
+    --color-bucket-dead: #c4baa9;
+}
+
+html, body {
+    background-color: #f5ecd7;
+    color: #3b2a1e;
+}
+a {
+    color: #8b4a1f;
+}
+a:hover {
+    color: #5e2f12;
+}
+.title, .subtitle, strong, .label, .table th {
+    color: #3b2a1e;
+}
+.box, .card, .table {
+    background-color: #fbf5e6;
+}
+
+/* Bulma colour classes used by the game pages. */
+.button.is-primary, .button.is-primary:hover, .button.is-primary:focus, .button.is-primary:active { background-color: #6b4f2f; border-color: transparent; color: #f8f0dc; }
+.button.is-link, .button.is-link:hover, .button.is-link:focus, .button.is-link:active { background-color: #7a4a24; border-color: transparent; color: #f8f0dc; }
+.button.is-info, .button.is-info:hover, .button.is-info:focus, .button.is-info:active { background-color: #5d6b4f; border-color: transparent; color: #f8f0dc; }
+.button.is-success, .button.is-success:hover, .button.is-success:focus, .button.is-success:active { background-color: #4f6b3a; border-color: transparent; color: #f8f0dc; }
+.button.is-warning, .button.is-warning:hover, .button.is-warning:focus, .button.is-warning:active { background-color: #c99a3c; border-color: transparent; color: #2e2015; }
+.button.is-danger, .button.is-danger:hover, .button.is-danger:focus, .button.is-danger:active { background-color: #8e2b1f; border-color: transparent; color: #f8f0dc; }
+.button.is-primary:hover, .button.is-link:hover, .button.is-info:hover,
+.button.is-success:hover, .button.is-warning:hover, .button.is-danger:hover { filter: brightness(1.12); }
+
+.notification { background-color: #efe3c6; color: #3b2a1e; }
+.notification.is-primary, .notification.is-link { background-color: #e9d6b8; color: #4a2c14; }
+.notification.is-info { background-color: #e1e3cf; color: #3d4732; }
+.notification.is-success { background-color: #dde4cc; color: #34472a; }
+.notification.is-warning { background-color: #f1dfb0; color: #5a4210; }
+.notification.is-danger { background-color: #ecc9bf; color: #6f1f16; }
+
+/* Bulma scopes its tag colours under .tag:not(body), so the theme must match that weight. */
+.tag:not(body).is-primary, .tag:not(body).is-link { background-color: #7a4a24; color: #f8f0dc; }
+.tag:not(body).is-info { background-color: #5d6b4f; color: #f8f0dc; }
+.tag:not(body).is-success { background-color: #5d6b4f; color: #f8f0dc; }
+.tag:not(body).is-warning { background-color: #c99a3c; color: #2e2015; }
+.tag:not(body).is-danger { background-color: #8e2b1f; color: #f8f0dc; }
+
+.select:not(.is-multiple):not(.is-loading)::after { border-color: #8b4a1f; }
+.has-text-danger { color: #8e2b1f !important; }
+.has-text-grey, .has-text-grey-light { color: #7a6650 !important; }
+.has-background-warning-light { background-color: #f1dfb0 !important; }
