@@ -67,6 +67,7 @@ def _set_zone_claimer_via_ui(page, zone_name, claimer_lastname):
 # --- shared state captured by the fixture ---
 _live_html: dict = {}
 _post_eot_html: dict = {}
+_short_card_text: dict = {}
 
 
 def _set_config_via_ui(page, name, value):
@@ -99,9 +100,10 @@ def phrase_snapshot(browser):
     Configures 5 workers, captures each's live phrase HTML, triggers
     one EOT, then captures each's post-EOT HTML.
     """
-    global _live_html, _post_eot_html
+    global _live_html, _post_eot_html, _short_card_text
     _live_html.clear()
     _post_eot_html.clear()
+    _short_card_text.clear()
 
     if DB_AVAILABLE:
         load_minimal_data()
@@ -160,6 +162,13 @@ def phrase_snapshot(browser):
             f"&defendLocation=1&defend_target_location_id={foxtrot_outpost_id}"
         )
         page.wait_for_load_state("load")
+
+        # 4b. Snapshot Foxtrot's short cards on the agents list (session is still Foxtrot).
+        #     Finder_4 (Foxtrot, passive in Alpha-Investigation) is the zone-action baseline.
+        safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
+        for name in ["Artefact_Worker_Foxtrot", "Gift_Source_Foxtrot", "Finder_4"]:
+            card = page.locator(f"div.worker-short[data-worker-lastname='{name}'] span").first
+            _short_card_text[name] = " ".join(card.inner_text().split())
 
         # 5. Snapshot LIVE HTML for each worker
         for name in ["Chain_B", "Searcher_1",
@@ -259,6 +268,33 @@ class TestLivePhrase:
         assert "<strong>Défend le lieu</strong>  <strong>Foxtrot-Outpost</strong>" in html, (
             "verb+target anchor « Défend le lieu … Foxtrot-Outpost » missing — "
             "txt_ps_defend_location seed or buildWorkerActionInfo regression ?"
+        )
+
+
+class TestShortCardTarget:
+    """The short card of workers/viewAll.php (showWorkerShort) reads
+    « <stats> <verb> <place>. ». For attack_location / defend_location the verb
+    announces a location, so the targeted location comes first, followed by the
+    worker's zone (Theta-Artefacts for both Foxtrot workers). Without the fix the
+    card reads « défend le lieu Theta-Artefacts. »."""
+
+    def test_defend_location_card_names_location(self):
+        text = _short_card_text["Gift_Source_Foxtrot"]
+        assert text.endswith("défend le lieu Foxtrot-Outpost Theta-Artefacts."), (
+            f"defender's short card must name the defended location, then its zone; got {text!r}"
+        )
+
+    def test_attack_location_card_names_location(self):
+        text = _short_card_text["Artefact_Worker_Foxtrot"]
+        assert text.endswith("attaque le lieu Echo-Base Theta-Artefacts."), (
+            f"attacker's short card must name the attacked location, then its zone; got {text!r}"
+        )
+
+    def test_zone_action_card_keeps_zone(self):
+        """Positive pair : a passive worker still reads « surveille <zone>. »."""
+        text = _short_card_text["Finder_4"]
+        assert text.endswith("surveille Alpha-Investigation."), (
+            f"zone-action short card must keep its zone name; got {text!r}"
         )
 
 
