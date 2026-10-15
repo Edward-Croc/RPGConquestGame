@@ -279,7 +279,8 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         if ($key == 0) {
             continue;
         }
-        $discipline_2 .= sprintf(
+        $discipline_2 .= formatConfigText(
+            'textesFoundDisciplines',
             $txtBag['textesFoundDisciplines'][array_rand($txtBag['textesFoundDisciplines'])],
             $discipline
         );
@@ -296,13 +297,15 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
             $transformationTextDiff[$diffval] .= $found_transformation[$iteration];
         }
         if ($diffval == 1) {
-            $transformationTextDiff[$diffval] .= sprintf(
+            $transformationTextDiff[$diffval] .= formatConfigText(
+                'textesTransformationDiff1',
                 $txtBag['textesTransformationDiff1'][array_rand($txtBag['textesTransformationDiff1'])],
                 $found_transformation[$iteration]
             );
         }
         if ($diffval == 2) {
-            $transformationTextDiff[$diffval] .= sprintf(
+            $transformationTextDiff[$diffval] .= formatConfigText(
+                'textesTransformationDiff2',
                 $txtBag['textesTransformationDiff2'][array_rand($txtBag['textesTransformationDiff2'])],
                 $found_transformation[$iteration]
             );
@@ -368,7 +371,8 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
 
     $originTexte = '';
     if (!in_array($row['found_worker_origin_id'], explode(',', $txtBag['local_origin_list']))) {
-        $originTexte = sprintf(
+        $originTexte = formatConfigText(
+            'textesOrigine',
             $txtBag['textesOrigine'][array_rand($txtBag['textesOrigine'])],
             $row['found_worker_origin_name']
         );
@@ -377,9 +381,8 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     $found_hobby = cleanAndSplitString($row['found_hobby']);
     $found_metier = cleanAndSplitString($row['found_metier']);
 
-    $textesDiff01Array = !empty($transformationTextDiff[0])
-        ? $txtBag['textesDiff01TransformationDiff0Array']
-        : $txtBag['textesDiff01Array'];
+    $textesDiff01Key = !empty($transformationTextDiff[0]) ? 'textesDiff01TransformationDiff0Array' : 'textesDiff01Array';
+    $textesDiff01Array = $txtBag[$textesDiff01Key];
     $texteDiff01 = $textesDiff01Array[array_rand($textesDiff01Array)];
 
     $slabArgs = [
@@ -388,15 +391,16 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         $transformationTextDiff[0], $transformationTextDiff[1], $originTexte
     ];
     $slabs = [
-        0 => vsprintf($texteDiff01[0], $slabArgs),
-        1 => vsprintf($texteDiff01[1], $slabArgs),
+        0 => formatConfigText($textesDiff01Key, $texteDiff01[0], ...$slabArgs),
+        1 => formatConfigText($textesDiff01Key, $texteDiff01[1], ...$slabArgs),
     ];
 
     // slab[2] and slab[3] only need building if either current OR prev knows that level
     $needSlab2 = ($currentLevel >= 2) || ($prevCke && !empty($prevCke['discovered_controller_id']));
     $needSlab3 = ($currentLevel >= 3) || ($prevCke && !empty($prevCke['discovered_controller_name']));
     if ($needSlab2) {
-        $slabs[2] = sprintf(
+        $slabs[2] = formatConfigText(
+            'textesDiff2',
             $txtBag['textesDiff2'][array_rand($txtBag['textesDiff2'])],
             $row['found_controller_id'],
             $transformationTextDiff[2],
@@ -404,7 +408,8 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         );
     }
     if ($needSlab3) {
-        $slabs[3] = sprintf(
+        $slabs[3] = formatConfigText(
+            'textesDiff3',
             $txtBag['textesDiff3'][array_rand($txtBag['textesDiff3'])],
             $row['found_controller_name']
         );
@@ -442,7 +447,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         // Moved — summary + full known text folded
         $prevZoneName = $zoneNameById[$prevZone] ?? ('zone #'.$prevZone);
         $movedTpl = $txtBag['textesAgentMoved'][array_rand($txtBag['textesAgentMoved'])];
-        $summary = sprintf($movedTpl, $foundName, $prevZoneName);
+        $summary = formatConfigText('textesAgentMoved', $movedTpl, $foundName, $prevZoneName);
         $maxLevel = max($currentLevel, $prevLevel);
         $foldedSlabs = [];
         for ($i = 0; $i <= $maxLevel; $i++) {
@@ -454,7 +459,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     } elseif ($currentLevel <= $prevLevel) {
         // delta <= 0 — "still here" + folded prev
         $stillTpl = $txtBag['textesAgentStillHere'][array_rand($txtBag['textesAgentStillHere'])];
-        $summary = sprintf($stillTpl, $foundName, $txtBag['textForZoneType']);
+        $summary = formatConfigText('textesAgentStillHere', $stillTpl, $foundName, $txtBag['textForZoneType']);
         $foldedSlabs = [];
         for ($i = 0; $i <= $prevLevel; $i++) {
             if (isset($slabs[$i])) {
@@ -465,7 +470,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     } else {
         // delta > 0 — new slabs visible + previously-known folded
         $upgradeTpl = $txtBag['textesAgentUpgradeInfo'][array_rand($txtBag['textesAgentUpgradeInfo'])];
-        $upgradeText = sprintf($upgradeTpl, $foundName);
+        $upgradeText = formatConfigText('textesAgentUpgradeInfo', $upgradeTpl, $foundName);
         $newSlabs = [];
         for ($i = $prevLevel + 1; $i <= $currentLevel; $i++) {
             $newSlabs[] = $slabs[$i];
@@ -564,7 +569,7 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool
         game_error_log(__FUNCTION__, 'processing row', ['row' => $row], 'debug');
 
         if (empty($reportArray[$row['searcher_id']])) {
-            $reportArray[$row['searcher_id']] = sprintf($txtBag['textesStartInvestigate'], $row['zone_name']);
+            $reportArray[$row['searcher_id']] = formatConfigText('textesStartInvestigate', $txtBag['textesStartInvestigate'], $row['zone_name']);
         }
 
         $prevCke = getCKEEntry($pdo, $row['searcher_controller_id'], $row['found_id']);

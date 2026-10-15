@@ -524,11 +524,14 @@ function buildWorkerZoneActionPhrase(
         // Append the infiltrated Controller name to the action
         $infiltratedId = getPrimaryControllerId($pdo, $workerId);
         if (!empty($infiltratedId)) {
-            $doubleAgentTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_double_agent' : 'txt_ps_double_agent'));
+            $doubleAgentKey = $firstPerson ? 'txt_ps_1p_double_agent' : 'txt_ps_double_agent';
+            $doubleAgentTpl = (string) getConfig($pdo, $doubleAgentKey);
             if ($doubleAgentTpl === '' && $firstPerson) {
-                $doubleAgentTpl = (string) getConfig($pdo, 'txt_ps_double_agent');
+                $doubleAgentKey = 'txt_ps_double_agent';
+                $doubleAgentTpl = (string) getConfig($pdo, $doubleAgentKey);
             }
-            $verb .= sprintf(
+            $verb .= formatConfigText(
+                $doubleAgentKey,
                 ' et ' . $doubleAgentTpl,
                 getConfig($pdo, 'controllerNameDenominatorOf'),
                 getControllerName($pdo, $infiltratedId)
@@ -542,12 +545,15 @@ function buildWorkerZoneActionPhrase(
             game_error_log(__FUNCTION__, 'json_decode failed on prisoner action_params : ' . json_last_error_msg(), ['workerId' => $workerId, 'actionParamsJson' => $actionParamsJson], 'warning');
             $params = [];
         }
-        $prisonerTpl = (string) getConfig($pdo, ($firstPerson ? 'txt_ps_1p_prisoner' : 'txt_ps_prisoner'));
+        $prisonerKey = $firstPerson ? 'txt_ps_1p_prisoner' : 'txt_ps_prisoner';
+        $prisonerTpl = (string) getConfig($pdo, $prisonerKey);
         if ($prisonerTpl === '' && $firstPerson) {
-            $prisonerTpl = (string) getConfig($pdo, 'txt_ps_prisoner');
+            $prisonerKey = 'txt_ps_prisoner';
+            $prisonerTpl = (string) getConfig($pdo, $prisonerKey);
         }
         // Append the original controller name to the captor
-        $verb = sprintf(
+        $verb = formatConfigText(
+            $prisonerKey,
             $prisonerTpl,
             getConfig($pdo, 'controllerNameDenominatorOf'),
             getControllerName($pdo, $params['original_controller_id'] ?? 0)
@@ -658,7 +664,8 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
             $controller_name = getControllerName($pdo, $params['original_controller_id']);
         }
 
-        $textActionUpdated = sprintf(
+        $textActionUpdated = formatConfigText(
+            'txt_ps_' . $workerStatus,
             getConfig($pdo, 'txt_ps_'.$workerStatus),
             getConfig($pdo, 'controllerNameDenominatorOf'),
             $controller_name
@@ -1755,7 +1762,8 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                 if ($traceWorkerId === false) {
                     game_error_log(__FUNCTION__, 'Failed to create trace worker', ['workerId' => $workerId, 'from_controller_id' => $fromControllerId], 'warning');
                 } else {
-                    updateWorkerAction($pdo, (int) $traceWorkerId, $turn_number, null, array('life_report' => sprintf(
+                    updateWorkerAction($pdo, (int) $traceWorkerId, $turn_number, null, array('life_report' => formatConfigText(
+                        'textPrisonerTransferSent',
                         (string) getConfig($pdo, 'textPrisonerTransferSent'),
                         getConfig($pdo, 'controllerNameDenominatorThe'),
                         getControllerName($pdo, $toControllerId)
@@ -1777,7 +1785,8 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
                 if (empty($currentReport['life_report'])) {
                     $currentReport['life_report'] = '';
                 }
-                $currentReport['life_report'] .= sprintf(
+                $currentReport['life_report'] .= formatConfigText(
+                    'textPrisonerTransferReceived',
                     (string) getConfig($pdo, 'textPrisonerTransferReceived'),
                     getConfig($pdo, 'controllerNameDenominatorThe'),
                     getControllerName($pdo, $toControllerId)

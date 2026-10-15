@@ -15,7 +15,10 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import PHP_BASE_URL
-from helpers import DB_AVAILABLE, load_minimal_data, login_as, safe_goto, set_config_via_ui
+from helpers import (
+    DB_AVAILABLE, clear_ui_caches, end_turn, load_minimal_data, load_scenario_via_admin, login_as, safe_goto,
+    set_config_via_ui, ui_turn_counter, worker_report_html,
+)
 
 
 @pytest.fixture(scope="session")
@@ -108,3 +111,39 @@ class TestUiTheme:
             assert sepia_marker not in html, "a name matching no theme file must load no theme"
         finally:
             set_config_via_ui(gm_session, "uiTheme", "", base_url=base_url)
+
+
+class TestMalformedTemplate:
+    """A template edited with one placeholder too many no longer stops the end
+    of turn nor breaks a page : the reader gets the template as typed, followed
+    by its values. Covers a plain site (the investigation report) and a composite
+    one (the agent history, which inserts the job and hobby sentence as %6$s)."""
+
+    def test_end_of_turn_survives_a_malformed_template(self, browser, base_url):
+        load_scenario_via_admin(browser, base_url, "TestConfig")
+        clear_ui_caches()
+        context = browser.new_context()
+        page = context.new_page()
+        try:
+            login_as(page, base_url, "gm", "orga")
+            history_head = "Originaire de <strong>origine Commune</strong>, "
+            assert history_head + "is a <strong>Common Folk" in worker_report_html(page, "Searcher_1", base_url=base_url), \
+                "the agent history should insert the job and hobby sentence as its sixth value"
+            # textViewWorkerJobHobby receives five values : %7$s has none.
+            set_config_via_ui(page, "textViewWorkerJobHobby", "MALFORMED %1$s %7$s", base_url=base_url)
+            assert history_head + "MALFORMED %1$s %7$s [origine Commune, " in worker_report_html(page, "Searcher_1", base_url=base_url), \
+                "the agent history should show the sentence template as typed, followed by its values"
+
+            turn_before = ui_turn_counter(page, base_url=base_url)
+            # textesStartInvestigate receives the zone name only : %2$s has no value.
+            set_config_via_ui(page, "textesStartInvestigate", "MALFORMED %1$s %2$s", base_url=base_url)
+            end_turn(page, base_url=base_url)
+            assert ui_turn_counter(page, base_url=base_url) == turn_before + 1, \
+                "the end of turn must complete despite the malformed template"
+            report_html = worker_report_html(page, "Searcher_1", base_url=base_url)
+            assert "MALFORMED %1$s %2$s [" in report_html, \
+                "the investigator's report should show the template as typed, followed by its values"
+        finally:
+            context.close()
+            load_scenario_via_admin(browser, base_url, "TestConfig")
+            clear_ui_caches()
