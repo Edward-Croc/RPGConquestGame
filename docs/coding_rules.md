@@ -193,7 +193,17 @@ faux. Une valeur de configuration se compare donc explicitement :
 
 ---
 
-## 7. Gardes et actions rejouables
+## 7. Textes de configuration
+
+**Un texte de configuration ne passe jamais par `sprintf`.** Un orga l'édite, et
+PHP 8 lève sur un gabarit mal formé. Il passe par
+`formatConfigText($cle, $gabarit, ...$valeurs)`, qui rend le gabarit et ses valeurs
+au lieu de lever. Un tel texte inséré dans un format plus large se formate à part,
+puis entre comme simple valeur.
+
+---
+
+## 8. Gardes et actions rejouables
 
 Une action déclenchée par une URL peut être rejouée : F5, retour arrière,
 double-clic, ou URL forgée à la main. Deux conséquences :
@@ -213,15 +223,9 @@ parce qu'elle diffuse le récit du tour au fil de la résolution. Là où la
 redirection est impossible, il faut un jeton à usage unique : voir
 [`architecture.md`](architecture.md) §3.
 
-**Un texte de configuration ne passe jamais par `sprintf`.** Un orga l'édite, et
-PHP 8 lève sur un gabarit mal formé. Il passe par
-`formatConfigText($cle, $gabarit, ...$valeurs)`, qui rend le gabarit et ses valeurs
-au lieu de lever. Un tel texte inséré dans un format plus large se formate à part,
-puis entre comme simple valeur.
-
 ---
 
-## 8. Tests
+## 9. Tests
 
 La suite est Playwright pilotée par pytest, dans `tests/`.
 
@@ -252,7 +256,7 @@ l'amorçage MySQL.
 
 ---
 
-## 9. Branches, commits et revue
+## 10. Branches, commits et revue
 
 **Jamais de commit direct sur `main`.** Une branche par issue, fusionnée par
 pull request. La CI (`.github/workflows/test.yml`) se déclenche sur les PR
@@ -286,7 +290,7 @@ mention d'aide automatisée.
 
 ---
 
-## 10. Ce qui ne se versionne pas
+## 11. Ce qui ne se versionne pas
 
 - `CLAUDE.md` — instructions personnelles, propres à chaque contributeur ;
 - `tests/AUDIT_*.md` — documents de travail temporaires ;
@@ -295,7 +299,7 @@ mention d'aide automatisée.
 
 ---
 
-## 11. Éviter le code inutile
+## 12. Éviter le code inutile
 
 Une nouvelle colonne, une nouvelle clé de configuration ou une nouvelle fonction
 d'aide se justifie par un comportement **visible par un joueur ou par le meneur
