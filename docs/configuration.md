@@ -24,7 +24,7 @@ name,value,description
 
 | Besoin | Clés à poser en premier |
 |---|---|
-| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt`, `uiTheme` |
+| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt`, `uiTheme`, `guideCaptures` |
 | Vocabulaire | `textForZoneType`, `timeValue`, dénominateurs `timeDenominator*` / `controllerNameDenominator*` |
 | Mode conquête | `claimMode` (`worker` ou `worker_leader`) |
 | Mode attaque de lieu | `locationAttackMode` (`immediate`, `endTurn`, ou `agent_attack_defence`) |
@@ -155,7 +155,7 @@ La carte complète vit dans [`docs/config_section_map.json`](config_section_map.
 
 Titre, présentation, dénominateurs, libellés d'actions, pools de rapports.
 
-Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `uiTheme`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`, `textPrisonerTransferSent`, `textPrisonerTransferReceived`
+Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `uiTheme`, `guideCaptures`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`, `textPrisonerTransferSent`, `textPrisonerTransferReceived`
 
 ### `engine` — Moteur de jeu (calculs partagés)
 
@@ -221,6 +221,13 @@ Un thème ne redéfinit que les variables `:root` de `base/style.css`
 classes de couleur de Bulma (`.button.is-link`, `.notification.is-danger`, …) : il
 se charge après Bulma pour pouvoir les surcharger. Les pages d'administration
 gardent leurs couleurs en ligne.
+
+**`guideCaptures`** (= vide) — le jeu de captures d'écran du guide joueur
+(`/base/systemPresentation.php`) : le nom d'un dossier de `base/guide/`. Chaque
+capture y est cherchée d'abord, puis dans `base/guide/testconfig/`, si bien qu'un
+scénario ne fournit que les captures qui diffèrent. Vide ou inconnu, le guide
+montre les captures de TestConfig. Japon1555 déclare `japon1555`. Les captures se
+régénèrent avec `tests/tools/capture_guide.py`.
 
 **`textPrisonerTransferSent`** et **`textPrisonerTransferReceived`** — les deux
 faces d'un transfert de garde (`transferPrisoner`). La première est déposée sur

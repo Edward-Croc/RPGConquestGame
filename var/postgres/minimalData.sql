@@ -192,7 +192,8 @@ INSERT INTO {prefix}config (name, value, description)
 VALUES
     ('map_file', 'shikoku.png', 'Map file to use'),
     ('map_alt', 'Carte', 'Map alt'),
-    ('uiTheme', '', 'Visual theme : name of a base/themes/*.css file, empty for the default colours')
+    ('uiTheme', '', 'Visual theme : name of a base/themes/*.css file, empty for the default colours'),
+    ('guideCaptures', '', 'Player guide captures : name of a base/guide/ folder, empty for the testconfig captures')
 ON CONFLICT (name) DO NOTHING;
 
 -- Controller / time denomimator texts
