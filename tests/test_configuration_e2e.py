@@ -113,6 +113,40 @@ class TestUiTheme:
             set_config_via_ui(gm_session, "uiTheme", "", base_url=base_url)
 
 
+class TestGuideCaptures:
+    """guideCaptures names a folder of base/guide/ : the player guide takes each
+    capture from it, else from base/guide/testconfig/, and a name matching no
+    folder keeps the testconfig captures."""
+
+    def test_guide_captures_follow_the_configuration_key(self, gm_session: Page, base_url):
+        def capture_sources():
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            sources = gm_session.locator("figure.guide-capture img").evaluate_all(
+                "imgs => imgs.map(i => i.getAttribute('src'))")
+            # The captures load lazily : fetch them rather than read their rendered size.
+            origin = base_url.split("/", 3)
+            for src in sources:
+                assert gm_session.request.get(f"{origin[0]}//{origin[2]}{src}").status == 200, f"{src} should be served"
+            return sources
+
+        try:
+            # A scenario loaded before the suite may have left its own set in the key.
+            set_config_via_ui(gm_session, "guideCaptures", "", base_url=base_url)
+            default_sources = capture_sources()
+            assert default_sources and all("/base/guide/testconfig/" in src for src in default_sources), \
+                f"an empty guideCaptures should show the testconfig captures, got {default_sources}"
+
+            set_config_via_ui(gm_session, "guideCaptures", "japon1555", base_url=base_url)
+            japon_sources = capture_sources()
+            assert len(japon_sources) == len(default_sources), "a set should replace the captures, not add or drop any"
+            assert all("/base/guide/japon1555/" in src for src in japon_sources), \
+                f"guideCaptures=japon1555 should show its own captures, got {japon_sources}"
+
+            set_config_via_ui(gm_session, "guideCaptures", "../guide", base_url=base_url)
+            assert capture_sources() == default_sources, "a name matching no folder should keep the testconfig captures"
+        finally:
+            set_config_via_ui(gm_session, "guideCaptures", "", base_url=base_url)
+
 class TestMalformedTemplate:
     """A template edited with one placeholder too many no longer stops the end
     of turn nor breaks a page : the reader gets the template as typed, followed

@@ -5,119 +5,223 @@ $pageName = 'systemPresentation';
 
 require_once '../base/baseHTML.php';
 
-?> 
-<div class="factions">
-<h2>Présentation du système : </h2>
-<p>Bienvenue sur la page de présentation du système de jeu RPG Game Conquest.<br>
-Ce système repose sur une simulation stratégique en tour par tour mettant en scène des <strong>contrôleurs/factions</strong>,
- leurs <strong>agents</strong>, des <strong>zones</strong> et des <strong>lieux spécifiques</strong> à découvrir, défendre ou conquérir.<br>
-Ce système est créé pour assiter le fonctionnement des mécaniques de jeu d'une <strong>soirée enquête</strong>.
-Il n'est pas prévu pour fonctionner sans une phase de négociations entre joueurs à chaque tour.<br>
-Un tutoriel pour la configuration Shikoku est disponible <a href="https://drive.google.com/file/d/1oRmi4oy_D6cPm3zzd7wn-3uEVQ1u-XsP/view?usp=sharing" target="_blank"><strong>PDF</strong></a>.
-</p>
+$timeValue = (string) getConfig($gameReady, 'timeValue');
+$zoneType = (string) getConfig($gameReady, 'textForZoneType');
+$labelInvestigate = ucfirst((string) getConfig($gameReady, 'txt_inf_investigate'));
+$labelPassive = ucfirst((string) getConfig($gameReady, 'txt_inf_passive'));
+$labelHide = ucfirst((string) getConfig($gameReady, 'txt_inf_hide'));
+$minRoll = (int) getConfig($gameReady, 'MINROLL');
+$maxRoll = (int) getConfig($gameReady, 'MAXROLL');
+$passiveVal = (int) getConfig($gameReady, 'PASSIVEVAL');
+$claimEnabled = in_array(getConfig($gameReady, 'claimMode'), ['worker', 'worker_leader'], true);
+$agentLocationAttack = getConfig($gameReady, 'locationAttackMode') === 'agent_attack_defence';
+$ressourcesEnabled = getConfig($gameReady, 'ressource_management') == 'TRUE';
+$captureSet = getConfig($gameReady, 'guideCaptures');
+$hideDiscretion = (int) getConfig($gameReady, 'HIDE_ENQUETE_FLAT_BONUS');
+$hideDefence = (int) getConfig($gameReady, 'HIDE_DEFENCE_FLAT_BONUS');
+$defendLocationBonus = (int) getConfig($gameReady, 'DEFEND_LOCATION_DEFENCE_FLAT_BONUS');
+$ownedArtefactsTitle = rtrim((string) getConfig($gameReady, 'textOwnedArtefacts'), ' :');
 
-<h3>1. Contrôleurs/Factions et Agents</h3>
-<p>Chaque contrôleur/faction gère son réseau d'agents, qu’il peut envoyer sur le terrain pour accomplir différentes actions : enquête, attaque, conquête, etc.<br>
-Chaque contrôleur a un numéro de réseau unique, qu'il sera possible aux autres joueurs de découvrir lors des enquêtes.
-  <ul>
-  <li>Un contrôleur peut chaque tour <strong>recruter</strong> un ou plusieurs agents, selon les circonstances.<ul>
-    <li>Il existe <strong>deux types</strong> de recrutement : celui qui donne un choix entre plusieurs agents et qui nécessite d'avoir une place forte active, et <strong>premier venu</strong> qui donne un agent unique à prendre ou à laisser.</li>
-    <li>Lors du <strong>recrutement</strong> le nom, prénom et deux <strong>capacités sont tirées au sort</strong>. Le contrôleur peut alors l'affecter à une zone d'action.</li>
-    <li> (<strong>Attention:</strong> une fois un recrutement commencé il est décompté pour le tour, ne quittez pas la page !)</li>
-  </ul></li>
-  <li>Un contrôleur peut donner des <strong>capacités</strong> supplémentaires à ses agents au fil du temps. Plus un agent est ancien, plus il sera puissant.</li>
-  <li>Un contrôleur pourra parfois, en fonction de la configuration (contrôle d'une zone, faction, etc.), donner d'autres avantages à son serviteur.</li>
-  <li>Ces agents possèdent donc des <strong>valeurs dynamiques</strong> (enquête, attaque, défense) qui sont <strong>calculées à chaque tour</strong> en fonction de leurs pouvoirs, avantages et de bonus passifs ou actifs, ainsi que du contrôle de la zone dans laquelle ils se trouvent.</li>
-  </ul>
-</p>
-<h3>2. Actions possibles d'Agents</h3>
-<p> Chaque tour un agent peut faire <strong>une action parmi</strong> les suivantes :
+// What an action adds on one axis : a die when it is active on that axis, the fixed value otherwise.
+$actionRoll = function (string $axis, string $action) use ($gameReady, $minRoll, $maxRoll, $passiveVal): string {
+    $activeActions = explode(',', str_replace("'", '', (string) getConfig($gameReady, 'active' . $axis . 'Actions')));
+    if (!in_array($action, $activeActions, true)) {
+        return (string) $passiveVal;
+    }
+    return $minRoll === 1 ? '1d' . $maxRoll : sprintf('un dé de %d à %d', $minRoll, $maxRoll);
+};
+
+// Actions an agent keeps from one turn to the next, the others fall back to watching.
+$continuingActions = [];
+foreach (['investigate', 'hide', 'claim', 'attack', 'attack_location', 'defend_location'] as $action) {
+    if ((int) getConfig($gameReady, 'continuing_' . $action . '_action') === 1) {
+        $continuingActions[] = (string) getConfig($gameReady, 'txt_inf_' . $action);
+    }
+}
+
+?>
+<div class="factions guide">
+<h2 class="title is-3">Guide du joueur</h2>
+<div class="box guide-section">
+<h3 class="title is-4">1. Se connecter et naviguer</h3>
+<?= guideCaptureFigure($captureSet, 'menu', 'Le menu, ouvert par le bouton ☰') ?>
+<?= guideCaptureFigure($captureSet, 'login', 'La page de connexion') ?>
+<p>Ce système accompagne une <strong>soirée enquête</strong> : il tient la mécanique de la partie, en tour par tour,
+pendant que les joueurs négocient entre eux. <strong>Le jeu diplomatique reste indispensable</strong> : le système
+ne remplace ni les alliances, ni les trahisons, ni l'orga.</p>
+<p>Chaque joueur dirige une <strong>faction</strong> qui envoie ses <strong>agents</strong> sur les
+<strong><?= htmlspecialchars($zoneType) ?>s</strong> de la carte pour enquêter, attaquer, revendiquer et découvrir des lieux secrets.
+Un tour de jeu s'appelle ici un <strong><?= htmlspecialchars($timeValue) ?></strong>.</p>
+<p><strong>Vos identifiants sont donnés par l'orga. Pour toute question, allez voir l'orga !</strong></p>
+<p>Le bouton <strong>☰</strong>, en haut à gauche de chaque page, ouvre le menu :</p>
 <ul>
-  <li><strong>Surveiller :</strong> L’agent ne prend pas de risques, mais reste à l'affut des autres agents et des informations secrètes dans la zone.</li>
-  <li><strong>Investiguer :</strong> L’agent tente de découvrir les autres agents et les lieux secrets dans sa zone, au risque d'échouer.</li>
-  <li><strong>Attaquer :</strong> Attaque les agents choisis par le contrôleur parmi la liste fournie.
-    Si plusieurs cibles sont séléctionnées, elles seront attaquées dans l'ordre de leur valeur enquête, la plus haute en premier.
-    Il y a 5 résultats possibles à une attaque : 
-    <ul>
-      <li> <i>Introuvable :</i> la cible est déjà morte.</li>
-      <li> <i>Défaite totale :</i> l'attaquant disparait, éliminé par une contre attaque et la cible apprend son nom.</li>
-      <li> <i>Echec :</i> l'attaquant échoue et la cible apprend son nom.</li>
-      <li> <i>Réussite :</i> l'attaquant élimine sa cible.</li>
-      <li> <i>Capture :</i> l'attaquant capture sa cible vivante le contrôleur obtient l'accès aux rapports de la cible.</li>
-    </ul>
-  </li>
-  <li><strong>Se cacher :</strong> L’agent tente de se dissimuler des autres agents dans sa zone et renforce ses défenses personnelles.</li>
-  <li><strong>Revendiquer :</strong> Cherche à prendre le contrôle de la zone, et la consacre au contrôleur choisi.
-  Ou renforce la défense d’une zone déjà contrôlée, si l'agent en a la puissance. Cette action <strong>révélera</strong> l'agent qui l'effectue.</li>
+  <li><strong>Accueil</strong> : l'introduction de la partie, puis votre faction, les <?= htmlspecialchars($zoneType) ?>s et vos agents sur une seule page.</li>
+  <li><strong>Ma Faction</strong> : votre base, vos lieux, les informations à donner ou reçues.</li>
+  <li><strong>Agents de la faction</strong> : recruter et diriger vos agents.</li>
+  <?php if ($ressourcesEnabled) { ?>
+  <li><strong>Ressources</strong> : ce que possède votre faction, ce qu'elle gagnera, et les dons.</li>
+  <?php } ?>
+  <li><strong>Les Zones</strong> : la carte et ce que vous savez de chaque <?= htmlspecialchars($zoneType) ?>.</li>
+  <li><strong>Le Système</strong> : ce guide.</li>
+  <li><strong>Mon compte</strong> : vos factions et votre mot de passe.</li>
 </ul>
-</p>
-<p> Chaque tour un agent peut <strong>librement</strong> et sans malus : <ul>
-    <li><strong>Déménager :</strong> changer de zone</li>
-    <li><strong>Etre offert à un autre :</strong> changer de contrôleur</li>
-</ul></p>
-<p>
-  Les <strong>résultats d'une enquête</strong> (surveillance ou investigation) sur un agent contiendront par ordre de difficulté d'obtention : <ul>
-    <li> Le nom, les capacités aléatoires et l'action en cours d'un agent. </li>
-    <li> Les capacités et modifications données par son contrôleur. </li>
-    <li> Le numéro du réseau dont fait partie l'agent. </li>
-    <li> Le nom du contrôleur qui domine le réseau.</li>
-  </ul>
-</p>
-<h3>3. Zones, Lieux et Artefacts</h3>
-<p>La carte du monde est divisée en <strong>zones</strong>, qui peuvent être contrôlées par un <strong>contrôleur/faction</strong>.
-  Ces zones peuvent contenir un ou plusieurs lieux secrets et les places fortes des contrôleurs, qui ont chacun une difficulté de découverte différente.
-  Lorsqu’un agent enquête dans une zone ennemie, il peut découvrir :</p>
+</div>
+
+<div class="box guide-section">
+<h3 class="title is-4">2. Un <?= htmlspecialchars($timeValue) ?> de jeu</h3>
+<p>Pendant le <?= htmlspecialchars($timeValue) ?>, vous <strong>choisissez</strong> l'action de chaque agent. Rien n'est
+résolu tout de suite : l'orga lance la <strong>fin de <?= htmlspecialchars($timeValue) ?></strong>, et le système résout
+alors toutes les actions, dans cet ordre :</p>
+<ol>
+  <?php if ($ressourcesEnabled) { ?><li>Les ressources du <?= htmlspecialchars($timeValue) ?> sont versées.</li><?php } ?>
+  <li>Les valeurs de chaque agent sont calculées et notées dans son rapport.</li>
+  <li>Les attaques entre agents.</li>
+  <li>Les attaques de lieux.</li>
+  <li>Les revendications de <?= htmlspecialchars($zoneType) ?>s.</li>
+  <?php if ($ressourcesEnabled) { ?><li>Les ressources qui dépendent des <?= htmlspecialchars($zoneType) ?>s tenu.es.</li><?php } ?>
+  <li>Les enquêtes sur les agents.</li>
+  <li>La recherche des lieux.</li>
+  <li>Le compteur de recrutement repart à zéro et un nouveau <?= htmlspecialchars($timeValue) ?> commence.</li>
+</ol>
+<p>Les rapports de vos agents racontent ensuite ce qu'ils ont vécu. <strong>Conseil : prenez des notes sur papier.</strong></p>
+</div>
+
+<div class="workers guide-band"><div class="box guide-section">
+<h3 class="title is-4">3. Vos agents</h3>
+<?= guideCaptureFigure($captureSet, 'agents', 'La liste des agents') ?>
+<h4 class="title is-5">Recruter</h4>
+<?= guideCaptureFigure($captureSet, 'recrutement', 'Le choix entre plusieurs candidats') ?>
 <ul>
-  <li><strong>Le nom du lieu</strong> si la différence de valeur est suffisante</li>
-  <li><strong>Sa description</strong> incluant des informations secrètes sur la zone ou les personnages liés si la valeur est encore plus élevée</li>
-  <li><strong>Et s’il est destructible</strong>, le rapport le mentionne et l'action de destruction ou de conquête apparaîtra dans la page du contrôleur et la page des zones</li>
+  <li><strong>Recruter un serviteur</strong> propose plusieurs candidats et demande d'avoir une base. Vous en choisissez un seul.</li>
+  <li><strong>Prendre le premier venu</strong> propose un candidat unique, à prendre ou à laisser.</li>
+  <li>Le nom et les capacités de chaque candidat sont tirés au sort. Vous choisissez où l'envoyer, et une première maîtrise à lui enseigner.</li>
+  <li><strong>Attention : un recrutement ouvert compte pour le <?= htmlspecialchars($timeValue) ?>. Ne quittez pas la page sans recruter, sinon l'agent est perdu !</strong></li>
 </ul>
-<p> L'<strong>attaque d'un lieu</strong>  est résolue immédiatement par le système, il prend en compte pour l'attaquant : <ul>
-    <li>une valeur fixe secrète </li>
-    <li>le nombre de serviteurs appartenant à l'attaquant dans la zone </li>
-    <li>les capacités du contrôleur attaquant </li>
-    <li>si la zone est conquise par le contrôleur </li>
-  </ul>
-  qui est comparée à la <strong>défense du lieu</strong> , une valeur fixe si le lieu n'est lié à aucun contrôleur, ou si le lieu est lié à un contrôleur (place forte, etc) composée de : 
-  <ul>
-    <li>la défense fixe du lieu </li>
-    <li>les capacités du contrôleur défenseur  </li>
-    <li>le nombre de serviteurs du contrôleur défenseur dans la zone </li>
-    <li>si la zone est conquise par le contrôleur </li>
-    <li>parfois la durée d'installation du lieu </li>
-</ul>
-</p>
-<p>
-    Lors d'une attaque réussie sur un lieu, si ce lieu contient des artéfacts récupérables, alors ils seront transférés dans la place forte du contrôleur.
-</p>
 
-<h3>4. Mécaniques de jeu (pour les nerds et power gamers)</h3>
-<p>Le système crée des rapports personnalisés selon les valeurs d’enquête, d'attaque et de défense et les actions menées.
-  Ces textes sont conservés d'un tour à l'autre pour former l'historique de chaque agent.
-</p>
-
-<p>À chaque tour de jeu, des calculs automatisés sont effectués dans l'ordre suivant :</p>
+<h4 class="title is-5">L'action prévue en fin de <?= htmlspecialchars($timeValue) ?> (et dans quel <?= htmlspecialchars($zoneType) ?>)</h4>
+<?= guideCaptureFigure($captureSet, 'agent', "Les actions d'un agent") ?>
+<p>Chaque agent fait <strong>une seule action</strong> par <?= htmlspecialchars($timeValue) ?>, dans son <?= htmlspecialchars($zoneType) ?>.
+Les formules donnent la valeur de l'agent pour cette action : « enquête », « attaque » et « défense » sont ses capacités.</p>
+<p><strong>Actions de surveillance :</strong></p>
 <ul>
-  <li>Calculer les valeurs des agents (enquête, attaque, défense) et les mentionne sur leur rapport du tour</li>
-  <li>Mettre à jour la difficulté de découverte des lieux contrôlés</li>
-  <li>Résoudre les attaques entre agents</li>
-  <li>Déterminer les résultats des investigations et surveillances</li>
-  <li>Gérer la découverte de lieux par les agents et leur contrôleur</li>
-  <li>Trancher le résultat des revendications de zones</li>
-  <li>Remettre à 0 les compteurs de recrutement</li>
-  <li>Avancer le compteur de tours</li>
+  <li><strong><?= htmlspecialchars($labelInvestigate) ?> : <?= $actionRoll('Investigate', 'investigate') ?> + enquête.</strong> L'agent cherche activement les agents et les lieux secrets.</li>
+  <li><strong><?= htmlspecialchars($labelPassive) ?> : <?= $actionRoll('Investigate', 'passive') ?> + enquête.</strong> L'agent reste à l'affût, sans prendre de risque, mais repère tout de même les agents et les lieux.</li>
+  <?php if ($agentLocationAttack) { ?>
+  <li><strong>Défendre le lieu : défense +<?= $defendLocationBonus ?>.</strong> L'agent défend l'un de vos lieux, et surveille en même temps. Les duels entre attaquants et défenseurs sont résolus en fin de <?= htmlspecialchars($timeValue) ?>.</li>
+  <?php } ?>
+</ul>
+<p><strong>Actions passives :</strong></p>
+<ul>
+  <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête, discrétion +<?= $hideDiscretion ?>, défense +<?= $hideDefence ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
+  <?php if ($claimEnabled) { ?>
+  <li><strong>Revendiquer : vous contrôlerez ce <?= htmlspecialchars($zoneType) ?>, mais au nom de qui ?</strong>
+    L'agent place le <?= htmlspecialchars($zoneType) ?> sous la bannière de la faction de votre choix, ou <strong>protège</strong> un <?= htmlspecialchars($zoneType) ?> déjà tenu. <strong>Revendiquer révèle l'agent.</strong></li>
+  <?php } ?>
+</ul>
+<p><strong>Actions violentes :</strong></p>
+<ul>
+  <li><strong>Attaquer : <?= $actionRoll('Attack', 'attack') ?> + attaque contre <?= $actionRoll('Defence', 'passive') ?> + défense : quel(s) agent(s) ?</strong>
+    L'agent attaque les agents ennemis repérés récemment dans son <?= htmlspecialchars($zoneType) ?>. L'attaque peut éliminer la cible, la capturer, échouer, ou se retourner contre l'attaquant.</li>
+  <?php if ($agentLocationAttack) { ?>
+  <li><strong>Attaquer le lieu : <?= $actionRoll('Attack', 'attack_location') ?> + attaque.</strong> L'agent attaque un lieu connu de son <?= htmlspecialchars($zoneType) ?>.</li>
+  <?php } ?>
+</ul>
+<?php if (!empty($continuingActions)) { ?>
+<p>Ces actions <strong>continuent</strong> d'un <?= htmlspecialchars($timeValue) ?> à l'autre : <?= htmlspecialchars(implode(', ', $continuingActions)) ?>.
+Les autres retombent en « <?= htmlspecialchars(lcfirst($labelPassive)) ?> » une fois résolues.</p>
+<?php } ?>
+
+<h4 class="title is-5">Actions immédiates et évolutions</h4>
+<ul>
+  <li><strong>Déménager</strong> : l'agent change de <?= htmlspecialchars($zoneType) ?> tout de suite, et son action repasse à « <?= htmlspecialchars(lcfirst($labelPassive)) ?> ».</li>
+  <li><strong>Donner</strong> : l'agent passe définitivement au service d'une autre faction.</li>
+  <li><strong>Évolutions</strong> : avec l'ancienneté, un agent apprend de nouvelles maîtrises. Certains équipements ne sont disponibles que dans un <?= htmlspecialchars($zoneType) ?> que vous tenez.</li>
+  <li>Un agent capturé devient votre <strong>prisonnier</strong> : vous pouvez le relâcher ou le transférer à une autre faction.</li>
 </ul>
 
-<h2>Pour les futurs organisateurs : </h2>
-<h3>1. Configuration dynamique</h3>
-<p> Presque tous les paramètres du système sont <strong>configurables dynamiquement</strong> dans la base de données (<code>config</code>) : valeurs de bonus, textes, modes de calcul, seuils de découverte, résultats des attaques etc.
-  Deux soirées enquêtes complètes sont prévues pour être publiées en utilisant ce système, il vous sera possible de vous baser sur leur paramétrage.</p>
-<p> Le détail de chaque clé, son rôle et sa valeur par défaut sont décrits dans le <a href="/<?= htmlspecialchars($folder) ?>/base/docConfig.php"><strong>guide de configuration</strong></a>.</p>
-<h3>2. Debug et suivi</h3>
-<p>Un mode <code>DEBUG_REPORT</code> permet d’afficher l’intégralité des calculs et des comparaisons réalisés à chaque tour pour le suivi du développement ou le test des équilibrages.</p>
-<h3>3. Contact</h3>
-<p> Il est possible de récupérer les sources libres d'accès de ce système sur le GitHub suivant <a href="https://github.com/Edward-Croc/RPGConquestGame" target="_blank">https://github.com/Edward-Croc/RPGConquestGame</a>.
-   Vous pouvez vous rendre sur la page <a href="https://github.com/Edward-Croc/RPGConquestGame/issues" target="_blank">issues</a> pour y déclarer les bugs.
-   Et en dernier recours voici <details> <summary>mon email : </summary> <p>lenainblanc[at]wanadoo.fr</p> </details>
-</p>
+<h4 class="title is-5">Lire les rapports</h4>
+<?= guideCaptureFigure($captureSet, 'rapport', "Le rapport d'un agent") ?>
+<p>Le rapport de chaque agent est classé par <?= htmlspecialchars($timeValue) ?> :</p>
+<ul>
+  <li><strong>Changements</strong> : sa vie, ses déménagements et ses valeurs du <?= htmlspecialchars($timeValue) ?>.</li>
+  <li><strong>Investigations</strong> : les agents qu'il a repérés. Plus il surpasse leur discrétion, plus il en apprend :
+    leur nom et leur action, puis leurs capacités, puis le numéro de leur réseau, enfin le nom de la faction qui les dirige.</li>
+  <li><strong>Recherches</strong> : qui tient le <?= htmlspecialchars($zoneType) ?>, et les lieux découverts. D'un lieu, on apprend d'abord le nom, puis la description, enfin ses secrets.</li>
+</ul>
+</div>
+</div>
+
+<div class="factions guide-band"><div class="box guide-section">
+<h3 class="title is-4">4. Votre faction</h3>
+<?= guideCaptureFigure($captureSet, 'faction', 'La page de votre faction') ?>
+<ul>
+  <li><strong>Votre base</strong> : la construire ou la déménager. Elle permet de recruter, et ses secrets ne se révèlent qu'à un enquêteur assez fort.</li>
+  <li>Le coût de chaque opération est affiché à côté de son bouton.</li>
+</ul>
+<?= guideCaptureFigure($captureSet, 'lieux', $ownedArtefactsTitle . ' et vos lieux, floutés') ?>
+<ul>
+  <li><strong><?= htmlspecialchars($ownedArtefactsTitle) ?></strong> : les personnes ou les objets d'intérêt politique sous votre garde,
+    et le lieu où ils se trouvent. Pour en remettre un.e à une autre faction, demandez à l'orga. Une attaque réussie sur un lieu
+    rapporte ce qu'il abrite.</li>
+  <li><strong>Vos lieux découverts</strong>, classés par <?= htmlspecialchars($zoneType) ?> : les lieux que vos agents ont trouvés, et ce qu'ils en ont appris.</li>
+  <li><strong>Vos lieux secrets</strong>, classés par <?= htmlspecialchars($zoneType) ?> : la description de votre base et de son contenu, et les autres lieux que vous possédez.</li>
+  <li><?php if ($agentLocationAttack) { ?>Pour attaquer ou défendre un lieu, donnez l'ordre à vos agents.<?php } else { ?>Un lieu découvert et destructible peut être attaqué depuis cette page, si vous avez une base.<?php } ?>
+    Un lieu détruit peut être réparé.</li>
+</ul>
+<?= guideCaptureFigure($captureSet, 'informations', 'Donner des informations à une autre faction') ?>
+<p><strong>Donner des informations à une autre faction :</strong></p>
+<ul>
+  <li><strong>Sur un agent repéré</strong> : son nom, pour que cette faction puisse l'attaquer. Il lui faut un agent dans le même <?= htmlspecialchars($zoneType) ?>.</li>
+  <li><strong>Sur un lieu découvert</strong> : ce que vous en savez.</li>
+</ul>
+<?php if ($ressourcesEnabled) { ?>
+<?= guideCaptureFigure($captureSet, 'ressources', 'Les ressources de la faction') ?>
+<p>La page <strong>Ressources</strong> montre ce que possède votre faction, les règles qui lui en font gagner, et son
+estimation pour le <?= htmlspecialchars($timeValue) ?> suivant. Vous pouvez y faire un don à une autre faction.</p>
+<?php } ?>
+</div>
+</div>
+
+<div class="zones guide-band"><div class="box guide-section">
+<h3 class="title is-4">5. Les <?= htmlspecialchars($zoneType) ?>s</h3>
+<?= guideCaptureFigure($captureSet, 'zones', 'La liste des ' . $zoneType . 's') ?>
+<ul>
+  <li>La <strong>carte</strong> se déplie en haut de la page.</li>
+  <li>Chaque <?= htmlspecialchars($zoneType) ?> montre la <strong>bannière</strong> qui y est levée, et l'étiquette <strong>Sous notre contrôle</strong> quand il est à vous.</li>
+  <li>Cliquer sur un <?= htmlspecialchars($zoneType) ?> déplie sa description, vos lieux, ceux que vous avez découverts et les agents présents.</li>
+  <li>Échanger un <?= htmlspecialchars($zoneType) ?> avec une autre faction se négocie… puis se demande à l'orga.</li>
+</ul>
+</div>
+</div>
+
+<div class="box guide-section">
+<h3 class="title is-4">6. Pour les curieux : les valeurs</h3>
+<details>
+<summary>Comment sont calculées les valeurs d'un agent</summary>
+<p>Chaque agent a trois valeurs, recalculées à chaque fin de <?= htmlspecialchars($timeValue) ?> : <strong>enquête</strong>,
+<strong>attaque</strong> et <strong>défense</strong>. Chacune additionne :</p>
+<ul>
+  <li>les bonus de ses capacités ;</li>
+  <li>pour l'action active du <?= htmlspecialchars($timeValue) ?>, un dé de <?= $minRoll ?> à <?= $maxRoll ?> ; sinon une valeur fixe de <?= $passiveVal ?> ;</li>
+  <li>un bonus quand votre faction tient le <?= htmlspecialchars($zoneType) ?> ;</li>
+  <li>un bonus propre à certaines actions (se cacher, défendre un lieu).</li>
+</ul>
+<p>Une enquête compare l'enquête du chercheur à celle de l'agent observé. Une attaque compare l'attaque de l'attaquant à la défense de sa cible.
+Les valeurs du <?= htmlspecialchars($timeValue) ?> sont écrites dans le rapport de l'agent.</p>
+</details>
+</div>
+
+<div class="box guide-section">
+<h3 class="title is-4">Pour les futurs organisateurs</h3>
+<details>
+<summary>Configuration, débogage et contact</summary>
+<p>Presque tous les paramètres du système sont <strong>configurables</strong> dans la table <code>config</code> : valeurs, textes,
+modes de calcul, seuils de découverte, résultats des attaques… Le détail de chaque clé est dans le
+<a href="/<?= htmlspecialchars($folder) ?>/base/docConfig.php"><strong>guide de configuration</strong></a>.</p>
+<p>Le mode <code>DEBUG_REPORT</code> affiche l'intégralité des calculs de chaque fin de <?= htmlspecialchars($timeValue) ?>, pour le suivi du développement ou l'équilibrage.</p>
+<p>Les sources sont libres sur <a href="https://github.com/Edward-Croc/RPGConquestGame" target="_blank">GitHub</a>,
+où vous pouvez déclarer les bugs dans les <a href="https://github.com/Edward-Croc/RPGConquestGame/issues" target="_blank">issues</a>.
+Et en dernier recours, voici <details><summary>mon email :</summary><p>lenainblanc[at]wanadoo.fr</p></details></p>
+</details>
+</div>
 </div>
