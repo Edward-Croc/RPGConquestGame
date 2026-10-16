@@ -380,13 +380,14 @@ function getWorkerStatus(array $worker, array $mechanics): string
 
 /**
  * build the « au nom de X » (claim) or « contre les réseaux X, Y et contre Prénom Nom » (attack)
- * insert that follows the action verb — resolves controller & worker names via DB
+ * insert that follows the action verb — resolves controller & worker names via DB,
+ * or the « <strong>Lieu</strong> » target of attack_location / defend_location
  *
  * @param PDO $pdo : database connection
  * @param string $actionChoice : action_choice value driving the shape
  * @param string|null $actionParamsJson : action_params JSON blob
  *
- * @return string : rendered fragment (empty when action is not claim/attack or params are missing)
+ * @return string : rendered fragment (empty when the action has no target insert or params are missing)
  */
 function buildWorkerActionInfo(PDO $pdo, string $actionChoice, ?string $actionParamsJson): string
 {
@@ -635,6 +636,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
     if ((string) $textActionUpdated === '') {
         $textActionUpdated = getConfig($pdo, 'txt_ps_'.$workerStatus);
     }
+    $placeName = $worker['zone_name'];
     // change action text if prisonner or double agent
     if ($workerStatus == 'double_agent' || $workerStatus == 'prisoner') {
 
@@ -670,6 +672,12 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
             getConfig($pdo, 'controllerNameDenominatorOf'),
             $controller_name
         );
+    } elseif (in_array($currentAction['action_choice'], ['attack_location', 'defend_location'], true)) {
+        // A location action names its target location before the zone, the zone alone when it cannot be resolved.
+        $locationInfo = buildWorkerActionInfo($pdo, $currentAction['action_choice'], $currentAction['action_params'] ?? null);
+        if ($locationInfo !== '') {
+            $placeName = ltrim($locationInfo) . ' ' . $worker['zone_name'];
+        }
     }
 
     $stateAttributes = buildWorkerStateAttributes($currentAction, $workerStatus);
@@ -692,7 +700,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
         $worker['id'], // %1$s
         $worker['firstname'], // %2$s
         $worker['lastname'], // %3$s
-        $worker['zone_name'], // %4$s
+        $placeName, // %4$s
         $textActionUpdated, // %5$s
         sprintf(
             '<i>(<strong>%1$s</strong>, <strong>%2$s</strong>/<strong>%3$s</strong>)</i>',
