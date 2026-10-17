@@ -113,6 +113,82 @@ class TestUiTheme:
             set_config_via_ui(gm_session, "uiTheme", "", base_url=base_url)
 
 
+class TestGuideCaptures:
+    """guideCaptures names a folder of base/guide/ : the player guide takes each
+    capture from it, else from base/guide/testconfig/, and a name matching no
+    folder keeps the testconfig captures."""
+
+    def test_guide_captures_follow_the_configuration_key(self, gm_session: Page, base_url):
+        def capture_sources():
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            sources = gm_session.locator("figure.guide-capture img").evaluate_all(
+                "imgs => imgs.map(i => i.getAttribute('src'))")
+            # The captures load lazily : fetch them rather than read their rendered size.
+            origin = base_url.split("/", 3)
+            for src in sources:
+                assert gm_session.request.get(f"{origin[0]}//{origin[2]}{src}").status == 200, f"{src} should be served"
+            return sources
+
+        try:
+            # A scenario loaded before the suite may have left its own set in the key.
+            set_config_via_ui(gm_session, "guideCaptures", "", base_url=base_url)
+            default_sources = capture_sources()
+            assert default_sources and all("/base/guide/testconfig/" in src for src in default_sources), \
+                f"an empty guideCaptures should show the testconfig captures, got {default_sources}"
+
+            set_config_via_ui(gm_session, "guideCaptures", "japon1555", base_url=base_url)
+            japon_sources = capture_sources()
+            assert len(japon_sources) == len(default_sources), "a set should replace the captures, not add or drop any"
+            assert all("/base/guide/japon1555/" in src for src in japon_sources), \
+                f"guideCaptures=japon1555 should show its own captures, got {japon_sources}"
+
+            set_config_via_ui(gm_session, "guideCaptures", "../guide", base_url=base_url)
+            assert capture_sources() == default_sources, "a name matching no folder should keep the testconfig captures"
+        finally:
+            set_config_via_ui(gm_session, "guideCaptures", "", base_url=base_url)
+
+class TestGuideRules:
+    """The rules section of the player guide describes the claim and location
+    attack modes the game is set to, with the configured thresholds."""
+
+    def test_guide_rules_follow_the_active_modes(self, gm_session: Page, base_url):
+        def rules_text():
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            return gm_session.locator(".box.guide-section", has_text="Pour les curieux").text_content()
+
+        try:
+            # A scenario loaded before the suite may have left its own modes.
+            set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
+            set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
+            set_config_via_ui(gm_session, "REPORTDIFF3", "7", base_url=base_url)
+            text = rules_text()
+            assert "tente sa chance seul" in text and "agissent ensemble" not in text, \
+                "claimMode=worker should describe the claim of a single agent"
+            assert "C'est votre faction qui attaque" in text and "Ce sont vos agents qui attaquent" not in text, \
+                "locationAttackMode=immediate should describe the attack by the faction"
+            assert "écart d'au moins 7 : le nom de la faction" in text, "the guide should show the configured REPORTDIFF3"
+
+            set_config_via_ui(gm_session, "investigateActionsList", "'investigate'", base_url=base_url)
+            assert "Un agent qui enquête observe" in rules_text(), "the observing actions should follow investigateActionsList"
+            # An unusable list falls back to INVESTIGATE_ACTIONS_DEFAULT, as the investigation itself does.
+            set_config_via_ui(gm_session, "investigateActionsList", "'not_an_action'", base_url=base_url)
+            assert "Un agent qui surveille ou enquête observe" in rules_text(), \
+                "an unusable investigateActionsList should show the default observing actions"
+
+            set_config_via_ui(gm_session, "claimMode", "worker_leader", base_url=base_url)
+            set_config_via_ui(gm_session, "locationAttackMode", "agent_attack_defence", base_url=base_url)
+            text = rules_text()
+            assert "agissent ensemble" in text and "tente sa chance seul" not in text, \
+                "claimMode=worker_leader should describe the claim led by a group"
+            assert "Ce sont vos agents qui attaquent" in text and "C'est votre faction qui attaque" not in text, \
+                "locationAttackMode=agent_attack_defence should describe the assault by agents"
+        finally:
+            set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
+            set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
+            set_config_via_ui(gm_session, "REPORTDIFF3", "4", base_url=base_url)
+            set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",
+                              base_url=base_url)
+
 class TestMalformedTemplate:
     """A template edited with one placeholder too many no longer stops the end
     of turn nor breaks a page : the reader gets the template as typed, followed

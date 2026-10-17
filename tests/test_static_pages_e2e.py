@@ -35,7 +35,7 @@ def gm_page(page: Page, base_url):
 
 
 # ---------------------------------------------------------------------------
-# /base/systemPresentation.php — three external links (anon-accessible)
+# /base/systemPresentation.php — external links (anon-accessible)
 # ---------------------------------------------------------------------------
 
 class TestSystemPresentationLinks:
@@ -43,13 +43,6 @@ class TestSystemPresentationLinks:
     def _open_page(self, page: Page, base_url):
         safe_goto(page, f"{base_url}/base/systemPresentation.php")
         yield
-
-    def test_pdf_tutorial_link(self, page: Page):
-        link = page.locator(
-            'a[href*="drive.google.com/file/d/1oRmi4oy_D6cPm3zzd7wn-3uEVQ1u-XsP"]'
-        )
-        expect(link).to_have_count(1)
-        expect(link).to_have_attribute("target", "_blank")
 
     def test_github_repo_link(self, page: Page):
         link = page.locator(
@@ -84,7 +77,7 @@ class TestLeSystemeSidebarClick:
             f"systemPresentation.php; current URL: {gm_page.url}"
         )
         expect(
-            gm_page.locator("h2", has_text="Présentation du système")
+            gm_page.locator("h2", has_text="Guide du joueur")
         ).to_be_visible()
 
 

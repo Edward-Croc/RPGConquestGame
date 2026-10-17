@@ -29,6 +29,7 @@
         "map_file",
         "map_alt",
         "uiTheme",
+        "guideCaptures",
         "textForZoneType",
         "timeValue",
         "timeDenominatorThis",
