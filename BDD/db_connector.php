@@ -1096,18 +1096,16 @@ function gameReady(): PDO|null
                         || (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true')
                         || (strtolower(getConfig($pdo, 'ACTIVATE_TESTS')) == 'true')
                     ) {
-                        // Check for CSV file first
-                        $csvFile = sprintf('%s/var/csv/setup%s_advanced_tests.csv', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
+                        $csvFile = sprintf('%s/var/csv/setup%s_advanced_tests.csv', $path, $_POST['config_name']);
                         $sqlFile = sprintf('%s/var/%s/setup%s_advanced_tests.sql', $path, $_SESSION['DBTYPE'], $_POST['config_name']);
 
+                        // No reader exists for an advanced_tests CSV : the SQL file is what loads.
                         if (file_exists($csvFile)) {
-                            echo "Loading CSV file $csvFile ...<br />";
-                            echo 'Start <br />';
-                            // Advanced tests CSV files may contain multiple tables, handle as needed
-                            echo "CSV file $csvFile found, but specific loader not yet implemented for advanced_tests. Using SQL fallback.<br />";
+                            echo "CSV file $csvFile found, but advanced_tests has no CSV loader : the SQL file is used.<br />";
+                            game_error_log(__FUNCTION__, 'advanced_tests CSV ignored, no loader', ['csvFile' => $csvFile], 'warning');
                         }
 
-                        if (!file_exists($csvFile) && file_exists($sqlFile)) {
+                        if (file_exists($sqlFile)) {
                             echo "Loading $sqlFile ...<br />";
                             echo 'Start <br />';
                             // Read SQL file
@@ -1116,8 +1114,8 @@ function gameReady(): PDO|null
                             // Execute SQL queries
                             $pdo->exec($sqlQueries);
                             echo "SQL file $sqlFile executed successfully.<br />";
-                        } elseif (!file_exists($csvFile) && !file_exists($sqlFile)) {
-                            echo "Neither CSV nor SQL file found for advanced_tests.<br />";
+                        } else {
+                            echo "No SQL file found for advanced_tests.<br />";
                         }
                     }
                 }

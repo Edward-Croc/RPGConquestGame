@@ -206,13 +206,36 @@ puis entre comme simple valeur.
 ## 8. Gardes et actions rejouables
 
 Une action déclenchée par une URL peut être rejouée : F5, retour arrière,
-double-clic, ou URL forgée à la main. Deux conséquences :
+double-clic, ou URL forgée à la main. Trois conséquences :
 
 1. **La garde passe avant la dépense.** Vérifier l'état *puis* débiter, jamais
    l'inverse.
 2. **Un repli permissif ne déréférence rien.** Si le `SELECT` de la garde échoue
    et que la ligne manque, il n'y a rien à appliquer : refuser vaut mieux que
    dépenser puis travailler sur `null`.
+3. **Une garde autorise, elle ne refuse pas.** Elle n'ouvre que sur une lecture
+   **positive** : la ligne existe *et* dit que l'action est permise. Une garde qui
+   cherche une raison de refuser s'ouvre quand la lecture ne ramène rien — un
+   `fetchColumn()` sur zéro ligne rend `false`, une valeur parfaitement définie
+   qui ne déréférence rien et ne contient aucun motif de refus. L'absence de
+   donnée doit tomber du mauvais côté de la condition :
+
+   ```php
+   // Mal — l'absence de ligne laisse passer
+   if ($current_choice === 'trace') { http_response_code(403); exit(); }
+
+   // Bien — une lecture vide refuse comme une action interdite
+   if (!is_string($current_choice) || in_array($current_choice, INACTIVE_ACTIONS, true)) {
+       http_response_code(403);
+       exit();
+   }
+   ```
+
+   En SQL, même inversion : compter ce qui **peut** agir et exiger le compte
+   attendu, plutôt que compter ce qui ne peut pas et exiger zéro. Les deux formes
+   sont celles des gardes d'inactivité de `workers/action.php` et
+   `workers/massAction.php`. Écrite dans ce sens, une garde n'a besoin d'aucune
+   vérification préalable : elle se ferme d'elle-même sur une donnée manquante.
 
 Le motif sûr à recopier est celui de `ressources/action.php` : mutation en POST,
 puis `header('Location: …')` et `exit()`, de sorte que la réponse à la mutation
