@@ -227,7 +227,7 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
 <div class="box guide-section">
 <h3 class="title is-4">6. Pour les curieux : les règles du jeu</h3>
 <details>
-<summary>Comment sont calculées les valeurs d'un agent</summary>
+<summary><strong>Comment sont calculées les valeurs d'un agent</strong></summary>
 <p>Chaque agent a trois valeurs, recalculées à chaque fin de <?= htmlspecialchars($timeValue) ?> : <strong>enquête</strong>,
 <strong>attaque</strong> et <strong>défense</strong>. Chacune additionne :</p>
 <ul>
@@ -241,7 +241,7 @@ plus il a pu apprendre de maîtrises, et plus ses valeurs sont hautes.</p>
 </details>
 
 <details>
-<summary>Ce qu'apprend une enquête sur un agent</summary>
+<summary><strong>Ce qu'apprend une enquête sur un agent</strong></summary>
 <p>Un agent qui <?= htmlspecialchars($investigatingText) ?> observe tous les agents des autres factions présents dans son <?= htmlspecialchars($zoneType) ?>.
 Pour chacun, on compare <strong>son enquête à l'enquête de l'agent observé</strong> : c'est pourquoi se cacher, qui augmente l'enquête, rend plus discret.
 Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le rapport révèle, de la plus facile à la plus difficile à obtenir :</p>
@@ -255,7 +255,7 @@ Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le ra
 </details>
 
 <details>
-<summary>Ce qu'apprend une recherche sur un lieu</summary>
+<summary><strong>Ce qu'apprend une recherche sur un lieu</strong></summary>
 <p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle grandit avec les capacités de la faction qui la possède,
 le nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> et son ancienneté. Selon l'écart (enquête de l'agent actif - difficulté de découverte) entre l'enquête de l'agent et cette difficulté :</p>
 <ul>
@@ -268,7 +268,7 @@ elle révèle le numéro du réseau qui le tient, et, avec une marge de plus de 
 </details>
 
 <details>
-<summary> <strong>Le combat entre agents</strong></summary>
+<summary><strong>Le combat entre agents</strong></summary>
 <p>Les attaquants agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles dans le même ordre.
 Chaque duel se résoud par <strong>l'attaque de l'attaquant</strong> à laquelle on soustrait <strong>la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
 <ul>
@@ -284,7 +284,7 @@ Chaque duel se résoud par <strong>l'attaque de l'attaquant</strong> à laquelle
 
 <?php if ($claimEnabled) { ?>
 <details>
-<summary>La revendication d'un <?= htmlspecialchars($zoneType) ?></summary>
+<summary><strong>La revendication d'un <?= htmlspecialchars($zoneType) ?></strong></summary>
 <?php if ($claimMode === 'worker') { ?>
 <p>Chaque agent qui revendique tente sa chance <strong>seul</strong>, contre la défense du <?= htmlspecialchars($zoneType) ?> :
 sa défense propre, plus un point par agent de la faction qui le tient. Il l'emporte si :</p>
@@ -308,7 +308,7 @@ La faction qui tient vraiment le <?= htmlspecialchars($zoneType) ?> reste la vô
 <?php } ?>
 
 <details>
-<summary>L'attaque et la défense d'un lieu</summary>
+<summary><strong>L'attaque et la défense d'un lieu</strong></summary>
 <?php if ($agentLocationAttack) { ?>
 <p>Ce sont vos <strong>agents</strong> qui attaquent ou défendent un lieu de leur <?= htmlspecialchars($zoneType) ?>. En fin de <?= htmlspecialchars($timeValue) ?>, pour chaque lieu visé :</p>
 <ul>
