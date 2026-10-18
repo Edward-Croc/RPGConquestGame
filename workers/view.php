@@ -412,65 +412,11 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
             // build upgrade HTML
             $upgradeHTML = '';
-            $currentChoice = $worker['actions'][$mechanics['turncounter']]['action_choice'];
-            $isActiveWorker = in_array($currentChoice, ACTIVE_ACTIONS);
-            // A dead agent, or the trace of one, may still be raised by a transformation, and nothing else.
-            $raisedWorkerId = null;
-            if ($currentChoice === 'dead') {
-                $raisedWorkerId = (int) $worker['id'];
-            } elseif ($currentChoice === 'trace' && !empty($controller_id)) {
-                $raisedWorkerId = getDeadTracePrimaryWorkerId($gameReady, (int) $worker['id'], (int) $controller_id, (int) $mechanics['turncounter']);
-            }
-            if ($isActiveWorker || $raisedWorkerId !== null) {
-                // Allow Discipline teaching via age_discipline param
-                $upgradeDisciplineHTML = "";
-                $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
-                $age_discipline_json = getConfig($gameReady, 'age_discipline');
-                if ($debug_discipline_age) {
-                    echo sprintf("age_discipline_json :%s  <br>", $age_discipline_json);
-                }
-
-                $age_discipline_array = array();
-                if (!empty($age_discipline_json)) {
-                    $age_discipline_array = json_decode($age_discipline_json, true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                    }
-                }
-                if ($debug_discipline_age) {
-                    echo sprintf("age_discipline_array :%s  <br>", var_export($age_discipline_array, true));
-                }
-                $powerDisciplineArray = getPowersByType($gameReady, '3', $controller_id, true);
-                if ($debug_discipline_age) {
-                    echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
-                }
-                $powerDisciplineArray = cleanPowerListFromJsonConditions($gameReady, $powerDisciplineArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_age');
-                if ($debug_discipline_age) {
-                    echo sprintf("powerDisciplineArray : %s <br/>", var_export($powerDisciplineArray, true));
-                }
-                $nb_disciplines = (int)getConfig($gameReady, 'recrutement_disciplines');
-                if ($debug_discipline_age) {
-                    echo sprintf("nb_disciplines :%s  <br>", $nb_disciplines);
-                }
-                foreach ($age_discipline_array['age'] as $age) {
-                    if ($age <= $worker['age']) {
-                        $nb_disciplines += 1;
-                    }
-                }
-                $nb_current_disciplines = countWorkerDisciplines($gameReady, array($worker['id']));
-                if (!isset($nb_current_disciplines[0]['discipline_count'])) {
-                    $nb_current_disciplines[0]['discipline_count'] = 0;
-                }
-                if ($debug_discipline_age) {
-                    echo sprintf(
-                        "nb_current_disciplines :count(%s) => %s, nb_disciplines: %s <br>",
-                        $nb_current_disciplines[0]['discipline_count'],
-                        var_export($nb_current_disciplines, true),
-                        $nb_disciplines
-                    );
-                }
-                if ($isActiveWorker && (int)$nb_current_disciplines[0]['discipline_count'] < (int)$nb_disciplines) {
-                    $upgradeDisciplineHTML .= sprintf(
+            $evolutions = getWorkerEvolutions($gameReady, $worker, $controller_id ?? null, (int) $mechanics['turncounter']);
+            if ($evolutions['open']) {
+                $upgradeDisciplineHTML = '';
+                if ($evolutions['canTeachDiscipline']) {
+                    $upgradeDisciplineHTML = sprintf(
                         '
                         <div class="field is-grouped is-grouped-multiline">
                             %1$s
@@ -479,50 +425,22 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                             </div>
                         </div>
                         ',
-                        showDisciplineSelect($gameReady, $powerDisciplineArray, true)
+                        showDisciplineSelect($gameReady, $evolutions['disciplines'], true)
                     );
                 }
-                // Check Transformation Conditions
-                $upgradeTransformationHTML = "";
-                $debug_transformation_age = $_SESSION['DEBUG_TRANSFORM'];
-                $age_transformation_json = getConfig($gameReady, 'age_transformation');
-                $age_transformation_array = array();
-                if (!empty($age_transformation_json)) {
-                    $age_transformation_array = json_decode($age_transformation_json, true);
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        echo "JSON decoding error: " . json_last_error_msg() . "<br />";
-                    }
-                }
-                if ($debug_transformation_age) {
-                    echo sprintf("age_transformation_array :%s  <br>", var_export($age_transformation_array, true));
-                }
-                if (!empty($age_transformation_array['action']) && $age_transformation_array['action'] == 'check') {
-                    // get transformations
-                    $powerTransformationArray = getPowersByType($gameReady, '4', null, false);
-                    if ($debug_transformation_age) {
-                        echo sprintf("powerTransformationArray: %s <br />", var_export($powerTransformationArray, true));
-                    }
-                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $raisedWorkerId ?? $worker['id'], $mechanics['turncounter'], 'on_transformation');
-                    if ($raisedWorkerId !== null) {
-                        $powerTransformationArray = array_values(array_filter($powerTransformationArray ?? [], 'powerRaisesTheDead'));
-                    }
-                    if ($debug_transformation_age) {
-                        echo sprintf("powerTransformationArray Json parsed: %s <br/>", var_export($powerTransformationArray, true));
-                    }
-                    if (! empty($powerTransformationArray)) {
-                        $upgradeTransformationHTML .= sprintf(
-                            '
-                            <div class="field is-grouped is-grouped-multiline">
-                                %1$s
-                                <div class="control">
-                                    <input type="submit" name="transform" value="Ajouter" class="button is-link worker-upgrade-btn">
-                                </div>
+                $upgradeTransformationHTML = '';
+                if (!empty($evolutions['transformations'])) {
+                    $upgradeTransformationHTML = sprintf(
+                        '
+                        <div class="field is-grouped is-grouped-multiline">
+                            %1$s
+                            <div class="control">
+                                <input type="submit" name="transform" value="Ajouter" class="button is-link worker-upgrade-btn">
                             </div>
-                            ',
-                            showTransformationSelect($gameReady, $powerTransformationArray),
-                            strtolower(getPowerTypesDescription($gameReady, 'Transformation'))
-                        );
-                    }
+                        </div>
+                        ',
+                        showTransformationSelect($gameReady, $evolutions['transformations'])
+                    );
                 }
                 $upgradeHTML = sprintf(
                     '<div class="box upgrade">

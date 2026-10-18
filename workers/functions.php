@@ -615,16 +615,89 @@ function buildWorkerStateAttributes(array $currentAction, string $workerStatus):
 }
 
 /**
+ * What an agent may receive now : a discipline to teach, transformations to choose, or a raising.
+ *
+ * The agent page renders it as its Evolutions block, and the short card marks it.
+ * A dead agent, or the trace of one, is only offered the transformations that
+ * raise the dead, and is taught no discipline.
+ *
+ * @param PDO $pdo : database connection
+ * @param array $worker : getWorkers row, with 'id', 'age' and 'actions'
+ * @param int|null $controllerId : controller viewing the agent, null when none is selected
+ * @param int $turnNumber : current turn
+ * @param bool $withDisciplineChoices : false when only the free slot matters, which spares the discipline list
+ *
+ * @return array : ['open' => bool, 'canTeachDiscipline' => bool, 'disciplines' => array, 'transformations' => array, 'raises' => bool]
+ */
+function getWorkerEvolutions(PDO $pdo, array $worker, int|null $controllerId, int $turnNumber, bool $withDisciplineChoices = true): array
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with worker id : ' . ($worker['id'] ?? ''), ['controllerId' => $controllerId, 'turnNumber' => $turnNumber], 'debug');
+
+    $evolutions = ['open' => false, 'canTeachDiscipline' => false, 'disciplines' => [], 'transformations' => [], 'raises' => false];
+    if (empty($controllerId)) {
+        return $evolutions;
+    }
+    $currentChoice = $worker['actions'][$turnNumber]['action_choice'] ?? null;
+    $isActiveWorker = in_array($currentChoice, ACTIVE_ACTIONS, true);
+    $raisedWorkerId = null;
+    if ($currentChoice === 'dead') {
+        $raisedWorkerId = (int) $worker['id'];
+    } elseif ($currentChoice === 'trace') {
+        $raisedWorkerId = getDeadTracePrimaryWorkerId($pdo, (int) $worker['id'], $controllerId, $turnNumber);
+    }
+    if (!$isActiveWorker && $raisedWorkerId === null) {
+        return $evolutions;
+    }
+    $evolutions['open'] = true;
+    $evolutions['raises'] = $raisedWorkerId !== null;
+
+    if ($isActiveWorker) {
+        $ageDisciplineJson = (string) getConfig($pdo, 'age_discipline');
+        $ageDiscipline = $ageDisciplineJson === '' ? [] : json_decode($ageDisciplineJson, true);
+        if ($ageDisciplineJson !== '' && json_last_error() !== JSON_ERROR_NONE) {
+            game_error_log(__FUNCTION__, 'age_discipline is not valid JSON : ' . json_last_error_msg(), [], 'warning');
+        }
+        // One slot per recruitment discipline, and one more for each age the agent has reached.
+        $nbDisciplines = (int) getConfig($pdo, 'recrutement_disciplines');
+        foreach ((array) ($ageDiscipline['age'] ?? []) as $age) {
+            if ((int) $age <= (int) ($worker['age'] ?? 0)) {
+                $nbDisciplines += 1;
+            }
+        }
+        $currentDisciplines = countWorkerDisciplines($pdo, [$worker['id']]);
+        $evolutions['canTeachDiscipline'] = (int) ($currentDisciplines[0]['discipline_count'] ?? 0) < $nbDisciplines;
+        if ($withDisciplineChoices) {
+            $disciplines = getPowersByType($pdo, '3', $controllerId, true);
+            $evolutions['disciplines'] = cleanPowerListFromJsonConditions($pdo, $disciplines, $controllerId, (int) $worker['id'], $turnNumber, 'on_age') ?? [];
+        }
+    }
+
+    $ageTransformation = json_decode((string) getConfig($pdo, 'age_transformation'), true);
+    if (($ageTransformation['action'] ?? null) === 'check') {
+        $transformations = getPowersByType($pdo, '4', null, false);
+        $transformations = cleanPowerListFromJsonConditions($pdo, $transformations, $controllerId, $raisedWorkerId ?? (int) $worker['id'], $turnNumber, 'on_transformation') ?? [];
+        if ($raisedWorkerId !== null) {
+            $transformations = array_values(array_filter($transformations, 'powerRaisesTheDead'));
+        }
+        $evolutions['transformations'] = $transformations;
+    }
+
+    return $evolutions;
+}
+
+/**
  * show Worker view Short version
  *
  * @param PDO $pdo : database connection
  * @param array $worker : must contain 'id', 'firstname', 'lastname', 'zone_name', 'total_enquete', 'total_attack', 'total_defence', 'actions'
  * @param array $mechanics : must contain key 'turncounter'
  * @param bool $showCheckBox : when true, prepend a select checkbox
+ * @param int|null $controllerId : controller whose list shows the card, the session's when null
  *
  * @return string : rendered HTML fragment
  */
-function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCheckBox = false): string
+function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCheckBox = false, int|null $controllerId = null): string
 {
 
     $currentAction = setWorkerCurrentAction($worker['actions'], $mechanics['turncounter']);
@@ -682,6 +755,24 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
 
     $stateAttributes = buildWorkerStateAttributes($currentAction, $workerStatus);
 
+    // Marks what the agent may receive now : # a discipline to teach, + a transformation or a raising.
+    $evolutions = getWorkerEvolutions($pdo, $worker, $controllerId ?? ($_SESSION['controller']['id'] ?? null), (int) $mechanics['turncounter'], false);
+    $evolutionMarks = '';
+    if ($evolutions['canTeachDiscipline']) {
+        $evolutionMarks .= sprintf(
+            ' <span class="evolution-mark" title="Peut apprendre : %s">#</span>',
+            htmlspecialchars((string) getPowerTypesDescription($pdo, 'Discipline'), ENT_QUOTES)
+        );
+    }
+    if (!empty($evolutions['transformations'])) {
+        $evolutionMarks .= sprintf(
+            ' <span class="evolution-mark" title="%s">+</span>',
+            $evolutions['raises']
+                ? 'Peut être relevé.e'
+                : htmlspecialchars('Peut recevoir : ' . getPowerTypesDescription($pdo, 'Transformation'), ENT_QUOTES)
+        );
+    }
+
     $return = sprintf(
         '<div class="worker-short" 
             data-worker-id="%1$s"
@@ -693,7 +784,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
             %8$s
             <a href="/%7$s/workers/action.php?worker_id=%1$s" class="has-text-weight-semibold" role="button" style="text-decoration:none;">
                 %2$s %3$s
-            </a>
+            </a>%12$s
             <span>%6$s %5$s %4$s.</span>
         </div>
         ',
@@ -712,7 +803,8 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
         ($showCheckBox ? sprintf('<input type="checkbox" name="worker_ids[]" value="%s" class="mr-2">', $worker['id']) : ''), // %8$s
         htmlspecialchars($stateAttributes['action_choice'], ENT_QUOTES), // %9$s
         htmlspecialchars($stateAttributes['action_params'], ENT_QUOTES), // %10$s
-        htmlspecialchars($stateAttributes['worker_status'], ENT_QUOTES) // %11$s
+        htmlspecialchars($stateAttributes['worker_status'], ENT_QUOTES), // %11$s
+        $evolutionMarks // %12$s
     );
 
     return $return;

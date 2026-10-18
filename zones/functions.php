@@ -758,14 +758,14 @@ function showZoneAgents(PDO $pdo, int $controller_id, int $zone_id, array $mecha
     if (!empty($friendlies)) {
         $out .= '<p><strong>Nos Agents présents :</strong></p><ul>';
         foreach ($friendlies as $w) {
-            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false) . '</li>';
+            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false, $controller_id) . '</li>';
         }
         $out .= '</ul>';
     }
     if (!empty($doubles)) {
         $out .= '<details><summary>Nos Agents doubles</summary><ul>';
         foreach ($doubles as $w) {
-            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false) . '</li>';
+            $out .= '<li>' . showWorkerShort($pdo, $w, $mechanics, false, $controller_id) . '</li>';
         }
         $out .= '</ul></details>';
     }

@@ -130,6 +130,10 @@ alors toutes les actions, dans cet ordre :</p>
 <div class="workers guide-band"><div class="box guide-section">
 <h3 class="title is-4">3. Vos agents</h3>
 <?= guideCaptureFigure($captureSet, 'agents', 'La liste des agents') ?>
+<p>Dans la liste, un <strong class="evolution-mark">#</strong> après le nom signale qu'un agent peut apprendre une maîtrise
+(« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Discipline')) ?> »), et un <strong class="evolution-mark">+</strong>
+qu'il peut recevoir une transformation (« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Transformation')) ?> »).
+Le détail est sur sa fiche, dans « Evolutions ».</p>
 <h4 class="title is-5">Recruter</h4>
 <?= guideCaptureFigure($captureSet, 'recrutement', 'Le choix entre plusieurs candidats') ?>
 <ul>

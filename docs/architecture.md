@@ -432,10 +432,15 @@ Seule une **transformation** dont la règle nomme `worker_is_dead`
 (`powerRaisesTheDead()`) peut sortir un agent de `dead`, et elle le fait
 implicitement : `workers/action.php` la laisse passer sur un mort — à condition
 qu'elle soit la seule action de la requête —, puis remet son action à `passive`.
-Ce sont aussi les seules proposées sur la fiche d'un mort, ce que `workers/view.php`
-évalue avant d'ouvrir le bloc « Evolutions » — sans discipline. L'orga peut donner n'importe quelle
-transformation à un mort ; une transformation qui ne relève pas les morts s'ajoute
-alors sans le relever.
+Ce sont aussi les seules proposées sur la fiche d'un mort — sans discipline. L'orga
+peut donner n'importe quelle transformation à un mort ; une transformation qui ne
+relève pas les morts s'ajoute alors sans le relever.
+
+Ce qu'un agent peut recevoir est calculé en un seul endroit,
+`getWorkerEvolutions()` (`workers/functions.php`) : une place de discipline libre,
+les transformations éligibles, ou une résurrection. La fiche de l'agent en tire son
+bloc « Evolutions », et la carte courte (`showWorkerShort`) ses marques : `#` pour une
+discipline à enseigner, `+` pour une transformation ou une résurrection.
 
 Une **trace** permet à l'ancien maître de ramener l'agent qu'il a donné, une fois
 celui-ci mort chez son nouveau maître. `getDeadTracePrimaryWorkerId()` remonte de la
