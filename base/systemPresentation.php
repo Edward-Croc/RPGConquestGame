@@ -180,14 +180,14 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
   <li><strong>Votre base</strong> : la construire ou la déménager. Elle permet de recruter, et ses secrets ne se révèlent qu'à un enquêteur assez fort.</li>
   <li>Le coût de chaque opération est affiché à côté de son bouton.</li>
 </ul>
-<?= guideCaptureFigure($captureSet, 'lieux', $ownedArtefactsTitle . ' et vos lieux, floutés') ?>
+<?= guideCaptureFigure($captureSet, 'lieux', $ownedArtefactsTitle . ' et vos lieux') ?>
 <ul>
   <li><strong><?= htmlspecialchars($ownedArtefactsTitle) ?></strong> : les personnes ou les objets d'intérêt politique sous votre garde,
     et le lieu où ils se trouvent. Pour en remettre un.e à une autre faction, demandez à l'orga. Une attaque réussie sur un lieu
     rapporte ce qu'il abrite.</li>
   <li><strong>Vos lieux découverts</strong>, classés par <?= htmlspecialchars($zoneType) ?> : les lieux que vos agents ont trouvés, et ce qu'ils en ont appris.</li>
   <li><strong>Vos lieux secrets</strong>, classés par <?= htmlspecialchars($zoneType) ?> : la description de votre base et de son contenu, et les autres lieux que vous possédez.</li>
-  <li><?php if ($agentLocationAttack) { ?>Pour attaquer ou défendre un lieu, donnez l'ordre à vos agents.<?php } else { ?>Un lieu découvert et destructible peut être attaqué depuis cette page, si vous avez une base.<?php } ?>
+  <li><?php if ($agentLocationAttack) { ?>Pour attaquer ou défendre un lieu, donnez-en l'ordre à vos agents.<?php } else { ?>Un lieu découvert et destructible peut être attaqué depuis cette page, si vous avez une base.<?php } ?>
     Un lieu détruit peut être réparé.</li>
 </ul>
 <?= guideCaptureFigure($captureSet, 'informations', 'Donner des informations à une autre faction') ?>
@@ -198,8 +198,7 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
 </ul>
 <?php if ($ressourcesEnabled) { ?>
 <?= guideCaptureFigure($captureSet, 'ressources', 'Les ressources de la faction') ?>
-<p>La page <strong>Ressources</strong> montre ce que possède votre faction, les règles qui lui en font gagner, et son
-estimation pour le <?= htmlspecialchars($timeValue) ?> suivant. Vous pouvez y faire un don à une autre faction.</p>
+<p>La page <strong>Ressources</strong> montre ce que possède votre faction, les règles d'acquisition de ces ressources, et l'estimation des gains pour le <?= htmlspecialchars($timeValue) ?> suivant. Vous pouvez y faire un don à une autre faction.</p>
 <?php } ?>
 </div>
 </div>
@@ -210,8 +209,17 @@ estimation pour le <?= htmlspecialchars($timeValue) ?> suivant. Vous pouvez y fa
 <ul>
   <li>La <strong>carte</strong> se déplie en haut de la page.</li>
   <li>Chaque <?= htmlspecialchars($zoneType) ?> montre la <strong>bannière</strong> qui y est levée, et l'étiquette <strong>Sous notre contrôle</strong> quand il est à vous.</li>
-  <li>Cliquer sur un <?= htmlspecialchars($zoneType) ?> déplie sa description, vos lieux, ceux que vous avez découverts et les agents présents.</li>
   <li>Échanger un <?= htmlspecialchars($zoneType) ?> avec une autre faction se négocie… puis se demande à l'orga.</li>
+</ul>
+<?= guideCaptureFigure($captureSet, 'zone', 'Un ' . $zoneType . ' déplié') ?>
+<p><strong>Cliquer sur un <?= htmlspecialchars($zoneType) ?> le déplie</strong>, et montre ce que votre faction en sait :</p>
+<ul>
+  <li><strong>Sa description</strong>, connue de tous.</li>
+  <li><strong>Vos lieux secrets</strong> : vos lieux dans ce <?= htmlspecialchars($zoneType) ?>, leurs secrets et ce qu'ils abritent.</li>
+  <li><strong>Lieux découverts</strong> : les lieux que vos agents y ont trouvés, et ce que vous en avez appris.
+    <?php if (!$agentLocationAttack) { ?>Un lieu destructible peut y être attaqué, si vous avez une base.<?php } ?></li>
+  <li><strong>Nos agents présents</strong>, avec leur action repliés.</li>
+  <li><strong>Agents ennemis repérés</strong> : ceux que vos agents ont vus récemment, regroupés par réseau quand il est connu ; les plus anciens sont repliés.</li>
 </ul>
 </div>
 </div>
@@ -236,7 +244,7 @@ plus il a pu apprendre de maîtrises, et plus ses valeurs sont hautes.</p>
 <summary>Ce qu'apprend une enquête sur un agent</summary>
 <p>Un agent qui <?= htmlspecialchars($investigatingText) ?> observe tous les agents des autres factions présents dans son <?= htmlspecialchars($zoneType) ?>.
 Pour chacun, on compare <strong>son enquête à l'enquête de l'agent observé</strong> : c'est pourquoi se cacher, qui augmente l'enquête, rend plus discret.
-Selon l'écart, le rapport révèle, de la plus facile à la plus difficile à obtenir :</p>
+Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le rapport révèle, de la plus facile à la plus difficile à obtenir :</p>
 <ul>
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF0') ?></strong> : son nom, son métier, son action en cours, et son origine s'il vient d'ailleurs ;</li>
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF1') ?></strong> : ses autres capacités, et ce que son contrôleur lui a appris ;</li>
@@ -249,7 +257,7 @@ Selon l'écart, le rapport révèle, de la plus facile à la plus difficile à o
 <details>
 <summary>Ce qu'apprend une recherche sur un lieu</summary>
 <p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle grandit avec les capacités de la faction qui la possède,
-le nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> et son ancienneté. Selon l'écart entre l'enquête de l'agent et cette difficulté :</p>
+le nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> et son ancienneté. Selon l'écart (enquête de l'agent actif - difficulté de découverte) entre l'enquête de l'agent et cette difficulté :</p>
 <ul>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONNAMEDIFF') ?></strong> : le nom du lieu, sans plus ; il n'est pas retenu pour la suite ;</li>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONINFORMATIONDIFF') ?></strong> : sa description, s'il peut être détruit, et depuis quand il est là ou en ruine. Le lieu rejoint alors vos lieux découverts ;</li>
@@ -260,9 +268,9 @@ elle révèle le numéro du réseau qui le tient, et, avec une marge de plus de 
 </details>
 
 <details>
-<summary>Le combat entre agents</summary>
+<summary> <strong>Le combat entre agents</strong></summary>
 <p>Les attaquants agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles dans le même ordre.
-Chaque duel compare <strong>l'attaque de l'attaquant à la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
+Chaque duel se résoud par <strong>l'attaque de l'attaquant</strong> à laquelle on soustrait <strong>la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
 <ul>
   <li><i>Capture</i> — écart d'au moins <strong><?= $configInt('ATTACKDIFF1') ?></strong> : la cible est prise vivante et devient votre prisonnier ; vous accédez à ses rapports.</li>
   <li><i>Réussite</i> — écart d'au moins <strong><?= $configInt('ATTACKDIFF0') ?></strong> : la cible est éliminée.</li>
