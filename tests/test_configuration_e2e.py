@@ -167,10 +167,17 @@ class TestGuideRules:
             assert "C'est votre faction qui attaque" in text and "Ce sont vos agents qui attaquent" not in text, \
                 "locationAttackMode=immediate should describe the attack by the faction"
             assert "écart d'au moins 7 : le nom de la faction" in text, "the guide should show the configured REPORTDIFF3"
+            assert "Un agent qui surveille ou enquête observe" in text, \
+                "without agent location attacks, defending a location must not be named as an observing action"
 
             set_config_via_ui(gm_session, "baseDiscoveryDiff", "9", base_url=base_url)
             set_config_via_ui(gm_session, "attackTimeWindow", "0", base_url=base_url)
+            set_config_via_ui(gm_session, "baseDiscoveryDiffAddPowers", "0", base_url=base_url)
+            set_config_via_ui(gm_session, "maxBonusDiscoveryDiffTurns", "0", base_url=base_url)
             text = rules_text()
+            assert "par agent, jusqu'à +4" in text, "a capped component should state its cap"
+            assert "les maîtrises de cette faction" not in text, "a multiplier of 0 should remove its component"
+            assert "son ancienneté (+0,5 par Tour)" in text, "a cap of 0 means no cap and should not be stated"
             assert "elle part de 9" in text, "the base discovery difficulty should follow baseDiscoveryDiff"
             assert "aussi longtemps après qu'on l'a vu" in text, "attackTimeWindow=0 should describe an unlimited window"
 
@@ -181,6 +188,8 @@ class TestGuideRules:
             assert "Un agent qui surveille ou enquête observe" in rules_text(), \
                 "an unusable investigateActionsList should show the default observing actions"
 
+            set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",
+                              base_url=base_url)
             set_config_via_ui(gm_session, "claimMode", "worker_leader", base_url=base_url)
             set_config_via_ui(gm_session, "locationAttackMode", "agent_attack_defence", base_url=base_url)
             text = rules_text()
@@ -188,11 +197,15 @@ class TestGuideRules:
                 "claimMode=worker_leader should describe the claim led by a group"
             assert "Ce sont vos agents qui attaquent" in text and "C'est votre faction qui attaque" not in text, \
                 "locationAttackMode=agent_attack_defence should describe the assault by agents"
+            assert "Un agent qui surveille, enquête ou défend le lieu observe" in text, \
+                "with agent location attacks, defending a location observes too"
         finally:
             set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
             set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
             set_config_via_ui(gm_session, "REPORTDIFF3", "4", base_url=base_url)
             set_config_via_ui(gm_session, "baseDiscoveryDiff", "3", base_url=base_url)
+            set_config_via_ui(gm_session, "baseDiscoveryDiffAddPowers", "1", base_url=base_url)
+            set_config_via_ui(gm_session, "maxBonusDiscoveryDiffTurns", "3", base_url=base_url)
             set_config_via_ui(gm_session, "attackTimeWindow", "1", base_url=base_url)
             set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",
                               base_url=base_url)

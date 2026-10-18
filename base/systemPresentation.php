@@ -33,10 +33,28 @@ $cappedBonus = function (string $multiplierKey, string $capKey, string $unit) us
     $cap = $configInt($capKey);
     return sprintf('+%s %s', $multiplier, $unit) . ($cap > 0 ? sprintf(', jusqu\'à +%d', $cap) : '');
 };
+// Actions this scenario's modes do not offer are never named to the players.
+$unavailableActions = array_merge($agentLocationAttack ? [] : ['attack_location', 'defend_location'], $claimEnabled ? [] : ['claim']);
+// Joins « a, b et c » the way the guide's sentences need it.
+$joinWithAnd = function (array $parts): string {
+    $last = array_pop($parts);
+    return empty($parts) ? (string) $last : implode(', ', $parts) . ' et ' . $last;
+};
+// The discovery difficulty components the configuration enables : a multiplier of 0 removes one.
+$discoveryComponents = [];
+foreach ([
+    ['baseDiscoveryDiffAddPowers', 'maxBonusDiscoveryDiffPowers', 'les maîtrises de cette faction', "par point d'enquête"],
+    ['baseDiscoveryDiffAddWorkers', 'maxBonusDiscoveryDiffWorkers', 'ses agents dans le ' . htmlspecialchars($zoneType), 'par agent'],
+    ['baseDiscoveryDiffAddTurns', 'maxBonusDiscoveryDiffTurns', 'son ancienneté', 'par ' . htmlspecialchars($timeValue)],
+] as [$multiplierKey, $capKey, $label, $unit]) {
+    if ((float) getConfig($gameReady, $multiplierKey) != 0) {
+        $discoveryComponents[] = sprintf('%s (%s)', $label, $cappedBonus($multiplierKey, $capKey, $unit));
+    }
+}
 // The actions that observe the other agents of the zone, read as the investigation reads them.
 $investigatingVerbs = array_map(
     fn (string $action): string => (string) getConfig($gameReady, 'txt_ps_' . $action),
-    explode(',', str_replace("'", '', getValidatedInvestigateActionsForSql($gameReady)))
+    array_diff(explode(',', str_replace("'", '', getValidatedInvestigateActionsForSql($gameReady))), $unavailableActions)
 );
 $lastInvestigatingVerb = array_pop($investigatingVerbs);
 $investigatingText = empty($investigatingVerbs)
@@ -54,7 +72,7 @@ $actionRoll = function (string $axis, string $action) use ($gameReady, $minRoll,
 
 // Actions an agent keeps from one turn to the next, the others fall back to watching.
 $continuingActions = [];
-foreach (['investigate', 'hide', 'claim', 'attack', 'attack_location', 'defend_location'] as $action) {
+foreach (array_diff(['investigate', 'hide', 'claim', 'attack', 'attack_location', 'defend_location'], $unavailableActions) as $action) {
     if ((int) getConfig($gameReady, 'continuing_' . $action . '_action') === 1) {
         $continuingActions[] = (string) getConfig($gameReady, 'txt_inf_' . $action);
     }
@@ -128,12 +146,12 @@ Les formules donnent la valeur de l'agent pour cette action ou « enquête », �
   <li><strong><?= htmlspecialchars($labelInvestigate) ?> : <?= $actionRoll('Investigate', 'investigate') ?> + enquête.</strong> L'agent cherche activement les agents et les lieux secrets.</li>
   <li><strong><?= htmlspecialchars($labelPassive) ?> : <?= $actionRoll('Investigate', 'passive') ?> + enquête.</strong> L'agent reste à l'affût, sans prendre de risque, mais repère tout de même les agents et les lieux.</li>
   <?php if ($agentLocationAttack) { ?>
-  <li><strong>Défendre le lieu : défense +<?= $defendLocationBonus ?>.</strong> L'agent défend l'un de vos lieux, et surveille en même temps. Les duels entre attaquants et défenseurs sont résolus en fin de <?= htmlspecialchars($timeValue) ?>.</li>
+  <li><strong>Défendre le lieu : <?= $actionRoll('Defence', 'defend_location') ?> + défense + <?= $defendLocationBonus ?>.</strong> L'agent défend l'un de vos lieux, et surveille en même temps. Les duels entre attaquants et défenseurs sont résolus en fin de <?= htmlspecialchars($timeValue) ?>.</li>
   <?php } ?>
 </ul>
 <p><strong>Actions passives :</strong></p>
 <ul>
-  <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête, discrétion +<?= $hideDiscretion ?>, défense +<?= $hideDefence ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
+  <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête ; discrétion <?= $actionRoll('Investigate', 'hide') ?> + enquête + <?= $hideDiscretion ?>, défense <?= $actionRoll('Defence', 'hide') ?> + défense + <?= $hideDefence ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
   <?php if ($claimEnabled) { ?>
   <li><strong>Revendiquer : </strong>
     L'agent tente de placer le <?= htmlspecialchars($zoneType) ?> sous votre contrôle, avec la bannière de la faction de votre choix, ou <strong>protège</strong> un <?= htmlspecialchars($zoneType) ?> déjà tenu. <strong>Revendiquer révèle l'agent.</strong></li>
@@ -262,10 +280,7 @@ Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le ra
 
 <details>
 <summary><strong>Ce qu'apprend une recherche sur un lieu</strong></summary>
-<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle part de <strong><?= $configInt('baseDiscoveryDiff') ?></strong>, plus 1 si sa faction tient le <?= htmlspecialchars($zoneType) ?> ou y lève sa bannière, et augmente avec
-les maîtrises de cette faction (<?= $cappedBonus('baseDiscoveryDiffAddPowers', 'maxBonusDiscoveryDiffPowers', "par point d'enquête") ?>),
-ses agents dans le <?= htmlspecialchars($zoneType) ?> (<?= $cappedBonus('baseDiscoveryDiffAddWorkers', 'maxBonusDiscoveryDiffWorkers', 'par agent') ?>)
-et son ancienneté (<?= $cappedBonus('baseDiscoveryDiffAddTurns', 'maxBonusDiscoveryDiffTurns', 'par ' . htmlspecialchars($timeValue)) ?>, arrondi au supérieur). Selon l'écart calculé (enquête de l'agent actif - difficulté de découverte) :</p>
+<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle part de <strong><?= $configInt('baseDiscoveryDiff') ?></strong>, plus 1 si sa faction tient le <?= htmlspecialchars($zoneType) ?> ou y lève sa bannière<?= empty($discoveryComponents) ? '' : ', et augmente avec ' . $joinWithAnd($discoveryComponents) . ' (arrondis au supérieur)' ?>. Selon l'écart calculé (enquête de l'agent actif - difficulté de découverte) :</p>
 <ul>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONNAMEDIFF') ?></strong> : le nom du lieu, sans plus ; il n'est pas retenu pour la suite ;</li>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONINFORMATIONDIFF') ?></strong> : sa description, s'il peut être détruit, et depuis quand il est là ou en ruine. Le lieu rejoint alors vos lieux découverts ;</li>
@@ -332,8 +347,7 @@ La faction qui tient vraiment le <?= htmlspecialchars($zoneType) ?> reste la vô
 <?= $locationAttackMode === 'endTurn' ? "L'attaque est préparée pendant le " . htmlspecialchars($timeValue) . ', avec une prédiction de son issue, et résolue en fin de ' . htmlspecialchars($timeValue) . '.' : "L'attaque est résolue immédiatement." ?></p>
 <p>L'<strong>attaque</strong> de votre faction additionne une valeur de base, ses capacités, ses agents présents dans le <?= htmlspecialchars($zoneType) ?>,
 et un point si votre bannière y flotte ou si vous le tenez. La <strong>défense</strong> du lieu additionne de même une valeur de base, les capacités
-et les agents de la faction qui le possède, un point pour la bannière ou le contrôle du <?= htmlspecialchars($zoneType) ?>, et son ancienneté
-(jusqu'à <strong>+<?= $configInt('maxBonusDefenceTurns') ?></strong>) ; un lieu qui n'appartient à personne reçoit <strong>+<?= $configInt('noControllerDefenceBonus') ?></strong>.
+et les agents de la faction qui le possède, un point pour la bannière ou le contrôle du <?= htmlspecialchars($zoneType) ?><?php if ((float) getConfig($gameReady, 'baseDefenceAddTurns') != 0) { ?>, et son ancienneté<?= $configInt('maxBonusDefenceTurns') > 0 ? ' (jusqu\'à <strong>+' . $configInt('maxBonusDefenceTurns') . '</strong>)' : '' ?><?php } ?> ; un lieu qui n'appartient à personne reçoit <strong>+<?= $configInt('noControllerDefenceBonus') ?></strong>.
 L'attaque réussit si elle dépasse la défense d'au moins <strong><?= $configInt('attackLocationDiff') ?></strong>.</p>
 <?php } ?>
 <p>Un lieu pris est détruit, ou seulement pillé s'il est indestructible, et ce qu'il abrite revient au vainqueur. Un lieu détruit peut être réparé.</p>
