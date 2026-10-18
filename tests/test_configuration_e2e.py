@@ -199,12 +199,22 @@ class TestGuideRules:
                 "locationAttackMode=agent_attack_defence should describe the assault by agents"
             assert "Un agent qui surveille, enquête ou défend le lieu observe" in text, \
                 "with agent location attacks, defending a location observes too"
+
+            # The flat bonuses of hiding and defending a location : nothing when 0, their sign otherwise.
+            set_config_via_ui(gm_session, "HIDE_DEFENCE_FLAT_BONUS", "0", base_url=base_url)
+            set_config_via_ui(gm_session, "DEFEND_LOCATION_DEFENCE_FLAT_BONUS", "-1", base_url=base_url)
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            page_text = " ".join(gm_session.locator("body").text_content().split())
+            assert "+ enquête + 4, défense 3 + défense." in page_text, "a bonus of 0 should not be printed"
+            assert "Défendre le lieu : 3 + défense − 1." in page_text, "a negative bonus should keep its sign"
         finally:
             set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
             set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
             set_config_via_ui(gm_session, "REPORTDIFF3", "4", base_url=base_url)
             set_config_via_ui(gm_session, "baseDiscoveryDiff", "3", base_url=base_url)
             set_config_via_ui(gm_session, "baseDiscoveryDiffAddPowers", "1", base_url=base_url)
+            set_config_via_ui(gm_session, "HIDE_DEFENCE_FLAT_BONUS", "1", base_url=base_url)
+            set_config_via_ui(gm_session, "DEFEND_LOCATION_DEFENCE_FLAT_BONUS", "1", base_url=base_url)
             set_config_via_ui(gm_session, "maxBonusDiscoveryDiffTurns", "3", base_url=base_url)
             set_config_via_ui(gm_session, "attackTimeWindow", "1", base_url=base_url)
             set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",

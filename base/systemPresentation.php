@@ -20,6 +20,8 @@ $captureSet = getConfig($gameReady, 'guideCaptures');
 $hideDiscretion = (int) getConfig($gameReady, 'HIDE_ENQUETE_FLAT_BONUS');
 $hideDefence = (int) getConfig($gameReady, 'HIDE_DEFENCE_FLAT_BONUS');
 $defendLocationBonus = (int) getConfig($gameReady, 'DEFEND_LOCATION_DEFENCE_FLAT_BONUS');
+// A flat bonus as calculateVals applies it : nothing when it is 0, its sign otherwise.
+$flatBonus = fn (int $bonus): string => $bonus === 0 ? '' : sprintf(' %s %d', $bonus > 0 ? '+' : '−', abs($bonus));
 $ownedArtefactsTitle = rtrim((string) getConfig($gameReady, 'textOwnedArtefacts'), ' :');
 $claimMode = getConfig($gameReady, 'claimMode');
 $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
@@ -146,12 +148,12 @@ Les formules donnent la valeur de l'agent pour cette action ou « enquête », �
   <li><strong><?= htmlspecialchars($labelInvestigate) ?> : <?= $actionRoll('Investigate', 'investigate') ?> + enquête.</strong> L'agent cherche activement les agents et les lieux secrets.</li>
   <li><strong><?= htmlspecialchars($labelPassive) ?> : <?= $actionRoll('Investigate', 'passive') ?> + enquête.</strong> L'agent reste à l'affût, sans prendre de risque, mais repère tout de même les agents et les lieux.</li>
   <?php if ($agentLocationAttack) { ?>
-  <li><strong>Défendre le lieu : <?= $actionRoll('Defence', 'defend_location') ?> + défense + <?= $defendLocationBonus ?>.</strong> L'agent défend l'un de vos lieux, et surveille en même temps. Les duels entre attaquants et défenseurs sont résolus en fin de <?= htmlspecialchars($timeValue) ?>.</li>
+  <li><strong>Défendre le lieu : <?= $actionRoll('Defence', 'defend_location') ?> + défense<?= $flatBonus($defendLocationBonus) ?>.</strong> L'agent défend l'un de vos lieux, et surveille en même temps. Les duels entre attaquants et défenseurs sont résolus en fin de <?= htmlspecialchars($timeValue) ?>.</li>
   <?php } ?>
 </ul>
 <p><strong>Actions passives :</strong></p>
 <ul>
-  <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête ; discrétion <?= $actionRoll('Investigate', 'hide') ?> + enquête + <?= $hideDiscretion ?>, défense <?= $actionRoll('Defence', 'hide') ?> + défense + <?= $hideDefence ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
+  <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête ; discrétion <?= $actionRoll('Investigate', 'hide') ?> + enquête<?= $flatBonus($hideDiscretion) ?>, défense <?= $actionRoll('Defence', 'hide') ?> + défense<?= $flatBonus($hideDefence) ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
   <?php if ($claimEnabled) { ?>
   <li><strong>Revendiquer : </strong>
     L'agent tente de placer le <?= htmlspecialchars($zoneType) ?> sous votre contrôle, avec la bannière de la faction de votre choix, ou <strong>protège</strong> un <?= htmlspecialchars($zoneType) ?> déjà tenu. <strong>Revendiquer révèle l'agent.</strong></li>
