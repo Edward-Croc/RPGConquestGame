@@ -109,7 +109,9 @@ if ($is_mutating && empty($_SESSION['is_privileged']) && $worker_id) {
     }
 
     // Dead workers keep the resurrection, and nothing else ; a trace may raise its dead agent.
-    $is_resurrection = isset($_GET['transform']) && (
+    // The raising must come alone : any other action in the same request would act on the dead.
+    $onlyTransform = array_values(array_filter($MUTATING_ACTIONS, fn (string $key): bool => isset($_GET[$key]))) === ['transform'];
+    $is_resurrection = $onlyTransform && (
         $current_choice === 'dead'
         || ($current_choice === 'trace'
             && getDeadTracePrimaryWorkerId($gameReady, (int) $worker_id, (int) ($_SESSION['controller']['id'] ?? 0), (int) $mechanics['turncounter']) !== null)
@@ -453,13 +455,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 }
             }
         }
-        // Only a transformation that names worker_is_dead may raise a dead agent.
-        if ($matchedPower !== null && $targetIsDead && !powerRaisesTheDead($matchedPower)) {
+        // A player may give a dead agent only a transformation that names worker_is_dead ; the organiser gives anything.
+        if ($matchedPower !== null && $targetIsDead && !$isOrganiser && !powerRaisesTheDead($matchedPower)) {
             $matchedPower = null;
         }
         if ($matchedPower === null) {
             echo "Cette transformation n'est plus disponible.<br />";
         } else {
+            $raises = $targetIsDead && powerRaisesTheDead($matchedPower);
+            // Handed over before it is transformed, so the trace its last master keeps does not show the new power.
+            if ($raises && !$isOrganiser && getPrimaryControllerId($gameReady, $target_worker_id) !== (int) $session_controller_id) {
+                activateWorker($gameReady, $target_worker_id, 'gift', (int) $session_controller_id);
+            }
             $upgraded = false;
             $cost = $isOrganiser ? null : getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
             if ($cost === null) {
@@ -478,9 +485,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     echo "Stock insuffisant ou modifié.<br />";
                 }
             }
-            // A transformation granted to a dead agent brings it back.
-            if ($upgraded && $targetIsDead) {
-                reviveWorker($gameReady, $target_worker_id, $isOrganiser ? null : (int) $session_controller_id, (string) $matchedPower['name']);
+            // A raising transformation granted to a dead agent brings it back.
+            if ($upgraded && $raises) {
+                reviveWorker($gameReady, $target_worker_id, (string) $matchedPower['name']);
                 $worker_id = $target_worker_id;
             }
         }

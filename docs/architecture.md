@@ -428,20 +428,27 @@ nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à pa
 
 ### Ramener un mort
 
-Seule une **transformation** peut sortir un agent de `dead`, et elle le fait
-implicitement : `workers/action.php` la laisse passer sur un mort, puis
-`reviveWorker()` (`workers/functions.php`) remet son action à `passive`. Les
-transformations proposées sont celles dont la règle accepte un mort
-(`worker_is_dead`), ce que `workers/view.php` évalue avant d'ouvrir le bloc
-« Evolutions » — sans discipline.
+Seule une **transformation** dont la règle nomme `worker_is_dead`
+(`powerRaisesTheDead()`) peut sortir un agent de `dead`, et elle le fait
+implicitement : `workers/action.php` la laisse passer sur un mort — à condition
+qu'elle soit la seule action de la requête —, puis `reviveWorker()`
+(`workers/functions.php`) remet son action à `passive`. Ce sont aussi les seules
+proposées sur la fiche d'un mort, ce que `workers/view.php` évalue avant d'ouvrir le
+bloc « Evolutions » — sans discipline. L'orga peut donner n'importe quelle
+transformation à un mort ; une transformation qui ne relève pas les morts s'ajoute
+alors sans le relever.
 
 Une **trace** permet à l'ancien maître de ramener l'agent qu'il a donné, une fois
 celui-ci mort chez son nouveau maître. `getDeadTracePrimaryWorkerId()` remonte de la
 trace à l'agent réel par `workers_trace_links`, à condition que l'agent réel soit
 mort ce tour ; la règle est alors évaluée sur l'agent réel, et la page comme le
-contrôle d'action acceptent la trace. `reviveWorker()` repasse par la branche
-`gift` d'`activateWorker()` : le maître étranger reçoit une trace, celle de l'ancien
-maître est détruite, et l'agent lui revient actif.
+contrôle d'action acceptent la trace. Avant d'ajouter la transformation,
+`workers/action.php` remet l'agent à celui qui le relève par la branche `gift`
+d'`activateWorker()` : le maître étranger reçoit une trace — copiée avant que
+l'agent change, elle ne montre pas le nouveau pouvoir —, celle de l'ancien maître est
+détruite, et l'agent lui revient actif. Il en va de même pour tout contrôleur qui
+relève un agent dont il n'est pas le maître primaire, comme le recruteur d'un agent
+double.
 
 ### Ce qu'un geôlier peut faire d'un prisonnier
 

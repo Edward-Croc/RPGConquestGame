@@ -274,8 +274,8 @@ ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.descript
 -- Table of powers
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO {prefix}powers ( name, enquete, attack, defence, other) VALUES
-    ('Goule', 0,0,1, '{"hidden" : "2", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "turn": "0"} }'),
-    ('Vampire nouveau né', 1,1,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "turn": "2"} }'),
+    ('Goule', 0,0,1, '{"hidden" : "2", "on_recrutment": "TRUE", "on_transformation": {"worker_is_alive": "1", "age": "0", "unlock_turn": "0"} }'),
+    ('Vampire nouveau né', 1,1,2, '{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "age": "2", "unlock_turn": "2"} }'),
     ('Szlatcha', -1,2,3, '{"hidden" : "0", "on_recrutment": {"controller_faction": "Tzimisce"}, "on_transformation": {"worker_is_alive": "1", "controller_faction": "Tzimisce"}}'),
     ('Gargouille', 0,1,3, '{"hidden" : "0", "on_recrutment": {"controller_faction": "Tremere"}, "on_transformation": {"worker_is_alive": "1", "controller_faction": "Tremere"}}'),
     ('Fantome',3,-2,3, '{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_dead": "1", "worker_without_power": ["Fantome", "Possession"], "controller_faction": "Giovanni"}}'),

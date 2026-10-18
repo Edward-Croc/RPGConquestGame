@@ -2300,28 +2300,23 @@ function getDeadTracePrimaryWorkerId(PDO $pdo, int $traceWorkerId, int $controll
 }
 
 /**
- * Bring back to life a dead agent that has just received a transformation.
+ * Bring back to life a dead agent that has just received a raising transformation.
  *
- * An agent dead in another controller's service first returns to the raising
- * controller through the gift path : its last master keeps a trace of it, and
- * the trace the raising controller held is destroyed.
+ * An agent raised by another master than its own has already been handed over
+ * to him through the gift path, before the transformation was added.
  *
  * @param PDO $pdo : database connection
  * @param int $workerId : id of the dead agent
- * @param int|null $raisingControllerId : controller raising the agent, null for an organiser
  * @param string $transformationName : name of the transformation that raised it
  *
- * @return void : failures are logged by the functions it calls
+ * @return void : failures are logged by updateWorkerAction
  */
-function reviveWorker(PDO $pdo, int $workerId, int|null $raisingControllerId, string $transformationName): void
+function reviveWorker(PDO $pdo, int $workerId, string $transformationName): void
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
-    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['raisingControllerId' => $raisingControllerId], 'debug');
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['transformationName' => $transformationName], 'debug');
 
     $mechanics = getMechanics($pdo);
-    if (!empty($raisingControllerId) && getPrimaryControllerId($pdo, $workerId) !== $raisingControllerId) {
-        activateWorker($pdo, $workerId, 'gift', $raisingControllerId);
-    }
     updateWorkerAction($pdo, $workerId, (int) $mechanics['turncounter'], 'passive', [
         'life_report' => sprintf("Je suis revenu.e d'entre les morts : <strong>%s</strong>.<br />", htmlspecialchars($transformationName)),
     ]);

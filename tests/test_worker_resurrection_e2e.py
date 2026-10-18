@@ -98,6 +98,14 @@ def resurrection(browser):
         state["forged_html"] = alpha.content()
         state["twice_after"] = _alpha_cards(alpha)["Revenant_Twice"][1]
 
+        # A raising must come alone : another action in the same request would act on the dead.
+        revenant = state["options"]["Revenant_Dead"]["Test_Revenant"]
+        response = alpha.request.get(
+            f"{PHP_BASE_URL}/workers/action.php?worker_id={cards['Revenant_Dead'][0]}"
+            f"&transformation={revenant}&transform=Ajouter&attack=Attaquer")
+        state["combined_status"] = response.status
+        state["dead_after_combined"] = _alpha_cards(alpha)["Revenant_Dead"][1]
+
         state["raise_html"] = _transform(alpha, cards["Revenant_Dead"][0], "Test_Revenant")
         state["dead_after"] = _alpha_cards(alpha)["Revenant_Dead"][1]
         state["dead_after_options"] = _transform_options(alpha, cards["Revenant_Dead"][0])
@@ -107,6 +115,23 @@ def resurrection(browser):
         state["gifted_rows"] = ui_workers_by_lastname(gm, "Revenant_Gifted", base_url=PHP_BASE_URL)
         state["alpha_id"] = ui_controller_id(gm, "Alpha", base_url=PHP_BASE_URL)
         state["beta_id"] = beta_id
+        beta_trace = [row["id"] for row in state["gifted_rows"] if row["action_choice"] == "trace"]
+        raised = [row["id"] for row in state["gifted_rows"] if row["action_choice"] == "passive"]
+        safe_goto(gm, f"{PHP_BASE_URL}/base/accueil.php?controller_id={beta_id}&chosir=Choisir")
+        safe_goto(gm, f"{PHP_BASE_URL}/workers/action.php?worker_id={beta_trace[0]}")
+        state["beta_trace_html"] = gm.content()
+        _open(alpha, raised[0])
+        state["raised_html"] = alpha.content()
+
+        # The organiser gives anything : an ordinary transformation on a dead agent leaves it dead.
+        organiser_context = browser.new_context()
+        contexts.append(organiser_context)
+        organiser = organiser_context.new_page()
+        login_as(organiser, PHP_BASE_URL, "gm", "orga")
+        safe_goto(organiser, f"{PHP_BASE_URL}/workers/action.php?worker_id={cards['Revenant_Twice'][0]}&transformation={war_gear}&transform=Ajouter")
+        _open(alpha, cards["Revenant_Twice"][0])
+        state["organiser_html"] = alpha.content()
+        state["twice_after_organiser"] = _alpha_cards(alpha)["Revenant_Twice"][1]
         yield state
     finally:
         for context in contexts:
@@ -150,6 +175,14 @@ class TestRaising:
         assert "Cette transformation n'est plus disponible" in resurrection["forged_html"]
         assert resurrection["twice_after"] == "dead", "the forged request must leave the agent dead"
 
+    def test_raising_combined_with_another_action_is_refused(self, resurrection):
+        assert resurrection["combined_status"] == 403, "a raising carrying another action must be refused"
+        assert resurrection["dead_after_combined"] == "dead", "the refused request must leave the agent dead"
+
+    def test_organiser_transformation_on_the_dead_does_not_raise(self, resurrection):
+        assert "War Gear" in resurrection["organiser_html"], "the organiser can give any transformation, here War Gear"
+        assert resurrection["twice_after_organiser"] == "dead", "an ordinary transformation does not raise the dead"
+
     def test_transformation_raises_a_dead_agent(self, resurrection):
         assert "revenu.e d'entre les morts" in resurrection["raise_html"]
         assert resurrection["dead_after"] == "passive", "the raised agent comes back watching"
@@ -163,3 +196,6 @@ class TestRaising:
         rows = {(int(row["controller_id"]), row["action_choice"]) for row in resurrection["gifted_rows"]}
         assert rows == {(int(resurrection["alpha_id"]), "passive"), (int(resurrection["beta_id"]), "trace")}, \
             f"the agent is back with Alpha and Beta keeps only a trace, got {rows}"
+        assert "Test_Revenant" in resurrection["raised_html"], "the raised agent holds its transformation"
+        assert "Test_Revenant" not in resurrection["beta_trace_html"], \
+            "the trace the foreign master keeps must not show the transformation that raised the agent"
