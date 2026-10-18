@@ -168,6 +168,12 @@ class TestGuideRules:
                 "locationAttackMode=immediate should describe the attack by the faction"
             assert "écart d'au moins 7 : le nom de la faction" in text, "the guide should show the configured REPORTDIFF3"
 
+            set_config_via_ui(gm_session, "baseDiscoveryDiff", "9", base_url=base_url)
+            set_config_via_ui(gm_session, "attackTimeWindow", "0", base_url=base_url)
+            text = rules_text()
+            assert "elle part de 9" in text, "the base discovery difficulty should follow baseDiscoveryDiff"
+            assert "aussi longtemps après qu'on l'a vu" in text, "attackTimeWindow=0 should describe an unlimited window"
+
             set_config_via_ui(gm_session, "investigateActionsList", "'investigate'", base_url=base_url)
             assert "Un agent qui enquête observe" in rules_text(), "the observing actions should follow investigateActionsList"
             # An unusable list falls back to INVESTIGATE_ACTIONS_DEFAULT, as the investigation itself does.
@@ -186,6 +192,8 @@ class TestGuideRules:
             set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
             set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
             set_config_via_ui(gm_session, "REPORTDIFF3", "4", base_url=base_url)
+            set_config_via_ui(gm_session, "baseDiscoveryDiff", "3", base_url=base_url)
+            set_config_via_ui(gm_session, "attackTimeWindow", "1", base_url=base_url)
             set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",
                               base_url=base_url)
 

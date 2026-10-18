@@ -157,11 +157,11 @@ def prepare_player(page: Page, base_url: str):
 
 
 def shoot_between(page: Page, out_dir: Path, name: str, start_heading: str, end_heading: str):
-    """Capture a page from the first heading matching start_heading down to the one matching end_heading."""
+    """Capture a page from the first heading or folded block title matching start_heading down to the one matching end_heading."""
     hide_secrets(page)
     hide_menu_button(page)
     region = page.evaluate("""([startPattern, endPattern]) => {
-        const headings = Array.from(document.querySelectorAll('h3, h4'));
+        const headings = Array.from(document.querySelectorAll('h3, h4, summary'));
         const start = headings.find((h) => new RegExp(startPattern).test(h.textContent));
         const end = headings.find((h) => new RegExp(endPattern).test(h.textContent));
         if (!start || !end) { return null; }
@@ -225,8 +225,8 @@ def capture(base_url: str, scenario: str, set_name: str, user: str, password: st
             if (summary && /Donner des informations/.test(summary.textContent)) { block.open = true; }
         })""")
         # The owned artefacts heading is the scenario's textOwnedArtefacts : protégé.es, artefacts…
-        shoot_between(page, out_dir, "lieux", "protégé|artefact|Vos lieux découverts", "Sur les agents connus")
-        shoot_between(page, out_dir, "informations", "Sur les agents connus", "Informations reçues")
+        shoot_between(page, out_dir, "lieux", "protégé|artefact|Vos lieux découverts", "Donner des informations")
+        shoot_between(page, out_dir, "informations", "Donner des informations", "Informations reçues")
 
         if page.locator("#sidebar a[href*='ressources/view.php']").count() > 0:
             safe_goto(page, f"{base_url}/ressources/view.php")

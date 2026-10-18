@@ -26,6 +26,13 @@ $locationAttackMode = getConfig($gameReady, 'locationAttackMode');
 $configInt = fn (string $key): int => (int) getConfig($gameReady, $key);
 $riposteActive = $configInt('RIPOSTACTIVE') !== 0;
 $overwhelmMorethan = getConfig($gameReady, 'locationOverwhelmMode') === 'morethan';
+$attackTimeWindow = $configInt('attackTimeWindow');
+// A bonus with its cap, as calculateControllerValue applies it : a cap of 0 means no cap.
+$cappedBonus = function (string $multiplierKey, string $capKey, string $unit) use ($gameReady, $configInt): string {
+    $multiplier = str_replace('.', ',', (string) (float) getConfig($gameReady, $multiplierKey));
+    $cap = $configInt($capKey);
+    return sprintf('+%s %s', $multiplier, $unit) . ($cap > 0 ? sprintf(', jusqu\'à +%d', $cap) : '');
+};
 // The actions that observe the other agents of the zone, read as the investigation reads them.
 $investigatingVerbs = array_map(
     fn (string $action): string => (string) getConfig($gameReady, 'txt_ps_' . $action),
@@ -187,7 +194,7 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
   <li><strong>Vos lieux découverts</strong>, classés par <?= htmlspecialchars($zoneType) ?> : les lieux que vos agents ont trouvés, et ce qu'ils en ont appris.</li>
   <li><strong>Vos lieux secrets</strong>, classés par <?= htmlspecialchars($zoneType) ?> : la description de votre base et de son contenu, et les autres lieux que vous possédez.</li>
   <li><?php if ($agentLocationAttack) { ?>Pour attaquer ou défendre un lieu, donnez-en l'ordre à vos agents.<?php } else { ?>Un lieu découvert et destructible peut être attaqué depuis cette page, si vous avez une base.<?php } ?>
-    Un lieu détruit peut être réparé moyennant finances.</li>
+    Un lieu détruit peut être réparé<?= $ressourcesEnabled ? ' moyennant finances' : '' ?>.</li>
 </ul>
 <?= guideCaptureFigure($captureSet, 'informations', 'Donner des informations à une autre faction') ?>
 <p><strong>Donner des informations à une autre faction :</strong></p>
@@ -250,13 +257,15 @@ Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le ra
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF2') ?></strong> : le numéro de son réseau, ses autres maîtrises et ses équipements les mieux cachés ;</li>
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF3') ?></strong> : le nom de la faction qui dirige ce réseau.</li>
 </ul>
-<p>Ce qui est appris reste acquis à votre faction et peut être donné à une autre. Un agent repéré peut être attaqué tant qu'il a été vu à la fin du <?= htmlspecialchars($timeValue) ?> précédent.</p>
+<p>Ce qui est appris reste acquis à votre faction et peut être donné à une autre. <?php if ($attackTimeWindow === 0) { ?>Un agent repéré peut être attaqué, aussi longtemps après qu'on l'a vu.<?php } elseif ($attackTimeWindow === 1) { ?>Un agent repéré peut être attaqué s'il a été vu à la fin du <?= htmlspecialchars($timeValue) ?> précédent.<?php } else { ?>Un agent repéré peut être attaqué s'il a été vu lors des <?= $attackTimeWindow ?> dernières fins de <?= htmlspecialchars($timeValue) ?>.<?php } ?></p>
 </details>
 
 <details>
 <summary><strong>Ce qu'apprend une recherche sur un lieu</strong></summary>
-<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle fonction des capacités de la faction qui la possède,
-du nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> (+1/agent) et son ancienneté (+1/2tours). Selon l'écart calculé (enquête de l'agent actif - difficulté de découverte) :</p>
+<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle part de <strong><?= $configInt('baseDiscoveryDiff') ?></strong>, plus 1 si sa faction tient le <?= htmlspecialchars($zoneType) ?> ou y lève sa bannière, et augmente avec
+les maîtrises de cette faction (<?= $cappedBonus('baseDiscoveryDiffAddPowers', 'maxBonusDiscoveryDiffPowers', "par point d'enquête") ?>),
+ses agents dans le <?= htmlspecialchars($zoneType) ?> (<?= $cappedBonus('baseDiscoveryDiffAddWorkers', 'maxBonusDiscoveryDiffWorkers', 'par agent') ?>)
+et son ancienneté (<?= $cappedBonus('baseDiscoveryDiffAddTurns', 'maxBonusDiscoveryDiffTurns', 'par ' . htmlspecialchars($timeValue)) ?>, arrondi au supérieur). Selon l'écart calculé (enquête de l'agent actif - difficulté de découverte) :</p>
 <ul>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONNAMEDIFF') ?></strong> : le nom du lieu, sans plus ; il n'est pas retenu pour la suite ;</li>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONINFORMATIONDIFF') ?></strong> : sa description, s'il peut être détruit, et depuis quand il est là ou en ruine. Le lieu rejoint alors vos lieux découverts ;</li>
@@ -269,7 +278,7 @@ elle révèle le numéro du réseau qui le tient, et, avec une marge de plus de 
 <details>
 <summary><strong>Le combat entre agents</strong></summary>
 <p>Les attaquants agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.
-Chaque duel se résoud par <strong>l'attaque de l'attaquant</strong> à laquelle on soustrait <strong>la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
+Chaque duel se résout par <strong>l'attaque de l'attaquant</strong> à laquelle on soustrait <strong>la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
 <ul>
   <li><i>Capture</i> — écart d'au moins <strong><?= $configInt('ATTACKDIFF1') ?></strong> : la cible est prise vivante et devient votre prisonnier ; vous accédez à ses rapports.</li>
   <li><i>Réussite</i> — écart d'au moins <strong><?= $configInt('ATTACKDIFF0') ?></strong> : la cible est éliminée.</li>
@@ -311,7 +320,7 @@ La faction qui tient vraiment le <?= htmlspecialchars($zoneType) ?> reste la vô
 <?php if ($agentLocationAttack) { ?>
 <p>Ce sont vos <strong>agents</strong> qui attaquent ou défendent un lieu de leur <?= htmlspecialchars($zoneType) ?>. En fin de <?= htmlspecialchars($timeValue) ?>, pour chaque lieu visé :</p>
 <ul>
-  <li>attaquants et défenseurs agirons dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.</li>
+  <li>attaquants et défenseurs agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.</li>
   <li>ils s'affrontent en une suite de duels, chacun résolu comme un combat entre agents : un attaquant enchaîne les défenseurs tant qu'il gagne, un défenseur tient tant qu'il survit ;</li>
   <li>le lieu tombe si les attaquants survivants sont <strong>strictement plus nombreux</strong> que
     <?php if ($overwhelmMorethan) { ?>les défenseurs survivants plus <strong><?= $configInt('locationOverwhelmValue') ?></strong><?php } else { ?><strong><?= $configInt('locationOverwhelmValue') ?></strong> fois les défenseurs survivants<?php } ?>.
