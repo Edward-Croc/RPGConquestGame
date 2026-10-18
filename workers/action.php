@@ -463,13 +463,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             echo "Cette transformation n'est plus disponible.<br />";
         } else {
             $raises = $targetIsDead && powerRaisesTheDead($matchedPower);
-            // Handed over before it is transformed, so the trace its last master keeps does not show the new power.
-            if ($raises && !$isOrganiser && getPrimaryControllerId($gameReady, $target_worker_id) !== (int) $session_controller_id) {
-                activateWorker($gameReady, $target_worker_id, 'gift', (int) $session_controller_id);
-            }
+            $handOver = $raises && !$isOrganiser && getPrimaryControllerId($gameReady, $target_worker_id) !== (int) $session_controller_id;
             $upgraded = false;
             $cost = $isOrganiser ? null : getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
-            if ($cost === null) {
+            if ($handOver) {
+                // Paid, handed over, then transformed : unpaid it stays dead, and the trace left behind lacks the new power.
+                if ($cost === null || consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
+                    activateWorker($gameReady, $target_worker_id, 'gift', (int) $session_controller_id);
+                    $worker_id = $target_worker_id;
+                    $upgraded = upgradeWorker($gameReady, $target_worker_id, (int) $linkPowerTypeId);
+                } else {
+                    echo "Stock insuffisant ou modifié.<br />";
+                }
+            } elseif ($cost === null) {
                 $upgraded = upgradeWorker($gameReady, $target_worker_id, (int) $linkPowerTypeId);
             } else {
                 $gameReady->beginTransaction();

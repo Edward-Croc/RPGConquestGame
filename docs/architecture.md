@@ -698,8 +698,9 @@ n'applique la garde de propriété qu'à celles-ci : une lecture reste possible 
 un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 
 `workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
-est dans `INACTIVE_ACTIONS`, avec une exception pour `transform` sur un mort — la
-résurrection vampire.
+est dans `INACTIVE_ACTIONS`, avec une exception pour une requête qui ne porte que
+`transform`, sur un mort ou sur la trace d'un agent mort — la résurrection (voir
+« Ramener un mort »).
 
 Le verrou n'autorise que sur une **lecture positive** : il faut que la ligne du tour
 existe et porte autre chose qu'une action inactive. Écrit à l'envers — refuser sur
