@@ -1,0 +1,2 @@
+ressource_name,presentation,stored_text,is_rollable,is_stored,base_building_cost,base_moving_cost,location_repaire_cost,gain_rules,hide_when_zero
+Sang,La réserve de la faction compte <strong>%s dose(s) de %s</strong>.,,1,0,0,0,0,"[{""amount"":2,""timing"":""before_claim"",""condition"":{""type"":""holds_zone""}},{""amount"":1,""timing"":""before_claim"",""condition"":{""type"":""claims_zone""}}]",0

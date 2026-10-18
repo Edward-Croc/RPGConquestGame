@@ -133,7 +133,7 @@ Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dan
 |---|---|---|---|
 | **TestConfig** (tests) | `setupTestConfig_config.csv` | `setupTestConfig_ressources_config.csv` | zones, locations, controllers, advanced… |
 | **Japon1555CSV** (Shikoku 1555) | `setupJapon1555CSV_config.csv` | `setupJapon1555CSV_ressources_config.csv` | zones (`zone_rules`, `is_hidden`), locations, powers… |
-| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | *(pas de CSV ressources — `ressource_management=FALSE`)* | zones, locations, controllers… |
+| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | `setupVampire1966CSV_ressources_config.csv` — le **Sang** : 1 dose au départ, +2 par zone tenue et +1 par zone sous sa bannière (avant les revendications), conservé d'un tour à l'autre ; Goule coûte 1 dose, les autres transformations 3. La variante SQL n'a pas de ressource. | zones, locations, controllers… |
 
 **En-tête config obligatoire :** `name,value,description`
 

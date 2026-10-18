@@ -9,7 +9,7 @@ basePowerNames,"'Célérité', 'Endurance', 'Puissance'",List of Powers accessib
 continuing_investigate_action,false,Does the investigate action stay active
 textLocationPillaged,"Le lieu %s a été pillé, mais nous n’avons pas pu le détruire.",Text for location pillaged
 textLocationNotDestroyed,"Le lieu %s n’a pas été détruit, nos excuses.",Text for location not destroyed
-ressource_management,FALSE,Ressource management configuration
+ressource_management,TRUE,Ressource management configuration
 map_file,carte_quartiers_florence.jpg,Map file to use
 map_alt,Carte des Quartiers de Florence,Map alt
 textForZoneType,quartier,Text for the type of zone
