@@ -118,6 +118,7 @@ class TestLinkTableFeature:
             'Test Gold Gate Optout', 'Test OR Zone Or Gold',
             'Test Direct And OR', 'Test Cross Resource',
             'Test Malformed Amount', 'Test Unknown Rule Key',
+            'Test_Revenant', 'Test_Possessed',
         }
         assert transformations == expected, \
             f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
@@ -127,7 +128,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 14, 'Metier': 17, 'Discipline': 4, 'Transformation': 11}
+        expected = {'Hobby': 14, 'Metier': 17, 'Discipline': 4, 'Transformation': 13}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 
@@ -377,6 +378,8 @@ class TestLoadWorkersCSV:
             'DA_Killer': 'Foxtrot',
             # Slice 14 — discipline/transform Evolutions tests subject
             'Transform_Subject': 'Alpha',
+            # Issue #38 — raising the dead (test_worker_resurrection_e2e.py)
+            'Revenant_Dead': 'Alpha', 'Revenant_Twice': 'Alpha', 'Revenant_Gifted': 'Alpha',
         }
         assert mapping == expected, f"Worker-controller mapping wrong: got {mapping}"
 
@@ -395,11 +398,17 @@ class TestLoadWorkersCSV:
         Exceptions (CSV-seeded with a non-passive action):
           - Searcher_1 (detection): action='investigate'
           - Hunter_Cross (cross-zone scenario): action='investigate'
+          - Revenant_Dead, Revenant_Twice (resurrection scenario): action='dead'
         """
         ensure_gm_login(page, base_url)
         investigate_agents = {'Searcher_1', 'Hunter_Cross', 'Artefact_Searcher_Echo'}
+        dead_agents = {'Revenant_Dead', 'Revenant_Twice'}
         for w in ui_all_workers(page, base_url=base_url):
             if w['lastname'] in investigate_agents:
+                continue
+            if w['lastname'] in dead_agents:
+                assert w['action_choice'] == 'dead', \
+                    f"Worker '{w['lastname']}' is seeded dead, got '{w['action_choice']}'"
                 continue
             assert w['action_choice'] == 'passive', \
                 f"Worker '{w['lastname']}' has action '{w['action_choice']}', expected 'passive'"
@@ -416,8 +425,9 @@ class TestLoadWorkersCSV:
             GROUP BY w.id, w.lastname
         """)
         four_power_agents = {'Chain_A', 'Inv_Atk_1', 'Claim_Atk_1'}
+        three_power_agents = {'Revenant_Twice'}
         for r in cursor.fetchall():
-            expected = 4 if r['lastname'] in four_power_agents else 2
+            expected = 4 if r['lastname'] in four_power_agents else 3 if r['lastname'] in three_power_agents else 2
             assert r['power_count'] == expected, \
                 f"Worker '{r['lastname']}' has {r['power_count']} powers, expected {expected}"
         conn.close()

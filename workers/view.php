@@ -412,8 +412,16 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
 
             // build upgrade HTML
             $upgradeHTML = '';
-            // worker must be active to have upgrades available
-            if (in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)) {
+            $currentChoice = $worker['actions'][$mechanics['turncounter']]['action_choice'];
+            $isActiveWorker = in_array($currentChoice, ACTIVE_ACTIONS);
+            // A dead agent, or the trace of one, may still be raised by a transformation, and nothing else.
+            $raisedWorkerId = null;
+            if ($currentChoice === 'dead') {
+                $raisedWorkerId = (int) $worker['id'];
+            } elseif ($currentChoice === 'trace' && !empty($controller_id)) {
+                $raisedWorkerId = getDeadTracePrimaryWorkerId($gameReady, (int) $worker['id'], (int) $controller_id, (int) $mechanics['turncounter']);
+            }
+            if ($isActiveWorker || $raisedWorkerId !== null) {
                 // Allow Discipline teaching via age_discipline param
                 $upgradeDisciplineHTML = "";
                 $debug_discipline_age = $_SESSION['DEBUG_TRANSFORM'];
@@ -461,7 +469,7 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                         $nb_disciplines
                     );
                 }
-                if ((int)$nb_current_disciplines[0]['discipline_count'] < (int)$nb_disciplines) {
+                if ($isActiveWorker && (int)$nb_current_disciplines[0]['discipline_count'] < (int)$nb_disciplines) {
                     $upgradeDisciplineHTML .= sprintf(
                         '
                         <div class="field is-grouped is-grouped-multiline">
@@ -494,7 +502,10 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                     if ($debug_transformation_age) {
                         echo sprintf("powerTransformationArray: %s <br />", var_export($powerTransformationArray, true));
                     }
-                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $worker['id'], $mechanics['turncounter'], 'on_transformation');
+                    $powerTransformationArray = cleanPowerListFromJsonConditions($gameReady, $powerTransformationArray, $controller_id, $raisedWorkerId ?? $worker['id'], $mechanics['turncounter'], 'on_transformation');
+                    if ($raisedWorkerId !== null) {
+                        $powerTransformationArray = array_values(array_filter($powerTransformationArray ?? [], 'powerRaisesTheDead'));
+                    }
                     if ($debug_transformation_age) {
                         echo sprintf("powerTransformationArray Json parsed: %s <br/>", var_export($powerTransformationArray, true));
                     }

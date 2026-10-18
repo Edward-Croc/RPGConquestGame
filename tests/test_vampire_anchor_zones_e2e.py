@@ -200,7 +200,7 @@ class TestPossessionORShape:
                 f"One key per OR branch (authoring convention); got {branch}"
             )
         keys = {next(iter(b.keys())) for b in or_block}
-        assert keys == {"age", "worker_is_alive"}, (
-            f"Possession OR must carry exactly the age and worker_is_alive "
+        assert keys == {"age", "worker_is_dead"}, (
+            f"Possession OR must carry exactly the age and worker_is_dead "
             f"branches; got keys {keys}"
         )

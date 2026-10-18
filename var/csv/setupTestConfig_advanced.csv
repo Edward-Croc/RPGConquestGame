@@ -43,3 +43,6 @@ combat,DA_Captor_Alpha,origine Accessible,Beta-Combat,Alpha,passive,{},Brute For
 combat,DA_Captor_Echo,origine Accessible,Beta-Combat,Echo,passive,{},Brute Force|Veteran Tactician
 combat,DA_Killer,origine Accessible,Beta-Combat,Foxtrot,passive,{},Eagle Scout|Common Folk
 combat,Transform_Subject,origine Accessible,Beta-Combat,Alpha,passive,{},Blank Slate|Common Folk
+resurrection,Revenant_Dead,origine Commune,Beta-Combat,Alpha,dead,{},Blank Slate|Common Folk
+resurrection,Revenant_Twice,origine Commune,Beta-Combat,Alpha,dead,{},Blank Slate|Common Folk|Test_Revenant
+resurrection,Revenant_Gifted,origine Commune,Beta-Combat,Alpha,passive,{},Blank Slate|Common Folk

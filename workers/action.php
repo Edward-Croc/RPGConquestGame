@@ -108,8 +108,12 @@ if ($is_mutating && empty($_SESSION['is_privileged']) && $worker_id) {
         exit();
     }
 
-    // Dead workers keep the vampire resurrection, and nothing else.
-    $is_resurrection = $current_choice === 'dead' && isset($_GET['transform']);
+    // Dead workers keep the resurrection, and nothing else ; a trace may raise its dead agent.
+    $is_resurrection = isset($_GET['transform']) && (
+        $current_choice === 'dead'
+        || ($current_choice === 'trace'
+            && getDeadTracePrimaryWorkerId($gameReady, (int) $worker_id, (int) ($_SESSION['controller']['id'] ?? 0), (int) $mechanics['turncounter']) !== null)
+    );
     // Absence is not permission : an unreadable row must refuse, like an inactive one.
     if (!$is_resurrection
         && (!is_string($current_choice) || in_array($current_choice, INACTIVE_ACTIONS, true))
@@ -422,50 +426,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
     if (isset($_GET['transform'])) {
-        if (!empty($_SESSION['is_privileged']) && empty($_SESSION['controller']['id'])) {
-            upgradeWorker($gameReady, $worker_id, $_GET['transformation']);
-        } else {
-            $session_controller_id = $_SESSION['controller']['id'] ?? null;
-            $turn = $mechanics['turncounter'] ?? 0;
-            $linkPowerTypeId = $_GET['transformation'] ?? null;
-            if (empty($linkPowerTypeId) || empty($session_controller_id)) {
-                http_response_code(403);
-                exit();
-            }
-            $candidates = getPowersByType($gameReady, '4', null, false);
-            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_transformation');
-            $matchedPower = null;
-            if (is_array($candidates)) {
-                foreach ($candidates as $p) {
-                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
-                        $matchedPower = $p;
-                        break;
-                    }
-                }
-            }
-            if ($matchedPower === null) {
-                echo "Cette transformation n'est plus disponible.<br />";
-            } else {
-                $cost = getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $worker_id, $turn, 'on_transformation');
-                if ($cost === null) {
-                    upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
-                } else {
-                    $gameReady->beginTransaction();
-                    if (consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
-                        if (upgradeWorker($gameReady, $worker_id, $linkPowerTypeId)) {
-                            $gameReady->commit();
-                        } else {
-                            $gameReady->rollBack();
-                        }
-                    } else {
-                        $gameReady->rollBack();
-                        echo "Stock insuffisant ou modifié.<br />";
-                    }
+        $turn = (int) ($mechanics['turncounter'] ?? 0);
+        $session_controller_id = $_SESSION['controller']['id'] ?? null;
+        $isOrganiser = !empty($_SESSION['is_privileged']) && empty($session_controller_id);
+        $linkPowerTypeId = $_GET['transformation'] ?? null;
+        if (empty($linkPowerTypeId) || (!$isOrganiser && empty($session_controller_id))) {
+            http_response_code(403);
+            exit();
+        }
+        // A trace stands for its dead agent : the transformation raises the agent itself.
+        $deadTracePrimaryId = $isOrganiser ? null : getDeadTracePrimaryWorkerId($gameReady, (int) $worker_id, (int) $session_controller_id, $turn);
+        $target_worker_id = $deadTracePrimaryId ?? (int) $worker_id;
+        $targetWorkers = getWorkers($gameReady, [$target_worker_id]);
+        $targetIsDead = ($targetWorkers[0]['actions'][$turn]['action_choice'] ?? null) === 'dead';
+
+        $candidates = getPowersByType($gameReady, '4', null, false);
+        if (!$isOrganiser) {
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
+        }
+        $matchedPower = null;
+        if (is_array($candidates)) {
+            foreach ($candidates as $p) {
+                if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
+                    $matchedPower = $p;
+                    break;
                 }
             }
         }
+        // Only a transformation that names worker_is_dead may raise a dead agent.
+        if ($matchedPower !== null && $targetIsDead && !powerRaisesTheDead($matchedPower)) {
+            $matchedPower = null;
+        }
+        if ($matchedPower === null) {
+            echo "Cette transformation n'est plus disponible.<br />";
+        } else {
+            $upgraded = false;
+            $cost = $isOrganiser ? null : getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
+            if ($cost === null) {
+                $upgraded = upgradeWorker($gameReady, $target_worker_id, (int) $linkPowerTypeId);
+            } else {
+                $gameReady->beginTransaction();
+                if (consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
+                    if (upgradeWorker($gameReady, $target_worker_id, (int) $linkPowerTypeId)) {
+                        $gameReady->commit();
+                        $upgraded = true;
+                    } else {
+                        $gameReady->rollBack();
+                    }
+                } else {
+                    $gameReady->rollBack();
+                    echo "Stock insuffisant ou modifié.<br />";
+                }
+            }
+            // A transformation granted to a dead agent brings it back.
+            if ($upgraded && $targetIsDead) {
+                reviveWorker($gameReady, $target_worker_id, $isOrganiser ? null : (int) $session_controller_id, (string) $matchedPower['name']);
+                $worker_id = $target_worker_id;
+            }
+        }
     }
-
 }
 
 // Resolve effective sort for prev/next nav buttons — URL > session > 'age', both whitelist-validated

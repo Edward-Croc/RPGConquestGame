@@ -638,9 +638,11 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 **Clés disponibles (toutes optionnelles) :**
 
 - **`age`** (int) — l'agent doit avoir au moins cet âge.
-- **`worker_is_alive`** (`"0"` ou `"1"`) — `1` exige une action active (move, attack, claim, gift, …), `0` exige une action inactive (passive, hide, dead, …).
+- **`worker_is_alive`** (`"1"`) — l'agent doit avoir une action active ce tour (`ACTIVE_ACTIONS` : passive, investigate, attack, claim, hide, attack_location, defend_location). Un agent sans ligne d'action pour le tour ne la satisfait pas. Toute autre valeur que `"1"` est refusée : l'ancienne forme `"0"` s'écrit désormais `worker_is_dead`.
+- **`worker_is_dead`** (`"1"`) — l'agent doit être **mort** ce tour : ni capturé, ni réduit à une trace. Sans agent dans le contexte (recrutement), la clé n'est jamais satisfaite. Voir « Ramener un mort » ci-dessous.
+- **`worker_without_power`** (string ou liste) — l'agent ne doit posséder aucun de ces pouvoirs, quel que soit leur type. Sert à rendre une transformation unique (elle se nomme elle-même) ou exclusive d'une autre (`["Fantome", "Possession"]`).
 - **`unlock_turn`** (int) — disponible **à partir** de ce tour inclus (ex. `5` masque le power aux tours 0 à 4, puis l'affiche dès le tour 5).
-- **`controller_faction`** (string) — nom exact de la faction du contrôleur.
+- **`controller_faction`** (string) — nom exact de la faction du contrôleur, ou une liste séparée par des virgules (`"Démon, Eglise"`) : le pouvoir est ouvert à chacune.
 - **`controller_has_zone`** (string) — nom de zone que le contrôleur réclame ou détient (claim OR holder).
 - **`worker_in_zone`** (string) — nom de zone où l'agent se trouve actuellement.
 - **`controller_has_ressource`** (objet) — voir ci-dessous. Honorée en clé directe **et** à l'intérieur d'une branche OR.
@@ -662,6 +664,12 @@ Une règle peut porter `controller_has_ressource` au niveau direct **et** à l'i
 **Convention OR pour le « gratuit si possédé, payant sinon » :**
 
 L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obtenir « gratuit si je tiens la zone, payant si je dois échanger », placer la branche zone **avant** la branche ressource. L'inverse ferait payer un joueur qui tient la zone ET possède aussi la ressource.
+
+**Ramener un mort :**
+
+Une transformation accordée à un agent **mort** le ramène à la vie : son action repasse à `passive` et son rapport le raconte (`reviveWorker`, `workers/functions.php`). Seules les transformations dont la règle l'admet (`worker_is_dead`) sont proposées sur la fiche d'un mort ; le bloc « Evolutions » n'y montre aucune discipline.
+
+Un agent donné puis mort au service de son nouveau maître peut être ramené par l'**ancien** maître, depuis la trace qu'il en garde : la fiche de la trace propose les transformations évaluées sur l'agent réel. La transformation ramène l'agent réel à l'ancien maître par le chemin du don — le maître étranger en garde une trace, la trace de l'ancien maître est détruite, et l'agent redevient un agent actif de l'ancien maître. Le lien entre trace et agent réel est `workers_trace_links` (`getDeadTracePrimaryWorkerId`).
 
 **Chemin admin / gm :**
 

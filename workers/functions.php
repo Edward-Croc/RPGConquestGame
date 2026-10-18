@@ -2260,6 +2260,74 @@ function destroyTraceWorker(PDO $pdo, int $worker_id, int $controller_id): bool
 }
 
 /**
+ * The real agent behind a trace, once that agent has died.
+ *
+ * A controller holds a trace of an agent it gave away or lost ; when the agent
+ * dies in its new master's service, the trace is how the former master may raise it.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $traceWorkerId : id of the trace worker
+ * @param int $controllerId : controller holding the trace
+ * @param int $turnNumber : current turn
+ *
+ * @return int|null : id of the dead agent, null when the worker is no trace of this controller or the agent lives
+ */
+function getDeadTracePrimaryWorkerId(PDO $pdo, int $traceWorkerId, int $controllerId, int $turnNumber): int|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with traceWorkerId : ' . $traceWorkerId, ['controllerId' => $controllerId, 'turnNumber' => $turnNumber], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT wtl.primary_worker_id
+            FROM {$prefix}workers_trace_links wtl
+            JOIN {$prefix}worker_actions wa ON wa.worker_id = wtl.primary_worker_id AND wa.turn_number = :turn_number
+            WHERE wtl.trace_worker_id = :trace_worker_id
+              AND wtl.controller_id = :controller_id
+              AND wa.action_choice = 'dead'
+            LIMIT 1");
+        $stmt->execute([
+            ':turn_number' => $turnNumber,
+            ':trace_worker_id' => $traceWorkerId,
+            ':controller_id' => $controllerId,
+        ]);
+        $primaryWorkerId = $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT workers_trace_links failed : ' . $e->getMessage(), ['traceWorkerId' => $traceWorkerId], 'error');
+        return null;
+    }
+    return $primaryWorkerId === false ? null : (int) $primaryWorkerId;
+}
+
+/**
+ * Bring back to life a dead agent that has just received a transformation.
+ *
+ * An agent dead in another controller's service first returns to the raising
+ * controller through the gift path : its last master keeps a trace of it, and
+ * the trace the raising controller held is destroyed.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $workerId : id of the dead agent
+ * @param int|null $raisingControllerId : controller raising the agent, null for an organiser
+ * @param string $transformationName : name of the transformation that raised it
+ *
+ * @return void : failures are logged by the functions it calls
+ */
+function reviveWorker(PDO $pdo, int $workerId, int|null $raisingControllerId, string $transformationName): void
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['raisingControllerId' => $raisingControllerId], 'debug');
+
+    $mechanics = getMechanics($pdo);
+    if (!empty($raisingControllerId) && getPrimaryControllerId($pdo, $workerId) !== $raisingControllerId) {
+        activateWorker($pdo, $workerId, 'gift', $raisingControllerId);
+    }
+    updateWorkerAction($pdo, $workerId, (int) $mechanics['turncounter'], 'passive', [
+        'life_report' => sprintf("Je suis revenu.e d'entre les morts : <strong>%s</strong>.<br />", htmlspecialchars($transformationName)),
+    ]);
+}
+
+/**
  * Sort the worker buckets by the given sort key
  *
  * @param array &$bucket : bucket of worker rows (mutated in place)

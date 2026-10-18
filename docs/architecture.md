@@ -426,6 +426,23 @@ Le statut affiché s'en déduit, croisé avec `is_primary_controller`
 (`getWorkerStatus`, `workers/functions.php`) : actif et à nous vaut `alive`, actif et pas à
 nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à part.
 
+### Ramener un mort
+
+Seule une **transformation** peut sortir un agent de `dead`, et elle le fait
+implicitement : `workers/action.php` la laisse passer sur un mort, puis
+`reviveWorker()` (`workers/functions.php`) remet son action à `passive`. Les
+transformations proposées sont celles dont la règle accepte un mort
+(`worker_is_dead`), ce que `workers/view.php` évalue avant d'ouvrir le bloc
+« Evolutions » — sans discipline.
+
+Une **trace** permet à l'ancien maître de ramener l'agent qu'il a donné, une fois
+celui-ci mort chez son nouveau maître. `getDeadTracePrimaryWorkerId()` remonte de la
+trace à l'agent réel par `workers_trace_links`, à condition que l'agent réel soit
+mort ce tour ; la règle est alors évaluée sur l'agent réel, et la page comme le
+contrôle d'action acceptent la trace. `reviveWorker()` repasse par la branche
+`gift` d'`activateWorker()` : le maître étranger reçoit une trace, celle de l'ancien
+maître est détruite, et l'agent lui revient actif.
+
 ### Ce qu'un geôlier peut faire d'un prisonnier
 
 Un prisonnier est un agent dont l'`action_choice` vaut `captured` et dont
