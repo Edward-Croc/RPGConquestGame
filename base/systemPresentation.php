@@ -109,7 +109,7 @@ alors toutes les actions, dans cet ordre :</p>
   <li><strong>Recruter un serviteur</strong> propose plusieurs candidats et demande d'avoir une base. Vous en choisissez un seul.</li>
   <li><strong>Prendre le premier venu</strong> propose un candidat unique, à prendre ou à laisser.</li>
   <li>Le nom et les capacités de chaque candidat sont tirés au sort. Vous choisissez où l'envoyer, et une première maîtrise à lui enseigner.</li>
-  <li><strong>ATTENTION : UN RECRUTEMENT OUVERT COMPTE POUR LE <?= htmlspecialchars(mb_strtoupper($timeValue)) ?>. NE QUITTEZ PAS LA PAGE SANS RECRUTER, SINON L'AGENT EST PERDU !</strong></li>
+  <li><strong>ATTENTION : Un recrutement ouvert compte pour le <?= htmlspecialchars($timeValue) ?>. NE QUITTEZ PAS LA PAGE SANS RECRUTER, SINON L'AGENT EST PERDU !</strong></li>
 </ul>
 
 <h4 class="title is-5">L'action prévue en fin de <?= htmlspecialchars($timeValue) ?> (et dans quel <?= htmlspecialchars($zoneType) ?>)</h4>
@@ -129,7 +129,7 @@ Les formules donnent la valeur de l'agent pour cette action ou « enquête », �
   <li><strong><?= htmlspecialchars($labelHide) ?> : pas d'enquête, discrétion +<?= $hideDiscretion ?>, défense +<?= $hideDefence ?>.</strong> L'agent se fait oublier et ne cherche rien.</li>
   <?php if ($claimEnabled) { ?>
   <li><strong>Revendiquer : </strong>
-    L'agent tente de placer le <?= htmlspecialchars($zoneType) ?> sous vôtre contrôle la bannière de la faction de votre choix, ou <strong>protège</strong> un <?= htmlspecialchars($zoneType) ?> déjà tenu. <strong>Revendiquer révèle l'agent.</strong></li>
+    L'agent tente de placer le <?= htmlspecialchars($zoneType) ?> sous votre contrôle, avec la bannière de la faction de votre choix, ou <strong>protège</strong> un <?= htmlspecialchars($zoneType) ?> déjà tenu. <strong>Revendiquer révèle l'agent.</strong></li>
   <?php } ?>
 </ul>
 <p><strong>Actions d'attaques :</strong></p>
@@ -163,9 +163,9 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
   <?php if ($agentLocationAttack) { ?>
   <li><strong>Attaque de lieu</strong> : ses duels lors de l'assaut ou de la défense d'un lieu, et l'issue de l'assaut.</li>
   <?php } ?>
-  <li><strong>Mes investigations</strong> : l'action faite et le <?= htmlspecialchars($zoneType) ?> où elle a eu lieu, puis les autres agents qu'il a repérés et ce qu'il en a appris.
+  <li><strong>Mes investigations</strong> : les autres agents qu'il a repérés et ce qu'il en a appris.
     Un agent déjà connu n'est rappelé que brièvement ; les informations nouvelles sont affichées intégralement.</li>
-  <li><strong>Mes recherches</strong> : la bannière sous laquelle est le <?= htmlspecialchars($zoneType) ?>, le réseau qui le défend si l'agent a su le voir, et les lieux découverts.</li>
+  <li><strong>Mes recherches</strong> : la bannière sous laquelle est le <?= htmlspecialchars($zoneType) ?>, le réseau qui le défend si l'agent a su le voir, et les informations sur les lieux découverts.</li>
   <?php if ($claimEnabled) { ?>
   <li><strong>Contrôle</strong> : le résultat de sa revendication, ou les revendications dont il a été témoin.</li>
   <?php } ?>
@@ -177,8 +177,7 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
 <h3 class="title is-4">4. Votre faction</h3>
 <?= guideCaptureFigure($captureSet, 'faction', 'La page de votre faction') ?>
 <ul>
-  <li><strong>Votre base</strong> : la construire ou la déménager. Elle permet de recruter, et ses secrets ne se révèlent qu'à un enquêteur assez fort.</li>
-  <li>Le coût de chaque opération est affiché à côté de son bouton.</li>
+  <li><strong>Votre base</strong> : la construire ou la déménager. Elle permet de recruter, et ses secrets ne se révèlent qu'à un enquêteur assez fort. Le coût de chaque opération est affiché à côté de son bouton.</li>
 </ul>
 <?= guideCaptureFigure($captureSet, 'lieux', $ownedArtefactsTitle . ' et vos lieux') ?>
 <ul>
@@ -188,7 +187,7 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> peut 
   <li><strong>Vos lieux découverts</strong>, classés par <?= htmlspecialchars($zoneType) ?> : les lieux que vos agents ont trouvés, et ce qu'ils en ont appris.</li>
   <li><strong>Vos lieux secrets</strong>, classés par <?= htmlspecialchars($zoneType) ?> : la description de votre base et de son contenu, et les autres lieux que vous possédez.</li>
   <li><?php if ($agentLocationAttack) { ?>Pour attaquer ou défendre un lieu, donnez-en l'ordre à vos agents.<?php } else { ?>Un lieu découvert et destructible peut être attaqué depuis cette page, si vous avez une base.<?php } ?>
-    Un lieu détruit peut être réparé.</li>
+    Un lieu détruit peut être réparé moyennant finances.</li>
 </ul>
 <?= guideCaptureFigure($captureSet, 'informations', 'Donner des informations à une autre faction') ?>
 <p><strong>Donner des informations à une autre faction :</strong></p>
@@ -251,13 +250,13 @@ Selon l'écart (enquête de l'agent actif - enquête de l'agent observé), le ra
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF2') ?></strong> : le numéro de son réseau, ses autres maîtrises et ses équipements les mieux cachés ;</li>
   <li>écart d'au moins <strong><?= $configInt('REPORTDIFF3') ?></strong> : le nom de la faction qui dirige ce réseau.</li>
 </ul>
-<p>Ce qui est appris reste acquis à votre faction et peut être donné à une autre. Un agent repéré peut être attaqué tant qu'il a été vu récemment.</p>
+<p>Ce qui est appris reste acquis à votre faction et peut être donné à une autre. Un agent repéré peut être attaqué tant qu'il a été vu à la fin du <?= htmlspecialchars($timeValue) ?> précédent.</p>
 </details>
 
 <details>
 <summary><strong>Ce qu'apprend une recherche sur un lieu</strong></summary>
-<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle grandit avec les capacités de la faction qui la possède,
-le nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> et son ancienneté. Selon l'écart (enquête de l'agent actif - difficulté de découverte) entre l'enquête de l'agent et cette difficulté :</p>
+<p>Chaque lieu secret a une <strong>difficulté de découverte</strong>. Pour une base, elle fonction des capacités de la faction qui la possède,
+du nombre de ses agents dans le <?= htmlspecialchars($zoneType) ?> (+1/agent) et son ancienneté (+1/2tours). Selon l'écart calculé (enquête de l'agent actif - difficulté de découverte) :</p>
 <ul>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONNAMEDIFF') ?></strong> : le nom du lieu, sans plus ; il n'est pas retenu pour la suite ;</li>
   <li>écart d'au moins <strong><?= $configInt('LOCATIONINFORMATIONDIFF') ?></strong> : sa description, s'il peut être détruit, et depuis quand il est là ou en ruine. Le lieu rejoint alors vos lieux découverts ;</li>
@@ -269,7 +268,7 @@ elle révèle le numéro du réseau qui le tient, et, avec une marge de plus de 
 
 <details>
 <summary><strong>Le combat entre agents</strong></summary>
-<p>Les attaquants agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles dans le même ordre.
+<p>Les attaquants agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.
 Chaque duel se résoud par <strong>l'attaque de l'attaquant</strong> à laquelle on soustrait <strong>la défense de sa cible</strong>. Il y a cinq issues possibles :</p>
 <ul>
   <li><i>Capture</i> — écart d'au moins <strong><?= $configInt('ATTACKDIFF1') ?></strong> : la cible est prise vivante et devient votre prisonnier ; vous accédez à ses rapports.</li>
@@ -297,7 +296,7 @@ Les agents présents sont témoins de la revendication, sauf pour une prise disc
 <?php } else { ?>
 <p>Les agents d'une même faction qui revendiquent le même <?= htmlspecialchars($zoneType) ?> agissent <strong>ensemble</strong>, menés par le plus fort d'entre eux.
 Il n'y a pas de dé : la valeur de revendication de la faction additionne ses agents présents, ses lieux dans le <?= htmlspecialchars($zoneType) ?>,
-chaque revendicateur en plus du meneur, et un bonus quand sa bannière flotte déjà sur le <?= htmlspecialchars($zoneType) ?> sans qu'elle le tienne.</p>
+chaque revendicateur en plus du meneur, et un bonus quand sa bannière flotte déjà sur le <?= htmlspecialchars($zoneType) ?> sans qu'elle le contrôle.</p>
 <p>En face, la défense du <?= htmlspecialchars($zoneType) ?> additionne les agents et les lieux de la faction qui le tient, et chacun de ses agents qui le protège ;
 un <?= htmlspecialchars($zoneType) ?> que personne ne tient a une défense fixe de <strong><?= $configInt('noControllerZoneDefenceBonus') ?></strong>.
 La revendication réussit si l'écart atteint <strong><?= $configInt('claimDiff') ?></strong>. Si plusieurs factions réussissent, celle dont le meneur est le plus fort l'emporte.</p>
@@ -312,13 +311,13 @@ La faction qui tient vraiment le <?= htmlspecialchars($zoneType) ?> reste la vô
 <?php if ($agentLocationAttack) { ?>
 <p>Ce sont vos <strong>agents</strong> qui attaquent ou défendent un lieu de leur <?= htmlspecialchars($zoneType) ?>. En fin de <?= htmlspecialchars($timeValue) ?>, pour chaque lieu visé :</p>
 <ul>
-  <li>attaquants et défenseurs s'engagent dans l'ordre de leur enquête, le plus perspicace en premier ;</li>
+  <li>attaquants et défenseurs agirons dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.</li>
   <li>ils s'affrontent en une suite de duels, chacun résolu comme un combat entre agents : un attaquant enchaîne les défenseurs tant qu'il gagne, un défenseur tient tant qu'il survit ;</li>
   <li>le lieu tombe si les attaquants survivants sont <strong>strictement plus nombreux</strong> que
     <?php if ($overwhelmMorethan) { ?>les défenseurs survivants plus <strong><?= $configInt('locationOverwhelmValue') ?></strong><?php } else { ?><strong><?= $configInt('locationOverwhelmValue') ?></strong> fois les défenseurs survivants<?php } ?>.
     Personne contre personne, le lieu tient.</li>
 </ul>
-<p>Pour emporter ce que le lieu abrite, il faut posséder au moins un lieu destructible où le mener : sans cela, le lieu reste debout malgré la victoire.</p>
+<p>Pour emporter ce que le lieu abrite, il faut posséder au moins un lieu destructible où l'amener (forteresse ou autre) : sans cela, le lieu attaqué reste debout malgré la victoire.</p>
 <?php } else { ?>
 <p>C'est votre <strong>faction</strong> qui attaque un lieu découvert et destructible, depuis la page de votre faction, à condition d'avoir une base.
 <?= $locationAttackMode === 'endTurn' ? "L'attaque est préparée pendant le " . htmlspecialchars($timeValue) . ', avec une prédiction de son issue, et résolue en fin de ' . htmlspecialchars($timeValue) . '.' : "L'attaque est résolue immédiatement." ?></p>
