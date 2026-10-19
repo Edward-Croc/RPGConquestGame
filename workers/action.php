@@ -493,7 +493,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             // A raising transformation granted to a dead agent brings it back.
             if ($upgraded && $raises) {
-                reviveWorker($gameReady, $target_worker_id, (string) $matchedPower['name']);
+                updateWorkerAction($gameReady, $target_worker_id, $turn, 'passive', [
+                    'life_report' => sprintf("Je suis revenu.e d'entre les morts : <strong>%s</strong>.<br />", htmlspecialchars((string) $matchedPower['name'])),
+                ]);
                 $worker_id = $target_worker_id;
             }
         }

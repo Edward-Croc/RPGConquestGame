@@ -2300,29 +2300,6 @@ function getDeadTracePrimaryWorkerId(PDO $pdo, int $traceWorkerId, int $controll
 }
 
 /**
- * Bring back to life a dead agent that has just received a raising transformation.
- *
- * An agent raised by another master than its own has already been handed over
- * to him through the gift path, before the transformation was added.
- *
- * @param PDO $pdo : database connection
- * @param int $workerId : id of the dead agent
- * @param string $transformationName : name of the transformation that raised it
- *
- * @return void : failures are logged by updateWorkerAction
- */
-function reviveWorker(PDO $pdo, int $workerId, string $transformationName): void
-{
-    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
-    game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['transformationName' => $transformationName], 'debug');
-
-    $mechanics = getMechanics($pdo);
-    updateWorkerAction($pdo, $workerId, (int) $mechanics['turncounter'], 'passive', [
-        'life_report' => sprintf("Je suis revenu.e d'entre les morts : <strong>%s</strong>.<br />", htmlspecialchars($transformationName)),
-    ]);
-}
-
-/**
  * Sort the worker buckets by the given sort key
  *
  * @param array &$bucket : bucket of worker rows (mutated in place)

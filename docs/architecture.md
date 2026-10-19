@@ -431,10 +431,9 @@ nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à pa
 Seule une **transformation** dont la règle nomme `worker_is_dead`
 (`powerRaisesTheDead()`) peut sortir un agent de `dead`, et elle le fait
 implicitement : `workers/action.php` la laisse passer sur un mort — à condition
-qu'elle soit la seule action de la requête —, puis `reviveWorker()`
-(`workers/functions.php`) remet son action à `passive`. Ce sont aussi les seules
-proposées sur la fiche d'un mort, ce que `workers/view.php` évalue avant d'ouvrir le
-bloc « Evolutions » — sans discipline. L'orga peut donner n'importe quelle
+qu'elle soit la seule action de la requête —, puis remet son action à `passive`.
+Ce sont aussi les seules proposées sur la fiche d'un mort, ce que `workers/view.php`
+évalue avant d'ouvrir le bloc « Evolutions » — sans discipline. L'orga peut donner n'importe quelle
 transformation à un mort ; une transformation qui ne relève pas les morts s'ajoute
 alors sans le relever.
 

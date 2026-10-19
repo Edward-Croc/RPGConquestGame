@@ -667,7 +667,7 @@ L'ordre des branches OR détermine laquelle paye (premier-match-gagne). Pour obt
 
 **Ramener un mort :**
 
-Une transformation dont la règle nomme `worker_is_dead`, accordée à un agent **mort**, le ramène à la vie : son action repasse à `passive` et son rapport le raconte (`reviveWorker`, `workers/functions.php`). Seules ces transformations sont proposées sur la fiche d'un mort, et un joueur ne peut en donner aucune autre ; le bloc « Evolutions » n'y montre aucune discipline. La requête qui relève un mort ne doit porter aucune autre action.
+Une transformation dont la règle nomme `worker_is_dead`, accordée à un agent **mort**, le ramène à la vie : son action repasse à `passive` et son rapport le raconte (`workers/action.php`). Seules ces transformations sont proposées sur la fiche d'un mort, et un joueur ne peut en donner aucune autre ; le bloc « Evolutions » n'y montre aucune discipline. La requête qui relève un mort ne doit porter aucune autre action.
 
 Un agent donné puis mort au service de son nouveau maître peut être ramené par l'**ancien** maître, depuis la trace qu'il en garde : la fiche de la trace propose les transformations évaluées sur l'agent réel. Avant d'être transformé, l'agent réel revient à l'ancien maître par le chemin du don — le maître étranger en garde une trace, qui ne montre donc pas le nouveau pouvoir, la trace de l'ancien maître est détruite, et l'agent redevient un agent actif de l'ancien maître. Le lien entre trace et agent réel est `workers_trace_links` (`getDeadTracePrimaryWorkerId`).
 
