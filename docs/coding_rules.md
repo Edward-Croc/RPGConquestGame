@@ -328,5 +328,11 @@ Une nouvelle colonne, une nouvelle clé de configuration ou une nouvelle fonctio
 d'aide se justifie par un comportement **visible par un joueur ou par le meneur
 de jeu**. Si personne ne peut observer la différence, la pièce n'a pas sa place.
 
+**Une fonction existe parce qu'elle sert plusieurs fois ou qu'elle est longue.**
+Une fonction n'a sa place que si elle est appelée à **plus d'un endroit**, ou si
+son corps dépasse **75 lignes**. Sinon, son code vit à l'endroit unique qui
+l'appelle : une fonction courte à un seul appelant éparpille la lecture sans rien
+mutualiser. La règle vise les fonctions nommées, pas les closures locales.
+
 Les décisions de conception — nom d'une clé de configuration, découpage d'une
 fonction, choix d'un repli — se posent en question avant d'être codées.

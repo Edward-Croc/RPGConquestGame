@@ -88,7 +88,7 @@ Le guide du joueur, `base/systemPresentation.php`, est une page publique
 générique : il lit le vocabulaire (`timeValue`, `textForZoneType`, `txt_inf_*`) et
 les modes du scénario (`claimMode`, `locationAttackMode`, `ressource_management`)
 au lieu de les écrire. Ses captures d'écran sont des JPEG de `base/guide/<jeu>/`,
-où `<jeu>` est la clé `guideCaptures` : `guideCapturePath()` (`base/theme.php`)
+où `<jeu>` est la clé `guideCaptures` : `guideCaptureFigure()` (`base/theme.php`)
 prend chaque capture dans ce jeu, sinon dans `base/guide/testconfig/`, en comparant
 les noms aux fichiers présents. `tests/tools/capture_guide.py` régénère un jeu : le
 joueur choisi bâtit sa base s'il n'en a pas et recrute de nouveaux agents, et chaque
