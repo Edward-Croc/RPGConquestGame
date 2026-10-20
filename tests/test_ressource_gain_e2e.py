@@ -17,10 +17,16 @@ that fixture never runs under UI_ONLY.
 
 Post-EOT expected amount = rule_gain × match_count.
 
+The same zone-based end-of-turn also checks `updateRessources` itself
+(`is_rollable` carry-over against the non-rollable reset, `is_stored`,
+`end_turn_gain`), the `claims_zone` condition, and the « Estimation
+tour +1 » value of the Ressources page read just before the end of turn.
+
 Run:
     python3 -m pytest tests/test_ressource_gain_e2e.py -v
 """
 import json
+import re
 
 import pytest
 
@@ -104,8 +110,6 @@ def _read_amount(controller_id, ressource_id):
 
 # --- UI-only helpers (POC for converting DB-marked tests to UI-only) ---
 
-import re as _re
-
 
 def _ui_resolve_controller_id(page, lastname):
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php")
@@ -175,15 +179,19 @@ def _ui_set_controller_ressource(page, controller_ressource_id, amount, amount_s
     )
 
 
-def _ui_read_amount(page, controller_id, ressource_name):
+def _ui_read_ressources_page(page, controller_id):
+    """The controller's Ressources page: ({ressource_name: {column header: cell text}}, [gain rule lines])."""
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={controller_id}")
-    page.wait_for_load_state("load")
     safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
-    page.wait_for_load_state("load")
-    content = page.content()
-    pattern = rf'<td>{_re.escape(ressource_name)}</td>\s*<td[^>]*>\s*(-?\d+)\s*</td>'
-    m = _re.search(pattern, content)
-    return int(m.group(1)) if m else None
+    table = page.locator("table", has=page.locator("th", has_text="Estimation"))
+    headers = [th.inner_text().strip() for th in table.locator("thead th").all()]
+    rows = {}
+    for tr in table.locator("tbody tr").all():
+        cells = [td.inner_text().strip() for td in tr.locator("td").all()]
+        rows[cells[0]] = dict(zip(headers, cells))
+    rules_box = page.locator("div.box", has=page.locator("h3", has_text="Règles d'obtention"))
+    rule_lines = [li.inner_text().strip() for li in rules_box.locator("li").all()]
+    return rows, rule_lines
 
 
 # --- Shared zone-based batch: one end-of-turn for 6 classes -----------------
@@ -206,10 +214,20 @@ _ZONE_RESOURCES = {
     "unlock_fires":   "GainTest_UnlockFires",
 }
 
+# Alpha's CSV rows: GainTest_Rollable 4/0/+1 (is_rollable=1), GainTest_ClaimsZone
+# 0/0/+2, Gold 100/50/+10 (is_stored=1), Silver 5/0/+0. Theta-Artefacts is set
+# under Alpha's banner without being held; Alpha-Investigation is held, not claimed.
+_ROLLABLE = "GainTest_Rollable"
+_CLAIMS_ZONE = "GainTest_ClaimsZone"
+_CLAIMS_ZONE_END_TURN_GAIN = 2
+_CLAIMED_RULE_AMOUNT = 3
+_HELD_ONLY_RULE_AMOUNT = 20
+_CLAIMED_ZONE = "Theta-Artefacts"
+
 
 @pytest.fixture(scope="module")
 def shared_gain_results(browser, load_test_config):
-    """Single end-of-turn shared by the 6 zone-based ressource-gain classes."""
+    """Single end-of-turn shared by the zone-based ressource-gain, updateRessources and estimate classes."""
     ctx = browser.new_context()
     page = ctx.new_page()
     register_php_error_listener(page)
@@ -275,16 +293,38 @@ def shared_gain_results(browser, load_test_config):
         "condition": {"type": "holds_zone", "zone_id": int(investigation_zone_id)},
     }]))
 
+    claimed_zone_id = _ui_resolve_zone_id(page, _CLAIMED_ZONE)
+    _ui_set_zone_holder(page, claimed_zone_id, None, alpha_id)
+    claims_zone_config_id = _ui_resolve_ressource_config_id(page, _CLAIMS_ZONE)
+    _ui_set_gain_rules(page, claims_zone_config_id, json.dumps([
+        {"amount": _CLAIMED_RULE_AMOUNT, "timing": "before_claim",
+         "condition": {"type": "claims_zone", "zone_id": int(claimed_zone_id)}},
+        {"amount": _HELD_ONLY_RULE_AMOUNT, "timing": "before_claim",
+         "condition": {"type": "claims_zone", "zone_id": int(investigation_zone_id)}},
+    ]))
+
+    ressources_before, rule_lines_before = _ui_read_ressources_page(page, alpha_id)
+
     end_turn(page, PHP_BASE_URL)
 
+    ressources_after, _ = _ui_read_ressources_page(page, alpha_id)
     results = {
-        key: _ui_read_amount(page, alpha_id, name)
+        key: int(ressources_after[name]["Montant utilisable"])
         for key, name in _ZONE_RESOURCES.items()
     }
+    results.update({
+        "ressources_before": ressources_before,
+        "ressources_after": ressources_after,
+        "rule_lines_before": rule_lines_before,
+        "claimed_zone_id": claimed_zone_id,
+        "held_only_zone_id": investigation_zone_id,
+    })
 
     for key in _ZONE_RESOURCES:
         _ui_set_gain_rules(page, config_ids[key], None)
+    _ui_set_gain_rules(page, claims_zone_config_id, None)
     _ui_set_zone_holder(page, investigation_zone_id, None)
+    _ui_set_zone_holder(page, claimed_zone_id, None)
     for zid in count_style_zone_ids:
         _ui_set_zone_holder(page, zid, None)
     assert_no_collected_php_errors(page)
@@ -385,6 +425,106 @@ class TestRessourceGainUnlockTurnFiresAtThreshold:
             f"unlock_turn == current_turn must fire (inclusive boundary); "
             f"expected amount={self._rule_amount}, got {got}"
         )
+
+
+def _cell(results, moment, ressource_name, header):
+    """One cell of Alpha's « Mes ressources » table, read before or after the end of turn."""
+    return results[f"ressources_{moment}"][ressource_name][header]
+
+
+class TestUpdateRessourcesAtEndOfTurn:
+    """`updateRessources` opens the end of turn: a stored ressource banks its
+    amount into `amount_stored`, a non-rollable one is reset to 0, a rollable
+    one keeps its amount, then every ressource receives its `end_turn_gain`.
+    GainTest_Rollable (is_rollable=1) and Gold (is_rollable=0, is_stored=1)
+    go through the same end of turn and must diverge."""
+
+    def test_rollable_amount_is_kept_and_non_rollable_is_reset(self, shared_gain_results):
+        rollable_before = int(_cell(shared_gain_results, "before", _ROLLABLE, "Montant utilisable"))
+        rollable_after = int(_cell(shared_gain_results, "after", _ROLLABLE, "Montant utilisable"))
+        gold_before = int(_cell(shared_gain_results, "before", "Gold", "Montant utilisable"))
+        gold_after = int(_cell(shared_gain_results, "after", "Gold", "Montant utilisable"))
+        assert rollable_before > 0, f"the rollable ressource needs a stock to carry over, got {rollable_before}"
+        assert rollable_after == rollable_before + 1, (
+            f"is_rollable=1 keeps the amount and adds end_turn_gain 1: "
+            f"expected {rollable_before + 1}, got {rollable_after}"
+        )
+        assert gold_after == 10, (
+            f"is_rollable=0 resets Gold to 0 before its end_turn_gain 10: expected 10, "
+            f"got {gold_after} (was {gold_before}, a carry-over would give {gold_before + 10})"
+        )
+
+    def test_stored_ressource_banks_its_amount(self, shared_gain_results):
+        gold_amount_before = int(_cell(shared_gain_results, "before", "Gold", "Montant utilisable"))
+        gold_stored_before = int(_cell(shared_gain_results, "before", "Gold", "Stockée inaccessible"))
+        gold_stored_after = int(_cell(shared_gain_results, "after", "Gold", "Stockée inaccessible"))
+        rollable_stored_before = _cell(shared_gain_results, "before", _ROLLABLE, "Stockée inaccessible")
+        rollable_stored_after = _cell(shared_gain_results, "after", _ROLLABLE, "Stockée inaccessible")
+        assert gold_stored_after == gold_stored_before + gold_amount_before, (
+            f"is_stored=1 adds the turn's amount to the stock: expected "
+            f"{gold_stored_before} + {gold_amount_before}, got {gold_stored_after}"
+        )
+        assert rollable_stored_after == rollable_stored_before == "0", (
+            f"is_stored=0 never fills the stock: got {rollable_stored_before} -> {rollable_stored_after}"
+        )
+
+
+def _claims_rule_count(results, zone_key):
+    """The « × N » count the Ressources page shows for the claims_zone rule scoped to that zone."""
+    zone_id = results[zone_key]
+    line = next((text for text in results["rule_lines_before"]
+                 if "revendiqué" in text and f"(id {zone_id})" in text), None)
+    assert line is not None, f"no claims_zone rule line for zone {zone_id} in {results['rule_lines_before']}"
+    return int(re.search(r"× (\d+) =", line).group(1))
+
+
+class TestRessourceGainClaimsZone:
+    """`condition: {type: claims_zone}` counts the zones under the
+    controller's banner (`claimer_controller_id`), not the zones it holds.
+    Alpha flies its banner over Theta-Artefacts without holding it (rule +3)
+    and holds Alpha-Investigation without claiming it (rule +20): only the
+    first rule may count, on the Ressources page and at the end of turn."""
+
+    def test_banner_zone_counts_and_held_only_zone_does_not(self, shared_gain_results):
+        assert _claims_rule_count(shared_gain_results, "claimed_zone_id") == 1, \
+            "a zone under Alpha's banner, not held, must count for claims_zone"
+        assert _claims_rule_count(shared_gain_results, "held_only_zone_id") == 0, \
+            "a zone Alpha holds without its banner must not count for claims_zone"
+        got = int(_cell(shared_gain_results, "after", _CLAIMS_ZONE, "Montant utilisable"))
+        expected = _CLAIMS_ZONE_END_TURN_GAIN + _CLAIMED_RULE_AMOUNT
+        assert got == expected, (
+            f"end of turn should give end_turn_gain {_CLAIMS_ZONE_END_TURN_GAIN} + banner rule "
+            f"{_CLAIMED_RULE_AMOUNT} = {expected}, without the held-only {_HELD_ONLY_RULE_AMOUNT}; got {got}"
+        )
+
+
+class TestRessourcesPageEstimate:
+    """The « Estimation tour +1 » column of the Ressources page announces
+    `end_turn_gain` + Σ(rule amount × match count): the gain to come, not
+    the next stock. Read just before the end of turn that applies it."""
+
+    _header = "Estimation tour +1"
+
+    def test_estimate_adds_end_turn_gain_and_matching_rules(self, shared_gain_results):
+        claims_estimate = _cell(shared_gain_results, "before", _CLAIMS_ZONE, self._header)
+        claims_after = int(_cell(shared_gain_results, "after", _CLAIMS_ZONE, "Montant utilisable"))
+        expected = _CLAIMS_ZONE_END_TURN_GAIN + _CLAIMED_RULE_AMOUNT * 1 + _HELD_ONLY_RULE_AMOUNT * 0
+        assert claims_estimate == f"+{expected}", \
+            f"end_turn_gain 2 + 3 × 1 + 20 × 0 should announce +{expected}, got {claims_estimate}"
+        assert claims_after == expected, \
+            f"the end of turn should deliver what was announced (+{expected}), got {claims_after}"
+        assert _cell(shared_gain_results, "before", "Gold", self._header) == "+10", \
+            "with no gain rule, Gold announces its end_turn_gain alone"
+
+    def test_estimate_is_the_gain_not_the_next_stock(self, shared_gain_results):
+        rollable_estimate = _cell(shared_gain_results, "before", _ROLLABLE, self._header)
+        rollable_after = int(_cell(shared_gain_results, "after", _ROLLABLE, "Montant utilisable"))
+        assert rollable_estimate == "+1", \
+            f"the rollable ressource announces its end_turn_gain 1, got {rollable_estimate}"
+        assert rollable_estimate != f"+{rollable_after}", \
+            f"the kept stock is not part of the estimate ({rollable_estimate} vs next stock {rollable_after})"
+        assert _cell(shared_gain_results, "before", "Silver", self._header) == "+0", \
+            "Silver has neither end_turn_gain nor rule: it announces +0"
 
 
 # --- Shared location-based batch: one end-of-turn for 2 @pytest.mark.db classes
