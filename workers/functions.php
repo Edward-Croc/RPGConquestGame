@@ -760,7 +760,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
     $evolutionMarks = '';
     if ($evolutions['canTeachDiscipline']) {
         $evolutionMarks .= sprintf(
-            ' <span class="evolution-mark" title="Peut apprendre : %s">#</span>',
+            ' <span class="evolution-mark" title="Disponible : %s">#</span>',
             htmlspecialchars((string) getPowerTypesDescription($pdo, 'Discipline'), ENT_QUOTES)
         );
     }
@@ -769,7 +769,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
             ' <span class="evolution-mark" title="%s">+</span>',
             $evolutions['raises']
                 ? 'Peut être relevé.e'
-                : htmlspecialchars('Peut recevoir : ' . getPowerTypesDescription($pdo, 'Transformation'), ENT_QUOTES)
+                : htmlspecialchars('Disponible : ' . getPowerTypesDescription($pdo, 'Transformation'), ENT_QUOTES)
         );
     }
 

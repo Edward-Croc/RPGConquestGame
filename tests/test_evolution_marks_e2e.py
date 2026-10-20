@@ -83,6 +83,10 @@ class TestEvolutionMarks:
     def test_free_discipline_slot_marks_a_hash(self, marks):
         assert _symbols(marks["one_slot"]["Searcher_1"]) == ["#", "+"], \
             f"with a free discipline slot the agent should carry « # » then « + », got {marks['one_slot']['Searcher_1']}"
+        assert marks["one_slot"]["Searcher_1"] == [
+            ("#", "Disponible : Test discipline power type"),
+            ("+", "Disponible : Test transformation power type"),
+        ], f"each mark names what is available, got {marks['one_slot']['Searcher_1']}"
         assert _symbols(marks["one_slot"]["Chain_A"]) == ["+"], \
             f"an agent whose slot is taken carries no « # », got {marks['one_slot']['Chain_A']}"
 
