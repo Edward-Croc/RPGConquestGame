@@ -622,7 +622,7 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 
 ```json
 "on_transformation": {
-    "worker_is_alive": "1",
+    "unlock_turn": 2,
     "controller_has_zone": "Province de Sanuki",
     "OR": [
         {"controller_has_zone": "Cap sud de Tosa"},
@@ -631,22 +631,23 @@ La colonne `powers.other` peut contenir un objet JSON dont les clés `on_age` (d
 }
 ```
 
-- Les **clés directes** (`worker_is_alive`, `controller_has_zone`, etc.) sont combinées en **AND** : toutes doivent être satisfaites.
+- Les **clés directes** (`unlock_turn`, `controller_has_zone`, etc.) sont combinées en **AND** : toutes doivent être satisfaites.
 - Le **bloc `OR`** est un **tableau d'objets** (jamais un objet simple). Chaque sous-objet est une **branche** ; à l'intérieur d'une branche, les clés sont aussi combinées en **AND**. Le tableau est évalué dans l'ordre, en premier-match-gagne : dès qu'une branche est satisfaite, la suivante n'est plus testée.
 - Convention d'écriture : pour une règle « zone A OR zone B OR avoir la ressource », utiliser trois branches à une clé `[{A}, {B}, {C}]` plutôt qu'une branche à trois clés.
 
 **Clés disponibles (toutes optionnelles) :**
 
 - **`age`** (int) — l'agent doit avoir au moins cet âge.
-- **`worker_is_alive`** (`"1"`) — l'agent doit avoir une action active ce tour (`ACTIVE_ACTIONS` : passive, investigate, attack, claim, hide, attack_location, defend_location). Un agent sans ligne d'action pour le tour ne la satisfait pas. Toute autre valeur que `"1"` est refusée : l'ancienne forme `"0"` s'écrit désormais `worker_is_dead`.
 - **`worker_is_dead`** (`"1"`) — l'agent doit être **mort** ce tour : ni capturé, ni réduit à une trace. Sans agent dans le contexte (recrutement), la clé n'est jamais satisfaite. Voir « Ramener un mort » ci-dessous.
-- **`worker_without_power`** (string ou liste) — l'agent ne doit posséder aucun de ces pouvoirs, quel que soit leur type. Sert à rendre une transformation unique (elle se nomme elle-même) ou exclusive d'une autre (`["Fantome", "Possession"]`).
+- **`worker_without_power`** (string ou liste) — l'agent ne doit posséder aucun de ces pouvoirs, quel que soit leur type. Sert à rendre une transformation exclusive d'une autre (`["Fantome", "Possession"]`). Un pouvoir que l'agent possède déjà ne lui est jamais proposé de nouveau : une règle n'a pas à se nommer elle-même.
 - **`unlock_turn`** (int) — disponible **à partir** de ce tour inclus (ex. `5` masque le power aux tours 0 à 4, puis l'affiche dès le tour 5).
 - **`controller_faction`** (string ou liste) — nom exact de la faction du contrôleur, une chaîne séparée par des virgules (`"Démon, Eglise"`) ou une liste JSON (`["Démon", "Eglise"]`) : le pouvoir est ouvert à chacune. C'est la vraie faction du contrôleur qui compte, jamais sa fausse. Pour les deux clés de faction, une valeur vide ne filtre rien. Une liste dont un élément n'est pas une chaîne, ou un contrôleur dont la faction ne peut être lue, refuse le pouvoir.
 - **`controller_not_faction`** (string ou liste) — le miroir de `controller_faction` : nom exact d'une faction, une chaîne séparée par des virgules (`"Garou, Eglise"`) ou une liste JSON, à qui le pouvoir est refusé. Toutes les autres y ont accès.
 - **`controller_has_zone`** (string) — nom de zone que le contrôleur réclame ou détient (claim OR holder).
 - **`worker_in_zone`** (string) — nom de zone où l'agent se trouve actuellement.
 - **`controller_has_ressource`** (objet) — voir ci-dessous. Honorée en clé directe **et** à l'intérieur d'une branche OR.
+
+Aucune clé ne réserve une règle aux vivants : l'état de l'agent ce tour en décide avant toute règle (`getWorkerEvolutions`). La fiche d'un agent actif propose tout ce que ses règles permettent, celle d'un mort seulement les transformations qui nomment `worker_is_dead` (voir « Ramener un mort »), celle d'un capturé aucune évolution.
 
 **`controller_has_ressource` — porte ressource :**
 
