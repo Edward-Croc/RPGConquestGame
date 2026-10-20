@@ -167,7 +167,7 @@ def phrase_snapshot(browser):
         #     Finder_4 (Foxtrot, passive in Alpha-Investigation) is the zone-action baseline.
         safe_goto(page, f"{PHP_BASE_URL}/workers/viewAll.php")
         for name in ["Artefact_Worker_Foxtrot", "Gift_Source_Foxtrot", "Finder_4"]:
-            card = page.locator(f"div.worker-short[data-worker-lastname='{name}'] span").first
+            card = page.locator(f"div.worker-short[data-worker-lastname='{name}'] span:not(.evolution-mark)").first
             _short_card_text[name] = " ".join(card.inner_text().split())
 
         # 5. Snapshot LIVE HTML for each worker

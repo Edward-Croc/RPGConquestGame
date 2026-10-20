@@ -115,10 +115,10 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
                 in_array($worker['actions'][$mechanics['turncounter']]['action_choice'], ACTIVE_ACTIONS)
                 && $worker['is_primary_controller']
             ) {
-                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true);
+                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, true, (int) $controller_id);
                 $liveWorkerArray[] = $worker;
             } else {
-                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics);
+                $worker['view'] = showWorkerShort($gameReady, $worker, $mechanics, false, (int) $controller_id);
             }
 
             //doubleAgentWorkerArray : worker alive and active that we don't control
