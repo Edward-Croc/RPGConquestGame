@@ -12,6 +12,7 @@ UPDATE {prefix}config SET value =  'revendiquer la province' WHERE name = 'txt_i
 UPDATE {prefix}config SET value =  'Carte_Shikoku_1555.jpg' WHERE name = 'map_file';
 UPDATE {prefix}config SET value =  'Carte de Shikoku' WHERE name = 'map_alt';
 UPDATE {prefix}config SET value =  'sepia' WHERE name = 'uiTheme';
+UPDATE {prefix}config SET value =  'japon1555' WHERE name = 'guideCaptures';
 
 -- Text time info
 UPDATE {prefix}config SET value =  'le ' WHERE name = 'controllerNameDenominatorThe';

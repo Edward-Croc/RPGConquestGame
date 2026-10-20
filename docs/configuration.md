@@ -24,7 +24,7 @@ name,value,description
 
 | Besoin | Clés à poser en premier |
 |---|---|
-| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt`, `uiTheme` |
+| Identité du jeu | `TITLE`, `PRESENTATION`, `IntrigueOrga`, `map_file`, `map_alt`, `uiTheme`, `guideCaptures` |
 | Vocabulaire | `textForZoneType`, `timeValue`, dénominateurs `timeDenominator*` / `controllerNameDenominator*` |
 | Mode conquête | `claimMode` (`worker` ou `worker_leader`) |
 | Mode attaque de lieu | `locationAttackMode` (`immediate`, `endTurn`, ou `agent_attack_defence`) |
@@ -155,7 +155,7 @@ La carte complète vit dans [`docs/config_section_map.json`](config_section_map.
 
 Titre, présentation, dénominateurs, libellés d'actions, pools de rapports.
 
-Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `uiTheme`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`, `textPrisonerTransferSent`, `textPrisonerTransferReceived`
+Clés : `TITLE`, `PRESENTATION`, `IntrigueOrga`, `basePowerNames`, `map_file`, `map_alt`, `uiTheme`, `guideCaptures`, `textForZoneType`, `timeValue`, `timeDenominatorThis`, `timeDenominatorThe`, `timeDenominatorOf`, `controllerNameDenominatorThe`, `controllerNameDenominatorOf`, `controllerLastNameDenominatorOf`, `txt_ps_passive`, `txt_ps_investigate`, `txt_ps_hide`, `txt_ps_attack`, `txt_ps_claim`, `txt_ps_attack_location`, `txt_ps_defend_location`, `txt_ps_captured`, `txt_ps_dead`, `txt_ps_prisoner`, `txt_ps_double_agent`, `txt_ps_1p_passive`, `txt_ps_1p_investigate`, `txt_ps_1p_hide`, `txt_ps_1p_attack`, `txt_ps_1p_claim`, `txt_ps_1p_captured`, `txt_ps_1p_dead`, `txt_ps_1p_prisoner`, `txt_ps_1p_double_agent`, `txt_ps_1p_attack_location`, `txt_ps_1p_defend_location`, `txt_inf_passive`, `txt_inf_investigate`, `txt_inf_hide`, `txt_inf_attack`, `txt_inf_claim`, `txt_inf_attack_location`, `txt_inf_defend_location`, `txt_inf_captured`, `txt_inf_dead`, `textesStartInvestigate`, `textesFoundDisciplines`, `textesTransformationDiff1`, `textesTransformationDiff2`, `textesOrigine`, `textesDiff01Array`, `textesDiff01TransformationDiff0Array`, `textesDiff2`, `textesDiff3`, `textesAgentStillHere`, `textesAgentMoved`, `textesAgentUpgradeInfo`, `textesAgentReminderLabel`, `textesLocationStillHere`, `textLocationAgeOriginal`, `textLocationAgeRuined`, `textLocationAgeRestored`, `textLocationAgeLongAgo`, `textLocationAgeThisTurn`, `textLocationAgeTurnsAgo`, `textLocationDiscoveredName`, `textLocationDiscoveredDescription`, `textLocationDiscoveredDestroyable`, `textRecrutementJobHobby`, `textViewWorkerJobHobby`, `textViewWorkerDisciplines`, `textViewWorkerTransformations`, `textControllerActionCreateBase`, `textControllerActionMoveBase`, `textcontrollerRecrutmentNeedsBase`, `texteDescriptionBase`, `texteHiddenFactionBase`, `texteNameBase`, `attackSuccessTexts`, `captureSuccessTexts`, `counterAttackTexts`, `escapeTextes`, `failedAttackTextes`, `unfoundAttackTextes`, `workerCapturedTexts`, `workerDisappearanceTexts`, `textesAttackFailedAndCountered`, `textesClaimFailArray`, `textesClaimFailViewArray`, `textesClaimSuccessArray`, `textesClaimSuccessViewArray`, `textPrisonerTransferSent`, `textPrisonerTransferReceived`
 
 ### `engine` — Moteur de jeu (calculs partagés)
 
@@ -222,6 +222,13 @@ classes de couleur de Bulma (`.button.is-link`, `.notification.is-danger`, …) 
 se charge après Bulma pour pouvoir les surcharger. Les pages d'administration
 gardent leurs couleurs en ligne.
 
+**`guideCaptures`** (= vide) — le jeu de captures d'écran du guide joueur
+(`/base/systemPresentation.php`) : le nom d'un dossier de `base/guide/`. Chaque
+capture y est cherchée d'abord, puis dans `base/guide/testconfig/`, si bien qu'un
+scénario ne fournit que les captures qui diffèrent. Vide ou inconnu, le guide
+montre les captures de TestConfig. Japon1555 déclare `japon1555`. Les captures se
+régénèrent avec `tests/tools/capture_guide.py`.
+
 **`textPrisonerTransferSent`** et **`textPrisonerTransferReceived`** — les deux
 faces d'un transfert de garde (`transferPrisoner`). La première est déposée sur
 la trace que le geôlier conserve, la seconde sur le rapport de l'agent lui-même,
@@ -264,7 +271,7 @@ Format attendu : chaîne SQL `'action1','action2',...` avec apostrophes incluses
 
 ### Seuils de découverte d'information
 
-**`REPORTDIFF0`** (= -1), **`REPORTDIFF1`** (= 1), **`REPORTDIFF2`** (= 2), **`REPORTDIFF3`** (= 4) — Seuils progressifs de différence `enquete_val − target_defence_val` pour révéler les niveaux d'information dans un rapport d'enquête sur un agent : nom et action (niveau 0, accessible dès `≥ REPORTDIFF0`), capacités aléatoires (niveau 1), capacités du contrôleur et numéro de réseau (niveau 2), nom du contrôleur dominant (niveau 3). Le niveau 0 négatif (-1) signifie que l'information passe même avec un léger déficit ; mettre `REPORTDIFF0 = 1` conditionnerait toute découverte à un avantage net.
+**`REPORTDIFF0`** (= -1), **`REPORTDIFF1`** (= 1), **`REPORTDIFF2`** (= 2), **`REPORTDIFF3`** (= 4) — Seuils progressifs de différence `enquete_val` de l'enquêteur `−` `enquete_val` de l'agent observé (`mechanics/investigateMechanic.php`) — c'est pourquoi `HIDE_ENQUETE_FLAT_BONUS` rend un agent caché plus discret — pour révéler les niveaux d'information dans un rapport d'enquête sur un agent : nom, métier, action et origine (niveau 0, accessible dès `≥ REPORTDIFF0`), autres capacités et première maîtrise (niveau 1), numéro de réseau, autres maîtrises et équipements cachés (niveau 2), nom du contrôleur dominant (niveau 3). Le contenu exact de chaque niveau est celui des gabarits `textesDiff01Array`, `textesDiff2` et `textesDiff3`. Le niveau 0 négatif (-1) signifie que l'information passe même avec un léger déficit ; mettre `REPORTDIFF0 = 1` conditionnerait toute découverte à un avantage net.
 
 **`LOCATIONNAMEDIFF`** (= 0), **`LOCATIONINFORMATIONDIFF`** (= 1), **`LOCATIONARTEFACTSDIFF`** (= 2) — Seuils de différence `enquete_val − discovery_diff` pour les niveaux de découverte d'un lieu secret : nom du lieu, description / informations secrètes, présence d'artefacts récupérables. Augmenter ces seuils rend les enquêtes de zone moins rentables.
 
