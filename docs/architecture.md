@@ -426,6 +426,29 @@ Le statut affiché s'en déduit, croisé avec `is_primary_controller`
 (`getWorkerStatus`, `workers/functions.php`) : actif et à nous vaut `alive`, actif et pas à
 nous vaut `double_agent`, inactif vaut `dead` — sauf `captured`, traité à part.
 
+### Ramener un mort
+
+Seule une **transformation** dont la règle nomme `worker_is_dead`
+(`powerRaisesTheDead()`) peut sortir un agent de `dead`, et elle le fait
+implicitement : `workers/action.php` la laisse passer sur un mort — à condition
+qu'elle soit la seule action de la requête —, puis remet son action à `passive`.
+Ce sont aussi les seules proposées sur la fiche d'un mort, ce que `workers/view.php`
+évalue avant d'ouvrir le bloc « Evolutions » — sans discipline. L'orga peut donner n'importe quelle
+transformation à un mort ; une transformation qui ne relève pas les morts s'ajoute
+alors sans le relever.
+
+Une **trace** permet à l'ancien maître de ramener l'agent qu'il a donné, une fois
+celui-ci mort chez son nouveau maître. `getDeadTracePrimaryWorkerId()` remonte de la
+trace à l'agent réel par `workers_trace_links`, à condition que l'agent réel soit
+mort ce tour ; la règle est alors évaluée sur l'agent réel, et la page comme le
+contrôle d'action acceptent la trace. Avant d'ajouter la transformation,
+`workers/action.php` remet l'agent à celui qui le relève par la branche `gift`
+d'`activateWorker()` : le maître étranger reçoit une trace — copiée avant que
+l'agent change, elle ne montre pas le nouveau pouvoir —, celle de l'ancien maître est
+détruite, et l'agent lui revient actif. Il en va de même pour tout contrôleur qui
+relève un agent dont il n'est pas le maître primaire, comme le recruteur d'un agent
+double.
+
 ### Ce qu'un geôlier peut faire d'un prisonnier
 
 Un prisonnier est un agent dont l'`action_choice` vaut `captured` et dont
@@ -674,8 +697,9 @@ n'applique la garde de propriété qu'à celles-ci : une lecture reste possible 
 un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 
 `workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
-est dans `INACTIVE_ACTIONS`, avec une exception pour `transform` sur un mort — la
-résurrection vampire.
+est dans `INACTIVE_ACTIONS`, avec une exception pour une requête qui ne porte que
+`transform`, sur un mort ou sur la trace d'un agent mort — la résurrection (voir
+« Ramener un mort »).
 
 Le verrou n'autorise que sur une **lecture positive** : il faut que la ligne du tour
 existe et porte autre chose qu'une action inactive. Écrit à l'envers — refuser sur

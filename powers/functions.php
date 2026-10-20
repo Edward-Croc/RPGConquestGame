@@ -478,6 +478,37 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
 }
 
 /**
+ * Whether a transformation may raise a dead agent : its rule must name worker_is_dead.
+ *
+ * Only such a transformation is offered to a dead agent, and only it brings the
+ * agent back ; a transformation without that key would otherwise raise anyone.
+ *
+ * @param array $power : power row, with its `other` JSON
+ *
+ * @return bool : true when on_transformation requires worker_is_dead, directly or in an OR branch
+ */
+function powerRaisesTheDead(array $power): bool
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with power : ' . ($power['name'] ?? ''), [], 'debug');
+
+    $other = json_decode((string) ($power['other'] ?? ''), true);
+    $rule = is_array($other) ? ($other['on_transformation'] ?? null) : null;
+    if (!is_array($rule)) {
+        return false;
+    }
+    if (array_key_exists('worker_is_dead', $rule)) {
+        return true;
+    }
+    foreach ((array) ($rule['OR'] ?? []) as $branch) {
+        if (is_array($branch) && array_key_exists('worker_is_dead', $branch)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Pre-fetch all per-controller / per-worker data the rule keys need.
  * Cached inside findMatchingBranch for the request.
  *
@@ -534,8 +565,8 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, ['keys_count' => count($keys), 'context' => $context], 'debug');
 
     static $ALLOWED_KEYS = [
-        'age', 'worker_is_alive', 'unlock_turn', 'controller_faction',
-        'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
+        'age', 'worker_is_alive', 'worker_is_dead', 'worker_without_power', 'unlock_turn',
+        'controller_faction', 'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
     ];
     $worker = $context['worker'];
     $controllersArray = $context['controllersArray'];
@@ -553,14 +584,38 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
         }
 
         if ($key === 'age') {
-            if (!empty($worker) && !empty($worker['age']) && ((int)$value > (int)$worker['age'])) {
+            // An agent of age 0 is young, not of unknown age : it must not pass every age rule.
+            if (!empty($worker) && ((int)$value > (int)($worker['age'] ?? 0))) {
                 return false;
             }
-        } elseif ($key === 'worker_is_alive') {
-            if (!empty($worker) && isset($worker['actions'][$turn_number]['action_choice'])) {
-                $should_be_alive = ($value != "0");
-                $is_alive = in_array($worker['actions'][$turn_number]['action_choice'], ACTIVE_ACTIONS);
-                if ($is_alive !== $should_be_alive) {
+        } elseif ($key === 'worker_is_alive' || $key === 'worker_is_dead') {
+            if ((string) $value !== '1') {
+                game_error_log(__FUNCTION__, $key . ' only accepts "1" — failing closed', ['value' => $value], 'warning');
+                return false;
+            }
+            // Without a worker the key does not apply ; a worker without a row for the turn is neither alive nor dead.
+            if (!empty($worker)) {
+                $action_choice = $worker['actions'][$turn_number]['action_choice'] ?? null;
+                $matches = ($key === 'worker_is_alive')
+                    ? in_array($action_choice, ACTIVE_ACTIONS, true)
+                    : $action_choice === 'dead';
+                if (!$matches) {
+                    return false;
+                }
+            } elseif ($key === 'worker_is_dead') {
+                return false;
+            }
+        } elseif ($key === 'worker_without_power') {
+            if (!empty($worker)) {
+                $worker_power_names = [];
+                foreach ($worker['powers'] ?? [] as $powersOfType) {
+                    foreach ($powersOfType as $index => $power_name) {
+                        if (is_int($index)) {
+                            $worker_power_names[] = $power_name;
+                        }
+                    }
+                }
+                if (!empty(array_intersect((array) $value, $worker_power_names))) {
                     return false;
                 }
             }
@@ -569,7 +624,9 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
                 return false;
             }
         } elseif ($key === 'controller_faction') {
-            if (!empty($value) && !empty($controllersArray) && $value !== $controllersArray[0]['faction_name']) {
+            // A comma-separated list names every faction the power is open to.
+            $factions = array_map('trim', explode(',', (string) $value));
+            if (!empty($value) && !empty($controllersArray) && !in_array($controllersArray[0]['faction_name'], $factions, true)) {
                 return false;
             }
         } elseif ($key === 'controller_has_zone') {
