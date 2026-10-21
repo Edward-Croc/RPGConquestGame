@@ -302,16 +302,16 @@ occupe la même base de données qu'un test manuel.
 
 **Format du message.** Conventional Commits **sans espace avant les deux points**
 (`feat:`, `fix:`, `test:`, `docs:`, `ci:`, `config:`), sujet **en anglais**, puis
-trois à cinq lignes qui disent *pourquoi*. C'est là que va la justification qu'on
-a retirée des commentaires.
+**au plus trois lignes** qui disent *pourquoi*. C'est là que va la justification
+qu'on a retirée des commentaires. Un sujet qui se suffit à lui-même se passe de
+corps.
 
 ```
 fix: refuse a replayed location repair
 
-repairLocation spent the resource on every reload of the URL and then
-reapplied update_location, so a place already rebuilt fell back into
-ruins. The SELECT that fed updateLocation now doubles as the guard,
-ahead of the spending.
+repairLocation spent the resource on every reload of the URL and reapplied
+update_location, so a rebuilt place fell back into ruins. The SELECT that
+fed updateLocation now doubles as the guard, ahead of the spending.
 ```
 
 **Aucune co-signature d'outil.** Pas de `Co-Authored-By` d'assistant, pas de
