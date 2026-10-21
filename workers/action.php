@@ -411,15 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
-            $matchedPower = null;
-            if (is_array($candidates)) {
-                foreach ($candidates as $p) {
-                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
-                        $matchedPower = $p;
-                        break;
-                    }
-                }
-            }
+            $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
             if ($matchedPower === null) {
                 echo "Cette discipline n'est plus disponible.<br />";
             } else {
@@ -446,15 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$isOrganiser) {
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
         }
-        $matchedPower = null;
-        if (is_array($candidates)) {
-            foreach ($candidates as $p) {
-                if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
-                    $matchedPower = $p;
-                    break;
-                }
-            }
-        }
+        $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
         // A player may give a dead agent only a transformation that names worker_is_dead ; the organiser gives anything.
         if ($matchedPower !== null && $targetIsDead && !$isOrganiser && !powerRaisesTheDead($matchedPower)) {
             $matchedPower = null;

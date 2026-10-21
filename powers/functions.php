@@ -478,6 +478,30 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
 }
 
 /**
+ * The power among the offered candidates whose link_power_type_id is the one posted.
+ *
+ * @param array|null $candidates : powers offered to the player, as cleanPowerListFromJsonConditions returns them
+ * @param mixed $linkPowerTypeId : link_power_type_id posted by the form ; anything but a scalar matches nothing
+ *
+ * @return array|null : the matching power row, or null when it is not on offer
+ */
+function findOfferedPower(array|null $candidates, mixed $linkPowerTypeId): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['linkPowerTypeId' => $linkPowerTypeId, 'candidates_count' => count($candidates ?? [])], 'debug');
+
+    if (!is_scalar($linkPowerTypeId)) {
+        return null;
+    }
+    foreach ($candidates ?? [] as $power) {
+        if ((string) $power['link_power_type_id'] === (string) $linkPowerTypeId) {
+            return $power;
+        }
+    }
+    return null;
+}
+
+/**
  * Whether a transformation may raise a dead agent : its rule must name worker_is_dead.
  *
  * Only such a transformation is offered to a dead agent, and only it brings the
