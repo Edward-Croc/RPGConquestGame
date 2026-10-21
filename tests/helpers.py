@@ -705,6 +705,25 @@ def ui_zone_names(page: Page, base_url: str = None):
     return {z["name"] for z in ui_all_zones(page, base_url)}
 
 
+def ui_read_ressources_page(page: Page, controller_id: int = None, base_url: str = None):
+    """Read the Ressources page of `controller_id`, or of the session's controller when None.
+
+    Returns ({ressource_name: {column header: cell text}}, [gain rule lines])."""
+    url = base_url or PHP_BASE_URL
+    if controller_id is not None:
+        safe_goto(page, f"{url}/base/accueil.php?controller_id={controller_id}")
+    safe_goto(page, f"{url}/ressources/view.php")
+    table = page.locator("table", has=page.locator("th", has_text="Estimation"))
+    headers = [th.inner_text().strip() for th in table.locator("thead th").all()]
+    rows = {}
+    for tr in table.locator("tbody tr").all():
+        cells = [td.inner_text().strip() for td in tr.locator("td").all()]
+        rows[cells[0]] = dict(zip(headers, cells))
+    rules_box = page.locator("div.box", has=page.locator("h3", has_text="Règles d'obtention"))
+    rule_lines = [li.inner_text().strip() for li in rules_box.locator("li").all()]
+    return rows, rule_lines
+
+
 def ui_workers_by_lastname(page: Page, lastname: str, base_url: str = None):
     """Return ALL management_workers rows matching `lastname`.
 
@@ -1032,6 +1051,7 @@ def ui_recruit_perfect_worker(page: Page, controller_id: int, zone_name: str,
     safe_goto(page,
         f"{url}/workers/action.php"
         f"?creation=true"
+        f"&perfect_worker=1"
         f"&controller_id={controller_id}"
         f"&zone_id={zone_id}"
         f"&origin_id={origin_id}"

@@ -118,7 +118,8 @@ class TestLinkTableFeature:
             'Test Gold Gate Optout', 'Test OR Zone Or Gold',
             'Test Direct And OR', 'Test Cross Resource',
             'Test Malformed Amount', 'Test Unknown Rule Key',
-            'Test_Revenant', 'Test_Possessed',
+            'Test_Revenant', 'Test_Possessed', 'Test_Not_Beta',
+            'Test_Gold_Recruit',
         }
         assert transformations == expected, \
             f"Transformation dropdown mismatch — expected {expected}, got {transformations}"
@@ -128,7 +129,7 @@ class TestLinkTableFeature:
         ensure_gm_login(page, base_url)
         options_by_type = ui_power_options_by_type(page, base_url=base_url)
         counts = {t: len(names) for t, names in options_by_type.items()}
-        expected = {'Hobby': 14, 'Metier': 17, 'Discipline': 4, 'Transformation': 13}
+        expected = {'Hobby': 14, 'Metier': 17, 'Discipline': 4, 'Transformation': 15}
         assert counts == expected, f"Power type counts mismatch: {counts}"
 
 

@@ -36,7 +36,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, end_turn, load_minimal_data, load_scenario_via_admin, safe_goto,
-    ui_turn_counter,
+    ui_turn_counter, ui_read_ressources_page,
     register_php_error_listener, assert_no_collected_php_errors, get_db_connection,)
 
 
@@ -179,21 +179,6 @@ def _ui_set_controller_ressource(page, controller_ressource_id, amount, amount_s
     )
 
 
-def _ui_read_ressources_page(page, controller_id):
-    """The controller's Ressources page: ({ressource_name: {column header: cell text}}, [gain rule lines])."""
-    safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={controller_id}")
-    safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
-    table = page.locator("table", has=page.locator("th", has_text="Estimation"))
-    headers = [th.inner_text().strip() for th in table.locator("thead th").all()]
-    rows = {}
-    for tr in table.locator("tbody tr").all():
-        cells = [td.inner_text().strip() for td in tr.locator("td").all()]
-        rows[cells[0]] = dict(zip(headers, cells))
-    rules_box = page.locator("div.box", has=page.locator("h3", has_text="Règles d'obtention"))
-    rule_lines = [li.inner_text().strip() for li in rules_box.locator("li").all()]
-    return rows, rule_lines
-
-
 # --- Shared zone-based batch: one end-of-turn for 6 classes -----------------
 #
 # Alpha holds Alpha-Investigation (used by the 5 zone_id-scoped rules below)
@@ -303,11 +288,11 @@ def shared_gain_results(browser, load_test_config):
          "condition": {"type": "claims_zone", "zone_id": int(investigation_zone_id)}},
     ]))
 
-    ressources_before, rule_lines_before = _ui_read_ressources_page(page, alpha_id)
+    ressources_before, rule_lines_before = ui_read_ressources_page(page, alpha_id)
 
     end_turn(page, PHP_BASE_URL)
 
-    ressources_after, _ = _ui_read_ressources_page(page, alpha_id)
+    ressources_after, _ = ui_read_ressources_page(page, alpha_id)
     results = {
         key: int(ressources_after[name]["Montant utilisable"])
         for key, name in _ZONE_RESOURCES.items()
