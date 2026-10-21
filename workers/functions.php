@@ -1123,12 +1123,47 @@ function _oppositionPickPower(PDO $pdo, array $newWorker, array $action, string 
 }
 
 /**
+ * Id of the agent a recruitment payload names, when its controller already holds it.
+ *
+ * An agent is the same when its firstname, lastname, origin and controller match.
+ *
+ * @param PDO $pdo : database connection
+ * @param array $array : recruitment payload, with firstname, lastname, origin_id and controller_id
+ *
+ * @return string|false|null : the existing worker id, null when there is none, false when the SELECT fails
+ */
+function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['array' => $array], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT w.id AS id FROM {$prefix}workers AS w
+        INNER JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
+        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
+        $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
+        $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
+        $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT workers failed : ' . $e->getMessage(), ['array' => $array], 'error');
+        return false;
+    }
+    $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return empty($worker) ? null : (string) $worker[0]['id'];
+}
+
+/**
  * Function to create worker and assign the controller
+ *
+ * Writes without a transaction of its own : the caller wraps it, so a false return can be rolled back whole.
  *
  * @param PDO $pdo : database connection
  * @param array $array : must contain firstname, lastname, origin_id, controller_id, zone_id and optionally power_hobby_id, power_metier_id, discipline, transformation
  *
- * @return string|false : new worker id, existing worker id, or false when required fields are missing / INSERT fails
+ * @return string|false : new worker id, existing worker id, or false when a required field is missing or any write fails
  */
 function createWorker(PDO $pdo, array $array): string|false
 {
@@ -1160,25 +1195,10 @@ function createWorker(PDO $pdo, array $array): string|false
 
     $prefix = $_SESSION['GAME_PREFIX'];
 
-    // Check if worker already exists :
-    try {
-        // Select worker value from the database
-        $stmt = $pdo->prepare("SELECT w.id AS id FROM {$prefix}workers AS w
-        INNER JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
-        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
-        $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
-        $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
-        $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
-        $stmt->bindParam(':controller_id', $array['controller_id'], PDO::PARAM_INT);
-        $stmt->execute();
-    } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'SELECT workers failed : ' . $e->getMessage(), ['array' => $array], 'error');
-        return false;
-    }
-    $worker = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    // If worker exist return worker ID
-    if (!empty($worker)) {
-        return $worker[0]['id'];
+    // A replayed recruitment returns the agent it already created.
+    $existing_worker_id = getRecruitedWorkerId($pdo, $array);
+    if ($existing_worker_id !== null) {
+        return $existing_worker_id;
     }
 
     try {
@@ -1201,7 +1221,9 @@ function createWorker(PDO $pdo, array $array): string|false
     $zone_name = getZoneName($pdo, $array['zone_id']);
     $life_report = sprintf("J'ai été recruté.e par %s<strong>%s</strong> et envoyé.e en mission dans le %s <strong>%s</strong>.<br/>", getConfig($pdo, 'controllerNameDenominatorThe'), $newControllerName, getConfig($pdo, 'textForZoneType'), $zone_name);
     $reportArray = array('life_report' => $life_report);
-    addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id'], $reportArray);
+    if (addWorkerAction($pdo, $workerId, $array['controller_id'], $array['zone_id'], $reportArray) === null) {
+        return false;
+    }
 
     try {
         // Insert new controller_worker value into the database
@@ -1210,7 +1232,8 @@ function createWorker(PDO $pdo, array $array): string|false
         $stmt->bindParam(':worker_id', $workerId, PDO::PARAM_INT);
         $stmt->execute();
     } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_id' => $array['controller_id']], 'warning');
+        game_error_log(__FUNCTION__, 'INSERT controller_worker failed : ' . $e->getMessage(), ['workerId' => $workerId, 'controller_id' => $array['controller_id']], 'error');
+        return false;
     }
 
     // Add powers to worker
@@ -1229,7 +1252,9 @@ function createWorker(PDO $pdo, array $array): string|false
     }
     foreach ($link_power_type_id_array as $link_power_type_id) {
         game_error_log(__FUNCTION__, 'add to worker', ['workerId' => $workerId, 'link_power_type_id' => $link_power_type_id], 'debug');
-        upgradeWorker($pdo, $workerId, $link_power_type_id, true);
+        if (!upgradeWorker($pdo, $workerId, $link_power_type_id, true)) {
+            return false;
+        }
     }
 
     try {
@@ -1240,7 +1265,8 @@ function createWorker(PDO $pdo, array $array): string|false
             ':controller_id' => $array['controller_id']
         ]);
     } catch (PDOException $e) {
-        game_error_log(__FUNCTION__, 'UPDATE controllers.recruited_workers failed : ' . $e->getMessage(), ['controller_id' => $array['controller_id']], 'warning');
+        game_error_log(__FUNCTION__, 'UPDATE controllers.recruited_workers failed : ' . $e->getMessage(), ['controller_id' => $array['controller_id']], 'error');
+        return false;
     }
 
     return $workerId;

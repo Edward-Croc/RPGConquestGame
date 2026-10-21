@@ -147,6 +147,7 @@ $powerTransformationArray = getPowersByType($gameReady, '4', null, false);
 // Submit to workers/action.php with creation = true
 /*
 *     "creation"="true"
+*     "perfect_worker"="1"
 *     controller_id
 *     firstname
 *     lastname
@@ -166,6 +167,7 @@ $html = sprintf(
             <h2> %2$s </h2>
             <form action="/%1$s/workers/action.php" method="GET"><p>
                 <input type="hidden" name="creation" value="true">
+                <input type="hidden" name="perfect_worker" value="1">
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%11$s</div>
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%8$s %9$s %10$s</div>
                 <div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%3$s %4$s</div>
