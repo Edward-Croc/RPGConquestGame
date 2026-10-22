@@ -183,7 +183,7 @@ VALUES
     ('textLocationAgeThisTurn', '["ce %1$s"]', 'Location discovery : age clause for a change made this very turn. %1$s = timeValue.'),
     ('textLocationAgeTurnsAgo', '["il y a %1$d %2$s"]', 'Location discovery : age clause with the elapsed turn count. %1$d = turns, %2$s = timeValue.'),
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
-    ('locationTypeNames', '[["base", "base"], ["temple", "temple"]]', 'Location types as a JSON list of [tag, name] pairs. The first pair is the type of a base : createBase gives its tag to every new base. The names are shown in the gain rules and the player guide.'),
+    ('locationTypeNames', '[["base", "base"], ["temple", "temple"]]', 'Location types as a JSON list of [tag, name] pairs. The first pair is the type of a base : createBase gives its tag to every new base. The names are shown in the gain rules, the faction page and the player guide.'),
     -- Ressource management
     ('ressource_management', 'TRUE', 'Ressource management configuration')
 ON CONFLICT (name) DO NOTHING;
