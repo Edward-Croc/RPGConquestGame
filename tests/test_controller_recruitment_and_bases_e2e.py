@@ -376,6 +376,16 @@ def recruitment_scenario(browser):
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
     # UI-side: accueil page shows the base under "Votre Base :" section.
     _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
+    # The new base's type, as the Ressources page and the location admin show it.
+    _switch_controller(page, 'Alpha')
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
+    page.wait_for_load_state("load")
+    _snapshot['alpha_t0_after_base_ressources_text'] = " ".join(page.locator("body").inner_text().split())
+    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
+    page.wait_for_load_state("load")
+    _snapshot['alpha_base_location_types'] = page.locator(
+        "div:has(> h3:has-text('Fortress of FactionAlpha')) input[name='location_types']"
+    ).input_value()
 
     # Phase 4: Alpha uses regular recruitment
     # Capture the recruitment form BEFORE submitting (for form validation tests)
