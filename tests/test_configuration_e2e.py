@@ -10,6 +10,7 @@ config_name keep the chain pointed at the same row.
 Run:
     python3 -m pytest tests/test_configuration_e2e.py -v
 """
+import re
 import time
 import pytest
 from playwright.sync_api import Page, expect
@@ -200,14 +201,30 @@ class TestGuideRules:
             assert "Un agent qui surveille, enquête ou défend le lieu observe" in text, \
                 "with agent location attacks, defending a location observes too"
 
-            # The flat bonuses of hiding and defending a location : nothing when 0, their sign otherwise.
+            # A passive action shows the fixed value (PASSIVEVAL 3) and its flat bonus added up into one number.
             set_config_via_ui(gm_session, "HIDE_DEFENCE_FLAT_BONUS", "0", base_url=base_url)
             set_config_via_ui(gm_session, "DEFEND_LOCATION_DEFENCE_FLAT_BONUS", "-1", base_url=base_url)
             safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
             page_text = " ".join(gm_session.locator("body").text_content().split())
-            assert "+ enquête + 4, défense 3 + défense." in page_text, "a bonus of 0 should not be printed"
-            assert "Défendre le lieu : 3 + défense − 1." in page_text, "a negative bonus should keep its sign"
+            assert "Se cacher : pas d'enquête. Valeur de discrétion = 7 + enquête, valeur de défense = 3 + défense." in page_text, \
+                "hiding should add HIDE_ENQUETE_FLAT_BONUS 4 to the fixed value, and a bonus of 0 should leave it alone"
+            assert "Défendre le lieu : valeur de défense = 2 + défense." in page_text, \
+                "a negative bonus should be taken from the fixed value"
+            # An active action keeps its die, and the bonus with its sign.
+            set_config_via_ui(gm_session, "activeDefenceActions", "'defend_location'", base_url=base_url)
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            page_text = " ".join(gm_session.locator("body").text_content().split())
+            # The die follows MINROLL / MAXROLL : « 1d6 », or « un dé de 3 à 3 » in TestConfig.
+            assert re.search(r"Défendre le lieu : valeur de défense = (1d\d+|un dé de \d+ à \d+) \+ défense − 1\.", page_text), \
+                "an active action should show the die, followed by its bonus with its sign"
+            # The bonus of a held zone (DEFENCE_ZONE_BONUS 1 by default) is named under the formulas, and only when set.
+            assert "ses valeurs gagnent +1 de défense." in page_text, "the held-zone defence bonus should be named"
+            set_config_via_ui(gm_session, "DEFENCE_ZONE_BONUS", "0", base_url=base_url)
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            page_text = " ".join(gm_session.locator("body").text_content().split())
+            assert "ses valeurs gagnent" not in page_text, "with no zone bonus, no sentence should name one"
         finally:
+            set_config_via_ui(gm_session, "DEFENCE_ZONE_BONUS", "1", base_url=base_url)
             set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
             set_config_via_ui(gm_session, "locationAttackMode", "immediate", base_url=base_url)
             set_config_via_ui(gm_session, "REPORTDIFF3", "4", base_url=base_url)
@@ -215,10 +232,43 @@ class TestGuideRules:
             set_config_via_ui(gm_session, "baseDiscoveryDiffAddPowers", "1", base_url=base_url)
             set_config_via_ui(gm_session, "HIDE_DEFENCE_FLAT_BONUS", "1", base_url=base_url)
             set_config_via_ui(gm_session, "DEFEND_LOCATION_DEFENCE_FLAT_BONUS", "1", base_url=base_url)
+            set_config_via_ui(gm_session, "activeDefenceActions", "", base_url=base_url)
             set_config_via_ui(gm_session, "maxBonusDiscoveryDiffTurns", "3", base_url=base_url)
             set_config_via_ui(gm_session, "attackTimeWindow", "1", base_url=base_url)
             set_config_via_ui(gm_session, "investigateActionsList", "'passive','investigate','defend_location'",
                               base_url=base_url)
+
+class TestGuideVocabulary:
+    """The player guide names the base with the first locationTypeNames pair, and
+    states the recruitment limits of turn_recrutable_workers and turn_firstcome_workers."""
+
+    def test_guide_names_the_base_and_the_recruitment_limits(self, gm_session: Page, base_url):
+        def guide_text():
+            safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
+            return " ".join(gm_session.locator("body").text_content().split())
+
+        try:
+            text = guide_text()
+            assert "Votre base : à construire" in text, "the minimalData list should name the base « base »"
+            assert "recruter 1 serviteur et prendre 1 premier venu" in text, "the guide should state the default limits"
+
+            set_config_via_ui(gm_session, "locationTypeNames", '[["forteresse", "forteresse"], ["temple", "temple"]]',
+                              base_url=base_url)
+            set_config_via_ui(gm_session, "turn_recrutable_workers", "2", base_url=base_url)
+            text = guide_text()
+            assert "Votre forteresse : à construire" in text and "Votre base" not in text, \
+                "the guide should name the base with the first pair of locationTypeNames"
+            assert "recruter 2 serviteurs et prendre 1 premier venu" in text, \
+                "the guide should follow turn_recrutable_workers, in the plural from 2 on"
+
+            # An unusable list falls back to the base type, as createBase does.
+            set_config_via_ui(gm_session, "locationTypeNames", "not json", base_url=base_url)
+            assert "Votre base : à construire" in guide_text(), "an unusable locationTypeNames should fall back on « base »"
+        finally:
+            set_config_via_ui(gm_session, "locationTypeNames", '[["base", "base"], ["temple", "temple"]]',
+                              base_url=base_url)
+            set_config_via_ui(gm_session, "turn_recrutable_workers", "1", base_url=base_url)
+
 
 class TestMalformedTemplate:
     """A template edited with one placeholder too many no longer stops the end
