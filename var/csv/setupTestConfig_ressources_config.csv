@@ -12,3 +12,4 @@ GainTest_UnlockSkip,GainTest_UnlockSkip resource for the gain-rule unlock_turn-s
 GainTest_UnlockFires,GainTest_UnlockFires resource for the gain-rule unlock_turn-fires test,,0,0,0,0,0,,0
 GainTest_LocationTypeTag,GainTest_LocationTypeTag resource for the gain-rule location-type-tag test,,0,0,0,0,0,,0
 GainTest_LocationById,GainTest_LocationById resource for the gain-rule location_id filter test,,0,0,0,0,0,,0
+GainTest_LocationTypeNames,GainTest_LocationTypeNames resource for the location-type names of the gain-rule texts,,0,0,0,0,0,"[{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""base""}},{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""temple""}},{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""watchtower""}}]",0

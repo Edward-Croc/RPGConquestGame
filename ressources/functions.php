@@ -351,14 +351,16 @@ function repairLocationCostHTML(PDO $pdo, int $controller_id): string
 /**
  * Natural-French rendering of a gain rule's condition for display.
  * $zoneTypeLabel is the resolved `textForZoneType` config ("zone" / "quartier"
- * / "territoire"). Caller fetches it once and passes it in.
+ * / "territoire") and $locationTypeNames the [tag, name] pairs of
+ * getLocationTypeNames. Caller fetches both once and passes them in.
  *
- * @param array  $rule           : gain rule structure
- * @param string $zoneTypeLabel  : resolved zone-type label
+ * @param array  $rule              : gain rule structure
+ * @param string $zoneTypeLabel     : resolved zone-type label
+ * @param array  $locationTypeNames : [tag, name] pairs naming the location types
  *
  * @return string natural-French condition rendering
  */
-function gainRuleToText(array $rule, string $zoneTypeLabel = 'zone'): string
+function gainRuleToText(array $rule, string $zoneTypeLabel, array $locationTypeNames): string
 {
     $type = $rule['condition']['type'] ?? '';
     switch ($type) {
@@ -374,16 +376,15 @@ function gainRuleToText(array $rule, string $zoneTypeLabel = 'zone'): string
             return sprintf('par %s sous notre bannière ce tour', $zoneTypeLabel);
         case 'owns_location_type':
             $tag = $rule['condition']['location_type'] ?? null;
-            if ($tag === 'temple') {
-                return 'par temple possédé';
+            if ($tag === null) {
+                return 'par lieu possédé';
             }
-            if ($tag === 'fortress') {
-                return 'par forteresse possédée';
+            foreach ($locationTypeNames as [$typeTag, $typeName]) {
+                if ($typeTag === $tag) {
+                    return sprintf('par %s que vous possédez', $typeName);
+                }
             }
-            if ($tag !== null) {
-                return sprintf('par lieu de type "%s" possédé', $tag);
-            }
-            return 'par lieu possédé';
+            return sprintf('par lieu de type "%s" que vous possédez', $tag);
         default:
             return 'selon règle';
     }
@@ -411,6 +412,7 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
     $prefix = $_SESSION['GAME_PREFIX'];
     $estimate = [];
     $zoneTypeLabel = getConfig($pdo, 'textForZoneType') ?: 'zone';
+    $locationTypeNames = getLocationTypeNames($pdo);
 
     $mechanics = getMechanics($pdo);
     $currentTurn = (int)($mechanics['turncounter'] ?? 0);
@@ -463,7 +465,7 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
             $total = $amount * $count;
             $bucket[$rule['timing']][] = [
                 'amount' => $amount,
-                'text'   => gainRuleToText($rule, $zoneTypeLabel),
+                'text'   => gainRuleToText($rule, $zoneTypeLabel, $locationTypeNames),
                 'count'  => $count,
                 'total'  => $total,
             ];

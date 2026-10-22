@@ -108,7 +108,7 @@ CREATE TABLE {prefix}locations (
     can_be_repaired BOOLEAN DEFAULT FALSE,
     is_base BOOLEAN DEFAULT FALSE, -- Is a controllers Base
     activate_json JSON DEFAULT '{}'::json,
-    location_types JSON DEFAULT NULL, -- multi-tag classification (e.g. ["temple","fortress"])
+    location_types JSON DEFAULT NULL, -- multi-tag classification (e.g. ["temple","forteresse"]), named by the locationTypeNames config
     FOREIGN KEY (zone_id) REFERENCES {prefix}zones (id),
     FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id)
 );

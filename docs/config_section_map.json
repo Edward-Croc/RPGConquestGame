@@ -260,7 +260,8 @@
       "title": "Ressources",
       "description": "Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).",
       "keys": [
-        "ressource_management"
+        "ressource_management",
+        "locationTypeNames"
       ]
     },
     "debug": {

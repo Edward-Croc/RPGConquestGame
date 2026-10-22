@@ -195,6 +195,12 @@ faux. Une valeur de configuration se compare donc explicitement :
 
 ## 7. Textes de configuration
 
+**Pas de point-virgule au milieu d'une phrase.** Dans tout texte en français
+— pages, guide du joueur, textes de configuration, documentation — un « ; » au
+milieu d'une phrase gêne la lecture : on coupe en deux phrases, ou on lie par une
+virgule ou « et ». Le point-virgule ne reste qu'en fin d'élément d'une liste. Un
+texte existant se corrige quand on le touche.
+
 **Un texte de configuration ne passe jamais par `sprintf`.** Un orga l'édite, et
 PHP 8 lève sur un gabarit mal formé. Il passe par
 `formatConfigText($cle, $gabarit, ...$valeurs)`, qui rend le gabarit et ses valeurs

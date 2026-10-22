@@ -115,11 +115,14 @@ if (isset($_SESSION['controller'])) {
 
     echo '<div class="box mb-5"> <h3 class="title is-5 mt-4">Les lieux :</h3>';
     $bases = hasBase($gameReady, $controllers['id']);
-    $htmlBase = '<h4 class="title is-5 mt-4">Votre Base :</h4>';
+    // The base is named by the first locationTypeNames pair.
+    $baseName = getLocationTypeNames($gameReady)[0][1];
+    $htmlBase = sprintf('<h4 class="title is-5 mt-4">Votre %s :</h4>', htmlspecialchars(ucfirst($baseName)));
     if (empty($bases) && $controllers['can_build_base']) {
         if (!hasEnoughRessourcesToBuildBase($gameReady, $controllers['id'])) {
             $htmlBase .= sprintf(
-                '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer une base %s.</div>',
+                '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour créer votre %s %s.</div>',
+                htmlspecialchars($baseName),
                 buildBaseCostHTML($gameReady, $controllers['id'])
             );
         } else {
@@ -156,7 +159,8 @@ if (isset($_SESSION['controller'])) {
 
         if (!hasEnoughRessourcesToMoveBase($gameReady, $controllers['id'])) {
             $baseMoveHTML = sprintf(
-                '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager une base %s.</div>',
+                '<div class="notification is-danger">Vous n\'avez pas les ressources nécessaires pour déménager votre %s %s.</div>',
+                htmlspecialchars($baseName),
                 moveBaseCostHTML($gameReady, $controllers['id'])
             );
         }
@@ -243,13 +247,15 @@ if (isset($_SESSION['controller'])) {
         $tabs .= '</ul></div>';
         $htmlBase .= $hasRecentAttack
             ? sprintf(
-                "<div class='notification is-danger'><strong>Alerte !</strong> Votre base a été attaquée ce %s !%s%s</div>",
+                "<div class='notification is-danger'><strong>Alerte !</strong> Attaque contre votre %s ce %s !%s%s</div>",
+                htmlspecialchars($baseName),
                 strtolower($timeWord),
                 $tabs,
                 $panels
             )
             : sprintf(
-                "<div class='notification'><strong>Attaques passées sur votre base</strong>%s%s</div>",
+                "<div class='notification'><strong>Attaques passées sur votre %s</strong>%s%s</div>",
+                htmlspecialchars($baseName),
                 $tabs,
                 $panels
             );

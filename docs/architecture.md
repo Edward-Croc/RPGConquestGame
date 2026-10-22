@@ -85,9 +85,14 @@ lui-même après `style.css`. Les pages d'administration gardent leurs couleurs 
 ligne.
 
 Le guide du joueur, `base/systemPresentation.php`, est une page publique
-générique : il lit le vocabulaire (`timeValue`, `textForZoneType`, `txt_inf_*`) et
-les modes du scénario (`claimMode`, `locationAttackMode`, `ressource_management`)
-au lieu de les écrire. Ses captures d'écran sont des JPEG de `base/guide/<jeu>/`,
+générique : il lit le vocabulaire (`timeValue`, `textForZoneType`, `txt_inf_*`,
+`textOwnedArtefacts`, le nom de la base dans la première paire de
+`locationTypeNames`), les limites de recrutement (`turn_recrutable_workers`,
+`turn_firstcome_workers`), les valeurs des formules (`PASSIVEVAL`, `MINROLL`,
+`MAXROLL`, listes `active*Actions`, bonus fixes) et les modes du scénario
+(`claimMode`, `locationAttackMode`, `ressource_management`) au lieu de les écrire.
+Une formule passive y additionne la valeur fixe et le bonus en un seul nombre,
+une formule active garde son dé. Ses captures d'écran sont des JPEG de `base/guide/<jeu>/`,
 où `<jeu>` est la clé `guideCaptures` : `guideCaptureFigure()` (`base/theme.php`)
 prend chaque capture dans ce jeu, sinon dans `base/guide/testconfig/`, en comparant
 les noms aux fichiers présents. `tests/tools/capture_guide.py` régénère un jeu : le
@@ -1283,6 +1288,12 @@ Types de condition acceptés (`RESSOURCE_GAIN_CONDITION_TYPES`, :
 
 Chaque règle qui matche produit `amount × COUNT(correspondances)` pour le
 contrôleur concerné — pas un montant forfaitaire.
+
+Les types de lieux se nomment dans la clé `locationTypeNames`, que lit
+`getLocationTypeNames` (`zones/functions.php`) : `createBase` pose sur chaque
+nouvelle base le tag de sa première paire, la page de la faction et le guide nomment la
+base avec son nom, et `gainRuleToText` affiche une règle
+`owns_location_type` avec le nom de la paire, ou le tag brut s'il n'est pas nommé.
 
 `unlock_turn` : la règle est ignorée tant que `unlock_turn > tour_courant`
 (`updateRessources` / `ressourceGainEstimateForController`) — **la borne est inclusive** : une règle `unlock_turn = 5`

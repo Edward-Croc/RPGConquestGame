@@ -297,7 +297,7 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
     }
     if ($baseAlreadyExists) {
         game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
-        echo "Une base existe déjà pour cette faction.<br />";
+        echo sprintf('Votre %s existe déjà.<br />', htmlspecialchars(getLocationTypeNames($pdo)[0][1]));
         return false;
     }
 
@@ -341,9 +341,11 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
 
     $mechanics = getMechanics($pdo);
     $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    // A new base carries the tag of the first locationTypeNames pair.
+    $locationTypes = json_encode([getLocationTypeNames($pdo)[0][0]]);
 
     $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, setup_turn, can_be_destroyed, is_base, location_types) VALUES
-        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, :setup_turn, True, True, '[\"fortress\"]')";
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, :setup_turn, True, True, :location_types)";
     try {
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -355,6 +357,7 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->bindParam(':setup_turn', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':location_types', $locationTypes, PDO::PARAM_STR);
         $stmt->execute();
         $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {
@@ -430,7 +433,7 @@ function moveBase(PDO $pdo, int $base_id, int $zone_id, int $controller_id): boo
     }
     if ($baseAlreadyThere) {
         game_error_log(__FUNCTION__, 'Base already in requested zone', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
-        echo "La base est déjà dans cette zone.<br />";
+        echo sprintf('Votre %s est déjà dans ce %s.<br />', htmlspecialchars(getLocationTypeNames($pdo)[0][1]), htmlspecialchars((string) getConfig($pdo, 'textForZoneType')));
         return false;
     }
 

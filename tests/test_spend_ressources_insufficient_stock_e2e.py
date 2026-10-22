@@ -294,7 +294,7 @@ class TestBuildBaseDuplicateGuard:
         assert_no_collected_php_errors(page)
         ctx.close()
 
-        assert "Une base existe déjà" in html, (
+        assert "Votre base existe déjà" in html, (
             "the refused build must render a notification, like the "
             "insufficient-stock and unreachable-zone paths do"
         )
@@ -413,7 +413,7 @@ class TestMoveBaseInsufficientStock:
         assert_no_collected_php_errors(page)
         ctx.close()
 
-        assert "La base est déjà dans cette zone." in html, (
+        assert "Votre base est déjà dans ce zone." in html, (
             "The replay must be turned away by the same-zone guard itself; "
             "without this, an unrelated failure would satisfy the Gold assertion too"
         )

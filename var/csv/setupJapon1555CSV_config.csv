@@ -296,3 +296,4 @@
 "textForZoneType","territoire","Type de zone affiché (Shikoku : territoire)"
 "timeValue","Trimestre","Unité de temps (Shikoku : trimestre)"
 "textOwnedArtefacts","Vos protégé.es :","En-tête de la liste d'artefacts détenus (Shikoku)"
+"locationTypeNames","[[""forteresse"", ""forteresse""], [""temple"", ""temple""]]","Types de lieux [tag, nom], le premier est celui des bases (Shikoku : forteresse)"

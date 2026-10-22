@@ -376,6 +376,16 @@ def recruitment_scenario(browser):
     _snapshot['alpha_t0_after_base_html'] = _workers_page_html(page, 'Alpha')
     # UI-side: accueil page shows the base under "Votre Base :" section.
     _snapshot['alpha_t0_after_base_accueil_html'] = _accueil_html(page, 'Alpha')
+    # The new base's type, as the Ressources page and the location admin show it.
+    _switch_controller(page, 'Alpha')
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/view.php")
+    page.wait_for_load_state("load")
+    _snapshot['alpha_t0_after_base_ressources_text'] = " ".join(page.locator("body").inner_text().split())
+    safe_goto(page, f"{PHP_BASE_URL}/zones/management_locations.php")
+    page.wait_for_load_state("load")
+    _snapshot['alpha_base_location_types'] = page.locator(
+        "div:has(> h3:has-text('Fortress of FactionAlpha')) input[name='location_types']"
+    ).input_value()
 
     # Phase 4: Alpha uses regular recruitment
     # Capture the recruitment form BEFORE submitting (for form validation tests)
@@ -516,6 +526,38 @@ class TestBaseCreation:
             "Accueil should display the base's zone 'Epsilon-Controlled'"
         assert 'Fortress of FactionAlpha' in html and 'Epsilon-Controlled' in html, \
             "Base name and zone should both be visible on Alpha's accueil"
+
+class TestBaseLocationType:
+    """A base built in game carries the tag of the first locationTypeNames pair,
+    and the Ressources page names each location type of a gain rule from that
+    list. TestConfig keeps the minimalData list [["base", "base"], ["temple",
+    "temple"]], and GainTest_LocationTypeNames (Alpha only) gains 1 per owned
+    location tagged base, temple, or watchtower, a tag the list does not name.
+    The base count also proves the tag: a base tagged otherwise counts × 0."""
+
+    def test_new_base_is_tagged_with_the_base_type(self):
+        """The location admin shows the tag createBase wrote on Alpha's base."""
+        assert _snapshot['alpha_base_location_types'] == 'base', \
+            f"a base built in game should carry the 'base' tag, got {_snapshot['alpha_base_location_types']!r}"
+
+    def test_gain_rule_names_and_counts_the_base_type(self):
+        """The first pair names the rule on the base tag, and Alpha's new base matches it."""
+        text = _snapshot['alpha_t0_after_base_ressources_text']
+        assert "+1 par base que vous possédez · × 1 = +1" in text, \
+            "the base-type rule should read with the configured name and count Alpha's new base"
+
+    def test_gain_rule_names_a_later_pair(self):
+        """A tag of a later pair reads with that pair's name."""
+        text = _snapshot['alpha_t0_after_base_ressources_text']
+        assert "+1 par temple que vous possédez · × 0 = +0" in text, \
+            "the temple rule should read with the name of the second pair"
+
+    def test_gain_rule_falls_back_on_an_unnamed_tag(self):
+        """A tag the list does not name reads as the raw tag."""
+        text = _snapshot['alpha_t0_after_base_ressources_text']
+        assert 'par lieu de type "watchtower" que vous possédez · × 0 = +0' in text, \
+            "a tag missing from locationTypeNames should fall back on the tag itself"
+
 
 class TestRecruitmentFormValidation:
     """Regular recruitment form structure (UI HTML assertions)."""
