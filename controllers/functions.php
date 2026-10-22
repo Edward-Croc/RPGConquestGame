@@ -297,7 +297,7 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
     }
     if ($baseAlreadyExists) {
         game_error_log(__FUNCTION__, 'Base already exists for this controller', ['controller_id' => $controller_id], 'debug');
-        echo "Une base existe déjà pour cette faction.<br />";
+        echo sprintf('Votre %s existe déjà.<br />', htmlspecialchars(getLocationTypeNames($pdo)[0][1]));
         return false;
     }
 
@@ -433,7 +433,7 @@ function moveBase(PDO $pdo, int $base_id, int $zone_id, int $controller_id): boo
     }
     if ($baseAlreadyThere) {
         game_error_log(__FUNCTION__, 'Base already in requested zone', ['base_id' => $base_id, 'zone_id' => $zone_id], 'debug');
-        echo "La base est déjà dans cette zone.<br />";
+        echo sprintf('Votre %s est déjà dans ce %s.<br />', htmlspecialchars(getLocationTypeNames($pdo)[0][1]), htmlspecialchars((string) getConfig($pdo, 'textForZoneType')));
         return false;
     }
 

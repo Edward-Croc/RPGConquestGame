@@ -247,7 +247,7 @@ if (isset($_SESSION['controller'])) {
         $tabs .= '</ul></div>';
         $htmlBase .= $hasRecentAttack
             ? sprintf(
-                "<div class='notification is-danger'><strong>Alerte !</strong> Votre %s a été attaquée ce %s !%s%s</div>",
+                "<div class='notification is-danger'><strong>Alerte !</strong> Attaque contre votre %s ce %s !%s%s</div>",
                 htmlspecialchars($baseName),
                 strtolower($timeWord),
                 $tabs,
