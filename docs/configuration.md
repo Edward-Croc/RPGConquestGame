@@ -36,7 +36,7 @@ name,value,description
 - Partez d’un CSV existant (TestConfig pour un socle court, Japon1555 pour un scénario riche).
 - Ne recopiez pas toutes les clés : surchargez seulement ce qui change le ressenti du scénario.
 - Testez un reset admin avec votre `config_name` avant la soirée.
-- Pour les règles de zone / tags de lieux / gains, ce sont **d’autres CSV** (`*_zones.csv`, `*_locations.csv`, `*_ressources_config.csv`), pas la table `config`.
+- Pour les règles de zone / tags de lieux / gains, ce sont **d’autres CSV** (`*_zones.csv`, `*_locations.csv`, `*_ressources_config.csv`), pas la table `config` ; seuls les noms des types de lieux s'y posent (`locationTypeNames`).
 
 **Note de lecture :** les **clés** (`claimMode`, `MINROLL`…) sont dans `{prefix}config`. Les **variables calculées** (`claim_val`, `calculated_defence_val`…) sont recalculées chaque tour — on les cite seulement pour expliquer les formules. Pour les modes énumérés, une valeur inconnue désactive le mécanisme.
 
@@ -185,7 +185,7 @@ Clés : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_nb_choi
 
 Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).
 
-Clés : `ressource_management`
+Clés : `ressource_management`, `locationTypeNames`
 
 ### `debug` — Débogage
 
@@ -819,7 +819,7 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
-- `{type: "owns_location_type", location_type: "temple", can_be_destroyed: 1}` → l'usage de Japon1555 pour `Koku`, sur `temple` comme sur `fortress`.
+- `{type: "owns_location_type", location_type: "temple", can_be_destroyed: 1}` → l'usage de Japon1555 pour `Koku`, sur `temple` comme sur `forteresse`.
 
 **Filtres whitelistés pour `owns_location_type`** (tous optionnels, AND-combinés) :
 
@@ -837,13 +837,15 @@ Colonne JSON dans `{prefix}locations` contenant un tableau de tags textuels :
 
 ```json
 ["temple"]
-["fortress"]
-["temple", "fortress"]
+["forteresse"]
+["temple", "forteresse"]
 ```
 
-Ces tags sont exploités par `owns_location_type` via le filtre `location_type`. Un même lieu peut cumuler plusieurs tags (ex. monastère fortifié = `["temple", "fortress"]`).
+Ces tags sont exploités par `owns_location_type` via le filtre `location_type`. Un même lieu peut cumuler plusieurs tags (ex. monastère fortifié = `["temple", "forteresse"]`).
 
-**Comportement automatique :** `createBase` ajoute le tag `"fortress"` aux nouvelles bases. **Tout autre lieu possédé doit être taggé à la main dans le CSV du scénario** — bases comprises quand elles sont seedées et non bâties en jeu. Un lieu possédé sans tag, ou portant un tag hors vocabulaire, est silencieusement ignoré par `owns_location_type` : rien ne valide le vocabulaire, ni à l'import CSV ni à la saisie admin.
+**`locationTypeNames`** (= `[["base", "base"], ["temple", "temple"]]`) — la liste JSON des types de lieux du scénario, en paires `[tag, nom]`. **La première paire est le type des bases.** Japon1555 déclare `[["forteresse", "forteresse"], ["temple", "temple"]]`. Le nom sert à la page Ressources : dans Japon1555, une règle `owns_location_type` sur le tag `forteresse` s'y lit « par forteresse que vous possédez », et un tag absent de la liste, `tour` par exemple, « par lieu de type "tour" que vous possédez ». Le guide du joueur nomme la base avec le nom de la première paire, et l'administration des lieux propose les tags de la liste en exemple. Une paire mal formée (autre chose que deux textes non vides) est ignorée avec un `warning` ; si c'est la première, ou si la valeur n'est pas une liste JSON, le type des bases retombe sur `["base", "base"]`. Changer la première paire en cours de partie ne retague pas les bases déjà bâties.
+
+**Comportement automatique :** `createBase` ajoute aux nouvelles bases le tag de la première paire de `locationTypeNames`. **Tout autre lieu possédé doit être taggé à la main dans le CSV du scénario** — bases comprises quand elles sont seedées et non bâties en jeu. Un lieu possédé sans tag, ou portant un tag hors vocabulaire, est silencieusement ignoré par `owns_location_type` : rien ne valide le vocabulaire, ni à l'import CSV ni à la saisie admin.
 
 ### Séquence de fin de tour
 

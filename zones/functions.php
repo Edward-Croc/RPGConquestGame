@@ -55,6 +55,49 @@ function getLocationName(PDO $pdo, int $location_id): string|null
 }
 
 /**
+ * Return the location types the scenario names, read from the `locationTypeNames` key.
+ *
+ * Each entry is a [tag, name] pair of non-empty strings, and the first one is the type of a base.
+ * A malformed pair is skipped with a warning ; when the first entry is malformed, or the key is
+ * not a JSON list, the base type falls back to ['base', 'base'] at the head of the list.
+ *
+ * @param PDO $pdo : database connection
+ *
+ * @return array : list of [tag, name] pairs, never empty, the base type first
+ */
+function getLocationTypeNames(PDO $pdo): array
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
+    $value = getConfig($pdo, 'locationTypeNames');
+    $decoded = json_decode((string) $value, true);
+    if (!is_array($decoded) || $decoded !== array_values($decoded)) {
+        game_error_log(__FUNCTION__, 'locationTypeNames is not a JSON list, falling back to the base type', ['value' => $value], 'warning');
+        $decoded = [];
+    }
+
+    $pairs = [];
+    foreach ($decoded as $index => $pair) {
+        $isPair = is_array($pair) && array_keys($pair) === [0, 1]
+            && is_string($pair[0]) && $pair[0] !== '' && is_string($pair[1]) && $pair[1] !== '';
+        if ($isPair) {
+            $pairs[] = $pair;
+            continue;
+        }
+        game_error_log(__FUNCTION__, 'malformed locationTypeNames pair skipped', ['index' => $index, 'pair' => $pair], 'warning');
+    }
+    // Only the first entry may name the base type : a later pair never takes its place.
+    if ($pairs === [] || $pairs[0] !== $decoded[0]) {
+        array_unshift($pairs, ['base', 'base']);
+    }
+
+    game_error_log(__FUNCTION__, 'DONE', ['pairs' => $pairs], 'debug');
+
+    return $pairs;
+}
+
+/**
  * Function to get ZONEs and return as an array
  *
  * @param PDO $pdo : database connection

@@ -341,9 +341,11 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
 
     $mechanics = getMechanics($pdo);
     $turn_number = isset($mechanics['turncounter']) ? (int)$mechanics['turncounter'] : 0;
+    // A new base carries the tag of the first locationTypeNames pair.
+    $locationTypes = json_encode([getLocationTypeNames($pdo)[0][0]]);
 
     $sql = "INSERT INTO {$prefix}locations (zone_id, name, description, hidden_description, controller_id, discovery_diff, setup_turn, can_be_destroyed, is_base, location_types) VALUES
-        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, :setup_turn, True, True, '[\"fortress\"]')";
+        (:zone_id, :baseName, :description, :hidden_description, :controller_id, :discovery_diff, :setup_turn, True, True, :location_types)";
     try {
         // Update config value in the database
         $stmt = $pdo->prepare($sql);
@@ -355,6 +357,7 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
         $stmt->bindParam(':controller_id', $controller_id, PDO::PARAM_INT);
         $stmt->bindParam(':discovery_diff', $discovery_diff, PDO::PARAM_INT);
         $stmt->bindParam(':setup_turn', $turn_number, PDO::PARAM_INT);
+        $stmt->bindParam(':location_types', $locationTypes, PDO::PARAM_STR);
         $stmt->execute();
         $base_id = (int)$pdo->lastInsertId();
     } catch (PDOException $e) {

@@ -80,7 +80,7 @@ def _scrape_new_turn(html):
 
 class TestJapon1555CSVEndTurnSmoke:
     """Full Japon1555CSV scenario (Koku gain_rules + location_types
-    temple/fortress tags + multi-faction config) ends turn cleanly."""
+    temple/forteresse tags + multi-faction config) ends turn cleanly."""
 
     @pytest.fixture(scope="class", autouse=True)
     def smoke_state(self, browser):

@@ -51,6 +51,9 @@ while ($row = $knownStmt->fetch(PDO::FETCH_ASSOC)) {
     $knownMap[$row['location_id']][$row['controller_id']] = (bool) $row['found_secret'];
 }
 
+// The tags the scenario names, offered as the example of the types field.
+$locationTypesPlaceholder = implode(', ', array_column(getLocationTypeNames($gameReady), 0));
+
 require_once '../base/baseHTML.php';
 echo '
     <div class="management">
@@ -100,7 +103,7 @@ foreach ($locations as $loc):
                     <!-- Action update location_types -->
                     <form method="POST" style="margin-top:0.3em;">
                         <input type="hidden" name="update_types_id" value="%1$s">
-                        <input type="text" name="location_types" value="%8$s" placeholder="temple, fortress" size="30">
+                        <input type="text" name="location_types" value="%8$s" placeholder="%10$s" size="30">
                         <button type="submit">Update types</button>
                     </form>
                 </span>
@@ -115,7 +118,8 @@ foreach ($locations as $loc):
         $loc['zone_name'],
         htmlspecialchars($locationTypesText),
         htmlspecialchars($locationTypesText === '—' ? '' : $locationTypesText),
-        !empty($loc['hidden_description']) ? nl2br($loc['hidden_description']) : '<em>(vide)</em>'
+        !empty($loc['hidden_description']) ? nl2br($loc['hidden_description']) : '<em>(vide)</em>',
+        htmlspecialchars($locationTypesPlaceholder)
     );
     foreach ($controllers as $ctrl):
         $isKnown = isset($knownMap[$loc['id']][$ctrl['id']]);
