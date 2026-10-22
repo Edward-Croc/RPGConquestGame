@@ -68,7 +68,6 @@ $investigatingText = empty($investigatingVerbs)
 
 // The die an active action rolls.
 $die = $minRoll === 1 ? '1d' . $maxRoll : sprintf('un dé de %d à %d', $minRoll, $maxRoll);
-// What an action gives on one axis : a die and the bonus when active on that axis, else the fixed value and the bonus added up.
 // The zone bonuses calculateVals adds when the agent's faction holds its zone, named once under the formulas.
 $zoneBonusParts = [];
 foreach (['ENQUETE_ZONE_BONUS' => "d'enquête", 'ATTACK_ZONE_BONUS' => "d'attaque", 'DEFENCE_ZONE_BONUS' => 'de défense'] as $zoneBonusKey => $zoneBonusLabel) {
@@ -77,6 +76,7 @@ foreach (['ENQUETE_ZONE_BONUS' => "d'enquête", 'ATTACK_ZONE_BONUS' => "d'attaqu
     }
 }
 $zoneBonusText = empty($zoneBonusParts) ? '' : ' Quand votre faction tient le ' . htmlspecialchars($zoneType) . ' de l\'agent, ses valeurs gagnent ' . $joinWithAnd($zoneBonusParts) . '.';
+// What an action gives on one axis : a die and the bonus when active on that axis, else the fixed value and the bonus added up.
 $actionFormula = function (string $axis, string $action, string $characteristic, int $bonus = 0) use ($gameReady, $die, $passiveVal, $flatBonus): string {
     $activeActions = explode(',', str_replace("'", '', (string) getConfig($gameReady, 'active' . $axis . 'Actions')));
     if (in_array($action, $activeActions, true)) {
@@ -145,7 +145,7 @@ Un tour de jeu s'appelle ici un <strong><?= htmlspecialchars($timeValue) ?></str
 <ul>
   <li><strong>Déménager</strong> : l'agent change de <?= htmlspecialchars($zoneType) ?> tout de suite, et son action repasse à « <?= htmlspecialchars(lcfirst($labelPassive)) ?> ».</li>
   <li><strong>Donner</strong> : l'agent passe définitivement au service d'une autre faction.</li>
-  <li><strong>Relâcher ou transférer</strong> : un agent capturé devient votre prisonnier. Vous pouvez le relâcher vers sa faction, ou le transférer à une autre.</li>
+  <li><strong>Relâcher ou transférer</strong> : un agent capturé devient votre prisonnier. Vous pouvez le relâcher vers sa faction, ou transférer sa garde à une autre faction.</li>
 </ul>
 
 <h4 class="title is-5">L'action prévue en fin de <?= htmlspecialchars($timeValue) ?>, et où</h4>

@@ -307,7 +307,7 @@ class TestAttackLocationBaseline:
 @pytest.mark.db
 class TestAttackLogTabsRendering:
     """Step 1b — `controllers/view.php` `Vos attaques ce <timeValue>` and
-    `Alerte ! Votre base a été attaquée ce <timeValue>` sections render as
+    `Alerte ! Attaque contre votre <base> ce <timeValue>` sections render as
     Bulma tabs (one tab per turn that has logged attacks for the controller,
     latest first, empty turns skipped). Tab labels follow the
     `<ucfirst(timeValue)> N` format."""
