@@ -215,3 +215,4 @@ texteDescriptionBase,"Nous avons trouvé le repaire de %1$s des %2$s. Ses servit
     "" Cette localisation peut être ciblée pour destruction."",
     "" Il est possible d’organiser une opération pour la detruire.""
 ]","Phrases pour signaler qu’une localisation peut être détruite"
+"locationTypeNames","[[""repaire"", ""repaire""]]","Types de lieux [tag, nom], le premier est celui des bases (Vampire : repaire)"
