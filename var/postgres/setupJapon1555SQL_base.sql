@@ -284,23 +284,23 @@ ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, description=EXCLUDED.descript
 -- other possible keys hidden, on_recrutment, on_transformation
 INSERT INTO {prefix}powers ( name, enquete, attack, defence, other, description) VALUES
     ('Cheval Sanuki', 0, 1,1 
-        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Province de Sanuki"} }'
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"controller_has_zone": "Province de Sanuki"} }'
         , ', les meilleures montures de Shikoku ont le pied sûr et rapide'
     )
     , ('Armure en fer de Tosa', 0, 0,2
-        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Cap sud de Tosa"} }'
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"controller_has_zone": "Cap sud de Tosa"} }'
         , ', faite de l’acier sombre extrait du cœur des montagnes et forgé en écailles plus dures que celles des tortues'
     )
     , ('Thé d’Oboké', 1, 0,0
-        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Vallée d’Iya et d’Oboké d’Awa"} }'
+        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"controller_has_zone": "Vallée d’Iya et d’Oboké d’Awa"} }'
         ,', un breuvage rare qui élève l’âme'
     )
     , ('Encens Coréen', 1, 0,0
-        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Ouest d’Iyo"} }'
+        ,'{"hidden" : "1", "on_recrutment": "FALSE", "on_transformation": {"controller_has_zone": "Côte Ouest d’Iyo"} }'
         ,', fabriqué à partir de résines et d’épices introuvables au Japon'
     )
     , ('Teppo Européen', -1, 2,0
-        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"worker_is_alive": "1", "controller_has_zone": "Côte Est d’Awa"} }'
+        ,'{"hidden" : "0", "on_recrutment": "FALSE", "on_transformation": {"controller_has_zone": "Côte Est d’Awa"} }'
         ,', armes à feu importées par les missionnaires chrétiens'
     )
 ;

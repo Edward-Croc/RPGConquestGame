@@ -11,9 +11,10 @@ Audit gap (Slice 14, once-per-file UI-click rule):
   - Click-through: ui_transform_click and ui_teach_discipline_click
     persist the new power (post-click dropdown excludes the chosen one).
 
-Status gate is intentionally NOT covered here — see
-`tests/AUDIT_next_steps.md` for the planned follow-up issue
-(`worker_is_alive='0'` semantic + γ/δ red-green TDD).
+The agent's state gate (which agents open the Evolutions block at all) is
+not covered here: no rule key carries it, `getWorkerEvolutions` does. The
+dead and their traces are covered by `test_worker_resurrection_e2e.py` and
+`test_evolution_marks_e2e.py`.
 
 Subjects:
   Transform_Subject : Alpha controller, passive, Beta-Combat zone

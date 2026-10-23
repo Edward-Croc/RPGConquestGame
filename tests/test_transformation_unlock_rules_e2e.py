@@ -348,9 +348,9 @@ class TestDirectAndORComposition:
     fires error_log + only the direct cost deducts."""
 
     def test_direct_cost_fires_when_or_is_non_resource(self, browser, base_url):
-        """Direct Gold=3 + OR [zone, alive]. Alpha holds Gamma-Claims OR is
-        active → OR satisfies via a non-resource branch. Direct Gold cost
-        still applies."""
+        """Direct Gold=3 + OR [zone, age 0]. Alpha holds Gamma-Claims, and
+        any agent is of age 0 or more → OR satisfies via a non-resource
+        branch. Direct Gold cost still applies."""
         alpha = _controller_id("Alpha"); gold = _ressource_id("Gold")
         _set_zone_holder("Gamma-Claims", "Alpha")
         _set_amount(alpha, gold, 10)

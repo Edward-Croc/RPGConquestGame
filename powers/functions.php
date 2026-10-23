@@ -589,7 +589,7 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $turn_number, ['keys_count' => count($keys), 'context' => $context], 'debug');
 
     static $ALLOWED_KEYS = [
-        'age', 'worker_is_alive', 'worker_is_dead', 'worker_without_power', 'unlock_turn',
+        'age', 'worker_is_dead', 'worker_without_power', 'unlock_turn',
         'controller_faction', 'controller_not_faction', 'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
     ];
     $worker = $context['worker'];
@@ -612,21 +612,13 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
             if (!empty($worker) && ((int)$value > (int)($worker['age'] ?? 0))) {
                 return false;
             }
-        } elseif ($key === 'worker_is_alive' || $key === 'worker_is_dead') {
+        } elseif ($key === 'worker_is_dead') {
             if ((string) $value !== '1') {
                 game_error_log(__FUNCTION__, $key . ' only accepts "1" — failing closed', ['value' => $value], 'warning');
                 return false;
             }
-            // Without a worker the key does not apply ; a worker without a row for the turn is neither alive nor dead.
-            if (!empty($worker)) {
-                $action_choice = $worker['actions'][$turn_number]['action_choice'] ?? null;
-                $matches = ($key === 'worker_is_alive')
-                    ? in_array($action_choice, ACTIVE_ACTIONS, true)
-                    : $action_choice === 'dead';
-                if (!$matches) {
-                    return false;
-                }
-            } elseif ($key === 'worker_is_dead') {
+            // Without a worker there is no one to raise, and a worker without a row for the turn is not dead.
+            if (empty($worker) || ($worker['actions'][$turn_number]['action_choice'] ?? null) !== 'dead') {
                 return false;
             }
         } elseif ($key === 'worker_without_power') {
