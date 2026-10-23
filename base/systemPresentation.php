@@ -258,7 +258,7 @@ Vous <strong>choisissez</strong> aussi l'action de chaque agent, mais rien n'en 
 <?= guideCaptureFigure($captureSet, 'informations', 'Donner des informations à une autre faction') ?>
 <p><strong>Donner des informations à une autre faction :</strong></p>
 <ul>
-  <li><strong>Sur un agent repéré</strong> : son nom, pour que cette faction puisse l'attaquer. Il lui faut un agent dans le même <?= htmlspecialchars($zoneType) ?>.</li>
+  <li><strong>Sur un agent repéré</strong> : son nom, pour que cette faction puisse l'attaquer.</li>
   <li><strong>Sur un lieu découvert</strong> : ce que vous en savez.</li>
 </ul>
 <?php if ($ressourcesEnabled) { ?>
@@ -377,10 +377,9 @@ La faction qui tient vraiment le <?= htmlspecialchars($zoneType) ?> reste la vô
 <p>Ce sont vos <strong>agents</strong> qui attaquent ou défendent un lieu de leur <?= htmlspecialchars($zoneType) ?>. En fin de <?= htmlspecialchars($timeValue) ?>, pour chaque lieu visé :</p>
 <ul>
   <li>attaquants et défenseurs agissent dans l'ordre de leur enquête, le plus perspicace en premier, et chacun attaque ses cibles par ordre décroissant d'enquête.</li>
-  <li>ils s'affrontent en une suite de duels, chacun résolu comme un combat entre agents : un attaquant enchaîne les défenseurs tant qu'il gagne, un défenseur tient tant qu'il survit ;</li>
+  <li>ils s'affrontent en une suite de duels, chacun résolu comme un combat entre agents : un attaquant enchaîne les défenseurs tant qu'il gagne, un défenseur tient tant qu'il survit.</li>
   <li>le lieu tombe si les attaquants survivants sont <strong>strictement plus nombreux</strong> que
-    <?php if ($overwhelmMorethan) { ?>les défenseurs survivants plus <strong><?= $configInt('locationOverwhelmValue') ?></strong><?php } else { ?><strong><?= $configInt('locationOverwhelmValue') ?></strong> fois les défenseurs survivants<?php } ?>.
-    Personne contre personne, le lieu tient.</li>
+    <?php if ($overwhelmMorethan) { ?>les défenseurs survivants plus <strong><?= $configInt('locationOverwhelmValue') ?></strong><?php } else { ?><strong><?= $configInt('locationOverwhelmValue') ?></strong> fois les défenseurs survivants<?php } ?>.</li>
 </ul>
 <p>Pour emporter ce que le lieu abrite, il faut posséder au moins un lieu destructible où l'amener, votre <?= htmlspecialchars($baseName) ?> par exemple : sans cela, le lieu attaqué reste debout malgré la victoire.</p>
 <?php } else { ?>

@@ -478,6 +478,30 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
 }
 
 /**
+ * The power among the offered candidates whose link_power_type_id is the one posted.
+ *
+ * @param array|null $candidates : powers offered to the player, as cleanPowerListFromJsonConditions returns them
+ * @param mixed $linkPowerTypeId : link_power_type_id posted by the form ; anything but a scalar matches nothing
+ *
+ * @return array|null : the matching power row, or null when it is not on offer
+ */
+function findOfferedPower(array|null $candidates, mixed $linkPowerTypeId): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['linkPowerTypeId' => $linkPowerTypeId, 'candidates_count' => count($candidates ?? [])], 'debug');
+
+    if (!is_scalar($linkPowerTypeId)) {
+        return null;
+    }
+    foreach ($candidates ?? [] as $power) {
+        if ((string) $power['link_power_type_id'] === (string) $linkPowerTypeId) {
+            return $power;
+        }
+    }
+    return null;
+}
+
+/**
  * Whether a transformation may raise a dead agent : its rule must name worker_is_dead.
  *
  * Only such a transformation is offered to a dead agent, and only it brings the
@@ -566,7 +590,7 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
 
     static $ALLOWED_KEYS = [
         'age', 'worker_is_alive', 'worker_is_dead', 'worker_without_power', 'unlock_turn',
-        'controller_faction', 'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
+        'controller_faction', 'controller_not_faction', 'controller_has_zone', 'worker_in_zone', 'controller_has_ressource',
     ];
     $worker = $context['worker'];
     $controllersArray = $context['controllersArray'];
@@ -623,10 +647,22 @@ function evaluateRuleKeysAllMatch(array $keys, array $context, int $turn_number)
             if ((int)$value > (int)$turn_number) {
                 return false;
             }
-        } elseif ($key === 'controller_faction') {
-            // A comma-separated list names every faction the power is open to.
-            $factions = array_map('trim', explode(',', (string) $value));
-            if (!empty($value) && !empty($controllersArray) && !in_array($controllersArray[0]['faction_name'], $factions, true)) {
+        } elseif ($key === 'controller_faction' || $key === 'controller_not_faction') {
+            // Factions the power is open to, or refused to : a list item that is no name, or an unread faction, refuses.
+            if (empty($value)) {
+                continue;
+            }
+            $factions = is_array($value) ? $value : explode(',', (string) $value);
+            if (count(array_filter($factions, 'is_string')) !== count($factions)) {
+                game_error_log(__FUNCTION__, $key . ' lists a faction that is not a string — failing closed', ['value' => $value], 'warning');
+                return false;
+            }
+            $faction_name = $controllersArray[0]['faction_name'] ?? null;
+            if (!is_string($faction_name)) {
+                return false;
+            }
+            $isListed = in_array($faction_name, array_map('trim', $factions), true);
+            if ($isListed !== ($key === 'controller_faction')) {
                 return false;
             }
         } elseif ($key === 'controller_has_zone') {

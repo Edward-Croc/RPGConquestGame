@@ -39,7 +39,88 @@ if (isset($_GET['creation'])) {
         http_response_code(403);
         exit();
     }
-    $worker_id = createWorker($gameReady, $_GET);
+    $recruit_controller_id = (int) ($_GET['controller_id'] ?? 0);
+    // The organiser, or a privileged account using the perfect-agent form, recruits free and unchecked.
+    $recruitUnchecked = !empty($_SESSION['is_privileged']) && (empty($_SESSION['controller']['id']) || !empty($_GET['perfect_worker']));
+    $cost = null;
+    $recruitAllowed = true;
+    if (!$recruitUnchecked) {
+        // A replay shows the agent already recruited, without checking or charging it again.
+        $worker_id = getRecruitedWorkerId($gameReady, $_GET);
+        $recruitAllowed = $worker_id === null;
+    }
+    if ($recruitAllowed && !$recruitUnchecked) {
+        // Each posted hobby, job and discipline must be a power of that very type.
+        $typedPowers = [];
+        foreach (['power_hobby_id' => 1, 'power_metier_id' => 2, 'discipline' => 3] as $field => $power_type_id) {
+            $value = $_GET[$field] ?? null;
+            if (!empty($value) && !($field === 'discipline' && $value == "\'\'")) {
+                $typedPowers[] = ['value' => $value, 'power_type_id' => $power_type_id];
+            }
+        }
+        $conditions = [];
+        $params = [];
+        foreach ($typedPowers as $i => $typedPower) {
+            if (!is_scalar($typedPower['value']) || !ctype_digit((string) $typedPower['value'])) {
+                $recruitAllowed = false;
+                break;
+            }
+            $conditions[] = "(id = :id{$i} AND power_type_id = :type{$i})";
+            $params[":id{$i}"] = (int) $typedPower['value'];
+            $params[":type{$i}"] = $typedPower['power_type_id'];
+        }
+        $typedCount = 0;
+        if ($recruitAllowed && !empty($conditions)) {
+            $prefix = $_SESSION['GAME_PREFIX'];
+            try {
+                $stmt = $gameReady->prepare("SELECT COUNT(*) FROM {$prefix}link_power_type WHERE " . implode(' OR ', $conditions));
+                $stmt->execute($params);
+                $typedCount = (int) $stmt->fetchColumn();
+            } catch (PDOException $e) {
+                game_error_log('workers_action_page', 'SELECT link_power_type failed : ' . $e->getMessage(), ['params' => $params], 'error');
+                $recruitAllowed = false;
+            }
+        }
+        if (!$recruitAllowed || $typedCount !== count($typedPowers)) {
+            echo "Ce pouvoir n'est pas disponible.<br />";
+            $recruitAllowed = false;
+        }
+    }
+    $linkPowerTypeId = $_GET['transformation'] ?? null;
+    // A player gets only a transformation the recruitment page offers, and pays its cost.
+    if ($recruitAllowed && !$recruitUnchecked && !empty($linkPowerTypeId)) {
+        $turn = (int) ($mechanics['turncounter'] ?? 0);
+        $candidates = null;
+        $recrutement_transformation_array = json_decode((string) getConfig($gameReady, 'recrutement_transformation'), true);
+        if (($recrutement_transformation_array['action'] ?? null) === 'check') {
+            $candidates = getPowersByType($gameReady, '4', null, false);
+            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates ?? [], $recruit_controller_id, null, $turn, 'on_recrutment');
+        }
+        $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
+        if ($matchedPower === null) {
+            echo "Cette transformation n'est plus disponible.<br />";
+            $recruitAllowed = false;
+        } else {
+            $cost = getRuleCostForPower($gameReady, $matchedPower, $recruit_controller_id, null, $turn, 'on_recrutment');
+        }
+    }
+    // Paid and created together, or neither : a failed write rolls the whole recruitment back.
+    if ($recruitAllowed) {
+        $gameReady->beginTransaction();
+        if ($cost !== null && !consumeRessource($gameReady, $recruit_controller_id, $cost['ressource_id'], $cost['amount'])) {
+            $gameReady->rollBack();
+            echo "Stock insuffisant ou modifié.<br />";
+        } else {
+            // A double click waits on the first payment, then finds the agent it bought.
+            $existing_worker_id = ($cost === null) ? null : getRecruitedWorkerId($gameReady, $_GET);
+            $worker_id = ($existing_worker_id === null) ? createWorker($gameReady, $_GET) : $existing_worker_id;
+            if ($existing_worker_id === null && $worker_id !== false) {
+                $gameReady->commit();
+            } else {
+                $gameReady->rollBack();
+            }
+        }
+    }
     if ($_SESSION['DEBUG'] == true) {
         echo 'createWorker : DONE <br />';
     }
@@ -411,15 +492,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
-            $matchedPower = null;
-            if (is_array($candidates)) {
-                foreach ($candidates as $p) {
-                    if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
-                        $matchedPower = $p;
-                        break;
-                    }
-                }
-            }
+            $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
             if ($matchedPower === null) {
                 echo "Cette discipline n'est plus disponible.<br />";
             } else {
@@ -446,15 +519,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$isOrganiser) {
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
         }
-        $matchedPower = null;
-        if (is_array($candidates)) {
-            foreach ($candidates as $p) {
-                if ((string)$p['link_power_type_id'] === (string)$linkPowerTypeId) {
-                    $matchedPower = $p;
-                    break;
-                }
-            }
-        }
+        $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
         // A player may give a dead agent only a transformation that names worker_is_dead ; the organiser gives anything.
         if ($matchedPower !== null && $targetIsDead && !$isOrganiser && !powerRaisesTheDead($matchedPower)) {
             $matchedPower = null;
