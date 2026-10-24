@@ -1241,21 +1241,35 @@ tour : pour chaque ressource d'un contrôleur, si `is_stored` elle bascule
 zéro *avant* d'ajouter `end_turn_gain` ; puis `end_turn_gain` s'ajoute dans
 tous les cas.
 
+**Coût d'une action.** Une seule fonction dit ce qu'une action coûte :
+`getRessourceCostsByCostField($pdo, $controller_id, $costField)`
+(`ressources/functions.php`). Elle vérifie le nom de colonne contre une liste
+blanche figée (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`)
+et refuse toute autre valeur. Elle lit toutes les ressources configurées dont ce
+coût est `> 0`, jointes au stock du contrôleur (`LEFT JOIN controller_ressources`).
+Une ressource dont le contrôleur n'a aucune ligne est écartée si la clé
+`freeWithoutRessource` cite ce champ, et gardée sans montant sinon : aucun stock
+ne la couvre, l'action est refusée. Une liste illisible ne dispense de rien.
+Les trois lecteurs passent par elle et ne peuvent donc pas diverger :
+`hasEnoughRessourcesByCostField` (derrière `hasEnoughRessourcesTo{BuildBase,
+MoveBase,RepairLocation}`) pour l'affichage du formulaire,
+`ressourceCostHTMLByCostField` (derrière `buildBaseCostHTML`, `moveBaseCostHTML`,
+`repairLocationCostHTML`) pour le texte « Coût : », qui liste aussi la ressource
+manquante, et `spendRessourcesByCostField` pour la dépense.
+
 **Dépense atomique.** Les trois opérations `spendRessourcesTo{BuildBase,
 MoveBase,RepairLocation}` ne sont que des façades vers
-`spendRessourcesByCostField($pdo, $controller_id, $costField)`
-(`spendRessourcesByCostField`) — le nom de colonne de coût est vérifié contre une liste blanche
-figée (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`) ;
-toute autre valeur est refusée. La fonction ne retient que les ressources dont
-ce champ est `> 0`, ouvre **une** transaction, et appelle `consumeRessource`
-(`consumeRessource`, un `UPDATE ... WHERE amount >= :amt` — garde TOCTOU en une seule
-requête) pour chacune ; le premier échec fait tout annuler
-(`rollBack`) : un contrôleur paie la totalité du coût multi-ressource, ou rien.
+`spendRessourcesByCostField($pdo, $controller_id, $costField)`. La fonction
+refuse d'emblée si une ressource requise manque au contrôleur, puis ouvre
+**une** transaction et appelle `consumeRessource` (un
+`UPDATE ... WHERE amount >= :amt`, garde TOCTOU en une seule requête) pour
+chacune. Le premier échec fait tout annuler (`rollBack`) : un contrôleur paie la
+totalité du coût multi-ressource, ou rien.
 
 **Trap : trois champs de coût morts.** `ressources_config` déclare aussi
 `servant_first_come_cost`, `servant_recruitment_cost` et
 `extra_first_come_cost` — affichés dans `ressources/management.php` —
-mais **aucun n'apparaît dans la liste blanche de `spendRessourcesByCostField`,
+mais **aucun n'apparaît dans la liste blanche de `getRessourceCostsByCostField`,
 ni ailleurs dans le code** : ce sont des colonnes de configuration sans chemin
 de dépense. Les renseigner n'a aujourd'hui aucun effet de jeu.
 
@@ -1263,9 +1277,9 @@ de dépense. Les renseigner n'a aujourd'hui aucun effet de jeu.
 d'affichage pur : il ne masque une ligne que si le flag est posé *et* que
 `amount`, `amount_stored` et `end_turn_gain` sont tous les trois nuls (et,
 quand un `gainEstimate` est fourni, que le gain prévu au tour suivant est aussi
-`<= 0`). Les vérifications internes de coût et de blocage appellent
-`getRessources()` directement, sans ce filtre : une ressource masquée à zéro
-reste pleinement dépensable et gate le jeu normalement.
+`<= 0`). Les vérifications internes de coût et de blocage lisent la base
+sans ce filtre (`getRessourceCostsByCostField`, `getRessources`) : une
+ressource masquée à zéro reste pleinement dépensable et gate le jeu normalement.
 
 **`gain_rules`** (JSON par ligne `ressources_config`) est lu par deux
 fonctions séparées : `ressourceGainMechanic($pdo, $timing)`

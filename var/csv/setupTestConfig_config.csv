@@ -56,3 +56,4 @@
 "textLocationDefenceAgentUnengaged","[""Defence report: never engaged.""]","Defence report, agent never paired"
 "textLocationAgentSpoilsSelf","[""Spoils report: taken by us.""]","Spoils credited to the reader's own network"
 "textLocationAgentSpoilsOther","[""Spoils report: taken by network %1$s.""]","Spoils credited to another network"
+"freeWithoutRessource","[""location_repaire_cost""]","Repair is free for a controller without the costed resource"

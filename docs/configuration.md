@@ -185,7 +185,7 @@ Clés : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_nb_choi
 
 Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).
 
-Clés : `ressource_management`, `locationTypeNames`
+Clés : `ressource_management`, `freeWithoutRessource`, `locationTypeNames`
 
 ### `debug` — Débogage
 
@@ -770,6 +770,7 @@ La table `{prefix}ressources_config` définit les types de ressources disponible
 - **`is_rollable`** (= `0` ou `1`) — si `1`, `amount` est conservé d'un tour à l'autre ; si `0`, `amount` est remis à `0` en fin de tour avant `end_turn_gain` et `gain_rules`.
 - **`is_stored`** (= `0` ou `1`) — si `1`, le `amount` du tour précédent est ajouté à `amount_stored` (réserve), ce qui sépare budget courant et stock accumulé.
 - **`*_cost`** (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`, `servant_first_come_cost`, `servant_recruitment_cost`) — coût soustrait à `amount` quand l'action correspondante est lancée.
+- **`freeWithoutRessource`** (= `[]`, clé de configuration) — liste JSON des colonnes de coût (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`) dont une faction est dispensée quand elle n'a aucune ligne `controller_ressources` pour la ressource coûteuse. Pour tout coût absent de la liste, une faction sans la ressource ne peut pas faire l'action : le formulaire affiche « Vous n'avez pas les ressources nécessaires » avec le coût manquant, et une requête forgée est refusée sans rien dépenser. Une valeur qui n'est pas une liste JSON est ignorée avec un `warning` et ne dispense de rien. Japon1555 déclare `["base_building_cost"]` : Shikoku, sans Koku, construit sa forteresse mais ne la déplace ni ne répare. TestConfig déclare `["location_repaire_cost"]`, Vampire1966 garde la valeur par défaut.
 - **`gain_rules`** — colonne JSON contenant les règles de gain conditionnel (détaillées ci-dessous).
 - **`hide_when_zero`** (= `0` ou `1`, défaut `0`) — si `1`, la ressource est filtrée des pages d'affichage quand le contrôleur n'en a jamais possédé (seuil strict : `amount = 0` ET `amount_stored = 0` ET `end_turn_gain = 0`). Dès qu'une de ces trois colonnes devient non-nulle, la ressource réapparaît normalement. **Échappatoire sur la page « Ressources de la faction » uniquement** : si l'estimation issue de `gain_rules` pour le prochain tour est strictement positive (i.e. le contrôleur tient une zone qui va produire de la ressource), la ligne réapparaît même au seuil 0/0/0 — le joueur peut ainsi anticiper son acquisition. Le bloc « Vos Ressources » du tableau de bord faction (`controllers/view.php`) reste sur le filtre strict pour rester sobre. Cas d'usage : ressources rares et scénario-spécifiques (équipement par zone, devise de niche) qui encombreraient la page pour les contrôleurs qui ne les produisent pas. Le filtre est purement d'affichage : `ressourceGainMechanic`, `giftRessource` et les autres mécaniques mutent toujours `controller_ressources` directement, donc une ressource cachée continue à être réceptionnée silencieusement.
 
