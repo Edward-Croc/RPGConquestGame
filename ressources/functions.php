@@ -368,10 +368,16 @@ function gainRuleToText(array $rule, string $zoneTypeLabel, array $locationTypeN
             if (isset($rule['condition']['zone_id'])) {
                 return sprintf('pour le %s tenu (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
             }
+            if (isset($rule['condition']['zone_name'])) {
+                return sprintf('pour le %s tenu (%s)', $zoneTypeLabel, (string)$rule['condition']['zone_name']);
+            }
             return sprintf('par %s tenu', $zoneTypeLabel);
         case 'claims_zone':
             if (isset($rule['condition']['zone_id'])) {
                 return sprintf('pour le %s revendiqué (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            if (isset($rule['condition']['zone_name'])) {
+                return sprintf('pour le %s revendiqué (%s)', $zoneTypeLabel, (string)$rule['condition']['zone_name']);
             }
             return sprintf('par %s sous notre bannière ce tour', $zoneTypeLabel);
         case 'owns_location_type':
@@ -417,6 +423,12 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
     $mechanics = getMechanics($pdo);
     $currentTurn = (int)($mechanics['turncounter'] ?? 0);
 
+    $controllersArray = getControllers($pdo, null, $controller_id);
+    if ($controllersArray === null) {
+        return [];
+    }
+    $factionContext = ['worker' => null, 'controllersArray' => $controllersArray, 'zonesArray' => [], 'zonesArrayHolder' => [], 'ressourcesArray' => []];
+
     try {
         $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
             FROM {$prefix}ressources_config
@@ -450,6 +462,11 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
                 continue;
             }
             if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) {
+                continue;
+            }
+            // A rule kept from the controller's faction is neither counted nor listed
+            $factionKeys = array_intersect_key($rule, array_flip(RESSOURCE_GAIN_FACTION_KEYS));
+            if (!empty($factionKeys) && !evaluateRuleKeysAllMatch($factionKeys, $factionContext, $currentTurn)) {
                 continue;
             }
 

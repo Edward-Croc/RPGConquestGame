@@ -22,3 +22,7 @@ Alpha,GainTest_LocationById,0,0,0
 Alpha,GainTest_LocationTypeNames,0,0,0
 Alpha,GainTest_Rollable,4,0,1
 Alpha,GainTest_ClaimsZone,0,0,2
+Alpha,GainTest_NotFaction,0,0,0
+Beta,GainTest_NotFaction,0,0,0
+Alpha,GainTest_OnlyFaction,0,0,0
+Beta,GainTest_OnlyFaction,0,0,0

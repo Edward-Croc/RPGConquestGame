@@ -1294,10 +1294,22 @@ Les types de lieux se nomment dans la clé `locationTypeNames`, que lit
 nouvelle base le tag de sa première paire, la page de la faction et le guide nomment la
 base avec son nom, et `gainRuleToText` affiche une règle
 `owns_location_type` avec le nom de la paire, ou le tag brut s'il n'est pas nommé.
+Une règle `holds_zone` ou `claims_zone` limitée à une zone s'y affiche avec
+l'identifiant (`zone_id`) ou le nom (`zone_name`) de cette zone entre parenthèses.
 
 `unlock_turn` : la règle est ignorée tant que `unlock_turn > tour_courant`
 (`updateRessources` / `ressourceGainEstimateForController`) — **la borne est inclusive** : une règle `unlock_turn = 5`
 produit son premier gain au tour 5, pas au tour 6.
+
+`controller_faction` / `controller_not_faction` : posées au niveau de la règle,
+comme `unlock_turn`, elles réservent la règle à des factions ou les en privent.
+Les deux lecteurs passent ces deux clés seules à `evaluateRuleKeysAllMatch`
+(`powers/functions.php`), l'évaluateur des règles de pouvoir, avec la vraie
+faction que rend `getControllers`. `ressourceGainMechanic` lit tous les
+contrôleurs une fois par appel et écarte chaque correspondance refusée. Si
+cette lecture échoue, l'étape échoue. `ressourceGainEstimateForController` lit
+le contrôleur affiché et écarte la règle avant d'évaluer sa condition : une
+règle refusée n'est ni versée ni listée sur la page Ressources.
 
 **Montant négatif.** Rien ne distingue un `amount` négatif d'un positif, hormis
 le court-circuit `amount === 0` : le `UPDATE ... SET amount = amount + :gain`

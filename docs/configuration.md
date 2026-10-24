@@ -793,6 +793,8 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 - **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
 - **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
 - **`unlock_turn`** (int, optionnel) — la règle ne produit rien avant ce tour inclus. Exemple : `1` masque le gain au tour 0, puis l'active dès le tour 1. Sans cette clé, la règle est active dès le début.
+- **`controller_faction`** (string ou liste, optionnel) — la règle ne rapporte qu'aux contrôleurs de ces factions : nom exact, en chaîne séparée par des virgules (`"Eglise, Démon"`) ou en liste JSON (`["Eglise", "Démon"]`). Même nom et même sens que la clé de règle de pouvoir : c'est la vraie faction du contrôleur qui compte, jamais sa fausse.
+- **`controller_not_faction`** (string ou liste, optionnel) — le miroir de `controller_faction` : les factions listées ne reçoivent rien de la règle, toutes les autres la touchent. Pour les deux clés, une valeur vide ne filtre rien. Une liste dont un élément n'est pas une chaîne refuse la règle à tous les contrôleurs, avec un `warning`, et un contrôleur dont la faction ne peut être lue n'en reçoit rien. Une règle refusée à un contrôleur n'est ni versée en fin de tour ni annoncée sur sa page Ressources. Recevoir la ressource par un don n'y change rien.
 - **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
 
 **Exemple avec verrou de tour :**
@@ -804,6 +806,12 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
     "unlock_turn": 1,
     "condition": {"type": "holds_zone", "zone_name": "Côte Est d’Awa"}
 }
+```
+
+**Exemple avec filtre de faction** (le Sang de Vampire1966) :
+
+```json
+{"amount": 2, "timing": "before_claim", "controller_not_faction": "Garou, Eglise", "condition": {"type": "holds_zone"}}
 ```
 
 **Types de condition implémentés :**
@@ -818,6 +826,8 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 
 - `{type: "holds_zone", zone_id: 5}` → binaire : gain 1 fois si la zone 5 est tenue.
 - `{type: "holds_zone", zone_name: "Province de Sanuki"}` → binaire stable au tri du CSV : gain 1 fois si la zone nommée est tenue (préférer `zone_name` à `zone_id` dans les CSV pour éviter le couplage à l'ordre des lignes).
+
+Sur la page Ressources, une règle limitée à une zone la nomme : « pour le quartier tenu (Monticelli) » avec `zone_name`, « pour le quartier tenu (id 5) » avec `zone_id`, « pour le quartier revendiqué (…) » pour `claims_zone`.
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.
