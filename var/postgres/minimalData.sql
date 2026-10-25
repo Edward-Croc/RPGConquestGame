@@ -185,6 +185,7 @@ VALUES
     ('textOwnedArtefacts', 'Vos artefacts :', 'Text for location owned artefacts'),
     ('locationTypeNames', '[["base", "base"], ["temple", "temple"]]', 'Location types as a JSON list of [tag, name] pairs. The first pair is the type of a base : createBase gives its tag to every new base. The names are shown in the gain rules, the faction page and the player guide.'),
     -- Ressource management
+    ('freeWithoutRessource', '[]', 'JSON list of cost columns (base_building_cost, base_moving_cost, location_repaire_cost) a controller lacking the costed ressource does for free. For any other cost, lacking the ressource refuses the action'),
     ('ressource_management', 'TRUE', 'Ressource management configuration')
 ON CONFLICT (name) DO NOTHING;
 

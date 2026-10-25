@@ -106,6 +106,127 @@ function filterVisibleRessources(array $ressources, array $gainEstimate = []): a
 }
 
 /**
+ * List the configured ressources an action costs, with the controller's stock of each.
+ * A ressource the controller holds no row for is dropped when the freeWithoutRessource
+ * config lists the cost field, and kept with a null amount otherwise, which no stock covers.
+ *
+ * @param PDO    $pdo            : DB connection
+ * @param int    $controller_id  : controller id
+ * @param string $costField      : one of base_building_cost, base_moving_cost, location_repaire_cost
+ *
+ * @return array|null rows ['ressource_id' => int, 'ressource_name' => string, 'cost' => int, 'amount' => int|null],
+ *                    [] when ressource management is off, null on an unknown field or a SQL failure
+ */
+function getRessourceCostsByCostField(PDO $pdo, int $controller_id, string $costField): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['costField' => $costField], 'debug');
+
+    static $allowed = ['base_building_cost', 'base_moving_cost', 'location_repaire_cost'];
+    if (!in_array($costField, $allowed, true)) {
+        game_error_log(__FUNCTION__, 'unknown cost field', ['costField' => $costField]);
+        return null;
+    }
+    if (getConfig($pdo, 'ressource_management') !== 'TRUE') {
+        return [];
+    }
+
+    // An unreadable list frees nothing, so a missing ressource refuses the action
+    $freeWithoutRessource = [];
+    $freeConfig = getConfig($pdo, 'freeWithoutRessource');
+    if ($freeConfig !== null && trim($freeConfig) !== '') {
+        $decoded = json_decode($freeConfig, true);
+        if (is_array($decoded) && array_values($decoded) === $decoded) {
+            $freeWithoutRessource = $decoded;
+        } else {
+            game_error_log(__FUNCTION__, 'freeWithoutRessource is not a JSON list, nothing is free', ['freeWithoutRessource' => $freeConfig], 'warning');
+        }
+    }
+    $isFreeWithout = in_array($costField, $freeWithoutRessource, true);
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    try {
+        $stmt = $pdo->prepare("SELECT r.id AS ressource_id, r.ressource_name, r.{$costField} AS cost, cr.amount
+            FROM {$prefix}ressources_config r
+            LEFT JOIN {$prefix}controller_ressources cr ON cr.ressource_id = r.id AND cr.controller_id = :controller_id
+            WHERE r.{$costField} > 0
+            ORDER BY r.id");
+        $stmt->execute([':controller_id' => $controller_id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT costs failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'costField' => $costField], 'error');
+        return null;
+    }
+
+    $costs = [];
+    foreach ($rows as $row) {
+        if ($row['amount'] === null && $isFreeWithout) {
+            continue;
+        }
+        $costs[] = [
+            'ressource_id' => (int)$row['ressource_id'],
+            'ressource_name' => (string)$row['ressource_name'],
+            'cost' => (int)$row['cost'],
+            'amount' => $row['amount'] === null ? null : (int)$row['amount'],
+        ];
+    }
+    game_error_log(__FUNCTION__, 'DONE with controller_id : ' . $controller_id, ['costField' => $costField, 'costs' => $costs], 'debug');
+    return $costs;
+}
+
+/**
+ * Does the controller hold every ressource the action costs, in sufficient amount ?
+ *
+ * @param PDO    $pdo            : DB connection
+ * @param int    $controller_id  : controller id
+ * @param string $costField      : one of base_building_cost, base_moving_cost, location_repaire_cost
+ *
+ * @return bool true when every cost is covered (or nothing is costed), false otherwise or on failure
+ */
+function hasEnoughRessourcesByCostField(PDO $pdo, int $controller_id, string $costField): bool
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['costField' => $costField], 'debug');
+
+    $costs = getRessourceCostsByCostField($pdo, $controller_id, $costField);
+    if ($costs === null) {
+        return false;
+    }
+    foreach ($costs as $cost) {
+        if ($cost['amount'] === null || $cost['amount'] < $cost['cost']) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Render the cost of an action, listing every configured ressource it requires.
+ *
+ * @param PDO    $pdo            : DB connection
+ * @param int    $controller_id  : controller id
+ * @param string $costField      : one of base_building_cost, base_moving_cost, location_repaire_cost
+ * @param string $label          : text placed before the costs
+ *
+ * @return string HTML fragment, empty when the action costs nothing
+ */
+function ressourceCostHTMLByCostField(PDO $pdo, int $controller_id, string $costField, string $label): string
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['costField' => $costField], 'debug');
+
+    $costs = getRessourceCostsByCostField($pdo, $controller_id, $costField);
+    if (empty($costs)) {
+        return '';
+    }
+    $parts = [];
+    foreach ($costs as $cost) {
+        $parts[] = sprintf('%d %s', $cost['cost'], htmlspecialchars($cost['ressource_name']));
+    }
+    return '<br> ' . $label . ' ' . implode(', ', $parts);
+}
+
+/**
  * Does the controller have enough ressources to build a base ?
  *
  * @param PDO $pdo            : DB connection
@@ -115,17 +236,7 @@ function filterVisibleRessources(array $ressources, array $gainEstimate = []): a
  */
 function hasEnoughRessourcesToBuildBase(PDO $pdo, int $controller_id): bool
 {
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_building_cost'] > 0) {
-                if ($controllerRessource['amount'] < $controllerRessource['base_building_cost']) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
+    return hasEnoughRessourcesByCostField($pdo, $controller_id, 'base_building_cost');
 }
 
 /**
@@ -155,19 +266,7 @@ function spendRessourcesToBuildBase(PDO $pdo, int $controller_id): bool
  */
 function buildBaseCostHTML(PDO $pdo, int $controller_id): string
 {
-    $html = '';
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        if (!empty($controllerRessources)) {
-            $html = '<br> Coût de construction : ';
-            foreach ($controllerRessources as $controllerRessource) {
-                if ($controllerRessource['base_building_cost'] > 0) {
-                    $html .= sprintf('%s %s', $controllerRessource['base_building_cost'], $controllerRessource['ressource_name']);
-                }
-            }
-        }
-    }
-    return $html;
+    return ressourceCostHTMLByCostField($pdo, $controller_id, 'base_building_cost', 'Coût de construction :');
 }
 
 /**
@@ -180,17 +279,7 @@ function buildBaseCostHTML(PDO $pdo, int $controller_id): string
  */
 function hasEnoughRessourcesToMoveBase(PDO $pdo, int $controller_id): bool
 {
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['base_moving_cost'] > 0) {
-                if ($controllerRessource['amount'] < $controllerRessource['base_moving_cost']) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
+    return hasEnoughRessourcesByCostField($pdo, $controller_id, 'base_moving_cost');
 }
 
 /**
@@ -217,19 +306,7 @@ function spendRessourcesToMoveBase(PDO $pdo, int $controller_id): bool
  */
 function moveBaseCostHTML(PDO $pdo, int $controller_id): string
 {
-    $html = '';
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        if (!empty($controllerRessources)) {
-            $html = '<br> Coût : ';
-            foreach ($controllerRessources as $controllerRessource) {
-                if ($controllerRessource['base_moving_cost'] > 0) {
-                    $html .= sprintf('%s %s', $controllerRessource['base_moving_cost'], $controllerRessource['ressource_name']);
-                }
-            }
-        }
-    }
-    return $html;
+    return ressourceCostHTMLByCostField($pdo, $controller_id, 'base_moving_cost', 'Coût :');
 }
 
 /**
@@ -242,18 +319,7 @@ function moveBaseCostHTML(PDO $pdo, int $controller_id): string
  */
 function hasEnoughRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool
 {
-
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        foreach ($controllerRessources as $controllerRessource) {
-            if ($controllerRessource['location_repaire_cost'] > 0) {
-                if ($controllerRessource['amount'] < $controllerRessource['location_repaire_cost']) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
+    return hasEnoughRessourcesByCostField($pdo, $controller_id, 'location_repaire_cost');
 }
 
 /**
@@ -271,15 +337,12 @@ function spendRessourcesToRepairLocation(PDO $pdo, int $controller_id): bool
 }
 
 /**
- * Shared deducting primitive for the three spend* operations. Loops over
- * the controller's ressources_config, filters to the cost field passed in,
- * and composes consumeRessource calls inside a single transaction. Any
- * shortfall (or `consumeRessource` returning false for any other reason)
- * triggers a rollback so partial deductions cannot ship.
- *
- * Cost-zero ressources never reach consumeRessource — the filter elides
- * them, so the old "rowCount on no-op UPDATE" noise is impossible by
- * construction.
+ * Shared deducting primitive for the three spend* operations. Reads the
+ * action's costs from getRessourceCostsByCostField, refuses when the
+ * controller lacks a costed ressource that freeWithoutRessource does not
+ * free, and composes consumeRessource calls inside a single transaction.
+ * Any shortfall (or `consumeRessource` returning false for any other
+ * reason) triggers a rollback so partial deductions cannot ship.
  *
  * @param PDO    $pdo            : DB connection
  * @param int    $controller_id  : controller id
@@ -293,28 +356,23 @@ function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costFi
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['costField' => $costField], 'debug');
 
-    static $allowed = ['base_building_cost', 'base_moving_cost', 'location_repaire_cost'];
-    if (!in_array($costField, $allowed, true)) {
-        game_error_log(__FUNCTION__, 'unknown cost field', ['costField' => $costField]);
+    $costs = getRessourceCostsByCostField($pdo, $controller_id, $costField);
+    if ($costs === null) {
         return false;
     }
-    if (getConfig($pdo, 'ressource_management') !== 'TRUE') {
+    if (empty($costs)) {
         return true;
     }
-
-    $costed = [];
-    foreach (getRessources($pdo, $controller_id) as $r) {
-        if ((int)$r[$costField] > 0) {
-            $costed[] = ['ressource_id' => (int)$r['ressource_id'], 'amount' => (int)$r[$costField]];
+    foreach ($costs as $cost) {
+        if ($cost['amount'] === null) {
+            game_error_log(__FUNCTION__, 'controller holds no row for a costed ressource', ['controller_id' => $controller_id, 'costField' => $costField, 'ressource_id' => $cost['ressource_id']], 'warning');
+            return false;
         }
-    }
-    if (empty($costed)) {
-        return true;
     }
 
     $pdo->beginTransaction();
-    foreach ($costed as $row) {
-        if (!consumeRessource($pdo, $controller_id, $row['ressource_id'], $row['amount'])) {
+    foreach ($costs as $cost) {
+        if (!consumeRessource($pdo, $controller_id, $cost['ressource_id'], $cost['cost'])) {
             $pdo->rollBack();
             return false;
         }
@@ -333,19 +391,7 @@ function spendRessourcesByCostField(PDO $pdo, int $controller_id, string $costFi
  */
 function repairLocationCostHTML(PDO $pdo, int $controller_id): string
 {
-    $html = '';
-    if (getConfig($pdo, 'ressource_management') === 'TRUE') {
-        $controllerRessources = getRessources($pdo, $controller_id);
-        if (!empty($controllerRessources)) {
-            $html = '<br> Coût : ';
-            foreach ($controllerRessources as $controllerRessource) {
-                if ($controllerRessource['location_repaire_cost'] > 0) {
-                    $html .= sprintf('%s %s', $controllerRessource['location_repaire_cost'], $controllerRessource['ressource_name']);
-                }
-            }
-        }
-    }
-    return $html;
+    return ressourceCostHTMLByCostField($pdo, $controller_id, 'location_repaire_cost', 'Coût :');
 }
 
 /**
@@ -368,10 +414,16 @@ function gainRuleToText(array $rule, string $zoneTypeLabel, array $locationTypeN
             if (isset($rule['condition']['zone_id'])) {
                 return sprintf('pour le %s tenu (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
             }
+            if (isset($rule['condition']['zone_name'])) {
+                return sprintf('pour le %s tenu (%s)', $zoneTypeLabel, (string)$rule['condition']['zone_name']);
+            }
             return sprintf('par %s tenu', $zoneTypeLabel);
         case 'claims_zone':
             if (isset($rule['condition']['zone_id'])) {
                 return sprintf('pour le %s revendiqué (id %d)', $zoneTypeLabel, (int)$rule['condition']['zone_id']);
+            }
+            if (isset($rule['condition']['zone_name'])) {
+                return sprintf('pour le %s revendiqué (%s)', $zoneTypeLabel, (string)$rule['condition']['zone_name']);
             }
             return sprintf('par %s sous notre bannière ce tour', $zoneTypeLabel);
         case 'owns_location_type':
@@ -417,6 +469,12 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
     $mechanics = getMechanics($pdo);
     $currentTurn = (int)($mechanics['turncounter'] ?? 0);
 
+    $controllersArray = getControllers($pdo, null, $controller_id);
+    if ($controllersArray === null) {
+        return [];
+    }
+    $factionContext = ['worker' => null, 'controllersArray' => $controllersArray, 'zonesArray' => [], 'zonesArrayHolder' => [], 'ressourcesArray' => []];
+
     try {
         $stmt = $pdo->prepare("SELECT id AS ressource_id, gain_rules
             FROM {$prefix}ressources_config
@@ -450,6 +508,11 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
                 continue;
             }
             if (isset($rule['unlock_turn']) && (int)$rule['unlock_turn'] > $currentTurn) {
+                continue;
+            }
+            // A rule kept from the controller's faction is neither counted nor listed
+            $factionKeys = array_intersect_key($rule, array_flip(RESSOURCE_GAIN_FACTION_KEYS));
+            if (!empty($factionKeys) && !evaluateRuleKeysAllMatch($factionKeys, $factionContext, $currentTurn)) {
                 continue;
             }
 

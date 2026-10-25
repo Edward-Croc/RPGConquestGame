@@ -133,7 +133,7 @@ Les fichiers vivent sous `var/csv/`. Pour les télécharger ou les vérifier dan
 |---|---|---|---|
 | **TestConfig** (tests) | `setupTestConfig_config.csv` | `setupTestConfig_ressources_config.csv` | zones, locations, controllers, advanced… |
 | **Japon1555CSV** (Shikoku 1555) | `setupJapon1555CSV_config.csv` | `setupJapon1555CSV_ressources_config.csv` | zones (`zone_rules`, `is_hidden`), locations, powers… |
-| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | `setupVampire1966CSV_ressources_config.csv` | zones, locations, controllers… |
+| **Vampire1966CSV** (Firenze 1966) | `setupVampire1966CSV_config.csv` | `setupVampire1966CSV_ressources_config.csv` : trois ressources gardées d'un tour à l'autre. Le **Sang** va à toutes les factions sauf Eglise et Garou : une dose au départ, +2 par zone tenue et +1 par zone sous sa bannière. La **Foi** rapporte +1 par zone tenue à l'Eglise (2 au départ, +1 fixe par tour) et au Démon (0 au départ), et paie la Possession (3 Foi). La **Gnose** rapporte au Garou (0 au départ) +2 par zone tenue qui contient un Cairn (Monticelli, Bosco Bello) et +2 par Cairn intact possédé, et paie la réparation d'un lieu (2 Gnose). Une faction sans Gnose ne peut pas réparer un Cairn. | zones, locations, controllers… Les deux Cairns (taggés `cairn`) appartiennent au Garou. Ils se détruisent : attaqué avec succès, un Cairn devient « Ruines du Cairn » (`can_be_destroyed` à 0) et ne rapporte plus de Gnose, puis sa réparation le rend intact. |
 
 **En-tête config obligatoire :** `name,value,description`
 
@@ -185,7 +185,7 @@ Clés : `turn_recrutable_workers`, `turn_firstcome_workers`, `first_come_nb_choi
 
 Activation du module économique. Les types et gains vivent aussi dans ressources_config / controller_ressources (autres CSV).
 
-Clés : `ressource_management`, `locationTypeNames`
+Clés : `ressource_management`, `freeWithoutRessource`, `locationTypeNames`
 
 ### `debug` — Débogage
 
@@ -770,6 +770,7 @@ La table `{prefix}ressources_config` définit les types de ressources disponible
 - **`is_rollable`** (= `0` ou `1`) — si `1`, `amount` est conservé d'un tour à l'autre ; si `0`, `amount` est remis à `0` en fin de tour avant `end_turn_gain` et `gain_rules`.
 - **`is_stored`** (= `0` ou `1`) — si `1`, le `amount` du tour précédent est ajouté à `amount_stored` (réserve), ce qui sépare budget courant et stock accumulé.
 - **`*_cost`** (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`, `servant_first_come_cost`, `servant_recruitment_cost`) — coût soustrait à `amount` quand l'action correspondante est lancée.
+- **`freeWithoutRessource`** (= `[]`, clé de configuration) — liste JSON des colonnes de coût (`base_building_cost`, `base_moving_cost`, `location_repaire_cost`) dont une faction est dispensée quand elle n'a aucune ligne `controller_ressources` pour la ressource coûteuse. Pour tout coût absent de la liste, une faction sans la ressource ne peut pas faire l'action : le formulaire affiche « Vous n'avez pas les ressources nécessaires » avec le coût manquant, et une requête forgée est refusée sans rien dépenser. Une valeur qui n'est pas une liste JSON est ignorée avec un `warning` et ne dispense de rien. Japon1555 déclare `["base_building_cost"]` : Shikoku, sans Koku, construit sa forteresse mais ne la déplace ni ne répare. TestConfig déclare `["location_repaire_cost"]`, Vampire1966 garde la valeur par défaut.
 - **`gain_rules`** — colonne JSON contenant les règles de gain conditionnel (détaillées ci-dessous).
 - **`hide_when_zero`** (= `0` ou `1`, défaut `0`) — si `1`, la ressource est filtrée des pages d'affichage quand le contrôleur n'en a jamais possédé (seuil strict : `amount = 0` ET `amount_stored = 0` ET `end_turn_gain = 0`). Dès qu'une de ces trois colonnes devient non-nulle, la ressource réapparaît normalement. **Échappatoire sur la page « Ressources de la faction » uniquement** : si l'estimation issue de `gain_rules` pour le prochain tour est strictement positive (i.e. le contrôleur tient une zone qui va produire de la ressource), la ligne réapparaît même au seuil 0/0/0 — le joueur peut ainsi anticiper son acquisition. Le bloc « Vos Ressources » du tableau de bord faction (`controllers/view.php`) reste sur le filtre strict pour rester sobre. Cas d'usage : ressources rares et scénario-spécifiques (équipement par zone, devise de niche) qui encombreraient la page pour les contrôleurs qui ne les produisent pas. Le filtre est purement d'affichage : `ressourceGainMechanic`, `giftRessource` et les autres mécaniques mutent toujours `controller_ressources` directement, donc une ressource cachée continue à être réceptionnée silencieusement.
 
@@ -793,6 +794,8 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 - **`amount`** — multiplicateur entier. Les règles avec `amount = 0` sont ignorées (no-op). Les valeurs négatives sont autorisées et soustraient au lieu d'ajouter — utile pour configurer des pénalités conditionnelles.
 - **`timing`** (`"before_claim"` ou `"after_claim"`) — moment d'application dans la séquence de fin de tour.
 - **`unlock_turn`** (int, optionnel) — la règle ne produit rien avant ce tour inclus. Exemple : `1` masque le gain au tour 0, puis l'active dès le tour 1. Sans cette clé, la règle est active dès le début.
+- **`controller_faction`** (string ou liste, optionnel) — la règle ne rapporte qu'aux contrôleurs de ces factions : nom exact, en chaîne séparée par des virgules (`"Eglise, Démon"`) ou en liste JSON (`["Eglise", "Démon"]`). Même nom et même sens que la clé de règle de pouvoir : c'est la vraie faction du contrôleur qui compte, jamais sa fausse.
+- **`controller_not_faction`** (string ou liste, optionnel) — le miroir de `controller_faction` : les factions listées ne reçoivent rien de la règle, toutes les autres la touchent. Pour les deux clés, une valeur vide ne filtre rien. Une liste dont un élément n'est pas une chaîne refuse la règle à tous les contrôleurs, avec un `warning`, et un contrôleur dont la faction ne peut être lue n'en reçoit rien. Une règle refusée à un contrôleur n'est ni versée en fin de tour ni annoncée sur sa page Ressources. Recevoir la ressource par un don n'y change rien.
 - **`condition`** — critère évalué pour le contrôleur. Une règle = un type de condition ; on cumule les effets en ajoutant plusieurs règles.
 
 **Exemple avec verrou de tour :**
@@ -804,6 +807,12 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
     "unlock_turn": 1,
     "condition": {"type": "holds_zone", "zone_name": "Côte Est d’Awa"}
 }
+```
+
+**Exemple avec filtre de faction** (le Sang de Vampire1966) :
+
+```json
+{"amount": 2, "timing": "before_claim", "controller_not_faction": "Garou, Eglise", "condition": {"type": "holds_zone"}}
 ```
 
 **Types de condition implémentés :**
@@ -818,6 +827,8 @@ Stockées en JSON dans `ressources_config.gain_rules`, ces règles sont évalué
 
 - `{type: "holds_zone", zone_id: 5}` → binaire : gain 1 fois si la zone 5 est tenue.
 - `{type: "holds_zone", zone_name: "Province de Sanuki"}` → binaire stable au tri du CSV : gain 1 fois si la zone nommée est tenue (préférer `zone_name` à `zone_id` dans les CSV pour éviter le couplage à l'ordre des lignes).
+
+Sur la page Ressources, une règle limitée à une zone la nomme : « pour le quartier tenu (Monticelli) » avec `zone_name`, « pour le quartier tenu (id 5) » avec `zone_id`, « pour le quartier revendiqué (…) » pour `claims_zone`.
 - `{type: "holds_zone"}` → compté : gain multiplié par le nombre de zones tenues.
 - `{type: "owns_location_type", is_base: true}` → compté filtré : gain par base possédée.
 - `{type: "owns_location_type", location_type: "temple"}` → compté par tag : gain par lieu taggé `temple`.

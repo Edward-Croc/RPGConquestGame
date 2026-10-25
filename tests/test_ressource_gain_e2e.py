@@ -19,8 +19,10 @@ Post-EOT expected amount = rule_gain × match_count.
 
 The same zone-based end-of-turn also checks `updateRessources` itself
 (`is_rollable` carry-over against the non-rollable reset, `is_stored`,
-`end_turn_gain`), the `claims_zone` condition, and the « Estimation
-tour +1 » value of the Ressources page read just before the end of turn.
+`end_turn_gain`), the `claims_zone` condition, the « Estimation
+tour +1 » value of the Ressources page read just before the end of turn,
+and the `controller_faction` / `controller_not_faction` rule filters
+(Alpha against Beta).
 
 Run:
     python3 -m pytest tests/test_ressource_gain_e2e.py -v
@@ -209,6 +211,15 @@ _CLAIMED_RULE_AMOUNT = 3
 _HELD_ONLY_RULE_AMOUNT = 20
 _CLAIMED_ZONE = "Theta-Artefacts"
 
+# Faction filters at rule level: Alpha (FactionAlpha) and Beta (FactionBeta) both
+# hold zones, each rule is refused to one of them. Amounts are unique on the page
+# so the rule lines can be told apart.
+_NOT_FACTION = "GainTest_NotFaction"
+_NOT_FACTION_AMOUNT = 13
+_ONLY_FACTION = "GainTest_OnlyFaction"
+_ONLY_FACTION_AMOUNT = 17
+_BETA_HELD_ZONE = "Delta-Disputed"
+
 
 @pytest.fixture(scope="module")
 def shared_gain_results(browser, load_test_config):
@@ -288,10 +299,28 @@ def shared_gain_results(browser, load_test_config):
          "condition": {"type": "claims_zone", "zone_id": int(investigation_zone_id)}},
     ]))
 
+    beta_id = _ui_resolve_controller_id(page, "Beta")
+    beta_zone_id = _ui_resolve_zone_id(page, _BETA_HELD_ZONE)
+    _ui_set_zone_holder(page, beta_zone_id, beta_id, beta_id)
+    not_faction_config_id = _ui_resolve_ressource_config_id(page, _NOT_FACTION)
+    only_faction_config_id = _ui_resolve_ressource_config_id(page, _ONLY_FACTION)
+    _ui_set_gain_rules(page, not_faction_config_id, json.dumps([{
+        "amount": _NOT_FACTION_AMOUNT, "timing": "before_claim",
+        "controller_not_faction": "FactionAlpha, FactionCharlie",
+        "condition": {"type": "holds_zone"},
+    }]))
+    _ui_set_gain_rules(page, only_faction_config_id, json.dumps([{
+        "amount": _ONLY_FACTION_AMOUNT, "timing": "before_claim",
+        "controller_faction": ["FactionAlpha"],
+        "condition": {"type": "holds_zone"},
+    }]))
+
+    beta_before, beta_rule_lines_before = ui_read_ressources_page(page, beta_id)
     ressources_before, rule_lines_before = ui_read_ressources_page(page, alpha_id)
 
     end_turn(page, PHP_BASE_URL)
 
+    beta_after, _ = ui_read_ressources_page(page, beta_id)
     ressources_after, _ = ui_read_ressources_page(page, alpha_id)
     results = {
         key: int(ressources_after[name]["Montant utilisable"])
@@ -303,11 +332,17 @@ def shared_gain_results(browser, load_test_config):
         "rule_lines_before": rule_lines_before,
         "claimed_zone_id": claimed_zone_id,
         "held_only_zone_id": investigation_zone_id,
+        "beta_before": beta_before,
+        "beta_after": beta_after,
+        "beta_rule_lines_before": beta_rule_lines_before,
     })
 
     for key in _ZONE_RESOURCES:
         _ui_set_gain_rules(page, config_ids[key], None)
     _ui_set_gain_rules(page, claims_zone_config_id, None)
+    _ui_set_gain_rules(page, not_faction_config_id, None)
+    _ui_set_gain_rules(page, only_faction_config_id, None)
+    _ui_set_zone_holder(page, beta_zone_id, None, beta_id)
     _ui_set_zone_holder(page, investigation_zone_id, None)
     _ui_set_zone_holder(page, claimed_zone_id, None)
     for zid in count_style_zone_ids:
@@ -510,6 +545,70 @@ class TestRessourcesPageEstimate:
             f"the kept stock is not part of the estimate ({rollable_estimate} vs next stock {rollable_after})"
         assert _cell(shared_gain_results, "before", "Silver", self._header) == "+0", \
             "Silver has neither end_turn_gain nor rule: it announces +0"
+
+
+class TestRessourcesPageZoneNameRuleText:
+    """A `holds_zone` rule scoped by `zone_name` names its zone on the
+    Ressources page, like a `zone_id` rule shows its id. TestConfig's Diamond
+    carries `{type: holds_zone, zone_name: "Gamma-Claims"}` and Alpha holds
+    Gamma-Claims from the CSV: its line reads « pour le zone tenu
+    (Gamma-Claims) » with a count of 1, not the generic « par zone tenu »."""
+
+    def test_zone_name_rule_line_names_the_zone(self, shared_gain_results):
+        lines = [text for text in shared_gain_results["rule_lines_before"] if "(Gamma-Claims)" in text]
+        assert len(lines) == 1, (
+            f"Diamond's zone_name rule must name Gamma-Claims once, got {lines} "
+            f"among {shared_gain_results['rule_lines_before']}"
+        )
+        assert lines[0].startswith("+1 pour le zone tenu (Gamma-Claims)") and "× 1 = +1" in lines[0], \
+            f"the held named zone counts once, got {lines[0]}"
+
+
+def _faction_rule_lines(rule_lines, amount):
+    """The Ressources page lines of the rule worth `amount` (unique in this module)."""
+    return [text for text in rule_lines if text.startswith(f"+{amount} ")]
+
+
+class TestRessourceGainFactionFilters:
+    """`controller_faction` / `controller_not_faction` at rule level, like the
+    power rule keys of the same name: a rule refused to a controller's real
+    faction is neither paid at the end of turn nor announced on its Ressources
+    page (no rule line, no estimate), while the other faction gets both.
+    Alpha (FactionAlpha) holds 5 zones, Beta (FactionBeta) holds Delta-Disputed.
+    Without the filter, Alpha would gain 13 × 5 and Beta 17 × 1."""
+
+    _header = "Estimation tour +1"
+
+    def test_not_faction_refuses_the_listed_faction(self, shared_gain_results):
+        beta_lines = _faction_rule_lines(shared_gain_results["beta_rule_lines_before"], _NOT_FACTION_AMOUNT)
+        assert len(beta_lines) == 1 and "× 1 =" in beta_lines[0], \
+            f"Beta is not listed: its held zone must be announced once, got {beta_lines}"
+        assert shared_gain_results["beta_before"][_NOT_FACTION][self._header] == f"+{_NOT_FACTION_AMOUNT}"
+        assert int(shared_gain_results["beta_after"][_NOT_FACTION]["Montant utilisable"]) == _NOT_FACTION_AMOUNT, \
+            "Beta is not listed: the end of turn must pay it 13 × 1"
+
+        alpha_lines = _faction_rule_lines(shared_gain_results["rule_lines_before"], _NOT_FACTION_AMOUNT)
+        assert alpha_lines == [], f"FactionAlpha is listed: no rule line may be announced, got {alpha_lines}"
+        assert _cell(shared_gain_results, "before", _NOT_FACTION, self._header) == "+0", \
+            "FactionAlpha is listed: the estimate must announce +0"
+        got = int(_cell(shared_gain_results, "after", _NOT_FACTION, "Montant utilisable"))
+        assert got == 0, f"FactionAlpha is listed: the end of turn must pay nothing, got {got}"
+
+    def test_faction_reserves_the_rule_to_the_listed_faction(self, shared_gain_results):
+        expected = _ONLY_FACTION_AMOUNT * TestRessourceGainAfterClaimCountStyle._expected_zone_count
+        alpha_lines = _faction_rule_lines(shared_gain_results["rule_lines_before"], _ONLY_FACTION_AMOUNT)
+        assert len(alpha_lines) == 1 and f"= +{expected}" in alpha_lines[0], \
+            f"FactionAlpha is listed: its rule line must announce +{expected}, got {alpha_lines}"
+        assert _cell(shared_gain_results, "before", _ONLY_FACTION, self._header) == f"+{expected}"
+        got = int(_cell(shared_gain_results, "after", _ONLY_FACTION, "Montant utilisable"))
+        assert got == expected, f"FactionAlpha is listed: the end of turn must pay {expected}, got {got}"
+
+        beta_lines = _faction_rule_lines(shared_gain_results["beta_rule_lines_before"], _ONLY_FACTION_AMOUNT)
+        assert beta_lines == [], f"FactionBeta is not listed: no rule line may be announced, got {beta_lines}"
+        assert shared_gain_results["beta_before"][_ONLY_FACTION][self._header] == "+0", \
+            "FactionBeta is not listed: the estimate must announce +0"
+        got = int(shared_gain_results["beta_after"][_ONLY_FACTION]["Montant utilisable"])
+        assert got == 0, f"FactionBeta is not listed: the end of turn must pay nothing, got {got}"
 
 
 # --- Shared location-based batch: one end-of-turn for 2 @pytest.mark.db classes
