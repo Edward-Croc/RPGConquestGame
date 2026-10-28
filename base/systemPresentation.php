@@ -75,7 +75,7 @@ foreach (['ENQUETE_ZONE_BONUS' => "d'enquête", 'ATTACK_ZONE_BONUS' => "d'attaqu
         $zoneBonusParts[] = sprintf('%s%d %s', $configInt($zoneBonusKey) > 0 ? '+' : '−', abs($configInt($zoneBonusKey)), $zoneBonusLabel);
     }
 }
-$zoneBonusText = empty($zoneBonusParts) ? '' : ' et quand votre faction tient le ' . htmlspecialchars($zoneType) . ' où se situe l\'agent, il gagne ' . $joinWithAnd($zoneBonusParts) . '.';
+$zoneBonusText = empty($zoneBonusParts) ? '' : ' et, quand votre faction tient le ' . htmlspecialchars($zoneType) . ' où se situe l\'agent, il gagne ' . $joinWithAnd($zoneBonusParts);
 // What an action gives on one axis : a die and the bonus when active on that axis, else the fixed value and the bonus added up.
 $actionFormula = function (string $axis, string $action, string $characteristic, int $bonus = 0) use ($gameReady, $die, $passiveVal, $flatBonus): string {
     $activeActions = explode(',', str_replace("'", '', (string) getConfig($gameReady, 'active' . $axis . 'Actions')));
@@ -152,7 +152,7 @@ Un tour de jeu s'appelle ici un <strong><?= htmlspecialchars($timeValue) ?></str
 <?= guideCaptureFigure($captureSet, 'agent', "Les actions d'un agent") ?>
 <p>Chaque agent fait <strong>une seule action</strong> par <?= htmlspecialchars($timeValue) ?>, dans son <?= htmlspecialchars($zoneType) ?>.
 Ci-dessous, la valeur totale est celle que l'agent obtient pour le <?= htmlspecialchars($timeValue) ?>. Elle est calculée à partir des caractéristiques fixes de l'agent (enquête, attaque, défense).
-Une action passive y ajoute une valeur fixe de <?= $passiveVal ?>, une action active <?= htmlspecialchars($die) ?>. Le nombre écrit comprend aussi le bonus propre à l'action.<?= $zoneBonusText ?></p>
+Une action passive y ajoute une valeur fixe de <?= $passiveVal ?>, une action active <?= htmlspecialchars($die) ?>. Le nombre écrit comprend aussi le bonus propre à l'action<?= $zoneBonusText ?>.</p>
 <p><strong>Actions de surveillance :</strong></p>
 <ul>
   <li><strong><?= htmlspecialchars($labelInvestigate) ?> : valeur d'enquête = <?= $actionFormula('Investigate', 'investigate', 'enquête') ?>.</strong> L'agent cherche activement les agents et les lieux secrets.</li>
