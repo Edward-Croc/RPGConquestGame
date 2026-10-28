@@ -75,7 +75,7 @@ foreach (['ENQUETE_ZONE_BONUS' => "d'enquête", 'ATTACK_ZONE_BONUS' => "d'attaqu
         $zoneBonusParts[] = sprintf('%s%d %s', $configInt($zoneBonusKey) > 0 ? '+' : '−', abs($configInt($zoneBonusKey)), $zoneBonusLabel);
     }
 }
-$zoneBonusText = empty($zoneBonusParts) ? '' : ' Quand votre faction tient le ' . htmlspecialchars($zoneType) . ' de l\'agent, ses valeurs gagnent ' . $joinWithAnd($zoneBonusParts) . '.';
+$zoneBonusText = empty($zoneBonusParts) ? '' : ' et, quand votre faction tient le ' . htmlspecialchars($zoneType) . ' où se situe l\'agent, il gagne ' . $joinWithAnd($zoneBonusParts);
 // What an action gives on one axis : a die and the bonus when active on that axis, else the fixed value and the bonus added up.
 $actionFormula = function (string $axis, string $action, string $characteristic, int $bonus = 0) use ($gameReady, $die, $passiveVal, $flatBonus): string {
     $activeActions = explode(',', str_replace("'", '', (string) getConfig($gameReady, 'active' . $axis . 'Actions')));
@@ -151,8 +151,8 @@ Un tour de jeu s'appelle ici un <strong><?= htmlspecialchars($timeValue) ?></str
 <h4 class="title is-5">L'action prévue en fin de <?= htmlspecialchars($timeValue) ?>, et où</h4>
 <?= guideCaptureFigure($captureSet, 'agent', "Les actions d'un agent") ?>
 <p>Chaque agent fait <strong>une seule action</strong> par <?= htmlspecialchars($timeValue) ?>, dans son <?= htmlspecialchars($zoneType) ?>.
-À gauche du signe =, la valeur que l'agent obtient pour le <?= htmlspecialchars($timeValue) ?>. À droite, « enquête », « attaque » et « défense » sont ses caractéristiques.
-Une action passive y ajoute une valeur fixe de <?= $passiveVal ?>, une action active <?= htmlspecialchars($die) ?>. Le nombre écrit comprend aussi le bonus propre à l'action.<?= $zoneBonusText ?></p>
+Ci-dessous, la valeur totale est celle que l'agent obtient pour le <?= htmlspecialchars($timeValue) ?>. Elle est calculée à partir des caractéristiques fixes de l'agent (enquête, attaque, défense).
+Une action passive y ajoute une valeur fixe de <?= $passiveVal ?>, une action active <?= htmlspecialchars($die) ?>. Le nombre écrit comprend aussi le bonus propre à l'action<?= $zoneBonusText ?>.</p>
 <p><strong>Actions de surveillance :</strong></p>
 <ul>
   <li><strong><?= htmlspecialchars($labelInvestigate) ?> : valeur d'enquête = <?= $actionFormula('Investigate', 'investigate', 'enquête') ?>.</strong> L'agent cherche activement les agents et les lieux secrets.</li>
@@ -298,7 +298,7 @@ Vous <strong>choisissez</strong> aussi l'action de chaque agent, mais rien n'en 
 <ul>
   <li>la caractéristique, c'est-à-dire les bonus de ses capacités ;</li>
   <li>pour l'action active du <?= htmlspecialchars($timeValue) ?>, un dé de <?= $minRoll ?> à <?= $maxRoll ?>, sinon une valeur fixe de <?= $passiveVal ?> ;</li>
-  <li>un bonus quand votre faction tient le <?= htmlspecialchars($zoneType) ?> ;</li>
+  <?php if (!empty($zoneBonusParts)) { ?><li>un bonus quand votre faction tient le <?= htmlspecialchars($zoneType) ?> : <?= $joinWithAnd($zoneBonusParts) ?> ;</li><?php } ?>
   <li>un bonus propre à certaines actions (se cacher, défendre un lieu).</li>
 </ul>
 <p>Les valeurs du <?= htmlspecialchars($timeValue) ?> sont écrites dans le rapport de l'agent. Plus un agent est ancien,
