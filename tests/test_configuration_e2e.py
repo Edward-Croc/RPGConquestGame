@@ -225,10 +225,13 @@ class TestGuideRules:
                 "an active action should show the die, followed by its bonus with its sign"
             # The bonus of a held zone (DEFENCE_ZONE_BONUS 1 by default) is named under the formulas, and only when set.
             assert "ses valeurs gagnent +1 de défense." in page_text, "the held-zone defence bonus should be named"
+            assert "un bonus quand votre faction tient le zone : +1 de défense ;" in page_text, \
+                "the rules should give the held-zone bonus values"
             set_config_via_ui(gm_session, "DEFENCE_ZONE_BONUS", "0", base_url=base_url)
             safe_goto(gm_session, f"{base_url}/base/systemPresentation.php")
             page_text = " ".join(gm_session.locator("body").text_content().split())
             assert "ses valeurs gagnent" not in page_text, "with no zone bonus, no sentence should name one"
+            assert "un bonus quand votre faction tient le" not in page_text, "with no zone bonus, the rules should not list one"
         finally:
             set_config_via_ui(gm_session, "DEFENCE_ZONE_BONUS", "1", base_url=base_url)
             set_config_via_ui(gm_session, "claimMode", "worker", base_url=base_url)
