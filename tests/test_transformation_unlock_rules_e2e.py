@@ -40,7 +40,7 @@ from helpers import (
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
     login_as, ui_transform_options, ui_transform_click,
     ui_teach_discipline_options, ui_worker_id, get_db_connection,
-    ui_controller_id, ui_workers_by_lastname, ui_select_option_id, ui_read_ressources_page,)
+    ui_controller_id, ui_workers_by_lastname, ui_select_option_id, ui_read_ressources_page, ui_zone_id,)
 
 
 @pytest.fixture(scope="session")
@@ -590,7 +590,7 @@ def recruitment_cost(browser):
     - Delta's player sends the perfect-agent marker, which it is not entitled to ;
     - the gm with Beta selected uses the perfect-agent form for Echo.
 
-    Alpha and Beta use the regular recruitment (start_workers=1 at turn 0),
+    Alpha and Beta build their base, then use the regular recruitment (start_workers=1 at turn 0),
     their first-come allowance being spent by TestControllerNotFaction ;
     Echo and Delta use their first-come allowance."""
     state = {}
@@ -611,6 +611,9 @@ def recruitment_cost(browser):
         alpha_context = browser.new_context(); contexts.append(alpha_context)
         alpha = alpha_context.new_page()
         login_as(alpha, PHP_BASE_URL, "single_player", "test")
+        # Recruiting a servant needs a base : Alpha and Beta build theirs first.
+        zones = {name: ui_zone_id(gm, name, base_url=PHP_BASE_URL) for name in ("Epsilon-Controlled", "Zeta-Unclaimed")}
+        safe_goto(alpha, f"{PHP_BASE_URL}/controllers/action.php?createBase=1&controller_id={ids['Alpha']}&zone_id={zones['Epsilon-Controlled']}")
         state["alpha_gold_before"] = _gold(alpha)
         safe_goto(alpha, f"{PHP_BASE_URL}/workers/new.php?recrutement=true")
         offered = _offered_on_recruitment(alpha)
@@ -656,6 +659,7 @@ def recruitment_cost(browser):
         beta = beta_context.new_page()
         ensure_gm_login(beta, PHP_BASE_URL)
         safe_goto(beta, f"{PHP_BASE_URL}/base/accueil.php?controller_id={ids['Beta']}&chosir=Choisir")
+        safe_goto(beta, f"{PHP_BASE_URL}/controllers/action.php?createBase=1&controller_id={ids['Beta']}&zone_id={zones['Zeta-Unclaimed']}")
         safe_goto(beta, f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={ids['Beta']}")
         state["beta_offered"] = set(_offered_on_recruitment(beta))
         beta_lastname = _form_lastname(beta)
@@ -758,12 +762,19 @@ class TestRecruitmentCost:
         assert recruitment_cost["beta_transformation_status"] == 403, \
             f"no agent to show: expected 403, got {recruitment_cost['beta_transformation_status']}"
 
-    @pytest.mark.parametrize("field", ["discipline", "hobby"])
-    def test_transformation_smuggled_in_another_field_is_refused(self, recruitment_cost, field):
+    @staticmethod
+    def _assert_smuggling_refused(recruitment_cost, field):
         assert recruitment_cost[f"beta_rows_after_{field}"] == [], \
             f"a transformation id posted as {field} must create no agent"
         assert "Ce pouvoir n'est pas disponible" in recruitment_cost[f"beta_{field}_html"]
         assert recruitment_cost[f"beta_{field}_status"] == 403
+
+    # Two plain tests rather than a parametrized one : pytest would rebuild the class fixture for the second value.
+    def test_transformation_smuggled_as_discipline_is_refused(self, recruitment_cost):
+        self._assert_smuggling_refused(recruitment_cost, "discipline")
+
+    def test_transformation_smuggled_as_hobby_is_refused(self, recruitment_cost):
+        self._assert_smuggling_refused(recruitment_cost, "hobby")
 
     def test_real_discipline_still_recruits(self, recruitment_cost):
         assert len(recruitment_cost["beta_rows_after_real"]) == 1, \

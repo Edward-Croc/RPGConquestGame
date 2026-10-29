@@ -357,6 +357,14 @@ def recruitment_scenario(browser):
     _snapshot['alpha_t0_before_base_html'] = _workers_page_html(page, 'Alpha')
     # Charlie has no base and no start_workers
     _snapshot['charlie_t0_html'] = _workers_page_html(page, 'Charlie')
+    # Charlie forges the URLs its hidden buttons would use : a first comer and a base.
+    charlie_cid = ui_controller_id(page, 'Charlie')
+    _switch_controller(page, 'Charlie')
+    safe_goto(page, f"{PHP_BASE_URL}/workers/new.php?first_come=true&controller_id={charlie_cid}")
+    _snapshot['charlie_first_come_html'] = page.content()
+    _create_base(page, 'Charlie', 'Gamma-Claims')
+    _snapshot['charlie_forged_base_html'] = page.content()
+    _snapshot['charlie_after_forged_base_accueil_html'] = _accueil_html(page, 'Charlie')
 
     # Phase 2: Alpha uses first-come (no base required).
     # First first-come in this file → exercised via the UI button on
@@ -441,6 +449,12 @@ def recruitment_scenario(browser):
 
     _snapshot['alpha_t1_before_counters'] = ui_controller_counters(page, 'Alpha')
     _snapshot['alpha_t1_before_html'] = _workers_page_html(page, 'Alpha')
+
+    # From turn 1 the counters allow Charlie a recruitment, but Charlie has no base : the forged URL must be refused.
+    charlie_cid = ui_controller_id(page, 'Charlie')
+    _switch_controller(page, 'Charlie')
+    safe_goto(page, f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={charlie_cid}")
+    _snapshot['charlie_t1_forged_recruit_html'] = page.content()
 
     # Recruit again on turn 1 (both paths)
     _do_first_come(page, 'Alpha')
@@ -782,6 +796,23 @@ class TestCharlieCannotRecruit:
         """Charlie should not have the recruit button."""
         html = _snapshot['charlie_t0_html']
         assert "Recruter un serviteur" not in html
+
+    def test_forged_recruitment_without_a_base_is_refused(self):
+        """The recruitment page itself refuses a faction without a base, the first comer stays open to it.
+
+        On turn 1 the counters allow Charlie a recruitment, but Charlie has no base."""
+        assert "Le recrutement n'est pas permis" in _snapshot['charlie_t1_forged_recruit_html'], \
+            "a forged recruitment URL must be refused to a faction without a base"
+        assert "Recruter et Affecter" not in _snapshot['charlie_t1_forged_recruit_html']
+        assert "Recruter et Affecter" in _snapshot['charlie_first_come_html'], \
+            "the first comer needs no base and must stay open to Charlie"
+
+    def test_forged_base_without_the_right_is_refused(self):
+        """createBase refuses a faction whose can_build_base is 0, and no base appears."""
+        assert "Cette faction ne peut pas construire." in _snapshot['charlie_forged_base_html'], \
+            "a forged createBase URL must be refused to a faction that cannot build"
+        assert "Fortress of" not in _snapshot['charlie_after_forged_base_accueil_html'], \
+            "Charlie must still have no base after the forged createBase"
 
 
 # ---------------------------------------------------------------------------
