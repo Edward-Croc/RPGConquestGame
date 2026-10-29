@@ -23,7 +23,6 @@ if (empty($_SESSION['is_privileged']) && (int) $controller_id !== (int) ($_SESSI
 }
 
 $controllerValues = getControllers($gameReady, null, $controller_id);
-$recrutment_allowed = true;
 
 $buttonClicked = 'first_come';
 $pageTitle = 'Recruter le premier venu';
@@ -38,21 +37,13 @@ if ($_SESSION['DEBUG'] == true) {
     .'</p>';
 }
 
+// The same checks as the buttons of the agents page : a recruitment needs a base, the first comer does not.
 if (isset($_GET['recrutement'])) {
     $buttonClicked = 'recrutement';
     $pageTitle = "Recrutement d'un Agent";
-    if (!((
-        ((int)$mechanics['turncounter'] == 0) && ((int)$controllerValues[0]['turn_recruited_workers'] < (int)$controllerValues[0]['start_workers'])
-    ) || (
-        ((int)$mechanics['turncounter'] > 0) && ((int)$controllerValues[0]['turn_recruited_workers'] < (int)getConfig($gameReady, 'turn_recrutable_workers'))
-    ))
-    ) {
-        $recrutment_allowed = false;
-    }
+    $recrutment_allowed = canStartRecrutement($gameReady, $controller_id, (int)$mechanics['turncounter']);
 } else {
-    if (!((int)$controllerValues[0]['turn_firstcome_workers'] < (int)getConfig($gameReady, 'turn_firstcome_workers'))) {
-        $recrutment_allowed = false;
-    }
+    $recrutment_allowed = canStartFirstCome($gameReady, $controller_id);
 }
 if (!$recrutment_allowed) {
     require_once '../base/baseHTML.php';

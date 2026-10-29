@@ -706,6 +706,11 @@ sans tel lieu reste en `passive`. Un défenseur continue d'enquêter, et
 n'applique la garde de propriété qu'à celles-ci : une lecture reste possible sur
 un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 
+Un droit qui cache un bouton est revérifié par l'action elle-même. `createBase`
+refuse une faction dont `can_build_base` ne l'autorise pas, avant toute dépense.
+`workers/new.php` reprend `canStartRecrutement` (une base est exigée) et
+`canStartFirstCome`, les mêmes contrôles que les boutons de la page des agents.
+
 `workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
 est dans `INACTIVE_ACTIONS`, avec une exception pour une requête qui ne porte que
 `transform`, sur un mort ou sur la trace d'un agent mort — la résurrection (voir

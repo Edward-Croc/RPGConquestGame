@@ -279,6 +279,14 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
         }
     }
 
+    // Only a faction allowed to build may build, read before any spending.
+    $controllers = getControllers($pdo, null, $controller_id);
+    if (empty($controllers[0]['can_build_base'])) {
+        game_error_log(__FUNCTION__, 'Base refused to a controller that cannot build one', ['controller_id' => $controller_id], 'warning');
+        echo "Cette faction ne peut pas construire.<br />";
+        return false;
+    }
+
     // Refused before spending, so a replay costs nothing.
     $baseAlreadyExists = null;
     try {
@@ -306,7 +314,6 @@ function createBase(PDO $pdo, int $controller_id, int $zone_id): bool
         return false;
     }
 
-    $controllers = getControllers($pdo, null, $controller_id);
     $controller_name = $controllers[0]['firstname']. ' '. $controllers[0]['lastname'];
     game_error_log(__FUNCTION__, 'controller_name : ' . $controller_name, [], 'debug');
 
