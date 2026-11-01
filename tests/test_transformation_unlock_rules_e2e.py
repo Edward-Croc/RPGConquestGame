@@ -605,6 +605,7 @@ def recruitment_cost(browser):
         power_ids = {
             "War Gear": ui_select_option_id(gm, f"{perfect} select#transformationSelect", "War Gear"),
             "Focused Mind": ui_select_option_id(gm, f"{perfect} select#disciplineSelect", "Focused Mind"),
+            "Offensive Stance": ui_select_option_id(gm, f"{perfect} select#disciplineSelect", "Offensive Stance"),
         }
 
         # Alpha, as its player, picks Test_Gold_Recruit in the form and submits it.
@@ -667,6 +668,7 @@ def recruitment_cost(browser):
             "transformation": _recruit_url(beta, transformation=offered["Test_Not_Beta"]),
             "discipline": _recruit_url(beta, discipline=str(power_ids["War Gear"])),
             "hobby": _recruit_url(beta, power_hobby_id=str(power_ids["War Gear"])),
+            "foreign_discipline": _recruit_url(beta, discipline=str(power_ids["Offensive Stance"])),
         }
         real_discipline = _recruit_url(beta, discipline=str(power_ids["Focused Mind"]))
         for field, url in forged.items():
@@ -775,6 +777,13 @@ class TestRecruitmentCost:
 
     def test_transformation_smuggled_as_hobby_is_refused(self, recruitment_cost):
         self._assert_smuggling_refused(recruitment_cost, "hobby")
+
+    def test_discipline_of_another_faction_is_refused(self, recruitment_cost):
+        """Offensive Stance belongs to FactionAlpha : Beta's recruitment page does not offer it."""
+        assert recruitment_cost["beta_rows_after_foreign_discipline"] == [], \
+            "a discipline the page does not offer to Beta must create no agent"
+        assert "Cette discipline n'est plus disponible" in recruitment_cost["beta_foreign_discipline_html"]
+        assert recruitment_cost["beta_foreign_discipline_status"] == 403
 
     def test_real_discipline_still_recruits(self, recruitment_cost):
         assert len(recruitment_cost["beta_rows_after_real"]) == 1, \

@@ -86,6 +86,14 @@ if (isset($_GET['creation'])) {
             $recruitAllowed = false;
         }
     }
+    // A player gets only a discipline the recruitment page offers to that faction.
+    $postedDiscipline = $_GET['discipline'] ?? null;
+    if ($recruitAllowed && !$recruitUnchecked && !empty($postedDiscipline) && $postedDiscipline != "\'\'") {
+        if (findOfferedPower(getPowersByType($gameReady, '3', $recruit_controller_id, true), $postedDiscipline) === null) {
+            echo "Cette discipline n'est plus disponible.<br />";
+            $recruitAllowed = false;
+        }
+    }
     $linkPowerTypeId = $_GET['transformation'] ?? null;
     // A player gets only a transformation the recruitment page offers, and pays its cost.
     if ($recruitAllowed && !$recruitUnchecked && !empty($linkPowerTypeId)) {
@@ -493,7 +501,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $candidates = getPowersByType($gameReady, '3', $session_controller_id, true);
             $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates, $session_controller_id, $worker_id, $turn, 'on_age');
             $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
-            if ($matchedPower === null) {
+            // The sheet offers a discipline only while a slot is free : the request is checked the same way.
+            $workers = getWorkers($gameReady, [(int) $worker_id]);
+            $evolutions = empty($workers) ? [] : getWorkerEvolutions($gameReady, $workers[0], (int) $session_controller_id, (int) $turn, false);
+            if ($matchedPower === null || empty($evolutions['canTeachDiscipline'])) {
                 echo "Cette discipline n'est plus disponible.<br />";
             } else {
                 upgradeWorker($gameReady, $worker_id, $linkPowerTypeId);
