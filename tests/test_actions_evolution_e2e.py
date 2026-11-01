@@ -39,7 +39,7 @@ from helpers import (
     register_php_error_listener, assert_no_collected_php_errors,
     ui_teach_button_visible, ui_teach_discipline_options,
     ui_transform_options, ui_teach_discipline_click, ui_transform_click,
-    end_turn,
+    end_turn, login_as, ui_worker_id, ui_select_option_id,
 )
 
 
@@ -95,6 +95,19 @@ def evolution_state(browser):
     ui_teach_discipline_click(page, "Transform_Subject", "Focused Mind")
     after_teach_click = set(ui_teach_discipline_options(page, "Transform_Subject"))
 
+    # --- Phase 3: the only slot is taken, Alpha's player forges a second teaching ---
+    worker_id = ui_worker_id(page, "Transform_Subject")
+    safe_goto(page, f"{PHP_BASE_URL}/admin/admin.php")
+    offensive_id = ui_select_option_id(page, "form:has(input[name='perfect_worker']) select#disciplineSelect", "Offensive Stance")
+    player_context = browser.new_context()
+    player = player_context.new_page()
+    login_as(player, PHP_BASE_URL, "single_player", "test")
+    safe_goto(player, f"{PHP_BASE_URL}/workers/action.php?worker_id={worker_id}&discipline={offensive_id}&teach_discipline=Enseigner")
+    forged_teach_html = player.content()
+    safe_goto(player, f"{PHP_BASE_URL}/workers/action.php?worker_id={worker_id}")
+    sheet_after_forged_teach = " ".join(player.locator("body").text_content().split())
+    player_context.close()
+
     assert_no_collected_php_errors(page)
     context.close()
 
@@ -106,6 +119,8 @@ def evolution_state(browser):
         "age2_teach_visible_subject": age2_teach_visible_subject,
         "age2_teach_options_subject": age2_teach_options_subject,
         "after_teach_click": after_teach_click,
+        "forged_teach_html": forged_teach_html,
+        "sheet_after_forged_teach": sheet_after_forged_teach,
     }
 
 
@@ -188,6 +203,16 @@ class TestTeachAtAgeTwo:
             f"Alpha teach dropdown must NOT include Beta's "
             f"'Defensive Posture'; got {opts}"
         )
+
+    def test_forged_teaching_without_a_free_slot_is_refused(self, evolution_state):
+        """Once its only slot holds Focused Mind, Transform_Subject cannot be
+        taught Offensive Stance by a hand-made URL, although its rules allow it."""
+        assert "Cette discipline n'est plus disponible" in evolution_state["forged_teach_html"], \
+            "a teaching with no free slot must be refused"
+        assert "Focused Mind" in evolution_state["sheet_after_forged_teach"], \
+            "the sheet should still show the discipline taught in the free slot"
+        assert "Offensive Stance" not in evolution_state["sheet_after_forged_teach"], \
+            "the agent must not gain a discipline beyond its slots"
 
     def test_teach_click_persists_focused_mind(self, evolution_state):
         """After teaching Focused Mind, the worker possesses it;

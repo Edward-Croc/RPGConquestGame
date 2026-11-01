@@ -445,7 +445,8 @@ Ce qu'un agent peut recevoir est calculé en un seul endroit,
 `getWorkerEvolutions()` (`workers/functions.php`) : une place de discipline libre,
 les transformations éligibles, ou une résurrection. La fiche de l'agent en tire son
 bloc « Evolutions », et la carte courte (`showWorkerShort`) ses marques : `#` pour une
-discipline à enseigner, `+` pour une transformation ou une résurrection.
+discipline à enseigner, `+` pour une transformation ou une résurrection. L'action
+`teach_discipline` reprend la même place libre avant d'enseigner.
 
 Une **trace** permet à l'ancien maître de ramener l'agent qu'il a donné, une fois
 celui-ci mort chez son nouveau maître. `getDeadTracePrimaryWorkerId()` remonte de la
