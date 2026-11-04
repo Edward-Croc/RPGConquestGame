@@ -30,6 +30,8 @@ VALUES
     ('first_come_origin_list', 'rand', 'Origins used for worker generation'),
     ('recrutement_nb_choices', '3', 'Number of choices presented for recrutment'),
     ('recrutement_origin_list', '1,2,3,4,5', 'Origins used for worker generation'),
+    ('recruitCarryMode', 'newest_agent', 'Candidate kept from one turn to the next: random, newest_agent or chosen'),
+    ('recruitMissingCandidates', 'generate', 'Draw the missing candidates when some are stored: generate or do_nothing'),
     ('local_origin_list', '1', 'Spécific list of local origins for investigations texts'),
     ('recrutement_disciplines', '1', 'Number of disciplines allowed on recrutment'),
     ('recrutement_transformation', '{"action": "check"}', 'Json string calibrating transformations allowed on recrutment'),
