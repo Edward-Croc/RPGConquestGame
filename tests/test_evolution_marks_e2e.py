@@ -63,39 +63,35 @@ def marks(browser):
         clear_ui_caches()
 
 
-def _symbols(entries) -> list:
-    return [symbol for symbol, _title in entries]
-
-
 class TestEvolutionMarks:
     def test_living_agent_marks_an_available_transformation(self, marks):
-        assert _symbols(marks["default"]["Searcher_1"]) == ["+"], \
-            f"a living agent with transformations open should carry « + » only, got {marks['default']['Searcher_1']}"
+        assert marks["default"]["Searcher_1"] == [("↑", "Disponible : Test transformation power type")], \
+            f"a living agent with transformations open should carry one « ↑ » naming the transformation, got {marks['default']['Searcher_1']}"
 
     def test_dead_agent_marks_a_raising(self, marks):
-        assert marks["default"]["Revenant_Dead"] == [("+", "Peut être relevé.e")], \
+        assert marks["default"]["Revenant_Dead"] == [("↑", "Peut être relevé.e")], \
             f"a dead agent that can be raised should say so, got {marks['default']['Revenant_Dead']}"
 
     def test_agent_with_nothing_open_carries_no_mark(self, marks):
         assert marks["default"]["Revenant_Twice"] == [], \
             f"a dead agent already raised once has nothing open, got {marks['default']['Revenant_Twice']}"
 
-    def test_free_discipline_slot_marks_a_hash(self, marks):
-        assert _symbols(marks["one_slot"]["Searcher_1"]) == ["#", "+"], \
-            f"with a free discipline slot the agent should carry « # » then « + », got {marks['one_slot']['Searcher_1']}"
+    def test_free_discipline_slot_marks_an_arrow(self, marks):
         assert marks["one_slot"]["Searcher_1"] == [
-            ("#", "Disponible : Test discipline power type"),
-            ("+", "Disponible : Test transformation power type"),
-        ], f"each mark names what is available, got {marks['one_slot']['Searcher_1']}"
-        assert _symbols(marks["one_slot"]["Chain_A"]) == ["+"], \
-            f"an agent whose slot is taken carries no « # », got {marks['one_slot']['Chain_A']}"
+            ("↑", "Disponible : Test discipline power type"),
+            ("↑", "Disponible : Test transformation power type"),
+        ], f"with a free discipline slot the agent carries two « ↑ », each naming what is available, got {marks['one_slot']['Searcher_1']}"
+        assert marks["one_slot"]["Chain_A"] == [("↑", "Disponible : Test transformation power type")], \
+            f"an agent whose slot is taken carries no discipline mark, got {marks['one_slot']['Chain_A']}"
 
     def test_dead_agent_is_taught_no_discipline(self, marks):
-        assert "#" not in _symbols(marks["one_slot"]["Revenant_Dead"]), "a dead agent is taught no discipline"
+        assert all("discipline" not in title for _symbol, title in marks["one_slot"]["Revenant_Dead"]), "a dead agent is taught no discipline"
+        assert marks["one_slot"]["Revenant_Dead"] == [("↑", "Peut être relevé.e")], \
+            f"positive anchor: the dead agent still carries its raising mark, got {marks['one_slot']['Revenant_Dead']}"
 
     def test_marks_follow_the_transformation_switch(self, marks):
-        assert _symbols(marks["no_transformation"]["Searcher_1"]) == ["#"], \
-            f"without age_transformation the « + » should go, the « # » stay, got {marks['no_transformation']['Searcher_1']}"
+        assert marks["no_transformation"]["Searcher_1"] == [("↑", "Disponible : Test discipline power type")], \
+            f"without age_transformation the transformation arrow should go, the discipline one stay, got {marks['no_transformation']['Searcher_1']}"
         assert marks["no_transformation"]["Revenant_Dead"] == [], "without age_transformation no raising is offered"
 
 
@@ -166,7 +162,7 @@ class TestTraceCard:
         assert trace_card["trace_of_living"]["marks"] == [], "the trace of a living agent offers nothing to raise"
 
     def test_trace_of_a_dead_agent_marks_its_raising(self, trace_card):
-        assert trace_card["trace_of_dead"]["marks"] == [("+", "Peut être relevé.e")], \
+        assert trace_card["trace_of_dead"]["marks"] == [("↑", "Peut être relevé.e")], \
             f"the trace of a dead agent should mark its raising, got {trace_card['trace_of_dead']['marks']}"
         assert "Test_Revenant" in trace_card["offered"], "the page the card links to offers the raising"
 
