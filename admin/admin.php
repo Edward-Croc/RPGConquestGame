@@ -156,7 +156,8 @@ echo sprintf('<form id="resetForm" action="/%s/admin/admin.php" method="post">',
                 <p> <a href="/%1$s/zones/management_locations.php">Discovered location list</a> </p>
                 <p> <a href="/%1$s/zones/management_bases.php">Attack on location log</a> </p>
                 <p> <a href="/%1$s/workers/management_combat.php">Agent combat log</a> </p>
-                <p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>',
+                <p> <a href="/%1$s/workers/management_workers.php">Worker list</a> </p>
+                <p> <a href="/%1$s/workers/management_candidates.php">Recruitment candidates</a> </p>',
                     $_SESSION['FOLDER']
                 ); ?>
         </div>

@@ -15,9 +15,11 @@ Lock surface (see tests/AUDIT_issue_86.md for the full lock list):
   - `Test_Job_UnlockTurn_2` (metier_id type=2)
 
 Test driver: render `/workers/new.php?recrutement=true&controller_id=<alpha>` N
-times and scrape the resulting proposal HTML for the test power name. Each
-page renders `recrutement_nb_choices` proposals (=3 in minimalData) → 3 rolls
-per page for each of hobby + metier. With N_VISITS=35 page-visits this gives
+times and scrape the resulting proposal HTML for the test power name. The page
+offers stored candidates and only draws when none are stored, so the stored
+candidates are deleted before each visit to force a fresh draw. Each draw
+stores `recrutement_nb_choices` candidates (=3 in minimalData) → 3 rolls per
+page for each of hobby + metier. With N_VISITS=35 page-visits this gives
 ~105 rolls per power type.
 
 Alpha is used (start_workers=1, can_build_base=1). A base is created in the
@@ -95,16 +97,12 @@ def _db():
     return get_db_connection()
 
 
-def _reset_recruit_counter(cid):
-    """workers/new.php increments turn_recruited_workers on every render.
-    Reset to 0 between visits so subsequent renders stay within
-    start_workers / turn_recrutable_workers limits."""
+def _delete_stored_candidates():
+    """workers/new.php offers the stored candidates and draws only when none
+    are stored. Delete them all between visits so every render draws a fresh
+    set."""
     conn = _db(); cur = conn.cursor()
-    cur.execute(
-        f"UPDATE `{GAME_PREFIX}controllers` SET turn_recruited_workers = 0 "
-        f"WHERE id = %s",
-        (cid,),
-    )
+    cur.execute(f"DELETE FROM `{GAME_PREFIX}recruit_candidates`")
     conn.commit()
     cur.close(); conn.close()
 
@@ -113,9 +111,8 @@ def _count_rolls_containing(browser, needle, visits=N_VISITS):
     """Open workers/new.php as Alpha `visits` times. Return the number of
     times `needle` appears in the rendered HTML across all visits.
 
-    The recruit counter is reset before each visit so the form actually
-    renders proposals every time. Each render rolls randomPowersByType
-    independently."""
+    The stored candidates are deleted before each visit so every render
+    draws a fresh set, rolling randomPowersByType independently."""
     cid = _alpha_cid()
     ctx = browser.new_context()
     page = ctx.new_page()
@@ -124,7 +121,7 @@ def _count_rolls_containing(browser, needle, visits=N_VISITS):
     safe_goto(page, f"{PHP_BASE_URL}/base/accueil.php?controller_id={cid}&chosir=Choisir")
     hits = 0
     for _ in range(visits):
-        _reset_recruit_counter(cid)
+        _delete_stored_candidates()
         safe_goto(
             page,
             f"{PHP_BASE_URL}/workers/new.php?recrutement=true&controller_id={cid}"

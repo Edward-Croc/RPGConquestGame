@@ -249,6 +249,23 @@ CREATE TABLE {prefix}controller_worker (
 CREATE INDEX idx_controller_worker_controller_id ON {prefix}controller_worker (controller_id);
 CREATE INDEX idx_controller_worker_worker_id ON {prefix}controller_worker (worker_id);
 
+-- Recruitment candidates stored per controller and recruit type
+CREATE TABLE {prefix}recruit_candidates (
+    id SERIAL PRIMARY KEY,
+    controller_id INT NOT NULL,
+    recruit_type VARCHAR(255) NOT NULL, -- first_come or recrutement
+    turn_generated INT NOT NULL,
+    firstname TEXT NOT NULL,
+    lastname TEXT NOT NULL,
+    origin_id INT NOT NULL,
+    power_hobby_id INT, -- link_power_type id of the hobby
+    power_metier_id INT, -- link_power_type id of the metier
+    is_kept BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (controller_id) REFERENCES {prefix}controllers (id),
+    FOREIGN KEY (origin_id) REFERENCES {prefix}worker_origins (id)
+);
+CREATE INDEX idx_recruit_candidates_controller_id ON {prefix}recruit_candidates (controller_id);
+
 CREATE TABLE {prefix}power_types (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,

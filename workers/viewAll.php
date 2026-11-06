@@ -33,14 +33,16 @@ if (!empty($_SESSION['controller']) ||  !empty($controller_id)) {
     echo "<div class='section workers'>";
     $recruitButton = "";
     $recruitNotice = "";
-    if (canStartRecrutement($gameReady, $controller_id, (int)$mechanics['turncounter'])) {
+    // The recruitment page refuses the organiser until a faction is selected.
+    $recruitPageOpen = empty($_SESSION['is_privileged']) || !empty($_SESSION['controller']['id']);
+    if ($recruitPageOpen && canStartRecrutement($gameReady, $controller_id, (int)$mechanics['turncounter'])) {
         $recruitButton = "<input type='submit' name='recrutement' value='Recruter un serviteur' class='button is-link'>";
     } elseif (empty(hasBase($gameReady, $controller_id))) {
         $recruitNotice = "<p class='has-text-danger'>" . getConfig($gameReady, 'textcontrollerRecrutmentNeedsBase') . "</p>";
     }
 
     $firstComeButton = "";
-    if (canStartFirstCome($gameReady, $controller_id)) {
+    if ($recruitPageOpen && canStartFirstCome($gameReady, $controller_id)) {
         $firstComeButton = "<input type='submit' name='first_come' value='Prendre le premier venu' class='button is-info'>";
     }
 

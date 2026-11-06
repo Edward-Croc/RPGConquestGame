@@ -44,8 +44,9 @@ if (!$endTurnAllowed) {
 
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
+// A resume after the turn increment still archives under the turn being ended.
+$archivedTurnNumber = (int) $mechanics['turncounter'] - (($mechanics['end_step'] ?? '') === 'updateTurnCounter' ? 1 : 0);
 // Registered after baseHTML so it runs after the footer : the archive holds the page as sent.
-$archivedTurnNumber = (int) $mechanics['turncounter'];
 register_shutdown_function(function () use ($archivedTurnNumber) {
     saveTurnReport((string) ob_get_contents(), $archivedTurnNumber);
 });
@@ -64,7 +65,7 @@ if (!$started) {
 
 echo sprintf(
     " <h2>  Starting END of Turn %s with end_step : %s</h2>",
-    $mechanics['turncounter'],
+    $archivedTurnNumber,
     $mechanics['end_step']
 );
 
@@ -278,14 +279,102 @@ if ($mechanics['end_step'] == 'createNewTurnLines') {
 if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
-        // SQL query to select username from the players table
-        $sql = "UPDATE {$prefix}mechanics set turncounter = :turncounter, end_step = '' WHERE id = :id";
-        // Prepare and execute SQL query
+        // The turn and its step move together, so a resume never increments twice.
+        $sql = "UPDATE {$prefix}mechanics set turncounter = :turncounter, end_step = 'updateTurnCounter' WHERE id = :id";
         $stmt = $gameReady->prepare($sql);
         $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id']]);
     } catch (PDOException $e) {
-        game_error_log('endTurn_page', 'UPDATE mechanics failed', ['error' => $e->getMessage()]);
+        game_error_log('endTurn_page', 'UPDATE mechanics failed : ' . $e->getMessage(), ['turn' => $turn], 'error');
+        return false;
     }
+    $mechanics['turncounter'] = $turn;
+    $mechanics['end_step'] = 'updateTurnCounter';
 }
 
-echo sprintf("<h2> %s: %s </h2>", ucfirst(getConfig($gameReady, 'timeValue')), $turn);
+if ($mechanics['end_step'] == 'updateTurnCounter') {
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $recruitCarryMode = (string) getConfig($gameReady, 'recruitCarryMode');
+    $nbChoicesByType = [];
+    foreach (['first_come', 'recrutement'] as $recruitType) {
+        $tmpChoices = getConfig($gameReady, $recruitType . '_nb_choices');
+        $nbChoicesByType[$recruitType] = empty($tmpChoices) ? 1 : intval($tmpChoices);
+    }
+    // Every controller in one transaction, so a resumed step redraws from a clean state.
+    $candidatesResult = false;
+    try {
+        $gameReady->beginTransaction();
+        // Locks the controller rows as workers/new.php does, so no page draws during this step.
+        $controller_ids = $gameReady->query("SELECT id FROM {$prefix}controllers ORDER BY id FOR UPDATE")->fetchAll(PDO::FETCH_COLUMN);
+        $stmtDeleteType = $gameReady->prepare("DELETE FROM {$prefix}recruit_candidates WHERE controller_id = :controller_id AND recruit_type = :recruit_type");
+        $stmtCandidates = $gameReady->prepare("SELECT id, is_kept FROM {$prefix}recruit_candidates WHERE controller_id = :controller_id AND recruit_type = 'recrutement' ORDER BY id");
+        $stmtDeleteOthers = $gameReady->prepare("DELETE FROM {$prefix}recruit_candidates WHERE controller_id = :controller_id AND recruit_type = 'recrutement' AND id <> :kept_id");
+        $stmtUnmark = $gameReady->prepare("UPDATE {$prefix}recruit_candidates SET is_kept = :is_kept WHERE id = :kept_id");
+        $candidatesResult = true;
+        foreach ($controller_ids as $controller_id) {
+            // A controller whose draw fails keeps its previous candidates and the turn still closes, the admin redraws.
+            $gameReady->exec('SAVEPOINT recruit_candidates_controller');
+            $stmtDeleteType->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+            $stmtDeleteType->bindValue(':recruit_type', 'first_come', PDO::PARAM_STR);
+            $stmtDeleteType->execute();
+            if (!topUpRecruitCandidates($gameReady, (int) $controller_id, 'first_come', $nbChoicesByType['first_come'])) {
+                $gameReady->exec('ROLLBACK TO SAVEPOINT recruit_candidates_controller');
+                game_error_log('endTurn_page', 'Candidate draw failed, previous candidates kept', ['controller_id' => $controller_id, 'recruit_type' => 'first_come'], 'error');
+                continue;
+            }
+
+            $stmtCandidates->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+            $stmtCandidates->execute();
+            $stored_candidates = $stmtCandidates->fetchAll(PDO::FETCH_ASSOC);
+            $storedIds = array_map('intval', array_column($stored_candidates, 'id'));
+            $keptId = null;
+            if (!empty($storedIds) && $recruitCarryMode === 'newest_agent') {
+                $keptId = max($storedIds);
+            } elseif (!empty($storedIds) && $recruitCarryMode === 'random') {
+                $keptId = $storedIds[random_int(0, count($storedIds) - 1)];
+            } elseif ($recruitCarryMode === 'chosen') {
+                foreach ($stored_candidates as $stored_candidate) {
+                    if (!empty($stored_candidate['is_kept'])) {
+                        $keptId = (int) $stored_candidate['id'];
+                    }
+                }
+            }
+
+            if ($keptId === null) {
+                $stmtDeleteType->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+                $stmtDeleteType->bindValue(':recruit_type', 'recrutement', PDO::PARAM_STR);
+                $stmtDeleteType->execute();
+            } else {
+                $stmtDeleteOthers->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+                $stmtDeleteOthers->bindValue(':kept_id', $keptId, PDO::PARAM_INT);
+                $stmtDeleteOthers->execute();
+                $stmtUnmark->bindValue(':is_kept', false, PDO::PARAM_BOOL);
+                $stmtUnmark->bindValue(':kept_id', $keptId, PDO::PARAM_INT);
+                $stmtUnmark->execute();
+            }
+            $drawCount = max(0, $nbChoicesByType['recrutement'] - ($keptId === null ? 0 : 1));
+            if ($drawCount > 0 && !topUpRecruitCandidates($gameReady, (int) $controller_id, 'recrutement', $drawCount)) {
+                $gameReady->exec('ROLLBACK TO SAVEPOINT recruit_candidates_controller');
+                game_error_log('endTurn_page', 'Candidate draw failed, previous candidates kept', ['controller_id' => $controller_id, 'recruit_type' => 'recrutement'], 'error');
+            }
+        }
+        if ($candidatesResult) {
+            changeEndTurnState($gameReady, '', $mechanics);
+            $gameReady->commit();
+        } else {
+            $gameReady->rollBack();
+        }
+    } catch (PDOException $e) {
+        if ($gameReady->inTransaction()) {
+            $gameReady->rollBack();
+        }
+        game_error_log('endTurn_page', 'Generating recruitment candidates failed : ' . $e->getMessage(), ['recruitCarryMode' => $recruitCarryMode], 'error');
+        return false;
+    }
+    if (!$candidatesResult) {
+        game_error_log('endTurn_page', 'Recruitment candidates generation failed', [], 'warning');
+        return false;
+    }
+    $mechanics['end_step'] = '';
+}
+
+echo sprintf("<h2> %s: %s </h2>", ucfirst(getConfig($gameReady, 'timeValue')), (int) $mechanics['turncounter']);

@@ -11,9 +11,14 @@ if (isset($_GET['controller_id'])) {
     $controller_id = $_GET['controller_id'];
 }
 
-// Checked before the counter is incremented : a stranger could otherwise burn a rival allowance.
+// Checked before any candidate is drawn : a stranger could otherwise draw a rival's candidates.
 if (empty($_SESSION['logged_in']) || empty($controller_id)) {
     header(sprintf('Location: /%s/connection/loginForm.php', $_SESSION['FOLDER']));
+    exit();
+}
+if (!empty($_SESSION['is_privileged']) && empty($_SESSION['controller']['id'])) {
+    game_error_log('workers_new_page', 'Recruitment page refused to the organiser without a selected faction', ['controller_id' => $controller_id], 'warning');
+    http_response_code(403);
     exit();
 }
 if (empty($_SESSION['is_privileged']) && (int) $controller_id !== (int) ($_SESSION['controller']['id'] ?? 0)) {
@@ -55,15 +60,38 @@ if (!$recrutment_allowed) {
 }
 
 $prefix = $_SESSION['GAME_PREFIX'];
-// increment recrutment values
-$sqlUpdateRecrutementCounter = sprintf(
-    "UPDATE {$prefix}controllers SET %1\$s = %1\$s +1 WHERE id = :controller_id",
-    $buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruited_workers'
-);
-$stmtUpdateRecrutementCounter = $gameReady->prepare($sqlUpdateRecrutementCounter);
-$stmtUpdateRecrutementCounter->execute([
-    ':controller_id' => $controller_id
-]);
+$markKeptCandidate = $buttonClicked == 'recrutement' && getConfig($gameReady, 'recruitCarryMode') === 'chosen';
+
+// Marks the one candidate kept over the end of turn, then reloads the page by a GET.
+if ($markKeptCandidate && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+    && is_string($_POST['keep_candidate_id'] ?? null) && ctype_digit($_POST['keep_candidate_id'])
+) {
+    try {
+        $gameReady->beginTransaction();
+        $stmt = $gameReady->prepare("UPDATE {$prefix}recruit_candidates SET is_kept = :is_kept WHERE controller_id = :controller_id AND recruit_type = 'recrutement'");
+        $stmt->bindValue(':is_kept', false, PDO::PARAM_BOOL);
+        $stmt->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $stmt = $gameReady->prepare("UPDATE {$prefix}recruit_candidates SET is_kept = :is_kept WHERE id = :id AND controller_id = :controller_id AND recruit_type = 'recrutement'");
+        $stmt->bindValue(':is_kept', true, PDO::PARAM_BOOL);
+        $stmt->bindValue(':id', (int) $_POST['keep_candidate_id'], PDO::PARAM_INT);
+        $stmt->bindValue(':controller_id', (int) $controller_id, PDO::PARAM_INT);
+        $stmt->execute();
+        if ($stmt->rowCount() === 1) {
+            $gameReady->commit();
+        } else {
+            $gameReady->rollBack();
+            game_error_log('workers_new_page', 'Kept candidate refused, not a recruitment candidate of this controller', ['controller_id' => $controller_id, 'keep_candidate_id' => $_POST['keep_candidate_id']], 'warning');
+        }
+    } catch (PDOException $e) {
+        if ($gameReady->inTransaction()) {
+            $gameReady->rollBack();
+        }
+        game_error_log('workers_new_page', 'Marking the kept candidate failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'error');
+    }
+    header(sprintf('Location: /%s/workers/new.php?recrutement=true&controller_id=%d', $_SESSION['FOLDER'], (int) $controller_id));
+    exit();
+}
 
 if ($_SESSION['DEBUG'] == true) {
     echo "buttonClicked : $buttonClicked";
@@ -83,6 +111,37 @@ if ($_SESSION['DEBUG'] == true) {
     echo"<br />";
 }
 
+// The controller row lock serialises two players of one faction drawing the same set.
+try {
+    $gameReady->beginTransaction();
+    $stmt = $gameReady->prepare("SELECT turn_firstcome_workers, turn_recruited_workers FROM {$prefix}controllers WHERE id = :controller_id FOR UPDATE");
+    $stmt->execute([':controller_id' => $controller_id]);
+    $controller_row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $gameReady->prepare("SELECT COUNT(*) FROM {$prefix}recruit_candidates WHERE controller_id = :controller_id AND recruit_type = :recruit_type");
+    $stmt->execute([':controller_id' => $controller_id, ':recruit_type' => $buttonClicked]);
+    $stored_count = (int) $stmt->fetchColumn();
+    $drawCount = 0;
+    if (is_array($controller_row)) {
+        $recruited_this_turn = (int) $controller_row[$buttonClicked == 'first_come' ? 'turn_firstcome_workers' : 'turn_recruited_workers'];
+        $missingCount = max(0, $nbChoices - $stored_count - $recruited_this_turn);
+        if ($stored_count == 0 || getConfig($gameReady, 'recruitMissingCandidates') === 'generate') {
+            $drawCount = $missingCount;
+        }
+    }
+    if ($drawCount > 0 && !topUpRecruitCandidates($gameReady, (int) $controller_id, $buttonClicked, $drawCount)) {
+        $gameReady->rollBack();
+    } else {
+        $gameReady->commit();
+    }
+} catch (PDOException $e) {
+    if ($gameReady->inTransaction()) {
+        $gameReady->rollBack();
+    }
+    game_error_log('workers_new_page', 'Drawing recruitment candidates failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'recruit_type' => $buttonClicked], 'error');
+}
+
+$candidates = getRecruitCandidates($gameReady, (int) $controller_id, $buttonClicked) ?: array();
+
 $powerDisciplineArray = getPowersByType($gameReady, '3', $controller_id, true);
 $zonesArray = getZonesArray($gameReady);
 if ($_SESSION['DEBUG'] == true) {
@@ -97,20 +156,19 @@ echo "
     <div >
 ";
 
-for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
-    $newWorker = generateNewWorker($gameReady, $controller_id, $buttonClicked);
+foreach ($candidates as $candidate) {
     if ($_SESSION['DEBUG'] == true) {
-        echo "newWorker: ".var_export($newWorker, true)."<br /><br />";
+        echo "candidate: ".var_export($candidate, true)."<br /><br />";
     }
     $proposalValues = [
-        $newWorker['firstname'],
-        $newWorker['lastname'],
-        $newWorker['origin'],
-        $newWorker['power_1']['power_text'],
-        $newWorker['power_2']['power_text'],
-        $newWorker['origin_id'],
-        $newWorker['power_1']['link_power_type_id'],
-        $newWorker['power_2']['link_power_type_id'],
+        $candidate['firstname'],
+        $candidate['lastname'],
+        $candidate['origin'],
+        $candidate['power_hobby_text'] ?? '',
+        $candidate['power_metier_text'] ?? '',
+        $candidate['origin_id'],
+        $candidate['power_hobby_id'],
+        $candidate['power_metier_id'],
         $controller_id,
         $_SESSION['FOLDER'],
     ];
@@ -125,17 +183,13 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
         %11$s <br />
         <!-- Hidden inputs -->
         <input type="hidden" name="creation" value="true">
-        <input type="hidden" name="firstname" value="%1$s">
-        <input type="hidden" name="lastname" value="%2$s">
-        <input type="hidden" name="origin" value="%3$s">
-        <input type="hidden" name="power_hobby" value="%4$s">
-        <input type="hidden" name="power_metier" value="%5$s">
+        <input type="hidden" name="firstname" value="%13$s">
+        <input type="hidden" name="lastname" value="%14$s">
         <input type="hidden" name="origin_id" value="%6$s">
-        <input type="hidden" name="power_hobby_id" value="%7$s">
-        <input type="hidden" name="power_metier_id" value="%8$s">
         <input type="hidden" name="controller_id" value="%9$s">
+        <input type="hidden" name="candidate_id" value="%12$s">
     ',
-        [...$proposalValues, $jobHobbyText]
+        [...$proposalValues, $jobHobbyText, $candidate['id'], htmlspecialchars($candidate['firstname']), htmlspecialchars($candidate['lastname'])]
     );
 
     // Check Transformation Conditions
@@ -176,7 +230,7 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
                 <input type="submit" name="chosir" value="Recruter et Affecter" class="button is-link" />
             </div>
         </div>
-    </p></form></div>',
+    </p></form>',
         showDisciplineSelect($gameReady, $powerDisciplineArray),
         (! empty($powerTransformationArray)) ? sprintf(
             '<div class="field is-grouped is-grouped-multiline is-flex-wrap-wrap">%s</div>',
@@ -186,5 +240,18 @@ for ($iteration = 0; $iteration < $nbChoices; $iteration++) {
     );
     echo $html;
 
+    if ($markKeptCandidate && !empty($candidate['is_kept'])) {
+        echo '<p><strong>Gardé pour le prochain tour</strong></p>';
+    } elseif ($markKeptCandidate) {
+        echo sprintf(
+            '
+    <form method="POST">
+        <input type="hidden" name="keep_candidate_id" value="%s">
+        <input type="submit" name="keep_candidate" value="Garder ce candidat" class="button is-info">
+    </form>',
+            (int) $candidate['id']
+        );
+    }
+    echo '</div>';
 }
 echo "</div>";

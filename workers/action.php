@@ -25,6 +25,8 @@ if ($_SESSION['DEBUG'] == true) {
 }
 // it can be determined by worker creation
 if (isset($_GET['creation'])) {
+    // A creation shows only the agent it creates or finds, never the worker_id of the URL.
+    $worker_id = null;
     // Checked before the INSERT : the guard below needs a worker that exists.
     if (
         empty($_SESSION['is_privileged'])
@@ -42,18 +44,53 @@ if (isset($_GET['creation'])) {
     $recruit_controller_id = (int) ($_GET['controller_id'] ?? 0);
     // The organiser, or a privileged account using the perfect-agent form, recruits free and unchecked.
     $recruitUnchecked = !empty($_SESSION['is_privileged']) && (empty($_SESSION['controller']['id']) || !empty($_GET['perfect_worker']));
+    $prefix = $_SESSION['GAME_PREFIX'];
     $cost = null;
     $recruitAllowed = true;
+    $candidate = null;
+    $replayLookup = false;
+    $recruitPayload = [];
     if (!$recruitUnchecked) {
-        // A replay shows the agent already recruited, without checking or charging it again.
-        $worker_id = getRecruitedWorkerId($gameReady, $_GET);
-        $recruitAllowed = $worker_id === null;
+        // A checked recruitment goes through a candidate stored for that controller.
+        $candidate_id = $_GET['candidate_id'] ?? null;
+        $recruitAllowed = is_string($candidate_id) && ctype_digit($candidate_id);
+        if ($recruitAllowed) {
+            try {
+                $stmt = $gameReady->prepare("SELECT id, controller_id, recruit_type, firstname, lastname, origin_id, power_hobby_id, power_metier_id
+                    FROM {$prefix}recruit_candidates WHERE id = :id AND controller_id = :recruit_controller_id");
+                $stmt->execute([':id' => (int) $candidate_id, ':recruit_controller_id' => $recruit_controller_id]);
+                $candidate = $stmt->fetch(PDO::FETCH_ASSOC);
+                $replayLookup = !is_array($candidate);
+                // A page opened before « Régénérer » posts the old identity : the candidate is no longer that one.
+                if (is_array($candidate) && ((string) ($_GET['firstname'] ?? '') !== (string) $candidate['firstname']
+                    || (string) ($_GET['lastname'] ?? '') !== (string) $candidate['lastname']
+                    || (string) ($_GET['origin_id'] ?? '') !== (string) $candidate['origin_id'])) {
+                    $candidate = null;
+                }
+            } catch (PDOException $e) {
+                game_error_log('workers_action_page', 'SELECT recruit_candidates failed : ' . $e->getMessage(), ['candidate_id' => $candidate_id], 'error');
+            }
+            $recruitAllowed = is_array($candidate);
+        }
+        if ($recruitAllowed) {
+            $recruitPayload = [
+                'firstname' => $candidate['firstname'],
+                'lastname' => $candidate['lastname'],
+                'origin_id' => $candidate['origin_id'],
+                'power_hobby_id' => $candidate['power_hobby_id'],
+                'power_metier_id' => $candidate['power_metier_id'],
+                'controller_id' => $candidate['controller_id'],
+                'zone_id' => $_GET['zone_id'] ?? null,
+                'discipline' => $_GET['discipline'] ?? null,
+                'transformation' => $_GET['transformation'] ?? null,
+            ];
+        }
     }
     if ($recruitAllowed && !$recruitUnchecked) {
-        // Each posted hobby, job and discipline must be a power of that very type.
+        // Each hobby, job and discipline must be a power of that very type.
         $typedPowers = [];
         foreach (['power_hobby_id' => 1, 'power_metier_id' => 2, 'discipline' => 3] as $field => $power_type_id) {
-            $value = $_GET[$field] ?? null;
+            $value = $recruitPayload[$field];
             if (!empty($value) && !($field === 'discipline' && $value == "\'\'")) {
                 $typedPowers[] = ['value' => $value, 'power_type_id' => $power_type_id];
             }
@@ -71,7 +108,6 @@ if (isset($_GET['creation'])) {
         }
         $typedCount = 0;
         if ($recruitAllowed && !empty($conditions)) {
-            $prefix = $_SESSION['GAME_PREFIX'];
             try {
                 $stmt = $gameReady->prepare("SELECT COUNT(*) FROM {$prefix}link_power_type WHERE " . implode(' OR ', $conditions));
                 $stmt->execute($params);
@@ -85,49 +121,101 @@ if (isset($_GET['creation'])) {
             echo "Ce pouvoir n'est pas disponible.<br />";
             $recruitAllowed = false;
         }
-    }
-    // A player gets only a discipline the recruitment page offers to that faction.
-    $postedDiscipline = $_GET['discipline'] ?? null;
-    if ($recruitAllowed && !$recruitUnchecked && !empty($postedDiscipline) && $postedDiscipline != "\'\'") {
-        if (findOfferedPower(getPowersByType($gameReady, '3', $recruit_controller_id, true), $postedDiscipline) === null) {
-            echo "Cette discipline n'est plus disponible.<br />";
-            $recruitAllowed = false;
+        // A player gets only a discipline the recruitment page offers to that faction.
+        $postedDiscipline = $recruitPayload['discipline'];
+        if ($recruitAllowed && !empty($postedDiscipline) && $postedDiscipline != "\'\'") {
+            if (findOfferedPower(getPowersByType($gameReady, '3', $recruit_controller_id, true), $postedDiscipline) === null) {
+                echo "Cette discipline n'est plus disponible.<br />";
+                $recruitAllowed = false;
+            }
+        }
+        $linkPowerTypeId = $recruitPayload['transformation'];
+        // A player gets only a transformation the recruitment page offers, and pays its cost.
+        if ($recruitAllowed && !empty($linkPowerTypeId)) {
+            $turn = (int) ($mechanics['turncounter'] ?? 0);
+            $offeredTransformations = null;
+            $recrutement_transformation_array = json_decode((string) getConfig($gameReady, 'recrutement_transformation'), true);
+            if (($recrutement_transformation_array['action'] ?? null) === 'check') {
+                $offeredTransformations = getPowersByType($gameReady, '4', null, false);
+                $offeredTransformations = cleanPowerListFromJsonConditions($gameReady, $offeredTransformations ?? [], $recruit_controller_id, null, $turn, 'on_recrutment');
+            }
+            $matchedPower = findOfferedPower($offeredTransformations, $linkPowerTypeId);
+            if ($matchedPower === null) {
+                echo "Cette transformation n'est plus disponible.<br />";
+                $recruitAllowed = false;
+            } else {
+                $cost = getRuleCostForPower($gameReady, $matchedPower, $recruit_controller_id, null, $turn, 'on_recrutment');
+                // A failed cost lookup refuses the transformation, it is never read as free.
+                if ($cost === false) {
+                    echo "Cette transformation n'est plus disponible.<br />";
+                    $recruitAllowed = false;
+                }
+            }
         }
     }
-    $linkPowerTypeId = $_GET['transformation'] ?? null;
-    // A player gets only a transformation the recruitment page offers, and pays its cost.
-    if ($recruitAllowed && !$recruitUnchecked && !empty($linkPowerTypeId)) {
-        $turn = (int) ($mechanics['turncounter'] ?? 0);
-        $candidates = null;
-        $recrutement_transformation_array = json_decode((string) getConfig($gameReady, 'recrutement_transformation'), true);
-        if (($recrutement_transformation_array['action'] ?? null) === 'check') {
-            $candidates = getPowersByType($gameReady, '4', null, false);
-            $candidates = cleanPowerListFromJsonConditions($gameReady, $candidates ?? [], $recruit_controller_id, null, $turn, 'on_recrutment');
-        }
-        $matchedPower = findOfferedPower($candidates, $linkPowerTypeId);
-        if ($matchedPower === null) {
-            echo "Cette transformation n'est plus disponible.<br />";
-            $recruitAllowed = false;
-        } else {
-            $cost = getRuleCostForPower($gameReady, $matchedPower, $recruit_controller_id, null, $turn, 'on_recrutment');
-        }
-    }
-    // Paid and created together, or neither : a failed write rolls the whole recruitment back.
-    if ($recruitAllowed) {
+    if ($recruitAllowed && $recruitUnchecked) {
+        // Created whole or not at all : a failed write rolls the whole recruitment back.
         $gameReady->beginTransaction();
-        if ($cost !== null && !consumeRessource($gameReady, $recruit_controller_id, $cost['ressource_id'], $cost['amount'])) {
-            $gameReady->rollBack();
-            echo "Stock insuffisant ou modifié.<br />";
+        $worker_id = createWorker($gameReady, $_GET);
+        if ($worker_id !== false) {
+            $gameReady->commit();
         } else {
-            // A double click waits on the first payment, then finds the agent it bought.
-            $existing_worker_id = ($cost === null) ? null : getRecruitedWorkerId($gameReady, $_GET);
-            $worker_id = ($existing_worker_id === null) ? createWorker($gameReady, $_GET) : $existing_worker_id;
-            if ($existing_worker_id === null && $worker_id !== false) {
+            $gameReady->rollBack();
+        }
+    } elseif ($recruitAllowed) {
+        // The controller row lock serialises two clicks : the second finds the candidate gone.
+        try {
+            $gameReady->beginTransaction();
+            $stmt = $gameReady->prepare("SELECT id FROM {$prefix}controllers WHERE id = :id FOR UPDATE");
+            $stmt->execute([':id' => $recruit_controller_id]);
+            $locked_controller_id = $stmt->fetchColumn();
+            $stmt = $gameReady->prepare("DELETE FROM {$prefix}recruit_candidates WHERE id = :id AND controller_id = :cid");
+            $stmt->execute([':id' => (int) $candidate['id'], ':cid' => $recruit_controller_id]);
+            $replayLookup = $stmt->rowCount() !== 1;
+            $recruitAllowed = false;
+            if (!$replayLookup) {
+                $turn = (int) ($mechanics['turncounter'] ?? 0);
+                $recruitAllowed = $locked_controller_id !== false && match ($candidate['recruit_type']) {
+                    'first_come' => canStartFirstCome($gameReady, $recruit_controller_id),
+                    'recrutement' => canStartRecrutement($gameReady, $recruit_controller_id, $turn),
+                    default => false,
+                };
+                if (!$recruitAllowed) {
+                    echo "Le recrutement n'est pas permis !<br />";
+                }
+            }
+            if ($recruitAllowed) {
+                $counterColumn = ($candidate['recruit_type'] === 'first_come') ? 'turn_firstcome_workers' : 'turn_recruited_workers';
+                $stmt = $gameReady->prepare("UPDATE {$prefix}controllers SET {$counterColumn} = {$counterColumn} + 1 WHERE id = :id");
+                $stmt->execute([':id' => $recruit_controller_id]);
+                if ($cost !== null && !consumeRessource($gameReady, $recruit_controller_id, $cost['ressource_id'], $cost['amount'])) {
+                    echo "Stock insuffisant ou modifié.<br />";
+                    $recruitAllowed = false;
+                }
+            }
+            $worker_id = $recruitAllowed ? createWorker($gameReady, $recruitPayload, false) : null;
+            if ($recruitAllowed && $worker_id !== false) {
                 $gameReady->commit();
             } else {
                 $gameReady->rollBack();
             }
+        } catch (PDOException $e) {
+            if ($gameReady->inTransaction()) {
+                $gameReady->rollBack();
+            }
+            game_error_log('workers_action_page', 'Recruiting the candidate failed : ' . $e->getMessage(), ['candidate_id' => $candidate['id']], 'error');
+            $replayLookup = false;
+            $worker_id = null;
         }
+    }
+    // A recruited candidate leaves the table : the replay shows the agent it became, unchecked and free.
+    if ($replayLookup) {
+        $worker_id = getRecruitedWorkerId($gameReady, $_GET);
+        if (empty($worker_id)) {
+            echo "Ce candidat n'est plus disponible.<br />";
+        }
+    } elseif (!$recruitUnchecked && !is_array($candidate)) {
+        echo "Ce candidat n'est plus disponible.<br />";
     }
     if ($_SESSION['DEBUG'] == true) {
         echo 'createWorker : DONE <br />';
@@ -542,7 +630,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $handOver = $raises && !$isOrganiser && getPrimaryControllerId($gameReady, $target_worker_id) !== (int) $session_controller_id;
             $upgraded = false;
             $cost = $isOrganiser ? null : getRuleCostForPower($gameReady, $matchedPower, $session_controller_id, $target_worker_id, $turn, 'on_transformation');
-            if ($handOver) {
+            // A failed cost lookup refuses the transformation, it is never read as free.
+            if ($cost === false) {
+                echo "Cette transformation n'est plus disponible.<br />";
+            } elseif ($handOver) {
                 // Paid, handed over, then transformed : unpaid it stays dead, and the trace left behind lacks the new power.
                 if ($cost === null || consumeRessource($gameReady, (int)$session_controller_id, $cost['ressource_id'], $cost['amount'])) {
                     activateWorker($gameReady, $target_worker_id, 'gift', (int) $session_controller_id);

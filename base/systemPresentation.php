@@ -138,7 +138,7 @@ Un tour de jeu s'appelle ici un <strong><?= htmlspecialchars($timeValue) ?></str
   <li>Chaque <?= htmlspecialchars($timeValue) ?>, vous pouvez recruter <?= $countOf($recruitPerTurn, 'serviteur', 'serviteurs') ?> et prendre <?= $countOf($firstComePerTurn, 'premier venu', 'premiers venus') ?>.
     Au premier <?= htmlspecialchars($timeValue) ?>, le nombre de serviteurs dépend de votre faction.</li>
   <li>Le nom et les capacités de chaque candidat sont tirés au sort. Vous choisissez où l'envoyer, et une première maîtrise à lui enseigner.</li>
-  <li><strong>ATTENTION : Un recrutement ouvert compte pour le <?= htmlspecialchars($timeValue) ?>. NE QUITTEZ PAS LA PAGE SANS RECRUTER, SINON L'AGENT EST PERDU !</strong></li>
+  <li>Les candidats proposés restent disponibles tout le <?= htmlspecialchars($timeValue) ?>.</li>
 </ul>
 
 <h4 class="title is-5">Actions immédiates</h4>

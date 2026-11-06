@@ -342,3 +342,22 @@ mutualiser. La règle vise les fonctions nommées, pas les closures locales.
 
 Les décisions de conception — nom d'une clé de configuration, découpage d'une
 fonction, choix d'un repli — se posent en question avant d'être codées.
+
+---
+
+## 13. Économie de moyens
+
+1. **Analyse d'abord.** Au début d'un chantier, lire l'issue en entier, puis poser
+   **toutes** les questions de conception en une seule fois.
+2. **Un modèle par rôle.** Recherche et lecture de code : modèle léger (Haiku).
+   Écriture et lancement des tests, relecture d'un diff simple : Sonnet.
+   Conception et diffs délicats (gardes, transactions, fin de tour) : Opus.
+3. **Une seule relecture ciblée par PR**, sur le diff final, avec les décisions
+   déjà prises en entrée. Une seconde passe seulement si la première révèle un
+   défaut de conception.
+4. **TDD sans organiseur pour les petites issues** : test rouge, correctif et test
+   vert se font dans la session principale. L'organiseur est réservé aux chantiers
+   en plusieurs étapes.
+5. **Suite complète une seule fois, juste avant le commit.** Entre-temps, seuls
+   les fichiers de test touchés tournent.
+6. **Rapports courts** : résultat, écarts, questions. Pas le récit du chemin.

@@ -244,6 +244,7 @@ function destroyAllTables(PDO $pdo): bool
                 'location_attack_logs',
                 'controllers_known_enemies',
                 'controller_known_locations',
+                'recruit_candidates',
                 'controller_worker',
                 'worker_actions',
                 'worker_powers',
