@@ -205,9 +205,9 @@ il forme l'histoire de l'agent. Chaque <?= htmlspecialchars($timeValue) ?> compo
 
 <h4 class="title is-5">Évolution</h4>
 <?= guideCaptureFigure($captureSet, 'agents', 'La liste des agents') ?>
-<p>Dans la liste, un <strong class="evolution-mark">#</strong> après le nom signale qu'un agent peut apprendre une maîtrise
-(« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Discipline')) ?> »), et un <strong class="evolution-mark">+</strong>
-qu'il peut recevoir une transformation (« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Transformation')) ?> »).
+<p>Dans la liste, un <strong class="evolution-mark">↑</strong> après le nom signale qu'un agent peut apprendre une maîtrise
+(« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Discipline')) ?> ») ou recevoir une transformation
+(« <?= htmlspecialchars((string) getPowerTypesDescription($gameReady, 'Transformation')) ?> »). Survolez la flèche pour voir laquelle.
 Le détail est sur sa fiche, dans « Evolutions ».</p>
 <ul>
   <li>Avec l'ancienneté, un agent apprend de nouvelles maîtrises.</li>

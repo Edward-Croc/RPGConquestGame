@@ -755,18 +755,18 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
 
     $stateAttributes = buildWorkerStateAttributes($currentAction, $workerStatus);
 
-    // Marks what the agent may receive now : # a discipline to teach, + a transformation or a raising.
+    // Marks what the agent may receive now : ↑ a discipline to teach, ↑ a transformation or a raising.
     $evolutions = getWorkerEvolutions($pdo, $worker, $controllerId ?? ($_SESSION['controller']['id'] ?? null), (int) $mechanics['turncounter'], false);
     $evolutionMarks = '';
     if ($evolutions['canTeachDiscipline']) {
         $evolutionMarks .= sprintf(
-            ' <span class="evolution-mark" title="Disponible : %s">#</span>',
+            ' <span class="evolution-mark" title="Disponible : %s">↑</span>',
             htmlspecialchars((string) getPowerTypesDescription($pdo, 'Discipline'), ENT_QUOTES)
         );
     }
     if (!empty($evolutions['transformations'])) {
         $evolutionMarks .= sprintf(
-            ' <span class="evolution-mark" title="%s">+</span>',
+            ' <span class="evolution-mark" title="%s">↑</span>',
             $evolutions['raises']
                 ? 'Peut être relevé.e'
                 : htmlspecialchars('Disponible : ' . getPowerTypesDescription($pdo, 'Transformation'), ENT_QUOTES)
