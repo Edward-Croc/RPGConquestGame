@@ -258,12 +258,27 @@ requête entièrement liée** n'est jamais une situation de jeu, et doit remonte
 | `claimMechanic` | `claimMechanic` |
 | `ressourceGainAfterClaim` | `ressourceGainMechanic('after_claim')` |
 | puis | `investigateMechanic`, `locationSearchMechanic`, `createNewTurnLines`, `restartTurnRecrutementCount` |
+| `updateTurnCounter` | l'incrément de `mechanics.turncounter`, écrit par le **même** `UPDATE` que cet état |
+| `''` (vide) | la génération des candidats au recrutement de tous les contrôleurs, dans une transaction qui écrit aussi cet état |
 
 **La granularité de reprise est l'état, pas la fonction.** Deux étapes portent
 deux appels sous un seul nom : le gain de ressources `before_claim` partage l'état
 de `updateRessources`, et les deux recalculs de défense partagent
 `recalculateBaseZoneDefence`. Une panne entre les deux appels d'un même état fait
 donc **rejouer les deux** à la reprise.
+
+Les deux dernières étapes ferment le tour. Le bloc `restartTurnRecrutementCount`
+écrit le compteur N+1 et l'état `updateTurnCounter` d'un seul `UPDATE`, et une
+`PDOException` y fait échouer l'étape : le compteur et son état bougent ensemble ou
+pas du tout. Le bloc `updateTurnCounter` verrouille toutes les lignes de
+`controllers` (`FOR UPDATE`, le verrou que prend `workers/new.php` pour tirer), puis
+régénère les candidats de chaque contrôleur dans une seule transaction, détaillée en
+§6. Il écrit l'état vide dans cette même transaction : une panne SQL annule tout le
+tirage, laisse `updateTurnCounter`, et la relance tire à nouveau les candidats depuis le
+même état sans jamais incrémenter une seconde fois. Un tirage qui échoue pour un seul
+contrôleur (une origine introuvable, par exemple) n'arrête pas le tour : un `SAVEPOINT`
+rend à ce contrôleur ses candidats précédents, l'erreur est loguée, et l'admin règle
+le paramétrage puis tire depuis `workers/management_candidates.php`.
 
 ### Comment une fin de tour se déclenche
 
@@ -302,7 +317,9 @@ gains de ressources, recalculs de défense, verdicts d'assaut, revendications.
 `endTurn.php` enregistre donc la page telle qu'elle a été rendue, sous
 `var/turn_reports/`, nommée `{préfixe}turn_{tour}_{horodatage}.html`. Le tour
 retenu est le compteur **d'avant** l'incrément, c'est-à-dire celui dont la page
-raconte la résolution.
+raconte la résolution. Une reprise à l'état `updateTurnCounter` lit déjà le
+compteur N+1 : `$archivedTurnNumber` en retranche un, et son récit s'archive sous
+N, comme le titre « Starting END of Turn » qu'elle affiche.
 
 L'écriture passe par `register_shutdown_function`, déclarée après l'inclusion de
 `baseHTML` : elle s'exécute donc après le pied de page, et l'archive contient la
@@ -319,9 +336,9 @@ d'erreurs : elles racontent la partie que la remise à zéro détruit.
 `aiMechanic` ne figure pas dans la chaîne : le moteur d'IA n'est pas branché sur
 la fin de tour.
 
-Le compteur de tour n'est incrémenté qu'**à la toute fin**, et écrit en base dans la
-foulée. Une exception au milieu laisse donc la partie à moitié résolue, au tour
-précédent.
+Le compteur de tour n'est incrémenté qu'**à l'avant-dernière étape**, et écrit en base
+dans la foulée. Une exception avant lui laisse donc la partie à moitié résolue, au
+tour précédent. Seule la génération des candidats au recrutement vient après lui.
 
 ### Ce que l'incrément tardif implique pour les dates
 
@@ -329,6 +346,13 @@ Toute mécanique écrit ses dates avec le compteur **d'avant** l'incrément. Une
 découverte faite pendant la fin du tour N porte donc `last_discovery_turn = N`,
 et personne ne la lit avant le tour N+1 : **le timbre le plus frais qu'un joueur
 puisse voir vaut toujours `tour − 1`**, jamais le tour courant.
+
+Une seule exception : `recruit_candidates.turn_generated`, qui porte le tour où le
+candidat est proposé. La génération de fin de tour suit l'incrément, si bien qu'un
+candidat tiré en fin de tour N porte N+1, et ses Métier et Hobby sont tirés sous le
+`on_random_pick.unlock_turn` du tour N+1. Un candidat tiré en cours de tour, par la
+page de recrutement ou par « Régénérer », porte le tour courant. La colonne n'est lue
+que par la page d'organisation des candidats.
 
 C'est ce qui rend correcte la règle de fenêtre de `buildEnemyWorkerListing`
 (`buildEnemyWorkerListing`, `workers/functions.php`) :
@@ -404,6 +428,11 @@ milieu :
   regroupement filtrent sur les actions vivantes. Il sort donc du calcul.
 - **Les échecs, si.** Un duel perdu sans mort se rejoue à l'identique et
   produira une seconde ligne dans `worker_combat_logs`.
+- **Le tour n'avance qu'une fois.** Une reprise à l'état `updateTurnCounter`
+  trouve le compteur déjà à N+1 et ne fait que tirer à nouveau les candidats au
+  recrutement. Les joueurs qui ouvrent une page entre la panne et la relance sont
+  déjà au tour N+1, avec les candidats restés du tour N, que `workers/new.php`
+  complète selon `recruitMissingCandidates`.
 
 Autrement dit, une reprise duplique des lignes de journal, pas des morts.
 
@@ -701,6 +730,8 @@ sans tel lieu reste en `passive`. Un défenseur continue d'enquêter, et
 | `workers/action.php` | GET | `creation`, `move`, `attack`, `attackLocation`, `defendLocation`, `hide`, `passive`, `investigate`, `claim`, `gift`, `recallDoubleAgent`, `returnPrisoner`, `transferPrisoner`, `teach_discipline`, `transform` |
 | `workers/massAction.php` | GET | `mass_move`, `mass_investigate`, `mass_passive`, `mass_hide`, `mass_claim` |
 | `ressources/action.php` | POST | don de ressource, en *post-redirect-get* pour qu'un rafraîchissement ne rejoue pas l'envoi |
+| `workers/new.php` | POST | « Garder ce candidat » (`keep_candidate_id`), en *post-redirect-get* |
+| `workers/management_candidates.php` | POST | « Régénérer » un candidat (orga seulement), en *post-redirect-get* |
 | `zones/action.php` | — | ne fait qu'inclure la vue |
 
 `controllers/action.php` déclare explicitement sa liste `$MUTATING_ACTIONS` et
@@ -710,7 +741,9 @@ un contrôleur tiers, ce qui fait vivre les pages de renseignement.
 Un droit qui cache un bouton est revérifié par l'action elle-même. `createBase`
 refuse une faction dont `can_build_base` ne l'autorise pas, avant toute dépense.
 `workers/new.php` reprend `canStartRecrutement` (une base est exigée) et
-`canStartFirstCome`, les mêmes contrôles que les boutons de la page des agents.
+`canStartFirstCome`, les mêmes contrôles que les boutons de la page des agents, et
+la branche `creation` de `workers/action.php` les rejoue au moment de créer l'agent
+(voir « Le recrutement passe par des candidats stockés » plus bas).
 
 `workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
 est dans `INACTIVE_ACTIONS`, avec une exception pour une requête qui ne porte que
@@ -746,6 +779,80 @@ Deux actions de masse portent un paramètre : `mass_move` la zone de destination
 `mass_claim` la bannière au nom de laquelle on revendique. Chaque agent sélectionné
 revendique **la zone où il se trouve**, donc une sélection répartie sur plusieurs zones
 en revendique plusieurs.
+
+### Le recrutement passe par des candidats stockés
+
+Les candidats vivent dans `recruit_candidates`, une ligne par candidat, rangée par
+contrôleur et par type de recrutement (`first_come` ou `recrutement`). Tous les
+joueurs d'un contrôleur voient donc les mêmes, et recharger la page ne les change
+pas. Chaque tirage appelle `generateNewWorker` et estampille la ligne du tour
+courant. `topUpRecruitCandidates` (`workers/functions.php`) ajoute des lignes, et
+« Régénérer » réécrit une ligne sur place.
+
+**L'ouverture de `workers/new.php`** ne dépense rien. Un visiteur non connecté part
+vers la page de connexion. L'organisateur sans faction sélectionnée reçoit un 403, et
+`workers/viewAll.php` ne lui rend pas les boutons de recrutement. Un joueur qui vise
+un autre contrôleur reçoit aussi un 403. Si `canStartRecrutement` ou
+`canStartFirstCome` refuse, la page répond « Le recrutement n'est pas permis ! » sans
+rien tirer. Sinon elle tire, dans une transaction qui verrouille la ligne du
+contrôleur (`FOR UPDATE`) pour que deux joueurs d'une même faction ne tirent pas
+chacun leur lot. Elle complète jusqu'à `<type>_nb_choices` moins les recrutements de
+ce type déjà faits ce tour (`turn_firstcome_workers` ou `turn_recruited_workers` du
+contrôleur), mais seulement quand aucun candidat de ce type n'est stocké, ou quand
+`recruitMissingCandidates` vaut `generate`.
+
+**La création** (branche `creation` de `workers/action.php`) ne prend de l'URL pour
+créer que `candidate_id`, la zone, la discipline et la transformation. Le nom, l'origine, le
+Hobby et le Métier viennent de la ligne stockée, qui doit appartenir au
+`controller_id` de la requête. Les champs cachés `firstname`, `lastname` et `origin_id`
+doivent encore égaler ceux de la ligne : une page ouverte avant un « Régénérer » ne
+retrouve plus son candidat (« Ce candidat n'est plus disponible. »). Après les contrôles de pouvoirs, une transaction
+verrouille la ligne du contrôleur, réclame le candidat par un `DELETE` qui doit
+toucher exactement une ligne, rejoue `canStartFirstCome` ou `canStartRecrutement`
+selon le type du candidat, incrémente le compteur du tour correspondant, débite le
+coût éventuel et crée l'agent par `createWorker` avec `$reuseNamesake` à faux : un
+candidat stocké donne toujours un nouvel agent, même homonyme d'un agent existant.
+Un coût dont la lecture de la ressource échoue, ou dont la ressource est inconnue de `ressources_config` (cas que la garde `controller_has_ressource` écarte déjà),
+fait refuser le pouvoir (`getRuleCostForPower` rend `false`) : la liste des pouvoirs offerts
+le masque, la création et la transformation le refusent, jamais gratuit. Les candidats se
+lisent par `getRecruitCandidates()`, commune à `workers/new.php` et à la page orga.
+Hors quota ou sans base, la réponse est « Le recrutement n'est pas permis ! » (403),
+et l'annulation de la transaction rend le candidat.
+
+Le quota se compte donc à la création : ouvrir la page et la quitter sans recruter
+ne coûte rien, et les candidats restent proposés tout le tour.
+
+**Un candidat absent** déclenche une recherche de rejeu. Un double clic ne trouve
+plus le candidat, à sa lecture ou, s'il attendait le verrou du premier, au `DELETE`
+qui ne touche aucune ligne, et
+`getRecruitedWorkerId` retrouve, par les champs cachés `firstname`, `lastname` et
+`origin_id`, l'agent le plus récent de ce nom chez ce contrôleur : la page montre
+l'agent que le premier clic a acheté, sans rien re-vérifier ni débiter. Sans un tel
+agent, la réponse est « Ce candidat n'est plus disponible. » (403).
+
+L'organisateur sans faction sélectionnée, et le formulaire « Create Perfect Agent »
+(`perfect_worker=1`, compte privilégié seulement), gardent le chemin sans
+vérification : `createWorker` reçoit les valeurs de l'URL, sans candidat, sans quota
+et sans coût.
+
+**En fin de tour**, l'étape `updateTurnCounter` (§3) traite chaque contrôleur. Les
+candidats `first_come` sont tous effacés puis tirés à nouveau. Parmi les candidats
+`recrutement`, `recruitCarryMode` en garde au plus un : le plus récent (`newest_agent`,
+le plus grand `id`), un au hasard (`random`), ou celui que le contrôleur a marqué
+(`chosen`). Une valeur inconnue, ou `chosen` sans marque, n'en garde aucun. La marque
+`is_kept` du gardé s'efface, les autres sont supprimés, et le lot est complété
+jusqu'à `recrutement_nb_choices`.
+
+En mode `chosen`, la page de recrutement, quand elle est permise, montre sous chaque
+candidat « Garder ce candidat » (un POST suivi d'une redirection en GET) ou « Gardé
+pour le prochain tour ». Un seul candidat est marqué par contrôleur : la marque
+efface la précédente, et un identifiant qui n'est pas un candidat `recrutement` de ce
+contrôleur ne marque rien.
+
+`workers/management_candidates.php`, réservée à l'orga et liée depuis l'admin
+(« Recruitment candidates »), liste tous les candidats, triables par contrôleur ou
+par type. « Régénérer » tire à nouveau un candidat sur place : même `id`, même marque
+`is_kept`, `turn_generated` au tour courant.
 
 ---
 
@@ -914,10 +1021,10 @@ de durées.
 
 ## 9. Carte du schéma
 
-`var/mysql/setupBDD.sql` compte **29** `CREATE TABLE`. `var/postgres/setupBDD.sql`
-en compte également 29, avec les mêmes 29 noms de table — aucun des deux
+`var/mysql/setupBDD.sql` compte **30** `CREATE TABLE`. `var/postgres/setupBDD.sql`
+en compte également 30, avec les mêmes 30 noms de table — aucun des deux
 dialectes n'a de table que l'autre ignore. Les cinq groupes ci-dessous totalisent
-4 + 5 + 7 + 8 + 5 = **29** : chaque table du schéma y apparaît une fois et une
+4 + 5 + 8 + 8 + 5 = **30** : chaque table du schéma y apparaît une fois et une
 seule.
 
 ### Identité
@@ -954,6 +1061,7 @@ table — aucun fichier `.sql` ni `.php` du dépôt n'en définit ou n'en lit un
 | `worker_actions` | État par tour d'un agent (action_choice, action_params, report, enquete_val/attack_val/defence_val) | `worker_id` → workers, `zone_id` → zones, `controller_id` → controllers |
 | `workers_trace_links` | Agent-leurre → agent primaire | `primary_worker_id`, `trace_worker_id` → workers, `controller_id` → controllers |
 | `worker_combat_logs` | Journal d'un duel agent-agent (une ligne par paire attaquant/défenseur) | `attacker_id`, `defender_id` → workers, `attacker_controller_id`, `defender_controller_id` → controllers, `zone_id` → zones |
+| `recruit_candidates` | Candidats au recrutement proposés à un meneur (recruit_type `first_come` ou `recrutement`, turn_generated, firstname/lastname, power_hobby_id, power_metier_id, is_kept) | `controller_id` → controllers, `origin_id` → worker_origins |
 
 ### Zones / Lieux / Renseignement
 
@@ -1069,10 +1177,10 @@ voir §3.
 
 ### Le piège booléen inter-dialecte
 
-17 colonnes portent une valeur booléenne dans le schéma. MySQL en déclare 14
+18 colonnes portent une valeur booléenne dans le schéma. MySQL en déclare 15
 en `TINYINT(1)` et 3 avec le mot-clé littéral `BOOLEAN` (`is_rollable`,
 `is_stored`, `hide_when_zero` — un simple alias de `TINYINT(1)` côté MySQL,
-sans effet sur le stockage) ; PostgreSQL déclare les 17 mêmes colonnes en
+sans effet sur le stockage). PostgreSQL déclare les 18 mêmes colonnes en
 `BOOLEAN`. Les deux fichiers **s'accordent exactement** sur la liste : aucune
 colonne booléenne d'un côté n'est un autre type de l'autre côté.
 
@@ -1083,6 +1191,7 @@ Colonnes concernées : `players.is_privileged`, `controllers.can_build_base`,
 `controller_known_locations.found_secret`,
 `controller_location_attacks.success`, `location_attack_logs.success`,
 `controller_worker.is_primary_controller`,
+`recruit_candidates.is_kept`,
 `controllers_known_enemies.discovered_powers`, `ressources_config.is_rollable`,
 `ressources_config.is_stored`, `ressources_config.hide_when_zero`.
 
@@ -1096,12 +1205,12 @@ Le §2 du document principal décrit le risque : une table absente de la liste
 en dur de `destroyAllTables()` (branche MySQL) interrompt le `DROP` en
 silence. Vérification faite contre l'état actuel du schéma :
 
-- `var/mysql/setupBDD.sql` définit **29** tables.
+- `var/mysql/setupBDD.sql` définit **30** tables.
 - La liste en dur dans `BDD/db_connector.php` (branche `mysql` de
-  `destroyAllTables()`) contient **29** entrées.
+  `destroyAllTables()`) contient **30** entrées.
 - Comparaison ensembliste des deux listes : **aucune** table du schéma
   n'est absente de la liste, et **aucune** entrée de la liste ne correspond à
-  une table qui n'existe plus dans le schéma. Concordance exacte, 29/29.
+  une table qui n'existe plus dans le schéma. Concordance exacte, 30/30.
 
 Le risque documenté au §2 reste donc structurel — la liste doit être tenue à
 jour manuellement à chaque table ajoutée ou renommée — mais n'est **pas**

@@ -313,7 +313,7 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
 
         // Same resolver the commit path uses, so a displayed cost is by
         // construction the one that will be charged.
-        $powerArray[$key]['rule_cost'] = getRuleCostForPower(
+        $ruleCost = getRuleCostForPower(
             $pdo,
             $power,
             $controller_id,
@@ -321,6 +321,12 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
             $turn_number,
             $state_text
         );
+        // A power whose price cannot be computed is not offered.
+        if ($ruleCost === false) {
+            unset($powerArray[$key]);
+            continue;
+        }
+        $powerArray[$key]['rule_cost'] = $ruleCost;
     }
 
     return empty($powerArray) ? null : $powerArray ;
@@ -411,7 +417,8 @@ function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id
  * Resolve the ressource cost owed at commit time for an unlocked power: walks
  * both the direct-level controller_has_ressource and the matched OR branch
  * (via findMatchingBranch). Direct precedence on cross-resource collision +
- * error_log warning. Returns null when no deducting cost applies.
+ * error_log warning. Returns null when no deducting cost applies, false when
+ * the ressource lookup fails, so the caller refuses instead of granting free.
  *
  * @param PDO $pdo : database connection
  * @param array $power : power to evaluate
@@ -419,9 +426,9 @@ function findMatchingBranch(PDO $pdo, array $powerConditions, int $controller_id
  * @param int $worker_id : worker id
  * @param int $turn_number : turn number
  * @param string $state_text : state text
- * @return array|null ['ressource_id' => int, 'ressource_name' => string, 'amount' => int]
+ * @return array|false|null ['ressource_id' => int, 'ressource_name' => string, 'amount' => int], null when no cost applies, false when the ressource is unknown or its lookup fails
  */
-function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null
+function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|false|null
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['power' => $power, 'worker_id' => $worker_id, 'state_text' => $state_text], 'debug');
@@ -465,14 +472,18 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
     }
 
     $rid = resolveRessourceIdByName($pdo, $cost['ressource_name']);
+    if ($rid === false) {
+        game_error_log(__FUNCTION__, 'cost lookup failed, the power is refused', ['ressource_name' => $cost['ressource_name']], 'error');
+        return false;
+    }
     if ($rid === null) {
         game_error_log(
             __FUNCTION__,
-            'ressource not found in ressources_config',
+            'ressource not found in ressources_config, the power is refused',
             ['ressource_name' => $cost['ressource_name']],
-            'warning'
+            'error'
         );
-        return null;
+        return false;
     }
     return ['ressource_id' => $rid, 'ressource_name' => $cost['ressource_name'], 'amount' => $cost['amount']];
 }
@@ -758,9 +769,9 @@ function extractRessourceCostFromRule(array|null $ressourceRule): array|null
  * Resolve a ressource_id from its ressource_name.
  * @param PDO $pdo : database connection
  * @param string $ressource_name : ressource name
- * @return int|null ressource id
+ * @return int|false|null ressource id, null when no ressource bears that name, false when the SELECT fails
  */
-function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|null
+function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|false|null
 {
     // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
     game_error_log(__FUNCTION__, 'START with ressource_name : ' . $ressource_name, [], 'debug');
@@ -773,7 +784,7 @@ function resolveRessourceIdByName(PDO $pdo, string $ressource_name): int|null
         return $rid !== false ? (int)$rid : null;
     } catch (PDOException $e) {
         game_error_log(__FUNCTION__, 'SELECT ressource_id by name failed', ['error' => $e->getMessage()]);
-        return null;
+        return false;
     }
 }
 

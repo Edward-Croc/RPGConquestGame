@@ -181,6 +181,10 @@ function canStartFirstCome(PDO $pdo, int $controller_id): bool
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, [], 'debug');
 
     $controllerValues = getControllers($pdo, null, $controller_id);
+    // An unreadable controller row refuses.
+    if (empty($controllerValues[0])) {
+        return false;
+    }
     if (
         (int)$controllerValues[0]['turn_firstcome_workers'] < (int)getConfig($pdo, 'turn_firstcome_workers')
     ) {
@@ -203,9 +207,14 @@ function canStartRecrutement(PDO $pdo, int $controller_id, int $turnNumber): boo
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['turnNumber' => $turnNumber], 'debug');
 
     $controllerValues = getControllers($pdo, null, $controller_id);
+    $bases = hasBase($pdo, $controller_id);
+    // An unreadable controller row or base list refuses.
+    if (empty($controllerValues[0]) || !is_array($bases)) {
+        return false;
+    }
 
     if (
-        count(hasBase($pdo, $controller_id)) > 0
+        count($bases) > 0
         &&
         ((
             ($turnNumber == 0)

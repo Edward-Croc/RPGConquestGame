@@ -422,14 +422,13 @@ class TestMalformedAmount:
 # ---------------------------------------------------------------------------
 
 def _recruitment_page(browser, base_url, controller_lastname):
-    """Render the first-come recruitment page of a controller as the gm.
-    Returns (recruitment form rendered, transformation names offered).
-
-    Rendering spends that controller's first-come allowance for the turn, so
-    each controller is visited once in this module."""
+    """Render the first-come recruitment page of a controller as the gm, with
+    that controller selected (the page refuses the gm without a faction).
+    Returns (recruitment form rendered, transformation names offered)."""
     ctx = browser.new_context(); page = ctx.new_page()
     ensure_gm_login(page, base_url)
     controller_id = ui_controller_id(page, controller_lastname, base_url=base_url)
+    safe_goto(page, f"{base_url}/base/accueil.php?controller_id={controller_id}&chosir=Choisir")
     safe_goto(page, f"{base_url}/workers/new.php?controller_id={controller_id}")
     page.wait_for_load_state("load")
     form_rendered = page.locator("input[name='chosir']").count() > 0
@@ -586,12 +585,16 @@ def recruitment_cost(browser):
     - Echo (Gold=2) forges that recruitment, is refused, receives 1 Gold from
       Alpha, buys it with the same URL, then replays it with an empty stock ;
     - Beta (gm with Beta selected) forges Test_Not_Beta, then a transformation
-      id in the discipline and hobby fields, then recruits with a real discipline ;
+      id in the discipline field, then recruits with a real discipline ;
     - Delta's player sends the perfect-agent marker, which it is not entitled to ;
     - the gm with Beta selected uses the perfect-agent form for Echo.
 
-    Alpha and Beta build their base, then use the regular recruitment (start_workers=1 at turn 0),
-    their first-come allowance being spent by TestControllerNotFaction ;
+    Every URL comes from the form of a stored candidate and carries its
+    candidate_id. A refused URL leaves that candidate in place, so the same URL
+    buys it later ; once bought, the candidate is gone and a replay shows the
+    agent the form names, unchecked and free.
+
+    Alpha and Beta build their base, then use the regular recruitment (start_workers=1 at turn 0) ;
     Echo and Delta use their first-come allowance."""
     state = {}
     contexts = []
@@ -667,7 +670,6 @@ def recruitment_cost(browser):
         forged = {
             "transformation": _recruit_url(beta, transformation=offered["Test_Not_Beta"]),
             "discipline": _recruit_url(beta, discipline=str(power_ids["War Gear"])),
-            "hobby": _recruit_url(beta, power_hobby_id=str(power_ids["War Gear"])),
             "foreign_discipline": _recruit_url(beta, discipline=str(power_ids["Offensive Stance"])),
         }
         real_discipline = _recruit_url(beta, discipline=str(power_ids["Focused Mind"]))
@@ -707,9 +709,10 @@ def recruitment_cost(browser):
 
 
 class TestRecruitmentCost:
-    """workers/action.php's creation branch rebuilds the transformation list
-    workers/new.php offers, refuses a posted transformation that is not on
-    it, and charges its cost in the same transaction as the new agent."""
+    """workers/action.php's creation branch recruits a stored candidate,
+    rebuilds the transformation list workers/new.php offers, refuses a posted
+    transformation that is not on it, and charges its cost in the same
+    transaction as the new agent."""
 
     def test_recruitment_charges_the_transformation_cost(self, recruitment_cost):
         assert "Test_Gold_Recruit" in recruitment_cost["alpha_offered"], \
@@ -771,12 +774,8 @@ class TestRecruitmentCost:
         assert "Ce pouvoir n'est pas disponible" in recruitment_cost[f"beta_{field}_html"]
         assert recruitment_cost[f"beta_{field}_status"] == 403
 
-    # Two plain tests rather than a parametrized one : pytest would rebuild the class fixture for the second value.
     def test_transformation_smuggled_as_discipline_is_refused(self, recruitment_cost):
         self._assert_smuggling_refused(recruitment_cost, "discipline")
-
-    def test_transformation_smuggled_as_hobby_is_refused(self, recruitment_cost):
-        self._assert_smuggling_refused(recruitment_cost, "hobby")
 
     def test_discipline_of_another_faction_is_refused(self, recruitment_cost):
         """Offensive Stance belongs to FactionAlpha : Beta's recruitment page does not offer it."""

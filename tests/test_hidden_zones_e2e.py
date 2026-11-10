@@ -33,7 +33,7 @@ from conftest import (
 )
 from helpers import (
     DB_AVAILABLE, _wait_loaded, load_minimal_data, load_scenario_via_admin,
-    login_as, safe_goto, get_db_connection, zone_name_from_option,)
+    login_as, safe_goto, get_db_connection, ui_worker_id, zone_name_from_option,)
 
 
 _TARGET_ZONE = "Zeta-Unclaimed"
@@ -230,9 +230,9 @@ def _delete_bases(zone_id, controller_id):
 
 def _reset_all_recruitment_counters():
     """Zero every controller's turn_firstcome_workers / turn_recruited_workers
-    so a test that navigates to workers/new.php can render the recruit
-    form (the page increments the counter each visit and blocks past
-    turn_firstcome_workers >= config.turn_firstcome_workers)."""
+    so workers/new.php renders the recruit form whatever an earlier test
+    recruited: the page only reads the counters, but refuses once they
+    reach the configured allowance and sizes its candidate draw on them."""
     conn = _db_conn()
     cur = conn.cursor()
     cur.execute(
@@ -244,9 +244,11 @@ def _reset_all_recruitment_counters():
     conn.close()
 
 
-def _worker_new_zone_option_names(page):
-    """Return the zone name of each <option> in <select name='zone_id'> on
-    workers/new.php, decoration stripped by zone_name_from_option."""
+def _zone_select_option_names(page):
+    """Return the zone name of each <option> in the showZoneSelect
+    <select name='zone_id'> of the current page (workers/new.php, an
+    agent sheet's move form...), decoration stripped by
+    zone_name_from_option."""
     raw = page.locator("select[name='zone_id'] option").all_text_contents()
     return [zone_name_from_option(r) for r in raw]
 
@@ -467,7 +469,8 @@ class TestHiddenZoneVisibility:
     """Runtime visibility of `is_hidden=1` zones: only the holder /
     claimer controller and GM see them; other non-privileged
     controllers do not. Covers the `showZoneSelect` output on
-    workers/new.php and the zone-box list on zones/view.php, plus
+    workers/new.php and an agent sheet's move select, and the zone-box
+    list on zones/view.php, plus
     coexistence with the legacy `hide_turn_zero` filter and mid-turn
     holder-flip reveal."""
 
@@ -487,7 +490,7 @@ class TestHiddenZoneVisibility:
         login_as(page, base_url, "single_player", "test")
         safe_goto(page, f"{base_url}/workers/new.php")
         _wait_loaded(page, "select[name='zone_id']")
-        zoneNames = _worker_new_zone_option_names(page)
+        zoneNames = _zone_select_option_names(page)
         assert self._EPSILON not in zoneNames, (
             f"Non-holder non-privileged controller must not see a hidden "
             f"zone; got zoneNames={zoneNames!r}"
@@ -507,30 +510,42 @@ class TestHiddenZoneVisibility:
         login_as(page, base_url, "single_player", "test")
         safe_goto(page, f"{base_url}/workers/new.php")
         _wait_loaded(page, "select[name='zone_id']")
-        zoneNames = _worker_new_zone_option_names(page)
+        zoneNames = _zone_select_option_names(page)
         assert self._EPSILON in zoneNames, (
             f"Holder controller must see the hidden zone it owns; got "
             f"zoneNames={zoneNames!r}"
         )
 
-    def test_gm_sees_hidden_zone_in_worker_new_select(
+    def test_gm_sees_hidden_zone_in_agent_move_select(
         self, page: Page, base_url
     ):
-        """GM (privileged) sees every zone regardless of is_hidden — on
-        both workers/new.php's recruitment select and the zone-box list
-        rendered by zones/action.php."""
+        """GM (privileged) with no faction selected sees every zone
+        regardless of is_hidden — in the move select of an agent sheet
+        (workers/action.php, showZoneSelect with hideZones) and in the
+        zone-box list rendered by zones/action.php. workers/new.php refuses
+        the gm without a faction, so the agent sheet carries the select
+        observation. Searcher_1 is a live Alpha agent of TestConfig; the
+        sheet needs controller_id in the URL to render without a faction."""
         epsilonId = _get_zone_id(self._EPSILON)
         _reset_zone_visibility(epsilonId)
         _set_zone_flags(epsilonId, is_hidden=1)
-        _reset_all_recruitment_counters()
         alphaId = _get_controller_id_by_lastname("Alpha")
 
+        # Fresh context: the gm is linked to several factions, so login selects none.
         ensure_gm_login(page, base_url)
-        safe_goto(page, f"{base_url}/workers/new.php?controller_id={alphaId}")
+        workerId = ui_worker_id(page, "Searcher_1", base_url)
+        safe_goto(
+            page,
+            f"{base_url}/workers/action.php?worker_id={workerId}"
+            f"&controller_id={alphaId}",
+        )
         _wait_loaded(page, "select[name='zone_id']")
-        zoneNames = _worker_new_zone_option_names(page)
+        zoneNames = _zone_select_option_names(page)
+        assert zoneNames, (
+            "The agent sheet must render a non-empty move select"
+        )
         assert self._EPSILON in zoneNames, (
-            f"GM must see hidden zone in worker recruitment; got "
+            f"GM must see hidden zone in an agent's move select; got "
             f"zoneNames={zoneNames!r}"
         )
 
@@ -556,7 +571,7 @@ class TestHiddenZoneVisibility:
             login_as(page, base_url, "single_player", "test")
             safe_goto(page, f"{base_url}/workers/new.php")
             _wait_loaded(page, "select[name='zone_id']")
-            zoneNames = _worker_new_zone_option_names(page)
+            zoneNames = _zone_select_option_names(page)
             assert self._ETA not in zoneNames, (
                 f"Eta-Hidden (hide_turn_zero=1) must still be filtered from "
                 f"the recruitment select at turn 0; got zoneNames={zoneNames!r}"
@@ -580,7 +595,7 @@ class TestHiddenZoneVisibility:
         login_as(page, base_url, "single_player", "test")
         safe_goto(page, f"{base_url}/workers/new.php")
         _wait_loaded(page, "select[name='zone_id']")
-        beforeNames = _worker_new_zone_option_names(page)
+        beforeNames = _zone_select_option_names(page)
         assert self._EPSILON not in beforeNames, (
             f"Baseline: Alpha (non-holder) must not see Epsilon; got "
             f"zoneNames={beforeNames!r}"
@@ -590,7 +605,7 @@ class TestHiddenZoneVisibility:
         _reset_all_recruitment_counters()
         page.reload()
         _wait_loaded(page, "select[name='zone_id']")
-        afterNames = _worker_new_zone_option_names(page)
+        afterNames = _zone_select_option_names(page)
         assert self._EPSILON in afterNames, (
             f"Post-flip: Alpha (new holder) must see Epsilon; got "
             f"zoneNames={afterNames!r}"

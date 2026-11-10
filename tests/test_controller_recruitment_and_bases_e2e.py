@@ -404,22 +404,17 @@ def recruitment_scenario(browser):
     page.wait_for_load_state("load")
     _snapshot['alpha_recruit_form_html'] = page.content()
 
-    # Submit the first proposal not named like an Alpha agent : createWorker
-    # would hand back that agent, whose powers are not the ones offered.
-    forms = page.locator("div.workers form")
-    form = forms.first
-    for index in range(forms.count()):
-        candidate = forms.nth(index)
-        name = " ".join(
-            candidate.locator(f"input[name='{field}']").get_attribute("value")
-            for field in ("firstname", "lastname")
-        )
-        if name not in _snapshot['alpha_t0_after_base_html']:
-            form = candidate
-            break
+    # A stored candidate always yields a new agent, even one named like an Alpha agent.
+    form = page.locator("div.workers form").first
+    # The proposal text names the hobby and the job as "<strong>Name (enquete, attack/defence)</strong>".
+    offered_powers = [
+        m.group(1)
+        for m in (re.match(r"(.+?) \(-?\d+, -?\d+/-?\d+\)$", text.strip())
+                  for text in form.locator("p > strong").all_inner_texts()[1:])
+        if m
+    ]
     _snapshot['alpha_recruit_offered_powers'] = {
-        field: re.search(r"<strong>(.+?) \(", form.locator(f"input[name='{field}']").get_attribute("value")).group(1)
-        for field in ("power_hobby", "power_metier")
+        f"power {index}": name for index, name in enumerate(offered_powers, 1)
     }
     form.locator("select[name='zone_id']").select_option(index=0)
     form.locator("input[name='chosir']").click()
@@ -643,18 +638,17 @@ class TestFirstComeRecruitment:
     """First-come recruitment path."""
 
     def test_first_come_creates_worker_without_base(self):
-        """First-come should not decrease the worker-card count on viewAll.
+        """First-come adds exactly one worker card on viewAll.
 
         UI-first: count `class="worker-short"` cards rendered on Alpha's
-        viewAll page. `createWorker` returns the existing worker ID if the
-        pre-generated name collides with one already recruited for the same
-        controller+origin — a duplicate is a valid game outcome, so we
-        accept `>= baseline` rather than requiring a new card every time.
+        viewAll page. A stored candidate always yields a new agent, even one
+        named like an agent Alpha already holds. The baseline is read before
+        any Alpha action; only Charlie acts in between.
         """
         baseline_ui = _snapshot['alpha_baseline_workers_ui']
         after_ui = _snapshot['alpha_t0_after_first_come_workers_ui']
-        assert after_ui >= baseline_ui, \
-            f"UI worker-card count should not decrease: baseline={baseline_ui}, after={after_ui}"
+        assert after_ui == baseline_ui + 1, \
+            f"First-come should add exactly one worker card: baseline={baseline_ui}, after={after_ui}"
 
     def test_first_come_locked_on_same_turn(self):
         """After one first-come, button should disappear (limit=1 per turn).
@@ -682,15 +676,14 @@ class TestRegularRecruitment:
     """Regular (base-requiring) recruitment path."""
 
     def test_recruit_creates_worker(self):
-        """UI-first: worker-card count on viewAll should not decrease after recruit.
+        """UI-first: recruiting a stored candidate adds exactly one worker card on viewAll.
 
-        Name collisions may cause createWorker to return the existing ID
-        without rendering a new card — the counter increments regardless.
+        Between the two snapshots Alpha only builds its base, which adds no agent.
         """
         after_first_come_ui = _snapshot['alpha_t0_after_first_come_workers_ui']
         after_recruit_ui = _snapshot['alpha_t0_after_recruit_workers_ui']
-        assert after_recruit_ui >= after_first_come_ui, \
-            f"UI worker-card count should not decrease after recruit: " \
+        assert after_recruit_ui == after_first_come_ui + 1, \
+            f"Recruitment should add exactly one worker card: " \
             f"{after_first_come_ui} -> {after_recruit_ui}"
 
     def test_recruit_carries_the_offered_powers(self):
@@ -701,6 +694,8 @@ class TestRegularRecruitment:
         powers.id hands the agent the next job in the list.
         """
         html = _snapshot['alpha_recruited_worker_html']
+        assert len(_snapshot['alpha_recruit_offered_powers']) == 2, \
+            f"The proposal must name a hobby and a job; got {_snapshot['alpha_recruit_offered_powers']}"
         for field, power_name in _snapshot['alpha_recruit_offered_powers'].items():
             assert power_name in html, \
                 f"Recruited agent should hold the offered {field} '{power_name}'"

@@ -248,6 +248,8 @@
         "first_come_origin_list",
         "recrutement_nb_choices",
         "recrutement_origin_list",
+        "recruitCarryMode",
+        "recruitMissingCandidates",
         "local_origin_list",
         "recrutement_disciplines",
         "recrutement_transformation",

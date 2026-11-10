@@ -10,10 +10,13 @@ define('INACTIVE_ACTIONS', ['dead', 'captured', 'trace']);
  * @param int $controller_id : controller who is recruiting
  * @param string $buttonClicked : recruitment button key (used to pick origin list)
  *
- * @return array : new worker draft with origin/powers filled in
+ * @return array|null : new worker draft with origin/powers filled in, or NULL as soon as a draw fails
  */
-function generateNewWorker(PDO $pdo, int $controller_id, string $buttonClicked): array
+function generateNewWorker(PDO $pdo, int $controller_id, string $buttonClicked): array|null
 {
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['buttonClicked' => $buttonClicked], 'debug');
+
     $newWorker = array('controller_id' => $controller_id);
 
     $generationOrder = getConfig($pdo, 'generation_order');
@@ -25,6 +28,9 @@ function generateNewWorker(PDO $pdo, int $controller_id, string $buttonClicked):
     foreach ($generationOrderArray as $generationOrder) {
         if ($generationOrder == 'origin') {
             $newWorker = randomWorkerOrigin($pdo, $newWorker, $buttonClicked);
+            if ($newWorker === null) {
+                return null;
+            }
             $newWorker = randomWorkerName($pdo, $newWorker);
         }
         if ($generationOrder == 'metier') {
@@ -33,9 +39,115 @@ function generateNewWorker(PDO $pdo, int $controller_id, string $buttonClicked):
         if ($generationOrder == 'hobby') {
             $newWorker = randomPowersByType($pdo, '1', $newWorker);
         }
+        if ($newWorker === null) {
+            return null;
+        }
     }
 
     return $newWorker;
+}
+
+/**
+ * Stored recruitment candidates with their origin and the text of their hobby and job.
+ *
+ * @param PDO $pdo : database connection
+ * @param int|null $controller_id : keep one controller's candidates, null for every controller
+ * @param string|null $recruit_type : 'first_come' or 'recrutement', null for both
+ * @param bool $shortPowerText : short power text (admin list) or long one (recruitment page)
+ *
+ * @return array|false : rows ordered by id, false on a failed SELECT
+ */
+function getRecruitCandidates(PDO $pdo, int|null $controller_id = null, string|null $recruit_type = null, bool $shortPowerText = false): array|false
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', ['controller_id' => $controller_id, 'recruit_type' => $recruit_type], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $sqlPowerText = "SELECT lpt.id AS link_power_type_id, " . getSQLPowerText($shortPowerText) . " FROM {$prefix}link_power_type lpt JOIN {$prefix}powers p ON p.id = lpt.power_id";
+    $where = [];
+    $params = [];
+    if ($controller_id !== null) {
+        $where[] = 'rc.controller_id = :controller_id';
+        $params[':controller_id'] = $controller_id;
+    }
+    if ($recruit_type !== null) {
+        $where[] = 'rc.recruit_type = :recruit_type';
+        $params[':recruit_type'] = $recruit_type;
+    }
+    try {
+        $stmt = $pdo->prepare("SELECT rc.id, rc.controller_id, rc.recruit_type, rc.turn_generated, rc.firstname, rc.lastname, rc.origin_id, rc.power_hobby_id, rc.power_metier_id, rc.is_kept,
+                c.lastname AS controller_lastname, wo.name AS origin, ph.power_text AS power_hobby_text, pm.power_text AS power_metier_text
+            FROM {$prefix}recruit_candidates rc
+            JOIN {$prefix}controllers c ON c.id = rc.controller_id
+            JOIN {$prefix}worker_origins wo ON wo.id = rc.origin_id
+            LEFT JOIN ({$sqlPowerText}) ph ON ph.link_power_type_id = rc.power_hobby_id
+            LEFT JOIN ({$sqlPowerText}) pm ON pm.link_power_type_id = rc.power_metier_id
+            " . ($where ? 'WHERE ' . implode(' AND ', $where) : '') . "
+            ORDER BY rc.id");
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'SELECT recruit_candidates failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'recruit_type' => $recruit_type], 'error');
+        return false;
+    }
+}
+
+/**
+ * Draw new recruitment candidates for a controller and store them.
+ *
+ * Each candidate is drawn with generateNewWorker and stamped with the current turn.
+ * The caller owns the transaction and rolls it back on a false return.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $controller_id : controller the candidates are offered to
+ * @param string $recruit_type : 'first_come' or 'recrutement'
+ * @param int $count : number of candidates to add
+ *
+ * @return bool : true once every candidate is stored, false on a failed draw or INSERT
+ */
+function topUpRecruitCandidates(PDO $pdo, int $controller_id, string $recruit_type, int $count): bool
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['recruit_type' => $recruit_type, 'count' => $count], 'debug');
+
+    $prefix = $_SESSION['GAME_PREFIX'];
+    $mechanics = getMechanics($pdo);
+    $turn_number = (int)($mechanics['turncounter'] ?? 0);
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO {$prefix}recruit_candidates
+            (controller_id, recruit_type, turn_generated, firstname, lastname, origin_id, power_hobby_id, power_metier_id)
+            VALUES (:controller_id, :recruit_type, :turn_generated, :firstname, :lastname, :origin_id, :power_hobby_id, :power_metier_id)
+        ");
+    } catch (PDOException $e) {
+        game_error_log(__FUNCTION__, 'Preparing the recruit_candidates INSERT failed : ' . $e->getMessage(), ['controller_id' => $controller_id], 'error');
+        return false;
+    }
+    for ($iteration = 0; $iteration < $count; $iteration++) {
+        $newWorker = generateNewWorker($pdo, $controller_id, $recruit_type);
+        if ($newWorker === null) {
+            game_error_log(__FUNCTION__, 'Candidate draw failed', ['controller_id' => $controller_id, 'recruit_type' => $recruit_type], 'error');
+            return false;
+        }
+        try {
+            $stmt->execute([
+                ':controller_id' => $controller_id,
+                ':recruit_type' => $recruit_type,
+                ':turn_generated' => $turn_number,
+                ':firstname' => $newWorker['firstname'],
+                ':lastname' => $newWorker['lastname'],
+                ':origin_id' => $newWorker['origin_id'],
+                ':power_hobby_id' => $newWorker['power_1']['link_power_type_id'] ?? null,
+                ':power_metier_id' => $newWorker['power_2']['link_power_type_id'] ?? null,
+            ]);
+        } catch (PDOException $e) {
+            game_error_log(__FUNCTION__, 'INSERT recruit_candidates failed : ' . $e->getMessage(), ['controller_id' => $controller_id, 'newWorker' => $newWorker], 'error');
+            return false;
+        }
+    }
+    game_error_log(__FUNCTION__, 'DONE', ['controller_id' => $controller_id, 'count' => $count], 'debug');
+
+    return true;
 }
 
 /**
@@ -1125,12 +1237,12 @@ function _oppositionPickPower(PDO $pdo, array $newWorker, array $action, string 
 /**
  * Id of the agent a recruitment payload names, when its controller already holds it.
  *
- * An agent is the same when its firstname, lastname, origin and controller match.
+ * An agent is the same when its firstname, lastname, origin and controller match. Among namesakes, the most recent such agent is returned.
  *
  * @param PDO $pdo : database connection
  * @param array $array : recruitment payload, with firstname, lastname, origin_id and controller_id
  *
- * @return string|false|null : the existing worker id, null when there is none, false when the SELECT fails
+ * @return string|false|null : the most recent such worker id, null when there is none, false when the SELECT fails
  */
 function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
 {
@@ -1141,7 +1253,8 @@ function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
     try {
         $stmt = $pdo->prepare("SELECT w.id AS id FROM {$prefix}workers AS w
         INNER JOIN {$prefix}controller_worker AS cw ON cw.worker_id = w.id
-        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id");
+        WHERE w.firstname = :firstname AND w.lastname = :lastname AND w.origin_id = :origin_id AND cw.controller_id = :controller_id
+        ORDER BY w.id DESC");
         $stmt->bindParam(':firstname', $array['firstname'], PDO::PARAM_STR);
         $stmt->bindParam(':lastname', $array['lastname'], PDO::PARAM_STR);
         $stmt->bindParam(':origin_id', $array['origin_id'], PDO::PARAM_INT);
@@ -1162,10 +1275,11 @@ function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
  *
  * @param PDO $pdo : database connection
  * @param array $array : must contain firstname, lastname, origin_id, controller_id, zone_id and optionally power_hobby_id, power_metier_id, discipline, transformation
+ * @param bool $reuseNamesake : true returns the controller's agent of the same firstname, lastname and origin instead of creating one
  *
- * @return string|false : new worker id, existing worker id, or false when a required field is missing or any write fails
+ * @return string|false : new worker id, existing namesake id, or false when a required field is missing or any write fails
  */
-function createWorker(PDO $pdo, array $array): string|false
+function createWorker(PDO $pdo, array $array, bool $reuseNamesake = true): string|false
 {
     if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
@@ -1196,9 +1310,11 @@ function createWorker(PDO $pdo, array $array): string|false
     $prefix = $_SESSION['GAME_PREFIX'];
 
     // A replayed recruitment returns the agent it already created.
-    $existing_worker_id = getRecruitedWorkerId($pdo, $array);
-    if ($existing_worker_id !== null) {
-        return $existing_worker_id;
+    if ($reuseNamesake) {
+        $existing_worker_id = getRecruitedWorkerId($pdo, $array);
+        if ($existing_worker_id !== null) {
+            return $existing_worker_id;
+        }
     }
 
     try {
