@@ -430,7 +430,7 @@ function ressourceGainEstimateForController(PDO $pdo, int $controller_id): array
 
     foreach ($configRows as $row) {
         $ressourceId = (int)$row['ressource_id'];
-        $rules = json_decode($row['gain_rules'], true);
+        $rules = decodeJson($row['gain_rules']);
         if (!is_array($rules)) {
             continue;
         }

@@ -279,7 +279,7 @@ function showDisciplineSelect(PDO $pdo, array $powerDisciplineArray, bool $showT
  */
 function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $controller_id, int|null $worker_id, int $turn_number, string $state_text): array|null
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_TRANSFORM')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with controller_id : ' . $controller_id, ['powerArray' => $powerArray, 'worker_id' => $worker_id, 'turn_number' => $turn_number, 'state_text' => $state_text], 'debug');
@@ -299,7 +299,7 @@ function cleanPowerListFromJsonConditions(PDO $pdo, array $powerArray, int $cont
             continue;
         }
 
-        $powerConditions = json_decode($power['other'] ?? '', true);
+        $powerConditions = decodeJson($power['other'] ?? '');
         if (!is_array($powerConditions)) {
             continue;
         }
@@ -436,7 +436,7 @@ function getRuleCostForPower(PDO $pdo, array $power, int $controller_id, int|nul
     if (empty($power['other'])) {
         return null;
     }
-    $powerConditions = json_decode($power['other'], true);
+    $powerConditions = decodeJson($power['other']);
     if (!is_array($powerConditions) || empty($powerConditions[$state_text]) || !is_array($powerConditions[$state_text])) {
         return null;
     }

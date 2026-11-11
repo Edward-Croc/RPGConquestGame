@@ -259,7 +259,7 @@ function excludeLocationCombatSaboteurs(PDO $pdo, array $attackers, array $locat
 
     $prefix = $_SESSION['GAME_PREFIX'];
     $secondaryLiteral = ($_SESSION['DBTYPE'] == 'postgres') ? 'false' : '0';
-    $unreachableArray = json_decode(getConfig($pdo, 'textLocationUnreachable'), true);
+    $unreachableArray = decodeJson(getConfig($pdo, 'textLocationUnreachable'));
     if (json_last_error() !== JSON_ERROR_NONE) {
         game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['config_key' => 'textLocationUnreachable'], 'warning');
         $unreachableArray = array("Je n'ai jamais pu atteindre le lieu.");

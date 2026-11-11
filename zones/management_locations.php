@@ -22,7 +22,7 @@ if (isset($_POST['toggle_destruction'])) {
     $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
     $stmt->execute([$_POST['toggle_destruction']]);
     $location = $stmt->fetch(PDO::FETCH_ASSOC);
-    $activate_json = json_decode($location['activate_json'], true);
+    $activate_json = decodeJson($location['activate_json']);
     updateLocation($gameReady, $location, $activate_json);
 }
 
@@ -67,8 +67,8 @@ foreach ($locations as $loc):
     }
 
     $toggleUpdateLocation = '';
-    $activate_json = json_decode($loc['activate_json'], true);
-    $locationTypes = json_decode($loc['location_types'] ?? '[]', true);
+    $activate_json = decodeJson($loc['activate_json']);
+    $locationTypes = decodeJson($loc['location_types'] ?? '[]');
     $locationTypesText = is_array($locationTypes) && !empty($locationTypes) ? implode(', ', $locationTypes) : '—';
     if (!empty($activate_json['update_location'])) {
         $toggleUpdateLocation = sprintf(

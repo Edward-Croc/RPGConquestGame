@@ -164,7 +164,7 @@ function topUpRecruitCandidates(PDO $pdo, int $controller_id, string $recruit_ty
  */
 function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|null $actionChoice = null, array|null $reportAppendArray = null, array|null $jsonArray = null): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['turnNumber' => $turnNumber, 'actionChoice' => $actionChoice, 'reportAppendArray' => $reportAppendArray, 'jsonArray' => $jsonArray], 'debug');
@@ -200,7 +200,7 @@ function updateWorkerAction(PDO $pdo, int $workerId, int $turnNumber, string|nul
         // Step 2: Decode the JSON report
         $report = array();
         if (!empty($row['report'])) {
-            $report = json_decode($row['report'], true);
+            $report = decodeJson($row['report']);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 game_error_log(__FUNCTION__, 'Failed to decode JSON : ' . json_last_error_msg(), ['row' => $row], 'error');
                 throw new Exception(__FUNCTION__."():Failed to decode JSON: " . json_last_error_msg());
@@ -844,7 +844,7 @@ function showWorkerShort(PDO $pdo, array $worker, array $mechanics, bool $showCh
         }
         // for prisonner get name of original controller
         if ($workerStatus == 'prisoner') {
-            $params = json_decode($currentAction['action_params'], true);
+            $params = decodeJson($currentAction['action_params']);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 echo "JSON decoding error: " . json_last_error_msg() . "<br />";
             }
@@ -982,14 +982,14 @@ function randomWorkerOrigin(PDO $pdo, array $newWorker, string $buttonClicked): 
     }
     // Locking of origins by config on hobbies
     if (!empty($newWorker['power_1']['other'])) {
-        $otherJson = json_decode($newWorker['power_1']['other'], true);
+        $otherJson = decodeJson($newWorker['power_1']['other']);
         if (!empty($otherJson['on_recrutment']['origin_list'])) {
             $originList = $otherJson['on_recrutment']['origin_list'];
         }
     }
     // Locking of origins by config on metiers
     if (!empty($newWorker['power_2']['other'])) {
-        $otherJson = json_decode($newWorker['power_2']['other'], true);
+        $otherJson = decodeJson($newWorker['power_2']['other']);
         if (!empty($otherJson['on_recrutment']['origin_list'])) {
             $originList = $otherJson['on_recrutment']['origin_list'];
         }
@@ -1281,7 +1281,7 @@ function getRecruitedWorkerId(PDO $pdo, array $array): string|false|null
  */
 function createWorker(PDO $pdo, array $array, bool $reuseNamesake = true): string|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START', ['array' => $array], 'debug');
@@ -1400,7 +1400,7 @@ function createWorker(PDO $pdo, array $array, bool $reuseNamesake = true): strin
  */
 function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $isRecrutment = false): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['link_power_type_id' => $link_power_type_id, 'isRecrutment' => $isRecrutment], 'debug');
@@ -1433,7 +1433,7 @@ function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $i
         game_error_log(__FUNCTION__, 'power other fetched', ['power' => $power], 'debug');
 
         if (!empty($power['other'])) {
-            $otherJson = json_decode($power['other'], true);
+            $otherJson = decodeJson($power['other']);
             game_error_log(__FUNCTION__, 'otherJson decoded', ['otherJson' => $otherJson], 'debug');
 
             if (json_last_error() === JSON_ERROR_NONE && is_array($otherJson)) {
@@ -1461,7 +1461,7 @@ function upgradeWorker(PDO $pdo, int $workerId, int $link_power_type_id, bool $i
  */
 function applyPowerObtentionEffect(PDO $pdo, int $workerId, array $otherJson, bool $isRecrutment = false): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with workerId : ' . $workerId, ['otherJson' => $otherJson, 'isRecrutment' => $isRecrutment], 'debug');
@@ -1730,7 +1730,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
     // Decode the existing JSON into an associative array
     $currentReport = array();
     if (!empty($currentAction['report'])) {
-        $currentReport = json_decode($currentAction['report'], true);
+        $currentReport = decodeJson($currentAction['report']);
         if (json_last_error() !== JSON_ERROR_NONE) {
             game_error_log(__FUNCTION__, 'JSON decoding error : ' . json_last_error_msg(), ['report' => $currentAction['report']], 'warning');
         }
@@ -1969,7 +1969,7 @@ function activateWorker(PDO $pdo, int $workerId, string $action, int|array|strin
             // Custody changes hands, captivity does not : the capture params must survive.
             $currentParams = array();
             if (!empty($currentAction['action_params'])) {
-                $currentParams = json_decode($currentAction['action_params'], true) ?: array();
+                $currentParams = decodeJson($currentAction['action_params']) ?: array();
             }
             $preservedParams = array();
             foreach (array('original_controller_id', 'double_agent_controller_id') as $paramKey) {
@@ -2223,7 +2223,7 @@ function buildEnemyWorkerListing(PDO $pdo, int $zone_id, int $controller_id, int
  */
 function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|null $turn_number = null): string
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with zone_id : ' . $zone_id, ['controller_id' => $controller_id, 'turn_number' => $turn_number], 'debug');
@@ -2297,7 +2297,7 @@ function showEnemyWorkersSelect(PDO $pdo, int $zone_id, int $controller_id, int|
  */
 function createTraceWorker(PDO $pdo, int $worker_id, int $controller_id): string|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');
@@ -2394,7 +2394,7 @@ function createTraceWorker(PDO $pdo, int $worker_id, int $controller_id): string
  */
 function destroyTraceWorker(PDO $pdo, int $worker_id, int $controller_id): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with worker_id : ' . $worker_id, ['controller_id' => $controller_id], 'debug');

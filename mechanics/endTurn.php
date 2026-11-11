@@ -114,8 +114,8 @@ if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessourc
         $stmt->execute();
         $workers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $timeValue = strtolower(getConfig($gameReady, 'timeValue'));
-        $timeDenominatorThis = strtolower(getConfig($gameReady, 'timeDenominatorThis'));
+        $timeValue = strtolower((string) getConfig($gameReady, 'timeValue'));
+        $timeDenominatorThis = strtolower((string) getConfig($gameReady, 'timeDenominatorThis'));
 
         foreach ($workers as $worker) {
             $investigation = $worker['enquete_val'];

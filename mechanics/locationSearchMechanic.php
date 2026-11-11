@@ -188,7 +188,7 @@ function buildLocationSearchReportLine(PDO $pdo, array $row, array|null $prevCkl
  */
 function locationSearchMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -208,16 +208,16 @@ function locationSearchMechanic(PDO $pdo, array $mechanics): bool
         'LOCATIONNAMEDIFF'            => $LOCATIONNAMEDIFF,
         'LOCATIONINFORMATIONDIFF'     => $LOCATIONINFORMATIONDIFF,
         'LOCATIONARTEFACTSDIFF'       => $LOCATIONARTEFACTSDIFF,
-        'locationNameText'            => json_decode(getConfig($pdo, 'textLocationDiscoveredName'), true),
-        'locationDescText'            => json_decode(getConfig($pdo, 'textLocationDiscoveredDescription'), true),
-        'locationDestroyableText'     => json_decode(getConfig($pdo, 'textLocationDiscoveredDestroyable'), true),
-        'textesLocationStillHere'     => json_decode(getConfig($pdo, 'textesLocationStillHere'), true),
-        'textLocationAgeOriginal'     => json_decode(getConfig($pdo, 'textLocationAgeOriginal'), true),
-        'textLocationAgeRuined'       => json_decode(getConfig($pdo, 'textLocationAgeRuined'), true),
-        'textLocationAgeRestored'     => json_decode(getConfig($pdo, 'textLocationAgeRestored'), true),
-        'textLocationAgeLongAgo'      => json_decode(getConfig($pdo, 'textLocationAgeLongAgo'), true),
-        'textLocationAgeThisTurn'     => json_decode(getConfig($pdo, 'textLocationAgeThisTurn'), true),
-        'textLocationAgeTurnsAgo'     => json_decode(getConfig($pdo, 'textLocationAgeTurnsAgo'), true),
+        'locationNameText'            => decodeJson(getConfig($pdo, 'textLocationDiscoveredName')),
+        'locationDescText'            => decodeJson(getConfig($pdo, 'textLocationDiscoveredDescription')),
+        'locationDestroyableText'     => decodeJson(getConfig($pdo, 'textLocationDiscoveredDestroyable')),
+        'textesLocationStillHere'     => decodeJson(getConfig($pdo, 'textesLocationStillHere')),
+        'textLocationAgeOriginal'     => decodeJson(getConfig($pdo, 'textLocationAgeOriginal')),
+        'textLocationAgeRuined'       => decodeJson(getConfig($pdo, 'textLocationAgeRuined')),
+        'textLocationAgeRestored'     => decodeJson(getConfig($pdo, 'textLocationAgeRestored')),
+        'textLocationAgeLongAgo'      => decodeJson(getConfig($pdo, 'textLocationAgeLongAgo')),
+        'textLocationAgeThisTurn'     => decodeJson(getConfig($pdo, 'textLocationAgeThisTurn')),
+        'textLocationAgeTurnsAgo'     => decodeJson(getConfig($pdo, 'textLocationAgeTurnsAgo')),
         'timeValue'                   => (string) getConfig($pdo, 'timeValue'),
         'turn_number'                 => $turn_number,
     ];

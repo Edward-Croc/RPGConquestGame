@@ -50,10 +50,10 @@ if (!$gameReady) {
     echo "The game is not ready. Please check DB Configuration and Setup. <br />";
     exit();
 } else {
-    if (strtolower(getConfig($gameReady, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG')) == 'true') {
         $_SESSION['DEBUG'] = true;
     }
-    if (strtolower(getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($gameReady, 'DEBUG_REPORT')) == 'true') {
         $_SESSION['DEBUG_REPORT'] = true;
     }
     $gameTitle = getConfig($gameReady, 'TITLE');

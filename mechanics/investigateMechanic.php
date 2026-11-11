@@ -32,7 +32,7 @@ function cleanAndSplitString(string|null $input): array
  */
 function getSearcherComparisons(PDO $pdo, int|null $turn_number = null, int|null $searcher_id = null): array|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . ($turn_number ?? 'NULL'), ['searcher_id' => $searcher_id], 'debug');
@@ -316,7 +316,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
     $text_action_ps = $actionEntry['ps'] ?? $row['found_action'];
     $text_action_inf = $actionEntry['inf'] ?? $row['found_action'];
     if ($row['found_action'] == 'claim' && $row['found_action_params'] != '{}') {
-        $found_action_params = json_decode($row['found_action_params'], true);
+        $found_action_params = decodeJson($row['found_action_params']);
         if (is_array($found_action_params)) {
             if ($found_action_params['claim_controller_id'] == 'null') {
                 $text_action_ps .= ' au nom de personne';
@@ -330,7 +330,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         }
     }
     if ($row['found_action'] == 'attack' && $row['found_action_params'] != '{}') {
-        $found_action_params = json_decode($row['found_action_params'], true);
+        $found_action_params = decodeJson($row['found_action_params']);
         $networkIDs = [];
         $workerIDs = [];
         if (is_array($found_action_params)) {
@@ -357,7 +357,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
         }
     }
     if (($row['found_action'] == 'attack_location' || $row['found_action'] == 'defend_location') && $row['found_action_params'] != '{}') {
-        $found_action_params = json_decode($row['found_action_params'], true);
+        $found_action_params = decodeJson($row['found_action_params']);
         // attack_location / defend_location => target location name
         if (is_array($found_action_params) && !empty($found_action_params['location_id'])) {
             $locName = getLocationName($pdo, (int) $found_action_params['location_id']);
@@ -506,7 +506,7 @@ function buildInvestigateReportLine(PDO $pdo, array $row, array|null $prevCke, a
  */
 function investigateMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_REPORT')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turncounter : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -540,19 +540,19 @@ function investigateMechanic(PDO $pdo, array $mechanics): bool
     $txtBag = [
         'actions' => $actionsMap,
         'textesStartInvestigate'              => getConfig($pdo, 'textesStartInvestigate'),
-        'textesDiff01Array'                   => json_decode(getConfig($pdo, 'textesDiff01Array'), true),
-        'textesDiff01TransformationDiff0Array' => json_decode(getConfig($pdo, 'textesDiff01TransformationDiff0Array'), true),
-        'textesDiff2'                         => json_decode(getConfig($pdo, 'textesDiff2'), true),
-        'textesDiff3'                         => json_decode(getConfig($pdo, 'textesDiff3'), true),
-        'textesFoundDisciplines'              => json_decode(getConfig($pdo, 'textesFoundDisciplines'), true),
-        'textesTransformationDiff1'           => json_decode(getConfig($pdo, 'textesTransformationDiff1'), true),
-        'textesTransformationDiff2'           => json_decode(getConfig($pdo, 'textesTransformationDiff2'), true),
-        'textesOrigine'                       => json_decode(getConfig($pdo, 'textesOrigine'), true),
+        'textesDiff01Array'                   => decodeJson(getConfig($pdo, 'textesDiff01Array')),
+        'textesDiff01TransformationDiff0Array' => decodeJson(getConfig($pdo, 'textesDiff01TransformationDiff0Array')),
+        'textesDiff2'                         => decodeJson(getConfig($pdo, 'textesDiff2')),
+        'textesDiff3'                         => decodeJson(getConfig($pdo, 'textesDiff3')),
+        'textesFoundDisciplines'              => decodeJson(getConfig($pdo, 'textesFoundDisciplines')),
+        'textesTransformationDiff1'           => decodeJson(getConfig($pdo, 'textesTransformationDiff1')),
+        'textesTransformationDiff2'           => decodeJson(getConfig($pdo, 'textesTransformationDiff2')),
+        'textesOrigine'                       => decodeJson(getConfig($pdo, 'textesOrigine')),
         'local_origin_list'                   => getConfig($pdo, 'local_origin_list'),
         'controllerNameDenominatorThe'        => getConfig($pdo, 'controllerNameDenominatorThe'),
-        'textesAgentStillHere'                => json_decode(getConfig($pdo, 'textesAgentStillHere'), true),
-        'textesAgentMoved'                    => json_decode(getConfig($pdo, 'textesAgentMoved'), true),
-        'textesAgentUpgradeInfo'              => json_decode(getConfig($pdo, 'textesAgentUpgradeInfo'), true),
+        'textesAgentStillHere'                => decodeJson(getConfig($pdo, 'textesAgentStillHere')),
+        'textesAgentMoved'                    => decodeJson(getConfig($pdo, 'textesAgentMoved')),
+        'textesAgentUpgradeInfo'              => decodeJson(getConfig($pdo, 'textesAgentUpgradeInfo')),
         'textesAgentReminderLabel'            => getConfig($pdo, 'textesAgentReminderLabel'),
         'textForZoneType'                     => getConfig($pdo, 'textForZoneType'),
         'REPORTDIFF'                          => $REPORTDIFF,

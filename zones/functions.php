@@ -495,7 +495,7 @@ function recalculateBaseDefence(PDO $pdo): bool
  */
 function calculateControllerValue(PDO $pdo, string $type, int $zone_id, int|null $controller_id = null, int|null $location_id = null): int
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with type : ' . $type, ['zone_id' => $zone_id, 'controller_id' => $controller_id, 'location_id' => $location_id], 'debug');
@@ -1265,7 +1265,7 @@ function applyZoneRules(PDO $pdo, string $type, int $zone_id, int|null $controll
         return $value;
     }
 
-    $rules = json_decode($row['zone_rules'], true);
+    $rules = decodeJson($row['zone_rules']);
     if (!is_array($rules)) {
         game_error_log(__FUNCTION__, 'invalid JSON in zone_rules', ['zone_id' => $zone_id]);
         return $value;

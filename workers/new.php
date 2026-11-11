@@ -197,7 +197,7 @@ foreach ($candidates as $candidate) {
     $recrutement_transformation_json = getConfig($gameReady, 'recrutement_transformation');
     $recrutement_transformation_array = array();
     if (!empty($recrutement_transformation_json)) {
-        $recrutement_transformation_array = json_decode($recrutement_transformation_json, true);
+        $recrutement_transformation_array = decodeJson($recrutement_transformation_json);
         if (json_last_error() !== JSON_ERROR_NONE) {
             echo __FUNCTION__."():JSON decoding error: " . json_last_error_msg() . "<br />";
             $recrutement_transformation_array = array();

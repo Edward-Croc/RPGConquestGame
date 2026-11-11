@@ -74,7 +74,7 @@ function _claimResolveClaimerControllerIdForWrite(array $params, int $selfContro
  */
 function claimMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -100,7 +100,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
 
         if ($r['fire_observer_reports']) {
             $textesViewKey = $r['success'] ? 'textesClaimSuccessViewArray' : 'textesClaimFailViewArray';
-            $textesView = json_decode(getConfig($pdo, $textesViewKey), true) ?: [];
+            $textesView = decodeJson(getConfig($pdo, $textesViewKey)) ?: [];
             // (nom) - %1$s
             // (zone) - %2$s
             // (co-claimer names) - %3$s
@@ -127,7 +127,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
         // (nom) - %1$s
         // (zone) - %2$s
         $textesSelfKey = $r['success'] ? 'textesClaimSuccessArray' : 'textesClaimFailArray';
-        $textesSelf = json_decode(getConfig($pdo, $textesSelfKey), true) ?: [];
+        $textesSelf = decodeJson(getConfig($pdo, $textesSelfKey)) ?: [];
         // Every agent of the group claimed, so every agent reports it, the leader included.
         $selfRecipients = array_unique(array_merge([(int)$r['leader_worker_id']], array_map('intval', $r['claimer_worker_ids'])));
         if (!empty($textesSelf)) {
@@ -175,7 +175,7 @@ function claimMechanic(PDO $pdo, array $mechanics): bool
  */
 function claimByWorkerMath(PDO $pdo, array $mechanics): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -266,7 +266,7 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array
             }
         }
 
-        $claimerParams = !empty($claimer['claimer_params']) ? json_decode($claimer['claimer_params'], true) : array();
+        $claimerParams = !empty($claimer['claimer_params']) ? decodeJson($claimer['claimer_params']) : array();
         if (json_last_error() !== JSON_ERROR_NONE) {
             $claimerParams = array();
         }
@@ -328,7 +328,7 @@ function claimByWorkerMath(PDO $pdo, array $mechanics): array
  */
 function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
     game_error_log(__FUNCTION__, 'START with turn_number : ' . $mechanics['turncounter'], ['mechanics' => $mechanics], 'debug');
@@ -453,7 +453,7 @@ function claimByWorkerLeaderMath(PDO $pdo, array $mechanics): array
         $calculated_defence_val = (int) $zone['calculated_defence_val'];
 
         $leaderParamsRaw = $paramsByLeader[$leader_id] ?? '';
-        $leaderParams = !empty($leaderParamsRaw) ? json_decode($leaderParamsRaw, true) : array();
+        $leaderParams = !empty($leaderParamsRaw) ? decodeJson($leaderParamsRaw) : array();
         if (json_last_error() !== JSON_ERROR_NONE) {
             $leaderParams = array();
         }

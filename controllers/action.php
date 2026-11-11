@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmt = $gameReady->prepare("SELECT * FROM {$prefix}locations WHERE id = ?");
             $stmt->execute([$target_location_id]);
             $location = $stmt->fetch(PDO::FETCH_ASSOC);
-            $activate_json = $location ? json_decode($location['activate_json'], true) : null;
+            $activate_json = $location ? decodeJson($location['activate_json']) : null;
         } catch (PDOException $e) {
             $lookupFailed = true;
             game_error_log('controllers_action_page', 'SELECT locations failed : ' . $e->getMessage(), ['target_location_id' => $target_location_id], 'warning');

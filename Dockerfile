@@ -1,10 +1,7 @@
-FROM php:8.0-apache
+FROM php:8.2-apache
 
 # Install PHP extensions and mysql client (needed for BDD export/import tests)
-# bullseye-security is frozen since Debian 11 went end of life : its index is expired and
-# advertises package versions whose pool files are gone, so apt must not read it at all.
-RUN sed -i '/bullseye-security/d' /etc/apt/sources.list \
-    && apt-get -o Acquire::Retries=3 update \
+RUN apt-get -o Acquire::Retries=3 update \
     && apt-get install -y --no-install-recommends default-mysql-client \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install pdo pdo_mysql mysqli

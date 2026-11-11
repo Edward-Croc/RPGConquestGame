@@ -18,7 +18,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__)) {
  */
 function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null $attacker_id = null): array|false
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 
@@ -72,7 +72,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
     foreach ($attackersActionArray as $attackAction) {
         if (!empty($attackAction['params'])) {
             $attackArray[$attackAction['attacker_id']] = array();
-            $attackParams = json_decode($attackAction['params'], true);
+            $attackParams = decodeJson($attackAction['params']);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 game_error_log(__FUNCTION__, 'JSON decode error', ['error' => json_last_error_msg(), 'attacker_id' => $attackAction['attacker_id']]);
                 $attackParams = array();
@@ -298,7 +298,7 @@ function getAttackerComparisons(PDO $pdo, int|null $turn_number = null, int|null
  */
 function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string $attackerReportKey = 'attack_report', string $defenderReportKey = 'life_report'): array
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 
@@ -311,14 +311,14 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
     $RIPOSTDIFF = getConfig($pdo, 'RIPOSTDIFF');
     $RIPOSTACTIVE = getConfig($pdo, 'RIPOSTACTIVE');
 
-    $workerDisappearanceTexts = json_decode(getConfig($pdo, 'workerDisappearanceTexts'), true);
-    $workerCapturedTexts = json_decode(getConfig($pdo, 'workerCapturedTexts'), true);
-    $attackSuccessTexts = json_decode(getConfig($pdo, 'attackSuccessTexts'), true);
-    $captureSuccessTexts = json_decode(getConfig($pdo, 'captureSuccessTexts'), true);
-    $failedAttackTextes = json_decode(getConfig($pdo, 'failedAttackTextes'), true);
-    $escapeTextes = json_decode(getConfig($pdo, 'escapeTextes'), true);
-    $textesAttackFailedAndCountered = json_decode(getConfig($pdo, 'textesAttackFailedAndCountered'), true);
-    $counterAttackTexts = json_decode(getConfig($pdo, 'counterAttackTexts'), true);
+    $workerDisappearanceTexts = decodeJson(getConfig($pdo, 'workerDisappearanceTexts'));
+    $workerCapturedTexts = decodeJson(getConfig($pdo, 'workerCapturedTexts'));
+    $attackSuccessTexts = decodeJson(getConfig($pdo, 'attackSuccessTexts'));
+    $captureSuccessTexts = decodeJson(getConfig($pdo, 'captureSuccessTexts'));
+    $failedAttackTextes = decodeJson(getConfig($pdo, 'failedAttackTextes'));
+    $escapeTextes = decodeJson(getConfig($pdo, 'escapeTextes'));
+    $textesAttackFailedAndCountered = decodeJson(getConfig($pdo, 'textesAttackFailedAndCountered'));
+    $counterAttackTexts = decodeJson(getConfig($pdo, 'counterAttackTexts'));
 
     $attackerReport = array();
     $defenderReport = array();
@@ -493,7 +493,7 @@ function resolveWorkerCombat(PDO $pdo, array $defender, array $mechanics, string
  */
 function attackMechanic(PDO $pdo, array $mechanics): bool
 {
-    if (strtolower(getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
+    if (strtolower((string) getConfig($pdo, 'DEBUG_ATTACK')) == 'true') {
         $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;
     }
 
@@ -516,7 +516,7 @@ function attackMechanic(PDO $pdo, array $mechanics): bool
         return true;
     }
 
-    $unfoundAttackTextes = json_decode(getConfig($pdo, 'unfoundAttackTextes'), true);
+    $unfoundAttackTextes = decodeJson(getConfig($pdo, 'unfoundAttackTextes'));
 
     foreach ($attacksArray as $attacker_id => $defenders) {
         // Build report :

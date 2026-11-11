@@ -500,7 +500,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $prisonerActions = getWorkerActions($gameReady, $worker_id);
         $prisonerParams = array();
         if (!empty($prisonerActions[0]['action_params'])) {
-            $prisonerParams = json_decode($prisonerActions[0]['action_params'], true) ?: array();
+            $prisonerParams = decodeJson($prisonerActions[0]['action_params']) ?: array();
         }
         // A release only ever goes back to a faction the capture recorded, even when that is the jailer.
         $releaseTargets = array_map('intval', array_filter([
@@ -535,7 +535,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $currentAction = $workerActions[0] ?? array();
         $params = array();
         if (!empty($currentAction['action_params'])) {
-            $params = json_decode($currentAction['action_params'], true) ?: array();
+            $params = decodeJson($currentAction['action_params']) ?: array();
         }
         // Only a prisoner may be transferred, and only by the faction actually holding them.
         $isPrisoner = ($currentAction['action_choice'] ?? '') === 'captured';
