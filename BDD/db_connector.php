@@ -31,6 +31,18 @@ function getPath(string $file): string|null
 }
 
 /**
+ * Return the SSL option for the mysql command-line clients.
+ *
+ * @param array $config : the DB config, as loadDBConfig returns it
+ *
+ * @return string : '--skip-ssl' when the config asks for it, an empty string otherwise
+ */
+function mysqlClientSslOption(array $config): string
+{
+    return filter_var($config['db_skip_ssl'] ?? false, FILTER_VALIDATE_BOOLEAN) ? '--skip-ssl' : '';
+}
+
+/**
  * Loads DB config from file, falling back to defaults for missing keys.
  *
  * @param string|null $path : directory containing the config file (nullable when getPath found nothing)
@@ -50,6 +62,7 @@ function loadDBConfig(string|null $path, string $configFile): array
         'folder' => 'RPGConquestGame',
         'game_prefix' => '',  // e.g., 'rpg1_' or 'demo_'
         'env' => 'production',
+        'db_skip_ssl' => false,  // true only where the mysql client rejects the server's self-signed certificate
     ];
 
     // Check if the file exists
@@ -1220,7 +1233,8 @@ function exportBDD(bool $silent = false): string|null
     // export BDD to file via command line
     if ($config['db_type'] == 'mysql') {
         $command = sprintf(
-            'mysqldump --skip-ssl -h %s -u %s -p%s %s > %s',
+            'mysqldump %s -h %s -u %s -p%s %s > %s',
+            mysqlClientSslOption($config),
             escapeshellarg($config['host']),
             escapeshellarg($config['username']),
             escapeshellarg($config['password']),
@@ -1290,7 +1304,8 @@ function importBDD(PDO $pdo, array $file): bool
             // import BDD from file via command line
             if ($config['db_type'] == 'mysql') {
                 $command = sprintf(
-                    'mysql --skip-ssl -h %s -u %s -p%s %s < %s',
+                    'mysql %s -h %s -u %s -p%s %s < %s',
+                    mysqlClientSslOption($config),
                     escapeshellarg($config['host']),
                     escapeshellarg($config['username']),
                     escapeshellarg($config['password']),
