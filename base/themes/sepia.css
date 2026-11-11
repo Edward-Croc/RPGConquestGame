@@ -60,3 +60,17 @@ a:hover {
 .has-text-danger { color: #8e2b1f !important; }
 .has-text-grey, .has-text-grey-light { color: #7a6650 !important; }
 .has-background-warning-light { background-color: #f1dfb0 !important; }
+
+/* Document buttons written as bare <button> in the scenario texts (PRESENTATION, IntrigueOrga) look like the Bulma "is-small is-info" faction document button. */
+.intro button, .mechanics > p button {
+    background-color: #5d6b4f;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #f8f0dc;
+    cursor: pointer;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    padding: calc(0.5em - 1px) 1em;
+}
+.intro button:hover, .mechanics > p button:hover { filter: brightness(1.12); }
