@@ -3,4 +3,4 @@
 // Application version — bumped per release in the same commit/PR that
 // introduces a user-visible change. Rendered in the page footer via
 // base/baseHTMLFooter.php.
-define('APP_VERSION', '0.8.0-beta-stable');
+define('APP_VERSION', '0.8.1-beta-stable');
