@@ -30,6 +30,8 @@ amount is unchanged.
 Run:
     python3 -m pytest tests/test_spend_ressources_insufficient_stock_e2e.py -v
 """
+import re
+
 import pytest
 
 from conftest import (
@@ -39,7 +41,8 @@ from conftest import (
 from helpers import (
     DB_AVAILABLE, load_minimal_data, load_scenario_via_admin,
     safe_goto, register_php_error_listener, assert_no_collected_php_errors,
-    ui_controller_ids_map, ui_zone_id, get_db_connection,)
+    ui_controller_ids_map, ui_zone_id, get_db_connection,
+    as_controller, set_config_via_ui, ui_config_value, ui_location_id, ui_read_ressources_page,)
 
 
 @pytest.fixture(scope="session")
@@ -540,3 +543,129 @@ class TestRepairLocationInsufficientStock:
         assert _location_repaired_state("Echo-Base") == state_after, (
             "the replay must not flip the location back to ruins"
         )
+
+
+# ---------------------------------------------------------------------------
+# freeWithoutRessource — a controller with NO row for a costed ressource
+# ---------------------------------------------------------------------------
+
+def _base_page(page, lastname):
+    """Faction page of `lastname` as the gm reads it, and the zone its base sits in."""
+    as_controller(page, lastname, base_url=PHP_BASE_URL)
+    safe_goto(page, f"{PHP_BASE_URL}/controllers/action.php")
+    page.wait_for_load_state("load")
+    html = page.content()
+    m = re.search(r"Votre\s+\S[^<]*?\s+à\s+([\w\-]+)", html)
+    return html, (m.group(1) if m else None)
+
+
+def _move_base_url(page, controller_id, base_id, zone_id):
+    """Crafted moveBase GET, the path a stale form or a forged URL takes; returns the response page."""
+    safe_goto(
+        page,
+        f"{PHP_BASE_URL}/controllers/action.php"
+        f"?controller_id={controller_id}&base_id={base_id}&zone_id={zone_id}&moveBase=1",
+    )
+    page.wait_for_load_state("load")
+    return page.content()
+
+
+def _set_echo_gold(page, amount):
+    """Set Echo's Gold row through the ressources admin page."""
+    safe_goto(page, f"{PHP_BASE_URL}/ressources/management.php")
+    page.wait_for_load_state("load")
+    rc_id = page.locator(
+        "tr:has(td:has-text('Echo')):has(td:text-is('Gold')) input[name='controller_ressource_id']"
+    ).first.get_attribute("value")
+    page.request.post(
+        f"{PHP_BASE_URL}/ressources/management.php",
+        form={"controller_ressource_id": str(rc_id), "amount": str(amount),
+              "amount_stored": "0", "end_turn_gain": "0", "update_ressource": "1"},
+    )
+
+
+class TestFreeWithoutRessource:
+    """`freeWithoutRessource` lists the cost columns a controller lacking the
+    costed ressource does for free. Foxtrot owns Foxtrot-Outpost (a base) and
+    has NO Gold row, while TestConfig's Gold costs 5 to move a base.
+
+    - `[]`: Foxtrot's page replaces the move form by « Vous n'avez pas les
+      ressources nécessaires » and names the missing cost « Coût : 5 Gold »,
+      and a crafted moveBase is refused (« Stock insuffisant ou modifié. »)
+      with the base left where it was. Without the missing-row rule, Foxtrot
+      would see the form and move for free.
+    - `["base_moving_cost"]`: Foxtrot sees the form and moves for free.
+    - Anchor: Echo, WITH 50 Gold, moves under `[]` and pays 5.
+
+    The key is restored to its TestConfig value in `finally`."""
+
+    @pytest.fixture(scope="class", autouse=True)
+    def free_without_state(self, browser):
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        register_php_error_listener(page)
+        ensure_gm_login(page, PHP_BASE_URL)
+        ids = ui_controller_ids_map(page, PHP_BASE_URL)
+        original = ui_config_value(page, "freeWithoutRessource")
+        foxtrot_base_id = ui_location_id(page, "Foxtrot-Outpost", base_url=PHP_BASE_URL)
+        echo_base_id = ui_location_id(page, "Echo-Base", base_url=PHP_BASE_URL)
+        zeta_id = ui_zone_id(page, "Zeta-Unclaimed", base_url=PHP_BASE_URL)
+        beta_combat_id = ui_zone_id(page, "Beta-Combat", base_url=PHP_BASE_URL)
+        state = {}
+        try:
+            set_config_via_ui(page, "freeWithoutRessource", "[]")
+            state["refused_page"], state["zone_before"] = _base_page(page, "Foxtrot")
+            state["refused_buttons"] = page.locator("input[name='moveBase']").count()
+            state["refused_response"] = _move_base_url(page, ids["Foxtrot"], foxtrot_base_id, zeta_id)
+            _, state["zone_after_refusal"] = _base_page(page, "Foxtrot")
+
+            _set_echo_gold(page, 50)
+            _, echo_zone_before = _base_page(page, "Echo")
+            echo_target_id, state["echo_target"] = (
+                (beta_combat_id, "Beta-Combat") if echo_zone_before == "Zeta-Unclaimed" else (zeta_id, "Zeta-Unclaimed")
+            )
+            _move_base_url(page, ids["Echo"], echo_base_id, echo_target_id)
+            _, state["echo_zone_after"] = _base_page(page, "Echo")
+            ressources, _ = ui_read_ressources_page(page, ids["Echo"])
+            state["echo_gold_after"] = int(ressources["Gold"]["Montant utilisable"])
+
+            set_config_via_ui(page, "freeWithoutRessource", '["base_moving_cost"]')
+            state["free_page"], _ = _base_page(page, "Foxtrot")
+            state["free_buttons"] = page.locator("input[name='moveBase']").count()
+            state["free_response"] = _move_base_url(page, ids["Foxtrot"], foxtrot_base_id, zeta_id)
+            _, state["zone_after_free"] = _base_page(page, "Foxtrot")
+        finally:
+            set_config_via_ui(page, "freeWithoutRessource", original)
+        assert_no_collected_php_errors(page)
+        ctx.close()
+        type(self)._state = state
+        yield
+
+    def test_missing_ressource_refuses_the_move_and_names_the_cost(self):
+        st = self._state
+        assert st["zone_before"] == "Theta-Artefacts", f"Foxtrot-Outpost starts in Theta-Artefacts, got {st['zone_before']!r}"
+        assert "ressources nécessaires pour déménager" in st["refused_page"], \
+            "without a Gold row and with base_moving_cost not free, the move form must give way to the warning"
+        assert "Coût : 5 Gold" in st["refused_page"], \
+            "the warning must name the configured cost Foxtrot lacks"
+        assert st["refused_buttons"] == 0, "no Déménager button may be offered"
+        assert "Stock insuffisant ou modifié." in st["refused_response"], \
+            "a crafted moveBase must be refused by the spend"
+        assert st["zone_after_refusal"] == "Theta-Artefacts", \
+            f"the refused move must leave the base in place, got {st['zone_after_refusal']!r}"
+
+    def test_controller_with_the_ressource_moves_and_pays(self):
+        st = self._state
+        assert st["echo_zone_after"] == st["echo_target"], \
+            f"Echo, holding 50 Gold, must move its base to {st['echo_target']}, got {st['echo_zone_after']!r}"
+        assert st["echo_gold_after"] == 45, f"Echo must pay the 5 Gold move cost: expected 45, got {st['echo_gold_after']}"
+
+    def test_listed_cost_is_free_without_the_ressource(self):
+        st = self._state
+        assert "ressources nécessaires pour déménager" not in st["free_page"], \
+            "base_moving_cost is listed: Foxtrot must not be warned"
+        assert st["free_buttons"] >= 1, "base_moving_cost is listed: the Déménager button must be offered"
+        assert "Stock insuffisant" not in st["free_response"]
+        assert st["zone_after_free"] == "Zeta-Unclaimed", \
+            f"the free move must carry the base to Zeta-Unclaimed, got {st['zone_after_free']!r}"
+

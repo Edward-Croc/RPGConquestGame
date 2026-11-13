@@ -15,3 +15,5 @@ GainTest_LocationById,GainTest_LocationById resource for the gain-rule location_
 GainTest_LocationTypeNames,GainTest_LocationTypeNames resource for the location-type names of the gain-rule texts,,0,0,0,0,0,"[{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""base""}},{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""temple""}},{""amount"":1,""timing"":""after_claim"",""condition"":{""type"":""owns_location_type"",""location_type"":""watchtower""}}]",0
 GainTest_Rollable,GainTest_Rollable resource for the is_rollable carry-over test,,1,0,0,0,0,,0
 GainTest_ClaimsZone,GainTest_ClaimsZone resource for the gain-rule claims_zone test,,0,0,0,0,0,,0
+GainTest_NotFaction,GainTest_NotFaction resource for the gain-rule controller_not_faction test,,0,0,0,0,0,,0
+GainTest_OnlyFaction,GainTest_OnlyFaction resource for the gain-rule controller_faction test,,0,0,0,0,0,,0

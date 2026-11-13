@@ -430,4 +430,5 @@ VALUES
 , ('textLocationAgentSpoilsOther', '[
     "Les prisonniers sont repartis avec le réseau %1$s.<br/>"
 ]', 'Ajout au rapport quand des artefacts ont bougé et qu’un autre réseau les emporte. %1$s = numéro du réseau vainqueur.')
+, ('freeWithoutRessource', '["base_building_cost"]', 'Coûts dont une faction sans la ressource est dispensée (Shikoku construit sa forteresse sans Koku, mais ne la déplace ni ne répare sans Koku)')
 ON CONFLICT (name) DO UPDATE SET value=EXCLUDED.value, description=EXCLUDED.description;

@@ -297,3 +297,4 @@
 "timeValue","Trimestre","Unité de temps (Shikoku : trimestre)"
 "textOwnedArtefacts","Vos protégé.es :","En-tête de la liste d'artefacts détenus (Shikoku)"
 "locationTypeNames","[[""forteresse"", ""forteresse""], [""temple"", ""temple""]]","Types de lieux [tag, nom], le premier est celui des bases (Shikoku : forteresse)"
+"freeWithoutRessource","[""base_building_cost""]","Coûts dont une faction sans la ressource est dispensée (Shikoku construit sa forteresse sans Koku, mais ne la déplace ni ne répare sans Koku)"

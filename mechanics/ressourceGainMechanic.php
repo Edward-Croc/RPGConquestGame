@@ -6,10 +6,14 @@ if (!defined('RESSOURCE_GAIN_LOCATION_FILTER_WHITELIST')) {
 if (!defined('RESSOURCE_GAIN_CONDITION_TYPES')) {
     define('RESSOURCE_GAIN_CONDITION_TYPES', ['holds_zone', 'claims_zone', 'owns_location_type']);
 }
+if (!defined('RESSOURCE_GAIN_FACTION_KEYS')) {
+    define('RESSOURCE_GAIN_FACTION_KEYS', ['controller_faction', 'controller_not_faction']);
+}
 
 /**
  * Apply end-of-turn ressource gain rules whose timing matches $timing.
  * Each rule produces amount x COUNT(matching entities for the controller).
+ * Its controller_faction / controller_not_faction keys admit or refuse controllers by real faction.
  * Malformed rules are logged and skipped (graceful degradation).
  *
  * @param PDO $pdo : database connection
@@ -40,6 +44,13 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool
         return false;
     }
 
+    // Real faction of every controller, read once for the faction filters of the rules
+    $controllersArray = getControllers($pdo, null, null, false);
+    if ($controllersArray === null) {
+        return false;
+    }
+    $controllersById = array_column($controllersArray, null, 'id');
+
     // For each Ressource
     foreach ($configRows as $row) {
         $ressourceId = (int)$row['ressource_id'];
@@ -63,6 +74,7 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool
             if ($multiplier === 0) {
                 continue;
             }
+            $factionKeys = array_intersect_key($rule, array_flip(RESSOURCE_GAIN_FACTION_KEYS));
 
             // Check if the rule's condition apply's to a controller
             // list of ['controller_id' => int, 'match_count' => int]
@@ -72,6 +84,11 @@ function ressourceGainMechanic(PDO $pdo, string $timing): bool
                 $controllerId = (int)$match['controller_id'];
                 $matchCount = (int)$match['match_count'];
                 if ($matchCount <= 0) {
+                    continue;
+                }
+                // A rule kept from the controller's faction pays it nothing
+                $factionContext = ['worker' => null, 'controllersArray' => [$controllersById[$controllerId] ?? []], 'zonesArray' => [], 'zonesArrayHolder' => [], 'ressourcesArray' => []];
+                if (!empty($factionKeys) && !evaluateRuleKeysAllMatch($factionKeys, $factionContext, $currentTurn)) {
                     continue;
                 }
                 $gainAmount = $multiplier * $matchCount;
