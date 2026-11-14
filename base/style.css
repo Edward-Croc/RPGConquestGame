@@ -142,6 +142,10 @@ body {
     width: 250px;
 }
 
+.sidebar-timer {
+    color: var(--color-chrome-text);
+    padding: 6px 10px;
+}
 .sidebar-form {
     margin: 0;
 }

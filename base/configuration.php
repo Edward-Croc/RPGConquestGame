@@ -101,7 +101,7 @@ require_once '../base/baseHTML.php';
                 <form method="post">
                     <td>' . $config['id'] . '</td>
                     <td>' . $config['name'] . '</td>
-                    <td><input type="textarea" name="value" value="' . htmlspecialchars($config['value']) . '"></td>
+                    <td><input type="textarea" name="value" value="' . htmlspecialchars((string) $config['value']) . '"></td>
                     <td>
                         <input type="hidden" name="id" value="' . $config['id'] . '">
                         <input type="submit" name="update_config" value="Update">

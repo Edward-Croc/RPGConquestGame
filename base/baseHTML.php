@@ -74,6 +74,68 @@ if (!$isLoggedIn && !empty($noConnection)) {
         echo "<a href='/$folder/{$info['path']}'$classAttr>{$info['label']}</a>";
     }
 
+    // One token per session, shared by the timer commands and the end-of-turn form, burned by endTurn.php.
+    if ($isPrivileged && $pageName !== 'End Turn' && empty($_SESSION['end_turn_token'])) {
+        $_SESSION['end_turn_token'] = bin2hex(random_bytes(16));
+    }
+
+    // Turn timer counter, only when a mode is set and the mechanics columns exist.
+    $timerMode = (string) getConfig($gameReady, 'turnTimerMode');
+    $timerStateRead = in_array($timerMode, ['durations', 'dates'], true) ? getTurnTimerState($mechanics ?? []) : null;
+    if ($timerStateRead !== null) {
+        $timerNow = time();
+        $timerDeadline = $timerStateRead['deadline'];
+        $timerRemaining = $timerStateRead['remaining'];
+        $timerImminentText = formatConfigText('turnTimerTextImminent', getConfig($gameReady, 'turnTimerTextImminent') ?? 'Fin de tour imminente.');
+        // The page of the MJ fires the end of turn itself at expiry, only for a fresh end of turn and never from the end-of-turn page.
+        $timerAutoFire = $isPrivileged && $pageName !== 'End Turn'
+            && getConfig($gameReady, 'turnTimerOnExpiry') === 'endTurn'
+            && empty($mechanics['end_step']);
+        $timerPhase = 'stopped';
+        if ($timerRemaining !== null) {
+            $timerPhase = 'paused';
+        } elseif ($timerDeadline !== null) {
+            $timerPhase = 'running';
+        }
+        if ($timerPhase === 'paused') {
+            $timerText = formatConfigText('turnTimerTextPaused', getConfig($gameReady, 'turnTimerTextPaused') ?? 'Jeu en pause, il reste %s.', formatTurnTimerDelay((int) $timerRemaining));
+            echo "<div id='turnTimer' class='sidebar-timer'>" . htmlspecialchars($timerText, ENT_QUOTES) . '</div>';
+        } elseif ($timerPhase === 'running' && $timerDeadline > $timerNow) {
+            $timerUnit = strtolower((string) getConfig($gameReady, 'timeValue'));
+            $timerTemplate = getConfig($gameReady, 'turnTimerTextRunning') ?? 'Fin de %s dans %s.';
+            $timerText = formatConfigText('turnTimerTextRunning', $timerTemplate, $timerUnit, formatTurnTimerDelay($timerDeadline - $timerNow));
+            $timerPattern = formatConfigText('turnTimerTextRunning', $timerTemplate, $timerUnit, '{delay}');
+            echo "<div id='turnTimer' class='sidebar-timer' data-deadline='" . (int) $timerDeadline . "' data-now='" . (int) $timerNow . "'>" . htmlspecialchars($timerText, ENT_QUOTES) . '</div>';
+            // Texts the countdown script swaps in, kept out of data-* attributes.
+            echo '<script>var turnTimerTexts = ' . json_encode(['running' => $timerPattern, 'imminent' => $timerImminentText, 'autoFire' => $timerAutoFire], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) . ';</script>';
+        } elseif ($timerPhase === 'running') {
+            $timerText = $timerImminentText;
+            if ($isPrivileged) {
+                $timerText .= ' Retard : ' . formatTurnTimerDelay($timerNow - $timerDeadline);
+            }
+            echo "<div id='turnTimer' class='sidebar-timer'>" . htmlspecialchars($timerText, ENT_QUOTES) . '</div>';
+            if ($timerAutoFire) {
+                echo '<script>var turnTimerExpiredAutoFire = true; var turnTimerExpiredDeadline = ' . (int) $timerDeadline . ';</script>';
+            }
+        }
+
+        // Commands for the MJ, the end-of-turn page has no token minted.
+        if ($isPrivileged && $pageName !== 'End Turn') {
+            $timerCommands = [
+                'stopped' => ['start' => 'Lancer'],
+                'running' => ['pause' => 'Pause', 'stop' => 'Arrêter'],
+                'paused' => ['resume' => 'Reprendre', 'stop' => 'Arrêter'],
+            ][$timerPhase];
+            foreach ($timerCommands as $timerAction => $timerLabel) {
+                echo "<form class='sidebar-form' method='post' action='/$folder/mechanics/turnTimer.php'>";
+                echo "<input type='hidden' name='turn_timer_action' value='$timerAction'>";
+                echo "<input type='hidden' name='end_turn_token' value='" . htmlspecialchars($_SESSION['end_turn_token'], ENT_QUOTES) . "'>";
+                echo "<button type='submit' class='sidebar-btn'>$timerLabel</button>";
+                echo '</form>';
+            }
+        }
+    }
+
     // Privileged user section
     if ($isPrivileged) {
         // The end-of-turn page carries no trigger of its own.
@@ -83,12 +145,10 @@ if (!$isLoggedIn && !empty($noConnection)) {
             } else {
                 $btnText = ($mechanics['gamestate'] ?? 0) == 0 ? 'Start Game' : 'End Turn';
             }
-            // One token per session, minted here and burned by endTurn.php.
-            if (empty($_SESSION['end_turn_token'])) {
-                $_SESSION['end_turn_token'] = bin2hex(random_bytes(16));
-            }
             echo "<form id='endTurnForm' class='sidebar-form' method='post' action='/$folder/mechanics/endTurn.php'>";
             echo "<input type='hidden' name='end_turn_token' value='" . htmlspecialchars($_SESSION['end_turn_token'], ENT_QUOTES) . "'>";
+            echo "<input type='hidden' name='turn_seen' value='" . (int) $mechanics['turncounter'] . "'>";
+            echo "<input type='hidden' name='end_step_seen' value='" . htmlspecialchars((string) ($mechanics['end_step'] ?? ''), ENT_QUOTES) . "'>";
             echo "<button type='submit' id='endTurnBtn' class='sidebar-btn'>$btnText</button>";
             echo '</form>';
         }
@@ -175,6 +235,24 @@ register_shutdown_function(function () {
             document.getElementById('endTurnForm').submit();
         }
 
+        var endTurnAutoFired = false;
+        var autoFireDeadline = '';
+
+        function autoFireEndTurn() {
+            if (endTurnAutoFired || !document.getElementById('endTurnForm')) return;
+            endTurnAutoFired = true;
+            // The deadline this tab rendered with, checked by endTurn.php against the live timer.
+            if (autoFireDeadline) {
+                const field = document.createElement('input');
+                field.type = 'hidden';
+                field.name = 'auto_deadline';
+                field.value = autoFireDeadline;
+                document.getElementById('endTurnForm').appendChild(field);
+            }
+            document.getElementById('endTurnModal').classList.add('is-active');
+            confirmEndTurn();
+        }
+
         function initEndTurnConfirmation() {
             const endTurnBtn = document.getElementById('endTurnBtn');
             if (!endTurnBtn) return; // Absent for non-privileged users and on the end-of-turn page
@@ -191,4 +269,43 @@ register_shutdown_function(function () {
         }
 
         document.addEventListener('DOMContentLoaded', initEndTurnConfirmation);
+
+        function initTurnTimerCountdown() {
+            const timer = document.getElementById('turnTimer');
+            if (!timer || !timer.dataset.deadline || typeof turnTimerTexts === 'undefined') return;
+
+            const deadline = parseInt(timer.dataset.deadline, 10);
+            autoFireDeadline = String(deadline);
+            const serverNow = parseInt(timer.dataset.now, 10);
+            const loadedAt = Date.now() / 1000;
+            const pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+            const format = function (s) {
+                return s >= 3600
+                    ? Math.floor(s / 3600) + 'h' + pad(Math.floor((s % 3600) / 60))
+                    : Math.floor(s / 60) + 'min ' + (s % 60) + 's';
+            };
+            const tick = function () {
+                // Elapsed client time since load, so the client clock offset never matters.
+                const left = Math.round(deadline - serverNow - (Date.now() / 1000 - loadedAt));
+                if (left <= 0) {
+                    timer.textContent = turnTimerTexts.imminent;
+                    clearInterval(handle);
+                    if (turnTimerTexts.autoFire) autoFireEndTurn();
+                    return;
+                }
+                timer.textContent = turnTimerTexts.running.replace('{delay}', format(left));
+            };
+            const handle = setInterval(tick, 1000);
+            tick();
+        }
+
+        document.addEventListener('DOMContentLoaded', initTurnTimerCountdown);
+
+        // The deadline is already past at load: the countdown has nothing to count.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof turnTimerExpiredAutoFire !== 'undefined' && turnTimerExpiredAutoFire) {
+                autoFireDeadline = String(turnTimerExpiredDeadline);
+                autoFireEndTurn();
+            }
+        });
     </script>

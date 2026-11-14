@@ -42,6 +42,51 @@ if (!$endTurnAllowed) {
     exit();
 }
 
+// A fresh end of turn is claimed atomically on the turn the form was rendered at: of two simultaneous triggers only one wins.
+$seenTurn = is_string($_POST['turn_seen'] ?? null) && ctype_digit($_POST['turn_seen']) ? (int) $_POST['turn_seen'] : null;
+$claimRefused = $seenTurn === null || $seenTurn !== (int) $mechanics['turncounter'];
+// The form carries the step it was rendered at: a step moved by another session since the render is a late second trigger.
+$seenStep = is_string($_POST['end_step_seen'] ?? null) ? $_POST['end_step_seen'] : null;
+if ($seenStep === null || $seenStep !== (string) ($mechanics['end_step'] ?? '')) {
+    $claimRefused = true;
+}
+// An auto-fire only proceeds while the timer still holds the deadline its tab rendered with.
+if (!$claimRefused && isset($_POST['auto_deadline'])) {
+    $autoDeadline = is_string($_POST['auto_deadline']) && ctype_digit($_POST['auto_deadline']) ? (int) $_POST['auto_deadline'] : null;
+    $currentTimer = getTurnTimerState($mechanics);
+    if ($autoDeadline === null || $currentTimer === null || $currentTimer['deadline'] === null || $currentTimer['deadline'] !== $autoDeadline) {
+        $claimRefused = true;
+    }
+}
+if (!$claimRefused && ($mechanics['end_step'] ?? '') === '') {
+    try {
+        $claimStmt = $gameReady->prepare(
+            "UPDATE {$_SESSION['GAME_PREFIX']}mechanics SET end_step = 'claimed' WHERE id = :id AND turncounter = :seen AND (end_step IS NULL OR end_step = '')"
+        );
+        $claimStmt->bindValue(':id', (int) $mechanics['id'], PDO::PARAM_INT);
+        $claimStmt->bindValue(':seen', $seenTurn, PDO::PARAM_INT);
+        $claimStmt->execute();
+        $claimRefused = $claimStmt->rowCount() !== 1;
+        if (!$claimRefused) {
+            $mechanics['end_step'] = 'claimed';
+        }
+    } catch (PDOException $e) {
+        game_error_log('endTurn_page', 'End of turn claim failed', ['error' => $e->getMessage()], 'error');
+        $claimRefused = true;
+    }
+}
+if ($claimRefused) {
+    game_error_log(
+        'endTurn_page',
+        'End of turn refused, stale turn or already claimed',
+        ['turn_seen' => $seenTurn, 'turncounter' => $mechanics['turncounter']],
+        'warning'
+    );
+    echo '<h2>Fin de tour non déclenchée</h2>';
+    echo '<p>Fin de tour déjà en cours ou déjà effectuée, rechargez la page.</p>';
+    exit();
+}
+
 // $GLOBALS['DEBUG_LOG_SECTIONS'][] = 'endTurn_page';  // uncomment to log DEBUG events from this page
 
 // A resume after the turn increment still archives under the turn being ended.
@@ -70,7 +115,7 @@ echo sprintf(
 );
 
 if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
-    if (in_array($mechanics['end_step'], [null, ''])) {
+    if (in_array($mechanics['end_step'], [null, '', 'claimed'])) {
         $ressourcesResult = updateRessources($gameReady, $mechanics);
         if (!$ressourcesResult) {
             game_error_log('endTurn_page', 'updateRessources failed', [], 'warning');
@@ -86,7 +131,7 @@ if (getConfig($gameReady, 'ressource_management') == 'TRUE') {
     }
 }
 
-if (in_array($mechanics['end_step'], [null, '', 'calculateVals', 'updateRessources'])) {
+if (in_array($mechanics['end_step'], [null, '', 'claimed', 'calculateVals', 'updateRessources'])) {
     $valsResult = true;
     $valsResult = calculateVals($gameReady, $mechanics);
     if ($valsResult) {
@@ -280,9 +325,24 @@ if ($mechanics['end_step'] == 'restartTurnRecrutementCount') {
     $prefix = $_SESSION['GAME_PREFIX'];
     try {
         // The turn and its step move together, so a resume never increments twice.
-        $sql = "UPDATE {$prefix}mechanics set turncounter = :turncounter, end_step = 'updateTurnCounter' WHERE id = :id";
+        // Re-read so a Pause, Arrêter or Reprendre made during the resolution is kept.
+        $freshMechanics = getMechanics($gameReady);
+        $timerState = $freshMechanics === null ? null : getTurnTimerState($freshMechanics);
+        $timerSet = '';
+        $timerParams = [];
+        if ($timerState !== null && ($timerState['deadline'] !== null || $timerState['remaining'] !== null)) {
+            // The deadline of the new turn moves with the turn, a paused timer restarts paused with the full duration.
+            $now = time();
+            $nextDeadline = computeNextTurnDeadline($gameReady, $turn, $now);
+            $timerParams = [
+                ':deadline' => ($nextDeadline === null || $timerState['deadline'] === null) ? null : gmdate('Y-m-d H:i:s', $nextDeadline),
+                ':remaining' => ($nextDeadline === null || $timerState['remaining'] === null) ? null : max(0, $nextDeadline - $now),
+            ];
+            $timerSet = ', turn_deadline = :deadline, turn_timer_remaining = :remaining';
+        }
+        $sql = "UPDATE {$prefix}mechanics set turncounter = :turncounter, end_step = 'updateTurnCounter'{$timerSet} WHERE id = :id";
         $stmt = $gameReady->prepare($sql);
-        $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id']]);
+        $stmt->execute([':turncounter' => $turn, ':id' => $mechanics['id']] + $timerParams);
     } catch (PDOException $e) {
         game_error_log('endTurn_page', 'UPDATE mechanics failed : ' . $e->getMessage(), ['turn' => $turn], 'error');
         return false;

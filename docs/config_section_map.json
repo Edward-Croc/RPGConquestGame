@@ -266,6 +266,20 @@
         "locationTypeNames"
       ]
     },
+    "turn_timer": {
+      "title": "Timer de fin de tour",
+      "description": "Échéance de fin de tour, pause et déclenchement automatique.",
+      "keys": [
+        "turnTimerMode",
+        "turnTimerOnExpiry",
+        "turnTimerDurations",
+        "turnTimerDates",
+        "turnTimerTimezone",
+        "turnTimerTextRunning",
+        "turnTimerTextPaused",
+        "turnTimerTextImminent"
+      ]
+    },
     "debug": {
       "title": "Débogage",
       "description": "Flags de debug et insertion de valeurs de test.",

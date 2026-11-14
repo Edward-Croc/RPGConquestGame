@@ -13,7 +13,9 @@ CREATE TABLE {prefix}mechanics (
     turncounter INT DEFAULT 0,
     gamestate INT DEFAULT 0,
     end_step TEXT,
-    scenario_name VARCHAR(255) DEFAULT '' -- scenario loaded by the last full reset
+    scenario_name VARCHAR(255) DEFAULT '', -- scenario loaded by the last full reset
+    turn_deadline DATETIME NULL, -- UTC end of the running turn timer, NULL when paused or stopped
+    turn_timer_remaining INT NULL -- seconds left while the turn timer is paused
 );
 
 -- create configuration table
