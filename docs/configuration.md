@@ -187,6 +187,12 @@ Activation du module économique. Les types et gains vivent aussi dans ressource
 
 Clés : `ressource_management`, `locationTypeNames`
 
+### `turn_timer` — Timer de fin de tour
+
+Mode, échéances, comportement à l'expiration et textes du compte à rebours.
+
+Clés : `turnTimerMode`, `turnTimerOnExpiry`, `turnTimerDurations`, `turnTimerDates`, `turnTimerTimezone`, `turnTimerTextRunning`, `turnTimerTextPaused`, `turnTimerTextImminent`
+
 ### `debug` — Débogage
 
 Flags de debug et insertion de valeurs de test.
@@ -934,6 +940,28 @@ Le préfixe de l'onglet est la valeur configurée par `timeValue`, par exemple �
 ### Section admin « Information Transactions »
 
 `controllers/management.php` reçoit une section listant tous les transferts (giver, recipient, type, target, zone) triés du plus récent au plus ancien — équivalent au panneau « Ressource Transactions » de la page admin des ressources.
+
+### `turn_timer` — Timer de fin de tour
+
+Le timer affiche dans la barre latérale le temps qui reste avant la fin du tour. Son fonctionnement (états, commandes du meneur de jeu) est décrit dans `docs/architecture.md`, §3.
+
+**`turnTimerMode`** (`off`, `durations` ou `dates`) — la source de l'échéance. Une clé absente vaut `off`, et rien ne s'affiche.
+
+**`turnTimerOnExpiry`** (`notice` ou `endTurn`) — ce qui arrive à zéro. `notice` change seulement le texte. `endTurn` fait déclencher la fin de tour par la page ouverte du meneur de jeu, uniquement pour une fin de tour neuve, et rien ne se passe sans onglet de meneur de jeu ouvert. Avec des durées à `0h`, l'échéance est déjà passée à chaque tour, et chaque page du meneur de jeu résout donc un tour.
+
+**`turnTimerDurations`** (mode `durations`) — liste séparée par des virgules d'entrées `Nh` ou `NhMM`, par exemple `48h,24h30,0h`. `N` compte une à trois chiffres, `MM` deux chiffres de minutes. `0h` est permis. Une valeur unique se répète à chaque tour. Une liste est indexée par le numéro de tour, à partir du tour 0, et au-delà de la liste le timer s'arrête. Seules les entrées vides en fin de liste sont ignorées (`2h,` est accepté), une entrée vide au milieu (`1h,,3h`) rend la liste invalide et arrête le timer. Combinée à `turnTimerOnExpiry` à `endTurn`, la valeur `0h` résout un tour à chaque chargement d'une page du meneur de jeu, tant que l'échéance est déjà passée.
+
+**`turnTimerDates`** (mode `dates`) — liste séparée par des virgules de dates `YYYY-MM-DD HH:MM`, lues dans `turnTimerTimezone`. L'échéance est la date future la plus proche. Les dates passées sont sautées, les dates invalides ignorées avec un avertissement, et quand il n'en reste aucune le timer s'arrête.
+
+**`turnTimerTimezone`** — fuseau des dates, par exemple `Europe/Paris`. Vide, il vaut le fuseau du serveur. Un nom invalide vaut aussi le fuseau du serveur, avec un avertissement.
+
+**`turnTimerTextRunning`** (= `Fin de %s dans %s.`) — le texte d'un timer en marche. Le premier `%s` est `timeValue` en minuscules, le second le temps restant.
+
+**`turnTimerTextPaused`** (= `Jeu en pause, il reste %s.`) — le texte d'un timer en pause. `%s` = le temps restant.
+
+**`turnTimerTextImminent`** (= `Fin de tour imminente.`) — le texte une fois l'échéance atteinte.
+
+Le temps restant s'affiche `2h05` à partir d'une heure, et `4min 12s` en dessous.
 
 ### `debug` — Débogage
 

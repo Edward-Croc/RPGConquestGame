@@ -491,3 +491,114 @@ function createNewTurnLines(PDO $pdo, int $turn_number): bool
     game_error_log(__FUNCTION__, 'DONE with turn_number : ' . $turn_number, [], 'debug');
     return true;
 }
+
+/**
+ * Compute the deadline of a turn starting at the given instant.
+ *
+ * Mode durations reads turnTimerDurations (comma list of Nh or NhMM, indexed by turncounter, a single value applies to every turn).
+ * Mode dates reads turnTimerDates (comma list of YYYY-MM-DD HH:MM in turnTimerTimezone) and keeps the earliest date after now.
+ * Any other mode, an exhausted list or a malformed entry stops the timer.
+ *
+ * @param PDO $pdo : database connection
+ * @param int $turncounter : turn that starts
+ * @param int $now : epoch of the start of the turn
+ *
+ * @return int|null : epoch of the deadline, NULL when the timer stops
+ */
+function computeNextTurnDeadline(PDO $pdo, int $turncounter, int $now): int|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with turncounter : ' . $turncounter, ['now' => $now], 'debug');
+
+    $mode = (string) getConfig($pdo, 'turnTimerMode');
+    if ($mode === 'durations') {
+        $entries = array_map('trim', explode(',', (string) getConfig($pdo, 'turnTimerDurations')));
+        // Only trailing empty entries are ignored, an empty one in the middle would shift the indexes.
+        while ($entries !== [] && end($entries) === '') {
+            array_pop($entries);
+        }
+        if (in_array('', $entries, true)) {
+            game_error_log(__FUNCTION__, 'malformed durations list', ['entries' => $entries], 'warning');
+            return null;
+        }
+        $entry = count($entries) === 1 ? $entries[0] : ($entries[$turncounter] ?? null);
+        if ($entry === null) {
+            return null;
+        }
+        if (!preg_match('/^(\d{1,3})h(?:([0-5]\d))?$/', $entry, $matches)) {
+            game_error_log(__FUNCTION__, 'malformed duration', ['entry' => $entry], 'warning');
+            return null;
+        }
+        return $now + ((int) $matches[1] * 3600) + ((int) ($matches[2] ?? 0) * 60);
+    }
+    if ($mode === 'dates') {
+        $timezoneName = (string) getConfig($pdo, 'turnTimerTimezone');
+        try {
+            $timezone = new DateTimeZone($timezoneName === '' ? date_default_timezone_get() : $timezoneName);
+        } catch (Exception $e) {
+            game_error_log(__FUNCTION__, 'invalid timezone', ['timezone' => $timezoneName], 'warning');
+            $timezone = new DateTimeZone(date_default_timezone_get());
+        }
+        $next = null;
+        $datesList = trim((string) getConfig($pdo, 'turnTimerDates'));
+        foreach ($datesList === '' ? [] : explode(',', $datesList) as $entry) {
+            $date = DateTimeImmutable::createFromFormat('!Y-m-d H:i', trim($entry), $timezone);
+            if ($date === false || $date->format('Y-m-d H:i') !== trim($entry)) {
+                game_error_log(__FUNCTION__, 'malformed date', ['entry' => $entry], 'warning');
+                continue;
+            }
+            $epoch = $date->getTimestamp();
+            if ($epoch > $now && ($next === null || $epoch < $next)) {
+                $next = $epoch;
+            }
+        }
+        return $next;
+    }
+    return null;
+}
+
+/**
+ * Format a delay for the turn timer texts: 2h05 from one hour, 4min 12s below.
+ *
+ * @param int $seconds : delay in seconds
+ *
+ * @return string : formatted delay
+ */
+function formatTurnTimerDelay(int $seconds): string
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with seconds : ' . $seconds, [], 'debug');
+
+    $seconds = max(0, $seconds);
+    if ($seconds >= 3600) {
+        return sprintf('%dh%02d', intdiv($seconds, 3600), intdiv($seconds % 3600, 60));
+    }
+    return sprintf('%dmin %ds', intdiv($seconds, 60), $seconds % 60);
+}
+
+/**
+ * Read the turn timer state from the mechanics row.
+ *
+ * @param array $mechanics : the mechanics row
+ *
+ * @return array|null : NULL when the timer columns are absent, else ['deadline' => UTC epoch|null, 'remaining' => seconds|null]
+ */
+function getTurnTimerState(array $mechanics): array|null
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START', [], 'debug');
+
+    if (!array_key_exists('turn_deadline', $mechanics) || !array_key_exists('turn_timer_remaining', $mechanics)) {
+        return null;
+    }
+    $deadline = null;
+    if (!empty($mechanics['turn_deadline'])) {
+        try {
+            $deadline = (new DateTimeImmutable($mechanics['turn_deadline'], new DateTimeZone('UTC')))->getTimestamp();
+        } catch (Exception $e) {
+            game_error_log(__FUNCTION__, 'corrupt turn_deadline', ['turn_deadline' => $mechanics['turn_deadline']], 'warning');
+        }
+    }
+    $remaining = $mechanics['turn_timer_remaining'] === null ? null : (int) $mechanics['turn_timer_remaining'];
+    return ['deadline' => $deadline, 'remaining' => $remaining];
+}

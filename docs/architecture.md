@@ -153,7 +153,9 @@ le lien et la phrase voisins montrent déjà.
 
 **La règle générale** : un attribut `data-*` qui n'existe que pour la suite de tests, sur
 une page qu'un joueur peut voir, ne dit rien en production. Les autres restent — les
-`data-tab-*` pilotent les onglets (`selectTab`, `base/baseScript.php`), et les pages
+`data-tab-*` pilotent les onglets (`selectTab`, `base/baseScript.php`), `data-deadline` et
+`data-now` alimentent le compte à rebours du timer de fin de tour (`initTurnTimerCountdown`,
+`base/baseHTML.php`), et les pages
 d'administration sont hors de portée d'un joueur. `TestNoUnexpectedDataAttributes`
 (`tests/test_agent_combat_e2e.py`) tient la liste blanche et fait rougir la suite dès qu'un
 attribut non prévu atteint une page joueur.
@@ -250,6 +252,7 @@ requête entièrement liée** n'est jamais une situation de jeu, et doit remonte
 
 | État écrit dans `end_step` | Ce que l'étape exécute réellement |
 |---|---|
+| `claimed` | écrit par la prise atomique du déclenchement : les premières étapes le traitent comme un départ à neuf |
 | `updateRessources` | `updateRessources` **puis** `ressourceGainMechanic('before_claim')` |
 | `calculateValsReport` | `calculateVals` puis la rédaction des rapports de valeurs |
 | `attackMechanic` | `attackMechanic` |
@@ -304,9 +307,79 @@ de tour » tant que `end_step` est non vide.
 quand `gamestate` vaut déjà 1 elle laisse son `UPDATE` vide et renvoie `true`
 quand même.
 
+Le formulaire porte aussi `turn_seen`, le `turncounter` au moment du rendu. Un
+formulaire périmé — `turn_seen` absent, ou différent du compteur courant — est refusé
+avec le même message, et ne mute rien.
+
+Il porte aussi `end_step_seen`, l'`end_step` au moment du rendu (chaîne vide pour `NULL`).
+`endTurn.php` refuse, avec le même message, une requête dont `end_step_seen` est absent ou
+diffère de l'`end_step` courant : un second déclenchement tardif, dont le formulaire date
+d'avant la prise d'une autre session, ne passe donc jamais pour une reprise. Le formulaire
+d'une reprise légitime, rendu après un plantage, porte l'étape de la reprise et passe.
+
+Une fin de tour **neuve** (`end_step` vide) est ensuite prise par un `UPDATE`
+conditionnel, qui écrit `end_step = 'claimed'` seulement si `turncounter` vaut encore
+`turn_seen` et si `end_step` est encore vide. De deux déclenchements simultanés, un seul
+voit `rowCount() === 1` et poursuit, l'autre reçoit le refus. Une **reprise** (`end_step`
+non vide) n'est pas prise : elle repart de son état. Un plantage juste après la prise
+laisse `claimed` dans `end_step`, et la relance repart du début, `claimed` valant départ
+à neuf.
+
 Côté tests, `helpers.end_turn` rejoint une page portant la barre latérale puis
 soumet le formulaire ; une navigation directe vers `endTurn.php` est refusée
 comme n'importe quel autre GET.
+
+### Le timer de fin de tour
+
+Le timer est un état **propre**, indépendant de `mechanics.gamestate`. Il tient en deux
+colonnes de `mechanics` : `turn_deadline` (l'échéance, en UTC) et `turn_timer_remaining`
+(les secondes restantes d'un timer en pause). Les deux à `NULL` signifient arrêté. Une
+installation dont la table n'a pas les colonnes est tolérée : `getTurnTimerState` rend
+`null`, aucun compteur ne s'affiche et rien ne s'écrit.
+
+`turnTimerMode` choisit la source de l'échéance (`computeNextTurnDeadline`) : `off` (ou clé
+absente), `durations` (une durée par tour) ou `dates` (la plus proche date future d'une
+liste). Les clés sont décrites dans `docs/configuration.md`.
+
+Les commandes du meneur de jeu passent par `mechanics/turnTimer.php` :
+
+- c'est un `POST` réservé à `is_privileged`, qui porte `turn_timer_action` et
+  `end_turn_token`
+- le jeton de session est **comparé sans être brûlé**, les commandes sont répétables
+- `start` ne s'applique qu'à un timer arrêté, et n'écrit rien si aucune échéance ne se
+  calcule
+- `pause` range les secondes restantes et efface l'échéance, `resume` rend une échéance
+  `maintenant + restant` et `stop` efface les deux
+- en mode `dates`, `resume` ne rend pas le restant : il recalcule la prochaine date future
+- la page redirige ensuite vers la page d'origine.
+
+L'échéance du tour suivant est écrite par le **même** `UPDATE` que `turncounter`, dans
+l'étape `restartTurnRecrutementCount` de `endTurn.php`. Un timer en marche reçoit la
+prochaine échéance, un timer en pause reste en pause avec la durée pleine du tour suivant
+dans `turn_timer_remaining`, et si aucune échéance ne se calcule (liste épuisée) le timer
+s'arrête. L'état du timer est **relu en base** juste avant cet `UPDATE`, donc une pause, un
+arrêt ou une reprise faits pendant la résolution du tour sont conservés, et si la relecture
+échoue aucune colonne du timer n'est écrite. L'échéance est mesurée **depuis la fin de la fin de tour**, pas depuis
+l'expiration du tour précédent.
+
+La barre latérale (`base/baseHTML.php`) rend le timer quand un mode est posé. Le bloc
+`#turnTimer` porte `data-deadline` et `data-now` (epoch serveur, UTC), et le script
+`initTurnTimerCountdown` compte à rebours depuis le temps client écoulé depuis le
+chargement, donc le décalage de l'horloge client est sans effet. À zéro, ou si l'échéance
+est déjà passée au chargement, le texte devient celui de `turnTimerTextImminent`. Le
+meneur de jeu y voit en plus « Retard » suivi du retard quand l'échéance est passée, et les
+boutons de commande qui correspondent à l'état (Lancer, Pause, Reprendre, Arrêter).
+
+Avec `turnTimerOnExpiry` à `endTurn`, la page ouverte du meneur de jeu soumet elle-même
+`#endTurnForm` à zéro (`autoFireEndTurn`). Cela exige un `end_step` vide : une reprise
+reste manuelle. Le script ajoute alors au formulaire `auto_deadline`, l'échéance (epoch)
+avec laquelle l'onglet a été rendu, et `endTurn.php` ne poursuit que si le timer porte
+encore exactement cette échéance : un onglet périmé, dont le timer a été mis en pause,
+arrêté ou relancé ailleurs, reçoit le refus. Un clic manuel ne porte pas `auto_deadline`. La page de fin de tour ne déclenche jamais, et **sans onglet de meneur de
+jeu ouvert rien ne se passe**. Avec `notice`, seul le texte change.
+
+La pause ne bloque pas les actions immédiates des joueurs (dons, déplacements, attaques de
+lieu en mode `immediate`) : elle ne touche que le compte à rebours.
 
 ### Le récit d'un tour est archivé
 
@@ -1080,7 +1153,7 @@ table — aucun fichier `.sql` ni `.php` du dépôt n'en définit ou n'en lit un
 
 | Table | Contenu | FK clés |
 |---|---|---|
-| `mechanics` | Ligne singleton : turncounter, gamestate, end_step | — |
+| `mechanics` | Ligne singleton : turncounter, gamestate, end_step, turn_deadline, turn_timer_remaining | — |
 | `config` | Clé/valeur de configuration (`name` UNIQUE) | — |
 | `ressources_config` | Définition des ressources (coûts, gain_rules JSON) | — |
 | `controller_ressources` | Inventaire par meneur | `controller_id` → controllers, `ressource_id` → ressources_config |
@@ -1174,6 +1247,10 @@ détaillée au §3 du document principal — `end_step` est le marqueur textuel 
 permet à `endTurn.php` de reprendre sa machine à états après une panne en cours
 de résolution. Ce n'est **pas** un rechargement de page : celui-ci est refusé,
 voir §3.
+
+`mechanics.turn_deadline` (`DATETIME` en UTC, `TIMESTAMP` en PostgreSQL) et
+`mechanics.turn_timer_remaining` (secondes) portent le timer de fin de tour, voir §3. Les
+deux à `NULL` signifient arrêté, et une base sans ces colonnes est tolérée.
 
 ### Le piège booléen inter-dialecte
 

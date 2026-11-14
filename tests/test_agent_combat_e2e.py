@@ -1260,6 +1260,7 @@ PLAYER_VISIBLE_DATA_ATTRIBUTES = {
     'data-tab-group', 'data-tab-index', 'data-max',
     'data-worker-id', 'data-worker-lastname',
     'data-action-choice', 'data-action-params', 'data-worker-status',
+    'data-deadline', 'data-now',
 }
 
 PLAYER_VISIBLE_PAGES = (
