@@ -287,14 +287,17 @@ if ($is_mutating && empty($_SESSION['is_privileged']) && $worker_id) {
 
     // Dead workers keep the resurrection, and nothing else ; a trace may raise its dead agent.
     // The raising must come alone : any other action in the same request would act on the dead.
-    $onlyTransform = array_values(array_filter($MUTATING_ACTIONS, fn (string $key): bool => isset($_GET[$key]))) === ['transform'];
-    $is_resurrection = $onlyTransform && (
+    $requestedActions = array_values(array_filter($MUTATING_ACTIONS, fn (string $key): bool => isset($_GET[$key])));
+    $is_resurrection = $requestedActions === ['transform'] && (
         $current_choice === 'dead'
         || ($current_choice === 'trace'
             && getDeadTracePrimaryWorkerId($gameReady, (int) $worker_id, (int) ($_SESSION['controller']['id'] ?? 0), (int) $mechanics['turncounter']) !== null)
     );
+    // A prisoner only takes a release or a transfer, sent alone ; the jailer checks come below.
+    $is_prisoner_custody = $current_choice === 'captured'
+        && in_array($requestedActions, [['returnPrisoner'], ['transferPrisoner']], true);
     // Absence is not permission : an unreadable row must refuse, like an inactive one.
-    if (!$is_resurrection
+    if (!$is_resurrection && !$is_prisoner_custody
         && (!is_string($current_choice) || in_array($current_choice, INACTIVE_ACTIONS, true))
     ) {
         game_error_log('workers_action_page', 'inactive or unreadable action, write refused', ['worker_id' => $worker_id, 'action_choice' => $current_choice], 'warning');
