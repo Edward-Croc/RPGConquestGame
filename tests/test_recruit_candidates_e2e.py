@@ -312,6 +312,13 @@ class TestOrganiserNeedsAFaction:
             assert status == 403, (
                 f"The gm with no faction selected must be refused on workers/new.php; got {status}"
             )
+            # Game-rule refusal family : the reason, inside the game template.
+            assert gm_page.locator("#sidebar").count() == 1, (
+                "the refusal must render inside the game template, menu included"
+            )
+            assert "Choisissez d'abord une faction" in gm_page.locator(".refusal-message").inner_text(), (
+                "the organiser without a faction must be told why the page is refused"
+            )
 
             _select_controller(gm_page, ids["Alpha"])
             response = gm_page.goto(_recruit_url(ids["Alpha"], "recrutement"))
@@ -665,6 +672,14 @@ class TestRecruitThroughStoredCandidate:
         assert state["c3_status"] == 403, f"A recruitment beyond the allowance must be refused with 403; got {state['c3_status']}"
         assert REFUSED_TEXT in state["c3_html"], (
             f"A recruitment beyond the allowance must answer « {REFUSED_TEXT} »"
+        )
+        # A second player of the faction landing here used to get a blank page :
+        # the reason must sit inside the game template, menu included.
+        assert 'id="sidebar"' in state["c3_html"], (
+            "the refusal beyond the allowance must render the game menu, not a blank page"
+        )
+        assert 'class="refusal-message"' in state["c3_html"], (
+            "the refusal reason must be rendered by the refusal page"
         )
         assert len(after) == len(before), f"No agent may be created beyond the allowance; {len(before)} -> {len(after)}"
         assert len(_named(after, c3)) == len(_named(before, c3)), (

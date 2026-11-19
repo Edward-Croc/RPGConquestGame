@@ -784,6 +784,28 @@ Deux actions de masse portent un paramètre : `mass_move` la zone de destination
 revendique **la zone où il se trouve**, donc une sélection répartie sur plusieurs zones
 en revendique plusieurs.
 
+### La page de refus
+
+`refuseRequest($statusCode, $reason)` (`base/basePHP.php`) termine la requête sur une
+page de refus rendue dans le gabarit du jeu, menu compris. Le joueur en repart par le
+menu, la page ne porte pas de lien de retour. Le code HTTP reste celui de la garde, 403
+ou 400. Le texte affiché relève de trois familles :
+
+| Famille | Appel | Texte affiché |
+|---|---|---|
+| Règle du jeu | `refuseRequest(403, $raison)` | la raison, journalisée en `warning` |
+| Requête forgée | `refuseRequest(400)` | « Requête invalide. » |
+| Propriété ou secret | `refuseRequest(403)` | « Action impossible. » |
+
+Les deux textes génériques ne disent rien de l'objet visé : un refus de propriété ne
+confirme pas qu'un agent, une zone ou une faction existe. Les textes sont figés dans le
+code. La garde qui refuse sans raison journalise elle-même son motif.
+
+Le recrutement passe par cette page : `workers/new.php` et la branche `creation` de
+`workers/action.php`. Dans ce dernier, toute requête qui n'aboutit à aucun agent, créé
+ou désigné par `worker_id`, la reçoit aussi, avec la raison du recrutement quand il y
+en a une. Les autres gardes répondent encore par une page blanche, voir l'issue #190.
+
 ### Le recrutement passe par des candidats stockés
 
 Les candidats vivent dans `recruit_candidates`, une ligne par candidat, rangée par
@@ -794,9 +816,11 @@ courant. `topUpRecruitCandidates` (`workers/functions.php`) ajoute des lignes, e
 « Régénérer » réécrit une ligne sur place.
 
 **L'ouverture de `workers/new.php`** ne dépense rien. Un visiteur non connecté part
-vers la page de connexion. L'organisateur sans faction sélectionnée reçoit un 403, et
-`workers/viewAll.php` ne lui rend pas les boutons de recrutement. Un joueur qui vise
-un autre contrôleur reçoit aussi un 403. Si `canStartRecrutement` ou
+vers la page de connexion. L'organisateur sans faction sélectionnée reçoit un 403
+(« Choisissez d'abord une faction pour recruter. »), et `workers/viewAll.php` ne lui
+rend pas les boutons de recrutement. Un joueur qui vise un autre contrôleur reçoit
+aussi un 403, avec le texte générique. Chaque refus du recrutement s'affiche sur la
+page de refus (voir « La page de refus »). Si `canStartRecrutement` ou
 `canStartFirstCome` refuse, la page répond « Le recrutement n'est pas permis ! » sans
 rien tirer. Sinon elle tire, dans une transaction qui verrouille la ligne du
 contrôleur (`FOR UPDATE`) pour que deux joueurs d'une même faction ne tirent pas

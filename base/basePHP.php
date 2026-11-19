@@ -114,6 +114,37 @@ function getMechanics(PDO $pdo): array|null
     }
 }
 
+/**
+ * Ends the request on a refusal page rendered inside the game template, menu included.
+ *
+ * A reason is a game rule the player may read, and it is logged as a warning. Without one, the page says only
+ * « Requête invalide. » for a 400 and « Action impossible. » otherwise, so a guard protecting a secret confirms nothing.
+ *
+ * @param int $statusCode : HTTP status of the refusal, 403 or 400
+ * @param string $reason : sentence shown to the player, empty for the generic text
+ *
+ * @return never
+ */
+function refuseRequest(int $statusCode, string $reason = ''): never
+{
+    // $GLOBALS['DEBUG_LOG_SECTIONS'][] = __FUNCTION__;  // uncomment to log DEBUG events from this function
+    game_error_log(__FUNCTION__, 'START with statusCode : ' . $statusCode, ['reason' => $reason], 'debug');
+
+    global $gameReady, $mechanics, $gameTitle;
+    if ($reason !== '') {
+        game_error_log(__FUNCTION__, $reason, ['statusCode' => $statusCode, 'page' => $_SERVER['SCRIPT_NAME'] ?? null, 'controller_id' => $_SESSION['controller']['id'] ?? null], 'warning');
+    }
+    $message = $reason !== '' ? $reason : ($statusCode === 400 ? 'Requête invalide.' : 'Action impossible.');
+    http_response_code($statusCode);
+    $pageName = 'refusal';
+    require_once __DIR__ . '/baseHTML.php';
+    echo sprintf(
+        '<div> <h2> Action refusée </h2> </div> <div class="refusal-message"> %s </div>',
+        htmlspecialchars($message, ENT_QUOTES)
+    );
+    exit();
+}
+
 // Call the gameReady() function from dbConnector.php
 $gameReady = gameReady();
 

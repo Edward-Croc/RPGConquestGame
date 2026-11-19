@@ -17,14 +17,11 @@ if (empty($_SESSION['logged_in']) || empty($controller_id)) {
     exit();
 }
 if (!empty($_SESSION['is_privileged']) && empty($_SESSION['controller']['id'])) {
-    game_error_log('workers_new_page', 'Recruitment page refused to the organiser without a selected faction', ['controller_id' => $controller_id], 'warning');
-    http_response_code(403);
-    exit();
+    refuseRequest(403, "Choisissez d'abord une faction pour recruter.");
 }
 if (empty($_SESSION['is_privileged']) && (int) $controller_id !== (int) ($_SESSION['controller']['id'] ?? 0)) {
     game_error_log('workers_new_page', 'Recruitment page refused for another controller', ['controller_id' => $controller_id], 'warning');
-    http_response_code(403);
-    exit();
+    refuseRequest(403);
 }
 
 $controllerValues = getControllers($gameReady, null, $controller_id);

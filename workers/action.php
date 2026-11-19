@@ -24,6 +24,7 @@ if ($_SESSION['DEBUG'] == true) {
     echo "worker_id: ".var_export($worker_id, true)."<br /><br />";
 }
 // it can be determined by worker creation
+$refusalReason = '';
 if (isset($_GET['creation'])) {
     // A creation shows only the agent it creates or finds, never the worker_id of the URL.
     $worker_id = null;
@@ -38,8 +39,7 @@ if (isset($_GET['creation'])) {
             ['controller_id' => $_GET['controller_id'] ?? null, 'session_controller_id' => $_SESSION['controller']['id'] ?? null],
             'warning'
         );
-        http_response_code(403);
-        exit();
+        refuseRequest(403);
     }
     $recruit_controller_id = (int) ($_GET['controller_id'] ?? 0);
     // The organiser, or a privileged account using the perfect-agent form, recruits free and unchecked.
@@ -118,14 +118,14 @@ if (isset($_GET['creation'])) {
             }
         }
         if (!$recruitAllowed || $typedCount !== count($typedPowers)) {
-            echo "Ce pouvoir n'est pas disponible.<br />";
+            $refusalReason = "Ce pouvoir n'est pas disponible.";
             $recruitAllowed = false;
         }
         // A player gets only a discipline the recruitment page offers to that faction.
         $postedDiscipline = $recruitPayload['discipline'];
         if ($recruitAllowed && !empty($postedDiscipline) && $postedDiscipline != "\'\'") {
             if (findOfferedPower(getPowersByType($gameReady, '3', $recruit_controller_id, true), $postedDiscipline) === null) {
-                echo "Cette discipline n'est plus disponible.<br />";
+                $refusalReason = "Cette discipline n'est plus disponible.";
                 $recruitAllowed = false;
             }
         }
@@ -141,13 +141,13 @@ if (isset($_GET['creation'])) {
             }
             $matchedPower = findOfferedPower($offeredTransformations, $linkPowerTypeId);
             if ($matchedPower === null) {
-                echo "Cette transformation n'est plus disponible.<br />";
+                $refusalReason = "Cette transformation n'est plus disponible.";
                 $recruitAllowed = false;
             } else {
                 $cost = getRuleCostForPower($gameReady, $matchedPower, $recruit_controller_id, null, $turn, 'on_recrutment');
                 // A failed cost lookup refuses the transformation, it is never read as free.
                 if ($cost === false) {
-                    echo "Cette transformation n'est plus disponible.<br />";
+                    $refusalReason = "Cette transformation n'est plus disponible.";
                     $recruitAllowed = false;
                 }
             }
@@ -181,7 +181,7 @@ if (isset($_GET['creation'])) {
                     default => false,
                 };
                 if (!$recruitAllowed) {
-                    echo "Le recrutement n'est pas permis !<br />";
+                    $refusalReason = "Le recrutement n'est pas permis !";
                 }
             }
             if ($recruitAllowed) {
@@ -189,7 +189,7 @@ if (isset($_GET['creation'])) {
                 $stmt = $gameReady->prepare("UPDATE {$prefix}controllers SET {$counterColumn} = {$counterColumn} + 1 WHERE id = :id");
                 $stmt->execute([':id' => $recruit_controller_id]);
                 if ($cost !== null && !consumeRessource($gameReady, $recruit_controller_id, $cost['ressource_id'], $cost['amount'])) {
-                    echo "Stock insuffisant ou modifié.<br />";
+                    $refusalReason = "Stock insuffisant ou modifié.";
                     $recruitAllowed = false;
                 }
             }
@@ -212,19 +212,18 @@ if (isset($_GET['creation'])) {
     if ($replayLookup) {
         $worker_id = getRecruitedWorkerId($gameReady, $_GET);
         if (empty($worker_id)) {
-            echo "Ce candidat n'est plus disponible.<br />";
+            $refusalReason = "Ce candidat n'est plus disponible.";
         }
     } elseif (!$recruitUnchecked && !is_array($candidate)) {
-        echo "Ce candidat n'est plus disponible.<br />";
+        $refusalReason = "Ce candidat n'est plus disponible.";
     }
     if ($_SESSION['DEBUG'] == true) {
         echo 'createWorker : DONE <br />';
     }
 }
-// if the is not worker ID this is an error
+// No worker to act on : the recruitment reason when there is one, the generic text otherwise.
 if (empty($worker_id)) {
-    http_response_code(403);
-    exit();
+    refuseRequest(403, $refusalReason);
 }
 
 $session_controller_id = $_SESSION['controller']['id'] ?? null;
