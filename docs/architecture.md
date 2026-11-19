@@ -746,9 +746,13 @@ la branche `creation` de `workers/action.php` les rejoue au moment de créer l'a
 (voir « Le recrutement passe par des candidats stockés » plus bas).
 
 `workers/action.php` ajoute un verrou d'écriture sur les agents dont l'action du tour
-est dans `INACTIVE_ACTIONS`, avec une exception pour une requête qui ne porte que
-`transform`, sur un mort ou sur la trace d'un agent mort — la résurrection (voir
-« Ramener un mort »).
+est dans `INACTIVE_ACTIONS`, avec deux exceptions. Une requête qui ne porte que
+`transform` passe sur un mort ou sur la trace d'un agent mort — la résurrection (voir
+« Ramener un mort »). Une requête qui ne porte que `returnPrisoner`, ou que
+`transferPrisoner`, passe sur un agent `captured` : ce sont les gestes du geôlier,
+qui sont ensuite contrôlés par leurs propres gardes (voir « Ce qu'un geôlier peut
+faire d'un prisonnier »). Tout autre ordre donné à un prisonnier reste refusé, même
+accompagné d'une libération.
 
 Le verrou n'autorise que sur une **lecture positive** : il faut que la ligne du tour
 existe et porte autre chose qu'une action inactive. Écrit à l'envers — refuser sur

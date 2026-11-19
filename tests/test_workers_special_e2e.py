@@ -351,6 +351,42 @@ class TestGiftPrisoner:
             f"the refused release must not mint a dossier at the forged faction; got {traces}"
         )
 
+    def test_a_prisoner_takes_no_other_order_from_its_jailer(self, gm_page: Page, browser, base_url):
+        """The inactive guard lets a non-privileged jailer through for a
+        release or a transfer sent alone, and for nothing else : an ordinary
+        order to a prisoner, or one riding along with a release, must 403.
+        echo_player is Echo's non-privileged account — the gm bypasses the
+        guard, so it cannot observe this.
+        """
+        wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
+        echo_id = _controller_ids["Echo"]
+        beta_id = _controller_ids["Beta"]
+
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "echo_player", "test")
+        for label, query in (
+            ("a plain order", "hide=1"),
+            ("a release carrying another order",
+             f"returnPrisoner=1&hide=1&recall_controller_id={echo_id}"
+             f"&return_controller_id={beta_id}"),
+        ):
+            response = page.goto(f"{base_url}/workers/action.php?worker_id={wid}&{query}")
+            assert response is not None and response.status == 403, (
+                f"{label} on a prisoner must 403; got "
+                f"{response.status if response else None}"
+            )
+        ctx.close()
+
+        rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
+        live = [r for r in rows if r["action_choice"] != "trace"]
+        assert len(live) == 1 and live[0]["action_choice"] == "captured", (
+            f"the refused orders must leave the prisoner captured; got {live}"
+        )
+        assert live[0]["controller_id"] == echo_id, (
+            f"the refused orders must leave the prisoner with Echo; got {live}"
+        )
+
     def test_the_transfer_form_only_shows_in_the_jailer_own_view(self, gm_page: Page, base_url):
         """The guard requires the session to act for the jailer, so a view
         opened as another controller must not render a button that would 403.
@@ -421,10 +457,14 @@ class TestGiftPrisoner:
             f"the refused transfer must leave the prisoner with Echo; got {live}"
         )
 
-    def test_transfer_hands_custody_over_without_freeing(self, gm_page: Page, base_url):
+    def test_transfer_hands_custody_over_without_freeing(self, gm_page: Page, browser, base_url):
         """Issue #95 — the third gesture : the prisoner changes jailer and stays
         a prisoner. Transfers Echo -> Delta, checks everything, then transfers
         back so the release test below still finds Echo holding them.
+
+        The outgoing transfer is clicked by echo_player, Echo's non-privileged
+        account : the inactive guard bypasses the gm, and a guard that refused
+        every write on a captured agent once 403'd every real jailer here.
 
         The round trip also proves the reverse direction, and restores the
         state this class shares.
@@ -434,12 +474,19 @@ class TestGiftPrisoner:
         echo_id = _controller_ids["Echo"]
         delta_id = _controller_ids["Delta"]
 
-        safe_goto(
-            gm_page,
-            f"{base_url}/workers/action.php?worker_id={wid}&transferPrisoner=1"
-            f"&recall_controller_id={echo_id}&transfer_controller_id={delta_id}",
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "echo_player", "test")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
+        page.wait_for_load_state("load")
+        page.locator("select[name='transfer_controller_id']").select_option(str(delta_id))
+        with page.expect_navigation() as nav:
+            page.locator("input[name='transferPrisoner']").click()
+        assert nav.value is not None and nav.value.status == 200, (
+            f"the jailer own transfer must succeed; got "
+            f"{nav.value.status if nav.value else None}"
         )
-        gm_page.wait_for_load_state("load")
+        ctx.close()
 
         rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
         live = [r for r in rows if r["action_choice"] != "trace"]
@@ -532,18 +579,29 @@ class TestGiftPrisoner:
             f"the refused transfers must leave the prisoner with Echo; got {live}"
         )
 
-    def test_return_releases_prisoner_to_original_owner(self, gm_page: Page, base_url):
+    def test_return_releases_prisoner_to_original_owner(self, gm_page: Page, browser, base_url):
         """Click 'Relâcher vers Beta !' → Claim_Def_1's live row
         belongs to Beta again. Note: returnPrisoner also creates a trace at
-        the captor (Echo) per workers/functions.php:1122 — same trace pattern
-        as the gift flow."""
-        _select_controller(gm_page, base_url, "Echo")
+        the captor (Echo) — same trace pattern as the gift flow.
+
+        Clicked by echo_player, Echo's non-privileged account : the gm
+        bypasses the inactive guard, and a guard that refused every write on
+        a captured agent once 403'd every real jailer here."""
         wid = ui_worker_id(gm_page, "Claim_Def_1", base_url=base_url)
-        safe_goto(gm_page, f"{base_url}/workers/action.php?worker_id={wid}")
-        gm_page.wait_for_load_state("load")
+
+        ctx = browser.new_context()
+        page = ctx.new_page()
+        login_as(page, base_url, "echo_player", "test")
+        safe_goto(page, f"{base_url}/workers/action.php?worker_id={wid}")
+        page.wait_for_load_state("load")
         # Click the first returnPrisoner submit (release-to-original-owner variant)
-        gm_page.locator("input[name='returnPrisoner']").first.click()
-        gm_page.wait_for_load_state("load")
+        with page.expect_navigation() as nav:
+            page.locator("input[name='returnPrisoner']").first.click()
+        assert nav.value is not None and nav.value.status == 200, (
+            f"the jailer own release must succeed; got "
+            f"{nav.value.status if nav.value else None}"
+        )
+        ctx.close()
 
         rows = ui_workers_by_lastname(gm_page, "Claim_Def_1", base_url=base_url)
         live = [r for r in rows if r["action_choice"] != "trace"]
