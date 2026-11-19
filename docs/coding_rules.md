@@ -243,6 +243,11 @@ double-clic, ou URL forgée à la main. Trois conséquences :
    `workers/massAction.php`. Écrite dans ce sens, une garde n'a besoin d'aucune
    vérification préalable : elle se ferme d'elle-même sur une donnée manquante.
 
+**Une garde qui refuse au joueur passe par `refuseRequest`**, jamais par
+`http_response_code(…)` suivi d'`exit()`, qui rend une page blanche. Une raison
+n'est donnée que pour une règle du jeu. Un refus de propriété ou de secret reste
+générique. Voir [`architecture.md`](architecture.md), « La page de refus ».
+
 Le motif sûr à recopier est celui de `ressources/action.php` : mutation en POST,
 puis `header('Location: …')` et `exit()`, de sorte que la réponse à la mutation
 n'est jamais la page mutée.

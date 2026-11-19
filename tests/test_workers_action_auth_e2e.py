@@ -150,6 +150,15 @@ def test_recruitment_for_a_foreign_controller_creates_nothing(browser, base_url)
     assert response.status == 403, (
         f"Recruiting onto another controller must 403; got {response.status}"
     )
+    # Ownership refusal family : the game page with its menu, and a generic
+    # sentence that says nothing about the foreign faction.
+    assert page.locator("#sidebar").count() == 1, (
+        "the refusal must render inside the game template, menu included"
+    )
+    message = page.locator(".refusal-message").inner_text().strip()
+    assert message == "Action impossible.", (
+        f"an ownership refusal must show only the generic sentence; got {message!r}"
+    )
     ctx.close()
 
     # UI-only proof that nothing was written despite the refusal.
